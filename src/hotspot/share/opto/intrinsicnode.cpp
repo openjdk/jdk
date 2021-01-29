@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,5 +96,19 @@ Node* EncodeISOArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 const Type* EncodeISOArrayNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   return bottom_type();
+}
+
+//------------------------------CopySign-----------------------------------------
+CopySignDNode* CopySignDNode::make(PhaseGVN& gvn, Node* in1, Node* in2) {
+  return new CopySignDNode(in1, in2, gvn.makecon(TypeD::ZERO));
+}
+
+//------------------------------Signum-------------------------------------------
+SignumDNode* SignumDNode::make(PhaseGVN& gvn, Node* in) {
+  return new SignumDNode(in, gvn.makecon(TypeD::ZERO), gvn.makecon(TypeD::ONE));
+}
+
+SignumFNode* SignumFNode::make(PhaseGVN& gvn, Node* in) {
+  return new SignumFNode(in, gvn.makecon(TypeF::ZERO), gvn.makecon(TypeF::ONE));
 }
 

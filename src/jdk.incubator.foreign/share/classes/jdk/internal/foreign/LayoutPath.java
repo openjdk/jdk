@@ -25,21 +25,28 @@
  */
 package jdk.internal.foreign;
 
+import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
+import jdk.incubator.foreign.MemorySegment;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.invoke.util.Wrapper;
+import jdk.internal.access.foreign.MemorySegmentProxy;
 
 import jdk.incubator.foreign.GroupLayout;
 import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.ValueLayout;
+import sun.invoke.util.Wrapper;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.function.ToLongFunction;
 import java.util.function.UnaryOperator;
-import java.util.stream.LongStream;
 
 /**
  * This class provide support for constructing layout paths; that is, starting from a root path (see {@link #rootPath(MemoryLayout, ToLongFunction)},
@@ -52,6 +59,23 @@ import java.util.stream.LongStream;
 public class LayoutPath {
 
     private static final JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
+
+    private static final MethodHandle ADD_STRIDE;
+    private static final MethodHandle MH_ADD_SCALED_OFFSET;
+
+    private static final int UNSPECIFIED_ELEM_INDEX = -1;
+
+    static {
+        try {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            ADD_STRIDE = lookup.findStatic(LayoutPath.class, "addStride",
+                    MethodType.methodType(long.class, MemorySegment.class, long.class, long.class, long.class));
+            MH_ADD_SCALED_OFFSET = lookup.findStatic(LayoutPath.class, "addScaledOffset",
+                    MethodType.methodType(long.class, long.class, long.class, long.class));
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
 
     private final MemoryLayout layout;
     private final long offset;
@@ -75,7 +99,7 @@ public class LayoutPath {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
         SequenceLayout seq = (SequenceLayout)layout;
         MemoryLayout elem = seq.elementLayout();
-        return LayoutPath.nestedPath(elem, offset, addStride(sizeFunc.applyAsLong(elem)), -1, this);
+        return LayoutPath.nestedPath(elem, offset, addStride(sizeFunc.applyAsLong(elem)), UNSPECIFIED_ELEM_INDEX, this);
     }
 
     public LayoutPath sequenceElement(long start, long step) {
@@ -84,7 +108,8 @@ public class LayoutPath {
         checkSequenceBounds(seq, start);
         MemoryLayout elem = seq.elementLayout();
         long elemSize = sizeFunc.applyAsLong(elem);
-        return LayoutPath.nestedPath(elem, offset + (start * elemSize), addStride(elemSize * step), -1, this);
+        return LayoutPath.nestedPath(elem, offset + (start * elemSize), addStride(elemSize * step),
+                UNSPECIFIED_ELEM_INDEX, this);
     }
 
     public LayoutPath sequenceElement(long index) {
@@ -130,23 +155,49 @@ public class LayoutPath {
     }
 
     public VarHandle dereferenceHandle(Class<?> carrier) {
-        if (!(layout instanceof ValueLayout)) {
-            throw badLayoutPath("layout path does not select a value layout");
-        }
-
-        if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class // illegal carrier?
-                || Wrapper.forPrimitiveType(carrier).bitWidth() != layout.bitSize()) { // carrier has the right size?
-            throw new IllegalArgumentException("Invalid carrier: " + carrier + ", for layout " + layout);
-        }
-
+        Utils.checkPrimitiveCarrierCompat(carrier, layout);
         checkAlignment(this);
 
-        return Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(
-                carrier,
-                layout.byteAlignment() - 1, //mask
-                ((ValueLayout) layout).order(),
-                Utils.bitsToBytesOrThrow(offset, IllegalStateException::new),
-                LongStream.of(strides).map(s -> Utils.bitsToBytesOrThrow(s, IllegalStateException::new)).toArray()));
+        List<Class<?>> expectedCoordinates = new ArrayList<>();
+        Deque<Integer> perms = new ArrayDeque<>();
+        perms.addFirst(0);
+        expectedCoordinates.add(MemorySegment.class);
+
+        VarHandle handle = Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(carrier, true, layout.byteAlignment() - 1,
+                ((ValueLayout)layout).order()));
+
+        for (int i = 0 ; i < strides.length ; i++) {
+            expectedCoordinates.add(long.class);
+            perms.addFirst(0);
+            perms.addLast(i + 1);
+            //add stride
+            handle = MemoryHandles.collectCoordinates(handle, 1 + i,
+                    MethodHandles.insertArguments(ADD_STRIDE, 1, Utils.bitsToBytesOrThrow(strides[strides.length - 1 - i], IllegalStateException::new))); // MS, long, MS_n, long_n, long
+        }
+        //add offset
+        handle = MemoryHandles.insertCoordinates(handle, 1 + strides.length, Utils.bitsToBytesOrThrow(offset, IllegalStateException::new));
+
+        if (strides.length > 0) {
+            // remove duplicate MS args
+            handle = MemoryHandles.permuteCoordinates(handle, expectedCoordinates, perms.stream().mapToInt(i -> i).toArray());
+        }
+        return handle;
+    }
+
+    private static long addScaledOffset(long base, long index, long stride) {
+        return base + (stride * index);
+    }
+
+    public MethodHandle offsetHandle() {
+        MethodHandle mh = MethodHandles.identity(long.class);
+        for (int i = strides.length - 1; i >=0; i--) {
+            MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i]);
+            // (J, ...) -> J to (J, J, ...) -> J
+            // i.e. new coord is prefixed. Last coord will correspond to innermost layout
+            mh = MethodHandles.collectArguments(mh, 0, collector);
+        }
+        mh = MethodHandles.insertArguments(mh, 0, offset);
+        return mh;
     }
 
     public MemoryLayout layout() {
@@ -283,5 +334,10 @@ public class LayoutPath {
         public PathKind kind() {
             return kind;
         }
+    }
+
+    private static long addStride(MemorySegment segment, long stride, long base, long index) {
+        return MemorySegmentProxy.addOffsets(base,
+                    MemorySegmentProxy.multiplyOffsets(stride, index, ((MemorySegmentProxy)segment)), (MemorySegmentProxy)segment);
     }
 }

@@ -41,7 +41,7 @@ public interface JavaUtilZipFileAccess {
     public Enumeration<JarEntry> entries(ZipFile zip);
     public Stream<JarEntry> stream(ZipFile zip);
     public Stream<String> entryNameStream(ZipFile zip);
-    public void setPosixPerms(ZipEntry ze, int posixPerms);
-    public int getPosixPerms(ZipEntry ze);
+    public void setExtraAttributes(ZipEntry ze, int extraAttrs);
+    public int getExtraAttributes(ZipEntry ze);
 }
 

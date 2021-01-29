@@ -92,7 +92,7 @@ public class LingeredApp {
     protected Process appProcess;
     protected OutputBuffer output;
     protected static final int appWaitTime = 100;
-    protected static final int appCoreWaitTime = 240;
+    protected static final int appCoreWaitTime = 480;
     protected final String lockFileName;
 
     protected boolean forceCrash = false; // set true to force a crash and core file

@@ -25,10 +25,12 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -306,6 +308,12 @@ BasicType Signature::basic_type(int ch) {
   BasicType btcode = decode_signature_char(ch);
   if (btcode == 0)  return T_ILLEGAL;
   return btcode;
+}
+
+Symbol* Signature::strip_envelope(const Symbol* signature) {
+  assert(has_envelope(signature), "precondition");
+  return SymbolTable::new_symbol((char*) signature->bytes() + 1,
+                                 signature->utf8_length() - 2);
 }
 
 static const int jl_len = 10, object_len = 6, jl_object_len = jl_len + object_len;

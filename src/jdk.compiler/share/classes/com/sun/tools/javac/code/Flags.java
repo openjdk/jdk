@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,112 @@ public class Flags {
      */
     public static final int DEPRECATED   = 1<<17;
 
+//<<<<<<< HEAD
+//=======
+//    /** Flag is set for a variable symbol if the variable's definition
+//     *  has an initializer part.
+//     */
+//    public static final int HASINIT          = 1<<18;
+//
+//    /** Flag is set for compiler-generated anonymous method symbols
+//     *  that `own' an initializer block.
+//     */
+//    public static final int BLOCK            = 1<<20;
+//
+//    /** Flag bit 21 is available. (used earlier to tag compiler-generated abstract methods that implement
+//     *  an interface method (Miranda methods)).
+//     */
+//
+//    /** Flag is set for nested classes that do not access instance members
+//     *  or `this' of an outer class and therefore don't need to be passed
+//     *  a this$n reference.  This value is currently set only for anonymous
+//     *  classes in superclass constructor calls.
+//     *  todo: use this value for optimizing away this$n parameters in
+//     *  other cases.
+//     */
+//    public static final int NOOUTERTHIS  = 1<<22;
+//
+//    /** Flag is set for package symbols if a package has a member or
+//     *  directory and therefore exists.
+//     */
+//    public static final int EXISTS           = 1<<23;
+//
+//    /** Flag is set for compiler-generated compound classes
+//     *  representing multiple variable bounds
+//     */
+//    public static final int COMPOUND     = 1<<24;
+//
+//    /** Flag is set for class symbols if a class file was found for this class.
+//     */
+//    public static final int CLASS_SEEN   = 1<<25;
+//
+//    /** Flag is set for class symbols if a source file was found for this
+//     *  class.
+//     */
+//    public static final int SOURCE_SEEN  = 1<<26;
+//
+//    /* State flags (are reset during compilation).
+//     */
+//
+//    /** Flag for class symbols is set and later re-set as a lock in
+//     *  Enter to detect cycles in the superclass/superinterface
+//     *  relations.  Similarly for constructor call cycle detection in
+//     *  Attr.
+//     */
+//    public static final int LOCKED           = 1<<27;
+//
+//    /** Flag for class symbols is set and later re-set to indicate that a class
+//     *  has been entered but has not yet been attributed.
+//     */
+//    public static final int UNATTRIBUTED = 1<<28;
+//
+//    /** Flag for synthesized default constructors of anonymous classes.
+//     */
+//    public static final int ANONCONSTR   = 1<<29;
+//
+//    /** Flag for class symbols to indicate it has been checked and found
+//     *  acyclic.
+//     */
+//    public static final int ACYCLIC          = 1<<30;
+//
+//    /** Flag that marks bridge methods.
+//     */
+//    public static final long BRIDGE          = 1L<<31;
+//
+//    /** Flag that marks formal parameters.
+//     */
+//    public static final long PARAMETER   = 1L<<33;
+//
+//    /** Flag that marks varargs methods.
+//     */
+//    public static final long VARARGS   = 1L<<34;
+//
+//    /** Flag for annotation type symbols to indicate it has been
+//     *  checked and found acyclic.
+//     */
+//    public static final long ACYCLIC_ANN      = 1L<<35;
+//
+//    /** Flag that marks a generated default constructor.
+//     */
+//    public static final long GENERATEDCONSTR   = 1L<<36;
+//
+//    /** Flag that marks a hypothetical method that need not really be
+//     *  generated in the binary, but is present in the symbol table to
+//     *  simplify checking for erasure clashes - also used for 292 poly sig methods.
+//     */
+//    public static final long HYPOTHETICAL   = 1L<<37;
+//
+//    /**
+//     * Flag that marks an internal proprietary class.
+//     */
+//    public static final long PROPRIETARY = 1L<<38;
+//
+//    /**
+//     * Flag that marks a multi-catch parameter.
+//     */
+//    public static final long UNION = 1L<<39;
+//
+//>>>>>>> master
     /**
      * Flag to indicate the given symbol has a @Deprecated annotation.
      */
@@ -134,9 +240,9 @@ public class Flags {
     public static final long PREVIEW_API = 1L<<20; //any Symbol kind
 
     /**
-     * Flag to indicate the API element in question is for a preview API.
+     * Flag to indicate the API element in question is for a reflective preview API.
      */
-    public static final long PREVIEW_ESSENTIAL_API = 1L<<21; //any Symbol kind
+    public static final long PREVIEW_REFLECTIVE = 1L<<21; //any Symbol kind
 
     //classfile flags:
     /** Flag that marks bridge methods.
@@ -238,30 +344,31 @@ public class Flags {
     /** Modifier masks.
      */
     public static final int
-        AccessFlags           = PUBLIC | PROTECTED | PRIVATE,
-        LocalClassFlags       = FINAL | ABSTRACT | STRICTFP | ENUM | SYNTHETIC,
-        StaticLocalFlags      = LocalClassFlags | STATIC | INTERFACE,
-        MemberClassFlags      = LocalClassFlags | INTERFACE | AccessFlags,
-        MemberRecordFlags     = MemberClassFlags | STATIC,
-        ClassFlags            = LocalClassFlags | INTERFACE | PUBLIC | ANNOTATION,
-        InterfaceVarFlags     = FINAL | STATIC | PUBLIC,
-        VarFlags              = AccessFlags | FINAL | STATIC |
-                                VOLATILE | TRANSIENT | ENUM,
-        ConstructorFlags      = AccessFlags,
-        InterfaceMethodFlags  = ABSTRACT | PUBLIC,
-        MethodFlags           = AccessFlags | ABSTRACT | STATIC | NATIVE |
-                                SYNCHRONIZED | FINAL | STRICTFP,
-        RecordMethodFlags     = AccessFlags | ABSTRACT | STATIC |
-                                SYNCHRONIZED | FINAL | STRICTFP;
+        AccessFlags                       = PUBLIC | PROTECTED | PRIVATE,
+        LocalClassFlags                   = FINAL | ABSTRACT | STRICTFP | ENUM | SYNTHETIC,
+        StaticLocalFlags                  = LocalClassFlags | STATIC | INTERFACE,
+        MemberClassFlags                  = LocalClassFlags | INTERFACE | AccessFlags,
+        MemberStaticClassFlags            = MemberClassFlags | STATIC,
+        ClassFlags                        = LocalClassFlags | INTERFACE | PUBLIC | ANNOTATION,
+        InterfaceVarFlags                 = FINAL | STATIC | PUBLIC,
+        VarFlags                          = AccessFlags | FINAL | STATIC |
+                                            VOLATILE | TRANSIENT | ENUM,
+        ConstructorFlags                  = AccessFlags,
+        InterfaceMethodFlags              = ABSTRACT | PUBLIC,
+        MethodFlags                       = AccessFlags | ABSTRACT | STATIC | NATIVE |
+                                            SYNCHRONIZED | FINAL | STRICTFP,
+        RecordMethodFlags                 = AccessFlags | ABSTRACT | STATIC |
+                                            SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
-        ExtendedStandardFlags       = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED,
-        ExtendedMemberClassFlags    = (long)MemberClassFlags | SEALED | NON_SEALED,
-        ExtendedClassFlags          = (long)ClassFlags | SEALED | NON_SEALED,
-        ModifierFlags               = ((long)StandardFlags & ~INTERFACE) | DEFAULT | SEALED | NON_SEALED,
-        InterfaceMethodMask         = ABSTRACT | PRIVATE | STATIC | PUBLIC | STRICTFP | DEFAULT,
-        AnnotationTypeElementMask   = ABSTRACT | PUBLIC,
-        LocalVarFlags               = FINAL | PARAMETER,
-        ReceiverParamFlags          = PARAMETER;
+        ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED,
+        ExtendedMemberClassFlags          = (long)MemberClassFlags | SEALED | NON_SEALED,
+        ExtendedMemberStaticClassFlags    = (long) MemberStaticClassFlags | SEALED | NON_SEALED,
+        ExtendedClassFlags                = (long)ClassFlags | SEALED | NON_SEALED,
+        ModifierFlags                     = ((long)StandardFlags & ~INTERFACE) | DEFAULT | SEALED | NON_SEALED,
+        InterfaceMethodMask               = ABSTRACT | PRIVATE | STATIC | PUBLIC | STRICTFP | DEFAULT,
+        AnnotationTypeElementMask         = ABSTRACT | PUBLIC,
+        LocalVarFlags                     = FINAL | PARAMETER,
+        ReceiverParamFlags                = PARAMETER;
 
     @SuppressWarnings("preview")
     public static Set<Modifier> asModifierSet(long flags) {
@@ -383,6 +490,12 @@ public class Flags {
          * Flag that marks that a symbol is not available in the current profile
          */
         NOT_IN_PROFILE,
+
+        /**
+         * Flags an erroneous TypeSymbol as viable for recovery.
+         * TypeSymbols only.
+         */
+        RECOVERABLE,
 
         //ModuleSymbols:
         /**
@@ -512,7 +625,8 @@ public class Flags {
         DEPRECATED_ANNOTATION(Flags.DEPRECATED_ANNOTATION),
         DEPRECATED_REMOVAL(Flags.DEPRECATED_REMOVAL),
         PREVIEW_API(Flags.PREVIEW_API),
-        PREVIEW_ESSENTIAL_API(Flags.PREVIEW_ESSENTIAL_API),
+        PREVIEW_REFLECTIVE(Flags.PREVIEW_REFLECTIVE),
+//<<<<<<< HEAD
         BRIDGE(Flags.BRIDGE),
         PARAMETER(Flags.PARAMETER),
         VARARGS(Flags.VARARGS),
@@ -528,6 +642,12 @@ public class Flags {
         BLOCK(Flags.BLOCK),
         HASINIT(Flags.HASINIT),
         THROWS(Flags.THROWS),
+//=======
+//        MATCH_BINDING(Flags.MATCH_BINDING),
+//        MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER),
+//        RECORD(Flags.RECORD),
+//        RECOVERABLE(Flags.RECOVERABLE),
+//>>>>>>> master
         SEALED(Flags.SEALED),
         NON_SEALED(Flags.NON_SEALED) {
             @Override

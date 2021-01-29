@@ -127,7 +127,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * subpattern, for example, {@code "#,##0.00;(#,##0.00)"}.  Each
  * subpattern has a prefix, numeric part, and suffix. The negative subpattern
  * is optional; if absent, then the positive subpattern prefixed with the
- * localized minus sign ({@code '-'} in most locales) is used as the
+ * minus sign ({@code '-' U+002D HYPHEN-MINUS}) is used as the
  * negative subpattern. That is, {@code "0.00"} alone is equivalent to
  * {@code "0.00;-0.00"}.  If there is an explicit negative subpattern, it
  * serves only to specify the negative prefix and suffix; the number of digits,
@@ -338,9 +338,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h3>Example</h3>
  *
- * <blockquote><pre>{@code
- * <strong>// Print out a number using the localized number, integer, currency,
- * // and percent format for each locale</strong>
+ * <blockquote><pre><strong>{@code
+ * // Print out a number using the localized number, integer, currency,
+ * // and percent format for each locale}</strong>{@code
  * Locale[] locales = NumberFormat.getAvailableLocales();
  * double myNumber = -1234.56;
  * NumberFormat form;

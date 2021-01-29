@@ -48,7 +48,6 @@
 //    31 bits, see os::random().  Also, 64-bit vm's require
 //    a hash value no bigger than 32 bits because they will not
 //    properly generate a mask larger than that: see library_call.cpp
-//    and c1_CodePatterns_sparc.cpp.
 //
 //  - the biased lock pattern is used to bias a lock toward a given
 //    thread. When this pattern is set in the low three bits, the lock
@@ -95,6 +94,7 @@
 class BasicLock;
 class ObjectMonitor;
 class JavaThread;
+class outputStream;
 
 class markWord {
  private:
@@ -286,16 +286,8 @@ class markWord {
   bool has_displaced_mark_helper() const {
     return ((value() & unlocked_value) == 0);
   }
-  markWord displaced_mark_helper() const {
-    assert(has_displaced_mark_helper(), "check");
-    uintptr_t ptr = (value() & ~monitor_value);
-    return *(markWord*)ptr;
-  }
-  void set_displaced_mark_helper(markWord m) const {
-    assert(has_displaced_mark_helper(), "check");
-    uintptr_t ptr = (value() & ~monitor_value);
-    ((markWord*)ptr)->_value = m._value;
-  }
+  markWord displaced_mark_helper() const;
+  void set_displaced_mark_helper(markWord m) const;
   markWord copy_set_hash(intptr_t hash) const {
     uintptr_t tmp = value() & (~hash_mask_in_place);
     tmp |= ((hash & hash_mask) << hash_shift);
@@ -355,7 +347,7 @@ class markWord {
   static inline markWord prototype_for_klass(const Klass* klass);
 
   // Debugging
-  void print_on(outputStream* st) const;
+  void print_on(outputStream* st, bool print_monitor_info = true) const;
 
   // Prepare address of oop for placement into mark
   inline static markWord encode_pointer_as_mark(void* p) { return from_pointer(p).set_marked(); }

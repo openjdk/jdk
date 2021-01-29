@@ -24,6 +24,7 @@
  */
 package java.rmi.server;
 
+import java.io.IOException;
 import java.io.ObjectInputFilter;
 import java.rmi.*;
 import sun.rmi.server.UnicastServerRef;
@@ -195,6 +196,7 @@ public class UnicastRemoteObject extends RemoteServer {
     private RMIServerSocketFactory ssf = null;
 
     /* indicate compatibility with JDK 1.1.x version of class */
+    @java.io.Serial
     private static final long serialVersionUID = 4974527148936298033L;
 
     /**
@@ -259,7 +261,13 @@ public class UnicastRemoteObject extends RemoteServer {
 
     /**
      * Re-export the remote object when it is deserialized.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     *
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream in)
         throws java.io.IOException, java.lang.ClassNotFoundException
     {
@@ -271,7 +279,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * Returns a clone of the remote object that is distinct from
      * the original.
      *
-     * @exception CloneNotSupportedException if clone failed due to
+     * @throws CloneNotSupportedException if clone failed due to
      * a RemoteException.
      * @return the new remote object
      * @since 1.1
@@ -311,7 +319,7 @@ public class UnicastRemoteObject extends RemoteServer {
      *
      * @param obj the remote object to be exported
      * @return remote object stub
-     * @exception RemoteException if export fails
+     * @throws RemoteException if export fails
      * @since 1.1
      * @deprecated This method is deprecated because it supports only static stubs.
      * Use {@link #exportObject(Remote, int) exportObject(Remote, port)} or
@@ -343,7 +351,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * @param obj the remote object to be exported
      * @param port the port to export the object on
      * @return remote object stub
-     * @exception RemoteException if export fails
+     * @throws RemoteException if export fails
      * @since 1.2
      */
     public static Remote exportObject(Remote obj, int port)
@@ -366,7 +374,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * remote object
      * @param ssf the server-side socket factory for receiving remote calls
      * @return remote object stub
-     * @exception RemoteException if export fails
+     * @throws RemoteException if export fails
      * @since 1.2
      */
     public static Remote exportObject(Remote obj, int port,
@@ -391,7 +399,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * @param filter an ObjectInputFilter applied when deserializing invocation arguments;
      *               may be {@code null}
      * @return remote object stub
-     * @exception RemoteException if export fails
+     * @throws RemoteException if export fails
      * @since 9
      */
     public static Remote exportObject(Remote obj, int port,
@@ -418,7 +426,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * @param filter an ObjectInputFilter applied when deserializing invocation arguments;
      *               may be {@code null}
      * @return remote object stub
-     * @exception RemoteException if export fails
+     * @throws RemoteException if export fails
      * @since 9
      */
     public static Remote exportObject(Remote obj, int port,
@@ -444,7 +452,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * pending or in-progress calls; if false, only unexports the object
      * if there are no pending or in-progress calls
      * @return true if operation is successful, false otherwise
-     * @exception NoSuchObjectException if the remote object is not
+     * @throws NoSuchObjectException if the remote object is not
      * currently exported
      * @since 1.2
      */

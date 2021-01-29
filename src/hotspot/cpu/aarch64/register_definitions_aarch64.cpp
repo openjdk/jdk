@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,7 +50,7 @@ REGISTER_DEFINITION(Register, r14);
 REGISTER_DEFINITION(Register, r15);
 REGISTER_DEFINITION(Register, r16);
 REGISTER_DEFINITION(Register, r17);
-REGISTER_DEFINITION(Register, r18);
+REGISTER_DEFINITION(Register, r18_tls); // see comment in register_aarch64.hpp
 REGISTER_DEFINITION(Register, r19);
 REGISTER_DEFINITION(Register, r20);
 REGISTER_DEFINITION(Register, r21);
@@ -154,3 +154,55 @@ REGISTER_DEFINITION(Register, rthread);
 REGISTER_DEFINITION(Register, rheapbase);
 
 REGISTER_DEFINITION(Register, r31_sp);
+
+REGISTER_DEFINITION(FloatRegister, z0);
+REGISTER_DEFINITION(FloatRegister, z1);
+REGISTER_DEFINITION(FloatRegister, z2);
+REGISTER_DEFINITION(FloatRegister, z3);
+REGISTER_DEFINITION(FloatRegister, z4);
+REGISTER_DEFINITION(FloatRegister, z5);
+REGISTER_DEFINITION(FloatRegister, z6);
+REGISTER_DEFINITION(FloatRegister, z7);
+REGISTER_DEFINITION(FloatRegister, z8);
+REGISTER_DEFINITION(FloatRegister, z9);
+REGISTER_DEFINITION(FloatRegister, z10);
+REGISTER_DEFINITION(FloatRegister, z11);
+REGISTER_DEFINITION(FloatRegister, z12);
+REGISTER_DEFINITION(FloatRegister, z13);
+REGISTER_DEFINITION(FloatRegister, z14);
+REGISTER_DEFINITION(FloatRegister, z15);
+REGISTER_DEFINITION(FloatRegister, z16);
+REGISTER_DEFINITION(FloatRegister, z17);
+REGISTER_DEFINITION(FloatRegister, z18);
+REGISTER_DEFINITION(FloatRegister, z19);
+REGISTER_DEFINITION(FloatRegister, z20);
+REGISTER_DEFINITION(FloatRegister, z21);
+REGISTER_DEFINITION(FloatRegister, z22);
+REGISTER_DEFINITION(FloatRegister, z23);
+REGISTER_DEFINITION(FloatRegister, z24);
+REGISTER_DEFINITION(FloatRegister, z25);
+REGISTER_DEFINITION(FloatRegister, z26);
+REGISTER_DEFINITION(FloatRegister, z27);
+REGISTER_DEFINITION(FloatRegister, z28);
+REGISTER_DEFINITION(FloatRegister, z29);
+REGISTER_DEFINITION(FloatRegister, z30);
+REGISTER_DEFINITION(FloatRegister, z31);
+
+REGISTER_DEFINITION(PRegister, p0);
+REGISTER_DEFINITION(PRegister, p1);
+REGISTER_DEFINITION(PRegister, p2);
+REGISTER_DEFINITION(PRegister, p3);
+REGISTER_DEFINITION(PRegister, p4);
+REGISTER_DEFINITION(PRegister, p5);
+REGISTER_DEFINITION(PRegister, p6);
+REGISTER_DEFINITION(PRegister, p7);
+REGISTER_DEFINITION(PRegister, p8);
+REGISTER_DEFINITION(PRegister, p9);
+REGISTER_DEFINITION(PRegister, p10);
+REGISTER_DEFINITION(PRegister, p11);
+REGISTER_DEFINITION(PRegister, p12);
+REGISTER_DEFINITION(PRegister, p13);
+REGISTER_DEFINITION(PRegister, p14);
+REGISTER_DEFINITION(PRegister, p15);
+
+REGISTER_DEFINITION(PRegister, ptrue);

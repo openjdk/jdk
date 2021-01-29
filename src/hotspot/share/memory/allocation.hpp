@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ class AllocatedObj {
   f(mtSafepoint,      "Safepoint")                                                   \
   f(mtSynchronizer,   "Synchronization")                                             \
   f(mtServiceability, "Serviceability")                                              \
+  f(mtMetaspace,      "Metaspace")                                                   \
   f(mtNone,           "Unknown")                                                     \
   //end
 
@@ -151,14 +152,20 @@ class AllocatedObj {
 /*
  * Memory types
  */
-enum MemoryType {
+enum class MEMFLAGS {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
   mt_number_of_types   // number of memory types (mtDontTrack
                        // is not included as validate type)
 };
 
-typedef MemoryType MEMFLAGS;
+#define MEMORY_TYPE_SHORTNAME(type, human_readable) \
+  constexpr MEMFLAGS type = MEMFLAGS::type;
 
+// Generate short aliases for the enum values. E.g. mtGC instead of MEMFLAGS::mtGC.
+MEMORY_TYPES_DO(MEMORY_TYPE_SHORTNAME)
+
+// Make an int version of the sentinel end value.
+constexpr int mt_number_of_types = static_cast<int>(MEMFLAGS::mt_number_of_types);
 
 #if INCLUDE_NMT
 
@@ -479,7 +486,7 @@ protected:
   NEW_C_HEAP_ARRAY3(type, (size), memflags, pc, AllocFailStrategy::RETURN_NULL)
 
 #define NEW_C_HEAP_ARRAY_RETURN_NULL(type, size, memflags)\
-  NEW_C_HEAP_ARRAY3(type, (size), memflags, CURRENT_PC, AllocFailStrategy::RETURN_NULL)
+  NEW_C_HEAP_ARRAY2(type, (size), memflags, AllocFailStrategy::RETURN_NULL)
 
 #define REALLOC_C_HEAP_ARRAY(type, old, size, memflags)\
   (type*) (ReallocateHeap((char*)(old), (size) * sizeof(type), memflags))

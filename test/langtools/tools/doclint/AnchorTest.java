@@ -1,45 +1,18 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832
+ * @bug 8004832 8247957
  * @summary Add new doclint package
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -ref AnchorTest.out AnchorTest.java
  */
 
 /** */
 public class AnchorTest {
-    // tests for <a name=value>
-
-    /**
-     * <a name=foo></a>
-     */
-    public void a_name_foo() { }
-
-    /**
-     * <a name=foo></a>
-     */
-    public void a_name_already_defined() { }
-
-    /**
-     * <a name=></a>
-     */
-    public void a_name_empty() { }
-
-    /**
-     * <a name=123 ></a>
-     */
-    public void a_name_invalid() { }
-
-    /**
-     * <a name ></a>
-     */
-    public void a_name_missing() { }
-
     // tests for <a id=value>
 
     /**
-     * <a id=a_id_foo></a>
+     * <a id=foo></a>
      */
     public void a_id_foo() { }
 
@@ -54,7 +27,7 @@ public class AnchorTest {
     public void a_id_empty() { }
 
     /**
-     * <a id=123 ></a>
+     * <a id="123 "></a>
      */
     public void a_id_invalid() { }
 
@@ -81,7 +54,7 @@ public class AnchorTest {
     public void p_id_empty() { }
 
     /**
-     * <p id=123 >text</p>
+     * <p id="123 ">text</p>
      */
     public void p_id_invalid() { }
 

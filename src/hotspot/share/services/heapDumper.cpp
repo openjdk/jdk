@@ -37,6 +37,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -1379,27 +1380,6 @@ void JNIGlobalsDumper::do_oop(oop* obj_p) {
   }
 };
 
-
-// Support class used to generate HPROF_GC_ROOT_MONITOR_USED records
-
-class MonitorUsedDumper : public OopClosure {
- private:
-  DumpWriter* _writer;
-  DumpWriter* writer() const                { return _writer; }
- public:
-  MonitorUsedDumper(DumpWriter* writer) {
-    _writer = writer;
-  }
-  void do_oop(oop* obj_p) {
-    u4 size = 1 + sizeof(address);
-    writer()->start_sub_record(HPROF_GC_ROOT_MONITOR_USED, size);
-    writer()->write_objectID(*obj_p);
-    writer()->end_sub_record();
-  }
-  void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
-};
-
-
 // Support class used to generate HPROF_GC_ROOT_STICKY_CLASS records
 
 class StickyClassDumper : public KlassClosure {
@@ -1428,15 +1408,12 @@ class VM_HeapDumper;
 
 class HeapObjectDumper : public ObjectClosure {
  private:
-  VM_HeapDumper* _dumper;
   DumpWriter* _writer;
 
-  VM_HeapDumper* dumper()               { return _dumper; }
   DumpWriter* writer()                  { return _writer; }
 
  public:
-  HeapObjectDumper(VM_HeapDumper* dumper, DumpWriter* writer) {
-    _dumper = dumper;
+  HeapObjectDumper(DumpWriter* writer) {
     _writer = writer;
   }
 
@@ -1846,15 +1823,11 @@ void VM_HeapDumper::work(uint worker_id) {
   // segment is started.
   // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
   // of the heap dump.
-  HeapObjectDumper obj_dumper(this, writer());
+  HeapObjectDumper obj_dumper(writer());
   Universe::heap()->object_iterate(&obj_dumper);
 
   // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
   do_threads();
-
-  // HPROF_GC_ROOT_MONITOR_USED
-  MonitorUsedDumper mon_dumper(writer());
-  ObjectSynchronizer::oops_do(&mon_dumper);
 
   // HPROF_GC_ROOT_JNI_GLOBAL
   JNIGlobalsDumper jni_dumper(writer());

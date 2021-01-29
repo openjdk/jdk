@@ -47,6 +47,7 @@ import org.graalvm.compiler.debug.DebugContext.Description;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.TimerKey;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
@@ -165,15 +166,17 @@ public class CompilationTask {
 
             final CompilationPrinter printer = CompilationPrinter.begin(debug.getOptions(), compilationId, method, entryBCI);
 
+            StructuredGraph graph;
             try (DebugContext.Scope s = debug.scope("Compiling", new DebugDumpScope(getIdString(), true))) {
-                result = compiler.compile(method, entryBCI, useProfilingInfo, shouldRetainLocalVariables, compilationId, debug);
+                graph = compiler.createGraph(method, entryBCI, useProfilingInfo, compilationId, debug.getOptions(), debug);
+                result = compiler.compile(graph, method, entryBCI, useProfilingInfo, shouldRetainLocalVariables, compilationId, debug);
             } catch (Throwable e) {
                 throw debug.handle(e);
             }
 
             if (result != null) {
                 try (DebugCloseable b = CodeInstallationTime.start(debug)) {
-                    installMethod(debug, result);
+                    installMethod(debug, graph, result);
                 }
                 // Installation is included in compilation time and memory usage reported by printer
                 printer.finish(result);
@@ -352,12 +355,12 @@ public class CompilationTask {
     }
 
     @SuppressWarnings("try")
-    private void installMethod(DebugContext debug, final CompilationResult compResult) {
+    private void installMethod(DebugContext debug, StructuredGraph graph, final CompilationResult compResult) {
         final CodeCacheProvider codeCache = jvmciRuntime.getHostJVMCIBackend().getCodeCache();
         HotSpotBackend backend = compiler.getGraalRuntime().getHostBackend();
         installedCode = null;
         Object[] context = {new DebugDumpScope(getIdString(), true), codeCache, getMethod(), compResult};
-        try (DebugContext.Scope s = debug.scope("CodeInstall", context)) {
+        try (DebugContext.Scope s = debug.scope("CodeInstall", context, graph)) {
             HotSpotCompilationRequest request = getRequest();
             installedCode = (HotSpotInstalledCode) backend.createInstalledCode(debug,
                             request.getMethod(),

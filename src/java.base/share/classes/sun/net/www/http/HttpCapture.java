@@ -54,6 +54,8 @@ import sun.util.logging.PlatformLogger;
  * @author jccollet
  */
 public class HttpCapture {
+    // HttpCapture does blocking I/O operations while holding monitors.
+    // This is not a concern because it is rarely used.
     private File file;
     private boolean incoming = true;
     private BufferedWriter out;

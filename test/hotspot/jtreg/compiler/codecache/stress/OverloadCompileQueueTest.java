@@ -30,6 +30,7 @@
  *          java.management
  *
  * @build sun.hotspot.WhiteBox
+ *        compiler.codecache.stress.TestCaseImpl
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
@@ -52,8 +53,34 @@ import java.lang.reflect.Method;
 import java.util.stream.IntStream;
 import java.util.Random;
 
-public class OverloadCompileQueueTest implements Runnable {
+class LockUnlockThread extends Thread {
     private static final int MAX_SLEEP = 10000;
+    private static final int DELAY_BETWEEN_LOCKS = 100;
+    private final Random rng = Utils.getRandomInstance();
+
+    public volatile boolean isActive = true;
+
+    @Override
+    public void run() {
+        try {
+            while (isActive) {
+                int timeInLockedState = rng.nextInt(MAX_SLEEP);
+                Helper.WHITE_BOX.lockCompilation();
+                Thread.sleep(timeInLockedState);
+                Helper.WHITE_BOX.unlockCompilation();
+                Thread.sleep(DELAY_BETWEEN_LOCKS);
+            }
+        } catch (InterruptedException e) {
+            if (isActive) {
+                throw new Error("TESTBUG: LockUnlockThread was unexpectedly interrupted", e);
+            }
+        } finally {
+            Helper.WHITE_BOX.unlockCompilation();
+        }
+    }
+}
+
+public class OverloadCompileQueueTest implements Runnable {
     private static final String METHOD_TO_ENQUEUE = "method";
     private static final int LEVEL_SIMPLE = 1;
     private static final int LEVEL_FULL_OPTIMIZATION = 4;
@@ -62,7 +89,6 @@ public class OverloadCompileQueueTest implements Runnable {
     private static final int TIERED_STOP_AT_LEVEL
             = Helper.WHITE_BOX.getIntxVMFlag("TieredStopAtLevel").intValue();
     private static final int[] AVAILABLE_LEVELS;
-    private final Random rng = Utils.getRandomInstance();
     static {
         if (TIERED_COMPILATION) {
             AVAILABLE_LEVELS = IntStream
@@ -77,15 +103,18 @@ public class OverloadCompileQueueTest implements Runnable {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
+        LockUnlockThread lockUnlockThread = new LockUnlockThread();
+        lockUnlockThread.start();
+
         if (Platform.isInt()) {
             throw new Error("TESTBUG: test can not be run in interpreter");
         }
         new CodeCacheStressRunner(new OverloadCompileQueueTest()).runTest();
-    }
 
-    public OverloadCompileQueueTest() {
-        Helper.startInfiniteLoopThread(this::lockUnlock, 100L);
+        lockUnlockThread.isActive = false;
+        lockUnlockThread.interrupt();
+        lockUnlockThread.join();
     }
 
     @Override
@@ -102,18 +131,6 @@ public class OverloadCompileQueueTest implements Runnable {
         }
         for (int compLevel : AVAILABLE_LEVELS) {
             Helper.WHITE_BOX.enqueueMethodForCompilation(mEnqueue, compLevel);
-        }
-    }
-
-    private void lockUnlock() {
-        try {
-            int sleep = rng.nextInt(MAX_SLEEP);
-            Helper.WHITE_BOX.lockCompilation();
-            Thread.sleep(sleep);
-        } catch (InterruptedException e) {
-            throw new Error("TESTBUG: lockUnlocker thread was unexpectedly interrupted", e);
-        } finally {
-            Helper.WHITE_BOX.unlockCompilation();
         }
     }
 

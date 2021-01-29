@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ package java.lang;
  * fact that it implements this interface.  Even if the clone method is invoked
  * reflectively, there is no guarantee that it will succeed.
  *
- * @author  unascribed
  * @see     java.lang.CloneNotSupportedException
  * @see     java.lang.Object#clone()
  * @since   1.0

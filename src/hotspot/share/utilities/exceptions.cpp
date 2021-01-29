@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
@@ -69,6 +70,16 @@ void ThreadShadow::clear_pending_exception() {
   _exception_file    = NULL;
   _exception_line    = 0;
 }
+
+void ThreadShadow::clear_pending_nonasync_exception() {
+  // Do not clear probable async exceptions.
+  if (!_pending_exception->is_a(SystemDictionary::ThreadDeath_klass()) &&
+      (_pending_exception->klass() != SystemDictionary::InternalError_klass() ||
+       java_lang_InternalError::during_unsafe_access(_pending_exception) != JNI_TRUE)) {
+    clear_pending_exception();
+  }
+}
+
 // Implementation of Exceptions
 
 bool Exceptions::special_exception(Thread* thread, const char* file, int line, Handle h_exception) {
@@ -240,6 +251,12 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
   _throw(THREAD, file, line, exception);
 }
 
+void Exceptions::throw_unsafe_access_internal_error(Thread* thread, const char* file, int line, const char* message) {
+  Handle h_exception = new_exception(thread, vmSymbols::java_lang_InternalError(), message);
+  java_lang_InternalError::set_during_unsafe_access(h_exception());
+  _throw(thread, file, line, h_exception, message);
+}
+
 void Exceptions::fthrow(Thread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
   const int max_msg_size = 1024;
   va_list ap;
@@ -347,7 +364,7 @@ Handle Exceptions::new_exception(Thread* thread, Symbol* name,
     // around the allocation.
     // If we get an exception from the allocation, prefer that to
     // the exception we are trying to build, or the pending exception.
-    // This is sort of like what PRESERVE_EXCEPTION_MARK does, except
+    // This is sort of like what PreserveExceptionMark does, except
     // for the preferencing and the early returns.
     Handle incoming_exception(thread, NULL);
     if (thread->has_pending_exception()) {

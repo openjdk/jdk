@@ -50,6 +50,8 @@ import jdk.jshell.Wrap.CompoundWrap;
 import jdk.jshell.Wrap.Range;
 import jdk.jshell.Wrap.RangeWrap;
 
+import java.util.Set;
+
 /**
  * Produce a corralled version of the Wrap for a snippet.
  */
@@ -227,17 +229,21 @@ class Corraller extends Visitor {
                 bodyBegin = -1;
             }
         }
-        if (bodyBegin > 0) {
-            //debugWrap("-visitMethodDef BEGIN: %d = '%s'\n", bodyBegin,
-            //        source.substring(methodBegin, bodyBegin));
-            Range noBodyRange = new Range(methodBegin, bodyBegin);
-            result = new CompoundWrap(
-                    new RangeWrap(source, noBodyRange),
-                    resolutionExceptionBlock);
+        String adjustedSource;
+        if (bodyBegin < 0) {
+            adjustedSource = new MaskCommentsAndModifiers(source, Set.of("abstract")).cleared();
+            bodyBegin = adjustedSource.charAt(methodEnd - 1) == ';'
+                ? methodEnd - 1
+                : methodEnd;
         } else {
-            Range range = new Range(methodBegin, methodEnd);
-            result = new RangeWrap(source, range);
+            adjustedSource = source;
         }
+        debugWrap("-visitMethodDef BEGIN: %d = '%s'\n", bodyBegin,
+                adjustedSource.substring(methodBegin, bodyBegin));
+        Range noBodyRange = new Range(methodBegin, bodyBegin);
+        result = new CompoundWrap(
+                new RangeWrap(adjustedSource, noBodyRange),
+                resolutionExceptionBlock);
     }
 
     // Remove initializer, if present

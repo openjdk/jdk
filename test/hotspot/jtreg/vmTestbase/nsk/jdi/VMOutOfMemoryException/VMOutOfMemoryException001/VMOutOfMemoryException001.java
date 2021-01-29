@@ -39,14 +39,14 @@
  *          /test/lib
  * @build nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001.VMOutOfMemoryException001
  *        nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001.VMOutOfMemoryException001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001.VMOutOfMemoryException001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx256M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}"
  */
 
 package nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001;
@@ -79,7 +79,14 @@ public class VMOutOfMemoryException001 extends TestDebuggerType2 {
             // create array in debuggee VM till VMOutOfMemoryException
             while (true) {
                 ArrayReference array = referenceType.newInstance(100000);
-                array.disableCollection();
+                try {
+                    // Since the VM is not suspended, the object may have been collected
+                    // before disableCollection() could be called on it. Just ignore and
+                    // continue doing allocations until we run out of memory.
+                    array.disableCollection();
+                } catch (ObjectCollectedException e) {
+                    continue;
+                }
                 objects.add(array);
             }
         } catch (VMOutOfMemoryException e) {

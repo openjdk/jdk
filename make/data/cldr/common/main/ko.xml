@@ -111,6 +111,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chy">샤이엔어</language>
 			<language type="ckb">소라니 쿠르드어</language>
 			<language type="ckb" alt="menu">쿠르드어(소라니)</language>
+			<language type="ckb" alt="variant">쿠르드어(소라니)</language>
 			<language type="co">코르시카어</language>
 			<language type="cop">콥트어</language>
 			<language type="cr">크리어</language>
@@ -149,7 +150,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">그리스어</language>
 			<language type="elx">엘람어</language>
 			<language type="en">영어</language>
-			<language type="en_AU">영어(호주)</language>
 			<language type="enm">중세 영어</language>
 			<language type="eo">에스페란토어</language>
 			<language type="es">스페인어</language>
@@ -355,7 +355,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="myv">엘즈야어</language>
 			<language type="mzn">마잔데라니어</language>
 			<language type="na">나우루어</language>
-			<language type="nan" draft="contributed">민난어</language>
+			<language type="nan">민난어</language>
 			<language type="nap">나폴리어</language>
 			<language type="naq">나마어</language>
 			<language type="nb">노르웨이어(보크말)</language>
@@ -453,7 +453,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="shi">타셸히트어</language>
 			<language type="shn">샨어</language>
 			<language type="shu">차디언 아라비아어</language>
-			<language type="si">스리랑카어</language>
+			<language type="si">싱할라어</language>
 			<language type="sid">시다모어</language>
 			<language type="sk">슬로바키아어</language>
 			<language type="sl">슬로베니아어</language>
@@ -539,7 +539,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="was">와쇼어</language>
 			<language type="wbp">왈피리어</language>
 			<language type="wo">월로프어</language>
-			<language type="wuu" draft="contributed">우어</language>
+			<language type="wuu">우어</language>
 			<language type="xal">칼미크어</language>
 			<language type="xh">코사어</language>
 			<language type="xog">소가어</language>
@@ -637,7 +637,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Khmr">크메르 문자</script>
 			<script type="Khoj" draft="contributed">코즈키 문자</script>
 			<script type="Knda">칸나다 문자</script>
-			<script type="Kore">한국어</script>
+			<script type="Kore">한국 문자</script>
 			<script type="Kpel" draft="contributed">크펠레 문자</script>
 			<script type="Kthi" draft="contributed">카이시 문자</script>
 			<script type="Lana">란나 문자</script>
@@ -741,7 +741,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="001">세계</territory>
 			<territory type="002">아프리카</territory>
 			<territory type="003">북아메리카</territory>
-			<territory type="005">남아메리카(남미)</territory>
+			<territory type="005">남아메리카</territory>
 			<territory type="009">오세아니아</territory>
 			<territory type="011">서부 아프리카</territory>
 			<territory type="013">중앙 아메리카</territory>
@@ -822,7 +822,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CM">카메룬</territory>
 			<territory type="CN">중국</territory>
 			<territory type="CO">콜롬비아</territory>
-			<territory type="CP">클립퍼튼 섬</territory>
+			<territory type="CP">클리퍼턴섬</territory>
 			<territory type="CR">코스타리카</territory>
 			<territory type="CU">쿠바</territory>
 			<territory type="CV">카보베르데</territory>
@@ -885,7 +885,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ID">인도네시아</territory>
 			<territory type="IE">아일랜드</territory>
 			<territory type="IL">이스라엘</territory>
-			<territory type="IM">맨 섬</territory>
+			<territory type="IM">맨섬</territory>
 			<territory type="IN">인도</territory>
 			<territory type="IO">영국령 인도양 식민지</territory>
 			<territory type="IQ">이라크</territory>
@@ -963,7 +963,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="PK">파키스탄</territory>
 			<territory type="PL">폴란드</territory>
 			<territory type="PM">생피에르 미클롱</territory>
-			<territory type="PN">핏케언 섬</territory>
+			<territory type="PN">핏케언 제도</territory>
 			<territory type="PR">푸에르토리코</territory>
 			<territory type="PS">팔레스타인 지구</territory>
 			<territory type="PS" alt="short">팔레스타인</territory>
@@ -972,7 +972,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="PY">파라과이</territory>
 			<territory type="QA">카타르</territory>
 			<territory type="QO">오세아니아 외곽</territory>
-			<territory type="RE">리유니온</territory>
+			<territory type="RE">레위니옹</territory>
 			<territory type="RO">루마니아</territory>
 			<territory type="RS">세르비아</territory>
 			<territory type="RU">러시아</territory>
@@ -1020,7 +1020,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UA">우크라이나</territory>
 			<territory type="UG">우간다</territory>
 			<territory type="UM">미국령 해외 제도</territory>
-			<territory type="UN">유엔</territory>
+			<territory type="UN">국제연합</territory>
+			<territory type="UN" alt="short">유엔</territory>
 			<territory type="US">미국</territory>
 			<territory type="UY">우루과이</territory>
 			<territory type="UZ">우즈베키스탄</territory>
@@ -1388,6 +1389,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</monthPatternContext>
 				</monthPatterns>
 				<cyclicNameSets>
+					<cyclicNameSet type="dayParts">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1" draft="contributed">자</cyclicName>
+								<cyclicName type="2" draft="contributed">축</cyclicName>
+								<cyclicName type="3" draft="contributed">인</cyclicName>
+								<cyclicName type="4" draft="contributed">묘</cyclicName>
+								<cyclicName type="5" draft="contributed">진</cyclicName>
+								<cyclicName type="6" draft="contributed">사</cyclicName>
+								<cyclicName type="7" draft="contributed">오</cyclicName>
+								<cyclicName type="8" draft="contributed">미</cyclicName>
+								<cyclicName type="9" draft="contributed">신</cyclicName>
+								<cyclicName type="10" draft="contributed">유</cyclicName>
+								<cyclicName type="11" draft="contributed">술</cyclicName>
+								<cyclicName type="12" draft="contributed">해</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="narrow">
+								<cyclicName type="1" draft="contributed">자</cyclicName>
+								<cyclicName type="2" draft="contributed">축</cyclicName>
+								<cyclicName type="3" draft="contributed">인</cyclicName>
+								<cyclicName type="4" draft="contributed">묘</cyclicName>
+								<cyclicName type="5" draft="contributed">진</cyclicName>
+								<cyclicName type="6" draft="contributed">사</cyclicName>
+								<cyclicName type="7" draft="contributed">오</cyclicName>
+								<cyclicName type="8" draft="contributed">미</cyclicName>
+								<cyclicName type="9" draft="contributed">신</cyclicName>
+								<cyclicName type="10" draft="contributed">유</cyclicName>
+								<cyclicName type="11" draft="contributed">술</cyclicName>
+								<cyclicName type="12" draft="contributed">해</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="wide">
+								<cyclicName type="1" draft="contributed">자</cyclicName>
+								<cyclicName type="2" draft="contributed">축</cyclicName>
+								<cyclicName type="3" draft="contributed">인</cyclicName>
+								<cyclicName type="4" draft="contributed">묘</cyclicName>
+								<cyclicName type="5" draft="contributed">진</cyclicName>
+								<cyclicName type="6" draft="contributed">사</cyclicName>
+								<cyclicName type="7" draft="contributed">오</cyclicName>
+								<cyclicName type="8" draft="contributed">미</cyclicName>
+								<cyclicName type="9" draft="contributed">신</cyclicName>
+								<cyclicName type="10" draft="contributed">유</cyclicName>
+								<cyclicName type="11" draft="contributed">술</cyclicName>
+								<cyclicName type="12" draft="contributed">해</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
 					<cyclicNameSet type="solarTerms">
 						<cyclicNameContext type="format">
 							<cyclicNameWidth type="abbreviated">
@@ -1481,6 +1528,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 								<cyclicName type="58">신유</cyclicName>
 								<cyclicName type="59">임술</cyclicName>
 								<cyclicName type="60">계해</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+					<cyclicNameSet type="zodiacs">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1" draft="contributed">쥐</cyclicName>
+								<cyclicName type="2" draft="contributed">소</cyclicName>
+								<cyclicName type="3" draft="contributed">호랑이</cyclicName>
+								<cyclicName type="4" draft="contributed">토끼</cyclicName>
+								<cyclicName type="5" draft="contributed">용</cyclicName>
+								<cyclicName type="6" draft="contributed">뱀</cyclicName>
+								<cyclicName type="7" draft="contributed">말</cyclicName>
+								<cyclicName type="8" draft="contributed">양</cyclicName>
+								<cyclicName type="9" draft="contributed">원숭이</cyclicName>
+								<cyclicName type="10" draft="contributed">닭</cyclicName>
+								<cyclicName type="11" draft="contributed">개</cyclicName>
+								<cyclicName type="12" draft="contributed">돼지</cyclicName>
 							</cyclicNameWidth>
 						</cyclicNameContext>
 					</cyclicNameSet>
@@ -2048,10 +2113,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y년</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y년 MMM월</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G y년 MMM월 d일</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y년 MMM월 d일 (E)</dateFormatItem>
-						<dateFormatItem id="GyMMMEEEEd">G y년 MMM월 d일 EEEE</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y년 M월</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y년 M월 d일</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y년 M월 d일 (E)</dateFormatItem>
+						<dateFormatItem id="GyMMMEEEEd">G y년 M월 d일 EEEE</dateFormatItem>
 						<dateFormatItem id="h">a h시</dateFormatItem>
 						<dateFormatItem id="H">H시</dateFormatItem>
 						<dateFormatItem id="HHmmss">HH:mm:ss</dateFormatItem>
@@ -2064,10 +2129,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MEd">M. d. (E)</dateFormatItem>
 						<dateFormatItem id="MEEEEd">M. d. EEEE</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM월 d일</dateFormatItem>
-						<dateFormatItem id="MMMEd">MMM월 d일 (E)</dateFormatItem>
-						<dateFormatItem id="MMMEEEEd">MMM월 d일 EEEE</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM월 d일</dateFormatItem>
+						<dateFormatItem id="MMMd">M월 d일</dateFormatItem>
+						<dateFormatItem id="MMMEd">M월 d일 (E)</dateFormatItem>
+						<dateFormatItem id="MMMEEEEd">M월 d일 EEEE</dateFormatItem>
+						<dateFormatItem id="MMMMd">M월 d일</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">G y년</dateFormatItem>
 						<dateFormatItem id="yyyy">G y년</dateFormatItem>
@@ -2075,11 +2140,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMd">G y. M. d.</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">G y. M. d. (E)</dateFormatItem>
 						<dateFormatItem id="yyyyMEEEEd">G y. M. d. EEEE</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">G y년 MMM월</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd">G y년 MMM월 d일</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">G y년 MMM월 d일 (E)</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEEEEd">G y년 MMM월 d일 EEEE</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">G y년 MMMM월</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">G y년 M월</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">G y년 M월 d일</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G y년 M월 d일 (E)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEEEEd">G y년 M월 d일 EEEE</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">G y년 M월</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">G y년 QQQ</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">G y년 QQQQ</dateFormatItem>
 					</availableFormats>
@@ -2119,21 +2184,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">GGGGG y년 M월 d일 E요일 ~ y년 M월 d일 E요일</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">G y년 MMM ~ G y년 MMM</greatestDifference>
-							<greatestDifference id="M">G y년 MMM ~ y년 MMM</greatestDifference>
-							<greatestDifference id="y">G y년 MMM ~ y년 MMM</greatestDifference>
+							<greatestDifference id="G">G y년 M월 ~ G y년 M월</greatestDifference>
+							<greatestDifference id="M">G y년 M월 ~ y년 M월</greatestDifference>
+							<greatestDifference id="y">G y년 M월 ~ y년 M월</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G y년 MMM d일 ~ d일</greatestDifference>
-							<greatestDifference id="G">G y년 MMM d일 ~ y년 MMM d일</greatestDifference>
-							<greatestDifference id="M">G y년 MMM d일 ~ MMM d일</greatestDifference>
-							<greatestDifference id="y">G y년 MMM d일 ~ MMM y년 d일</greatestDifference>
+							<greatestDifference id="d">G y년 M월 d일 ~ d일</greatestDifference>
+							<greatestDifference id="G">G y년 M월 d일 ~ y년 M월 d일</greatestDifference>
+							<greatestDifference id="M">G y년 M월 d일 ~ M월 d일</greatestDifference>
+							<greatestDifference id="y">G y년 M월 d일 ~ y년 M월 d일</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G y년 MMM d일 e요일 – MMM d일 e요일</greatestDifference>
-							<greatestDifference id="G">G y년 MMM d일 E요일 ~ G y년 MMM d일 E요일</greatestDifference>
-							<greatestDifference id="M">G y년 MMM d일 E요일 ~ MMM d일 E요일</greatestDifference>
-							<greatestDifference id="y">G y년 MMM d일 E요일 ~ y년 MMM d일 E요일</greatestDifference>
+							<greatestDifference id="d">G y년 M월 d일 e요일 – M월 d일 e요일</greatestDifference>
+							<greatestDifference id="G">G y년 M월 d일 E요일 ~ G y년 M월 d일 E요일</greatestDifference>
+							<greatestDifference id="M">G y년 M월 d일 E요일 ~ M월 d일 E요일</greatestDifference>
+							<greatestDifference id="y">G y년 M월 d일 E요일 ~ y년 M월 d일 E요일</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">a h시 ~ a h시</greatestDifference>
@@ -2179,7 +2244,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M. d (E) ~ M. d (E)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM ~ MMM</greatestDifference>
+							<greatestDifference id="M">M월 ~ M월</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">M월 d일 ~ d일</greatestDifference>
@@ -4493,7 +4558,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>코모로</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
-				<exemplarCity>세인트 키츠</exemplarCity>
+				<exemplarCity>세인트키츠</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
 				<exemplarCity>평양</exemplarCity>
@@ -4535,7 +4600,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>베이루트</exemplarCity>
 			</zone>
 			<zone type="America/St_Lucia">
-				<exemplarCity>세인트 루시아</exemplarCity>
+				<exemplarCity>세인트루시아</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
 				<exemplarCity>파두츠</exemplarCity>
@@ -4789,9 +4854,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>칼리닌그라드</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>심페로폴</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>모스크바</exemplarCity>
 			</zone>
@@ -4987,6 +5049,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kiev">
 				<exemplarCity>키예프</exemplarCity>
 			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>심페로폴</exemplarCity>
+			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>자포로지예</exemplarCity>
 			</zone>
@@ -5039,7 +5104,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>노스다코타주, 베라</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/New_Salem">
-				<exemplarCity>노스 다코타주, 뉴살렘</exemplarCity>
+				<exemplarCity>노스다코타주, 뉴살렘</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
 				<exemplarCity>중부, 노스다코타</exemplarCity>
@@ -5051,22 +5116,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>메노미니</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vincennes">
-				<exemplarCity>인디아나주, 뱅센</exemplarCity>
+				<exemplarCity>인디애나주, 빈센스</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Petersburg">
 				<exemplarCity>인디애나주, 피츠버그</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>인디아나주, 텔시티</exemplarCity>
+				<exemplarCity>인디애나주, 텔시티</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Knox">
-				<exemplarCity>인디애나주 녹스</exemplarCity>
+				<exemplarCity>인디애나주, 녹스</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Winamac">
-				<exemplarCity>인디아나주, 워너맥</exemplarCity>
+				<exemplarCity>인디애나주, 위너맥</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Marengo">
-				<exemplarCity>인디애나주, 마렝고</exemplarCity>
+				<exemplarCity>인디애나주, 머렝고</exemplarCity>
 			</zone>
 			<zone type="America/Indianapolis">
 				<exemplarCity>인디애나폴리스</exemplarCity>
@@ -5075,7 +5140,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>루이빌</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vevay">
-				<exemplarCity>비비</exemplarCity>
+				<exemplarCity>인디애나주, 비비</exemplarCity>
 			</zone>
 			<zone type="America/Kentucky/Monticello">
 				<exemplarCity>켄터키주, 몬티첼로</exemplarCity>
@@ -5099,7 +5164,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>바티칸</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
-				<exemplarCity>세인트 빈센트</exemplarCity>
+				<exemplarCity>세인트빈센트</exemplarCity>
 			</zone>
 			<zone type="America/Caracas">
 				<exemplarCity>카라카스</exemplarCity>
@@ -5108,7 +5173,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>토르톨라</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
-				<exemplarCity>세인트 토마스</exemplarCity>
+				<exemplarCity>세인트토마스</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>사이공</exemplarCity>
@@ -5459,9 +5524,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>중부 유럽 시간</generic>
-					<standard>중부 유럽 표준시</standard>
-					<daylight>중부 유럽 하계 표준시</daylight>
+					<generic>중부유럽 시간</generic>
+					<standard>중부유럽 표준시</standard>
+					<daylight>중부유럽 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
@@ -5473,7 +5538,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard>극동 유럽 표준시</standard>
+					<standard>극동유럽 표준시</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
@@ -5822,9 +5887,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">노퍽섬 시간</generic>
-					<standard draft="contributed">노퍽섬 표준시</standard>
-					<daylight draft="contributed">노퍽섬 하계 표준시</daylight>
+					<generic>노퍽섬 시간</generic>
+					<standard>노퍽섬 표준시</standard>
+					<daylight>노퍽섬 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -6389,7 +6454,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BRL">
 				<displayName>브라질 레알</displayName>
-				<displayName count="other">브라질 헤알</displayName>
+				<displayName count="other">브라질 레알</displayName>
 				<symbol draft="contributed">R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
@@ -6621,8 +6686,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>프랑스 프랑</displayName>
 			</currency>
 			<currency type="GBP">
-				<displayName>파운드</displayName>
-				<displayName count="other">영국령 파운드 스털링</displayName>
+				<displayName>영국 파운드</displayName>
+				<displayName count="other">영국 파운드</displayName>
 				<symbol draft="contributed">£</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
@@ -7577,6 +7642,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>요타{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>키비{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>메비{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>기비{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>테비{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>페비{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>엑스비{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>제비{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>요비{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{1}당 {0}</compoundUnitPattern>
 			</compoundUnit>
@@ -7593,8 +7682,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} 중력가속도</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName>제곱 초당 미터</displayName>
-				<unitPattern count="other">{0}제곱 초당 미터</unitPattern>
+				<displayName>미터 매 초 제곱</displayName>
+				<unitPattern count="other">제곱 초당 {0}미터</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>회전</displayName>
@@ -7848,6 +7937,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>영국 열량 단위</displayName>
 				<unitPattern count="other">{0}영국 열량 단위</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<displayName>미국 섬</displayName>
+				<unitPattern count="other">{0}섬</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>파운드포스</displayName>
 				<unitPattern count="other">{0}파운드포스</unitPattern>
@@ -7871,6 +7964,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="frequency-hertz">
 				<displayName>헤르츠</displayName>
 				<unitPattern count="other">{0}헤르츠</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="other">{0}em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<unitPattern count="other">{0}px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<unitPattern count="other">{0}MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="other">{0}ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<unitPattern count="other">{0}ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<unitPattern count="other">{0}dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<unitPattern count="other">{0}dot</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>지구 반경</displayName>
+				<unitPattern count="other">{0}지구 반경</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>킬로미터</displayName>
@@ -7938,12 +8056,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}천문 단위</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">펄롱</displayName>
-				<unitPattern count="other" draft="contributed">{0}펄롱</unitPattern>
+				<displayName>펄롱</displayName>
+				<unitPattern count="other">{0}펄롱</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">패덤</displayName>
-				<unitPattern count="other" draft="contributed">{0}패덤</unitPattern>
+				<displayName>패덤</displayName>
+				<unitPattern count="other">{0}패덤</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>해리</displayName>
@@ -7959,11 +8077,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>태양 반경</displayName>
-				<unitPattern count="other">{0} 태양 반경</unitPattern>
+				<unitPattern count="other">{0}태양 반경</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>룩스</displayName>
 				<unitPattern count="other">{0}룩스</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>칸델라</displayName>
+				<unitPattern count="other">{0}칸델라</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>루멘</displayName>
+				<unitPattern count="other">{0}루멘</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>태양 광도</displayName>
@@ -7996,8 +8122,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}톤</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">스톤</displayName>
-				<unitPattern count="other" draft="contributed">{0}스톤</unitPattern>
+				<displayName>스톤</displayName>
+				<unitPattern count="other">{0}스톤</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>파운드</displayName>
@@ -8028,6 +8154,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-solar-mass">
 				<displayName>태양 질량</displayName>
 				<unitPattern count="other">{0}태양 질량</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>그레인</displayName>
+				<unitPattern count="other">{0}그레인</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>기가와트</displayName>
@@ -8065,6 +8195,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>수은주인치</displayName>
 				<unitPattern count="other">{0}수은주인치</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>바</displayName>
+				<unitPattern count="other">{0}바</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>밀리바</displayName>
 				<unitPattern count="other">{0}밀리바</unitPattern>
@@ -8072,6 +8206,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-atmosphere">
 				<displayName>atm</displayName>
 				<unitPattern count="other">{0}atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>파스칼</displayName>
+				<unitPattern count="other">{0}파스칼</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>헥토파스칼</displayName>
@@ -8090,11 +8228,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">시속 {0}킬로미터</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<displayName>m/s</displayName>
+				<displayName>미터 매 초</displayName>
 				<unitPattern count="other">초속 {0}미터</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName>mi/h</displayName>
+				<displayName>시간당 마일</displayName>
 				<unitPattern count="other">시속 {0}마일</unitPattern>
 			</unit>
 			<unit type="speed-knot">
@@ -8191,6 +8329,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>에이커 피트</displayName>
 				<unitPattern count="other">{0}에이커 피트</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>부셸</displayName>
+				<unitPattern count="other">{0}부셸</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>갤런</displayName>
 				<unitPattern count="other">{0}갤런</unitPattern>
@@ -8232,6 +8374,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-barrel">
 				<displayName>배럴</displayName>
 				<unitPattern count="other">{0}배럴</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>디저트스푼</displayName>
+				<unitPattern count="other">{0}디저트스푼</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>영국 디저트스푼</displayName>
+				<unitPattern count="other">{0}영국 디저트스푼</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>방울</displayName>
+				<unitPattern count="other">{0}방울</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>영국 액량 드램</displayName>
+				<unitPattern count="other">{0}영국 액량 드램</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>지거</displayName>
+				<unitPattern count="other">{0}지거</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>꼬집</displayName>
+				<unitPattern count="other">{0}꼬집</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>영국 쿼트</displayName>
+				<unitPattern count="other">{0}영국 쿼트</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>방향</displayName>
@@ -8414,7 +8584,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-decade">
 				<displayName>dec</displayName>
-				<unitPattern count="other">{0} dec</unitPattern>
+				<unitPattern count="other">{0}dec</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>년</displayName>
@@ -8512,8 +8682,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
-				<displayName>US therm</displayName>
-				<unitPattern count="other">{0} US therm</unitPattern>
+				<displayName>미국 섬</displayName>
+				<unitPattern count="other">{0}섬</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<unitPattern count="other">{0}lbf</unitPattern>
@@ -8539,31 +8709,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<displayName>em</displayName>
-				<unitPattern count="other">{0} em</unitPattern>
+				<unitPattern count="other">{0}em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>px</displayName>
-				<unitPattern count="other">{0} px</unitPattern>
+				<unitPattern count="other">{0}px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>MP</displayName>
-				<unitPattern count="other">{0} MP</unitPattern>
+				<unitPattern count="other">{0}MP</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>ppcm</displayName>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0}ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>ppi</displayName>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<unitPattern count="other">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
 				<displayName>dpi</displayName>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<unitPattern count="other">{0}dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<unitPattern count="other">{0}dot</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="other">{0}R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -8606,7 +8783,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-yard">
 				<displayName>yd</displayName>
-				<unitPattern count="other">{0}야드</unitPattern>
+				<unitPattern count="other">{0}yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName>ft</displayName>
@@ -8631,12 +8808,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}au</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">fur</displayName>
-				<unitPattern count="other" draft="contributed">{0}fur</unitPattern>
+				<displayName>fur</displayName>
+				<unitPattern count="other">{0}fur</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">fm</displayName>
-				<unitPattern count="other" draft="contributed">{0}fth</unitPattern>
+				<displayName>fm</displayName>
+				<unitPattern count="other">{0}fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
@@ -8657,6 +8834,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="other">{0}lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<unitPattern count="other">{0}cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="other">{0}lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<unitPattern count="other">{0}L☉</unitPattern>
@@ -8688,8 +8871,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">st</displayName>
-				<unitPattern count="other" draft="contributed">{0}st</unitPattern>
+				<displayName>st</displayName>
+				<unitPattern count="other">{0}st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>lb</displayName>
@@ -8720,6 +8903,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-solar-mass">
 				<displayName>M☉</displayName>
 				<unitPattern count="other">{0}M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<unitPattern count="other">{0}grain</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -8759,7 +8945,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-bar">
 				<displayName>bar</displayName>
-				<unitPattern count="other">{0} bar</unitPattern>
+				<unitPattern count="other">{0}bar</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
@@ -8771,7 +8957,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-pascal">
 				<displayName>Pa</displayName>
-				<unitPattern count="other">{0} Pa</unitPattern>
+				<unitPattern count="other">{0}Pa</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
@@ -8890,6 +9076,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ac ft</displayName>
 				<unitPattern count="other">{0}ac ft</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="other">{0}bu</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
 				<unitPattern count="other">{0}gal</unitPattern>
@@ -8931,6 +9121,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-barrel">
 				<displayName>bbl</displayName>
 				<unitPattern count="other">{0}bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<unitPattern count="other">{0}dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="other">{0}dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<unitPattern count="other">{0}drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<unitPattern count="other">{0}dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="other">{0}jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<unitPattern count="other">{0}pinch</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="other">{0}qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>쪽</displayName>
@@ -9315,6 +9526,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="other">{0} — 기타</characterLabelPattern>
 		<characterLabelPattern type="scripts">문자 — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0}획</characterLabelPattern>
+		<characterLabelPattern type="subscript">아래 첨자 {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">위 첨자 {0}</characterLabelPattern>
 		<characterLabel type="activities">활동</characterLabel>
 		<characterLabel type="african_scripts">아프리카 문자</characterLabel>
 		<characterLabel type="american_scripts">아메리카 문자</characterLabel>
@@ -9409,8 +9622,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<axisName type="wdth">폭</axisName>
 		<axisName type="wght">두께</axisName>
 		<styleName type="ital" subtype="1">필기체</styleName>
-		<styleName type="opsz" subtype="8">caption</styleName>
-		<styleName type="opsz" subtype="12">text</styleName>
+		<styleName type="opsz" subtype="8">자막체</styleName>
+		<styleName type="opsz" subtype="12">텍스트체</styleName>
 		<styleName type="opsz" subtype="18">각인체</styleName>
 		<styleName type="opsz" subtype="72">표시체</styleName>
 		<styleName type="opsz" subtype="144">포스터체</styleName>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compileBroker.hpp"
@@ -38,6 +40,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -51,6 +54,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/reflectionUtils.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -131,6 +135,9 @@ enum {
   REFERENCE_KIND_MASK  = java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK,
   SEARCH_SUPERCLASSES  = java_lang_invoke_MemberName::MN_SEARCH_SUPERCLASSES,
   SEARCH_INTERFACES    = java_lang_invoke_MemberName::MN_SEARCH_INTERFACES,
+  LM_UNCONDITIONAL     = java_lang_invoke_MemberName::MN_UNCONDITIONAL_MODE,
+  LM_MODULE            = java_lang_invoke_MemberName::MN_MODULE_MODE,
+  LM_TRUSTED           = java_lang_invoke_MemberName::MN_TRUSTED_MODE,
   ALL_KINDS      = IS_METHOD | IS_CONSTRUCTOR | IS_FIELD | IS_TYPE
 };
 
@@ -415,15 +422,16 @@ bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
 
 
 Symbol* MethodHandles::signature_polymorphic_intrinsic_name(vmIntrinsics::ID iid) {
-  assert(is_signature_polymorphic_intrinsic(iid), "%d %s", iid, vmIntrinsics::name_at(iid));
+  assert(is_signature_polymorphic_intrinsic(iid), "%d %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
   switch (iid) {
   case vmIntrinsics::_invokeBasic:      return vmSymbols::invokeBasic_name();
   case vmIntrinsics::_linkToVirtual:    return vmSymbols::linkToVirtual_name();
   case vmIntrinsics::_linkToStatic:     return vmSymbols::linkToStatic_name();
   case vmIntrinsics::_linkToSpecial:    return vmSymbols::linkToSpecial_name();
   case vmIntrinsics::_linkToInterface:  return vmSymbols::linkToInterface_name();
+  case vmIntrinsics::_linkToNative:     return vmSymbols::linkToNative_name();
   default:
-    fatal("unexpected intrinsic id: %d %s", iid, vmIntrinsics::name_at(iid));
+    fatal("unexpected intrinsic id: %d %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
     return 0;
   }
 }
@@ -444,42 +452,42 @@ Bytecodes::Code MethodHandles::signature_polymorphic_intrinsic_bytecode(vmIntrin
 int MethodHandles::signature_polymorphic_intrinsic_ref_kind(vmIntrinsics::ID iid) {
   switch (iid) {
   case vmIntrinsics::_invokeBasic:      return 0;
+  case vmIntrinsics::_linkToNative:     return 0;
   case vmIntrinsics::_linkToVirtual:    return JVM_REF_invokeVirtual;
   case vmIntrinsics::_linkToStatic:     return JVM_REF_invokeStatic;
   case vmIntrinsics::_linkToSpecial:    return JVM_REF_invokeSpecial;
   case vmIntrinsics::_linkToInterface:  return JVM_REF_invokeInterface;
   default:
-    fatal("unexpected intrinsic id: %d %s", iid, vmIntrinsics::name_at(iid));
+    fatal("unexpected intrinsic id: %d %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
     return 0;
   }
 }
 
 vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Symbol* name) {
-  vmSymbols::SID name_id = vmSymbols::find_sid(name);
+  vmSymbolID name_id = vmSymbols::find_sid(name);
   switch (name_id) {
   // The ID _invokeGeneric stands for all non-static signature-polymorphic methods, except built-ins.
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name):           return vmIntrinsics::_invokeGeneric;
+  case VM_SYMBOL_ENUM_NAME(invoke_name):           return vmIntrinsics::_invokeGeneric;
   // The only built-in non-static signature-polymorphic method is MethodHandle.invokeBasic:
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeBasic_name):      return vmIntrinsics::_invokeBasic;
+  case VM_SYMBOL_ENUM_NAME(invokeBasic_name):      return vmIntrinsics::_invokeBasic;
 
   // There is one static signature-polymorphic method for each JVM invocation mode.
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToVirtual_name):    return vmIntrinsics::_linkToVirtual;
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToStatic_name):     return vmIntrinsics::_linkToStatic;
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToSpecial_name):    return vmIntrinsics::_linkToSpecial;
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToInterface_name):  return vmIntrinsics::_linkToInterface;
+  case VM_SYMBOL_ENUM_NAME(linkToVirtual_name):    return vmIntrinsics::_linkToVirtual;
+  case VM_SYMBOL_ENUM_NAME(linkToStatic_name):     return vmIntrinsics::_linkToStatic;
+  case VM_SYMBOL_ENUM_NAME(linkToSpecial_name):    return vmIntrinsics::_linkToSpecial;
+  case VM_SYMBOL_ENUM_NAME(linkToInterface_name):  return vmIntrinsics::_linkToInterface;
+  case VM_SYMBOL_ENUM_NAME(linkToNative_name):     return vmIntrinsics::_linkToNative;
   default:                                                    break;
   }
 
   // Cover the case of invokeExact and any future variants of invokeFoo.
-  Klass* mh_klass = SystemDictionary::well_known_klass(
-                              SystemDictionary::WK_KLASS_ENUM_NAME(MethodHandle_klass) );
+  Klass* mh_klass = vmClasses::klass_at(VM_CLASS_ID(MethodHandle_klass));
   if (mh_klass != NULL && is_method_handle_invoke_name(mh_klass, name)) {
     return vmIntrinsics::_invokeGeneric;
   }
 
   // Cover the case of methods on VarHandle.
-  Klass* vh_klass = SystemDictionary::well_known_klass(
-                              SystemDictionary::WK_KLASS_ENUM_NAME(VarHandle_klass) );
+  Klass* vh_klass = vmClasses::klass_at(VM_CLASS_ID(VarHandle_klass));
   if (vh_klass != NULL && is_method_handle_invoke_name(vh_klass, name)) {
     return vmIntrinsics::_invokeGeneric;
   }
@@ -671,11 +679,10 @@ oop MethodHandles::field_signature_type_or_null(Symbol* s) {
   return NULL;
 }
 
-
 // An unresolved member name is a mere symbolic reference.
 // Resolving it plants a vmtarget/vmindex in it,
 // which refers directly to JVM internals.
-Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller,
+Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup_mode,
                                          bool speculative_resolve, TRAPS) {
   Handle empty;
   assert(java_lang_invoke_MemberName::is_instance(mname()), "");
@@ -744,16 +751,21 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller,
   TempNewSymbol type = lookup_signature(type_str(), (mh_invoke_id != vmIntrinsics::_none), CHECK_(empty));
   if (type == NULL)  return empty;  // no such signature exists in the VM
 
+  // skip access check if it's trusted lookup
   LinkInfo::AccessCheck access_check = caller != NULL ?
                                               LinkInfo::AccessCheck::required :
                                               LinkInfo::AccessCheck::skip;
+  // skip loader constraints if it's trusted lookup or a public lookup
+  LinkInfo::LoaderConstraintCheck loader_constraint_check = (caller != NULL && (lookup_mode & LM_UNCONDITIONAL) == 0) ?
+                                              LinkInfo::LoaderConstraintCheck::required :
+                                              LinkInfo::LoaderConstraintCheck::skip;
 
   // Time to do the lookup.
   switch (flags & ALL_KINDS) {
   case IS_METHOD:
     {
       CallInfo result;
-      LinkInfo link_info(defc, name, type, caller, access_check);
+      LinkInfo link_info(defc, name, type, caller, access_check, loader_constraint_check);
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
@@ -794,7 +806,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller,
   case IS_CONSTRUCTOR:
     {
       CallInfo result;
-      LinkInfo link_info(defc, name, type, caller, access_check);
+      LinkInfo link_info(defc, name, type, caller, access_check, loader_constraint_check);
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (name == vmSymbols::object_initializer_name()) {
@@ -819,7 +831,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller,
       fieldDescriptor result; // find_field initializes fd if found
       {
         assert(!HAS_PENDING_EXCEPTION, "");
-        LinkInfo link_info(defc, name, type, caller, LinkInfo::AccessCheck::skip);
+        LinkInfo link_info(defc, name, type, caller, LinkInfo::AccessCheck::skip, loader_constraint_check);
         LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           if (speculative_resolve) {
@@ -1116,6 +1128,9 @@ void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm,
     template(java_lang_invoke_MemberName,MN_HIDDEN_CLASS) \
     template(java_lang_invoke_MemberName,MN_STRONG_LOADER_LINK) \
     template(java_lang_invoke_MemberName,MN_ACCESS_VM_ANNOTATIONS) \
+    template(java_lang_invoke_MemberName,MN_MODULE_MODE) \
+    template(java_lang_invoke_MemberName,MN_UNCONDITIONAL_MODE) \
+    template(java_lang_invoke_MemberName,MN_TRUSTED_MODE) \
     /*end*/
 
 #define IGNORE_REQ(req_expr) /* req_expr */
@@ -1189,13 +1204,17 @@ JVM_END
 
 // void resolve(MemberName self, Class<?> caller)
 JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh,
-    jboolean speculative_resolve)) {
+    jint lookup_mode, jboolean speculative_resolve)) {
   if (mname_jh == NULL) { THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "mname is null"); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
 
   // The trusted Java code that calls this method should already have performed
   // access checks on behalf of the given caller.  But, we can verify this.
-  if (VerifyMethodHandles && caller_jh != NULL &&
+  // This only verifies from the context of the lookup class.  It does not
+  // verify the lookup context for a Lookup object teleported from one module
+  // to another. Such Lookup object can only access the intersection of the set
+  // of accessible classes from both lookup class and previous lookup class.
+  if (VerifyMethodHandles && (lookup_mode & LM_TRUSTED) == LM_TRUSTED && caller_jh != NULL &&
       java_lang_invoke_MemberName::clazz(mname()) != NULL) {
     Klass* reference_klass = java_lang_Class::as_Klass(java_lang_invoke_MemberName::clazz(mname()));
     if (reference_klass != NULL && reference_klass->is_objArray_klass()) {
@@ -1206,18 +1225,25 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
     if (reference_klass != NULL && reference_klass->is_instance_klass()) {
       // Emulate LinkResolver::check_klass_accessability.
       Klass* caller = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
-      if (caller != SystemDictionary::Object_klass()
+      // access check on behalf of the caller if this is not a public lookup
+      // i.e. lookup mode is not UNCONDITIONAL
+      if ((lookup_mode & LM_UNCONDITIONAL) == 0
           && Reflection::verify_class_access(caller,
                                              InstanceKlass::cast(reference_klass),
                                              true) != Reflection::ACCESS_OK) {
-        THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), reference_klass->external_name());
+        ResourceMark rm(THREAD);
+        stringStream ss;
+        ss.print("caller %s tried to access %s", caller->class_in_module_of_loader(),
+                 reference_klass->class_in_module_of_loader());
+        THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), ss.as_string());
       }
     }
   }
 
   Klass* caller = caller_jh == NULL ? NULL :
                      java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
-  Handle resolved = MethodHandles::resolve_MemberName(mname, caller, speculative_resolve == JNI_TRUE,
+  Handle resolved = MethodHandles::resolve_MemberName(mname, caller, lookup_mode,
+                                                      speculative_resolve == JNI_TRUE,
                                                       CHECK_NULL);
 
   if (resolved.is_null()) {
@@ -1517,7 +1543,7 @@ JVM_END
 static JNINativeMethod MHN_methods[] = {
   {CC "init",                      CC "(" MEM "" OBJ ")V",                   FN_PTR(MHN_init_Mem)},
   {CC "expand",                    CC "(" MEM ")V",                          FN_PTR(MHN_expand_Mem)},
-  {CC "resolve",                   CC "(" MEM "" CLS "Z)" MEM,               FN_PTR(MHN_resolve_Mem)},
+  {CC "resolve",                   CC "(" MEM "" CLS "IZ)" MEM,              FN_PTR(MHN_resolve_Mem)},
   //  static native int getNamedCon(int which, Object[] name)
   {CC "getNamedCon",               CC "(I[" OBJ ")I",                        FN_PTR(MHN_getNamedCon)},
   //  static native int getMembers(Class<?> defc, String matchName, String matchSig,

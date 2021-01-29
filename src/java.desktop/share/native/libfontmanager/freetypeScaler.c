@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
             if (byteArray == NULL) {
                 return 0;
             } else {
-                jsize len = (*env)->GetArrayLength(env, byteArray);
+                unsigned long len = (*env)->GetArrayLength(env, byteArray);
                 if (len < numBytes) {
                     numBytes = len; // don't get more bytes than there are ..
                 }
@@ -241,7 +241,7 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
                                       scalerInfo->fontDataLength);
         if (bread <= 0) {
             return 0;
-        } else if (bread < numBytes) {
+        } else if ((unsigned long)bread < numBytes) {
            numBytes = bread;
         }
         memcpy(destBuffer, scalerInfo->fontData, numBytes);
@@ -529,7 +529,8 @@ Java_sun_font_FreetypeFontScaler_createScalerContextNative(
      */
     if ((aa != TEXT_AA_ON) && (fm != TEXT_FM_ON) &&
         !context->doBold && !context->doItalize &&
-        (context->transform.yx == 0) && (context->transform.xy == 0))
+        (context->transform.yx == 0) && (context->transform.xy == 0) &&
+        (context->transform.xx > 0) && (context->transform.yy > 0))
     {
         context->useSbits = 1;
     }
@@ -1213,7 +1214,7 @@ static FT_Outline* getFTOutline(JNIEnv* env, jobject font2D,
 
     FT_Outline_Translate(&ftglyph->outline,
                          FloatToF26Dot6(xpos),
-                         -FloatToF26Dot6(ypos));
+                         FloatToF26Dot6(-ypos));
 
     return &ftglyph->outline;
 }
@@ -1284,10 +1285,18 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
     }
 
     /* failure if any of mallocs failed */
-    if (gpdata->pointTypes == NULL ||  gpdata->pointCoords == NULL)
+    if (gpdata->pointTypes == NULL || gpdata->pointCoords == NULL) {
+        if (gpdata->pointTypes != NULL)  {
+            free(gpdata->pointTypes);
+            gpdata->pointTypes = NULL;
+        }
+        if (gpdata->pointCoords != NULL) {
+            free(gpdata->pointCoords);
+            gpdata->pointCoords = NULL;
+        }
         return 0;
-    else
-        return 1;
+    }
+    return 1;
 }
 
 static void addSeg(GPData *gp, jbyte type) {
@@ -1519,7 +1528,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphVectorOutlineNative(
              (FTScalerInfo*) jlong_to_ptr(pScaler);
 
     glyphs = NULL;
-    if (numGlyphs > 0 && 0xffffffffu / sizeof(jint) >= numGlyphs) {
+    if (numGlyphs > 0 && 0xffffffffu / sizeof(jint) >= (unsigned int)numGlyphs) {
         glyphs = (jint*) malloc(numGlyphs*sizeof(jint));
     }
     if (glyphs == NULL) {

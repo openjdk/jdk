@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -65,15 +66,17 @@
 #include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #ifdef COMPILER1
@@ -203,25 +206,6 @@ void print_bytecode_count() {
 
 // General statistics printing (profiling ...)
 void print_statistics() {
-#ifdef ASSERT
-
-  if (CountRuntimeCalls) {
-    extern Histogram *RuntimeHistogram;
-    RuntimeHistogram->print();
-  }
-
-  if (CountJNICalls) {
-    extern Histogram *JNIHistogram;
-    JNIHistogram->print();
-  }
-
-  if (CountJVMCalls) {
-    extern Histogram *JVMHistogram;
-    JVMHistogram->print();
-  }
-
-#endif
-
   if (MemProfiling) {
     MemProfiler::disengage();
   }
@@ -477,6 +461,12 @@ void before_exit(JavaThread* thread) {
     BytecodeHistogram::print();
   }
 
+#ifdef LINUX
+  if (DumpPerfMapAtExit) {
+    CodeCache::write_perf_map();
+  }
+#endif
+
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_end(thread);
   }
@@ -536,7 +526,7 @@ void vm_exit(int code) {
       // Historically there must have been some exit path for which
       // that was not the case and so we set it explicitly - even
       // though we no longer know what that path may be.
-      ((JavaThread*)thread)->set_thread_state(_thread_in_vm);
+      thread->as_Java_thread()->set_thread_state(_thread_in_vm);
     }
 
     // Fire off a VM_Exit operation to bring VM to a safepoint and exit
@@ -571,13 +561,20 @@ void vm_direct_exit(int code) {
   os::exit(code);
 }
 
+void vm_direct_exit(int code, const char* message) {
+  if (message != nullptr) {
+    tty->print_cr("%s", message);
+  }
+  vm_direct_exit(code);
+}
+
 void vm_perform_shutdown_actions() {
   if (is_init_completed()) {
     Thread* thread = Thread::current_or_null();
     if (thread != NULL && thread->is_Java_thread()) {
       // We are leaving the VM, set state to native (in case any OS exit
       // handlers call back to the VM)
-      JavaThread* jt = (JavaThread*)thread;
+      JavaThread* jt = thread->as_Java_thread();
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
       jt->frame_anchor()->make_walkable(jt);
@@ -687,6 +684,7 @@ void vm_shutdown_during_initialization(const char* error, const char* message) {
 }
 
 JDK_Version JDK_Version::_current;
+const char* JDK_Version::_java_version;
 const char* JDK_Version::_runtime_name;
 const char* JDK_Version::_runtime_version;
 const char* JDK_Version::_runtime_vendor_version;

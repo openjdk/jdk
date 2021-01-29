@@ -1,10 +1,10 @@
-## Little Color Management System (LCMS) v2.9
+## Little Color Management System (LCMS) v2.11
 
 ### LCMS License
 <pre>
 
 Little Color Management System
-Copyright (c) 1998-2011 Marti Maria Saguer
+Copyright (c) 1998-2020 Marti Maria Saguer
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the "Software"),

@@ -41,7 +41,7 @@ import java.awt.image.BufferStrategy;
 import java.awt.peer.ComponentPeer;
 
 import java.awt.peer.MenuComponentPeer;
-import java.lang.invoke.MethodHandles;;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 

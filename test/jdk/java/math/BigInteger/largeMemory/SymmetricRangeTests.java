@@ -26,7 +26,7 @@
  * @bug 6910473 8021204 8021203 9005933 8074460 8078672
  * @summary Test range of BigInteger values (use -Dseed=X to set PRNG seed)
  * @library /test/lib
- * @requires (sun.arch.data.model == "64" & os.maxMemory > 8g)
+ * @requires (sun.arch.data.model == "64" & os.maxMemory >= 10g)
  * @run main/timeout=180/othervm -Xmx8g -XX:+CompactStrings SymmetricRangeTests
  * @author Dmitry Nadezhin
  * @key randomness

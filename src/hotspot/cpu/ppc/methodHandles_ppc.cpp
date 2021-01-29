@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,12 +27,16 @@
 #include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ _masm->
@@ -53,7 +57,7 @@ inline static RegisterOrConstant constant(int value) {
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg,
                                           Register temp_reg, Register temp2_reg) {
   if (VerifyMethodHandles) {
-    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+    verify_klass(_masm, klass_reg, VM_CLASS_ID(java_lang_Class),
                  temp_reg, temp2_reg, "MH argument is a Class");
   }
   __ ld(klass_reg, java_lang_Class::klass_offset(), klass_reg);
@@ -71,11 +75,11 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj_reg, SystemDictionary::WKID klass_id,
+                                 Register obj_reg, VMClassID klass_id,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  Klass* klass = SystemDictionary::well_known_klass(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj_reg, FILE_AND_LINE);
@@ -219,6 +223,13 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ stop("Should not reach here");           // empty stubs make SG sick
+    return NULL;
+  }
+
   Register argbase    = R15_esp; // parameter (preserved)
   Register argslot    = R3;
   Register temp1      = R6;
@@ -305,14 +316,17 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   if (receiver_reg != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, receiver_reg);
   if (member_reg   != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic) {
+  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+    if (iid == vmIntrinsics::_linkToNative) {
+      assert(for_compiler_entry, "only compiler entry is supported");
+    }
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, R19_method, temp1, temp2, for_compiler_entry);
   } else {
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
       // make sure the trailing argument really is a MemberName (caller responsibility)
-      verify_klass(_masm, member_reg, SystemDictionary::WK_KLASS_ENUM_NAME(MemberName_klass),
+      verify_klass(_masm, member_reg, VM_CLASS_ID(MemberName_klass),
                    temp1, temp2,
                    "MemberName required for invokeVirtual etc.");
     }
@@ -447,7 +461,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+      fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
       break;
     }
 
@@ -479,32 +493,35 @@ void trace_method_handle_stub(const char* adaptername,
   bool has_mh = (strstr(adaptername, "/static") == NULL &&
                  strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "R23_method_handle" : "G23";
-  tty->print_cr("MH %s %s=" INTPTR_FORMAT " sp=" INTPTR_FORMAT,
+  log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sp=" INTPTR_FORMAT,
                 adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
 
-  if (Verbose) {
+  LogTarget(Trace, methodhandles) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    tty->print_cr("Registers:");
+    LogStream ls(lt);
+    ls.print_cr("Registers:");
     const int abi_offset = frame::abi_reg_args_size / 8;
     for (int i = R3->encoding(); i <= R12->encoding(); i++) {
       Register r = as_Register(i);
       int count = i - R3->encoding();
       // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, abi_reg_args_size)).
-      tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[abi_offset + count]);
+      ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[abi_offset + count]);
       if ((count + 1) % 4 == 0) {
-        tty->cr();
+        ls.cr();
       } else {
-        tty->print(", ");
+        ls.print(", ");
       }
     }
-    tty->cr();
+    ls.cr();
 
     {
       // dumping last frame with frame::describe
 
       JavaThread* p = JavaThread::active();
 
-      PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
+      // may not be needed by safer and unexpensive here
+      PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
       // Note: We want to allow trace_method_handle from any call site.
@@ -531,14 +548,14 @@ void trace_method_handle_stub(const char* adaptername,
 
       values.describe(-1, saved_regs, "raw top of stack");
 
-      tty->print_cr("Stack layout:");
-      values.print(p);
+      ls.print_cr("Stack layout:");
+      values.print_on(p, &ls);
     }
 
     if (has_mh && oopDesc::is_oop(mh)) {
-      mh->print();
+      mh->print_on(&ls);
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        java_lang_invoke_MethodHandle::form(mh)->print();
+        java_lang_invoke_MethodHandle::form(mh)->print_on(&ls);
       }
     }
   }

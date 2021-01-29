@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test 8247352
  * @summary test different configurations of sealed classes, same compilation unit, diff pkg or mdl, etc
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -373,7 +373,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
         tb.writeJavaFiles(sub1,
                 "package pkg2;\n" +
                         "import pkg1.*;\n" +
-                        "public class Sub1 extends pkg1.Sealed {\n" +
+                        "public final class Sub1 extends pkg1.Sealed {\n" +
                         "}");
 
         List<String> error = new JavacTask(tb)
@@ -384,9 +384,8 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                 .getOutputLines(OutputKind.DIRECT);
 
         List<String> expected = List.of(
-                "Sub1.java:3:8: compiler.err.non.sealed.sealed.or.final.expected",
-                "Sealed.java:3:40: compiler.err.cant.inherit.from.sealed: pkg1.Sealed",
-                "2 errors");
+                "Sealed.java:3:40: compiler.err.class.in.unnamed.module.cant.extend.sealed.in.diff.package: pkg1.Sealed",
+                "1 error");
         if (!error.containsAll(expected)) {
             throw new AssertionError("Expected output not found. Expected: " + expected);
         }
@@ -461,7 +460,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                 .getOutputLines(OutputKind.DIRECT);
 
         List<String> expected = List.of(
-                "Sealed.java:3:40: compiler.err.cant.inherit.from.sealed: pkg1.Sealed",
+                "Sealed.java:3:40: compiler.err.class.in.unnamed.module.cant.extend.sealed.in.diff.package: pkg1.Sealed",
                 "1 error");
         if (!error.containsAll(expected)) {
             throw new AssertionError("Expected output not found. Found: " + error);
@@ -601,8 +600,8 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                 .getOutputLines(OutputKind.DIRECT);
 
         List<String> expected = List.of(
-            "Base.java:1:46: compiler.err.cant.inherit.from.sealed: a.Base",
-            "- compiler.note.preview.filename: Base.java",
+            "Base.java:1:46: compiler.err.class.in.module.cant.extend.sealed.in.diff.module: a.Base, mSealed",
+            "- compiler.note.preview.plural: DEFAULT",
             "- compiler.note.preview.recompile",
             "1 error"
         );

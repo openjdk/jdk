@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -132,7 +133,7 @@ template <class T> inline void MarkSweep::follow_root(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (!obj->mark_raw().is_marked()) {
+    if (!obj->mark().is_marked()) {
       mark_object(obj);
       follow_object(obj);
     }
@@ -148,7 +149,7 @@ void PreservedMark::adjust_pointer() {
 }
 
 void PreservedMark::restore() {
-  _obj->set_mark_raw(_mark);
+  _obj->set_mark(_mark);
 }
 
 // We preserve the mark which should be replaced at the end and the location
@@ -205,7 +206,7 @@ void MarkSweep::restore_marks() {
   while (!_preserved_oop_stack.is_empty()) {
     oop obj       = _preserved_oop_stack.pop();
     markWord mark = _preserved_mark_stack.pop();
-    obj->set_mark_raw(mark);
+    obj->set_mark(mark);
   }
 }
 

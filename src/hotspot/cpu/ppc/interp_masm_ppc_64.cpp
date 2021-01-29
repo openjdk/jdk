@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,10 +31,12 @@
 #include "interp_masm_ppc.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/methodData.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of InterpreterMacroAssembler.
@@ -223,7 +225,7 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register byt
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;
-      ld(R0, in_bytes(Thread::polling_page_offset()), R16_thread);
+      ld(R0, in_bytes(Thread::polling_word_offset()), R16_thread);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       andi_(R0, R0, SafepointMechanism::poll_bit());
       beq(CCR0, dispatch);
@@ -771,7 +773,7 @@ void InterpreterMacroAssembler::merge_frames(Register Rsender_sp, Register retur
   ld(Rsender_sp, _ijava_state_neg(sender_sp), Rscratch1); // top_frame_sp
   ld(Rscratch2, 0, Rscratch1); // **SP
   if (return_pc!=noreg) {
-    ld(return_pc, _abi(lr), Rscratch1); // LR
+    ld(return_pc, _abi0(lr), Rscratch1); // LR
   }
 
   // Merge top frames.
@@ -848,7 +850,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // call could have a smaller SP, so that this compare succeeds for an
     // inner call of the method annotated with ReservedStack.
     ld_ptr(R0, JavaThread::reserved_stack_activation_offset(), R16_thread);
-    ld_ptr(R11_scratch1, _abi(callers_sp), R1_SP); // Load frame pointer.
+    ld_ptr(R11_scratch1, _abi0(callers_sp), R1_SP); // Load frame pointer.
     cmpld(CCR0, R11_scratch1, R0);
     blt_predict_taken(CCR0, no_reserved_zone_enabling);
 
@@ -878,8 +880,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 //
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   if (UseHeavyMonitors) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor, /*check_for_exceptions=*/true);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
   } else {
     // template code:
     //
@@ -910,10 +911,10 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // Load markWord from object into displaced_header.
     ld(displaced_header, oopDesc::mark_offset_in_bytes(), object);
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, object);
       lwz(tmp, in_bytes(Klass::access_flags_offset()), tmp);
-      testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_BOX_CLASS));
+      testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
       bne(CCR0, slow_case);
     }
 
@@ -980,8 +981,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // None of the above fast optimizations worked so we have to get into the
     // slow case of monitor enter.
     bind(slow_case);
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor, /*check_for_exceptions=*/true);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
     // }
     align(32, 12);
     bind(done);
@@ -995,10 +995,9 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 //             which must be initialized with the object to lock.
 //
 // Throw IllegalMonitorException if object is not locked by current thread.
-void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_exceptions) {
+void InterpreterMacroAssembler::unlock_object(Register monitor) {
   if (UseHeavyMonitors) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            monitor, check_for_exceptions);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
   } else {
 
     // template code:
@@ -1011,7 +1010,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_e
     //   monitor->set_obj(NULL);
     // } else {
     //   // Slow path.
-    //   InterpreterRuntime::monitorexit(THREAD, monitor);
+    //   InterpreterRuntime::monitorexit(monitor);
     // }
 
     const Register object           = R7_ARG5;
@@ -1065,13 +1064,12 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_e
 
     // } else {
     //   // Slow path.
-    //   InterpreterRuntime::monitorexit(THREAD, monitor);
+    //   InterpreterRuntime::monitorexit(monitor);
 
     // The lock has been converted into a heavy lock and hence
     // we need to get into the slow case.
     bind(slow_case);
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            monitor, check_for_exceptions);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
     // }
 
     Label done;
@@ -1196,95 +1194,6 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
 
   bind(verify_continue);
 #endif
-}
-
-void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocation_count,
-                                                                Register method_counters,
-                                                                Register Rscratch,
-                                                                Label &profile_continue) {
-  assert(ProfileInterpreter, "must be profiling interpreter");
-  // Control will flow to "profile_continue" if the counter is less than the
-  // limit or if we call profile_method().
-  Label done;
-
-  // If no method data exists, and the counter is high enough, make one.
-  lwz(Rscratch, in_bytes(MethodCounters::interpreter_profile_limit_offset()), method_counters);
-
-  cmpdi(CCR0, R28_mdx, 0);
-  // Test to see if we should create a method data oop.
-  cmpd(CCR1, Rscratch, invocation_count);
-  bne(CCR0, done);
-  bge(CCR1, profile_continue);
-
-  // Build it now.
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-  set_method_data_pointer_for_bcp();
-  b(profile_continue);
-
-  align(32, 12);
-  bind(done);
-}
-
-void InterpreterMacroAssembler::test_backedge_count_for_osr(Register backedge_count, Register method_counters,
-                                                            Register target_bcp, Register disp, Register Rtmp) {
-  assert_different_registers(backedge_count, target_bcp, disp, Rtmp, R4_ARG2);
-  assert(UseOnStackReplacement,"Must UseOnStackReplacement to test_backedge_count_for_osr");
-
-  Label did_not_overflow;
-  Label overflow_with_error;
-
-  lwz(Rtmp, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset()), method_counters);
-  cmpw(CCR0, backedge_count, Rtmp);
-
-  blt(CCR0, did_not_overflow);
-
-  // When ProfileInterpreter is on, the backedge_count comes from the
-  // methodDataOop, which value does not get reset on the call to
-  // frequency_counter_overflow(). To avoid excessive calls to the overflow
-  // routine while the method is being compiled, add a second test to make sure
-  // the overflow function is called only once every overflow_frequency.
-  if (ProfileInterpreter) {
-    const int overflow_frequency = 1024;
-    andi_(Rtmp, backedge_count, overflow_frequency-1);
-    bne(CCR0, did_not_overflow);
-  }
-
-  // Overflow in loop, pass branch bytecode.
-  subf(R4_ARG2, disp, target_bcp); // Compute branch bytecode (previous bcp).
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
-
-  // Was an OSR adapter generated?
-  cmpdi(CCR0, R3_RET, 0);
-  beq(CCR0, overflow_with_error);
-
-  // Has the nmethod been invalidated already?
-  lbz(Rtmp, nmethod::state_offset(), R3_RET);
-  cmpwi(CCR0, Rtmp, nmethod::in_use);
-  bne(CCR0, overflow_with_error);
-
-  // Migrate the interpreter frame off of the stack.
-  // We can use all registers because we will not return to interpreter from this point.
-
-  // Save nmethod.
-  const Register osr_nmethod = R31;
-  mr(osr_nmethod, R3_RET);
-  set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R11_scratch1);
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), R16_thread);
-  reset_last_Java_frame();
-  // OSR buffer is in ARG1
-
-  // Remove the interpreter frame.
-  merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
-
-  // Jump to the osr code.
-  ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
-  mtlr(R0);
-  mtctr(R11_scratch1);
-  bctr();
-
-  align(32, 12);
-  bind(overflow_with_error);
-  bind(did_not_overflow);
 }
 
 // Store a value at some constant offset from the method data pointer.
@@ -1922,7 +1831,7 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
       cmpwi(CCR0, tmp1, Bytecodes::_invokedynamic);
       cmpwi(CCR1, tmp1, Bytecodes::_invokehandle);
       cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
-      cmpwi(CCR1, tmp2, vmIntrinsics::_compiledLambdaForm);
+      cmpwi(CCR1, tmp2, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
       bne(CCR0, profile_continue);
     }
@@ -2403,8 +2312,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
     lwz(R0, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
     cmpwi(CCR0, R0, 0);
     beq(CCR0, jvmti_post_done);
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_entry),
-            /*check_exceptions=*/true);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_entry));
 
     bind(jvmti_post_done);
   }
@@ -2439,8 +2347,7 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
     cmpwi(CCR0, R0, 0);
     beq(CCR0, jvmti_post_done);
     if (!is_native_method) { push(state); } // Expose tos to GC.
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit),
-            /*check_exceptions=*/check_exceptions);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit), check_exceptions);
     if (!is_native_method) { pop(state); }
 
     align(32, 12);

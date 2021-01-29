@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.text;
 
-import java.util.Vector;
 import java.io.Serializable;
-import javax.swing.undo.UndoableEdit;
 
 /**
  * An implementation of a gapped buffer similar to that used by
@@ -67,17 +66,24 @@ abstract class GapVector implements Serializable {
     /**
      * Allocate an array to store items of the type
      * appropriate (which is determined by the subclass).
+     *
+     * @param  len the length of the array
+     * @return the java array of some type
      */
     protected abstract Object allocateArray(int len);
 
     /**
-     * Get the length of the allocated array
+     * Get the length of the allocated array.
+     *
+     * @return the length of the array
      */
     protected abstract int getArrayLength();
 
     /**
      * Access to the array.  The actual type
      * of the array is known only by the subclass.
+     *
+     * @return the java array of some type
      */
     protected final Object getArray() {
         return array;
@@ -85,6 +91,8 @@ abstract class GapVector implements Serializable {
 
     /**
      * Access to the start of the gap.
+     *
+     * @return the start of the gap
      */
     protected final int getGapStart() {
         return g0;
@@ -92,6 +100,8 @@ abstract class GapVector implements Serializable {
 
     /**
      * Access to the end of the gap.
+     *
+     * @return the end of the gap
      */
     protected final int getGapEnd() {
         return g1;
@@ -128,6 +138,7 @@ abstract class GapVector implements Serializable {
      *  the location in the contiguous space being modeled.
      * @param rmSize the number of items to remove
      * @param addItems the new items to place in storage.
+     * @param addSize the number of items to add
      */
     protected void replace(int position, int rmSize, Object addItems, int addSize) {
         int addOffset = 0;
@@ -219,7 +230,9 @@ abstract class GapVector implements Serializable {
 
     /**
      * Make the gap bigger, moving any necessary data and updating
-     * the appropriate marks
+     * the appropriate marks.
+     *
+     * @param  newSize the new capacity
      */
     protected void shiftEnd(int newSize) {
         int oldSize = getArrayLength();
@@ -251,6 +264,8 @@ abstract class GapVector implements Serializable {
      * without changing the size of the gap.  This
      * moves the data in the array and updates the
      * marks accordingly.
+     *
+     * @param  newGapStart the new start of the gap
      */
     protected void shiftGap(int newGapStart) {
         if (newGapStart == g0) {
@@ -280,6 +295,8 @@ abstract class GapVector implements Serializable {
      * gap start down to the new gap start are squeezed
      * to the end of the gap (their location has been
      * removed).
+     *
+     * @param  newGapStart the new start of the gap
      */
     protected void shiftGapStartDown(int newGapStart) {
         g0 = newGapStart;
@@ -292,6 +309,8 @@ abstract class GapVector implements Serializable {
      * gap end up to the new gap end are squeezed
      * to the end of the gap (their location has been
      * removed).
+     *
+     * @param  newGapEnd the new end of the gap
      */
     protected void shiftGapEndUp(int newGapEnd) {
         g1 = newGapEnd;

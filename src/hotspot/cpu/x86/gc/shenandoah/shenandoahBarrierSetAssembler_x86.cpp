@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
@@ -44,30 +43,75 @@
 
 #define __ masm->
 
-address ShenandoahBarrierSetAssembler::_shenandoah_lrb = NULL;
+static void save_machine_state(MacroAssembler* masm, bool handle_gpr, bool handle_fp) {
+  if (handle_gpr) {
+    __ push_IU_state();
+  }
 
-static void save_xmm_registers(MacroAssembler* masm) {
-    __ subptr(rsp, 64);
-    __ movdbl(Address(rsp, 0), xmm0);
-    __ movdbl(Address(rsp, 8), xmm1);
-    __ movdbl(Address(rsp, 16), xmm2);
-    __ movdbl(Address(rsp, 24), xmm3);
-    __ movdbl(Address(rsp, 32), xmm4);
-    __ movdbl(Address(rsp, 40), xmm5);
-    __ movdbl(Address(rsp, 48), xmm6);
-    __ movdbl(Address(rsp, 56), xmm7);
+  if (handle_fp) {
+    // Some paths can be reached from the c2i adapter with live fp arguments in registers.
+    LP64_ONLY(assert(Argument::n_float_register_parameters_j == 8, "8 fp registers to save at java call"));
+
+    if (UseSSE >= 2) {
+      const int xmm_size = wordSize * LP64_ONLY(2) NOT_LP64(4);
+      __ subptr(rsp, xmm_size * 8);
+      __ movdbl(Address(rsp, xmm_size * 0), xmm0);
+      __ movdbl(Address(rsp, xmm_size * 1), xmm1);
+      __ movdbl(Address(rsp, xmm_size * 2), xmm2);
+      __ movdbl(Address(rsp, xmm_size * 3), xmm3);
+      __ movdbl(Address(rsp, xmm_size * 4), xmm4);
+      __ movdbl(Address(rsp, xmm_size * 5), xmm5);
+      __ movdbl(Address(rsp, xmm_size * 6), xmm6);
+      __ movdbl(Address(rsp, xmm_size * 7), xmm7);
+    } else if (UseSSE >= 1) {
+      const int xmm_size = wordSize * LP64_ONLY(1) NOT_LP64(2);
+      __ subptr(rsp, xmm_size * 8);
+      __ movflt(Address(rsp, xmm_size * 0), xmm0);
+      __ movflt(Address(rsp, xmm_size * 1), xmm1);
+      __ movflt(Address(rsp, xmm_size * 2), xmm2);
+      __ movflt(Address(rsp, xmm_size * 3), xmm3);
+      __ movflt(Address(rsp, xmm_size * 4), xmm4);
+      __ movflt(Address(rsp, xmm_size * 5), xmm5);
+      __ movflt(Address(rsp, xmm_size * 6), xmm6);
+      __ movflt(Address(rsp, xmm_size * 7), xmm7);
+    } else {
+      __ push_FPU_state();
+    }
+  }
 }
 
-static void restore_xmm_registers(MacroAssembler* masm) {
-    __ movdbl(xmm0, Address(rsp, 0));
-    __ movdbl(xmm1, Address(rsp, 8));
-    __ movdbl(xmm2, Address(rsp, 16));
-    __ movdbl(xmm3, Address(rsp, 24));
-    __ movdbl(xmm4, Address(rsp, 32));
-    __ movdbl(xmm5, Address(rsp, 40));
-    __ movdbl(xmm6, Address(rsp, 48));
-    __ movdbl(xmm7, Address(rsp, 56));
-    __ addptr(rsp, 64);
+static void restore_machine_state(MacroAssembler* masm, bool handle_gpr, bool handle_fp) {
+  if (handle_fp) {
+    if (UseSSE >= 2) {
+      const int xmm_size = wordSize * LP64_ONLY(2) NOT_LP64(4);
+      __ movdbl(xmm0, Address(rsp, xmm_size * 0));
+      __ movdbl(xmm1, Address(rsp, xmm_size * 1));
+      __ movdbl(xmm2, Address(rsp, xmm_size * 2));
+      __ movdbl(xmm3, Address(rsp, xmm_size * 3));
+      __ movdbl(xmm4, Address(rsp, xmm_size * 4));
+      __ movdbl(xmm5, Address(rsp, xmm_size * 5));
+      __ movdbl(xmm6, Address(rsp, xmm_size * 6));
+      __ movdbl(xmm7, Address(rsp, xmm_size * 7));
+      __ addptr(rsp, xmm_size * 8);
+    } else if (UseSSE >= 1) {
+      const int xmm_size = wordSize * LP64_ONLY(1) NOT_LP64(2);
+      __ movflt(xmm0, Address(rsp, xmm_size * 0));
+      __ movflt(xmm1, Address(rsp, xmm_size * 1));
+      __ movflt(xmm2, Address(rsp, xmm_size * 2));
+      __ movflt(xmm3, Address(rsp, xmm_size * 3));
+      __ movflt(xmm4, Address(rsp, xmm_size * 4));
+      __ movflt(xmm5, Address(rsp, xmm_size * 5));
+      __ movflt(xmm6, Address(rsp, xmm_size * 6));
+      __ movflt(xmm7, Address(rsp, xmm_size * 7));
+      __ addptr(rsp, xmm_size * 8);
+    } else {
+      __ pop_FPU_state();
+    }
+  }
+
+  if (handle_gpr) {
+    __ pop_IU_state();
+  }
 }
 
 void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
@@ -77,7 +121,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
   if (is_reference_type(type)) {
 
-    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahStoreValEnqueueBarrier || ShenandoahLoadRefBarrier) {
+    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahIUBarrier || ShenandoahLoadRefBarrier) {
 #ifdef _LP64
       Register thread = r15_thread;
 #else
@@ -112,7 +156,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ testb(gc_state, flags);
       __ jcc(Assembler::zero, done);
 
-      __ pusha();                      // push registers
+      save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ false);
 
 #ifdef _LP64
       assert(src == rdi, "expected");
@@ -128,7 +172,8 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
                         src, dst, count);
       }
 
-      __ popa();
+      restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ false);
+
       __ bind(done);
       NOT_LP64(__ pop(thread);)
     }
@@ -271,11 +316,20 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   __ bind(done);
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Address src) {
+void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst, Address src, DecoratorSet decorators) {
   assert(ShenandoahLoadRefBarrier, "Should be enabled");
 
-  Label done;
+  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
+  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
+  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
+  bool is_narrow  = UseCompressedOops && !is_native;
 
+  Label heap_stable, not_cset;
+
+  __ block_comment("load_reference_barrier { ");
+
+  // Check if GC is active
 #ifdef _LP64
   Register thread = r15_thread;
 #else
@@ -289,158 +343,145 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembl
 
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
-  __ jccb(Assembler::zero, done);
+  __ jcc(Assembler::zero, heap_stable);
 
-  // Use rsi for src address
-  const Register src_addr = rsi;
-  // Setup address parameter first, if it does not clobber oop in dst
-  bool need_addr_setup = (src_addr != dst);
-
-  if (need_addr_setup) {
-    __ push(src_addr);
-    __ lea(src_addr, src);
-
-    if (dst != rax) {
-      // Move obj into rax and save rax
-      __ push(rax);
-      __ movptr(rax, dst);
+  Register tmp1 = noreg, tmp2 = noreg;
+  if (is_strong) {
+    // Test for object in cset
+    // Allocate temporary registers
+    for (int i = 0; i < 8; i++) {
+      Register r = as_Register(i);
+      if (r != rsp && r != rbp && r != dst && r != src.base() && r != src.index()) {
+        if (tmp1 == noreg) {
+          tmp1 = r;
+        } else {
+          tmp2 = r;
+          break;
+        }
+      }
     }
-  } else {
-    // dst == rsi
-    __ push(rax);
-    __ movptr(rax, dst);
+    assert(tmp1 != noreg, "tmp1 allocated");
+    assert(tmp2 != noreg, "tmp2 allocated");
+    assert_different_registers(tmp1, tmp2, src.base(), src.index());
+    assert_different_registers(tmp1, tmp2, dst);
 
-    // we can clobber it, since it is outgoing register
-    __ lea(src_addr, src);
+    __ push(tmp1);
+    __ push(tmp2);
+
+    // Optimized cset-test
+    __ movptr(tmp1, dst);
+    __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+    __ movbool(tmp1, Address(tmp1, tmp2, Address::times_1));
+    __ testbool(tmp1);
+    __ jcc(Assembler::zero, not_cset);
   }
 
-  save_xmm_registers(masm);
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahBarrierSetAssembler::shenandoah_lrb())));
-  restore_xmm_registers(masm);
+  save_machine_state(masm, /* handle_gpr = */ false, /* handle_fp = */ true);
 
-  if (need_addr_setup) {
-    if (dst != rax) {
-      __ movptr(dst, rax);
-      __ pop(rax);
-    }
-    __ pop(src_addr);
+  // The rest is saved with the optimized path
+
+  uint num_saved_regs = 4 + (dst != rax ? 1 : 0) LP64_ONLY(+4);
+  __ subptr(rsp, num_saved_regs * wordSize);
+  uint slot = num_saved_regs;
+  if (dst != rax) {
+    __ movptr(Address(rsp, (--slot) * wordSize), rax);
+  }
+  __ movptr(Address(rsp, (--slot) * wordSize), rcx);
+  __ movptr(Address(rsp, (--slot) * wordSize), rdx);
+  __ movptr(Address(rsp, (--slot) * wordSize), rdi);
+  __ movptr(Address(rsp, (--slot) * wordSize), rsi);
+#ifdef _LP64
+  __ movptr(Address(rsp, (--slot) * wordSize), r8);
+  __ movptr(Address(rsp, (--slot) * wordSize), r9);
+  __ movptr(Address(rsp, (--slot) * wordSize), r10);
+  __ movptr(Address(rsp, (--slot) * wordSize), r11);
+  // r12-r15 are callee saved in all calling conventions
+#endif
+  assert(slot == 0, "must use all slots");
+
+  // Shuffle registers such that dst is in c_rarg0 and addr in c_rarg1.
+#ifdef _LP64
+  Register arg0 = c_rarg0, arg1 = c_rarg1;
+#else
+  Register arg0 = rdi, arg1 = rsi;
+#endif
+  if (dst == arg1) {
+    __ lea(arg0, src);
+    __ xchgptr(arg1, arg0);
   } else {
+    __ lea(arg1, src);
+    __ movptr(arg0, dst);
+  }
+
+  if (is_strong) {
+    if (is_narrow) {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), arg0, arg1);
+    } else {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), arg0, arg1);
+    }
+  } else if (is_weak) {
+    if (is_narrow) {
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), arg0, arg1);
+    } else {
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
+    }
+  } else {
+    assert(is_phantom, "only remaining strength");
+    assert(!is_narrow, "phantom access cannot be narrow");
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
+  }
+
+#ifdef _LP64
+  __ movptr(r11, Address(rsp, (slot++) * wordSize));
+  __ movptr(r10, Address(rsp, (slot++) * wordSize));
+  __ movptr(r9,  Address(rsp, (slot++) * wordSize));
+  __ movptr(r8,  Address(rsp, (slot++) * wordSize));
+#endif
+  __ movptr(rsi, Address(rsp, (slot++) * wordSize));
+  __ movptr(rdi, Address(rsp, (slot++) * wordSize));
+  __ movptr(rdx, Address(rsp, (slot++) * wordSize));
+  __ movptr(rcx, Address(rsp, (slot++) * wordSize));
+
+  if (dst != rax) {
     __ movptr(dst, rax);
-    __ pop(rax);
+    __ movptr(rax, Address(rsp, (slot++) * wordSize));
   }
 
-  __ bind(done);
+  assert(slot == num_saved_regs, "must use all slots");
+  __ addptr(rsp, num_saved_regs * wordSize);
+
+  restore_machine_state(masm, /* handle_gpr = */ false, /* handle_fp = */ true);
+
+  __ bind(not_cset);
+
+  if  (is_strong) {
+    __ pop(tmp2);
+    __ pop(tmp1);
+  }
+
+  __ bind(heap_stable);
+
+  __ block_comment("} load_reference_barrier");
 
 #ifndef _LP64
     __ pop(thread);
 #endif
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler* masm, Register dst, Address src) {
-  if (!ShenandoahLoadRefBarrier) {
-    return;
-  }
-
-  Label done;
-  Label not_null;
-  Label slow_path;
-  __ block_comment("load_reference_barrier_native { ");
-
-  // null check
-  __ testptr(dst, dst);
-  __ jcc(Assembler::notZero, not_null);
-  __ jmp(done);
-  __ bind(not_null);
-
-
-#ifdef _LP64
-  Register thread = r15_thread;
-#else
-  Register thread = rcx;
-  if (thread == dst) {
-    thread = rbx;
-  }
-  __ push(thread);
-  __ get_thread(thread);
-#endif
-  assert_different_registers(dst, thread);
-
-  Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::EVACUATION);
-#ifndef _LP64
-  __ pop(thread);
-#endif
-  __ jccb(Assembler::notZero, slow_path);
-  __ jmp(done);
-  __ bind(slow_path);
-
-  if (dst != rax) {
-    __ push(rax);
-  }
-  __ push(rcx);
-  __ push(rdx);
-  __ push(rdi);
-  __ push(rsi);
-#ifdef _LP64
-  __ push(r8);
-  __ push(r9);
-  __ push(r10);
-  __ push(r11);
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
-#endif
-
-  assert_different_registers(dst, rsi);
-  __ lea(rsi, src);
-
-  save_xmm_registers(masm);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), dst, rsi);
-  restore_xmm_registers(masm);
-
-#ifdef _LP64
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
-  __ pop(r11);
-  __ pop(r10);
-  __ pop(r9);
-  __ pop(r8);
-#endif
-  __ pop(rsi);
-  __ pop(rdi);
-  __ pop(rdx);
-  __ pop(rcx);
-
-  if (dst != rax) {
-    __ movptr(dst, rax);
-    __ pop(rax);
-  }
-
-  __ bind(done);
-  __ block_comment("load_reference_barrier_native { ");
-}
-
-void ShenandoahBarrierSetAssembler::storeval_barrier(MacroAssembler* masm, Register dst, Register tmp) {
-  if (ShenandoahStoreValEnqueueBarrier) {
-    storeval_barrier_impl(masm, dst, tmp);
+void ShenandoahBarrierSetAssembler::iu_barrier(MacroAssembler* masm, Register dst, Register tmp) {
+  if (ShenandoahIUBarrier) {
+    iu_barrier_impl(masm, dst, tmp);
   }
 }
 
-void ShenandoahBarrierSetAssembler::storeval_barrier_impl(MacroAssembler* masm, Register dst, Register tmp) {
-  assert(ShenandoahStoreValEnqueueBarrier, "should be enabled");
+void ShenandoahBarrierSetAssembler::iu_barrier_impl(MacroAssembler* masm, Register dst, Register tmp) {
+  assert(ShenandoahIUBarrier, "should be enabled");
 
   if (dst == noreg) return;
 
-  if (ShenandoahStoreValEnqueueBarrier) {
-    // The set of registers to be saved+restored is the same as in the write-barrier above.
-    // Those are the commonly used registers in the interpreter.
-    __ pusha();
-    // __ push_callee_saved_registers();
-    __ subptr(rsp, 2 * Interpreter::stackElementSize);
-    __ movdbl(Address(rsp, 0), xmm0);
+  if (ShenandoahIUBarrier) {
+    save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
 
 #ifdef _LP64
     Register thread = r15_thread;
@@ -457,20 +498,8 @@ void ShenandoahBarrierSetAssembler::storeval_barrier_impl(MacroAssembler* masm, 
     assert_different_registers(dst, tmp, thread);
 
     satb_write_barrier_pre(masm, noreg, dst, thread, tmp, true, false);
-    __ movdbl(xmm0, Address(rsp, 0));
-    __ addptr(rsp, 2 * Interpreter::stackElementSize);
-    //__ pop_callee_saved_registers();
-    __ popa();
-  }
-}
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst, Address src) {
-  if (ShenandoahLoadRefBarrier) {
-    Label done;
-    __ testptr(dst, dst);
-    __ jcc(Assembler::zero, done);
-    load_reference_barrier_not_null(masm, dst, src);
-    __ bind(done);
+    restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
   }
 }
 
@@ -504,7 +533,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
     // Preserve src location for LRB
     if (dst == src.base() || dst == src.index()) {
-      // Use tmp1 for dst if possible, as it is not used in BarrierAssembler::load_at()
+    // Use tmp1 for dst if possible, as it is not used in BarrierAssembler::load_at()
       if (tmp1->is_valid() && tmp1 != src.base() && tmp1 != src.index()) {
         dst = tmp1;
         use_tmp1_for_dst = true;
@@ -517,11 +546,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
     BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
 
-    if (ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type)) {
-      load_reference_barrier_native(masm, dst, src);
-    } else {
-      load_reference_barrier(masm, dst, src);
-    }
+    load_reference_barrier(masm, dst, src, decorators);
 
     // Move loaded oop to final destination
     if (dst != result_dst) {
@@ -539,11 +564,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
   // 3: apply keep-alive barrier if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
-    __ push_IU_state();
-    // That path can be reached from the c2i adapter with live fp
-    // arguments in registers.
-    LP64_ONLY(assert(Argument::n_float_register_parameters_j == 8, "8 fp registers to save at java call"));
-    save_xmm_registers(masm);
+    save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
 
     Register thread = NOT_LP64(tmp_thread) LP64_ONLY(r15_thread);
     assert_different_registers(dst, tmp1, tmp_thread);
@@ -560,8 +581,8 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
                                  tmp1 /* tmp */,
                                  true /* tosca_live */,
                                  true /* expand_call */);
-    restore_xmm_registers(masm);
-    __ pop_IU_state();
+
+    restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
   }
 }
 
@@ -606,7 +627,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
     if (val == noreg) {
       BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg);
     } else {
-      storeval_barrier(masm, val, tmp3);
+      iu_barrier(masm, val, tmp3);
       BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg);
     }
     NOT_LP64(imasm->restore_bcp());
@@ -638,7 +659,8 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
                                                 bool exchange, Register tmp1, Register tmp2) {
   assert(ShenandoahCASBarrier, "Should only be used when CAS barrier is enabled");
   assert(oldval == rax, "must be in rax for implicit use in cmpxchg");
-  assert_different_registers(oldval, newval, tmp1, tmp2);
+  assert_different_registers(oldval, tmp1, tmp2);
+  assert_different_registers(newval, tmp1, tmp2);
 
   Label L_success, L_failure;
 
@@ -833,6 +855,12 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   ShenandoahBarrierSetC1* bs = (ShenandoahBarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
   __ bind(*stub->entry());
 
+  DecoratorSet decorators = stub->decorators();
+  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
+  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
+  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
+
   Register obj = stub->obj()->as_register();
   Register res = stub->result()->as_register();
   Register addr = stub->addr()->as_pointer_register();
@@ -848,32 +876,37 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
     __ mov(res, obj);
   }
 
-  // Check for null.
-  __ testptr(res, res);
-  __ jcc(Assembler::zero, *stub->continuation());
-
-  // Check for object being in the collection set.
-  __ mov(tmp1, res);
-  __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
-  __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+  if (is_strong) {
+    // Check for object being in the collection set.
+    __ mov(tmp1, res);
+    __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
 #ifdef _LP64
-  __ movbool(tmp2, Address(tmp2, tmp1, Address::times_1));
-  __ testbool(tmp2);
+    __ movbool(tmp2, Address(tmp2, tmp1, Address::times_1));
+    __ testbool(tmp2);
 #else
-  // On x86_32, C1 register allocator can give us the register without 8-bit support.
-  // Do the full-register access and test to avoid compilation failures.
-  __ movptr(tmp2, Address(tmp2, tmp1, Address::times_1));
-  __ testptr(tmp2, 0xFF);
+    // On x86_32, C1 register allocator can give us the register without 8-bit support.
+    // Do the full-register access and test to avoid compilation failures.
+    __ movptr(tmp2, Address(tmp2, tmp1, Address::times_1));
+    __ testptr(tmp2, 0xFF);
 #endif
-  __ jcc(Assembler::zero, *stub->continuation());
+    __ jcc(Assembler::zero, *stub->continuation());
+  }
 
   __ bind(slow_path);
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
-  if (stub->is_native()) {
-    __ call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
+  if (is_strong) {
+    if (is_native) {
+      __ call(RuntimeAddress(bs->load_reference_barrier_strong_native_rt_code_blob()->code_begin()));
+    } else {
+      __ call(RuntimeAddress(bs->load_reference_barrier_strong_rt_code_blob()->code_begin()));
+    }
+  } else if (is_weak) {
+    __ call(RuntimeAddress(bs->load_reference_barrier_weak_rt_code_blob()->code_begin()));
   } else {
-    __ call(RuntimeAddress(bs->load_reference_barrier_rt_code_blob()->code_begin()));
+    assert(is_phantom, "only remaining strength");
+    __ call(RuntimeAddress(bs->load_reference_barrier_phantom_rt_code_blob()->code_begin()));
   }
   __ jmp(*stub->continuation());
 }
@@ -938,29 +971,52 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ epilogue();
 }
 
-void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, bool is_native) {
+void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, DecoratorSet decorators) {
   __ prologue("shenandoah_load_reference_barrier", false);
   // arg0 : object to be resolved
 
   __ save_live_registers_no_oop_map(true);
 
+  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
+  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
+  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
+
 #ifdef _LP64
   __ load_parameter(0, c_rarg0);
   __ load_parameter(1, c_rarg1);
-  if (is_native) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), c_rarg0, c_rarg1);
-  } else if (UseCompressedOops) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), c_rarg0, c_rarg1);
+  if (is_strong) {
+    if (is_native) {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), c_rarg0, c_rarg1);
+    } else {
+      if (UseCompressedOops) {
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), c_rarg0, c_rarg1);
+      } else {
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), c_rarg0, c_rarg1);
+      }
+    }
+  } else if (is_weak) {
+    assert(!is_native, "weak must not be called off-heap");
+    if (UseCompressedOops) {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), c_rarg0, c_rarg1);
+    } else {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), c_rarg0, c_rarg1);
+    }
   } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), c_rarg0, c_rarg1);
+    assert(is_phantom, "only remaining strength");
+    assert(is_native, "phantom must only be called off-heap");
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), c_rarg0, c_rarg1);
   }
 #else
   __ load_parameter(0, rax);
   __ load_parameter(1, rbx);
-  if (is_native) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), rax, rbx);
+  if (is_strong) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), rax, rbx);
+  } else if (is_weak) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), rax, rbx);
   } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), rax, rbx);
+    assert(is_phantom, "only remaining strength");
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), rax, rbx);
   }
 #endif
 
@@ -972,104 +1028,3 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 #undef __
 
 #endif // COMPILER1
-
-address ShenandoahBarrierSetAssembler::shenandoah_lrb() {
-  assert(_shenandoah_lrb != NULL, "need load reference barrier stub");
-  return _shenandoah_lrb;
-}
-
-#define __ cgen->assembler()->
-
-/*
- *  Incoming parameters:
- *  rax: oop
- *  rsi: load address
- */
-address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator* cgen) {
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(cgen, "StubRoutines", "shenandoah_lrb");
-  address start = __ pc();
-
-  Label slow_path;
-
-  // We use RDI, which also serves as argument register for slow call.
-  // RAX always holds the src object ptr, except after the slow call,
-  // then it holds the result. R8/RBX is used as temporary register.
-
-  Register tmp1 = rdi;
-  Register tmp2 = LP64_ONLY(r8) NOT_LP64(rbx);
-
-  __ push(tmp1);
-  __ push(tmp2);
-
-  // Check for object being in the collection set.
-  __ mov(tmp1, rax);
-  __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
-  __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
-  __ movbool(tmp2, Address(tmp2, tmp1, Address::times_1));
-  __ testbool(tmp2);
-  __ jccb(Assembler::notZero, slow_path);
-  __ pop(tmp2);
-  __ pop(tmp1);
-  __ ret(0);
-
-  __ bind(slow_path);
-
-  __ push(rcx);
-  __ push(rdx);
-  __ push(rdi);
-#ifdef _LP64
-  __ push(r8);
-  __ push(r9);
-  __ push(r10);
-  __ push(r11);
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
-#endif
-  __ push(rbp);
-  __ movptr(rbp, rsp);
-  __ andptr(rsp, -StackAlignmentInBytes);
-  __ push_FPU_state();
-  if (UseCompressedOops) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), rax, rsi);
-  } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), rax, rsi);
-  }
-  __ pop_FPU_state();
-  __ movptr(rsp, rbp);
-  __ pop(rbp);
-#ifdef _LP64
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
-  __ pop(r11);
-  __ pop(r10);
-  __ pop(r9);
-  __ pop(r8);
-#endif
-  __ pop(rdi);
-  __ pop(rdx);
-  __ pop(rcx);
-
-  __ pop(tmp2);
-  __ pop(tmp1);
-  __ ret(0);
-
-  return start;
-}
-
-#undef __
-
-void ShenandoahBarrierSetAssembler::barrier_stubs_init() {
-  if (ShenandoahLoadRefBarrier) {
-    int stub_code_size = 4096;
-    ResourceMark rm;
-    BufferBlob* bb = BufferBlob::create("shenandoah_barrier_stubs", stub_code_size);
-    CodeBuffer buf(bb);
-    StubCodeGenerator cgen(&buf);
-    _shenandoah_lrb = generate_shenandoah_lrb(&cgen);
-  }
-}

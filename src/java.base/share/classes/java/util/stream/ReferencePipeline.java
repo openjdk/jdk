@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package java.util.stream;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -44,6 +45,7 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Abstract base class for an intermediate pipeline stage or pipeline source
@@ -257,7 +259,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
-                return new Sink.ChainedReference<P_OUT, R>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     // true if cancellationRequested() has been called
                     boolean cancellationRequestedCalled;
 
@@ -429,6 +431,103 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
+    public final <R> Stream<R> mapMulti(BiConsumer<? super P_OUT, ? super Consumer<R>> mapper) {
+        Objects.requireNonNull(mapper);
+        return new StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+            @Override
+            Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
+                return new Sink.ChainedReference<>(sink) {
+
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public void accept(P_OUT u) {
+                        mapper.accept(u, (Consumer<R>) downstream);
+                    }
+                };
+            }
+        };
+    }
+
+    @Override
+    public final IntStream mapMultiToInt(BiConsumer<? super P_OUT, ? super IntConsumer> mapper) {
+        Objects.requireNonNull(mapper);
+        return new IntPipeline.StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+            @Override
+            Sink<P_OUT> opWrapSink(int flags, Sink<Integer> sink) {
+                return new Sink.ChainedReference<>(sink) {
+
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public void accept(P_OUT u) {
+                        mapper.accept(u, (IntConsumer)downstream);
+                    }
+                };
+            }
+        };
+    }
+
+    @Override
+    public final LongStream mapMultiToLong(BiConsumer<? super P_OUT, ? super LongConsumer> mapper) {
+        Objects.requireNonNull(mapper);
+        return new LongPipeline.StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+            @Override
+            Sink<P_OUT> opWrapSink(int flags, Sink<Long> sink) {
+                return new Sink.ChainedReference<>(sink) {
+
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public void accept(P_OUT u) {
+                        mapper.accept(u, (LongConsumer) downstream);
+                    }
+                };
+            }
+        };
+    }
+
+
+    @Override
+    public final DoubleStream mapMultiToDouble(BiConsumer<? super P_OUT, ? super DoubleConsumer> mapper) {
+        Objects.requireNonNull(mapper);
+        return new DoublePipeline.StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+            @Override
+            Sink<P_OUT> opWrapSink(int flags, Sink<Double> sink) {
+                return new Sink.ChainedReference<>(sink) {
+
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public void accept(P_OUT u) {
+                        mapper.accept(u, (DoubleConsumer) downstream);
+                    }
+                };
+            }
+        };
+    }
+
+    @Override
     public final Stream<P_OUT> peek(Consumer<? super P_OUT> action) {
         Objects.requireNonNull(action);
         return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
@@ -521,6 +620,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final Object[] toArray() {
         return toArray(Object[]::new);
+    }
+
+    @Override
+    public List<P_OUT> toList() {
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(this.toArray());
     }
 
     @Override

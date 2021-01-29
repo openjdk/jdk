@@ -42,7 +42,8 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/arguments.hpp"
@@ -173,7 +174,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
 
   // Timer includes any side effects of class verification (resolution,
   // etc), but not recursive calls to Verifier::verify().
-  JavaThread* jt = (JavaThread*)THREAD;
+  JavaThread* jt = THREAD->as_Java_thread();
   PerfClassTraceTime timer(ClassLoader::perf_class_verify_time(),
                            ClassLoader::perf_class_verify_selftime(),
                            ClassLoader::perf_classes_verified(),
@@ -296,7 +297,7 @@ bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_ve
 
 Symbol* Verifier::inference_verify(
     InstanceKlass* klass, char* message, size_t message_len, TRAPS) {
-  JavaThread* thread = (JavaThread*)THREAD;
+  JavaThread* thread = THREAD->as_Java_thread();
 
   verify_byte_codes_fn_t verify_func = verify_byte_codes_fn();
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,12 +228,12 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
   if (tmp->is_valid()) {
     if (is_power_of_2(c + 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2_int(c + 1), left);
+      __ shift_left(left, log2i_exact(c + 1), left);
       __ sub(left, tmp, result);
       return true;
     } else if (is_power_of_2(c - 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2_int(c - 1), left);
+      __ shift_left(left, log2i_exact(c - 1), left);
       __ add(left, tmp, result);
       return true;
     }

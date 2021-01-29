@@ -26,123 +26,96 @@
 #define SHARE_UTILITIES_POWEROFTWO_HPP
 
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/isIntegral.hpp"
-#include "metaprogramming/isSigned.hpp"
 #include "utilities/count_leading_zeros.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <limits>
+#include <type_traits>
 
 // Power of two convenience library.
 
-template <typename T>
-bool is_power_of_2(T x) {
-  return (x > T(0)) && ((x & (x - 1)) == T(0));
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+constexpr T max_power_of_2() {
+  T max_val = std::numeric_limits<T>::max();
+  return max_val - (max_val >> 1);
 }
 
-// Log2 of a power of 2
-inline int exact_log2(intptr_t x) {
-  assert(is_power_of_2((uintptr_t)x), "x must be a power of 2: " INTPTR_FORMAT, x);
-
-  const int bits = sizeof x * BitsPerByte;
-  return bits - count_leading_zeros(x) - 1;
+// Returns true iff there exists integer i such that (T(1) << i) == value.
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+constexpr bool is_power_of_2(T value) {
+  return (value > T(0)) && ((value & (value - 1)) == T(0));
 }
 
-// Log2 of a power of 2
-inline int exact_log2_long(jlong x) {
-  assert(is_power_of_2((julong)x), "x must be a power of 2: " JLONG_FORMAT, x);
-
-  const int bits = sizeof x * BitsPerByte;
-  return bits - count_leading_zeros(x) - 1;
+// Log2 of a positive, integral value, i.e., largest i such that 2^i <= value
+// Precondition: value > 0
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2i(T value) {
+  assert(value > T(0), "value must be > 0");
+  const int bits = sizeof(value) * BitsPerByte;
+  return bits - count_leading_zeros(value) - 1;
 }
 
-// Round down to the closest power of two greater to or equal to the given
-// value.
+// Log2 of positive, integral value, i.e., largest i such that 2^i <= value
+// Returns -1 if value is zero
+// For negative values this will return 63 for 64-bit types, 31 for
+// 32-bit types, and so on.
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2i_graceful(T value) {
+  if (value == 0) {
+    return -1;
+  }
+  const int bits = sizeof(value) * BitsPerByte;
+  return bits - count_leading_zeros(value) - 1;
+}
 
-// Signed version: 0 is an invalid input, negative values are invalid
-template <typename T>
-inline typename EnableIf<IsSigned<T>::value, T>::type round_down_power_of_2(T value) {
-  STATIC_ASSERT(IsIntegral<T>::value);
+// Log2 of a power of 2, i.e., i such that 2^i == value
+// Preconditions: value > 0, value is a power of two
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2i_exact(T value) {
+  assert(is_power_of_2(value),
+         "value must be a power of 2: " UINT64_FORMAT_X,
+         static_cast<uint64_t>(value));
+  return count_trailing_zeros(value);
+}
+
+// Preconditions: value != 0, and the unsigned representation of value is a power of two
+inline int exact_log2(intptr_t value) {
+  return log2i_exact((uintptr_t)value);
+}
+
+// Preconditions: value != 0, and the unsigned representation of value is a power of two
+inline int exact_log2_long(jlong value) {
+  return log2i_exact((julong)value);
+}
+
+// Round down to the closest power of two less than or equal to the given value.
+// precondition: value > 0.
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline T round_down_power_of_2(T value) {
   assert(value > 0, "Invalid value");
-  uint32_t lz = count_leading_zeros(value);
-  assert(lz < sizeof(T) * BitsPerByte, "Sanity");
-  return T(1) << (sizeof(T) * BitsPerByte - 1 - lz);
+  return T(1) << log2i(value);
 }
 
-// Unsigned version: 0 is an invalid input
-template <typename T>
-inline typename EnableIf<!IsSigned<T>::value, T>::type round_down_power_of_2(T value) {
-  STATIC_ASSERT(IsIntegral<T>::value);
-  assert(value != 0, "Invalid value");
-  uint32_t lz = count_leading_zeros(value);
-  assert(lz < sizeof(T) * BitsPerByte, "Sanity");
-  return T(1) << (sizeof(T) * BitsPerByte - 1 - lz);
-}
-
-// Round up to the closest power of two greater to or equal to
-// the given value.
-
-// Signed version: 0 is an invalid input, negative values are invalid,
-// overflows with assert if value is larger than 2^30 or 2^62 for 32- and
-// 64-bit integers, respectively
-template <typename T>
-inline typename EnableIf<IsSigned<T>::value, T>::type round_up_power_of_2(T value) {
-  STATIC_ASSERT(IsIntegral<T>::value);
-  STATIC_ASSERT(IsSigned<T>::value);
+// Round up to the closest power of two greater to or equal to the given value.
+// precondition: value > 0.
+// precondition: value <= maximum power of two representable by T.
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline T round_up_power_of_2(T value) {
   assert(value > 0, "Invalid value");
+  assert(value <= max_power_of_2<T>(), "Overflow");
   if (is_power_of_2(value)) {
     return value;
   }
-  uint32_t lz = count_leading_zeros(value);
-  assert(lz < sizeof(T) * BitsPerByte, "Sanity");
-  assert(lz > 1, "Will overflow");
-  return T(1) << (sizeof(T) * BitsPerByte - lz);
-}
-
-// Unsigned version: 0 is an invalid input, overflows with assert if value
-// is larger than 2^31 or 2^63 for 32- and 64-bit integers, respectively
-template <typename T>
-inline typename EnableIf<!IsSigned<T>::value, T>::type round_up_power_of_2(T value) {
-  STATIC_ASSERT(IsIntegral<T>::value);
-  STATIC_ASSERT(!IsSigned<T>::value);
-  assert(value != 0, "Invalid value");
-  if (is_power_of_2(value)) {
-    return value;
-  }
-  uint32_t lz = count_leading_zeros(value);
-  assert(lz < sizeof(T) * BitsPerByte, "Sanity");
-  assert(lz > 0, "Will overflow");
-  return T(1) << (sizeof(T) * BitsPerByte - lz);
-}
-
-// Helper function to get the maximum positive value. Implemented here
-// since using std::numeric_limits<T>::max() seems problematic on some
-// platforms.
-
-template <typename T> T max_value() {
-  if (IsSigned<T>::value) {
-    // Highest positive power of two expressible in the type
-    uint64_t val = static_cast<T>(1) << (sizeof(T) * BitsPerByte - 2);
-    // Fill lower bits with ones
-    val |= val >> 1;
-    val |= val >> 2;
-    val |= val >> 4;
-    if (sizeof(T) >= 2)  val |= val >> 8;
-    if (sizeof(T) >= 4)  val |= val >> 16;
-    if (sizeof(T) == 8)  val |= val >> 32;
-    return (T)val;
-  } else {
-    return ~(static_cast<T>(0));
-  }
+  return T(1) << (log2i(value) + 1);
 }
 
 // Calculate the next power of two greater than the given value.
-
-// Accepts 0 (returns 1), overflows with assert if value is larger than
-// or equal to 2^31 (signed: 2^30) or 2^63 (signed: 2^62), for 32-
-// and 64-bit integers, respectively
-template <typename T>
+// precondition: if signed, value >= 0.
+// precondition: value < maximum power of two representable by T.
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T next_power_of_2(T value)  {
-  assert(value != max_value<T>(), "Overflow");
+  assert(value < std::numeric_limits<T>::max(), "Overflow");
   return round_up_power_of_2(value + 1);
 }
 

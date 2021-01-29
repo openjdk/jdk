@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/connode.hpp"
 
 
 //----------------------PartialSubtypeCheckNode--------------------------------
@@ -46,10 +47,11 @@ class PartialSubtypeCheckNode : public Node {
 // Base class for Ideal nodes used in String intrinsic code.
 class StrIntrinsicNode: public Node {
  public:
-  // Possible encodings of the two parameters passed to the string intrinsic.
+  // Possible encodings of the parameters passed to the string intrinsic.
   // 'L' stands for Latin1 and 'U' stands for UTF16. For example, 'LU' means that
   // the first string is Latin1 encoded and the second string is UTF16 encoded.
-  typedef enum ArgEncoding { LL, LU, UL, UU, none } ArgEnc;
+  // 'L' means that the single string is Latin1 encoded
+  typedef enum ArgEncoding { LL, LU, UL, UU, L, U, none } ArgEnc;
 
  protected:
   // Encoding of strings. Used to select the right version of the intrinsic.
@@ -214,6 +216,46 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------CopySign-----------------------------------------
+class CopySignDNode : public Node {
+ protected:
+  CopySignDNode(Node* in1, Node* in2, Node* in3) : Node(0, in1, in2, in3) {}
+ public:
+  static CopySignDNode* make(PhaseGVN& gvn, Node* in1, Node* in2);
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return TypeLong::DOUBLE; }
+  virtual uint ideal_reg() const { return Op_RegD; }
+};
+
+class CopySignFNode : public Node {
+ public:
+  CopySignFNode(Node* in1, Node* in2) : Node(0, in1, in2) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return TypeLong::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+};
+
+//------------------------------Signum-------------------------------------------
+class SignumDNode : public Node {
+ protected:
+  SignumDNode(Node* in1, Node* in2, Node* in3) : Node(0, in1, in2, in3) {}
+ public:
+  static SignumDNode* make(PhaseGVN& gvn, Node* in);
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return Type::DOUBLE; }
+  virtual uint ideal_reg() const { return Op_RegD; }
+};
+
+class SignumFNode : public Node {
+ protected:
+  SignumFNode(Node* in1, Node* in2, Node* in3) : Node(0, in1, in2, in3) {}
+ public:
+  static SignumFNode* make(PhaseGVN& gvn, Node* in);
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return Type::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
 };
 
 #endif // SHARE_OPTO_INTRINSICNODE_HPP

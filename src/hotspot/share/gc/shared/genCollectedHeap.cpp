@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "memory/filemap.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -662,7 +663,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
     // Delete metaspaces for unloaded class loaders and clean up loader_data graph
     ClassLoaderDataGraph::purge(/*at_safepoint*/true);
-    MetaspaceUtils::verify_metrics();
+    DEBUG_ONLY(MetaspaceUtils::verify();)
     // Resize the metaspace capacity after full collections
     MetaspaceGC::compute_new_size();
     update_full_collections_completed();
@@ -817,12 +818,11 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   bool is_par = scope->n_threads() > 1;
   Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_code_p);
 
-  if (_process_strong_tasks->try_claim_task(GCH_PS_ObjectSynchronizer_oops_do)) {
-    ObjectSynchronizer::oops_do(strong_roots);
-  }
 #if INCLUDE_AOT
-  if (UseAOT && _process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
-    AOTLoader::oops_do(strong_roots);
+  if (_process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
+    if (UseAOT) {
+      AOTLoader::oops_do(strong_roots);
+    }
   }
 #endif
   if (_process_strong_tasks->try_claim_task(GCH_PS_OopStorageSet_oops_do)) {
@@ -1032,33 +1032,22 @@ bool GenCollectedHeap::block_is_obj(const HeapWord* addr) const {
   return _old_gen->block_is_obj(addr);
 }
 
-bool GenCollectedHeap::supports_tlab_allocation() const {
-  assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  return _young_gen->supports_tlab_allocation();
-}
-
 size_t GenCollectedHeap::tlab_capacity(Thread* thr) const {
   assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  if (_young_gen->supports_tlab_allocation()) {
-    return _young_gen->tlab_capacity();
-  }
-  return 0;
+  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
+  return _young_gen->tlab_capacity();
 }
 
 size_t GenCollectedHeap::tlab_used(Thread* thr) const {
   assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  if (_young_gen->supports_tlab_allocation()) {
-    return _young_gen->tlab_used();
-  }
-  return 0;
+  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
+  return _young_gen->tlab_used();
 }
 
 size_t GenCollectedHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  if (_young_gen->supports_tlab_allocation()) {
-    return _young_gen->unsafe_max_tlab_alloc();
-  }
-  return 0;
+  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
+  return _young_gen->unsafe_max_tlab_alloc();
 }
 
 HeapWord* GenCollectedHeap::allocate_new_tlab(size_t min_size,
@@ -1272,17 +1261,13 @@ void GenCollectedHeap::gc_epilogue(bool full) {
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
   size_t actual_gap = pointer_delta((HeapWord*) (max_uintx-3), *(end_addr()));
-  guarantee(is_client_compilation_mode_vm() || actual_gap > (size_t)FastAllocateSizeLimit, "inline allocation wraps");
+  guarantee(!CompilerConfig::is_c2_or_jvmci_compiler_enabled() || actual_gap > (size_t)FastAllocateSizeLimit, "inline allocation wraps");
 #endif // COMPILER2_OR_JVMCI
 
   resize_all_tlabs();
 
   GenGCEpilogueClosure blk(full);
   generation_iterate(&blk, false);  // not old-to-young.
-
-  if (!CleanChunkPoolAsync) {
-    Chunk::clean_chunk_pool();
-  }
 
   MetaspaceCounters::update_performance_counters();
   CompressedClassSpaceCounters::update_performance_counters();

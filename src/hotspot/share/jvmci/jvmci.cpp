@@ -23,18 +23,22 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
+#include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
 JVMCIRuntime* JVMCI::_java_runtime = NULL;
 volatile bool JVMCI::_is_initialized = false;
+bool JVMCI::_box_caches_initialized = false;
 void* JVMCI::_shared_library_handle = NULL;
 char* JVMCI::_shared_library_path = NULL;
 volatile bool JVMCI::_in_shutdown = false;
@@ -68,17 +72,17 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
     char ebuf[1024];
     if (JVMCILibPath != NULL) {
       if (!os::dll_locate_lib(path, sizeof(path), JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
-        vm_exit_during_initialization("Unable to locate JVMCI shared library in path specified by -XX:JVMCILibPath value", JVMCILibPath);
+        fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
       }
     } else {
       if (!os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
-        vm_exit_during_initialization("Unable to create path to JVMCI shared library");
+        fatal("Unable to create path to JVMCI shared library");
       }
     }
 
     void* handle = os::dll_load(path, ebuf, sizeof ebuf);
     if (handle == NULL) {
-      vm_exit_during_initialization("Unable to load JVMCI shared library", ebuf);
+      fatal("Unable to load JVMCI shared library from %s: %s", path, ebuf);
     }
     _shared_library_handle = handle;
     _shared_library_path = strdup(path);
@@ -123,6 +127,44 @@ void JVMCI::initialize_globals() {
   }
 }
 
+void JVMCI::ensure_box_caches_initialized(TRAPS) {
+  if (_box_caches_initialized) {
+    return;
+  }
+
+  // While multiple threads may reach here, that's fine
+  // since class initialization is synchronized.
+  Symbol* box_classes[] = {
+    java_lang_Boolean::symbol(),
+    java_lang_Byte_ByteCache::symbol(),
+    java_lang_Short_ShortCache::symbol(),
+    java_lang_Character_CharacterCache::symbol(),
+    java_lang_Integer_IntegerCache::symbol(),
+    java_lang_Long_LongCache::symbol()
+  };
+
+  for (unsigned i = 0; i < sizeof(box_classes) / sizeof(Symbol*); i++) {
+    Klass* k = SystemDictionary::resolve_or_fail(box_classes[i], true, CHECK);
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->is_not_initialized()) {
+      ik->initialize(CHECK);
+    }
+  }
+  _box_caches_initialized = true;
+}
+
+JavaThread* JVMCI::compilation_tick(JavaThread* thread) {
+  if (thread->is_Compiler_thread()) {
+    CompileTask *task = thread->as_CompilerThread()->task();
+    if (task != NULL) {
+      JVMCICompileState *state = task->blocking_jvmci_compile_state();
+      if (state != NULL) {
+        state->inc_compilation_ticks();
+      }
+    }
+  }
+  return thread;
+}
 
 void JVMCI::metadata_do(void f(Metadata*)) {
   if (_java_runtime != NULL) {

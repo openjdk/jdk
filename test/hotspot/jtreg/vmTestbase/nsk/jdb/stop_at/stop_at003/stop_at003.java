@@ -48,9 +48,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.stop_at.stop_at003.stop_at003
- *        nsk.jdb.stop_at.stop_at003.stop_at003a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.stop_at.stop_at003.stop_at003
+ * @build nsk.jdb.stop_at.stop_at003.stop_at003a
+ * @run main/othervm
+ *      nsk.jdb.stop_at.stop_at003.stop_at003
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

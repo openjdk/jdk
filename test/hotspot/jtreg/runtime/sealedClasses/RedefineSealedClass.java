@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
+ * @requires vm.jvmti
  * @compile --enable-preview -source ${jdk.version} RedefineSealedClass.java
  * @run main/othervm --enable-preview RedefineSealedClass buildagent
  * @run main/othervm/timeout=6000 --enable-preview RedefineSealedClass runtest

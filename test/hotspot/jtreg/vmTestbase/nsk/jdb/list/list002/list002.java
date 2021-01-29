@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,10 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.list.list002.list002
- *        nsk.jdb.list.list002.list002a
+ * @build nsk.jdb.list.list002.list002a
  * @run driver jdk.test.lib.FileInstaller list002a.java src/nsk/jdb/list/list002/list002a.java
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.list.list002.list002
+ * @run main/othervm
+ *      nsk.jdb.list.list002.list002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
@@ -53,7 +53,7 @@
  *      -jdb=${test.jdk}/bin/jdb
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
- *      "-jdb.option=-sourcepath src/"
+ *      -jdb.option="-sourcepath src/"
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

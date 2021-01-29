@@ -46,7 +46,6 @@
  * @build nsk.sysdict.share.ChainTest
  * @run main/othervm
  *      -XX:-UseGCOverheadLimit
- *      PropertyResolvingWrapper
  *      nsk.sysdict.share.ChainTest
  *      -stressHeap
  *      -useFatClass

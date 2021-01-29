@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public interface EventDirContext extends EventContext, DirContext {
      * @param ctls   The possibly null search controls. If null, the default
      *        search controls are used.
      * @param l  The nonnull listener.
-     * @exception NamingException If a problem was encountered while
+     * @throws NamingException If a problem was encountered while
      * adding the listener.
      * @see EventContext#removeNamingListener
      * @see javax.naming.directory.DirContext#search(javax.naming.Name, java.lang.String, javax.naming.directory.SearchControls)
@@ -101,7 +101,7 @@ public interface EventDirContext extends EventContext, DirContext {
      * @param ctls   The possibly null search controls. If null, the default
      *        search controls is used.
      * @param l  The nonnull listener.
-     * @exception NamingException If a problem was encountered while
+     * @throws NamingException If a problem was encountered while
      * adding the listener.
      * @see EventContext#removeNamingListener
      * @see javax.naming.directory.DirContext#search(java.lang.String, java.lang.String, javax.naming.directory.SearchControls)
@@ -128,7 +128,7 @@ public interface EventDirContext extends EventContext, DirContext {
      * @param ctls   The possibly null search controls. If null, the default
      *        search controls are used.
      * @param l  The nonnull listener.
-     * @exception NamingException If a problem was encountered while
+     * @throws NamingException If a problem was encountered while
      * adding the listener.
      * @see EventContext#removeNamingListener
      * @see javax.naming.directory.DirContext#search(javax.naming.Name, java.lang.String, java.lang.Object[], javax.naming.directory.SearchControls)
@@ -150,7 +150,7 @@ public interface EventDirContext extends EventContext, DirContext {
      * @param ctls   The possibly null search controls. If null, the default
      *        search controls is used.
      * @param l  The nonnull listener.
-     * @exception NamingException If a problem was encountered while
+     * @throws NamingException If a problem was encountered while
      * adding the listener.
      * @see EventContext#removeNamingListener
      * @see javax.naming.directory.DirContext#search(java.lang.String, java.lang.String, java.lang.Object[], javax.naming.directory.SearchControls)      */

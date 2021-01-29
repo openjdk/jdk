@@ -86,7 +86,6 @@ public:
   juint super_depth();
   juint super_check_offset();
   ciKlass* super_of_depth(juint i);
-  bool can_be_primary_super();
   static juint primary_super_limit() { return Klass::primary_super_limit(); }
 
   // Is this ciObject the ciInstanceKlass representing java.lang.Object()?

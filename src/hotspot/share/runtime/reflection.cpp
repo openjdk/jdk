@@ -36,7 +36,8 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -1033,7 +1034,7 @@ static oop invoke(InstanceKlass* klass,
           // JVMTI has already reported the pending exception
           // JVMTI internal flag reset is needed in order to report InvocationTargetException
           if (THREAD->is_Java_thread()) {
-            JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
+            JvmtiExport::clear_detected_exception(THREAD->as_Java_thread());
           }
           JavaCallArguments args(Handle(THREAD, resolution_exception));
           THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
@@ -1147,7 +1148,7 @@ static oop invoke(InstanceKlass* klass,
     // JVMTI has already reported the pending exception
     // JVMTI internal flag reset is needed in order to report InvocationTargetException
     if (THREAD->is_Java_thread()) {
-      JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
+      JvmtiExport::clear_detected_exception(THREAD->as_Java_thread());
     }
 
     JavaCallArguments args(Handle(THREAD, target_exception));

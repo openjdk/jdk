@@ -2357,6 +2357,11 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
         AccessibleValue, AccessibleText, AccessibleExtendedComponent {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleAbstractButton() {}
+
+        /**
          * Returns the accessible name of this object.
          *
          * @return the localized name of the object -- can be

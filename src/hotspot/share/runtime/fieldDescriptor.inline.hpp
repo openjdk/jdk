@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP
 #define SHARE_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP
 
+#include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
 
 // All fieldDescriptor inline functions that (directly or indirectly) use "_cp()" or "_cp->"

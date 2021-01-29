@@ -28,7 +28,7 @@
  *          using CDS/AppCDSv1/AppCDSv2.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @build sun.hotspot.WhiteBox
  *        InstrumentationApp
  *        InstrumentationClassFileTransformer

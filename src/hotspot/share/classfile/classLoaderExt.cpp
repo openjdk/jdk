@@ -28,6 +28,7 @@
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -37,6 +38,7 @@
 #include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/arguments.hpp"
@@ -269,7 +271,7 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
   }
   {
     PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
-                               ((JavaThread*) THREAD)->get_thread_stat()->perf_timers_addr(),
+                               THREAD->as_Java_thread()->get_thread_stat()->perf_timers_addr(),
                                PerfClassTraceTime::CLASS_LOAD);
     stream = e->open_stream(file_name, CHECK_NULL);
   }

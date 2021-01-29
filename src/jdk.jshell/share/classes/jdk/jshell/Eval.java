@@ -76,6 +76,9 @@ import static java.util.stream.Collectors.toSet;
 import static java.util.Collections.singletonList;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
+import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
+import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
+import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
 import static jdk.jshell.Util.PREFIX_PATTERN;
 import static jdk.jshell.Util.expunge;
@@ -777,21 +780,40 @@ class Eval {
                 .map(param -> dis.treeToRange(param.getType()).part(compileSource))
                 .collect(Collectors.joining(","));
         Tree returnType = mt.getReturnType();
-        DiagList modDiag = modifierDiagnostics(mt.getModifiers(), dis, true);
-        MethodKey key = state.keyMap.keyForMethod(name, parameterTypes);
-        // Corralling
-        Wrap corralled = new Corraller(dis, key.index(), compileSource).corralMethod(mt);
-
+        DiagList modDiag = modifierDiagnostics(mt.getModifiers(), dis, false);
         if (modDiag.hasErrors()) {
             return compileFailResult(modDiag, userSource, Kind.METHOD);
         }
-        Wrap guts = Wrap.classMemberWrap(compileSource);
+        MethodKey key = state.keyMap.keyForMethod(name, parameterTypes);
+
+        Wrap corralled;
+        Wrap guts;
+        String unresolvedSelf;
+        if (mt.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
+            if (mt.getBody() == null) {
+                // abstract method -- pre-corral
+                corralled = null; // no fall-back
+                guts = new Corraller(dis, key.index(), compileSource).corralMethod(mt);
+                unresolvedSelf = "method " + name + "(" + parameterTypes + ")";
+            } else {
+                // abstract with body, don't pollute the error message
+                corralled = null;
+                guts = Wrap.simpleWrap(compileSource);
+                unresolvedSelf = null;
+            }
+        } else {
+            // normal method
+            corralled = new Corraller(dis, key.index(), compileSource).corralMethod(mt);
+            guts = Wrap.classMemberWrap(compileSource);
+            unresolvedSelf = null;
+        }
         Range typeRange = dis.treeToRange(returnType);
         String signature = "(" + parameterTypes + ")" + typeRange.part(compileSource);
 
         Snippet snip = new MethodSnippet(key, userSource, guts,
                 name, signature,
-                corralled, tds.declareReferences(), tds.bodyReferences(), modDiag);
+                corralled, tds.declareReferences(), tds.bodyReferences(),
+                unresolvedSelf, modDiag);
         return singletonList(snip);
     }
 
@@ -890,6 +912,18 @@ class Eval {
         Set<Unit> ins = new LinkedHashSet<>();
         ins.add(c);
         Set<Unit> outs = compileAndLoad(ins);
+
+        if (si.status().isActive() && si instanceof MethodSnippet) {
+            // special processing for abstract methods
+            MethodSnippet msi = (MethodSnippet) si;
+            String unresolvedSelf = msi.unresolvedSelf;
+            if (unresolvedSelf != null) {
+                List<String> unresolved = new ArrayList<>(si.unresolved());
+                unresolved.add(unresolvedSelf);
+                si.setCompilationStatus(si.status() == VALID ? RECOVERABLE_DEFINED : si.status(),
+                        unresolved, si.diagnostics());
+            }
+        }
 
         if (!si.status().isDefined()
                 && si.diagnostics().isEmpty()
@@ -1251,6 +1285,9 @@ class Eval {
                     fatal = true;
                     break;
                 case ABSTRACT:
+                    // for classes, abstract is valid
+                    // for variables, generate an error message
+                    // for methods, we generate a placeholder method
                     if (isAbstractProhibited) {
                         list.add(mod);
                         fatal = true;
@@ -1266,7 +1303,7 @@ class Eval {
                     //final classes needed for sealed classes
                     break;
                 case STATIC:
-                    list.add(mod);
+                    // everything is static -- warning just adds noise when pasting
                     break;
             }
         }

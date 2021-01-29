@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
 #define SHARE_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
 
-#include "gc/parallel/immutableSpace.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psOldGen.hpp"
@@ -46,9 +45,8 @@
   nonstatic_field(PSVirtualSpace,              _committed_low_addr,                           char*)                                 \
   nonstatic_field(PSVirtualSpace,              _committed_high_addr,                          char*)                                 \
                                                                                                                                      \
-  nonstatic_field(ImmutableSpace,              _bottom,                                       HeapWord*)                             \
-  nonstatic_field(ImmutableSpace,              _end,                                          HeapWord*)                             \
-                                                                                                                                     \
+  nonstatic_field(MutableSpace,                _bottom,                                       HeapWord*)                             \
+  nonstatic_field(MutableSpace,                _end,                                          HeapWord*)                             \
   volatile_nonstatic_field(MutableSpace,       _top,                                          HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(PSYoungGen,                  _reserved,                                     MemRegion)                             \
@@ -81,8 +79,7 @@
            declare_type(ParallelScavengeHeap,         CollectedHeap)      \
                                                                           \
   declare_toplevel_type(PSVirtualSpace)                                   \
-  declare_toplevel_type(ImmutableSpace)                                   \
-           declare_type(MutableSpace, ImmutableSpace)                     \
+  declare_toplevel_type(MutableSpace)                                     \
   declare_toplevel_type(PSYoungGen)                                       \
   declare_toplevel_type(PSOldGen)                                         \
                                                                           \
@@ -91,7 +88,6 @@
   /*****************************/                                         \
                                                                           \
   declare_toplevel_type(PSVirtualSpace*)                                  \
-  declare_toplevel_type(ImmutableSpace*)                                  \
   declare_toplevel_type(MutableSpace*)                                    \
   declare_toplevel_type(PSYoungGen*)                                      \
   declare_toplevel_type(PSOldGen*)                                        \

@@ -314,9 +314,7 @@ static size_t write_storage(JfrStorage& storage, JfrChunkWriter& chunkwriter) {
 }
 
 typedef Content<JfrStringPool, &JfrStringPool::write> StringPool;
-typedef Content<JfrStringPool, &JfrStringPool::write_at_safepoint> StringPoolSafepoint;
 typedef WriteCheckpointEvent<StringPool> WriteStringPool;
-typedef WriteCheckpointEvent<StringPoolSafepoint> WriteStringPoolSafepoint;
 
 static u4 flush_stringpool(JfrStringPool& string_pool, JfrChunkWriter& chunkwriter) {
   StringPool sp(string_pool);
@@ -328,12 +326,6 @@ static u4 write_stringpool(JfrStringPool& string_pool, JfrChunkWriter& chunkwrit
   StringPool sp(string_pool);
   WriteStringPool wsp(chunkwriter, sp, TYPE_STRING);
   return invoke(wsp);
-}
-
-static u4 write_stringpool_safepoint(JfrStringPool& string_pool, JfrChunkWriter& chunkwriter) {
-  StringPoolSafepoint sps(string_pool);
-  WriteStringPoolSafepoint wsps(chunkwriter, sps, TYPE_STRING);
-  return invoke(wsps);
 }
 
 typedef Content<JfrCheckpointManager, &JfrCheckpointManager::flush_type_set> FlushTypeSetFunctor;
@@ -450,7 +442,7 @@ void JfrRecorderService::pre_safepoint_clear() {
 
 void JfrRecorderService::invoke_safepoint_clear() {
   JfrVMOperation<JfrRecorderService, &JfrRecorderService::safepoint_clear> safepoint_task(*this);
-  ThreadInVMfromNative transition((JavaThread*)Thread::current());
+  ThreadInVMfromNative transition(JavaThread::current());
   VMThread::execute(&safepoint_task);
 }
 
@@ -561,7 +553,7 @@ void JfrRecorderService::pre_safepoint_write() {
 void JfrRecorderService::invoke_safepoint_write() {
   JfrVMOperation<JfrRecorderService, &JfrRecorderService::safepoint_write> safepoint_task(*this);
   // can safepoint here
-  ThreadInVMfromNative transition((JavaThread*)Thread::current());
+  ThreadInVMfromNative transition(JavaThread::current());
   VMThread::execute(&safepoint_task);
 }
 
@@ -569,7 +561,7 @@ void JfrRecorderService::safepoint_write() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   _checkpoint_manager.begin_epoch_shift();
   if (_string_pool.is_modified()) {
-    write_stringpool_safepoint(_string_pool, _chunkwriter);
+    write_stringpool(_string_pool, _chunkwriter);
   }
   _checkpoint_manager.on_rotation();
   _storage.write_at_safepoint();

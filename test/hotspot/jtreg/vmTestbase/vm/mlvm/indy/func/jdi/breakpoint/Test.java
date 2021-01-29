@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /*
  * @test
  *
@@ -43,7 +42,7 @@
  * @build vm.mlvm.indy.func.jdi.breakpoint.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      vm.mlvm.indy.func.jdi.breakpoint.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -75,9 +74,9 @@ public class Test extends JDIBreakpointTest {
         result.add(new BreakpointInfo("bootstrap"));
         result.add(new BreakpointInfo("target"));
         result.add(new BreakpointInfo("stop"));
+
         return result;
     }
-
 
     public static void main(String[] args) {
         launch(new ArgumentHandler(args));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -32,7 +33,7 @@
 #include "memory/padded.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/arrayOop.inline.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/atomic.hpp"
@@ -224,7 +225,7 @@ StringDedupTable*        StringDedupTable::_resized_table = NULL;
 StringDedupTable*        StringDedupTable::_rehashed_table = NULL;
 volatile size_t          StringDedupTable::_claimed_index = 0;
 
-StringDedupTable::StringDedupTable(size_t size, jint hash_seed) :
+StringDedupTable::StringDedupTable(size_t size, uint64_t hash_seed) :
   _size(size),
   _entries(0),
   _shrink_threshold((uintx)(size * _shrink_load_factor)),
@@ -278,7 +279,7 @@ typeArrayOop StringDedupTable::lookup(typeArrayOop value, bool latin1, unsigned 
     if (entry->hash() == hash && entry->latin1() == latin1) {
       oop* obj_addr = (oop*)entry->obj_addr();
       oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(obj_addr);
-      if (java_lang_String::value_equals(value, static_cast<typeArrayOop>(obj))) {
+      if (obj != NULL && java_lang_String::value_equals(value, static_cast<typeArrayOop>(obj))) {
         obj = NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(obj_addr);
         return static_cast<typeArrayOop>(obj);
       }
@@ -322,7 +323,7 @@ unsigned int StringDedupTable::hash_code(typeArrayOop value, bool latin1) {
     if (use_java_hash()) {
       hash = java_lang_String::hash_code(data, length);
     } else {
-      hash = AltHashing::murmur3_32(_table->_hash_seed, data, length);
+      hash = AltHashing::halfsiphash_32(_table->_hash_seed, (const uint8_t*)data, length);
     }
   } else {
     length /= sizeof(jchar) / sizeof(jbyte); // Convert number of bytes to number of chars
@@ -330,7 +331,7 @@ unsigned int StringDedupTable::hash_code(typeArrayOop value, bool latin1) {
     if (use_java_hash()) {
       hash = java_lang_String::hash_code(data, length);
     } else {
-      hash = AltHashing::murmur3_32(_table->_hash_seed, data, length);
+      hash = AltHashing::halfsiphash_32(_table->_hash_seed, (const uint16_t*)data, length);
     }
   }
 
@@ -647,6 +648,6 @@ void StringDedupTable::print_statistics() {
             _table->_entries, percent_of((size_t)_table->_entries, _table->_size), _entry_cache->size(), _entries_added, _entries_removed);
   log.debug("    Resize Count: " UINTX_FORMAT ", Shrink Threshold: " UINTX_FORMAT "(" STRDEDUP_PERCENT_FORMAT_NS "), Grow Threshold: " UINTX_FORMAT "(" STRDEDUP_PERCENT_FORMAT_NS ")",
             _resize_count, _table->_shrink_threshold, _shrink_load_factor * 100.0, _table->_grow_threshold, _grow_load_factor * 100.0);
-  log.debug("    Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: 0x%x", _rehash_count, _rehash_threshold, _table->_hash_seed);
+  log.debug("    Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: " UINT64_FORMAT, _rehash_count, _rehash_threshold, _table->_hash_seed);
   log.debug("    Age Threshold: " UINTX_FORMAT, StringDeduplicationAgeThreshold);
 }

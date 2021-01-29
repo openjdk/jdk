@@ -51,7 +51,8 @@
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp")
  * @library /vmTestbase
  * @build nsk.share.Terminator
- * @run main/othervm/timeout=900 -Xss448K nsk.stress.stack.stack016 -eager
+ * @run main/othervm/timeout=900 -Xint -Xss448K nsk.stress.stack.stack016 -eager
+ * @run main/othervm/timeout=900 -Xcomp -Xss448K nsk.stress.stack.stack016 -eager
  */
 
 package nsk.stress.stack;
@@ -104,13 +105,14 @@ public class stack016 extends Thread {
         // Measure recursive depth before stack overflow:
         //
         int maxDepth = 0;
-        for (depthToTry = 0; ; depthToTry += STEP)
+        for (depthToTry = 0; ; depthToTry += STEP) {
             try {
                 trickyRecurse(depthToTry);
                 maxDepth = depthToTry;
-            } catch (Error error) {
+            } catch (StackOverflowError | OutOfMemoryError ex) {
                 break;
             }
+        }
         out.println("Maximal recursion depth: " + maxDepth);
 
         //
@@ -123,25 +125,27 @@ public class stack016 extends Thread {
             threads[i].depthToTry = RESERVE * maxDepth;
             threads[i].start();
         }
-        for (int i = 0; i < threads.length; i++)
-            if (threads[i].isAlive())
+        for (int i = 0; i < threads.length; i++) {
+            if (threads[i].isAlive()) {
                 try {
                     threads[i].join();
                 } catch (InterruptedException exception) {
                     exception.printStackTrace(out);
                     return 2;
                 }
+            }
+        }
 
         //
         // Check if unexpected exceptions were thrown:
         //
         int exitCode = 0;
-        for (int i = 0; i < threads.length; i++)
+        for (int i = 0; i < threads.length; i++) {
             if (threads[i].thrown != null) {
                 threads[i].thrown.printStackTrace(out);
                 exitCode = 2;
             }
-
+        }
         if (exitCode != 0)
             out.println("# TEST FAILED");
         return exitCode;
@@ -153,7 +157,7 @@ public class stack016 extends Thread {
 
     private void trickyRecurse(int depth) {
         stackTop = depthToTry - depth;
-        if (depth > 0)
+        if (depth > 0) {
             try {
                 trickyRecurse(depth - 1);
             } catch (Error error) {
@@ -171,6 +175,7 @@ public class stack016 extends Thread {
 
                 throw new Error("TEST_RFE: try deeper recursion!");
             }
+        }
     }
 
     private static void recurse(int depth) {
@@ -180,9 +185,10 @@ public class stack016 extends Thread {
 
     public void run() {
         String threadName = Thread.currentThread().getName();
-        for (int i = 1; i <= CYCLES; i++)
+        for (int i = 1; i <= CYCLES; i++) {
             try {
-                display(threadName + ", iteration: " + i + "/" + CYCLES);
+                display(threadName + ", iteration: " + i + "/" + CYCLES +
+                        ", depthToTry: " + depthToTry);
                 trickyRecurse(depthToTry);
                 throw new Error(
                         "TEST_BUG: trickyRecursion() must throw an error anyway!");
@@ -198,5 +204,6 @@ public class stack016 extends Thread {
                 thrown = throwable;
                 break;
             }
+        }
     }
 }

@@ -85,7 +85,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void packages_do(void f(PackageEntry*));
   static void packages_unloading_do(void f(PackageEntry*));
   static void loaded_classes_do(KlassClosure* klass_closure);
-  static void unlocked_loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
   static bool do_unloading();
 
@@ -163,12 +162,4 @@ class ClassLoaderDataGraphKlassIteratorAtomic : public StackObj {
   static Klass* next_klass_in_cldg(Klass* klass);
 };
 
-class ClassLoaderDataGraphMetaspaceIterator : public StackObj {
-  ClassLoaderData* _data;
- public:
-  ClassLoaderDataGraphMetaspaceIterator();
-  ~ClassLoaderDataGraphMetaspaceIterator();
-  bool repeat() { return _data != NULL; }
-  ClassLoaderMetaspace* get_next();
-};
 #endif // SHARE_CLASSFILE_CLASSLOADERDATAGRAPH_HPP

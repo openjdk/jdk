@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandomParameters;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.List;
 
 public class HashDrbg extends AbstractHashDrbg {
@@ -161,8 +162,8 @@ public class HashDrbg extends AbstractHashDrbg {
 
     private void status() {
         if (debug != null) {
-            debug.println(this, "V = " + hex(v));
-            debug.println(this, "C = " + hex(c));
+            debug.println(this, "V = " + HexFormat.of().formatHex(v));
+            debug.println(this, "C = " + HexFormat.of().formatHex(c));
             debug.println(this, "reseed counter = " + reseedCounter);
         }
     }

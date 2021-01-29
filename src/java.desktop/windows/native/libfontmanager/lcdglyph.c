@@ -125,15 +125,6 @@ static unsigned char* getIGTable(int gamma) {
 JNIEXPORT jboolean JNICALL
     Java_sun_font_FileFontStrike_initNative(JNIEnv *env, jclass unused) {
 
-    DWORD osVersion = GetVersion();
-    DWORD majorVersion = (DWORD)(LOBYTE(LOWORD(osVersion)));
-    DWORD minorVersion = (DWORD)(HIBYTE(LOWORD(osVersion)));
-
-    /* Need at least XP which is 5.1 */
-    if (majorVersion < 5 || (majorVersion == 5 && minorVersion < 1)) {
-        return JNI_FALSE;
-    }
-
     memset(igLUTable, 0,  LCDLUTCOUNT);
 
     return JNI_TRUE;

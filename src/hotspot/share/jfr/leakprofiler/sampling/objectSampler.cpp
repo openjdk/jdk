@@ -175,7 +175,7 @@ void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) 
   record_stacktrace(thread);
   // try enter critical section
   JfrTryLock tryLock(&_lock);
-  if (!tryLock.has_lock()) {
+  if (!tryLock.acquired()) {
     log_trace(jfr, oldobject, sampling)("Skipping old object sample due to lock contention");
     return;
   }
@@ -226,7 +226,7 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, Java
   sample->set_object((oop)obj);
   sample->set_allocated(allocated);
   sample->set_allocation_time(JfrTicks::now());
-  sample->set_heap_used_at_last_gc(Universe::get_heap_used_at_last_gc());
+  sample->set_heap_used_at_last_gc(Universe::heap()->used_at_last_gc());
   _priority_queue->push(sample);
 }
 

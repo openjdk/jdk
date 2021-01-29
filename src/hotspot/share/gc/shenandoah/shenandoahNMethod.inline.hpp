@@ -73,15 +73,11 @@ void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
 }
 
 void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
-  ShenandoahEvacuateUpdateRootsClosure<> cl;
+  ShenandoahEvacuateUpdateMetadataClosure<> cl;
   nmethod_data->oops_do(&cl, true /*fix relocation*/);
 }
 
 void ShenandoahNMethod::disarm_nmethod(nmethod* nm) {
-  if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
-    return;
-  }
-
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
   assert(bs != NULL, "Sanity");
   if (bs->is_armed(nm)) {

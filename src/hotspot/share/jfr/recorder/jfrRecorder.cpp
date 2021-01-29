@@ -33,6 +33,7 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
+#include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
@@ -289,6 +290,9 @@ bool JfrRecorder::create_components() {
   if (!create_thread_sampling()) {
     return false;
   }
+  if (!create_event_throttler()) {
+    return false;
+  }
   return true;
 }
 
@@ -362,6 +366,10 @@ bool JfrRecorder::create_thread_sampling() {
   return _thread_sampling != NULL;
 }
 
+bool JfrRecorder::create_event_throttler() {
+  return JfrEventThrottler::create();
+}
+
 void JfrRecorder::destroy_components() {
   JfrJvmtiAgent::destroy();
   if (_post_box != NULL) {
@@ -396,6 +404,7 @@ void JfrRecorder::destroy_components() {
     JfrThreadSampling::destroy();
     _thread_sampling = NULL;
   }
+  JfrEventThrottler::destroy();
 }
 
 bool JfrRecorder::create_recorder_thread() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ class SpaceDecorator: public AllStatic {
 // spaces are resized after an expansion.
 //   The class SpaceMangler keeps a pointer to the top of the allocated
 // area and provides the methods for doing the piece meal mangling.
-// Methods for doing sparces and full checking of the mangling are
+// Methods for doing spaces and full checking of the mangling are
 // included.  The full checking is done if DEBUG_MANGLING is defined.
 //   GenSpaceMangler is used with the GenCollectedHeap collectors and
 // MutableSpaceMangler is used with the ParallelScavengeHeap collectors.

@@ -27,27 +27,21 @@
 #include "code/debugInfoRec.hpp"
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-ScopeDesc::ScopeDesc(const CompiledMethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool rethrow_exception, bool return_oop) {
+ScopeDesc::ScopeDesc(const CompiledMethod* code, PcDesc* pd, bool ignore_objects) {
+  int obj_decode_offset = ignore_objects ? DebugInformationRecorder::serialized_null : pd->obj_decode_offset();
   _code          = code;
-  _decode_offset = decode_offset;
+  _decode_offset = pd->scope_decode_offset();
   _objects       = decode_object_values(obj_decode_offset);
-  _reexecute     = reexecute;
-  _rethrow_exception = rethrow_exception;
-  _return_oop    = return_oop;
-  decode_body();
-}
-
-ScopeDesc::ScopeDesc(const CompiledMethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop) {
-  _code          = code;
-  _decode_offset = decode_offset;
-  _objects       = decode_object_values(DebugInformationRecorder::serialized_null);
-  _reexecute     = reexecute;
-  _rethrow_exception = rethrow_exception;
-  _return_oop    = return_oop;
+  _reexecute     = pd->should_reexecute();
+  _rethrow_exception = pd->rethrow_exception();
+  _return_oop    = pd->return_oop();
+  _has_ea_local_in_scope = ignore_objects ? false : pd->has_ea_local_in_scope();
+  _arg_escape    = ignore_objects ? false : pd->arg_escape();
   decode_body();
 }
 
@@ -59,6 +53,8 @@ void ScopeDesc::initialize(const ScopeDesc* parent, int decode_offset) {
   _reexecute     = false; //reexecute only applies to the first scope
   _rethrow_exception = false;
   _return_oop    = false;
+  _has_ea_local_in_scope = parent->has_ea_local_in_scope();
+  _arg_escape    = false;
   decode_body();
 }
 

@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key stress randomness
  * @bug 8069191
  * @summary predicate moved out of loops and CastPP removal causes dependency to be lost
  *

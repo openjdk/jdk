@@ -28,9 +28,10 @@
 #include "jfr/writers/jfrMemoryWriterHost.hpp"
 
 template <typename Adapter, typename AP, typename AccessAssert>
-inline void MemoryWriterHost<Adapter, AP, AccessAssert>::bytes(void* dest, const void* buf, size_t len) {
+inline void MemoryWriterHost<Adapter, AP, AccessAssert>::write_bytes(void* dest, const void* buf, intptr_t len) {
   assert(dest != NULL, "invariant");
-  memcpy(dest, buf, len); // no encoding
+  assert(len >= 0, "invariant");
+  memcpy(dest, buf, (size_t)len); // no encoding
   this->set_current_pos(len);
 }
 

@@ -141,10 +141,12 @@ class LinkInfo : public StackObj {
   Klass*      _current_klass;   // class that owns the constant pool
   methodHandle _current_method;  // sending method
   bool        _check_access;
+  bool        _check_loader_constraints;
   constantTag _tag;
 
  public:
   enum class AccessCheck { required, skip };
+  enum class LoaderConstraintCheck { required, skip };
 
   LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, TRAPS);
   LinkInfo(const constantPoolHandle& pool, int index, TRAPS);
@@ -152,33 +154,38 @@ class LinkInfo : public StackObj {
   // Condensed information from other call sites within the vm.
   LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, Klass* current_klass,
            AccessCheck check_access = AccessCheck::required,
+           LoaderConstraintCheck check_loader_constraints = LoaderConstraintCheck::required,
            constantTag tag = JVM_CONSTANT_Invalid) :
     _name(name),
     _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_klass), _current_method(methodHandle()),
-    _check_access(check_access == AccessCheck::required), _tag(tag) {}
+    _check_access(check_access == AccessCheck::required),
+    _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required), _tag(tag) {}
 
   LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, const methodHandle& current_method,
            AccessCheck check_access = AccessCheck::required,
+           LoaderConstraintCheck check_loader_constraints = LoaderConstraintCheck::required,
            constantTag tag = JVM_CONSTANT_Invalid) :
     _name(name),
     _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_method->method_holder()), _current_method(current_method),
-    _check_access(check_access == AccessCheck::required), _tag(tag) {}
+    _check_access(check_access == AccessCheck::required),
+    _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required), _tag(tag) {}
+
 
   // Case where we just find the method and don't check access against the current class
   LinkInfo(Klass* resolved_klass, Symbol*name, Symbol* signature) :
     _name(name),
     _signature(signature), _resolved_klass(resolved_klass), _current_klass(NULL), _current_method(methodHandle()),
-    _check_access(false), _tag(JVM_CONSTANT_Invalid) {}
+    _check_access(false), _check_loader_constraints(false), _tag(JVM_CONSTANT_Invalid) {}
 
   // accessors
-  Symbol* name() const               { return _name; }
-  Symbol* signature() const          { return _signature; }
-  Klass* resolved_klass() const      { return _resolved_klass; }
-  Klass* current_klass() const       { return _current_klass; }
-  Method* current_method() const     { return _current_method(); }
-  constantTag tag() const            { return _tag; }
-  bool check_access() const          { return _check_access; }
-
+  Symbol* name() const                  { return _name; }
+  Symbol* signature() const             { return _signature; }
+  Klass* resolved_klass() const         { return _resolved_klass; }
+  Klass* current_klass() const          { return _current_klass; }
+  Method* current_method() const        { return _current_method(); }
+  constantTag tag() const               { return _tag; }
+  bool check_access() const             { return _check_access; }
+  bool check_loader_constraints() const { return _check_loader_constraints; }
   void         print()  PRODUCT_RETURN;
 };
 

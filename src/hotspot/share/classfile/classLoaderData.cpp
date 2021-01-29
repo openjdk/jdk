@@ -58,13 +58,17 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutex.hpp"
@@ -132,7 +136,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   _metaspace_lock(new Mutex(Mutex::leaf+1, "Metaspace allocation lock", true,
                             Mutex::_safepoint_check_never)),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
-  _modified_oops(true), _accumulated_modified_oops(false),
+  _modified_oops(true),
   // An unsafe anonymous class loader data doesn't have anything to keep
   // it from being unloaded during parsing of the unsafe anonymous class.
   // The null-class-loader should always be kept alive.
@@ -299,7 +303,9 @@ bool ClassLoaderData::try_claim(int claim) {
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
   if (has_class_mirror_holder()) {
-    assert(_keep_alive > 0, "Invalid keep alive increment count");
+    if (!Arguments::is_dumping_archive()) {
+      assert(_keep_alive > 0, "Invalid keep alive increment count");
+    }
     _keep_alive++;
   }
 }
@@ -950,9 +956,11 @@ void ClassLoaderData::verify() {
   guarantee(cl != NULL || this == ClassLoaderData::the_null_class_loader_data() || has_class_mirror_holder(), "must be");
 
   // Verify the integrity of the allocated space.
+#ifdef ASSERT
   if (metaspace_or_null() != NULL) {
     metaspace_or_null()->verify();
   }
+#endif
 
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
     guarantee(k->class_loader_data() == this, "Must be the same");

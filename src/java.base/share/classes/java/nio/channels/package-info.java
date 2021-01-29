@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,6 +240,28 @@
  * created by invoking the static {@code open} method of the corresponding class.
  * If a channel needs an associated socket then a socket will be created as a side
  * effect of this operation.
+ *
+ * <p> {@link java.nio.channels.DatagramChannel},
+ * {@link java.nio.channels.SocketChannel} and
+ * {@link java.nio.channels.ServerSocketChannel}s can be created
+ * with different {@link java.net.ProtocolFamily protocol families}. The standard
+ * family types are specified in {@link java.net.StandardProtocolFamily}.
+ *
+ * <p> Channels for <i>Internet Protocol</i> sockets are created using the
+ * {@link java.net.StandardProtocolFamily#INET INET} or {@link
+ * java.net.StandardProtocolFamily#INET6 INET6} protocol families. <i>Internet
+ * Protocol</i> sockets support network communication using TCP and UDP and are
+ * addressed using {@link java.net.InetSocketAddress}es which encapsulate an IP
+ * address and port number. <i>Internet Protocol</i> sockets are also the default
+ * type created, when a protocol family is not specified in the channel factory
+ * creation method.
+ *
+ * <p> Channels for <a id="unixdomain"></a><i>Unix Domain</i> sockets are created
+ * using the {@link java.net.StandardProtocolFamily#UNIX UNIX} protocol family.
+ * <i>Unix Domain</i> sockets support local inter-process
+ * communication on the same host, and are addressed using {@link
+ * java.net.UnixDomainSocketAddress}es which encapsulate a filesystem pathname
+ * on the local system.
  *
  * <p> The implementation of selectors, selectable channels, and selection keys
  * can be replaced by "plugging in" an alternative definition or instance of the

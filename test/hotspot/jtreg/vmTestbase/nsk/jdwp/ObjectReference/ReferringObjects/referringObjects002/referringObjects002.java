@@ -58,8 +58,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ObjectReference.ReferringObjects.referringObjects002.referringObjects002
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdwp.ObjectReference.ReferringObjects.referringObjects002.referringObjects002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -71,20 +70,24 @@
 
 package nsk.jdwp.ObjectReference.ReferringObjects.referringObjects002;
 
-import java.io.PrintStream;
 import nsk.share.Consts;
-import nsk.share.jdwp.*;
+import nsk.share.jdwp.CommandPacket;
+import nsk.share.jdwp.JDWP;
+import nsk.share.jdwp.ReplyPacket;
+import nsk.share.jdwp.TestDebuggerType1;
+
+import java.io.PrintStream;
 
 public class referringObjects002 extends TestDebuggerType1 {
     protected String getDebugeeClassName() {
         return nsk.jdwp.ObjectReference.ReferringObjects.referringObjects002.referringObjects002a.class.getName();
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
+    public static int run(String[] argv, PrintStream out) {
         return new referringObjects002().runIt(argv, out);
     }
 
@@ -124,7 +127,7 @@ public class referringObjects002 extends TestDebuggerType1 {
                 setSuccess(false);
             }
 
-            long expectedReferrersID[] = new long[expectedReferrersCount];
+            long[] expectedReferrersID = new long[expectedReferrersCount];
 
             // initialize expected IDs of referrers
             for (int i = 0; i < expectedReferrersCount; i++) {
@@ -132,21 +135,21 @@ public class referringObjects002 extends TestDebuggerType1 {
                         + (i + 1));
             }
 
-            long receivedReferrersID[] = new long[referringObjects];
+            long[] receivedReferrersID = new long[referringObjects];
 
             for (int i = 0; i < referringObjects; i++) {
                 JDWP.Value value = reply.getValue();
                 log.display("tagged-ObjectID = " + value);
 
-                receivedReferrersID[i] = ((Long) value.getValue()).longValue();
+                receivedReferrersID[i] = (Long) value.getValue();
             }
 
             // check that correct IDs of referrers was received
             for (int i = 0; i < referringObjects; i++) {
                 boolean isIDExpected = false;
 
-                for (int j = 0; j < expectedReferrersID.length; j++) {
-                    if (receivedReferrersID[i] == expectedReferrersID[j]) {
+                for (long l : expectedReferrersID) {
+                    if (receivedReferrersID[i] == l) {
                         isIDExpected = true;
                         break;
                     }
@@ -160,8 +163,9 @@ public class referringObjects002 extends TestDebuggerType1 {
 
             if (!getSuccess()) {
                 log.complain("Expected IDs:");
-                for (int i = 0; i < expectedReferrersID.length; i++)
-                    log.complain("" + expectedReferrersID[i]);
+                for (long l : expectedReferrersID) {
+                    log.complain("" + l);
+                }
             }
 
             if (!reply.isParsed()) {

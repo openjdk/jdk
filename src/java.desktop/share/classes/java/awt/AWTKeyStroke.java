@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import java.awt.event.KeyEvent;
-import sun.awt.AppContext;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.io.Serial;
+import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.io.Serializable;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Field;
+
+import sun.awt.AppContext;
 import sun.swing.SwingAccessor;
 
 /**
@@ -62,7 +65,12 @@ import sun.swing.SwingAccessor;
  * @since 1.4
  */
 public class AWTKeyStroke implements Serializable {
-    static final long serialVersionUID = -6430539691155161871L;
+
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
+    @Serial
+    private static final long serialVersionUID = -6430539691155161871L;
 
     private static Map<String, Integer> modifierKeywords;
     /**
@@ -77,9 +85,25 @@ public class AWTKeyStroke implements Serializable {
     //A key withing the cache
     private static AWTKeyStroke APP_CONTEXT_KEYSTROKE_KEY = new AWTKeyStroke();
 
+    /**
+     * The character value for a keyboard key.
+     */
     private char keyChar = KeyEvent.CHAR_UNDEFINED;
+
+    /**
+     * The key code for this {@code AWTKeyStroke}.
+     */
     private int keyCode = KeyEvent.VK_UNDEFINED;
+
+    /**
+     * The bitwise-ored combination of any modifiers.
+     */
     private int modifiers;
+
+    /**
+     * {@code true} if this {@code AWTKeyStroke} corresponds to a key release;
+     * {@code false} otherwise.
+     */
     private boolean onKeyRelease;
 
     static {
@@ -707,6 +731,7 @@ public class AWTKeyStroke implements Serializable {
      * @return a cached instance which is equal to this instance
      * @throws java.io.ObjectStreamException if a serialization problem occurs
      */
+    @Serial
     protected Object readResolve() throws java.io.ObjectStreamException {
         synchronized (AWTKeyStroke.class) {
 

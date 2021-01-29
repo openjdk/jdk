@@ -52,7 +52,7 @@ package java.awt;
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
  * How to Use the Focus Subsystem</a>,
  * a section in <em>The Java Tutorial</em>, and the
- * <a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+ * <a href="doc-files/FocusSpec.html">Focus Specification</a>
  * for more information.
  *
  * @author David Mendenhall

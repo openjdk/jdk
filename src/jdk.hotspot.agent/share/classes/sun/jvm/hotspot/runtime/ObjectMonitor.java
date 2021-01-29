@@ -92,16 +92,16 @@ public class ObjectMonitor extends VMObject {
   public long recursions() { return recursionsField.getValue(addr); }
 
   public OopHandle object() {
-    return addr.getOopHandleAt(objectFieldOffset);
+    Address objAddr = addr.getAddressAt(objectFieldOffset);
+    if (objAddr == null) {
+      return null;
+    }
+    return objAddr.getOopHandleAt(0);
   }
 
   public int contentions() {
       return contentionsField.getValue(addr);
   }
-
-  // FIXME
-  //  void*     object_addr();
-  //  void      set_object(void* obj);
 
   // The following four either aren't expressed as typed fields in
   // vmStructs.cpp because they aren't strongly typed in the VM, or

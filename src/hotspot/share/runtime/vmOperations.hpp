@@ -76,14 +76,11 @@
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \
   template(RedefineClasses)                       \
-  template(UpdateForPopTopFrame)                  \
-  template(SetFramePop)                           \
   template(GetObjectMonitorUsage)                 \
   template(GetAllStackTraces)                     \
   template(GetThreadListStackTraces)              \
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
-  template(GetCurrentLocation)                    \
   template(ChangeSingleStep)                      \
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \
@@ -114,6 +111,7 @@
   template(PrintMetadata)                         \
   template(GTestExecuteAtSafepoint)               \
   template(JFROldObject)                          \
+  template(JvmtiPostObjectFree)
 
 class VM_Operation : public StackObj {
  public:
@@ -124,14 +122,12 @@ class VM_Operation : public StackObj {
 
  private:
   Thread*         _calling_thread;
-  VM_Operation*   _next;
-  VM_Operation*   _prev;
 
   // The VM operation name array
   static const char* _names[];
 
  public:
-  VM_Operation() : _calling_thread(NULL), _next(NULL), _prev(NULL) {}
+  VM_Operation() : _calling_thread(NULL) {}
 
   // VM operation support (used by VM thread)
   Thread* calling_thread() const                 { return _calling_thread; }
@@ -151,15 +147,13 @@ class VM_Operation : public StackObj {
   virtual bool doit_prologue()                   { return true; };
   virtual void doit_epilogue()                   {};
 
-  // Linking
-  VM_Operation *next() const                     { return _next; }
-  VM_Operation *prev() const                     { return _prev; }
-  void set_next(VM_Operation *next)              { _next = next; }
-  void set_prev(VM_Operation *prev)              { _prev = prev; }
-
   // Configuration. Override these appropriately in subclasses.
   virtual VMOp_Type type() const = 0;
   virtual bool allow_nested_vm_operations() const { return false; }
+
+  // You may override skip_thread_oop_barriers to return true if the operation
+  // does not access thread-private oops (including frames).
+  virtual bool skip_thread_oop_barriers() const { return false; }
 
   // An operation can either be done inside a safepoint
   // or concurrently with Java threads running.
@@ -224,6 +218,7 @@ class VM_ThreadsSuspendJVMTI: public VM_ForceSafepoint {
 class VM_ICBufferFull: public VM_ForceSafepoint {
  public:
   VMOp_Type type() const { return VMOp_ICBufferFull; }
+  virtual bool skip_thread_oop_barriers() const { return true; }
 };
 
 // Base class for invoking parts of a gtest in a safepoint.
@@ -281,13 +276,6 @@ class VM_ZombieAll: public VM_Operation {
   bool allow_nested_vm_operations() const        { return true; }
 };
 #endif // PRODUCT
-
-class VM_Verify: public VM_Operation {
- public:
-  VMOp_Type type() const { return VMOp_Verify; }
-  void doit();
-};
-
 
 class VM_PrintThreads: public VM_Operation {
  private:
@@ -408,7 +396,6 @@ class VM_Exit: public VM_Operation {
     }
   }
   VMOp_Type type() const { return VMOp_Exit; }
-  bool doit_prologue();
   void doit();
 };
 

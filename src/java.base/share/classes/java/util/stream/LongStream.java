@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,43 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * @see Stream#flatMap(Function)
      */
     LongStream flatMap(LongFunction<? extends LongStream> mapper);
+
+    /**
+     * Returns a stream consisting of the results of replacing each element of
+     * this stream with multiple elements, specifically zero or more elements.
+     * Replacement is performed by applying the provided mapping function to each
+     * element in conjunction with a {@linkplain LongConsumer consumer} argument
+     * that accepts replacement elements. The mapping function calls the consumer
+     * zero or more times to provide the replacement elements.
+     *
+     * <p>This is an <a href="package-summary.html#StreamOps">intermediate
+     * operation</a>.
+     *
+     * <p>If the {@linkplain LongConsumer consumer} argument is used outside the scope of
+     * its application to the mapping function, the results are undefined.
+     *
+     * @implSpec
+     * The default implementation invokes {@link #flatMap flatMap} on this stream,
+     * passing a function that behaves as follows. First, it calls the mapper function
+     * with a {@code LongConsumer} that accumulates replacement elements into a newly created
+     * internal buffer. When the mapper function returns, it creates a {@code LongStream} from the
+     * internal buffer. Finally, it returns this stream to {@code flatMap}.
+     *
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function that generates replacement elements
+     * @return the new stream
+     * @see Stream#mapMulti Stream.mapMulti
+     * @since 16
+     */
+    default LongStream mapMulti(LongMapMultiConsumer mapper) {
+        Objects.requireNonNull(mapper);
+        return flatMap(e -> {
+            SpinedBuffer.OfLong buffer = new SpinedBuffer.OfLong();
+            mapper.accept(e, buffer);
+            return StreamSupport.longStream(buffer.spliterator(), false);
+        });
+    }
 
     /**
      * Returns a stream consisting of the distinct elements of this stream.
@@ -1176,5 +1213,31 @@ public interface LongStream extends BaseStream<Long, LongStream> {
          * to the built state
          */
         LongStream build();
+    }
+
+    /**
+     * Represents an operation that accepts a {@code long}-valued argument
+     * and a LongConsumer, and returns no result. This functional interface is
+     * used by {@link LongStream#mapMulti(LongStream.LongMapMultiConsumer) LongStream.mapMulti}
+     * to replace a long value with zero or more long values.
+     *
+     * <p>This is a <a href="../function/package-summary.html">functional interface</a>
+     * whose functional method is {@link #accept(long, LongConsumer)}.
+     *
+     * @see LongStream#mapMulti(LongStream.LongMapMultiConsumer)
+     *
+     * @since 16
+     */
+    @FunctionalInterface
+    interface LongMapMultiConsumer {
+
+        /**
+         * Replaces the given {@code value} with zero or more values by feeding the mapped
+         * values to the {@code lc} consumer.
+         *
+         * @param value the long value coming from upstream
+         * @param lc a {@code LongConsumer} accepting the mapped values
+         */
+        void accept(long value, LongConsumer lc);
     }
 }

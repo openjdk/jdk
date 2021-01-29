@@ -26,7 +26,6 @@
 #define SHARE_INTERPRETER_BYTECODEINTERPRETER_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.hpp"
@@ -110,7 +109,6 @@ private:
     ConstantPoolCache*    _constants;     // constant pool cache
     Method*               _method;        // method being executed
     oop                   _mirror;        // mirror to klass containing method
-    DataLayout*           _mdx;           // compiler profiling data for current bytecode
     intptr_t*             _stack;         // expression stack
     messages              _msg;           // frame manager <-> interpreter message
     frame_manager_message _result;        // result to frame manager
@@ -188,8 +186,6 @@ inline intptr_t* locals() { return _locals; }
 
 inline ConstantPoolCache* constants() { return _constants; }
 inline Method* method() { return _method; }
-inline DataLayout* mdx() { return _mdx; }
-inline void set_mdx(DataLayout *new_mdx) { _mdx = new_mdx; }
 
 inline messages msg() { return _msg; }
 inline void set_msg(messages new_msg) { _msg = new_msg; }
@@ -507,58 +503,8 @@ static void dup2_x1(intptr_t *tos);   /* insert top 2 slots three down */
 static void dup2_x2(intptr_t *tos);   /* insert top 2 slots four down */
 static void swap(intptr_t *tos);      /* swap top two elements */
 
-// umm don't like this method modifies its object
-
-// The Interpreter used when
+template<bool JVMTI_ENABLED>
 static void run(interpreterState istate);
-// The interpreter used if JVMTI needs interpreter events
-static void runWithChecks(interpreterState istate);
-static void End_Of_Interpreter(void);
-
-// Inline static functions for Java Stack and Local manipulation
-
-static address stack_slot(intptr_t *tos, int offset);
-static jint stack_int(intptr_t *tos, int offset);
-static jfloat stack_float(intptr_t *tos, int offset);
-static oop stack_object(intptr_t *tos, int offset);
-static jdouble stack_double(intptr_t *tos, int offset);
-static jlong stack_long(intptr_t *tos, int offset);
-
-// only used for value types
-static void set_stack_slot(intptr_t *tos, address value, int offset);
-static void set_stack_int(intptr_t *tos, int value, int offset);
-static void set_stack_float(intptr_t *tos, jfloat value, int offset);
-static void set_stack_object(intptr_t *tos, oop value, int offset);
-
-// needs to be platform dep for the 32 bit platforms.
-static void set_stack_double(intptr_t *tos, jdouble value, int offset);
-static void set_stack_long(intptr_t *tos, jlong value, int offset);
-
-static void set_stack_double_from_addr(intptr_t *tos, address addr, int offset);
-static void set_stack_long_from_addr(intptr_t *tos, address addr, int offset);
-
-// Locals
-
-static address locals_slot(intptr_t* locals, int offset);
-static jint locals_int(intptr_t* locals, int offset);
-static jfloat locals_float(intptr_t* locals, int offset);
-static oop locals_object(intptr_t* locals, int offset);
-static jdouble locals_double(intptr_t* locals, int offset);
-static jlong locals_long(intptr_t* locals, int offset);
-
-static address locals_long_at(intptr_t* locals, int offset);
-static address locals_double_at(intptr_t* locals, int offset);
-
-static void set_locals_slot(intptr_t *locals, address value, int offset);
-static void set_locals_int(intptr_t *locals, jint value, int offset);
-static void set_locals_float(intptr_t *locals, jfloat value, int offset);
-static void set_locals_object(intptr_t *locals, oop value, int offset);
-static void set_locals_double(intptr_t *locals, jdouble value, int offset);
-static void set_locals_long(intptr_t *locals, jlong value, int offset);
-static void set_locals_double_from_addr(intptr_t *locals,
-                                   address addr, int offset);
-static void set_locals_long_from_addr(intptr_t *locals,
-                                   address addr, int offset);
 
 static void astore(intptr_t* topOfStack, int stack_offset,
                    intptr_t* locals,     int locals_offset);

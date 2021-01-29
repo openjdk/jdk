@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/heapShared.hpp"
@@ -52,6 +53,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -59,7 +61,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -141,9 +143,6 @@ bool            Universe::_bootstrapping = false;
 bool            Universe::_module_initialized = false;
 bool            Universe::_fully_initialized = false;
 
-size_t          Universe::_heap_capacity_at_last_gc;
-size_t          Universe::_heap_used_at_last_gc = 0;
-
 OopStorage*     Universe::_vm_weak = NULL;
 OopStorage*     Universe::_vm_global = NULL;
 
@@ -186,15 +185,6 @@ oop Universe::java_mirror(BasicType t) {
 // Used by CDS dumping
 void Universe::replace_mirror(BasicType t, oop new_mirror) {
   Universe::_mirrors[t].replace(new_mirror);
-}
-
-// Not sure why CDS has to do this
-void Universe::clear_basic_type_mirrors() {
-  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-    if (!is_reference_type((BasicType)i)) {
-      Universe::_mirrors[i].replace(NULL);
-    }
-  }
 }
 
 void Universe::basic_type_classes_do(void f(Klass*)) {
@@ -248,7 +238,11 @@ void Universe::serialize(SerializeClosure* f) {
           _mirrors[i] = OopHandle(vm_global(), mirror_oop);
         }
       } else {
-        mirror_oop = _mirrors[i].resolve();
+        if (HeapShared::is_heap_object_archiving_allowed()) {
+          mirror_oop = _mirrors[i].resolve();
+        } else {
+          mirror_oop = NULL;
+        }
         f->do_oop(&mirror_oop); // write to archive
       }
       if (mirror_oop != NULL) { // may be null if archived heap is disabled
@@ -756,7 +750,7 @@ jint universe_init() {
   AOTLoader::universe_init();
 
   // Checks 'AfterMemoryInit' constraints.
-  if (!JVMFlagConstraintList::check_constraints(JVMFlagConstraint::AfterMemoryInit)) {
+  if (!JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase::AfterMemoryInit)) {
     return JNI_EINVAL;
   }
 
@@ -814,8 +808,6 @@ jint Universe::initialize_heap() {
 void Universe::initialize_tlab() {
   ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
   if (UseTLAB) {
-    assert(Universe::heap()->supports_tlab_allocation(),
-           "Should support thread-local allocation buffers");
     ThreadLocalAllocBuffer::startup_initialization();
   }
 }
@@ -863,14 +855,6 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   // satisfy compiler
   ShouldNotReachHere();
   return ReservedHeapSpace(0, 0, false);
-}
-
-
-// It's the caller's responsibility to ensure glitch-freedom
-// (if required).
-void Universe::update_heap_info_at_gc() {
-  _heap_capacity_at_last_gc = heap()->capacity();
-  _heap_used_at_last_gc     = heap()->used();
 }
 
 OopStorage* Universe::vm_weak() {
@@ -1008,7 +992,7 @@ bool universe_post_init() {
   // it's an input to soft ref clearing policy.
   {
     MutexLocker x(THREAD, Heap_lock);
-    Universe::update_heap_info_at_gc();
+    Universe::heap()->update_capacity_and_used_at_gc();
   }
 
   // ("weak") refs processing infrastructure initialization
@@ -1039,26 +1023,6 @@ void Universe::print_heap_at_SIGBREAK() {
     print_on(tty);
     tty->cr();
     tty->flush();
-  }
-}
-
-void Universe::print_heap_before_gc() {
-  LogTarget(Debug, gc, heap) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
-    ResourceMark rm;
-    heap()->print_on(&ls);
-  }
-}
-
-void Universe::print_heap_after_gc() {
-  LogTarget(Debug, gc, heap) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
-    ResourceMark rm;
-    heap()->print_on(&ls);
   }
 }
 
@@ -1163,7 +1127,7 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   }
   if (should_verify_subset(Verify_MetaspaceUtils)) {
     log_debug(gc, verify)("MetaspaceUtils");
-    MetaspaceUtils::verify_free_chunks();
+    DEBUG_ONLY(MetaspaceUtils::verify();)
   }
   if (should_verify_subset(Verify_JNIHandles)) {
     log_debug(gc, verify)("JNIHandles");

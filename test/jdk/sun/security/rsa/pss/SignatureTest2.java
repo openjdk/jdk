@@ -31,7 +31,7 @@ import static javax.crypto.Cipher.PUBLIC_KEY;
 
 /**
  * @test
- * @bug 8146293 8238448
+ * @bug 8146293 8238448 8172366
  * @summary Create a signature for RSASSA-PSS and get its signed data.
  *          re-initiate the signature with the public key. The signature
  *          can be verified by acquired signed data.
@@ -68,7 +68,8 @@ public class SignatureTest2 {
      */
     private static final String[] DIGEST_ALG = {
         "SHA-1", "SHA-224", "SHA-256", "SHA-384",
-        "SHA-512", "SHA-512/224", "SHA-512/256"
+        "SHA-512", "SHA-512/224", "SHA-512/256",
+        "SHA3-224", "SHA3-256", "SHA3-384", "SHA3-512"
     };
 
     private static final String SIG_ALG = "RSASSA-PSS";

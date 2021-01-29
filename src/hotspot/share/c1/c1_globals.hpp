@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,19 @@
 #ifndef SHARE_C1_C1_GLOBALS_HPP
 #define SHARE_C1_C1_GLOBALS_HPP
 
+#include "c1/c1_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
-
-#include CPU_HEADER(c1_globals)
-#include OS_HEADER(c1_globals)
-
 //
-// Defines all global flags used by the client compiler.
+// Declare all global flags used by the client compiler.
 //
-#define C1_FLAGS(develop, \
-                 develop_pd, \
-                 product, \
-                 product_pd, \
-                 diagnostic, \
-                 diagnostic_pd, \
-                 notproduct, \
-                 range, \
-                 constraint) \
+#define C1_FLAGS(develop,                                                   \
+                 develop_pd,                                                \
+                 product,                                                   \
+                 product_pd,                                                \
+                 notproduct,                                                \
+                 range,                                                     \
+                 constraint)                                                \
                                                                             \
   /* Printing */                                                            \
   notproduct(bool, PrintC1Statistics, false,                                \
@@ -158,7 +153,7 @@
   product(bool, InlineSynchronizedMethods, true,                            \
           "Inline synchronized methods")                                    \
                                                                             \
-  diagnostic(bool, InlineNIOCheckIndex, true,                               \
+  product(bool, InlineNIOCheckIndex, true, DIAGNOSTIC,                      \
           "Intrinsify java.nio.Buffer.checkIndex")                          \
                                                                             \
   develop(bool, CanonicalizeNodes, true,                                    \
@@ -333,11 +328,14 @@
   product(bool, C1OptimizeVirtualCallProfiling, true,                       \
           "Use CHA and exact type results at call sites when updating MDOs")\
                                                                             \
-  product(bool, C1UpdateMethodData, trueInTiered,                           \
+  product(bool, C1UpdateMethodData, true,                                   \
           "Update MethodData*s in Tier1-generated code")                    \
                                                                             \
   develop(bool, PrintCFGToFile, false,                                      \
-          "print control flow graph to a separate file during compilation") \
-                                                                            \
+          "print control flow graph to a separate file during compilation")
+
+// end of C1_FLAGS
+
+DECLARE_FLAGS(C1_FLAGS)
 
 #endif // SHARE_C1_C1_GLOBALS_HPP

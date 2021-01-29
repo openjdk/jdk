@@ -336,6 +336,48 @@ import java.util.function.BiFunction;
  * started, an {@code SSLEngine} can not switch between client and server
  * modes, even when performing renegotiations.
  * <P>
+ * The ApplicationProtocol {@code String} values returned by the methods
+ * in this class are in the network byte representation sent by the peer.
+ * The bytes could be directly compared, or converted to its Unicode
+ * {code String} format for comparison.
+ *
+ * <blockquote><pre>
+ *     String networkString = sslEngine.getHandshakeApplicationProtocol();
+ *     byte[] bytes = networkString.getBytes(StandardCharsets.ISO_8859_1);
+ *
+ *     //
+ *     // Match using bytes:
+ *     //
+ *     //   "http/1.1"                       (7-bit ASCII values same in UTF-8)
+ *     //   MEETEI MAYEK LETTERS "HUK UN I"  (Unicode 0xabcd->0xabcf)
+ *     //
+ *     String HTTP1_1 = "http/1.1";
+ *     byte[] HTTP1_1_BYTES = HTTP1_1.getBytes(StandardCharsets.UTF_8);
+ *
+ *     byte[] HUK_UN_I_BYTES = new byte[] {
+ *         (byte) 0xab, (byte) 0xcd,
+ *         (byte) 0xab, (byte) 0xce,
+ *         (byte) 0xab, (byte) 0xcf};
+ *
+ *     if ((Arrays.compare(bytes, HTTP1_1_BYTES) == 0 )
+ *             || Arrays.compare(bytes, HUK_UN_I_BYTES) == 0) {
+ *        ...
+ *     }
+ *
+ *     //
+ *     // Alternatively match using string.equals() if we know the ALPN value
+ *     // was encoded from a {@code String} using a certain character set,
+ *     // for example {@code UTF-8}.  The ALPN value must first be properly
+ *     // decoded to a Unicode {@code String} before use.
+ *     //
+ *     String unicodeString = new String(bytes, StandardCharsets.UTF_8);
+ *     if (unicodeString.equals(HTTP1_1)
+ *             || unicodeString.equals("\u005cuabcd\u005cuabce\u005cuabcf")) {
+ *         ...
+ *     }
+ * </pre></blockquote>
+ *
+ * <P>
  * Applications might choose to process delegated tasks in different
  * threads.  When an {@code SSLEngine}
  * is created, the current {@link java.security.AccessControlContext}

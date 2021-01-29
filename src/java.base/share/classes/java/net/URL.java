@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,7 @@ public final class URL implements java.io.Serializable {
      * The host's IP address, used in equals and hashCode.
      * Computed on demand. An uninitialized or unknown hostAddress is null.
      */
-    transient InetAddress hostAddress;
+    private transient InetAddress hostAddress;
 
     /**
      * The URLStreamHandler for this URL.
@@ -775,39 +775,6 @@ public final class URL implements java.io.Serializable {
     }
 
     /**
-     * Sets the fields of the URL. This is not a public method so that
-     * only URLStreamHandlers can modify URL fields. URLs are
-     * otherwise constant.
-     *
-     * @param protocol the name of the protocol to use
-     * @param host the name of the host
-     * @param port the port number on the host
-     * @param file the file on the host
-     * @param ref the internal reference in the URL
-     */
-    void set(String protocol, String host, int port,
-             String file, String ref) {
-        synchronized (this) {
-            this.protocol = protocol;
-            this.host = host;
-            authority = port == -1 ? host : host + ":" + port;
-            this.port = port;
-            this.file = file;
-            this.ref = ref;
-            /* This is very important. We must recompute this after the
-             * URL has been changed. */
-            hashCode = -1;
-            hostAddress = null;
-            int q = file.lastIndexOf('?');
-            if (q != -1) {
-                query = file.substring(q+1);
-                path = file.substring(0, q);
-            } else
-                path = file;
-        }
-    }
-
-    /**
      * Sets the specified 8 fields of the URL. This is not a public method so
      * that only URLStreamHandlers can modify URL fields. URLs are otherwise
      * constant.
@@ -841,6 +808,31 @@ public final class URL implements java.io.Serializable {
             this.authority = authority;
         }
     }
+
+    /**
+     * Returns the address of the host represented by this URL.
+     * A {@link SecurityException} or an {@link UnknownHostException}
+     * while getting the host address will result in this method returning
+     * {@code null}
+     *
+     * @return an {@link InetAddress} representing the host
+     */
+    synchronized InetAddress getHostAddress() {
+        if (hostAddress != null) {
+            return hostAddress;
+        }
+
+        if (host == null || host.isEmpty()) {
+            return null;
+        }
+        try {
+            hostAddress = InetAddress.getByName(host);
+        } catch (UnknownHostException | SecurityException ex) {
+            return null;
+        }
+        return hostAddress;
+    }
+
 
     /**
      * Gets the query part of this {@code URL}.

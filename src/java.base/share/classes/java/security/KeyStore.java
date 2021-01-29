@@ -219,7 +219,7 @@ public class KeyStore {
     private KeyStoreSpi keyStoreSpi;
 
     // Has this keystore been initialized (loaded)?
-    private boolean initialized = false;
+    private boolean initialized;
 
     /**
      * A marker interface for {@code KeyStore}
@@ -264,7 +264,7 @@ public class KeyStore {
         private final char[] password;
         private final String protectionAlgorithm;
         private final AlgorithmParameterSpec protectionParameters;
-        private volatile boolean destroyed = false;
+        private volatile boolean destroyed;
 
         /**
          * Creates a password parameter.
@@ -1421,6 +1421,7 @@ public class KeyStore {
      *          algorithm could not be found
      * @throws    CertificateException if any of the certificates included in
      *          the keystore data could not be stored
+     * @throws    UnsupportedOperationException if this operation is not supported
      *
      * @since 1.5
      */

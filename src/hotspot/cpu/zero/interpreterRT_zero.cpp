@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -127,6 +127,18 @@ void InterpreterRuntime::SignatureHandlerGeneratorBase::generate(
 
   // Tack on the result type
   push(method()->result_type());
+}
+
+InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer)
+  : SignatureHandlerGeneratorBase(method, (ffi_cif *) buffer->insts_end()),
+    _cb(buffer) {
+  _cb->set_insts_end((address) (cif() + 1));
+}
+
+void InterpreterRuntime::SignatureHandlerGenerator::push(intptr_t value) {
+  intptr_t *dst = (intptr_t *) _cb->insts_end();
+  _cb->set_insts_end((address) (dst + 1));
+  *dst = value;
 }
 
 void InterpreterRuntime::SignatureHandler::finalize() {

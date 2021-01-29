@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.peer.TextFieldPeer;
-import java.awt.event.*;
-import java.util.EventListener;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import javax.accessibility.*;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.util.EventListener;
 
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
 
 /**
  * A {@code TextField} object is a text component
@@ -126,9 +131,10 @@ public class TextField extends TextComponent {
     private static final String base = "textfield";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -2966288784432217853L;
 
     /**
@@ -701,9 +707,12 @@ public class TextField extends TextComponent {
      *             is one of the following :
      *             ActionListenerK indicating and ActionListener object.
      *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see java.awt.Component#actionListenerK
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {
@@ -719,13 +728,17 @@ public class TextField extends TextComponent {
      * TextField.  Unrecognized keys or values will be
      * ignored.
      *
-     * @exception HeadlessException if
-     * {@code GraphicsEnvironment.isHeadless()} returns
-     * {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @see #removeActionListener(ActionListener)
      * @see #addActionListener(ActionListener)
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -783,10 +796,16 @@ public class TextField extends TextComponent {
      */
     protected class AccessibleAWTTextField extends AccessibleAWTTextComponent
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 6219164359235943158L;
+
+        /**
+         * Constructs an {@code AccessibleAWTTextField}.
+         */
+        protected AccessibleAWTTextField() {}
 
         /**
          * Gets the state set of this object.

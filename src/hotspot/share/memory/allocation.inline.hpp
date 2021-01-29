@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -56,9 +55,8 @@ size_t MmapArrayAllocator<E>::size_for(size_t length) {
 template <class E>
 E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
   size_t size = size_for(length);
-  int alignment = os::vm_allocation_granularity();
 
-  char* addr = os::reserve_memory(size, NULL, alignment, flags);
+  char* addr = os::reserve_memory(size, !ExecMem, flags);
   if (addr == NULL) {
     return NULL;
   }
@@ -74,9 +72,8 @@ E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
 template <class E>
 E* MmapArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
   size_t size = size_for(length);
-  int alignment = os::vm_allocation_granularity();
 
-  char* addr = os::reserve_memory(size, NULL, alignment, flags);
+  char* addr = os::reserve_memory(size, !ExecMem, flags);
   if (addr == NULL) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }

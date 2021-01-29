@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,18 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 
 
 #ifdef ASSERT
 static bool must_be_in_vm() {
   Thread* thread = Thread::current();
-  if (thread->is_Java_thread())
-    return ((JavaThread*)thread)->thread_state() == _thread_in_vm;
-  else
-    return true;  //something like this: thread->is_VM_thread();
+  if (thread->is_Java_thread()) {
+    return thread->as_Java_thread()->thread_state() == _thread_in_vm;
+  } else {
+    return true;  // Could be VMThread or GC thread
+  }
 }
 #endif //ASSERT
 
@@ -1310,8 +1312,8 @@ static bool count_find_witness_calls() {
     bool occasional_print = ((pcount & ((1<<10) - 1)) == 0);
     if (pcount < 0)  pcount = 1; // crude overflow protection
     deps_find_witness_print = pcount;
-    if (VerifyDependencies && initial_call) {
-      tty->print_cr("Warning:  TraceDependencies results may be inflated by VerifyDependencies");
+    if (TraceDependencies && VerifyDependencies && initial_call) {
+      warning("TraceDependencies results may be inflated by VerifyDependencies");
     }
     if (occasional_print || final_stats) {
       // Every now and then dump a little info about dependency searching.

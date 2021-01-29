@@ -105,7 +105,7 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             jfloat px = x + positions[++n];
             jfloat py = y + positions[++n];
 
-            ginfo = (GlyphInfo*)imagePtrs[g];
+            ginfo = (GlyphInfo*)((uintptr_t)imagePtrs[g]);
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
             gbv->glyphs[g].width = ginfo->width;
@@ -118,7 +118,7 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
                                               positions, JNI_ABORT);
     } else {
         for (g=0; g<len; g++) {
-            ginfo = (GlyphInfo*)imagePtrs[g];
+            ginfo = (GlyphInfo*)((uintptr_t)imagePtrs[g]);
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
             gbv->glyphs[g].width = ginfo->width;
@@ -531,7 +531,7 @@ GlyphBlitVector* setupLCDBlitVector(JNIEnv *env, jobject glyphlist) {
      * heterogenous
      */
     if (subPixPos && len > 0) {
-        ginfo = (GlyphInfo*)imagePtrs[0];
+        ginfo = (GlyphInfo*)((uintptr_t)imagePtrs[0]);
         if (ginfo == NULL) {
             (*env)->ReleasePrimitiveArrayCritical(env, glyphImages,
                                                   imagePtrs, JNI_ABORT);
@@ -566,7 +566,7 @@ GlyphBlitVector* setupLCDBlitVector(JNIEnv *env, jobject glyphlist) {
         for (g=0; g<len; g++) {
             jfloat px, py;
 
-            ginfo = (GlyphInfo*)imagePtrs[g];
+            ginfo = (GlyphInfo*)((uintptr_t)imagePtrs[g]);
             if (ginfo == NULL) {
                 (*env)->ReleasePrimitiveArrayCritical(env, glyphImages,
                                                   imagePtrs, JNI_ABORT);
@@ -647,7 +647,7 @@ GlyphBlitVector* setupLCDBlitVector(JNIEnv *env, jobject glyphlist) {
                                               positions, JNI_ABORT);
     } else {
         for (g=0; g<len; g++) {
-            ginfo = (GlyphInfo*)imagePtrs[g];
+            ginfo = (GlyphInfo*)((uintptr_t)imagePtrs[g]);
             if (ginfo == NULL) {
                 (*env)->ReleasePrimitiveArrayCritical(env, glyphImages,
                                                   imagePtrs, JNI_ABORT);

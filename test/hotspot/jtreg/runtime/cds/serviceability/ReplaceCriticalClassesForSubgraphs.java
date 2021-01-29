@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,21 @@ public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
 
     public String[] getTests() {
         String tests[] = {
-            // Try to replace classes that are used by the archived subgraph graphs.
+            // Try to replace classes that are used by the archived subgraph graphs. (CDS should be disabled)
             "-early -notshared -subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
             "-early -notshared -subgraph java/lang/Long java.lang.Long$LongCache",
+
+            // CDS should not be disabled -- these critical classes cannot be replaced because
+            // JvmtiExport::early_class_hook_env() is false.
+            "-subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
             "-subgraph java/lang/Long java.lang.Long$LongCache",
+
+            // Tests for archived full module graph. We cannot use whitebox, which requires appending to bootclasspath.
+            // VM will disable full module graph if bootclasspath is appended.
+            "-nowhitebox -early -notshared -subgraph java/lang/Module jdk.internal.module.ArchivedBootLayer",
+            "-nowhitebox -early -notshared -subgraph java/lang/ModuleLayer jdk.internal.module.ArchivedBootLayer",
+            "-nowhitebox -subgraph java/lang/Module jdk.internal.module.ArchivedBootLayer",
+            "-nowhitebox -subgraph java/lang/ModuleLayer jdk.internal.module.ArchivedBootLayer",
         };
         return tests;
     }

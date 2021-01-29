@@ -45,6 +45,8 @@ public class DigestOptionsBase extends CommandLineOptionTest {
             = "UseSHA256Intrinsics";
     public static final String USE_SHA512_INTRINSICS_OPTION
             = "UseSHA512Intrinsics";
+    public static final String USE_SHA3_INTRINSICS_OPTION
+            = "UseSHA3Intrinsics";
 
     // Intrinsics flags are of diagnostic type
     // and must be preceded by UnlockDiagnosticVMOptions.
@@ -64,6 +66,8 @@ public class DigestOptionsBase extends CommandLineOptionTest {
             = "Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.";
     protected static final String SHA512_INTRINSICS_ARE_NOT_AVAILABLE
             = "Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.";
+    protected static final String SHA3_INTRINSICS_ARE_NOT_AVAILABLE
+            = "Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.";
 
     private final TestCase[] testCases;
 
@@ -89,6 +93,8 @@ public class DigestOptionsBase extends CommandLineOptionTest {
             return DigestOptionsBase.SHA256_INTRINSICS_ARE_NOT_AVAILABLE;
         case DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION:
             return DigestOptionsBase.SHA512_INTRINSICS_ARE_NOT_AVAILABLE;
+        case DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION:
+            return DigestOptionsBase.SHA3_INTRINSICS_ARE_NOT_AVAILABLE;
         default:
             throw new Error("Unexpected option " + optionName);
         }
@@ -115,6 +121,8 @@ public class DigestOptionsBase extends CommandLineOptionTest {
                 return IntrinsicPredicates.SHA256_INSTRUCTION_AVAILABLE;
             case DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION:
                 return IntrinsicPredicates.SHA512_INSTRUCTION_AVAILABLE;
+            case DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION:
+                return IntrinsicPredicates.SHA3_INSTRUCTION_AVAILABLE;
             default:
                 throw new Error("Unexpected option " + optionName);
         }

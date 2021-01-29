@@ -51,7 +51,7 @@
 /*
  * @test TestPauseNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
@@ -61,7 +61,7 @@
 /*
  * @test TestPauseNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
@@ -71,7 +71,7 @@
 /*
  * @test TestPauseNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
@@ -148,7 +148,12 @@ public class TestPauseNotifications {
             sink = new int[size];
         }
 
-        Thread.sleep(1000);
+        // Wait until notifications start arriving, and then wait some more
+        // to catch the ones arriving late.
+        while (pausesDuration.get() == 0) {
+            Thread.sleep(1000);
+        }
+        Thread.sleep(5000);
 
         long pausesActual = pausesDuration.get();
         long cyclesActual = cyclesDuration.get();

@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -68,6 +69,10 @@ public:
     // mask or move objects. Changing the bad mask will invalidate all oops,
     // which makes it conceptually the same thing as moving all objects.
     return false;
+  }
+
+  virtual bool skip_thread_oop_barriers() const {
+    return true;
   }
 
   virtual bool do_operation() = 0;
@@ -218,6 +223,10 @@ public:
     return VMOp_ZVerify;
   }
 
+  virtual bool skip_thread_oop_barriers() const {
+    return true;
+  }
+
   virtual void doit() {
     ZVerify::after_weak_processing();
   }
@@ -314,6 +323,7 @@ void ZDriver::concurrent_mark_continue() {
 
 void ZDriver::concurrent_process_non_strong_references() {
   ZStatTimer timer(ZPhaseConcurrentProcessNonStrongReferences);
+  ZBreakpoint::at_after_reference_processing_started();
   ZHeap::heap()->process_non_strong_references();
 }
 
@@ -380,7 +390,7 @@ public:
     ZStatCycle::at_end(_gc_cause, boost_factor);
 
     // Update data used by soft reference policy
-    Universe::update_heap_info_at_gc();
+    Universe::heap()->update_capacity_and_used_at_gc();
 
     // Signal that we have completed a visit to all live objects
     Universe::heap()->record_whole_heap_examined_timestamp();

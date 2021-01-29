@@ -1,8 +1,8 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832
+ * @bug 8004832 8247957
  * @summary Add new doclint package
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:-html HtmlTagsTest.java
  * @run main DocLintTester -ref HtmlTagsTest.out HtmlTagsTest.java

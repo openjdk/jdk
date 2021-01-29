@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
 // Implementation of ConstantPoolCacheEntry
@@ -774,15 +775,22 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 oop ConstantPoolCache::archived_references() {
-  if (CompressedOops::is_null(_archived_references)) {
+  if (_archived_references_index < 0) {
     return NULL;
   }
-  return HeapShared::materialize_archived_object(_archived_references);
+  return HeapShared::get_root(_archived_references_index);
+}
+
+void ConstantPoolCache::clear_archived_references() {
+  if (_archived_references_index >= 0) {
+    HeapShared::clear_root(_archived_references_index);
+    _archived_references_index = -1;
+  }
 }
 
 void ConstantPoolCache::set_archived_references(oop o) {
   assert(DumpSharedSpaces, "called only during runtime");
-  _archived_references = CompressedOops::encode(o);
+  _archived_references_index = HeapShared::append_root(o);
 }
 #endif
 

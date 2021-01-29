@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,32 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/classListParser.hpp"
 #include "classfile/classLoaderExt.hpp"
-#include "classfile/loaderConstraints.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
+#include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/gcVMOperations.hpp"
+#include "interpreter/abstractInterpreter.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.inline.hpp"
+#include "memory/cppVtables.hpp"
+#include "memory/dumpAllocStats.hpp"
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
@@ -49,18 +58,16 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
-#include "oops/instanceRefKlass.hpp"
-#include "oops/methodData.hpp"
-#include "oops/objArrayKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
-#include "oops/typeArrayKlass.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -70,7 +77,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #endif
 
 ReservedSpace MetaspaceShared::_shared_rs;
@@ -82,11 +89,11 @@ bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
 bool MetaspaceShared::_remapped_readwrite = false;
 address MetaspaceShared::_i2i_entry_code_buffers = NULL;
-size_t MetaspaceShared::_i2i_entry_code_buffers_size = 0;
 void* MetaspaceShared::_shared_metaspace_static_top = NULL;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
+bool MetaspaceShared::_use_full_module_graph = true;
 
 // The CDS archive is divided into the following regions:
 //     mc  - misc code (the method entry trampolines, c++ vtables)
@@ -149,6 +156,10 @@ char* MetaspaceShared::misc_code_space_alloc(size_t num_bytes) {
 
 char* MetaspaceShared::read_only_space_alloc(size_t num_bytes) {
   return _ro_region.allocate(num_bytes);
+}
+
+char* MetaspaceShared::read_write_space_alloc(size_t num_bytes) {
+  return _rw_region.allocate(num_bytes);
 }
 
 size_t MetaspaceShared::reserved_space_alignment() { return os::vm_allocation_granularity(); }
@@ -334,10 +345,6 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   log_info(cds)("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
                 _shared_rs.size(), p2i(_shared_rs.base()));
 
-  // We don't want any valid object to be at the very bottom of the archive.
-  // See ArchivePtrMarker::mark_pointer().
-  MetaspaceShared::misc_code_space_alloc(16);
-
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
   _symbol_rs = ReservedSpace(symbol_rs_size);
   if (!_symbol_rs.is_reserved()) {
@@ -494,28 +501,30 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
-  SystemDictionaryShared::serialize_well_known_klasses(soc);
+  SystemDictionaryShared::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
-  serialize_cloned_cpp_vtptrs(soc);
+  CppVtables::serialize(soc);
   soc->do_tag(--tag);
+
+  CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
   soc->do_tag(666);
 }
 
-address MetaspaceShared::i2i_entry_code_buffers(size_t total_size) {
-  if (DumpSharedSpaces) {
-    if (_i2i_entry_code_buffers == NULL) {
-      _i2i_entry_code_buffers = (address)misc_code_space_alloc(total_size);
-      _i2i_entry_code_buffers_size = total_size;
-    }
-  } else if (UseSharedSpaces) {
-    assert(_i2i_entry_code_buffers != NULL, "must already been initialized");
-  } else {
-    return NULL;
-  }
+void MetaspaceShared::init_misc_code_space() {
+  // We don't want any valid object to be at the very bottom of the archive.
+  // See ArchivePtrMarker::mark_pointer().
+  MetaspaceShared::misc_code_space_alloc(16);
 
-  assert(_i2i_entry_code_buffers_size == total_size, "must not change");
+  size_t trampoline_size = SharedRuntime::trampoline_size();
+  size_t buf_size = (size_t)AbstractInterpreter::number_of_method_entries * trampoline_size;
+  _i2i_entry_code_buffers = (address)misc_code_space_alloc(buf_size);
+}
+
+address MetaspaceShared::i2i_entry_code_buffers() {
+  assert(DumpSharedSpaces || UseSharedSpaces, "must be");
+  assert(_i2i_entry_code_buffers != NULL, "must already been initialized");
   return _i2i_entry_code_buffers;
 }
 
@@ -539,30 +548,6 @@ GrowableArray<Klass*>* MetaspaceShared::collected_klasses() {
   return _global_klass_objects;
 }
 
-static void remove_unshareable_in_classes() {
-  for (int i = 0; i < _global_klass_objects->length(); i++) {
-    Klass* k = _global_klass_objects->at(i);
-    if (!k->is_objArray_klass()) {
-      // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
-      // on their array classes.
-      assert(k->is_instance_klass() || k->is_typeArray_klass(), "must be");
-      k->remove_unshareable_info();
-    }
-  }
-}
-
-static void remove_java_mirror_in_classes() {
-  for (int i = 0; i < _global_klass_objects->length(); i++) {
-    Klass* k = _global_klass_objects->at(i);
-    if (!k->is_objArray_klass()) {
-      // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
-      // on their array classes.
-      assert(k->is_instance_klass() || k->is_typeArray_klass(), "must be");
-      k->remove_java_mirror();
-    }
-  }
-}
-
 static void rewrite_nofast_bytecode(const methodHandle& method) {
   BytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
@@ -582,21 +567,9 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
   }
 }
 
-// Walk all methods in the class list to ensure that they won't be modified at
-// run time. This includes:
 // [1] Rewrite all bytecodes as needed, so that the ConstMethod* will not be modified
 //     at run time by RewriteBytecodes/RewriteFrequentPairs
 // [2] Assign a fingerprint, so one doesn't need to be assigned at run-time.
-static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread) {
-  for (int i = 0; i < _global_klass_objects->length(); i++) {
-    Klass* k = _global_klass_objects->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(thread, ik);
-    }
-  }
-}
-
 void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
@@ -607,298 +580,7 @@ void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread
   }
 }
 
-// Objects of the Metadata types (such as Klass and ConstantPool) have C++ vtables.
-// (In GCC this is the field <Type>::_vptr, i.e., first word in the object.)
-//
-// Addresses of the vtables and the methods may be different across JVM runs,
-// if libjvm.so is dynamically loaded at a different base address.
-//
-// To ensure that the Metadata objects in the CDS archive always have the correct vtable:
-//
-// + at dump time:  we redirect the _vptr to point to our own vtables inside
-//                  the CDS image
-// + at run time:   we clone the actual contents of the vtables from libjvm.so
-//                  into our own tables.
-
-// Currently, the archive contain ONLY the following types of objects that have C++ vtables.
-#define CPP_VTABLE_PATCH_TYPES_DO(f) \
-  f(ConstantPool) \
-  f(InstanceKlass) \
-  f(InstanceClassLoaderKlass) \
-  f(InstanceMirrorKlass) \
-  f(InstanceRefKlass) \
-  f(Method) \
-  f(ObjArrayKlass) \
-  f(TypeArrayKlass)
-
-class CppVtableInfo {
-  intptr_t _vtable_size;
-  intptr_t _cloned_vtable[1];
-public:
-  static int num_slots(int vtable_size) {
-    return 1 + vtable_size; // Need to add the space occupied by _vtable_size;
-  }
-  int vtable_size()           { return int(uintx(_vtable_size)); }
-  void set_vtable_size(int n) { _vtable_size = intptr_t(n); }
-  intptr_t* cloned_vtable()   { return &_cloned_vtable[0]; }
-  void zero()                 { memset(_cloned_vtable, 0, sizeof(intptr_t) * vtable_size()); }
-  // Returns the address of the next CppVtableInfo that can be placed immediately after this CppVtableInfo
-  static size_t byte_size(int vtable_size) {
-    CppVtableInfo i;
-    return pointer_delta(&i._cloned_vtable[vtable_size], &i, sizeof(u1));
-  }
-};
-
-static inline intptr_t* vtable_of(Metadata* m) {
-  return *((intptr_t**)m);
-}
-
-template <class T> class CppVtableCloner : public T {
-  static CppVtableInfo* _info;
-
-  static int get_vtable_length(const char* name);
-
-public:
-  // Allocate and initialize the C++ vtable, starting from top, but do not go past end.
-  static intptr_t* allocate(const char* name);
-
-  // Clone the vtable to ...
-  static intptr_t* clone_vtable(const char* name, CppVtableInfo* info);
-
-  static void zero_vtable_clone() {
-    assert(DumpSharedSpaces, "dump-time only");
-    _info->zero();
-  }
-
-  static bool is_valid_shared_object(const T* obj) {
-    intptr_t* vptr = *(intptr_t**)obj;
-    return vptr == _info->cloned_vtable();
-  }
-
-  static void init_orig_cpp_vtptr(int kind);
-};
-
-template <class T> CppVtableInfo* CppVtableCloner<T>::_info = NULL;
-
-template <class T>
-intptr_t* CppVtableCloner<T>::allocate(const char* name) {
-  assert(is_aligned(_mc_region.top(), sizeof(intptr_t)), "bad alignment");
-  int n = get_vtable_length(name);
-  _info = (CppVtableInfo*)_mc_region.allocate(CppVtableInfo::byte_size(n), sizeof(intptr_t));
-  _info->set_vtable_size(n);
-
-  intptr_t* p = clone_vtable(name, _info);
-  assert((char*)p == _mc_region.top(), "must be");
-
-  return _info->cloned_vtable();
-}
-
-template <class T>
-intptr_t* CppVtableCloner<T>::clone_vtable(const char* name, CppVtableInfo* info) {
-  if (!DumpSharedSpaces) {
-    assert(_info == 0, "_info is initialized only at dump time");
-    _info = info; // Remember it -- it will be used by MetaspaceShared::is_valid_shared_method()
-  }
-  T tmp; // Allocate temporary dummy metadata object to get to the original vtable.
-  int n = info->vtable_size();
-  intptr_t* srcvtable = vtable_of(&tmp);
-  intptr_t* dstvtable = info->cloned_vtable();
-
-  // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
-  // safe to do memcpy.
-  log_debug(cds, vtables)("Copying %3d vtable entries for %s", n, name);
-  memcpy(dstvtable, srcvtable, sizeof(intptr_t) * n);
-  return dstvtable + n;
-}
-
-// To determine the size of the vtable for each type, we use the following
-// trick by declaring 2 subclasses:
-//
-//   class CppVtableTesterA: public InstanceKlass {virtual int   last_virtual_method() {return 1;}    };
-//   class CppVtableTesterB: public InstanceKlass {virtual void* last_virtual_method() {return NULL}; };
-//
-// CppVtableTesterA and CppVtableTesterB's vtables have the following properties:
-// - Their size (N+1) is exactly one more than the size of InstanceKlass's vtable (N)
-// - The first N entries have are exactly the same as in InstanceKlass's vtable.
-// - Their last entry is different.
-//
-// So to determine the value of N, we just walk CppVtableTesterA and CppVtableTesterB's tables
-// and find the first entry that's different.
-//
-// This works on all C++ compilers supported by Oracle, but you may need to tweak it for more
-// esoteric compilers.
-
-template <class T> class CppVtableTesterB: public T {
-public:
-  virtual int last_virtual_method() {return 1;}
-};
-
-template <class T> class CppVtableTesterA : public T {
-public:
-  virtual void* last_virtual_method() {
-    // Make this different than CppVtableTesterB::last_virtual_method so the C++
-    // compiler/linker won't alias the two functions.
-    return NULL;
-  }
-};
-
-template <class T>
-int CppVtableCloner<T>::get_vtable_length(const char* name) {
-  CppVtableTesterA<T> a;
-  CppVtableTesterB<T> b;
-
-  intptr_t* avtable = vtable_of(&a);
-  intptr_t* bvtable = vtable_of(&b);
-
-  // Start at slot 1, because slot 0 may be RTTI (on Solaris/Sparc)
-  int vtable_len = 1;
-  for (; ; vtable_len++) {
-    if (avtable[vtable_len] != bvtable[vtable_len]) {
-      break;
-    }
-  }
-  log_debug(cds, vtables)("Found   %3d vtable entries for %s", vtable_len, name);
-
-  return vtable_len;
-}
-
-#define ALLOC_CPP_VTABLE_CLONE(c) \
-  _cloned_cpp_vtptrs[c##_Kind] = CppVtableCloner<c>::allocate(#c); \
-  ArchivePtrMarker::mark_pointer(&_cloned_cpp_vtptrs[c##_Kind]);
-
-#define CLONE_CPP_VTABLE(c) \
-  p = CppVtableCloner<c>::clone_vtable(#c, (CppVtableInfo*)p);
-
-#define ZERO_CPP_VTABLE(c) \
- CppVtableCloner<c>::zero_vtable_clone();
-
-#define INIT_ORIG_CPP_VTPTRS(c) \
-  CppVtableCloner<c>::init_orig_cpp_vtptr(c##_Kind);
-
-#define DECLARE_CLONED_VTABLE_KIND(c) c ## _Kind,
-
-enum ClonedVtableKind {
-  // E.g., ConstantPool_Kind == 0, InstanceKlass_Kind == 1, etc.
-  CPP_VTABLE_PATCH_TYPES_DO(DECLARE_CLONED_VTABLE_KIND)
-  _num_cloned_vtable_kinds
-};
-
-// This is a map of all the original vtptrs. E.g., for
-//     ConstantPool *cp = new (...) ConstantPool(...) ; // a dynamically allocated constant pool
-// the following holds true:
-//     _orig_cpp_vtptrs[ConstantPool_Kind] ==  ((intptr_t**)cp)[0]
-static intptr_t* _orig_cpp_vtptrs[_num_cloned_vtable_kinds];
-static bool _orig_cpp_vtptrs_inited = false;
-
-template <class T>
-void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
-  assert(kind < _num_cloned_vtable_kinds, "sanity");
-  T tmp; // Allocate temporary dummy metadata object to get to the original vtable.
-  intptr_t* srcvtable = vtable_of(&tmp);
-  _orig_cpp_vtptrs[kind] = srcvtable;
-}
-
-// This is the index of all the cloned vtables. E.g., for
-//     ConstantPool* cp = ....; // an archived constant pool
-//     InstanceKlass* ik = ....;// an archived class
-// the following holds true:
-//     _cloned_cpp_vtptrs[ConstantPool_Kind]  == ((intptr_t**)cp)[0]
-//     _cloned_cpp_vtptrs[InstanceKlass_Kind] == ((intptr_t**)ik)[0]
-static intptr_t** _cloned_cpp_vtptrs = NULL;
-
-void MetaspaceShared::allocate_cloned_cpp_vtptrs() {
-  assert(DumpSharedSpaces, "must");
-  size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(intptr_t*);
-  _cloned_cpp_vtptrs = (intptr_t**)_mc_region.allocate(vtptrs_bytes, sizeof(intptr_t*));
-}
-
-void MetaspaceShared::serialize_cloned_cpp_vtptrs(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_cloned_cpp_vtptrs);
-}
-
-intptr_t* MetaspaceShared::get_archived_cpp_vtable(MetaspaceObj::Type msotype, address obj) {
-  if (!_orig_cpp_vtptrs_inited) {
-    CPP_VTABLE_PATCH_TYPES_DO(INIT_ORIG_CPP_VTPTRS);
-    _orig_cpp_vtptrs_inited = true;
-  }
-
-  Arguments::assert_is_dumping_archive();
-  int kind = -1;
-  switch (msotype) {
-  case MetaspaceObj::SymbolType:
-  case MetaspaceObj::TypeArrayU1Type:
-  case MetaspaceObj::TypeArrayU2Type:
-  case MetaspaceObj::TypeArrayU4Type:
-  case MetaspaceObj::TypeArrayU8Type:
-  case MetaspaceObj::TypeArrayOtherType:
-  case MetaspaceObj::ConstMethodType:
-  case MetaspaceObj::ConstantPoolCacheType:
-  case MetaspaceObj::AnnotationsType:
-  case MetaspaceObj::MethodCountersType:
-  case MetaspaceObj::RecordComponentType:
-    // These have no vtables.
-    break;
-  case MetaspaceObj::MethodDataType:
-    // We don't archive MethodData <-- should have been removed in removed_unsharable_info
-    ShouldNotReachHere();
-    break;
-  default:
-    for (kind = 0; kind < _num_cloned_vtable_kinds; kind ++) {
-      if (vtable_of((Metadata*)obj) == _orig_cpp_vtptrs[kind]) {
-        break;
-      }
-    }
-    if (kind >= _num_cloned_vtable_kinds) {
-      fatal("Cannot find C++ vtable for " INTPTR_FORMAT " -- you probably added"
-            " a new subtype of Klass or MetaData without updating CPP_VTABLE_PATCH_TYPES_DO",
-            p2i(obj));
-    }
-  }
-
-  if (kind >= 0) {
-    assert(kind < _num_cloned_vtable_kinds, "must be");
-    return _cloned_cpp_vtptrs[kind];
-  } else {
-    return NULL;
-  }
-}
-
-// This can be called at both dump time and run time:
-// - clone the contents of the c++ vtables into the space
-//   allocated by allocate_cpp_vtable_clones()
-void MetaspaceShared::clone_cpp_vtables(intptr_t* p) {
-  assert(DumpSharedSpaces || UseSharedSpaces, "sanity");
-  CPP_VTABLE_PATCH_TYPES_DO(CLONE_CPP_VTABLE);
-}
-
-void MetaspaceShared::zero_cpp_vtable_clones_for_writing() {
-  assert(DumpSharedSpaces, "dump-time only");
-  CPP_VTABLE_PATCH_TYPES_DO(ZERO_CPP_VTABLE);
-}
-
-// Allocate and initialize the C++ vtables, starting from top, but do not go past end.
-char* MetaspaceShared::allocate_cpp_vtable_clones() {
-  char* cloned_vtables = _mc_region.top(); // This is the beginning of all the cloned vtables
-
-  assert(DumpSharedSpaces, "dump-time only");
-  // Layout (each slot is a intptr_t):
-  //   [number of slots in the first vtable = n1]
-  //   [ <n1> slots for the first vtable]
-  //   [number of slots in the first second = n2]
-  //   [ <n2> slots for the second vtable]
-  //   ...
-  // The order of the vtables is the same as the CPP_VTAB_PATCH_TYPES_DO macro.
-  CPP_VTABLE_PATCH_TYPES_DO(ALLOC_CPP_VTABLE_CLONE);
-
-  return cloned_vtables;
-}
-
-bool MetaspaceShared::is_valid_shared_method(const Method* m) {
-  assert(is_in_shared_metaspace(m), "must be");
-  return CppVtableCloner<Method>::is_valid_shared_object(m);
-}
-
-class VM_PopulateDumpSharedSpace: public VM_Operation {
+class VM_PopulateDumpSharedSpace : public VM_GC_Operation {
 private:
   GrowableArray<MemRegion> *_closed_archive_heap_regions;
   GrowableArray<MemRegion> *_open_archive_heap_regions;
@@ -923,6 +605,12 @@ private:
 
 public:
 
+  VM_PopulateDumpSharedSpace() : VM_GC_Operation(0, /* total collections, ignored */
+                                                 GCCause::_archive_time_gc)
+  { }
+
+  bool skip_operation() const { return false; }
+
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit();   // outline because gdb sucks
   bool allow_nested_vm_operations() const { return true; }
@@ -930,8 +618,11 @@ public:
 
 class StaticArchiveBuilder : public ArchiveBuilder {
 public:
-  StaticArchiveBuilder(DumpRegion* rw_region, DumpRegion* ro_region)
-    : ArchiveBuilder(rw_region, ro_region) {}
+  StaticArchiveBuilder(DumpRegion* mc_region, DumpRegion* rw_region, DumpRegion* ro_region)
+    : ArchiveBuilder(mc_region, rw_region, ro_region) {
+    _alloc_bottom = address(SharedBaseAddress);
+    _buffer_to_target_delta = 0;
+  }
 
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {
     FileMapInfo::metaspace_pointers_do(it, false);
@@ -954,13 +645,6 @@ public:
 
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
-
-  log_info(cds)("Removing java_mirror ... ");
-  if (!HeapShared::is_heap_object_archiving_allowed()) {
-    Universe::clear_basic_type_mirrors();
-  }
-  remove_java_mirror_in_classes();
-  log_info(cds)("done. ");
 
   SystemDictionaryShared::write_to_archive();
 
@@ -1050,30 +734,44 @@ void VM_PopulateDumpSharedSpace::doit() {
   // that so we don't have to walk the SystemDictionary again.
   SystemDictionaryShared::check_excluded_classes();
 
-  StaticArchiveBuilder builder(&_rw_region, &_ro_region);
+  StaticArchiveBuilder builder(&_mc_region, &_rw_region, &_ro_region);
+  builder.set_current_dump_space(&_mc_region);
   builder.gather_klasses_and_symbols();
   _global_klass_objects = builder.klasses();
 
-  // Ensure the ConstMethods won't be modified at run-time
-  log_info(cds)("Updating ConstMethods ... ");
-  rewrite_nofast_bytecodes_and_calculate_fingerprints(THREAD);
-  log_info(cds)("done. ");
-
-  // Remove all references outside the metadata
-  log_info(cds)("Removing unshareable information ... ");
-  remove_unshareable_in_classes();
-  log_info(cds)("done. ");
-
   builder.gather_source_objs();
 
-  MetaspaceShared::allocate_cloned_cpp_vtptrs();
-  char* cloned_vtables = _mc_region.top();
-  MetaspaceShared::allocate_cpp_vtable_clones();
+  MetaspaceShared::init_misc_code_space();
+  builder.allocate_method_trampoline_info();
+  builder.allocate_method_trampolines();
 
-  _mc_region.pack(&_rw_region);
-  builder.dump_rw_region();
-  _rw_region.pack(&_ro_region);
-  builder.dump_ro_region();
+  char* cloned_vtables = CppVtables::dumptime_init();
+
+  {
+    _mc_region.pack(&_rw_region);
+    builder.set_current_dump_space(&_rw_region);
+    builder.dump_rw_region();
+#if INCLUDE_CDS_JAVA_HEAP
+    if (MetaspaceShared::use_full_module_graph()) {
+      // Archive the ModuleEntry's and PackageEntry's of the 3 built-in loaders
+      char* start = _rw_region.top();
+      ClassLoaderDataShared::allocate_archived_tables();
+      ArchiveBuilder::alloc_stats()->record_modules(_rw_region.top() - start, /*read_only*/false);
+    }
+#endif
+  }
+  {
+    _rw_region.pack(&_ro_region);
+    builder.set_current_dump_space(&_ro_region);
+    builder.dump_ro_region();
+#if INCLUDE_CDS_JAVA_HEAP
+    if (MetaspaceShared::use_full_module_graph()) {
+      char* start = _ro_region.top();
+      ClassLoaderDataShared::init_archived_tables();
+      ArchiveBuilder::alloc_stats()->record_modules(_ro_region.top() - start, /*read_only*/true);
+    }
+#endif
+  }
   builder.relocate_pointers();
 
   dump_shared_symbol_table(builder.symbols());
@@ -1083,16 +781,22 @@ void VM_PopulateDumpSharedSpace::doit() {
   _open_archive_heap_regions = NULL;
   dump_java_heap_objects();
 
-  builder.relocate_well_known_klasses();
+  builder.relocate_vm_classes();
+
+  log_info(cds)("Update method trampolines");
+  builder.update_method_trampolines();
+
+  log_info(cds)("Make classes shareable");
+  builder.make_klasses_shareable();
 
   char* serialized_data = dump_read_only_tables();
   _ro_region.pack();
 
+  SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive. Same for i2i buffer.
-  MetaspaceShared::zero_cpp_vtable_clones_for_writing();
-  memset(MetaspaceShared::i2i_entry_code_buffers(), 0,
-         MetaspaceShared::i2i_entry_code_buffers_size());
+  CppVtables::zero_archived_vtables();
 
   // relocate the data so that it can be mapped to MetaspaceShared::requested_base_address()
   // without runtime relocation.
@@ -1104,10 +808,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->populate_header(os::vm_allocation_granularity());
   mapinfo->set_serialized_data(serialized_data);
   mapinfo->set_cloned_vtables(cloned_vtables);
-  mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers(),
-                                      MetaspaceShared::i2i_entry_code_buffers_size());
+  mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers());
   mapinfo->open_for_write();
-  MetaspaceShared::write_core_archive_regions(mapinfo, _closed_archive_heap_oopmaps, _open_archive_heap_oopmaps);
+  size_t bitmap_size_in_bytes;
+  char* bitmap = MetaspaceShared::write_core_archive_regions(mapinfo, _closed_archive_heap_oopmaps,
+                                                             _open_archive_heap_oopmaps,
+                                                             bitmap_size_in_bytes);
   _total_closed_archive_region_size = mapinfo->write_archive_heap_regions(
                                         _closed_archive_heap_regions,
                                         _closed_archive_heap_oopmaps,
@@ -1125,6 +831,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   print_region_stats(mapinfo);
   mapinfo->close();
 
+  builder.write_cds_map_to_log(mapinfo, _closed_archive_heap_regions, _open_archive_heap_regions,
+                               bitmap, bitmap_size_in_bytes);
+  FREE_C_HEAP_ARRAY(char, bitmap);
+
   if (log_is_enabled(Info, cds)) {
     builder.print_stats(int(_ro_region.used()), int(_rw_region.used()), int(_mc_region.used()));
   }
@@ -1138,9 +848,9 @@ void VM_PopulateDumpSharedSpace::doit() {
             "for testing purposes only and should not be used in a production environment");
   }
 
-  // There may be other pending VM operations that operate on the InstanceKlasses,
-  // which will fail because InstanceKlasses::remove_unshareable_info()
-  // has been called. Forget these operations and exit the VM directly.
+  // There may be pending VM operations. We have changed some global states
+  // (such as vmClasses::_klasses) that may cause these VM operations
+  // to fail. For safety, forget these operations and exit the VM directly.
   vm_direct_exit(0);
 }
 
@@ -1189,9 +899,10 @@ void VM_PopulateDumpSharedSpace::print_heap_region_stats(GrowableArray<MemRegion
   }
 }
 
-void MetaspaceShared::write_core_archive_regions(FileMapInfo* mapinfo,
-                                                 GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                                 GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps) {
+char* MetaspaceShared::write_core_archive_regions(FileMapInfo* mapinfo,
+                                                  GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                                  GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                                                  size_t& bitmap_size_in_bytes) {
   // Make sure NUM_CDS_REGIONS (exported in cds.h) agrees with
   // MetaspaceShared::n_regions (internal to hotspot).
   assert(NUM_CDS_REGIONS == MetaspaceShared::n_regions, "sanity");
@@ -1201,7 +912,9 @@ void MetaspaceShared::write_core_archive_regions(FileMapInfo* mapinfo,
   write_region(mapinfo, mc, &_mc_region, /*read_only=*/false,/*allow_exec=*/true);
   write_region(mapinfo, rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
-  mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), closed_oopmaps, open_oopmaps);
+
+  return mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), closed_oopmaps, open_oopmaps,
+                                      bitmap_size_in_bytes);
 }
 
 void MetaspaceShared::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {
@@ -1225,47 +938,74 @@ Klass* MetaspaceShared::get_relocated_klass(Klass *k, bool is_final) {
   return k;
 }
 
-class LinkSharedClassesClosure : public KlassClosure {
-  Thread* THREAD;
-  bool    _made_progress;
- public:
-  LinkSharedClassesClosure(Thread* thread) : THREAD(thread), _made_progress(false) {}
+static GrowableArray<ClassLoaderData*>* _loaded_cld = NULL;
 
-  void reset()               { _made_progress = false; }
-  bool made_progress() const { return _made_progress; }
-
-  void do_klass(Klass* k) {
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
-      bool do_linking = DumpSharedSpaces ? true : !ik->is_shared_unregistered_class();
-      if (do_linking) {
-        // Link the class to cause the bytecodes to be rewritten and the
-        // cpcache to be created. Class verification is done according
-        // to -Xverify setting.
-        _made_progress |= MetaspaceShared::try_link_class(ik, THREAD);
-        guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
-
-        if (DumpSharedSpaces) {
-          // The following function is used to resolve all Strings in the statically
-          // dumped classes to archive all the Strings. The archive heap is not supported
-          // for the dynamic archive.
-          ik->constants()->resolve_class_constants(THREAD);
-        }
-      }
+class CollectCLDClosure : public CLDClosure {
+  void do_cld(ClassLoaderData* cld) {
+    if (_loaded_cld == NULL) {
+      _loaded_cld = new (ResourceObj::C_HEAP, mtClassShared)GrowableArray<ClassLoaderData*>(10, mtClassShared);
+    }
+    if (!cld->is_unloading()) {
+      cld->inc_keep_alive();
+      _loaded_cld->append(cld);
     }
   }
 };
 
+bool MetaspaceShared::linking_required(InstanceKlass* ik) {
+  // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
+  return DumpSharedSpaces ? true : !ik->is_shared_unregistered_class();
+}
+
+bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
+  // Link the class to cause the bytecodes to be rewritten and the
+  // cpcache to be created. Class verification is done according
+  // to -Xverify setting.
+  bool res = MetaspaceShared::try_link_class(ik, THREAD);
+  guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
+
+  if (DumpSharedSpaces) {
+    // The following function is used to resolve all Strings in the statically
+    // dumped classes to archive all the Strings. The archive heap is not supported
+    // for the dynamic archive.
+    ik->constants()->resolve_class_constants(THREAD);
+  }
+  return res;
+}
+
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
-  // We need to iterate because verification may cause additional classes
-  // to be loaded.
-  LinkSharedClassesClosure link_closure(THREAD);
-  do {
-    link_closure.reset();
-    ClassLoaderDataGraph::unlocked_loaded_classes_do(&link_closure);
-    guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
-  } while (link_closure.made_progress());
+  // Collect all loaded ClassLoaderData.
+  CollectCLDClosure collect_cld;
+  {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    ClassLoaderDataGraph::loaded_cld_do(&collect_cld);
+  }
+
+  while (true) {
+    bool has_linked = false;
+    for (int i = 0; i < _loaded_cld->length(); i++) {
+      ClassLoaderData* cld = _loaded_cld->at(i);
+      for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
+        if (klass->is_instance_klass()) {
+          InstanceKlass* ik = InstanceKlass::cast(klass);
+          if (linking_required(ik)) {
+            has_linked |= link_class_for_cds(ik, THREAD);
+          }
+        }
+      }
+    }
+
+    if (!has_linked) {
+      break;
+    }
+    // Class linking includes verification which may load more classes.
+    // Keep scanning until we have linked no more classes.
+  }
+
+  for (int i = 0; i < _loaded_cld->length(); i++) {
+    ClassLoaderData* cld = _loaded_cld->at(i);
+    cld->dec_keep_alive();
+  }
 }
 
 void MetaspaceShared::prepare_for_dumping() {
@@ -1324,11 +1064,19 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     if (SharedArchiveConfigFile) {
       log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
       read_extra_data(SharedArchiveConfigFile, THREAD);
+      log_info(cds)("Reading extra data: done.");
     }
-    log_info(cds)("Reading extra data: done.");
+
+    if (LambdaFormInvokers::lambdaform_lines() != NULL) {
+      log_info(cds)("Regenerate MethodHandle Holder classes...");
+      LambdaFormInvokers::regenerate_holder_classes(THREAD);
+      log_info(cds)("Regenerate MethodHandle Holder classes done.");
+    }
 
     HeapShared::init_for_dumping(THREAD);
 
+    // exercise the manifest processing code to ensure classes used by CDS are always archived
+    SystemDictionaryShared::create_jar_manifest("Manifest-Version: 1.0\n", strlen("Manifest-Version: 1.0\n"), THREAD);
     // Rewrite and link classes
     log_info(cds)("Rewriting and linking classes ...");
 
@@ -1339,9 +1087,13 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     link_and_cleanup_shared_classes(CATCH);
     log_info(cds)("Rewriting and linking classes: done");
 
+#if INCLUDE_CDS_JAVA_HEAP
+    if (use_full_module_graph()) {
+      HeapShared::reset_archived_object_states(THREAD);
+    }
+#endif
+
     VM_PopulateDumpSharedSpace op;
-    MutexLocker ml(THREAD, HeapShared::is_heap_object_archiving_allowed() ?
-                   Heap_lock : NULL);     // needed by HeapShared::run_gc()
     VMThread::execute(&op);
   }
 }
@@ -1352,6 +1104,9 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
   int class_count = 0;
 
   while (parser.parse_one_line()) {
+    if (parser.lambda_form_line()) {
+      continue;
+    }
     Klass* klass = parser.load_current_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       if (klass == NULL &&
@@ -1388,7 +1143,7 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
 // Returns true if the class's status has changed
 bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
   Arguments::assert_is_dumping_archive();
-  if (ik->init_state() < InstanceKlass::linked &&
+  if (ik->is_loaded() && !ik->is_linked() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == NULL) {
@@ -1419,6 +1174,15 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
+  if(!HeapShared::is_heap_object_archiving_allowed()) {
+    log_info(cds)(
+      "Archived java heap is not supported as UseG1GC, "
+      "UseCompressedOops and UseCompressedClassPointers are required."
+      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
+      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
+      BOOL_TO_STR(UseCompressedClassPointers));
+    return;
+  }
   // Find all the interned strings that should be dumped.
   int i;
   for (i = 0; i < _global_klass_objects->length(); i++) {
@@ -1607,10 +1371,13 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     assert(static_mapinfo->mapping_end_offset() == dynamic_mapinfo->mapping_base_offset(), "no gap");
   }
 
-  ReservedSpace archive_space_rs, class_space_rs;
+  ReservedSpace total_space_rs, archive_space_rs, class_space_rs;
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
-  char* mapped_base_address = reserve_address_space_for_archives(static_mapinfo, dynamic_mapinfo,
-                                                                 use_requested_addr, archive_space_rs,
+  char* mapped_base_address = reserve_address_space_for_archives(static_mapinfo,
+                                                                 dynamic_mapinfo,
+                                                                 use_requested_addr,
+                                                                 total_space_rs,
+                                                                 archive_space_rs,
                                                                  class_space_rs);
   if (mapped_base_address == NULL) {
     result = MAP_ARCHIVE_MMAP_FAILURE;
@@ -1660,6 +1427,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
       //  this with use_requested_addr, since we're going to patch all the
       //  pointers anyway so there's no benefit to mmap.
       if (use_requested_addr) {
+        assert(!total_space_rs.is_reserved(), "Should not be reserved for Windows");
         log_info(cds)("Windows mmap workaround: releasing archive space.");
         archive_space_rs.release();
       }
@@ -1715,6 +1483,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           //  cover both archive and class space.
           address cds_base = (address)static_mapinfo->mapped_base();
           address ccs_end = (address)class_space_rs.end();
+          assert(ccs_end > cds_base, "Sanity check");
           CompressedKlassPointers::initialize(cds_base, ccs_end - cds_base);
 
           // map_heap_regions() compares the current narrow oop and klass encodings
@@ -1722,11 +1491,12 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           static_mapinfo->map_heap_regions();
         }
       });
-    log_info(cds)("Using optimized module handling %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);
-    release_reserved_spaces(archive_space_rs, class_space_rs);
+    release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
   }
 
   return result;
@@ -1775,6 +1545,10 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 // Return:
 //
 // - On success:
+//    - total_space_rs will be reserved as whole for archive_space_rs and
+//      class_space_rs if UseCompressedClassPointers is true.
+//      On Windows, try reserve archive_space_rs and class_space_rs
+//      separately first if use_archive_base_addr is true.
 //    - archive_space_rs will be reserved and large enough to host static and
 //      if needed dynamic archive: [Base, A).
 //      archive_space_rs.base and size will be aligned to CDS reserve
@@ -1789,6 +1563,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
                                                           FileMapInfo* dynamic_mapinfo,
                                                           bool use_archive_base_addr,
+                                                          ReservedSpace& total_space_rs,
                                                           ReservedSpace& archive_space_rs,
                                                           ReservedSpace& class_space_rs) {
 
@@ -1854,34 +1629,52 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       align_up(archive_space_size + gap_size + class_space_size,
                os::vm_allocation_granularity());
 
-  ReservedSpace total_rs;
-  if (base_address != NULL) {
-    // Reserve at the given archive base address, or not at all.
-    total_rs = ReservedSpace(total_range_size, archive_space_alignment,
-                             false /* bool large */, (char*) base_address);
+  assert(total_range_size > ccs_begin_offset, "must be");
+  if (use_windows_memory_mapping() && use_archive_base_addr) {
+    if (base_address != nullptr) {
+      // On Windows, we cannot safely split a reserved memory space into two (see JDK-8255917).
+      // Hence, we optimistically reserve archive space and class space side-by-side. We only
+      // do this for use_archive_base_addr=true since for use_archive_base_addr=false case
+      // caller will not split the combined space for mapping, instead read the archive data
+      // via sequential file IO.
+      address ccs_base = base_address + archive_space_size + gap_size;
+      archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
+                                       false /* large */, (char*)base_address);
+      class_space_rs   = ReservedSpace(class_space_size, class_space_alignment,
+                                       false /* large */, (char*)ccs_base);
+    }
+    if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
+      release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
+      return NULL;
+    }
   } else {
-    // Reserve at any address, but leave it up to the platform to choose a good one.
-    total_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
+    if (use_archive_base_addr && base_address != nullptr) {
+      total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
+                                     false /* bool large */, (char*) base_address);
+    } else {
+      // Reserve at any address, but leave it up to the platform to choose a good one.
+      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
+    }
+
+    if (!total_space_rs.is_reserved()) {
+      return NULL;
+    }
+
+    // Paranoid checks:
+    assert(base_address == NULL || (address)total_space_rs.base() == base_address,
+           "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
+    assert(is_aligned(total_space_rs.base(), archive_space_alignment), "Sanity");
+    assert(total_space_rs.size() == total_range_size, "Sanity");
+    assert(CompressedKlassPointers::is_valid_base((address)total_space_rs.base()), "Sanity");
+
+    // Now split up the space into ccs and cds archive. For simplicity, just leave
+    //  the gap reserved at the end of the archive space. Do not do real splitting.
+    archive_space_rs = total_space_rs.first_part(ccs_begin_offset,
+                                                 (size_t)os::vm_allocation_granularity());
+    class_space_rs = total_space_rs.last_part(ccs_begin_offset);
+    MemTracker::record_virtual_memory_split_reserved(total_space_rs.base(), total_space_rs.size(),
+                                                     ccs_begin_offset);
   }
-
-  if (!total_rs.is_reserved()) {
-    return NULL;
-  }
-
-  // Paranoid checks:
-  assert(base_address == NULL || (address)total_rs.base() == base_address,
-         "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_rs.base()));
-  assert(is_aligned(total_rs.base(), archive_space_alignment), "Sanity");
-  assert(total_rs.size() == total_range_size, "Sanity");
-  assert(CompressedKlassPointers::is_valid_base((address)total_rs.base()), "Sanity");
-
-  // Now split up the space into ccs and cds archive. For simplicity, just leave
-  //  the gap reserved at the end of the archive space.
-  archive_space_rs = total_rs.first_part(ccs_begin_offset,
-                                         (size_t)os::vm_allocation_granularity(),
-                                         /*split=*/true);
-  class_space_rs = total_rs.last_part(ccs_begin_offset);
-
   assert(is_aligned(archive_space_rs.base(), archive_space_alignment), "Sanity");
   assert(is_aligned(archive_space_rs.size(), archive_space_alignment), "Sanity");
   assert(is_aligned(class_space_rs.base(), class_space_alignment), "Sanity");
@@ -1900,15 +1693,21 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
 
 }
 
-void MetaspaceShared::release_reserved_spaces(ReservedSpace& archive_space_rs,
+void MetaspaceShared::release_reserved_spaces(ReservedSpace& total_space_rs,
+                                              ReservedSpace& archive_space_rs,
                                               ReservedSpace& class_space_rs) {
-  if (archive_space_rs.is_reserved()) {
-    log_debug(cds)("Released shared space (archive) " INTPTR_FORMAT, p2i(archive_space_rs.base()));
-    archive_space_rs.release();
-  }
-  if (class_space_rs.is_reserved()) {
-    log_debug(cds)("Released shared space (classes) " INTPTR_FORMAT, p2i(class_space_rs.base()));
-    class_space_rs.release();
+  if (total_space_rs.is_reserved()) {
+    log_debug(cds)("Released shared space (archive + class) " INTPTR_FORMAT, p2i(total_space_rs.base()));
+    total_space_rs.release();
+  } else {
+    if (archive_space_rs.is_reserved()) {
+      log_debug(cds)("Released shared space (archive) " INTPTR_FORMAT, p2i(archive_space_rs.base()));
+      archive_space_rs.release();
+    }
+    if (class_space_rs.is_reserved()) {
+      log_debug(cds)("Released shared space (classes) " INTPTR_FORMAT, p2i(class_space_rs.base()));
+      class_space_rs.release();
+    }
   }
 }
 
@@ -1952,6 +1751,7 @@ void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
   assert(UseSharedSpaces, "must be runtime");
   if (mapinfo != NULL) {
     mapinfo->unmap_regions(archive_regions, archive_regions_count);
+    mapinfo->unmap_region(MetaspaceShared::bm);
     mapinfo->set_is_mapped(false);
   }
 }
@@ -1962,13 +1762,10 @@ void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
 void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
   _i2i_entry_code_buffers = static_mapinfo->i2i_entry_code_buffers();
-  _i2i_entry_code_buffers_size = static_mapinfo->i2i_entry_code_buffers_size();
-  char* buffer = static_mapinfo->cloned_vtables();
-  clone_cpp_vtables((intptr_t*)buffer);
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables
-  buffer = static_mapinfo->serialized_data();
+  char* buffer = static_mapinfo->serialized_data();
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array);
   serialize(&rc);
@@ -1990,6 +1787,7 @@ void MetaspaceShared::initialize_shared_spaces() {
     SymbolTable::serialize_shared_table_header(&rc, false);
     SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
     dynamic_mapinfo->close();
+    dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
   if (PrintSharedArchiveAndExit) {
@@ -2045,6 +1843,22 @@ void MetaspaceShared::report_out_of_space(const char* name, size_t needed_bytes)
 intx MetaspaceShared::final_delta() {
   return intx(MetaspaceShared::requested_base_address())  // We want the base archive to be mapped to here at runtime
        - intx(SharedBaseAddress);                         // .. but the base archive is mapped at here at dump time
+}
+
+bool MetaspaceShared::use_full_module_graph() {
+#if INCLUDE_CDS_JAVA_HEAP
+  if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
+    return true;
+  }
+#endif
+  bool result = _use_optimized_module_handling && _use_full_module_graph &&
+    (UseSharedSpaces || DumpSharedSpaces) && HeapShared::is_heap_object_archiving_allowed();
+  if (result && UseSharedSpaces) {
+    // Classes used by the archived full module graph are loaded in JVMTI early phase.
+    assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
+           "CDS should be disabled if early class hooks are enabled");
+  }
+  return result;
 }
 
 void MetaspaceShared::print_on(outputStream* st) {

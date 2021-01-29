@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @bug      8236539
+ * @bug      8236539 8246774
  * @summary  Relative link tags in record javadoc don't resolve
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    toolbox.ToolBox javadoc.tester.*
- * @compile --enable-preview --source ${jdk.version} TestRecordLinks.java
- * @run main/othervm --enable-preview TestRecordLinks
+ * @run main TestRecordLinks
  */
 
 import java.nio.file.Path;
@@ -74,7 +73,6 @@ public class TestRecordLinks  extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "example");
         checkExit(Exit.OK);
 
@@ -89,7 +87,7 @@ public class TestRecordLinks  extends JavadocTester {
 
         checkOutput("example/JavadocTest.Bar.html", true,
                 """
-                    <h1 title="Record JavadocTest.Bar" class="title">Record JavadocTest.Bar</h1>
+                    <h1 title="Record Class JavadocTest.Bar" class="title">Record Class JavadocTest.Bar</h1>
                     """,
                 """
                     <div class="block"><a href="#bar()"><code>bar()</code></a>

@@ -22,14 +22,36 @@
  */
 
 /*
- * @test
+ * @test id=z
  * @key randomness
  * @bug 8059022
  * @modules java.base/jdk.internal.misc:+open
  * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
  * @requires vm.gc.Z
  * @library /test/lib
- * @run main/othervm -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+ZVerifyViews -XX:ZCollectionInterval=1 -XX:-CreateCoredumpOnCrash -XX:CompileCommand=dontinline,*::mergeImpl* compiler.gcbarriers.UnsafeIntrinsicsTest
+ * @run main/othervm -XX:+UseZGC
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+ZVerifyViews -XX:ZCollectionInterval=1
+ *                   -XX:-CreateCoredumpOnCrash
+ *                   -XX:CompileCommand=dontinline,*::mergeImpl*
+ *                   compiler.gcbarriers.UnsafeIntrinsicsTest
+ */
+
+/*
+ * @test id=shenandoah
+ * @key randomness
+ * @bug 8255401 8251944
+ * @modules java.base/jdk.internal.misc:+open
+ * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @run main/othervm -XX:+UseShenandoahGC
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:-CreateCoredumpOnCrash
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+ShenandoahVerifyOptoBarriers
+ *                   -XX:CompileCommand=dontinline,*::mergeImpl*
+ *                   compiler.gcbarriers.UnsafeIntrinsicsTest
  */
 
 package compiler.gcbarriers;

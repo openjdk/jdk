@@ -56,8 +56,8 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   // Splitting range check CastIIs through a loop induction Phi can
   // cause new Phis to be created that are left unrelated to the loop
   // induction Phi and prevent optimizations (vectorization)
-  if (n->Opcode() == Op_CastII && n->as_CastII()->has_range_check() &&
-      region->is_CountedLoop() && n->in(1) == region->as_CountedLoop()->phi()) {
+  if (n->Opcode() == Op_CastII && region->is_CountedLoop() &&
+      n->in(1) == region->as_CountedLoop()->phi()) {
     return NULL;
   }
 
@@ -278,18 +278,23 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
     return; // Let IGVN transformation change control dependence.
   }
 
-  IdealLoopTree *old_loop = get_loop(dp);
+  IdealLoopTree* old_loop = get_loop(dp);
 
   for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
     Node* cd = dp->fast_out(i); // Control-dependent node
-    if (cd->depends_only_on_test()) {
+    // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
+    if (cd->depends_only_on_test() && _igvn.no_dependent_zero_check(cd)) {
       assert(cd->in(0) == dp, "");
       _igvn.replace_input_of(cd, 0, prevdom);
-      set_early_ctrl(cd);
-      IdealLoopTree *new_loop = get_loop(get_ctrl(cd));
+      set_early_ctrl(cd, false);
+      IdealLoopTree* new_loop = get_loop(get_ctrl(cd));
       if (old_loop != new_loop) {
-        if (!old_loop->_child) old_loop->_body.yank(cd);
-        if (!new_loop->_child) new_loop->_body.push(cd);
+        if (!old_loop->_child) {
+          old_loop->_body.yank(cd);
+        }
+        if (!new_loop->_child) {
+          new_loop->_body.push(cd);
+        }
       }
       --i;
       --imax;
@@ -515,7 +520,7 @@ Node *PhaseIdealLoop::convert_add_to_muladd(Node* n) {
   if (in1->Opcode() == Op_MulI && in2->Opcode() == Op_MulI) {
     IdealLoopTree* loop_n = get_loop(get_ctrl(n));
     if (loop_n->is_counted() &&
-        loop_n->_head->as_Loop()->is_valid_counted_loop() &&
+        loop_n->_head->as_Loop()->is_valid_counted_loop(T_INT) &&
         Matcher::match_rule_supported(Op_MulAddVS2VI) &&
         Matcher::match_rule_supported(Op_MulAddS2I)) {
       Node* mul_in1 = in1->in(1);
@@ -1038,7 +1043,10 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Do not clone the trip counter through on a CountedLoop
   // (messes up the canonical shape).
-  if( n_blk->is_CountedLoop() && n->Opcode() == Op_AddI ) return n;
+  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_loop())) && n->Opcode() == Op_AddI) ||
+      (n_blk->is_LongCountedLoop() && n->Opcode() == Op_AddL)) {
+    return n;
+  }
 
   // Check for having no control input; not pinned.  Allow
   // dominating control.
@@ -1113,7 +1121,7 @@ static bool merge_point_safe(Node* region) {
         Node* m = n->fast_out(j);
         if (m->Opcode() == Op_ConvI2L)
           return false;
-        if (m->is_CastII() && m->isa_CastII()->has_range_check()) {
+        if (m->is_CastII()) {
           return false;
         }
       }
@@ -1143,7 +1151,7 @@ Node *PhaseIdealLoop::place_near_use(Node *useblock) const {
 
 
 bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
-  if (!n->is_If() || n->is_CountedLoopEnd()) {
+  if (!n->is_If() || n->is_BaseCountedLoopEnd()) {
     return false;
   }
   if (!n->in(0)->is_Region()) {
@@ -2290,7 +2298,7 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
 int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
   Node* trunc1 = NULL;
   Node* trunc2 = NULL;
-  const TypeInt* ttype = NULL;
+  const TypeInteger* ttype = NULL;
   if (!iff->is_If() || iff->in(1) == NULL || !iff->in(1)->is_Bool()) {
     return 0;
   }
@@ -2311,7 +2319,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     for (uint i = 1; i < phi->req(); i++) {
       Node* in = phi->in(i);
       Node* add = CountedLoopNode::match_incr_with_optional_truncation(in,
-                                &trunc1, &trunc2, &ttype);
+                                &trunc1, &trunc2, &ttype, T_INT);
       if (add && add->in(1) == phi) {
         add2 = add->in(2);
         break;
@@ -2321,7 +2329,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     // (If (Bool (CmpX addtrunc:(Optional-trunc((AddI (Phi ...addtrunc...) add2)) )))
     Node* addtrunc = cmp1;
     Node* add = CountedLoopNode::match_incr_with_optional_truncation(addtrunc,
-                                &trunc1, &trunc2, &ttype);
+                                &trunc1, &trunc2, &ttype, T_INT);
     if (add && add->in(1)->is_Phi()) {
       Node* phi = add->in(1);
       for (uint i = 1; i < phi->req(); i++) {
@@ -2558,7 +2566,13 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *lo
 
   ProjNode* lp_continue = lp_proj->as_Proj();
   ProjNode* lp_exit     = if_cmpu->proj_out(!lp_continue->is_IfTrue())->as_Proj();
-
+  if (!lp_exit->is_IfFalse()) {
+    // The loop exit condition is (i <u limit) ==> (i >= 0 && i < limit).
+    // We therefore can't add a single exit condition.
+    return NULL;
+  }
+  // The loop exit condition is !(i <u limit) ==> (i < 0 || i >= limit).
+  // Split out the exit condition (i < 0) for stride < 0 or (i >= limit) for stride > 0.
   Node* limit = NULL;
   if (stride > 0) {
     limit = cmpu->in(2);
@@ -3485,7 +3499,7 @@ void PhaseIdealLoop::reorg_offsets(IdealLoopTree *loop) {
   // Loop's shape could be messed up by iteration_split_impl.
   if (!loop->_head->is_CountedLoop())
     return;
-  if (!loop->_head->as_Loop()->is_valid_counted_loop())
+  if (!loop->_head->as_Loop()->is_valid_counted_loop(T_INT))
     return;
 
   CountedLoopNode *cl = loop->_head->as_CountedLoop();

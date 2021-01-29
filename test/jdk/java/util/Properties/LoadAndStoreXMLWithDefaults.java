@@ -70,28 +70,6 @@ public class LoadAndStoreXMLWithDefaults {
         Properties P3 = loadFromXML(writeToXML(p3), P2);
 
         testResults(p1, P1, p2, P2, p3, P3);
-
-        // Now check that properties whose keys or values are objects
-        // are skipped.
-
-        P1.put("p1.object.prop", Objects.OBJ1);
-        P1.put(Objects.OBJ1, "p1.object.prop");
-        P1.put("p2.object.prop", "p2.object.prop");
-        P2.put("p2.object.prop", Objects.OBJ2);
-        P2.put(Objects.OBJ2, "p2.object.prop");
-        P3.put("p3.object.prop", Objects.OBJ3);
-        P3.put(Objects.OBJ3, "p3.object.prop");
-
-        Properties PP1 = loadFromXML(writeToXML(P1), null);
-        Properties PP2 = loadFromXML(writeToXML(P2), PP1);
-        Properties PP3 = loadFromXML(writeToXML(P3), PP2);
-
-        p1.setProperty("p2.object.prop", "p2.object.prop");
-        try {
-            testResults(p1, PP1, p2, PP2, p3, PP3);
-        } finally {
-            p1.remove("p2.object.prop");
-        }
     }
 
     public static void testResults(Properties... pps) {

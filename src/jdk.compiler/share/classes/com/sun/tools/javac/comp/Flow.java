@@ -1875,7 +1875,8 @@ public class Flow {
         void checkInit(DiagnosticPosition pos, VarSymbol sym, Error errkey) {
             if ((sym.adr >= firstadr || sym.owner.kind != TYP) &&
                 trackable(sym) &&
-                !inits.isMember(sym.adr)) {
+                !inits.isMember(sym.adr) &&
+                (sym.flags_field & CLASH) == 0) {
                     log.error(pos, errkey);
                 inits.incl(sym.adr);
             }
@@ -2758,6 +2759,12 @@ public class Flow {
             }
         }
 
+        @Override
+        public void visitBindingPattern(JCBindingPattern tree) {
+            super.visitBindingPattern(tree);
+            initParam(tree.var);
+        }
+
         void referenced(Symbol sym) {
             unrefdResources.remove(sym);
         }
@@ -2897,7 +2904,7 @@ public class Flow {
         public void visitClassDef(JCClassDecl tree) {
             JCTree prevTree = currentTree;
             try {
-                currentTree = tree.sym.isLocal() ? tree : null;
+                currentTree = tree.sym.isDirectlyOrIndirectlyLocal() ? tree : null;
                 super.visitClassDef(tree);
             } finally {
                 currentTree = prevTree;

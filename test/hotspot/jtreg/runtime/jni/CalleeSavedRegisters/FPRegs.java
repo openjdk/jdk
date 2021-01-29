@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/*
  * @test
  * @bug 8067744
  * @comment Test uses custom launcher that starts VM in primordial thread. This is
@@ -35,7 +35,6 @@
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.File;
@@ -47,14 +46,14 @@ import java.util.Optional;
 
 public class FPRegs {
     public static void main(String[] args) throws IOException {
-        Path launcher = Paths.get(System.getProperty("test.nativepath"), "FPRegs" + (Platform.isWindows() ? ".exe" : ""));
+        Path launcher = Paths.get(Utils.TEST_NATIVE_PATH, "FPRegs" + (Platform.isWindows() ? ".exe" : ""));
         System.out.println("Launcher = " + launcher + (Files.exists(launcher) ? " (exists)" : " (not exists)"));
         Path jvmLib = findJVM();
         ProcessBuilder pb = new ProcessBuilder(launcher.toString(), jvmLib.toString());
         // bin as working directory to let Windows load dll
         pb.directory(jvmLib.getParent().getParent().toFile());
-        OutputAnalyzer outputf = new OutputAnalyzer(pb.start());
-        outputf.shouldHaveExitValue(0);
+        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        oa.shouldHaveExitValue(0);
     }
 
     static Path findJVM() throws IOException {

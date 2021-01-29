@@ -28,6 +28,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -119,8 +120,7 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
   assert(stream != NULL, "invariant");
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
-    assert(THREAD->is_Java_thread(), "must be a JavaThread");
-    const JavaThread* jt = (JavaThread*)THREAD;
+    const JavaThread* jt = THREAD->as_Java_thread();
 
     Handle class_loader(THREAD, loader_data->class_loader());
 

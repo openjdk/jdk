@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,9 @@ static jobject get_chunk_monitor(Thread* thread) {
 }
 
 static void notify() {
-  Thread* const thread = Thread::current();
+  JavaThread* const thread = JavaThread::current();
   // can safepoint here
-  ThreadInVMfromNative transition((JavaThread*)thread);
-  ResetNoHandleMark rnhm;
+  ThreadInVMfromNative transition(thread);
   JfrJavaSupport::notify_all(get_chunk_monitor(thread), thread);
 }
 

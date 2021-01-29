@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.Serializable;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -207,7 +208,7 @@ import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON;
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
  * How to Use the Focus Subsystem</a>,
  * a section in <em>The Java Tutorial</em>, and the
- * <a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+ * <a href="doc-files/FocusSpec.html">Focus Specification</a>
  * for more information.
  *
  * @author      Arthur van Hoff
@@ -671,9 +672,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public static final float RIGHT_ALIGNMENT = 1.0f;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -7644114512714619750L;
 
     /**
@@ -716,6 +718,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return acc;
     }
 
+    /**
+     * Whether the component is packed or not;
+     */
     boolean isPacked = false;
 
     /**
@@ -7648,7 +7653,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param temporary true if the focus change is temporary,
      *        such as when the window loses the focus; for
      *        more information on temporary focus changes see the
-     *<a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+     *<a href="doc-files/FocusSpec.html">Focus Specification</a>
      * @return {@code false} if the focus change request is guaranteed to
      *         fail; {@code true} if it is likely to succeed
      * @see java.awt.event.FocusEvent
@@ -7716,7 +7721,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param temporary true if the focus change is temporary,
      *        such as when the window loses the focus; for
      *        more information on temporary focus changes see the
-     *<a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+     *<a href="doc-files/FocusSpec.html">Focus Specification</a>
      *
      * @param  cause the cause why the focus is requested
      * @return {@code false} if the focus change request is guaranteed to
@@ -7883,7 +7888,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param temporary true if the focus change is temporary,
      *        such as when the window loses the focus; for
      *        more information on temporary focus changes see the
-     *<a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+     *<a href="doc-files/FocusSpec.html">Focus Specification</a>
      * @return {@code false} if the focus change request is guaranteed to
      *         fail; {@code true} if it is likely to succeed
      * @see #requestFocus
@@ -8328,7 +8333,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return hasFocus();
     }
 
-    /*
+    /**
      * Used to disallow auto-focus-transfer on disposal of the focus owner
      * in the process of disposing its parent container.
      */
@@ -8903,7 +8908,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * The non-serializable listeners are detected and
      * no attempt is made to serialize them.
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData {@code null} terminated sequence of
      *   0 or more pairs; the pair consists of a {@code String}
      *   and an {@code Object}; the {@code String} indicates
@@ -8941,6 +8947,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #mouseWheelListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {
@@ -8974,9 +8981,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * of events fired by the component.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the {@code ObjectInputStream} to read
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
@@ -9303,6 +9314,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     protected abstract class AccessibleAWTComponent extends AccessibleContext
         implements Serializable, AccessibleComponent {
 
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
+         */
+        @Serial
         private static final long serialVersionUID = 642321655757800191L;
 
         /**
@@ -9339,7 +9354,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * @since 1.3
          */
         protected class AccessibleAWTComponentHandler implements ComponentListener, Serializable {
+
+            /**
+             * Use serialVersionUID from JDK 1.3 for interoperability.
+             */
+            @Serial
             private static final long serialVersionUID = -1009684107426231869L;
+
+            /**
+             * Constructs an {@code AccessibleAWTComponentHandler}.
+             */
+            protected AccessibleAWTComponentHandler() {}
 
             public void componentHidden(ComponentEvent e)  {
                 if (accessibleContext != null) {
@@ -9371,7 +9396,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * @since 1.3
          */
         protected class AccessibleAWTFocusHandler implements FocusListener, Serializable {
+
+            /**
+             * Use serialVersionUID from JDK 1.3 for interoperability.
+             */
+            @Serial
             private static final long serialVersionUID = 3150908257351582233L;
+
+            /**
+             * Constructs an {@code AccessibleAWTFocusHandler}.
+             */
+            protected AccessibleAWTFocusHandler() {}
 
             public void focusGained(FocusEvent event) {
                 if (accessibleContext != null) {

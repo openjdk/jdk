@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -59,7 +60,7 @@ void ReferenceProcessor::init_statics() {
   java_lang_ref_SoftReference::set_clock(_soft_ref_timestamp_clock);
 
   _always_clear_soft_ref_policy = new AlwaysClearPolicy();
-  if (is_server_compilation_mode_vm()) {
+  if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
     _default_soft_ref_policy = new LRUMaxHeapPolicy();
   } else {
     _default_soft_ref_policy = new LRUCurrentHeapPolicy();
@@ -260,9 +261,7 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   assert(_current_discovered_addr && oopDesc::is_oop_or_null(discovered),
          "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   _next_discovered = discovered;
-
-  _referent_addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
-  _referent = java_lang_ref_Reference::referent(_current_discovered);
+  _referent = java_lang_ref_Reference::unknown_referent_no_keepalive(_current_discovered);
   assert(Universe::heap()->is_in_or_null(_referent),
          "Wrong oop found in java.lang.Reference object");
   assert(allow_null_referent ?
@@ -295,8 +294,17 @@ void DiscoveredListIterator::remove() {
   _refs_list.dec_length(1);
 }
 
+void DiscoveredListIterator::make_referent_alive() {
+  HeapWord* addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
+  if (UseCompressedOops) {
+    _keep_alive->do_oop((narrowOop*)addr);
+  } else {
+    _keep_alive->do_oop((oop*)addr);
+  }
+}
+
 void DiscoveredListIterator::clear_referent() {
-  RawAccess<>::oop_store(_referent_addr, oop(NULL));
+  java_lang_ref_Reference::clear_referent(_current_discovered);
 }
 
 void DiscoveredListIterator::enqueue() {
@@ -1058,7 +1066,7 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
 // cleared concurrently by mutators during (or after) discovery.
 void ReferenceProcessor::verify_referent(oop obj) {
   bool da = discovery_is_atomic();
-  oop referent = java_lang_ref_Reference::referent(obj);
+  oop referent = java_lang_ref_Reference::unknown_referent_no_keepalive(obj);
   assert(da ? oopDesc::is_oop(referent) : oopDesc::is_oop_or_null(referent),
          "Bad referent " INTPTR_FORMAT " found in Reference "
          INTPTR_FORMAT " during %satomic discovery ",
@@ -1119,7 +1127,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // known to be strongly reachable.
   if (is_alive_non_header() != NULL) {
     verify_referent(obj);
-    if (is_alive_non_header()->do_object_b(java_lang_ref_Reference::referent(obj))) {
+    oop referent = java_lang_ref_Reference::unknown_referent_no_keepalive(obj);
+    if (is_alive_non_header()->do_object_b(referent)) {
       return false;  // referent is reachable
     }
   }
@@ -1169,7 +1178,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // .. we are an atomic collector and referent is in our span
     if (is_subject_to_discovery(obj) ||
         (discovery_is_atomic() &&
-         is_subject_to_discovery(java_lang_ref_Reference::referent(obj)))) {
+         is_subject_to_discovery(java_lang_ref_Reference::unknown_referent_no_keepalive(obj)))) {
     } else {
       return false;
     }

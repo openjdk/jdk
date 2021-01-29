@@ -37,12 +37,7 @@ bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
 }
 
 bool ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() {
-#if (defined(X86) || defined(AARCH64))
-  return ShenandoahCodeRootsStyle == 2 &&
-         ClassUnloading;
-#else
-  return false;
-#endif
+  return ClassUnloading;
 }
 
 bool ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() {

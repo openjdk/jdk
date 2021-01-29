@@ -37,6 +37,7 @@
 #include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"

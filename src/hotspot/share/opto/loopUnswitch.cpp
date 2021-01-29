@@ -275,7 +275,6 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   register_node(iffast, outer_loop, iff, dom_depth(iff));
   ProjNode* ifslow = new IfFalseNode(iff);
   register_node(ifslow, outer_loop, iff, dom_depth(iff));
-  uint idx_before_clone = Compile::current()->unique();
 
   // Clone the loop body.  The clone becomes the slow loop.  The
   // original pre-header will (illegally) have 3 control users
@@ -283,11 +282,10 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   clone_loop(loop, old_new, dom_depth(head->skip_strip_mined()), mode, iff);
   assert(old_new[head->_idx]->is_Loop(), "" );
 
-  // Fast (true) control
-  Node* iffast_pred = clone_loop_predicates(entry, iffast, !counted_loop, false, idx_before_clone, old_new);
-
-  // Slow (false) control
-  Node* ifslow_pred = clone_loop_predicates(entry, ifslow, !counted_loop, true, idx_before_clone, old_new);
+  // Fast (true) and Slow (false) control
+  ProjNode* iffast_pred = iffast;
+  ProjNode* ifslow_pred = ifslow;
+  clone_predicates_to_unswitched_loop(loop, old_new, iffast_pred, ifslow_pred);
 
   Node* l = head->skip_strip_mined();
   _igvn.replace_input_of(l, LoopNode::EntryControl, iffast_pred);
@@ -402,7 +400,7 @@ bool CountedLoopReserveKit::create_reserve() {
     return false;
   }
   CountedLoopNode *cl = _lpt->_head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop()) {
+  if (!cl->is_valid_counted_loop(T_INT)) {
     if (TraceLoopOpts) {
       tty->print_cr("CountedLoopReserveKit::create_reserve: %d not valid counted loop", cl->_idx);
     }

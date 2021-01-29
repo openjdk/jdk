@@ -99,7 +99,6 @@ jfieldID AwtFrame::handleID;
 
 jfieldID AwtFrame::undecoratedID;
 jmethodID AwtFrame::getExtendedStateMID;
-jmethodID AwtFrame::setExtendedStateMID;
 
 jmethodID AwtFrame::activateEmbeddingTopLevelMID;
 jfieldID AwtFrame::isEmbeddedInIEID;
@@ -329,17 +328,13 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
                 frame->CreateHWnd(env, L"",
                                   style,
                                   exStyle,
-                                  0, 0, 0, 0,
+                                  x, y, width, height,
                                   hwndParent,
                                   NULL,
                                   ::GetSysColor(COLOR_WINDOWTEXT),
                                   ::GetSysColor(COLOR_WINDOWFRAME),
                                   self);
-                /*
-                 * Reshape here instead of during create, so that a
-                 * WM_NCCALCSIZE is sent.
-                 */
-                frame->Reshape(x, y, width, height);
+                frame->RecalcNonClient();
             }
         }
     } catch (...) {
@@ -656,31 +651,38 @@ MsgRouting AwtFrame::WmNcMouseDown(WPARAM hitTest, int x, int y, int button) {
 
 // Override AwtWindow::Reshape() to handle minimized/maximized
 // frames (see 6525850, 4065534)
-void AwtFrame::Reshape(int x, int y, int width, int height)
+void AwtFrame::Reshape(int x, int y, int w, int h)
 {
     if (isIconic()) {
     // normal AwtComponent::Reshape will not work for iconified windows so...
+        POINT pt = {x + w / 2, y + h / 2};
+        Devices::InstanceAccess devices;
+        HMONITOR monitor = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+        int screen = AwtWin32GraphicsDevice::GetScreenFromHMONITOR(monitor);
+        AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
+        // Try to set the correct size and jump to the correct location, even if
+        // it is on the different monitor. Note that for the "size" we use the
+        // current monitor, so the WM_DPICHANGED will adjust it for the "target"
+        // monitor.
+        MONITORINFO *miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screen);
+        x = device == NULL ? x : device->ScaleUpAbsX(x);
+        y = device == NULL ? y : device->ScaleUpAbsY(y);
+        w = ScaleUpX(w);
+        h = ScaleUpY(h);
+        // SetWindowPlacement takes workspace coordinates, but if taskbar is at
+        // top/left of screen, workspace coords != screen coords, so offset by
+        // workspace origin
+        x = x - (miInfo->rcWork.left - miInfo->rcMonitor.left);
+        y = y - (miInfo->rcWork.top - miInfo->rcMonitor.top);
         WINDOWPLACEMENT wp;
-        POINT       ptMinPosition = {x,y};
-        POINT       ptMaxPosition = {0,0};
-        RECT        rcNormalPosition = {x,y,x+width,y+height};
-        RECT        rcWorkspace;
-        HWND        hWndDesktop = GetDesktopWindow();
-        HWND        hWndSelf = GetHWnd();
-
-        // SetWindowPlacement takes workspace coordinates, but
-        // if taskbar is at top of screen, workspace coords !=
-        // screen coords, so offset by workspace origin
-        VERIFY(::SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&rcWorkspace, 0));
-        ::OffsetRect(&rcNormalPosition, -rcWorkspace.left, -rcWorkspace.top);
-
+        ::ZeroMemory(&wp, sizeof(WINDOWPLACEMENT));
         // set the window size for when it is not-iconified
         wp.length = sizeof(wp);
         wp.flags = WPF_SETMINPOSITION;
         wp.showCmd = IsVisible() ? SW_SHOWMINIMIZED : SW_HIDE;
-        wp.ptMinPosition = ptMinPosition;
-        wp.ptMaxPosition = ptMaxPosition;
-        wp.rcNormalPosition = rcNormalPosition;
+        wp.ptMinPosition = {x, y};
+        wp.ptMaxPosition = {0, 0};
+        wp.rcNormalPosition = {x, y, x + w, y + h};
 
         // If the call is not guarded with ignoreWmSize,
         // a regression for bug 4851435 appears.
@@ -688,7 +690,7 @@ void AwtFrame::Reshape(int x, int y, int width, int height)
         // changing the iconified state of the frame
         // while calling the Frame.setBounds() method.
         m_ignoreWmSize = TRUE;
-        ::SetWindowPlacement(hWndSelf, &wp);
+        ::SetWindowPlacement(GetHWnd(), &wp);
         m_ignoreWmSize = FALSE;
 
         return;
@@ -708,7 +710,7 @@ void AwtFrame::Reshape(int x, int y, int width, int height)
         }
     }
 
-    AwtWindow::Reshape(x, y, width, height);
+    AwtWindow::Reshape(x, y, w, h);
 }
 
 
@@ -811,13 +813,6 @@ AwtFrame::Show()
             ::ShowWindow(hwnd, SW_RESTORE);
         }
     }
-}
-
-void
-AwtFrame::SendWindowStateEvent(int oldState, int newState)
-{
-    SendWindowEvent(java_awt_event_WindowEvent_WINDOW_STATE_CHANGED,
-                    NULL, oldState, newState);
 }
 
 void
@@ -973,24 +968,7 @@ MsgRouting AwtFrame::WmSize(UINT type, int w, int h)
 
     jint changed = oldState ^ newState;
     if (changed != 0) {
-        DTRACE_PRINTLN2("AwtFrame::WmSize: reporting state change %x -> %x",
-                oldState, newState);
-
-        // sync target with peer
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        env->CallVoidMethod(GetPeer(env), AwtFrame::setExtendedStateMID, newState);
-
-        // report (de)iconification to old clients
-        if (changed & java_awt_Frame_ICONIFIED) {
-            if (newState & java_awt_Frame_ICONIFIED) {
-                SendWindowEvent(java_awt_event_WindowEvent_WINDOW_ICONIFIED);
-            } else {
-                SendWindowEvent(java_awt_event_WindowEvent_WINDOW_DEICONIFIED);
-            }
-        }
-
-        // New (since 1.4) state change event
-        SendWindowStateEvent(oldState, newState);
+        NotifyWindowStateChanged(oldState, newState);
     }
 
     // If window is in iconic state, do not send COMPONENT_RESIZED event
@@ -1695,10 +1673,6 @@ JNIEXPORT void JNICALL
 Java_sun_awt_windows_WFramePeer_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
-
-    AwtFrame::setExtendedStateMID = env->GetMethodID(cls, "setExtendedState", "(I)V");
-    DASSERT(AwtFrame::setExtendedStateMID);
-    CHECK_NULL(AwtFrame::setExtendedStateMID);
 
     AwtFrame::getExtendedStateMID = env->GetMethodID(cls, "getExtendedState", "()I");
     DASSERT(AwtFrame::getExtendedStateMID);

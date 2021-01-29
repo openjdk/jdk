@@ -286,9 +286,9 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                    javaVFrame *jvf,
                                    GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
                                    jint depth);
-  vframe* vframeFor(JavaThread* java_thread, jint depth);
-
  public:
+  static vframe* vframeForNoProcess(JavaThread* java_thread, jint depth);
+
   // get a field descriptor for the specified class and field
   static bool get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd);
 
@@ -306,8 +306,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                            jobject *monitor_ptr);
   jvmtiError get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
-  jvmtiError check_top_frame(JavaThread* current_thread, JavaThread* java_thread,
-                             jvalue value, TosState tos, Handle* ret_ob_h);
+  static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
+                                    jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(JavaThread* java_thread, jvalue value, TosState tos);
 };
 
@@ -336,60 +336,81 @@ class JvmtiEnvIterator : public StackObj {
   JvmtiEnv* next(JvmtiEnvBase* env) { return env->next_environment(); }
 };
 
-// VM operation to update for pop top frame.
-class VM_UpdateForPopTopFrame : public VM_Operation {
-private:
-  JvmtiThreadState* _state;
+class JvmtiHandshakeClosure : public HandshakeClosure {
+ protected:
   jvmtiError _result;
-
-public:
-  VM_UpdateForPopTopFrame(JvmtiThreadState* state) {
-    _state = state;
-    _result = JVMTI_ERROR_NONE;
-  }
-  VMOp_Type type() const { return VMOp_UpdateForPopTopFrame; }
+ public:
+  JvmtiHandshakeClosure(const char* name)
+    : HandshakeClosure(name),
+      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}
   jvmtiError result() { return _result; }
-  void doit();
 };
 
-// VM operation to set frame pop.
-class VM_SetFramePop : public VM_Operation {
+class SetForceEarlyReturn : public JvmtiHandshakeClosure {
+private:
+  JvmtiThreadState* _state;
+  jvalue _value;
+  TosState _tos;
+public:
+  SetForceEarlyReturn(JvmtiThreadState* state, jvalue value, TosState tos)
+    : JvmtiHandshakeClosure("SetForceEarlyReturn"),
+     _state(state),
+     _value(value),
+     _tos(tos) {}
+  void do_thread(Thread *target) {
+    doit(target, false /* self */);
+  }
+  void doit(Thread *target, bool self);
+};
+
+// HandshakeClosure to update for pop top frame.
+class UpdateForPopTopFrameClosure : public JvmtiHandshakeClosure {
+private:
+  JvmtiThreadState* _state;
+
+public:
+  UpdateForPopTopFrameClosure(JvmtiThreadState* state)
+    : JvmtiHandshakeClosure("UpdateForPopTopFrame"),
+     _state(state) {}
+  void do_thread(Thread *target) {
+    doit(target, false /* self */);
+  }
+  void doit(Thread *target, bool self);
+};
+
+// HandshakeClosure to set frame pop.
+class SetFramePopClosure : public JvmtiHandshakeClosure {
 private:
   JvmtiEnv *_env;
   JvmtiThreadState* _state;
   jint _depth;
-  jvmtiError _result;
 
 public:
-  VM_SetFramePop(JvmtiEnv *env, JvmtiThreadState* state, jint depth) {
-    _env = env;
-    _state = state;
-    _depth = depth;
-    _result = JVMTI_ERROR_NONE;
+  SetFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth)
+    : JvmtiHandshakeClosure("SetFramePop"),
+      _env(env),
+      _state(state),
+      _depth(depth) {}
+  void do_thread(Thread *target) {
+    doit(target, false /* self */);
   }
-  VMOp_Type type() const { return VMOp_SetFramePop; }
-  jvmtiError result() { return _result; }
-  void doit();
+  void doit(Thread *target, bool self);
 };
 
-
 // HandshakeClosure to get monitor information with stack depth.
-class GetOwnedMonitorInfoClosure : public HandshakeClosure {
+class GetOwnedMonitorInfoClosure : public JvmtiHandshakeClosure {
 private:
   JavaThread* _calling_thread;
   JvmtiEnv *_env;
-  jvmtiError _result;
   GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
 
 public:
   GetOwnedMonitorInfoClosure(JavaThread* calling_thread, JvmtiEnv* env,
                              GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitor_list)
-    : HandshakeClosure("GetOwnedMonitorInfo"),
+    : JvmtiHandshakeClosure("GetOwnedMonitorInfo"),
       _calling_thread(calling_thread),
       _env(env),
-      _result(JVMTI_ERROR_THREAD_NOT_ALIVE),
       _owned_monitors_list(owned_monitor_list) {}
-  jvmtiError result() { return _result; }
   void do_thread(Thread *target);
 };
 
@@ -419,46 +440,39 @@ public:
 };
 
 // HandshakeClosure to get current contended monitor.
-class GetCurrentContendedMonitorClosure : public HandshakeClosure {
+class GetCurrentContendedMonitorClosure : public JvmtiHandshakeClosure {
 private:
   JavaThread *_calling_thread;
   JvmtiEnv *_env;
   jobject *_owned_monitor_ptr;
-  jvmtiError _result;
 
 public:
   GetCurrentContendedMonitorClosure(JavaThread* calling_thread, JvmtiEnv *env, jobject *mon_ptr)
-    : HandshakeClosure("GetCurrentContendedMonitor"),
+    : JvmtiHandshakeClosure("GetCurrentContendedMonitor"),
       _calling_thread(calling_thread),
       _env(env),
-      _owned_monitor_ptr(mon_ptr),
-      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}
-  jvmtiError result() { return _result; }
+      _owned_monitor_ptr(mon_ptr) {}
   void do_thread(Thread *target);
 };
 
 // HandshakeClosure to get stack trace.
-class GetStackTraceClosure : public HandshakeClosure {
+class GetStackTraceClosure : public JvmtiHandshakeClosure {
 private:
   JvmtiEnv *_env;
   jint _start_depth;
   jint _max_count;
   jvmtiFrameInfo *_frame_buffer;
   jint *_count_ptr;
-  jvmtiError _result;
 
 public:
   GetStackTraceClosure(JvmtiEnv *env, jint start_depth, jint max_count,
                        jvmtiFrameInfo* frame_buffer, jint* count_ptr)
-    : HandshakeClosure("GetStackTrace"),
+    : JvmtiHandshakeClosure("GetStackTrace"),
       _env(env),
       _start_depth(start_depth),
       _max_count(max_count),
       _frame_buffer(frame_buffer),
-      _count_ptr(count_ptr),
-      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {
-  }
-  jvmtiError result() { return _result; }
+      _count_ptr(count_ptr) {}
   void do_thread(Thread *target);
 };
 
@@ -558,45 +572,37 @@ public:
 };
 
 // HandshakeClosure to count stack frames.
-class GetFrameCountClosure : public HandshakeClosure {
+class GetFrameCountClosure : public JvmtiHandshakeClosure {
 private:
   JvmtiEnv *_env;
   JvmtiThreadState *_state;
   jint *_count_ptr;
-  jvmtiError _result;
 
 public:
   GetFrameCountClosure(JvmtiEnv *env, JvmtiThreadState *state, jint *count_ptr)
-    : HandshakeClosure("GetFrameCount"),
+    : JvmtiHandshakeClosure("GetFrameCount"),
       _env(env),
       _state(state),
-      _count_ptr(count_ptr),
-      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {
-  }
-  jvmtiError result()    { return _result; }
+      _count_ptr(count_ptr) {}
   void do_thread(Thread *target);
 };
 
 // HandshakeClosure to get frame location.
-class GetFrameLocationClosure : public HandshakeClosure {
+class GetFrameLocationClosure : public JvmtiHandshakeClosure {
 private:
   JvmtiEnv *_env;
   jint _depth;
   jmethodID* _method_ptr;
   jlocation* _location_ptr;
-  jvmtiError _result;
 
 public:
   GetFrameLocationClosure(JvmtiEnv *env, jint depth,
                           jmethodID* method_ptr, jlocation* location_ptr)
-    : HandshakeClosure("GetFrameLocation"),
+    : JvmtiHandshakeClosure("GetFrameLocation"),
       _env(env),
       _depth(depth),
       _method_ptr(method_ptr),
-      _location_ptr(location_ptr),
-      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {
-  }
-  jvmtiError result()    { return _result; }
+      _location_ptr(location_ptr) {}
   void do_thread(Thread *target);
 };
 

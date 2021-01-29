@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -57,7 +56,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * Generate the Class Information Page.
@@ -85,11 +83,12 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
 
+    private static final Set<String> previewModifiers
+            = Set.of("sealed", "non-sealed");
+
     protected final TypeElement typeElement;
 
     protected final ClassTree classtree;
-
-    private final Navigation navBar;
 
     /**
      * @param configuration the configuration data for the doclet
@@ -102,20 +101,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;
         this.classtree = classTree;
-        this.navBar = new Navigation(typeElement, configuration, PageMode.CLASS, path);
     }
 
     @Override
     public Content getHeader(String header) {
         HtmlTree bodyTree = getBody(getWindowTitle(utils.getSimpleName(typeElement)));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
-                contents.moduleLabel);
-        navBar.setNavLinkModule(linkContent);
-        navBar.setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -145,7 +135,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 HtmlStyle.title, new StringContent(header));
         heading.add(getTypeParameterLinks(linkInfo));
         div.add(heading);
-        bodyContents.setHeader(headerContent)
+        bodyContents.setHeader(getHeader(PageMode.CLASS, typeElement))
                 .addMainContent(MarkerComments.START_OF_CLASS_DATA)
                 .addMainContent(div);
         return bodyTree;
@@ -157,13 +147,18 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     @Override
+    protected Navigation getNavBar(PageMode pageMode, Element element) {
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
+                contents.moduleLabel);
+        return super.getNavBar(pageMode, element)
+                .setNavLinkModule(linkContent)
+                .setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
+    }
+
+    @Override
     public void addFooter() {
         bodyContents.addMainContent(MarkerComments.END_OF_CLASS_DATA);
-        Content htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
+        bodyContents.setFooter(getFooter());
     }
 
     @Override
@@ -193,119 +188,44 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override @SuppressWarnings("preview")
     public void addClassSignature(String modifiers, Content classInfoTree) {
-        Content hr = new HtmlTree(TagName.HR);
-        classInfoTree.add(hr);
-        Content pre = new HtmlTree(TagName.PRE);
-        addAnnotationInfo(typeElement, pre);
-        pre.add(modifiers);
-        LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.Kind.CLASS_SIGNATURE, typeElement);
-        //Let's not link to ourselves in the signature.
-        linkInfo.linkToSelf = false;
-        Content className = new StringContent(utils.getSimpleName(typeElement));
-        Content parameterLinks = getTypeParameterLinks(linkInfo);
-        if (options.linkSource()) {
-            addSrcLink(typeElement, className, pre);
-            pre.add(parameterLinks);
-        } else {
-            Content span = HtmlTree.SPAN(HtmlStyle.typeNameLabel, className);
-            span.add(parameterLinks);
-            pre.add(span);
-        }
-        if (utils.isRecord(typeElement)) {
-            pre.add(getRecordComponents(typeElement));
-        }
-        if (!utils.isAnnotationType(typeElement)) {
-            if (!utils.isInterface(typeElement)) {
-                TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
-                if (superclass != null) {
-                    pre.add(DocletConstants.NL);
-                    pre.add("extends ");
-                    Content link = getLink(new LinkInfoImpl(configuration,
-                            LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
-                            superclass));
-                    pre.add(link);
-                }
+        ContentBuilder mods = new ContentBuilder();
+        String sep = null;
+        for (String modifiersPart : modifiers.split(" ")) {
+            if (sep != null) {
+                mods.add(sep);
             }
-            List<? extends TypeMirror> interfaces = typeElement.getInterfaces();
-            if (!interfaces.isEmpty()) {
-                boolean isFirst = true;
-                for (TypeMirror type : interfaces) {
-                    TypeElement tDoc = utils.asTypeElement(type);
-                    if (!(utils.isPublic(tDoc) || utils.isLinkable(tDoc))) {
-                        continue;
-                    }
-                    if (isFirst) {
-                        pre.add(DocletConstants.NL);
-                        pre.add(utils.isInterface(typeElement) ? "extends " : "implements ");
-                        isFirst = false;
-                    } else {
-                        pre.add(", ");
-                    }
-                    Content link = getLink(new LinkInfoImpl(configuration,
-                            LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
-                            type));
-                    pre.add(link);
-                }
+            if (previewModifiers.contains(modifiersPart)) {
+                mods.add(modifiersPart);
+                mods.add(HtmlTree.SUP(links.createLink(htmlIds.forPreviewSection(typeElement),
+                                                       contents.previewMark)));
+            } else {
+                mods.add(modifiersPart);
             }
+            sep = " ";
         }
-        List<? extends TypeMirror> permits = typeElement.getPermittedSubclasses();
-        List<? extends TypeMirror> linkablePermits = permits.stream()
-                .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
-                .collect(Collectors.toList());
-        if (!linkablePermits.isEmpty()) {
-            boolean isFirst = true;
-            for (TypeMirror type : linkablePermits) {
-                TypeElement tDoc = utils.asTypeElement(type);
-                if (isFirst) {
-                    pre.add(DocletConstants.NL);
-                    pre.add("permits ");
-                    isFirst = false;
-                } else {
-                    pre.add(", ");
-                }
-                Content link = getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.PERMITTED_SUBCLASSES,
-                        type));
-                pre.add(link);
-            }
-            if (linkablePermits.size() < permits.size()) {
-                Content c = new StringContent(resources.getText("doclet.not.exhaustive"));
-                pre.add(" ");
-                pre.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
-            }
+        if (modifiers.endsWith(" ")) {
+            mods.add(" ");
         }
-        classInfoTree.add(pre);
+        classInfoTree.add(new HtmlTree(TagName.HR));
+        classInfoTree.add(new Signatures.TypeSignature(typeElement, this)
+                .setModifiers(mods)
+                .toContent());
     }
 
-    @SuppressWarnings("preview")
-    private Content getRecordComponents(TypeElement typeElem) {
-        Content content = new ContentBuilder();
-        content.add("(");
-        String sep = "";
-        for (RecordComponentElement e : typeElement.getRecordComponents()) {
-            content.add(sep);
-            getAnnotations(e.getAnnotationMirrors(), false)
-                    .forEach(a -> { content.add(a); content.add(" "); });
-            Content link = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RECORD_COMPONENT,
-                    e.asType()));
-            content.add(link);
-            content.add(Entity.NO_BREAK_SPACE);
-            content.add(e.getSimpleName());
-            sep = ", ";
-        }
-        content.add(")");
-        return content;
-    }
 
     @Override
     public void addClassDescription(Content classInfoTree) {
+        addPreviewInfo(classInfoTree);
         if (!options.noComment()) {
             // generate documentation for the class.
             if (!utils.getFullBody(typeElement).isEmpty()) {
                 addInlineComment(typeElement, classInfoTree);
             }
         }
+    }
+
+    private void addPreviewInfo(Content classInfoTree) {
+        addPreviewInfo(typeElement, classInfoTree);
     }
 
     @Override
@@ -376,7 +296,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void addParamInfo(Content classInfoTree) {
         if (utils.hasBlockTag(typeElement, DocTree.Kind.PARAM)) {
-            Content paramInfo = (new ParamTaglet()).getTagletOutput(typeElement,
+            Content paramInfo = (new ParamTaglet()).getAllBlockTagOutput(typeElement,
                     getTagletWriterInstance(false));
             if (!paramInfo.isEmpty()) {
                 classInfoTree.add(HtmlTree.DL(HtmlStyle.notes, paramInfo));
@@ -507,7 +427,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addClassDeprecationInfo(Content classInfoTree) {
-        List<? extends DocTree> deprs = utils.getBlockTags(typeElement, DocTree.Kind.DEPRECATED);
+        List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(typeElement);
         if (utils.isDeprecated(typeElement)) {
             Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(typeElement));
             Content div = HtmlTree.DIV(HtmlStyle.deprecationBlock, deprLabel);
@@ -574,7 +494,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         HtmlTree section = HtmlTree.SECTION(HtmlStyle.details, contentTree);
         // The following id is required by the Navigation bar
         if (utils.isAnnotationType(typeElement)) {
-            section.setId(SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL.getName());
+            section.setId(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL);
         }
         return section;
     }

@@ -126,7 +126,7 @@ public final class Subject implements java.io.Serializable {
      *
      * @serial
      */
-    private volatile boolean readOnly = false;
+    private volatile boolean readOnly;
 
     private static final int PRINCIPAL_SET = 1;
     private static final int PUB_CREDENTIAL_SET = 2;

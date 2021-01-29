@@ -52,7 +52,8 @@
  * @clean nsk.jdb.print.print002.print002a
  * @compile -g:lines,source,vars print002a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.print.print002.print002
+ * @run main/othervm
+ *      nsk.jdb.print.print002.print002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

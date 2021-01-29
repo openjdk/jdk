@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
  **********************************************************************/
 
 package java.awt.color;
+
+import java.io.Serial;
 
 import sun.java2d.cmm.Profile;
 import sun.java2d.cmm.ProfileDeferralInfo;
@@ -78,10 +80,13 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * RGB components through the inverse of the above 3x3 matrix, and then
  * converting linear RGB to device RGB through inverses of the TRCs.
  */
-public class ICC_ProfileRGB
-extends ICC_Profile {
+public class ICC_ProfileRGB extends ICC_Profile {
 
-    static final long serialVersionUID = 8505067385152579334L;
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
+     */
+    @Serial
+    private static final long serialVersionUID = 8505067385152579334L;
 
     /**
      * Used to get a gamma value or TRC for the red component.
@@ -101,7 +106,7 @@ extends ICC_Profile {
     /**
      * Constructs an new {@code ICC_ProfileRGB} from a CMM ID.
      *
-     * @param p the CMM ID for the profile.
+     * @param  p the CMM ID for the profile.
      */
     ICC_ProfileRGB(Profile p) {
         super(p);
@@ -111,7 +116,7 @@ extends ICC_Profile {
      * Constructs a new {@code ICC_ProfileRGB} from a
      * {@code ProfileDeferralInfo} object.
      *
-     * @param pdi
+     * @param  pdi
      */
     ICC_ProfileRGB(ProfileDeferralInfo pdi) {
         super(pdi);
@@ -141,22 +146,12 @@ extends ICC_Profile {
      *         {@code greenColorantTag}, and {@code blueColorantTag}
      */
     public float[][] getMatrix() {
-        float[][] theMatrix = new float[3][3];
-        float[] tmpMatrix;
-
-        tmpMatrix = getXYZTag(ICC_Profile.icSigRedColorantTag);
-        theMatrix[0][0] = tmpMatrix[0];
-        theMatrix[1][0] = tmpMatrix[1];
-        theMatrix[2][0] = tmpMatrix[2];
-        tmpMatrix = getXYZTag(ICC_Profile.icSigGreenColorantTag);
-        theMatrix[0][1] = tmpMatrix[0];
-        theMatrix[1][1] = tmpMatrix[1];
-        theMatrix[2][1] = tmpMatrix[2];
-        tmpMatrix = getXYZTag(ICC_Profile.icSigBlueColorantTag);
-        theMatrix[0][2] = tmpMatrix[0];
-        theMatrix[1][2] = tmpMatrix[1];
-        theMatrix[2][2] = tmpMatrix[2];
-        return theMatrix;
+        float[] red = getXYZTag(ICC_Profile.icSigRedColorantTag);
+        float[] green = getXYZTag(ICC_Profile.icSigGreenColorantTag);
+        float[] blue = getXYZTag(ICC_Profile.icSigBlueColorantTag);
+        return new float[][]{{red[0], green[0], blue[0]},
+                             {red[1], green[1], blue[1]},
+                             {red[2], green[2], blue[2]}};
     }
 
     /**
@@ -179,33 +174,14 @@ extends ICC_Profile {
      * @param  component the {@code ICC_ProfileRGB} constant that represents the
      *         component whose TRC you want to retrieve
      * @return the gamma value as a float
+     * @throws IllegalArgumentException if the component is not
+     *         {@code REDCOMPONENT}, {@code GREENCOMPONENT}, or
+     *         {@code BLUECOMPONENT}
      * @throws ProfileDataException if the profile does not specify the
      *         corresponding TRC as a single gamma value
      */
     public float getGamma(int component) {
-    float theGamma;
-    int theSignature;
-
-        switch (component) {
-        case REDCOMPONENT:
-            theSignature = ICC_Profile.icSigRedTRCTag;
-            break;
-
-        case GREENCOMPONENT:
-            theSignature = ICC_Profile.icSigGreenTRCTag;
-            break;
-
-        case BLUECOMPONENT:
-            theSignature = ICC_Profile.icSigBlueTRCTag;
-            break;
-
-        default:
-            throw new IllegalArgumentException("Must be Red, Green, or Blue");
-        }
-
-        theGamma = super.getGamma(theSignature);
-
-        return theGamma;
+        return super.getGamma(toTag(component));
     }
 
     /**
@@ -230,33 +206,32 @@ extends ICC_Profile {
      *         component whose TRC you want to retrieve: {@code REDCOMPONENT},
      *         {@code GREENCOMPONENT}, or {@code BLUECOMPONENT}
      * @return a short array representing the TRC
+     * @throws IllegalArgumentException if the component is not
+     *         {@code REDCOMPONENT}, {@code GREENCOMPONENT}, or
+     *         {@code BLUECOMPONENT}
      * @throws ProfileDataException if the profile does not specify the
      *         corresponding TRC as a table
      */
     public short[] getTRC(int component) {
-    short[] theTRC;
-    int theSignature;
-
-        switch (component) {
-        case REDCOMPONENT:
-            theSignature = ICC_Profile.icSigRedTRCTag;
-            break;
-
-        case GREENCOMPONENT:
-            theSignature = ICC_Profile.icSigGreenTRCTag;
-            break;
-
-        case BLUECOMPONENT:
-            theSignature = ICC_Profile.icSigBlueTRCTag;
-            break;
-
-        default:
-            throw new IllegalArgumentException("Must be Red, Green, or Blue");
-        }
-
-        theTRC = super.getTRC(theSignature);
-
-        return theTRC;
+        return super.getTRC(toTag(component));
     }
 
+    /**
+     * Converts the {@code ICC_ProfileRGB} constant to the appropriate tag.
+     *
+     * @param  component the {@code ICC_ProfileRGB} constant
+     * @return the tag signature
+     * @throws IllegalArgumentException if the component is not
+     *         {@code REDCOMPONENT}, {@code GREENCOMPONENT}, or
+     *         {@code BLUECOMPONENT}
+     */
+    private static int toTag(int component) {
+        return switch (component) {
+            case REDCOMPONENT -> ICC_Profile.icSigRedTRCTag;
+            case GREENCOMPONENT -> ICC_Profile.icSigGreenTRCTag;
+            case BLUECOMPONENT -> ICC_Profile.icSigBlueTRCTag;
+            default -> throw new IllegalArgumentException(
+                    "Must be Red, Green, or Blue");
+        };
+    }
 }

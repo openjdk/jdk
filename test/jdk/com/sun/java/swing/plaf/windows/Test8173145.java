@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,56 @@
  */
 
 /* @test
+   @key headful
    @bug 8173145
    @requires (os.family == "windows")
    @summary Menu is activated after using mnemonic Alt/Key combination
-   @modules java.desktop/com.sun.java.swing.plaf.windows
    @run main Test8173145
 */
 
-import java.awt.*;
+import java.awt.AWTException;
+import java.awt.Component;
+import java.awt.KeyboardFocusManager;
+import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 public class Test8173145 {
 
     private volatile static JButton btn;
+    private volatile static JFrame f;
     private volatile static boolean uiCreated;
 
     public static void main(String[] args) throws InvocationTargetException, InterruptedException, AWTException {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    uiCreated = createGUI();
-                } catch (Exception e) {
-                    e.printStackTrace();
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        uiCreated = createGUI();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-            }
-        });
+            });
 
-        if (uiCreated) {
-            test();
-        } else {
-            //no windows l&f, skip the test
+            if (uiCreated) {
+                test();
+            } else {
+                //no windows l&f, skip the test
+            }
+        }finally {
+            SwingUtilities.invokeAndWait(() -> f.dispose());
         }
     }
 
@@ -66,13 +82,14 @@ public class Test8173145 {
         } catch (AWTException e) {
             throw new RuntimeException(e);
         }
-        robot.setAutoDelay(100);
+        robot.setAutoDelay(150);
         robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_ALT);
         robot.keyPress(KeyEvent.VK_M);
         robot.keyRelease(KeyEvent.VK_M);
         robot.keyRelease(KeyEvent.VK_ALT);
+        robot.waitForIdle();
 
         Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
 
@@ -87,7 +104,7 @@ public class Test8173145 {
         } catch (Exception e) {
             return false;
         }
-        JFrame f = new JFrame();
+        f = new JFrame();
 
         JPanel panel = new JPanel();
         btn = new JButton("Mmmmm");
@@ -103,6 +120,7 @@ public class Test8173145 {
         f.add(panel);
         f.pack();
         f.setVisible(true);
+        f.setLocationRelativeTo(null);
         tf.requestFocus();
         return true;
     }

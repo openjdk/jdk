@@ -229,7 +229,7 @@ void BFSClosure::do_oop(narrowOop* ref) {
 }
 
 void BFSClosure::do_root(UnifiedOopRef ref) {
-  assert(!ref.is_null(), "invariant");
+  assert(ref.dereference() != NULL, "pointee must not be null");
   if (!_edge_queue->is_full()) {
     _edge_queue->add(NULL, ref);
   }

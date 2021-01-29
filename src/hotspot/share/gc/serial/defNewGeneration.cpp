@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,9 +115,6 @@ void CLDScanClosure::do_cld(ClassLoaderData* cld) {
   // If the cld has not been dirtied we know that there's
   // no references into  the young gen and we can skip it.
   if (cld->has_modified_oops()) {
-    if (_accumulate_modified_oops) {
-      cld->accumulate_modified_oops();
-    }
 
     // Tell the closure which CLD is being scanned so that it can be dirtied
     // if oops are left pointing into the young gen.
@@ -567,8 +564,7 @@ void DefNewGeneration::collect(bool   full,
   DefNewScanClosure       scan_closure(this);
   DefNewYoungerGenClosure younger_gen_closure(this, _old_gen);
 
-  CLDScanClosure cld_scan_closure(&scan_closure,
-                                  heap->rem_set()->cld_rem_set()->accumulate_modified_oops());
+  CLDScanClosure cld_scan_closure(&scan_closure);
 
   set_promo_failure_scan_stack_closure(&scan_closure);
   FastEvacuateFollowersClosure evacuate_followers(heap,
@@ -693,7 +689,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
-  _preserved_marks_set.get()->push_if_necessary(old, old->mark_raw());
+  _preserved_marks_set.get()->push_if_necessary(old, old->mark());
   // forward to self
   old->forward_to(old);
 
@@ -715,7 +711,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
 
   // Try allocating obj in to-space (unless too old)
   if (old->age() < tenuring_threshold()) {
-    obj = (oop) to()->allocate_aligned(s);
+    obj = (oop) to()->allocate(s);
   }
 
   // Otherwise try allocating obj tenured
@@ -868,10 +864,6 @@ void DefNewGeneration::gc_epilogue(bool full) {
     to()->check_mangled_unused_area_complete();
   }
 
-  if (!CleanChunkPoolAsync) {
-    Chunk::clean_chunk_pool();
-  }
-
   // update the generation and space performance counters
   update_counters();
   gch->counters()->update_counters();
@@ -931,11 +923,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   // Note that since DefNewGeneration supports lock-free allocation, we
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
-  if (result != NULL) {
-    if (_old_gen != NULL) {
-      _old_gen->sample_eden_chunk();
-    }
-  } else {
+  if (result == NULL) {
     // If the eden is full and the last collection bailed out, we are running
     // out of heap space, and we try to allocate the from-space, too.
     // allocate_from_space can't be inlined because that would introduce a
@@ -947,11 +935,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
 
 HeapWord* DefNewGeneration::par_allocate(size_t word_size,
                                          bool is_tlab) {
-  HeapWord* res = eden()->par_allocate(word_size);
-  if (_old_gen != NULL) {
-    _old_gen->sample_eden_chunk();
-  }
-  return res;
+  return eden()->par_allocate(word_size);
 }
 
 size_t DefNewGeneration::tlab_capacity() const {

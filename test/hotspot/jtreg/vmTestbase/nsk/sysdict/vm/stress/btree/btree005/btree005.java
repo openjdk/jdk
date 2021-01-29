@@ -45,7 +45,6 @@
  * @build nsk.sysdict.share.BTreeTest
  * @run main/othervm
  *      -XX:-UseGCOverheadLimit
- *      PropertyResolvingWrapper
  *      nsk.sysdict.share.BTreeTest
  *      -jarpath btree.jar${path.separator}fats.jar
  *      -useSingleLoader

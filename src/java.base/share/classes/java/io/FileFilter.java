@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@ package java.io;
 /**
  * A filter for abstract pathnames.
  *
- * <p> Instances of this interface may be passed to the <code>{@link
- * File#listFiles(java.io.FileFilter) listFiles(FileFilter)}</code> method
- * of the <code>{@link java.io.File}</code> class.
+ * <p> Instances of this interface may be passed to the
+ * {@link File#listFiles(java.io.FileFilter) listFiles(FileFilter)} method
+ * of the {@link java.io.File} class.
  *
  * @since 1.2
  */

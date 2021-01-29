@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /*
  * @test
  *
@@ -29,7 +28,8 @@
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, fds, jdk]
  * VM Testbase readme:
  * DESCRIPTION
- *     Execute an invokedynamic instruction 10000 times to trigger Hotspot compilation. Set a debugger breakpoint to invokedynamic instruction.
+ *     Execute an invokedynamic instruction 10000 times to trigger Hotspot compilation.
+ *     Set a debugger breakpoint to invokedynamic instruction.
  *     Make few debugger steps, obtaining various information from JVM
  *
  * @library /vmTestbase
@@ -42,7 +42,7 @@
  * @build vm.mlvm.indy.stress.jdi.breakpointInCompiledCode.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      vm.mlvm.indy.stress.jdi.breakpointInCompiledCode.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -64,9 +64,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Test extends JDIBreakpointTest {
-    //  bootstrap,runDebuggee=>(indyWrapper:S5000,~target,stop)
+    // bootstrap,runDebuggee=>(indyWrapper:S5000,~target,stop)
     @Override
-    protected List<BreakpointInfo> getBreakpoints(String debuggeeClassName)  {
+    protected List<BreakpointInfo> getBreakpoints(String debuggeeClassName) {
         List<BreakpointInfo> result = new ArrayList<>();
         result.add(new BreakpointInfo("bootstrap"));
         {
@@ -88,6 +88,7 @@ public class Test extends JDIBreakpointTest {
             info.subBreakpoints = subBreakpoints;
             result.add(info);
         }
+
         return result;
     }
 

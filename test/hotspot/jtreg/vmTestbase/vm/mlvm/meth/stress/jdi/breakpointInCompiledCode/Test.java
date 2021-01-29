@@ -43,7 +43,7 @@
  * @build vm.mlvm.meth.stress.jdi.breakpointInCompiledCode.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      vm.mlvm.meth.stress.jdi.breakpointInCompiledCode.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

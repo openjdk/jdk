@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,27 @@
  */
 
 #include "precompiled.hpp"
-
 #include "code/codeCache.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
+#include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
+#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
@@ -52,16 +56,60 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "gc/shared/workgroup.hpp"
 
 ShenandoahMarkCompact::ShenandoahMarkCompact() :
-  _gc_timer(NULL),
+  _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
 
-void ShenandoahMarkCompact::initialize(GCTimer* gc_timer) {
-  _gc_timer = gc_timer;
+bool ShenandoahMarkCompact::collect(GCCause::Cause cause) {
+  vmop_entry_full(cause);
+  // Always success
+  return true;
+}
+
+void ShenandoahMarkCompact::vmop_entry_full(GCCause::Cause cause) {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->full_stw_collection_counters());
+  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_gross);
+
+  heap->try_inject_alloc_failure();
+  VM_ShenandoahFullGC op(cause, this);
+  VMThread::execute(&op);
+}
+
+void ShenandoahMarkCompact::entry_full(GCCause::Cause cause) {
+  static const char* msg = "Pause Full";
+  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::full_gc, true /* log_heap_usage */);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_fullgc(),
+                              "full gc");
+
+  op_full(cause);
+}
+
+void ShenandoahMarkCompact::op_full(GCCause::Cause cause) {
+  ShenandoahMetricsSnapshot metrics;
+  metrics.snap_before();
+
+  // Perform full GC
+  do_it(cause);
+
+  metrics.snap_after();
+
+  if (metrics.is_good_progress()) {
+    ShenandoahHeap::heap()->notify_gc_progress();
+  } else {
+    // Nothing to do. Tell the allocation path that we have failed to make
+    // progress, and it can finally fail.
+    ShenandoahHeap::heap()->notify_gc_no_progress();
+  }
 }
 
 void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
@@ -113,14 +161,14 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
     // b. Cancel concurrent mark, if in progress
     if (heap->is_concurrent_mark_in_progress()) {
-      heap->concurrent_mark()->cancel();
+      ShenandoahConcurrentGC::cancel();
       heap->set_concurrent_mark_in_progress(false);
     }
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
     // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
     if (has_forwarded_objects) {
-      heap->concurrent_mark()->update_roots(ShenandoahPhaseTimings::full_gc_update_roots);
+      update_roots(true /*full_gc*/);
     }
 
     // d. Reset the bitmaps for new marking
@@ -129,10 +177,8 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     assert(!heap->marking_context()->is_complete(), "sanity");
 
     // e. Abandon reference discovery and clear all discovered references.
-    ReferenceProcessor* rp = heap->ref_processor();
-    rp->disable_discovery();
+    ShenandoahReferenceProcessor* rp = heap->ref_processor();
     rp->abandon_partial_discovery();
-    rp->verify_no_references_recorded();
 
     // f. Set back forwarded objects bit back, in case some steps above dropped it.
     heap->set_has_forwarded_objects(has_forwarded_objects);
@@ -239,20 +285,14 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
   ShenandoahPrepareForMarkClosure cl;
   heap->heap_region_iterate(&cl);
 
-  ShenandoahConcurrentMark* cm = heap->concurrent_mark();
-
-  heap->set_process_references(heap->heuristics()->can_process_references());
   heap->set_unload_classes(heap->heuristics()->can_unload_classes());
 
-  ReferenceProcessor* rp = heap->ref_processor();
+  ShenandoahReferenceProcessor* rp = heap->ref_processor();
   // enable ("weak") refs discovery
-  rp->enable_discovery(true /*verify_no_refs*/);
-  rp->setup_policy(true); // forcefully purge all soft references
-  rp->set_active_mt_degree(heap->workers()->active_workers());
+  rp->set_soft_reference_policy(true); // forcefully purge all soft references
 
-  cm->mark_roots(ShenandoahPhaseTimings::full_gc_scan_roots);
-  cm->finish_mark_from_roots(/* full_gc = */ true);
-  heap->mark_complete_marking_context();
+  ShenandoahSTWMark mark(true /*full_gc*/);
+  mark.mark();
   heap->parallel_cleaning(true /* full_gc */);
 }
 
@@ -323,7 +363,7 @@ public:
     // Object fits into current region, record new location:
     assert(_compact_point + obj_size <= _to_region->end(), "must fit");
     shenandoah_assert_not_forwarded(NULL, p);
-    _preserved_marks->push_if_necessary(p, p->mark_raw());
+    _preserved_marks->push_if_necessary(p, p->mark());
     p->forward_to(oop(_compact_point));
     _compact_point += obj_size;
   }
@@ -337,7 +377,7 @@ private:
 
 public:
   ShenandoahPrepareForCompactionTask(PreservedMarksSet *preserved_marks, ShenandoahHeapRegionSet **worker_slices) :
-    AbstractGangTask("Shenandoah Prepare For Compaction Task"),
+    AbstractGangTask("Shenandoah Prepare For Compaction"),
     _preserved_marks(preserved_marks),
     _heap(ShenandoahHeap::heap()), _worker_slices(worker_slices) {
   }
@@ -431,7 +471,7 @@ void ShenandoahMarkCompact::calculate_target_humongous_objects() {
 
       if (start >= to_begin && start != r->index()) {
         // Fits into current window, and the move is non-trivial. Record the move then, and continue scan.
-        _preserved_marks->get(0)->push_if_necessary(old_obj, old_obj->mark_raw());
+        _preserved_marks->get(0)->push_if_necessary(old_obj, old_obj->mark());
         old_obj->forward_to(oop(heap->get_region(start)->bottom()));
         to_end = start;
         continue;
@@ -730,7 +770,7 @@ private:
 
 public:
   ShenandoahAdjustPointersTask() :
-    AbstractGangTask("Shenandoah Adjust Pointers Task"),
+    AbstractGangTask("Shenandoah Adjust Pointers"),
     _heap(ShenandoahHeap::heap()) {
   }
 
@@ -753,7 +793,7 @@ private:
   PreservedMarksSet* _preserved_marks;
 public:
   ShenandoahAdjustRootPointersTask(ShenandoahRootAdjuster* rp, PreservedMarksSet* preserved_marks) :
-    AbstractGangTask("Shenandoah Adjust Root Pointers Task"),
+    AbstractGangTask("Shenandoah Adjust Root Pointers"),
     _rp(rp),
     _preserved_marks(preserved_marks) {}
 
@@ -806,7 +846,7 @@ public:
       HeapWord* compact_to = cast_from_oop<HeapWord*>(p->forwardee());
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = oop(compact_to);
-      new_obj->init_mark_raw();
+      new_obj->init_mark();
     }
   }
 };
@@ -818,7 +858,7 @@ private:
 
 public:
   ShenandoahCompactObjectsTask(ShenandoahHeapRegionSet** worker_slices) :
-    AbstractGangTask("Shenandoah Compact Objects Task"),
+    AbstractGangTask("Shenandoah Compact Objects"),
     _heap(ShenandoahHeap::heap()),
     _worker_slices(worker_slices) {
   }
@@ -922,7 +962,7 @@ void ShenandoahMarkCompact::compact_humongous_objects() {
                                    ShenandoahHeapRegion::region_size_words()*num_regions);
 
       oop new_obj = oop(heap->get_region(new_start)->bottom());
-      new_obj->init_mark_raw();
+      new_obj->init_mark();
 
       {
         for (size_t c = old_start; c <= old_end; c++) {
@@ -967,7 +1007,7 @@ private:
 
 public:
   ShenandoahMCResetCompleteBitmapTask() :
-    AbstractGangTask("Parallel Reset Bitmap Task") {
+    AbstractGangTask("Shenandoah Reset Bitmap") {
   }
 
   void work(uint worker_id) {

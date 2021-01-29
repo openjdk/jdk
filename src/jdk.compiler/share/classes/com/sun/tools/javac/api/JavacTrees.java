@@ -59,6 +59,7 @@ import javax.tools.StandardLocation;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.EntityTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -103,7 +104,6 @@ import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.DocCommentParser;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
@@ -301,9 +301,19 @@ public class JavacTrees extends DocTrees {
                                 return getEndPosition(file, comment, last) + correction;
                             }
 
-                            DCBlockTag block = (DCBlockTag) tree;
+                            int pos;
+                            String name;
+                            if (tree.getKind() == DocTree.Kind.RETURN) {
+                                DCTree.DCReturn dcReturn = (DCTree.DCReturn) tree;
+                                pos = dcReturn.pos;
+                                name = dcReturn.getTagName();
+                            } else {
+                                DCBlockTag block = (DCBlockTag) tree;
+                                pos = block.pos;
+                                name = block.getTagName();
+                            }
 
-                            return dcComment.comment.getSourcePos(block.pos + block.getTagName().length() + 1);
+                            return dcComment.comment.getSourcePos(pos + name.length() + 1);
                         }
                         case ENTITY: {
                             DCEntity endEl = (DCEntity) tree;
@@ -1161,6 +1171,11 @@ public class JavacTrees extends DocTrees {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public void setBreakIterator(BreakIterator breakiterator) {
         this.breakIterator = breakiterator;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public String getCharacters(EntityTree tree) {
+        return Entity.getCharacters(tree);
     }
 
     /**

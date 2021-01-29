@@ -24,6 +24,8 @@
  */
 package javax.swing.text;
 
+import java.io.Serial;
+import java.util.Arrays;
 import java.util.Vector;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -39,7 +41,7 @@ import java.lang.ref.ReferenceQueue;
 /**
  * An implementation of the AbstractDocument.Content interface
  * implemented using a gapped buffer similar to that used by emacs.
- * The underlying storage is a array of unicode characters with
+ * The underlying storage is an array of Unicode characters with
  * a gap somewhere.  The gap is moved to the location of changes
  * to take advantage of common behavior where most changes are
  * in the same location.  Changes that occur at a gap boundary are
@@ -49,8 +51,8 @@ import java.lang.ref.ReferenceQueue;
  * The positions tracking change are also generally cheap to
  * maintain.  The Position implementations (marks) store the array
  * index and can easily calculate the sequential position from
- * the current gap location.  Changes only require update to the
- * the marks between the old and new gap boundaries when the gap
+ * the current gap location.  Changes only require updating the
+ * marks between the old and new gap boundaries when the gap
  * is moved, so generally updating the marks is pretty cheap.
  * The marks are stored sorted so they can be located quickly
  * with a binary search.  This increases the cost of adding a
@@ -103,6 +105,12 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         return carray.length;
     }
 
+    @Override
+    void resize(int nsize) {
+        char[] carray = (char[]) getArray();
+        super.resize(nsize);
+        Arrays.fill(carray, '\u0000');
+    }
     // --- AbstractDocument.Content methods -------------------------
 
     /**
@@ -195,10 +203,12 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         if ((where + len) <= g0) {
             // below gap
             chars.array = array;
+            chars.copy = false;
             chars.offset = where;
         } else if (where >= g0) {
             // above gap
             chars.array = array;
+            chars.copy = false;
             chars.offset = g1 + where - g0;
         } else {
             // spans the gap
@@ -206,12 +216,14 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
             if (chars.isPartialReturn()) {
                 // partial return allowed, return amount before the gap
                 chars.array = array;
+                chars.copy = false;
                 chars.offset = where;
                 chars.count = before;
                 return;
             }
             // partial return not allowed, must copy
             chars.array = new char[len];
+            chars.copy = true;
             chars.offset = 0;
             System.arraycopy(array, where, chars.array, 0, before);
             System.arraycopy(array, g1, chars.array, before, len - before);
@@ -320,7 +332,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
 
     /**
      * Record used for searching for the place to
-     * start updating mark indexs when the gap
+     * start updating mark indexes when the gap
      * boundaries are moved.
      */
     private transient MarkData search;
@@ -687,6 +699,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
 
     // --- serialization -------------------------------------
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException {
         s.defaultReadObject();

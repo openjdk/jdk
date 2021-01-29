@@ -299,7 +299,7 @@ class vframeStreamCommon : StackObj {
 
  public:
   // Constructor
-  inline vframeStreamCommon(JavaThread* thread);
+  inline vframeStreamCommon(JavaThread* thread, bool process_frames);
 
   // Accessors
   Method* method() const { return _method; }
@@ -337,7 +337,7 @@ class vframeStreamCommon : StackObj {
 class vframeStream : public vframeStreamCommon {
  public:
   // Constructors
-  vframeStream(JavaThread* thread, bool stop_at_java_call_stub = false);
+  vframeStream(JavaThread* thread, bool stop_at_java_call_stub = false, bool process_frames = true);
 
   // top_frame may not be at safepoint, start with sender
   vframeStream(JavaThread* thread, frame top_frame, bool stop_at_java_call_stub = false);

@@ -38,7 +38,7 @@ typedef struct JDKFontInfo_Struct {
     JNIEnv* env;
     jobject font2D;
     jobject fontStrike;
-    long nativeFont;
+    jlong nativeFont;
     float matrix[4];
     float ptSize;
     float xPtSize;

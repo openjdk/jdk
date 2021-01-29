@@ -39,10 +39,12 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/archiveUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
@@ -241,6 +243,7 @@ LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle
 
   // Coming from the constant pool always checks access
   _check_access  = true;
+  _check_loader_constraints = true;
 }
 
 LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
@@ -256,17 +259,20 @@ LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
 
   // Coming from the constant pool always checks access
   _check_access  = true;
+  _check_loader_constraints = true;
 }
 
 #ifndef PRODUCT
 void LinkInfo::print() {
   ResourceMark rm;
-  tty->print_cr("Link resolved_klass=%s name=%s signature=%s current_klass=%s check_access=%s",
+  tty->print_cr("Link resolved_klass=%s name=%s signature=%s current_klass=%s check_access=%s check_loader_constraints=%s",
                 _resolved_klass->name()->as_C_string(),
                 _name->as_C_string(),
                 _signature->as_C_string(),
                 _current_klass == NULL ? "(none)" : _current_klass->name()->as_C_string(),
-                _check_access ? "true" : "false");
+                _check_access ? "true" : "false",
+                _check_loader_constraints ? "true" : "false");
+
 }
 #endif // PRODUCT
 //------------------------------------------------------------------------------------------------------------------------
@@ -795,7 +801,8 @@ Method* LinkResolver::resolve_method(const LinkInfo& link_info,
                                resolved_method->method_holder(),
                                resolved_method,
                                CHECK_NULL);
-
+  }
+  if (link_info.check_loader_constraints()) {
     // check loader constraints
     check_method_loader_constraints(link_info, resolved_method, "method", CHECK_NULL);
   }
@@ -891,7 +898,8 @@ Method* LinkResolver::resolve_interface_method(const LinkInfo& link_info, Byteco
                                resolved_method->method_holder(),
                                resolved_method,
                                CHECK_NULL);
-
+  }
+  if (link_info.check_loader_constraints()) {
     check_method_loader_constraints(link_info, resolved_method, "interface method", CHECK_NULL);
   }
 
@@ -1055,7 +1063,7 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
     }
   }
 
-  if ((sel_klass != current_klass) && (current_klass != NULL)) {
+  if (link_info.check_loader_constraints() && (sel_klass != current_klass) && (current_klass != NULL)) {
     check_field_loader_constraints(field, sig, current_klass, sel_klass, CHECK);
   }
 
@@ -1089,7 +1097,8 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     // Use updated LinkInfo to reresolve with resolved method holder
     LinkInfo new_info(resolved_klass, link_info.name(), link_info.signature(),
                       link_info.current_klass(),
-                      link_info.check_access() ? LinkInfo::AccessCheck::required : LinkInfo::AccessCheck::skip);
+                      link_info.check_access() ? LinkInfo::AccessCheck::required : LinkInfo::AccessCheck::skip,
+                      link_info.check_loader_constraints() ? LinkInfo::LoaderConstraintCheck::required : LinkInfo::LoaderConstraintCheck::skip);
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
@@ -1250,7 +1259,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
         ss.print("'");
         THROW_MSG(vmSymbols::java_lang_AbstractMethodError(), ss.as_string());
       // check loader constraints if found a different method
-      } else if (sel_method() != resolved_method()) {
+      } else if (link_info.check_loader_constraints() && sel_method() != resolved_method()) {
         check_method_loader_constraints(link_info, sel_method, "method", CHECK);
       }
     }
@@ -1758,6 +1767,9 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // of this method, via CPCE::set_dynamic_call, which uses
   // an ObjectLocker to do the final serialization of updates
   // to CPCE state, including f1.
+
+  // Log dynamic info to CDS classlist.
+  ArchiveUtils::log_to_classlist(&bootstrap_specifier, THREAD);
 }
 
 void LinkResolver::resolve_dynamic_call(CallInfo& result,

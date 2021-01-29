@@ -184,8 +184,7 @@ public class JavacParser implements Parser {
         endPosTable = newEndPosTable(keepEndPositions);
         this.allowYieldStatement = (!preview.isPreview(Feature.SWITCH_EXPRESSION) || preview.isEnabled()) &&
                 Feature.SWITCH_EXPRESSION.allowedInSource(source);
-        this.allowRecords = (!preview.isPreview(Feature.RECORDS) || preview.isEnabled()) &&
-                Feature.RECORDS.allowedInSource(source);
+        this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
                 Feature.SEALED_CLASSES.allowedInSource(source);
     }
@@ -491,9 +490,13 @@ public class JavacParser implements Parser {
 
     /** Diagnose a modifier flag from the set, if any. */
     protected void checkNoMods(long mods) {
+        checkNoMods(token.pos, mods);
+    }
+
+    protected void checkNoMods(int pos, long mods) {
         if (mods != 0) {
             long lowestMod = mods & -mods;
-            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.ModNotAllowedHere(Flags.asFlagSet(lowestMod)));
+            log.error(DiagnosticFlag.SYNTAX, pos, Errors.ModNotAllowedHere(Flags.asFlagSet(lowestMod)));
         }
     }
 
@@ -567,7 +570,7 @@ public class JavacParser implements Parser {
         return ident(false);
     }
 
-    protected Name ident(boolean advanceOnErrors) {
+    protected Name ident(boolean allowClass) {
         if (token.kind == IDENTIFIER) {
             Name name = token.name();
             nextToken();
@@ -603,8 +606,9 @@ public class JavacParser implements Parser {
             return name;
         } else {
             accept(IDENTIFIER);
-            if (advanceOnErrors) {
+            if (allowClass && token.kind == CLASS) {
                 nextToken();
+                return names._class;
             }
             return names.error;
         }
@@ -932,10 +936,31 @@ public class JavacParser implements Parser {
             if (token.kind == INSTANCEOF) {
                 int pos = token.pos;
                 nextToken();
-                JCTree pattern = parseType();
+                int patternPos = token.pos;
+                JCModifiers mods = optFinal(0);
+                int typePos = token.pos;
+                JCExpression type = unannotatedType(false);
+                JCTree pattern;
                 if (token.kind == IDENTIFIER) {
                     checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
-                    pattern = toP(F.at(token.pos).BindingPattern(ident(), pattern));
+                    JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), type, null));
+                    pattern = toP(F.at(patternPos).BindingPattern(var));
+                } else {
+                    checkNoMods(typePos, mods.flags & ~Flags.DEPRECATED);
+                    if (mods.annotations.nonEmpty()) {
+                        checkSourceLevel(mods.annotations.head.pos, Feature.TYPE_ANNOTATIONS);
+                        List<JCAnnotation> typeAnnos =
+                                mods.annotations
+                                    .map(decl -> {
+                                        JCAnnotation typeAnno = F.at(decl.pos)
+                                                                 .TypeAnnotation(decl.annotationType,
+                                                                                  decl.args);
+                                        endPosTable.replaceTree(decl, typeAnno);
+                                        return typeAnno;
+                                    });
+                        type = insertAnnotationsToMostInner(type, typeAnnos, false);
+                    }
+                    pattern = type;
                 }
                 odStack[top] = F.at(pos).TypeTest(odStack[top], pattern);
             } else {
@@ -1319,6 +1344,14 @@ public class JavacParser implements Parser {
                         }
                         // typeArgs saved for next loop iteration.
                         t = toP(F.at(pos).Select(t, ident()));
+                        if (token.pos <= endPosTable.errorEndPos &&
+                            token.kind == MONKEYS_AT) {
+                            //error recovery, case like:
+                            //int i = expr.<missing-ident>
+                            //@Deprecated
+                            if (typeArgs != null) illegal();
+                            return toP(t);
+                        }
                         if (tyannos != null && tyannos.nonEmpty()) {
                             t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
                         }
@@ -1526,6 +1559,13 @@ public class JavacParser implements Parser {
                         tyannos = typeAnnotationsOpt();
                     }
                     t = toP(F.at(pos1).Select(t, ident(true)));
+                    if (token.pos <= endPosTable.errorEndPos &&
+                        token.kind == MONKEYS_AT) {
+                        //error recovery, case like:
+                        //int i = expr.<missing-ident>
+                        //@Deprecated
+                        break;
+                    }
                     if (tyannos != null && tyannos.nonEmpty()) {
                         t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
                     }
@@ -3489,7 +3529,7 @@ public class JavacParser implements Parser {
             List<JCAnnotation> annotations = List.nil();
             seenPackage = true;
             if (mods != null) {
-                checkNoMods(mods.flags);
+                checkNoMods(mods.flags & ~Flags.DEPRECATED);
                 annotations = mods.annotations;
                 mods = null;
             }
@@ -3716,7 +3756,7 @@ public class JavacParser implements Parser {
         } else {
             int pos = token.pos;
             List<JCTree> errs;
-            if (token.kind == IDENTIFIER && token.name() == names.record && preview.isEnabled()) {
+            if (token.kind == IDENTIFIER && token.name() == names.record) {
                 checkSourceLevel(Feature.RECORDS);
                 JCErroneous erroneousTree = syntaxError(token.pos, List.of(mods), Errors.RecordHeaderExpected);
                 return toP(F.Exec(erroneousTree));
@@ -3800,7 +3840,8 @@ public class JavacParser implements Parser {
                     for (JCVariableDecl param : headerFields) {
                         tmpParams.add(F.at(param)
                                 // we will get flags plus annotations from the record component
-                                .VarDef(F.Modifiers(Flags.PARAMETER | param.mods.flags & Flags.VARARGS, param.mods.annotations),
+                                .VarDef(F.Modifiers(Flags.PARAMETER | Flags.GENERATED_MEMBER | param.mods.flags & Flags.VARARGS,
+                                        param.mods.annotations),
                                 param.name, param.vartype, null));
                     }
                     methDef.params = tmpParams.toList();
@@ -4212,7 +4253,7 @@ public class JavacParser implements Parser {
             (peekToken(TokenKind.IDENTIFIER, TokenKind.LPAREN) ||
              peekToken(TokenKind.IDENTIFIER, TokenKind.EOF) ||
              peekToken(TokenKind.IDENTIFIER, TokenKind.LT))) {
-             checkSourceLevel(Feature.RECORDS);
+            checkSourceLevel(Feature.RECORDS);
             return true;
         } else {
             return false;
@@ -4255,11 +4296,19 @@ public class JavacParser implements Parser {
     private boolean allowedAfterSealedOrNonSealed(Token next, boolean local, boolean currentIsNonSealed) {
         return local ?
             switch (next.kind) {
-                case MONKEYS_AT, ABSTRACT, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
+                case MONKEYS_AT -> {
+                    Token afterNext = S.token(2);
+                    yield afterNext.kind != INTERFACE || currentIsNonSealed;
+                }
+                case ABSTRACT, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
                 default -> false;
             } :
             switch (next.kind) {
-                case MONKEYS_AT, PUBLIC, PROTECTED, PRIVATE, ABSTRACT, STATIC, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
+                case MONKEYS_AT -> {
+                    Token afterNext = S.token(2);
+                    yield afterNext.kind != INTERFACE || currentIsNonSealed;
+                }
+                case PUBLIC, PROTECTED, PRIVATE, ABSTRACT, STATIC, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
                 case IDENTIFIER -> isNonSealedIdentifier(next, currentIsNonSealed ? 3 : 1) || next.name() == names.sealed;
                 default -> false;
             };

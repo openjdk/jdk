@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -76,7 +76,7 @@
   );
 
   enum {
-    max_array_allocation_length = 0x01000000 // Sparc friendly value, requires sethi only.
+    max_array_allocation_length = 0x01000000
   };
 
   // Allocation of arrays.

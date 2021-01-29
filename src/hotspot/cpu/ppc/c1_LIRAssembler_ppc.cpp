@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #define __ _masm->
@@ -340,7 +342,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
 
     } else if (is_power_of_2(divisor)) {
       // Convert division by a power of two into some shifts and logical operations.
-      int log2 = log2_intptr(divisor);
+      int log2 = log2i_exact(divisor);
 
       // Round towards 0.
       if (divisor == 2) {
@@ -705,6 +707,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 }
 
 
+/* vtable_call is not enabled for ppc platform */
 void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   ShouldNotReachHere(); // ic_call is used instead.
 }
@@ -1323,7 +1326,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
 }
 
 
-void LIR_Assembler::return_op(LIR_Opr result) {
+void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   const Register return_pc        = R31;  // Must survive C-call to enable_stack_reserved_zone().
   const Register polling_page     = R12;
 
@@ -1338,7 +1341,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   __ ld(polling_page, in_bytes(Thread::polling_page_offset()), R16_thread);
 
   // Restore return pc relative to callers' sp.
-  __ ld(return_pc, _abi(lr), R1_SP);
+  __ ld(return_pc, _abi0(lr), R1_SP);
   // Move return pc to LR.
   __ mtlr(return_pc);
 
@@ -1526,7 +1529,6 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
 
 void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dst, LIR_Op2* op){
   const Register Rdst = dst->as_register();
-  Label done;
   if (code == lir_cmp_fd2i || code == lir_ucmp_fd2i) {
     bool is_unordered_less = (code == lir_ucmp_fd2i);
     if (left->is_single_fpu()) {
@@ -1536,18 +1538,13 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
     } else {
       ShouldNotReachHere();
     }
-    __ li(Rdst, is_unordered_less ? -1 : 1);
-    __ bso(CCR0, done);
+    __ set_cmpu3(Rdst, is_unordered_less); // is_unordered_less ? -1 : 1
   } else if (code == lir_cmp_l2i) {
     __ cmpd(CCR0, left->as_register_lo(), right->as_register_lo());
+    __ set_cmp3(Rdst);  // set result as follows: <: -1, =: 0, >: 1
   } else {
     ShouldNotReachHere();
   }
-  __ mfcr(R0); // set bit 32..33 as follows: <: 0b10, =: 0b00, >: 0b01
-  __ srwi(Rdst, R0, 30);
-  __ srawi(R0, R0, 31);
-  __ orr(Rdst, R0, Rdst); // set result as follows: <: -1, =: 0, >: 1
-  __ bind(done);
 }
 
 

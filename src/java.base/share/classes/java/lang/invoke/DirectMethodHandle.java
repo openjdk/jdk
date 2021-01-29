@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import sun.invoke.util.Wrapper;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
@@ -63,7 +64,7 @@ class DirectMethodHandle extends MethodHandle {
             member.isMethod() && !member.isAbstract()) {
             // Check for corner case: invokeinterface of Object method
             MemberName m = new MemberName(Object.class, member.getName(), member.getMethodType(), member.getReferenceKind());
-            m = MemberName.getFactory().resolveOrNull(m.getReferenceKind(), m, null);
+            m = MemberName.getFactory().resolveOrNull(m.getReferenceKind(), m, null, LM_TRUSTED);
             if (m != null && m.isPublic()) {
                 assert(member.getReferenceKind() == m.getReferenceKind());  // else this.form is wrong
                 member = m;
@@ -260,7 +261,8 @@ class DirectMethodHandle extends MethodHandle {
                     .changeReturnType(void.class);          // <init> returns void
         MemberName linker = new MemberName(MethodHandle.class, linkerName, mtypeWithArg, REF_invokeStatic);
         try {
-            linker = IMPL_NAMES.resolveOrFail(REF_invokeStatic, linker, null, NoSuchMethodException.class);
+            linker = IMPL_NAMES.resolveOrFail(REF_invokeStatic, linker, null, LM_TRUSTED,
+                                              NoSuchMethodException.class);
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
@@ -386,10 +388,12 @@ class DirectMethodHandle extends MethodHandle {
     private void ensureInitialized() {
         if (checkInitialized(member)) {
             // The coast is clear.  Delete the <clinit> barrier.
-            if (member.isField())
-                updateForm(preparedFieldLambdaForm(member));
-            else
-                updateForm(preparedLambdaForm(member));
+            updateForm(new Function<>() {
+                public LambdaForm apply(LambdaForm oldForm) {
+                    return (member.isField() ? preparedFieldLambdaForm(member)
+                                             : preparedLambdaForm(member));
+                }
+            });
         }
     }
     private static boolean checkInitialized(MemberName member) {
@@ -398,9 +402,8 @@ class DirectMethodHandle extends MethodHandle {
         if (ref == null) {
             return true;  // the final state
         }
-        Thread clinitThread = ref.get();
         // Somebody may still be running defc.<clinit>.
-        if (clinitThread == Thread.currentThread()) {
+        if (ref.refersTo(Thread.currentThread())) {
             // If anybody is running defc.<clinit>, it is this thread.
             if (UNSAFE.shouldBeInitialized(defc))
                 // Yes, we are running it; keep the barrier for now.
@@ -771,7 +774,8 @@ class DirectMethodHandle extends MethodHandle {
             linkerType = MethodType.methodType(void.class, Object.class, long.class, ft);
         MemberName linker = new MemberName(Unsafe.class, kind.methodName, linkerType, REF_invokeVirtual);
         try {
-            linker = IMPL_NAMES.resolveOrFail(REF_invokeVirtual, linker, null, NoSuchMethodException.class);
+            linker = IMPL_NAMES.resolveOrFail(REF_invokeVirtual, linker, null, LM_TRUSTED,
+                                              NoSuchMethodException.class);
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
@@ -914,13 +918,15 @@ class DirectMethodHandle extends MethodHandle {
                 case NF_UNSAFE:
                     MemberName member = new MemberName(MethodHandleStatics.class, "UNSAFE", Unsafe.class, REF_getField);
                     return new NamedFunction(
-                            MemberName.getFactory()
-                                    .resolveOrFail(REF_getField, member, DirectMethodHandle.class, NoSuchMethodException.class));
+                            MemberName.getFactory().resolveOrFail(REF_getField, member,
+                                                                  DirectMethodHandle.class, LM_TRUSTED,
+                                                                  NoSuchMethodException.class));
                 case NF_checkReceiver:
                     member = new MemberName(DirectMethodHandle.class, "checkReceiver", OBJ_OBJ_TYPE, REF_invokeVirtual);
                     return new NamedFunction(
-                        MemberName.getFactory()
-                            .resolveOrFail(REF_invokeVirtual, member, DirectMethodHandle.class, NoSuchMethodException.class));
+                            MemberName.getFactory().resolveOrFail(REF_invokeVirtual, member,
+                                                                  DirectMethodHandle.class, LM_TRUSTED,
+                                                                  NoSuchMethodException.class));
                 default:
                     throw newInternalError("Unknown function: " + func);
             }
@@ -934,8 +940,9 @@ class DirectMethodHandle extends MethodHandle {
     {
         MemberName member = new MemberName(DirectMethodHandle.class, name, type, REF_invokeStatic);
         return new NamedFunction(
-            MemberName.getFactory()
-                .resolveOrFail(REF_invokeStatic, member, DirectMethodHandle.class, NoSuchMethodException.class));
+                MemberName.getFactory().resolveOrFail(REF_invokeStatic, member,
+                                                      DirectMethodHandle.class, LM_TRUSTED,
+                                                      NoSuchMethodException.class));
     }
 
     static {

@@ -52,7 +52,7 @@
  * @clean nsk.jdb.uncaught_exception.uncaught_exception002.uncaught_exception002a
  * @compile -g:lines,source,vars uncaught_exception002a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdb.uncaught_exception.uncaught_exception002.uncaught_exception002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

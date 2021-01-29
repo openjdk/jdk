@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,9 +29,10 @@
 
 package com.sun.crypto.provider;
 
+import java.nio.ByteBuffer;
 import java.security.ProviderException;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class represents the GHASH function defined in NIST 800-38D
@@ -198,6 +199,38 @@ final class GHASH {
         processBlocks(in, inOfs, inLen/AES_BLOCK_SIZE, state, subkeyHtbl);
     }
 
+    // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
+    private static final int MAX_LEN = 1024;
+
+    // Will process as many blocks it can and will leave the remaining.
+    int update(ByteBuffer src, int inLen) {
+        inLen -= (inLen % AES_BLOCK_SIZE);
+        if (inLen == 0) {
+            return 0;
+        }
+
+        int processed = inLen;
+        byte[] in = new byte[Math.min(MAX_LEN, inLen)];
+        while (processed > MAX_LEN ) {
+            src.get(in, 0, MAX_LEN);
+            update(in, 0 , MAX_LEN);
+            processed -= MAX_LEN;
+        }
+        src.get(in, 0, processed);
+        update(in, 0, processed);
+        return inLen;
+    }
+
+    void doLastBlock(ByteBuffer src, int inLen) {
+        int processed = update(src, inLen);
+        if (inLen == processed) {
+            return;
+        }
+        byte[] block = new byte[AES_BLOCK_SIZE];
+        src.get(block, 0, inLen - processed);
+        update(block, 0, AES_BLOCK_SIZE);
+    }
+
     private static void ghashRangeCheck(byte[] in, int inOfs, int inLen, long[] st, long[] subH) {
         if (inLen < 0) {
             throw new RuntimeException("invalid input length: " + inLen);
@@ -229,7 +262,7 @@ final class GHASH {
      * the hotspot signature.  This method and methods called by it, cannot
      * throw exceptions or allocate arrays as it will breaking intrinsics
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static void processBlocks(byte[] data, int inOfs, int blocks, long[] st, long[] subH) {
         int offset = inOfs;
         while (blocks > 0) {

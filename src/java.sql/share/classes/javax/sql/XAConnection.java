@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ public interface XAConnection extends PooledConnection {
      * in a distributed transaction.
      *
      * @return the {@code XAResource} object
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not
      * support this method
      * @since 1.4
      */

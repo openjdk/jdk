@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8080357 8167643 8187359 8199762 8080353 8246353
+ * @bug 8080357 8167643 8187359 8199762 8080353 8246353 8247456
  * @summary Tests for EvaluationState.methods
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng MethodsTest
@@ -36,7 +36,11 @@ import jdk.jshell.MethodSnippet;
 import jdk.jshell.Snippet.Status;
 import org.testng.annotations.Test;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static jdk.jshell.Snippet.Status.*;
+import static org.testng.Assert.assertEquals;
 
 @Test
 public class MethodsTest extends KullaTesting {
@@ -216,14 +220,25 @@ public class MethodsTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    public void methodsAbstract() {
+        MethodSnippet m1 = methodKey(assertEval("abstract String f();",
+                ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_DEFINED, true, null)));
+        assertEquals(getState().unresolvedDependencies(m1).collect(Collectors.toList()),
+                List.of("method f()"));
+        MethodSnippet m2 = methodKey(assertEval("abstract int mm(Blah b);",
+                ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_NOT_DEFINED, false, null)));
+        List<String> unr = getState().unresolvedDependencies(m2).collect(Collectors.toList());
+        assertEquals(unr.size(), 2);
+        unr.remove("class Blah");
+        unr.remove("method mm(Blah)");
+        assertEquals(unr.size(), 0, "unexpected entry: " + unr);
+        assertNumberOfActiveMethods(2);
+        assertActiveKeys();
+    }
+
     public void methodsErrors() {
         assertDeclareFail("String f();",
                 new ExpectedDiagnostic("compiler.err.missing.meth.body.or.decl.abstract", 0, 11, 7, -1, -1, Diagnostic.Kind.ERROR));
-        assertNumberOfActiveMethods(0);
-        assertActiveKeys();
-
-        assertDeclareFail("abstract String f();",
-                new ExpectedDiagnostic("jdk.eval.error.illegal.modifiers", 0, 8, 0, -1, -1, Diagnostic.Kind.ERROR));
         assertNumberOfActiveMethods(0);
         assertActiveKeys();
 
@@ -290,10 +305,8 @@ public class MethodsTest extends KullaTesting {
         assertActiveKeys();
     }
 
-    public void methodsWarn() {
-        Snippet f = assertDeclareWarn1("static String f() {return null;}",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING),
-                added(VALID));
+    public void methodsIgnoredModifiers() {
+        Snippet f = methodKey(assertEval("static String f() {return null;}"));
         assertNumberOfActiveMethods(1);
         assertActiveKeys();
 

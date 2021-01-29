@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +28,15 @@
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
+
+import static java.net.StandardProtocolFamily.UNIX;
 
 public class Launcher {
 
@@ -63,81 +68,101 @@ public class Launcher {
         launch0(cmdarray, fd);
     }
 
-
     /**
-     * Launch 'java' with specified class using a UnixDomainSocket pair linking calling
-     * process to the child VM. UnixDomainSocket is a simplified interface to PF_UNIX sockets
-     * which supports byte a time reads and writes.
+     * Launch 'java' with specified class. The launched process will inherit
+     * a connected Unix Domain socket. The remote endpoint will be the
+     * SocketChannel returned by this method.
      */
-    public static UnixDomainSocket launchWithUnixDomainSocket(String className) throws IOException {
-        UnixDomainSocket[] socks = UnixDomainSocket.socketpair();
-        launch(className, null, null, socks[0].fd());
-        socks[0].close();
-        return socks[1];
+    public static SocketChannel launchWithUnixSocketChannel(String className)
+            throws IOException
+    {
+        UnixDomainSocketAddress addr = null;
+        try (ServerSocketChannel ssc = ServerSocketChannel.open(UNIX)) {
+            addr = (UnixDomainSocketAddress)ssc.bind(null).getLocalAddress();
+            SocketChannel sc1 = SocketChannel.open(addr);
+            try (SocketChannel sc2 = ssc.accept()) {
+                launch(className, null, null, Util.getFD(sc2));
+            }
+            return sc1;
+        } finally {
+            if (addr != null)
+                Files.delete(addr.getPath());
+        }
     }
 
     /**
-     * Launch specified class with an AF_UNIX socket created externally, and one String arg to child VM
-     */
-    public static void launchWithUnixDomainSocket(String className, UnixDomainSocket socket, String arg) throws IOException {
-        String[] args = new String[1];
-        args[0] = arg;
-        launch(className, null, args, socket.fd());
-    }
-
-    /*
      * Launch 'java' with specified class with the specified arguments (may be null).
      * The launched process will inherit a connected TCP socket. The remote endpoint
      * will be the SocketChannel returned by this method.
      */
-    public static SocketChannel launchWithSocketChannel(String className, String options[], String args[]) throws IOException {
-        ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
-        InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(),
+    public static SocketChannel launchWithInetSocketChannel(String className,
+                                                        String options[],
+                                                        String... args)
+            throws IOException
+    {
+        try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+            ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
+            InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(),
                                                       ssc.socket().getLocalPort());
-        SocketChannel sc1 = SocketChannel.open(isa);
-        SocketChannel sc2 = ssc.accept();
-        launch(className, options, args, Util.getFD(sc2));
-        sc2.close();
-        ssc.close();
-        return sc1;
+            SocketChannel sc1 = SocketChannel.open(isa);
+            try (SocketChannel sc2 = ssc.accept()) {
+                launch(className, options, args, Util.getFD(sc2));
+            }
+            return sc1;
+        }
     }
 
-    public static SocketChannel launchWithSocketChannel(String className, String args[]) throws IOException {
-        return launchWithSocketChannel(className, null, args);
+    /**
+     * Launch specified class with a SocketChannel created externally.
+     */
+    public static void launchWithSocketChannel(String className,
+                                               SocketChannel sc,
+                                               String[] options,
+                                               String... args) throws Exception {
+        launch(className, options, args, Util.getFD(sc));
     }
 
-    public static SocketChannel launchWithSocketChannel(String className) throws IOException {
-        return launchWithSocketChannel(className, null);
-    }
-
-    /*
+    /**
      * Launch 'java' with specified class with the specified arguments (may be null).
      * The launched process will inherited a TCP listener socket.
      * Once launched this method tries to connect to service. If a connection
      * can be established a SocketChannel, connected to the service, is returned.
      */
-    public static SocketChannel launchWithServerSocketChannel(String className, String options[], String args[])
-        throws IOException
+    public static SocketChannel launchWithInetServerSocketChannel(String className,
+                                                              String[] options,
+                                                              String... args)
+            throws IOException
     {
-        ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
-        int port = ssc.socket().getLocalPort();
-        launch(className, options, args, Util.getFD(ssc));
+        try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+            ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
+            int port = ssc.socket().getLocalPort();
+            launch(className, options, args, Util.getFD(ssc));
+            InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(), port);
+            return SocketChannel.open(isa);
+        }
+    }
+
+    public static SocketChannel launchWithUnixServerSocketChannel(String className) throws IOException {
+        ServerSocketChannel ssc = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+        ssc.bind(null);
+        var addr = ssc.getLocalAddress();
+        launch(className, null, null, Util.getFD(ssc));
         ssc.close();
-        InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(), port);
-        return SocketChannel.open(isa);
+        return SocketChannel.open(addr);
     }
 
-    public static SocketChannel launchWithServerSocketChannel(String className, String args[]) throws IOException {
-        return launchWithServerSocketChannel(className, null, args);
+    /**
+     * Launch specified class with a ServerSocketChannel created externally.
+     */
+    public static void launchWithServerSocketChannel(String className,
+                                                     ServerSocketChannel ssc,
+                                                     String[] options,
+                                                     String... args)
+            throws Exception {
+        launch(className, options, args, Util.getFD(ssc));
     }
 
-    public static SocketChannel launchWithServerSocketChannel(String className) throws IOException {
-        return launchWithServerSocketChannel(className, null);
-    }
-
-    /*
+    /**
      * Launch 'java' with specified class with the specified arguments (may be null).
      * The launch process will inherited a bound UDP socket.
      * Once launched this method creates a DatagramChannel and "connects
@@ -145,9 +170,10 @@ public class Launcher {
      * As it is connected any packets sent from the socket will be
      * sent to the service.
      */
-    public static DatagramChannel launchWithDatagramChannel(String className, String options[], String args[])
-        throws IOException
-    {
+    public static DatagramChannel launchWithDatagramChannel(String className,
+                                                            String[] options,
+                                                            String... args)
+            throws IOException {
         InetAddress address = InetAddress.getLocalHost();
         if (address.isLoopbackAddress()) {
             address = InetAddress.getLoopbackAddress();
@@ -164,13 +190,5 @@ public class Launcher {
 
         dc.connect(isa);
         return dc;
-    }
-
-    public static DatagramChannel launchWithDatagramChannel(String className, String args[]) throws IOException {
-        return launchWithDatagramChannel(className, null, args);
-    }
-
-    public static DatagramChannel launchWithDatagramChannel(String className) throws IOException {
-        return launchWithDatagramChannel(className, null);
     }
 }

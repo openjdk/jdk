@@ -50,7 +50,7 @@ public class DumpSymbolAndStringTable {
         pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.stringtable", "-verbose"});
         output = CDSTestUtils.executeAndLog(pb, "jcmd-stringtable");
         try {
-            output.shouldContain("16: java.lang.String\n");
+            output.shouldContain("24: DumpSymbolAndStringTable\n");
         } catch (RuntimeException e) {
             output.shouldContain("Unknown diagnostic command");
         }

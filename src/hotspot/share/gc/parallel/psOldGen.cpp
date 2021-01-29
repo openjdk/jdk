@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psCardTable.hpp"
-#include "gc/parallel/psFileBackedVirtualspace.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -36,6 +35,7 @@
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 
 PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
@@ -62,14 +62,7 @@ void PSOldGen::initialize_virtual_space(ReservedSpace rs,
                                         size_t initial_size,
                                         size_t alignment) {
 
-  if(ParallelArguments::is_heterogeneous_heap()) {
-    _virtual_space = new PSFileBackedVirtualSpace(rs, alignment, AllocateOldGenAt);
-    if (!(static_cast <PSFileBackedVirtualSpace*>(_virtual_space))->initialize()) {
-      vm_exit_during_initialization("Could not map space for PSOldGen at given AllocateOldGenAt path");
-    }
-  } else {
-    _virtual_space = new PSVirtualSpace(rs, alignment);
-  }
+  _virtual_space = new PSVirtualSpace(rs, alignment);
   if (!_virtual_space->expand_by(initial_size)) {
     vm_exit_during_initialization("Could not reserve enough space for "
                                   "object heap");
@@ -131,7 +124,9 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   _object_space = new MutableSpace(virtual_space()->alignment());
   object_space()->initialize(cmr,
                              SpaceDecorator::Clear,
-                             SpaceDecorator::Mangle);
+                             SpaceDecorator::Mangle,
+                             MutableSpace::SetupPages,
+                             &ParallelScavengeHeap::heap()->workers());
 
   // Update the start_array
   start_array()->set_covered_region(cmr);
@@ -152,31 +147,36 @@ bool  PSOldGen::is_allocated() {
   return virtual_space()->reserved_size() != 0;
 }
 
-// Allocation. We report all successful allocations to the size policy
-// Note that the perm gen does not use this method, and should not!
-HeapWord* PSOldGen::allocate(size_t word_size) {
-  assert_locked_or_safepoint(Heap_lock);
-  HeapWord* res = allocate_noexpand(word_size);
-
-  if (res == NULL) {
-    res = expand_and_allocate(word_size);
-  }
-
-  // Allocations in the old generation need to be reported
-  if (res != NULL) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    heap->size_policy()->tenured_allocation(word_size * HeapWordSize);
-  }
-
-  return res;
+size_t PSOldGen::num_iterable_blocks() const {
+  return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
 }
 
-HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
-  expand(word_size*HeapWordSize);
-  if (GCExpandToAllocateDelayMillis > 0) {
-    os::naked_sleep(GCExpandToAllocateDelayMillis);
+void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
+  size_t block_word_size = IterateBlockSize / HeapWordSize;
+  assert((block_word_size % (ObjectStartArray::block_size)) == 0,
+         "Block size not a multiple of start_array block");
+
+  MutableSpace *space = object_space();
+
+  HeapWord* begin = space->bottom() + block_index * block_word_size;
+  HeapWord* end = MIN2(space->top(), begin + block_word_size);
+
+  if (!start_array()->object_starts_in_range(begin, end)) {
+    return;
   }
-  return allocate_noexpand(word_size);
+
+  // Get object starting at or reaching into this block.
+  HeapWord* start = start_array()->object_start(begin);
+  if (start < begin) {
+    start += oop(start)->size();
+  }
+  assert(start >= begin,
+         "Object address" PTR_FORMAT " must be larger or equal to block address at " PTR_FORMAT,
+         p2i(start), p2i(begin));
+  // Iterate all objects until the end.
+  for (HeapWord* p = start; p < end; p += oop(p)->size()) {
+    cl->do_object(oop(p));
+  }
 }
 
 HeapWord* PSOldGen::expand_and_cas_allocate(size_t word_size) {
@@ -351,10 +351,17 @@ void PSOldGen::post_resize() {
   start_array()->set_covered_region(new_memregion);
   ParallelScavengeHeap::heap()->card_table()->resize_covered_region(new_memregion);
 
-  // ALWAYS do this last!!
+  WorkGang* workers = Thread::current()->is_VM_thread() ?
+                      &ParallelScavengeHeap::heap()->workers() : NULL;
+
+  // Ensure the space bounds are updated and made visible to other
+  // threads after the other data structures have been resized.
+  OrderAccess::storestore();
   object_space()->initialize(new_memregion,
                              SpaceDecorator::DontClear,
-                             SpaceDecorator::DontMangle);
+                             SpaceDecorator::DontMangle,
+                             MutableSpace::SetupPages,
+                             workers);
 
   assert(new_word_size == heap_word_size(object_space()->capacity_in_bytes()),
     "Sanity");

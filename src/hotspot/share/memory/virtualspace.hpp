@@ -76,17 +76,11 @@ class ReservedSpace {
 
   // Splitting
   // This splits the space into two spaces, the first part of which will be returned.
-  // If split==true, the resulting two spaces can be released independently from each other.
-  //  This may cause the original space to loose its content.
-  //  They also will be tracked individually by NMT and can be tagged with different flags.
-  //  Note that this may cause the original space to loose its content.
-  // If split==false, the resulting space will be just a hotspot-internal representation
-  //  of a sub section of the underlying mapping.
-  ReservedSpace first_part(size_t partition_size, size_t alignment, bool split = false);
+  ReservedSpace first_part(size_t partition_size, size_t alignment);
   ReservedSpace last_part (size_t partition_size, size_t alignment);
 
   // These simply call the above using the default alignment.
-  inline ReservedSpace first_part(size_t partition_size, bool split = false);
+  inline ReservedSpace first_part(size_t partition_size);
   inline ReservedSpace last_part (size_t partition_size);
 
   // Alignment
@@ -96,12 +90,14 @@ class ReservedSpace {
   bool contains(const void* p) const {
     return (base() <= ((char*)p)) && (((char*)p) < (base() + size()));
   }
+
+  static size_t actual_reserved_page_size(const ReservedSpace& rs);
 };
 
 ReservedSpace
-ReservedSpace::first_part(size_t partition_size, bool split)
+ReservedSpace::first_part(size_t partition_size)
 {
-  return first_part(partition_size, alignment(), split);
+  return first_part(partition_size, alignment());
 }
 
 ReservedSpace ReservedSpace::last_part(size_t partition_size)

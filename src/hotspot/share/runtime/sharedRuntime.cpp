@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "jvm.h"
 #include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
@@ -64,10 +65,12 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -149,7 +152,6 @@ int SharedRuntime::_nof_interface_calls = 0;
 int SharedRuntime::_nof_optimized_interface_calls = 0;
 int SharedRuntime::_nof_inlined_interface_calls = 0;
 int SharedRuntime::_nof_megamorphic_interface_calls = 0;
-int SharedRuntime::_nof_removable_exceptions = 0;
 
 int SharedRuntime::_new_instance_ctr=0;
 int SharedRuntime::_new_array_ctr=0;
@@ -454,6 +456,12 @@ JRT_END
 // previous frame depending on the return address.
 
 address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
+  // Note: This is called when we have unwound the frame of the callee that did
+  // throw an exception. So far, no check has been performed by the StackWatermarkSet.
+  // Notably, the stack is not walkable at this point, and hence the check must
+  // be deferred until later. Specifically, any of the handlers returned here in
+  // this function, will get dispatched to, and call deferred checks to
+  // StackWatermarkSet::after_unwind at a point where the stack is walkable.
   assert(frame::verify_return_pc(return_address), "must be a return address: " INTPTR_FORMAT, p2i(return_address));
   assert(thread->frames_to_pop_failed_realloc() == 0 || Interpreter::contains(return_address), "missed frames to pop?");
 
@@ -480,24 +488,33 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
       // unguarded. Reguard the stack otherwise if we return to the
       // deopt blob and the stack bang causes a stack overflow we
       // crash.
-      bool guard_pages_enabled = thread->stack_guards_enabled();
-      if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
-      if (thread->reserved_stack_activation() != thread->stack_base()) {
-        thread->set_reserved_stack_activation(thread->stack_base());
+      StackOverflow* overflow_state = thread->stack_overflow_state();
+      bool guard_pages_enabled = overflow_state->reguard_stack_if_needed();
+      if (overflow_state->reserved_stack_activation() != thread->stack_base()) {
+        overflow_state->set_reserved_stack_activation(thread->stack_base());
       }
       assert(guard_pages_enabled, "stack banging in deopt blob may cause crash");
+      // The deferred StackWatermarkSet::after_unwind check will be performed in
+      // Deoptimization::fetch_unroll_info (with exec_mode == Unpack_exception)
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
+      // The deferred StackWatermarkSet::after_unwind check will be performed in
+      // * OptoRuntime::rethrow_C for C2 code
+      // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
       return nm->exception_begin();
     }
   }
 
   // Entry code
   if (StubRoutines::returns_to_call_stub(return_address)) {
+    // The deferred StackWatermarkSet::after_unwind check will be performed in
+    // JavaCallWrapper::~JavaCallWrapper
     return StubRoutines::catch_exception_entry();
   }
   // Interpreted code
   if (Interpreter::contains(return_address)) {
+    // The deferred StackWatermarkSet::after_unwind check will be performed in
+    // InterpreterRuntime::exception_handler_for_exception
     return Interpreter::rethrow_exception_entry();
   }
 
@@ -582,6 +599,28 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, Handle h_
     address bcp = method()->bcp_from(vfst.bci());
     JvmtiExport::post_exception_throw(thread, method(), bcp, h_exception());
   }
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI && UseJVMCICompiler) {
+    vframeStream vfst(thread, true);
+    methodHandle method = methodHandle(thread, vfst.method());
+    int bci = vfst.bci();
+    MethodData* trap_mdo = method->method_data();
+    if (trap_mdo != NULL) {
+      // Set exception_seen if the exceptional bytecode is an invoke
+      Bytecode_invoke call = Bytecode_invoke_check(method, bci);
+      if (call.is_valid()) {
+        ResourceMark rm(thread);
+        ProfileData* pdata = trap_mdo->allocate_bci_to_data(bci, NULL);
+        if (pdata != NULL && pdata->is_BitData()) {
+          BitData* bit_data = (BitData*) pdata;
+          bit_data->set_exception_seen();
+        }
+      }
+    }
+  }
+#endif
+
   Exceptions::_throw(thread, __FILE__, __LINE__, h_exception);
 }
 
@@ -950,7 +989,7 @@ JRT_END
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL) {
     if (thread->is_Java_thread()) {
-      oop obj = ((JavaThread*)thread)->threadObj();
+      oop obj = thread->as_Java_thread()->threadObj();
       return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
     }
   }
@@ -1855,8 +1894,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(const methodHand
   assert(member_arg_pos >= 0 && member_arg_pos < total_args_passed, "oob");
   assert(sig_bt[member_arg_pos] == T_OBJECT, "dispatch argument must be an object");
 
-  const bool is_outgoing = method->is_method_handle_intrinsic();
-  int comp_args_on_stack = java_calling_convention(sig_bt, regs_without_member_name, total_args_passed - 1, is_outgoing);
+  int comp_args_on_stack = java_calling_convention(sig_bt, regs_without_member_name, total_args_passed - 1);
 
   for (int i = 0; i < member_arg_pos; i++) {
     VMReg a =    regs_with_member_name[i].first();
@@ -2065,7 +2103,7 @@ char* SharedRuntime::generate_class_cast_message(
 }
 
 JRT_LEAF(void, SharedRuntime::reguard_yellow_pages())
-  (void) JavaThread::current()->reguard_stack();
+  (void) JavaThread::current()->stack_overflow_state()->reguard_stack();
 JRT_END
 
 void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread) {
@@ -2097,6 +2135,14 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   assert(JavaThread::current() == thread, "invariant");
   // Exit must be non-blocking, and therefore no exceptions can be thrown.
   EXCEPTION_MARK;
+  // The object could become unlocked through a JNI call, which we have no other checks for.
+  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
+  if (obj->is_unlocked()) {
+    if (CheckJNICalls) {
+      fatal("Object has been unlocked by JNI");
+    }
+    return;
+  }
   ObjectSynchronizer::exit(obj, lock, THREAD);
 }
 
@@ -2114,13 +2160,6 @@ void SharedRuntime::print_statistics() {
   if (_throw_null_ctr) tty->print_cr("%5d implicit null throw", _throw_null_ctr);
 
   SharedRuntime::print_ic_miss_histogram();
-
-  if (CountRemovableExceptions) {
-    if (_nof_removable_exceptions > 0) {
-      Unimplemented(); // this counter is not yet incremented
-      tty->print_cr("Removable exceptions: %d", _nof_removable_exceptions);
-    }
-  }
 
   // Dump the JRT_ENTRY counters
   if (_new_instance_ctr) tty->print_cr("%5d new instance requires GC", _new_instance_ctr);
@@ -2173,8 +2212,8 @@ class MethodArityHistogram {
   static int _max_size;                       // max. arg size seen
 
   static void add_method_to_histogram(nmethod* nm) {
-    if (CompiledMethod::nmethod_access_is_safe(nm)) {
-      Method* method = nm->method();
+    Method* method = (nm == NULL) ? NULL : nm->method();
+    if ((method != NULL) && nm->is_alive()) {
       ArgumentCount args(method->signature());
       int arity   = args.size() + (method->is_static() ? 0 : 1);
       int argsize = method->size_of_parameters();
@@ -2215,7 +2254,10 @@ class MethodArityHistogram {
 
  public:
   MethodArityHistogram() {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    // Take the Compile_lock to protect against changes in the CodeBlob structures
+    MutexLocker mu1(Compile_lock, Mutex::_safepoint_check_flag);
+    // Take the CodeCache_lock to protect against changes in the CodeHeap structure
+    MutexLocker mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     _max_arity = _max_size = 0;
     for (int i = 0; i < MAX_ARITY; i++) _arity_histogram[i] = _size_histogram[i] = 0;
     CodeCache::nmethods_do(add_method_to_histogram);
@@ -2427,15 +2469,12 @@ class AdapterHandlerTable : public BasicHashtable<mtCode> {
 
  public:
   AdapterHandlerTable()
-    : BasicHashtable<mtCode>(293, (DumpSharedSpaces ? sizeof(CDSAdapterHandlerEntry) : sizeof(AdapterHandlerEntry))) { }
+    : BasicHashtable<mtCode>(293, (sizeof(AdapterHandlerEntry))) { }
 
   // Create a new entry suitable for insertion in the table
   AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry, address c2i_no_clinit_check_entry) {
     AdapterHandlerEntry* entry = (AdapterHandlerEntry*)BasicHashtable<mtCode>::new_entry(fingerprint->compute_hash());
     entry->init(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
-    if (DumpSharedSpaces) {
-      ((CDSAdapterHandlerEntry*)entry)->init();
-    }
     return entry;
   }
 
@@ -2664,7 +2703,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter0(const methodHandle& met
     }
 
     // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
-    int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, false);
+    int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
 
     // Make a C heap allocated version of the fingerprint to store in the adapter
     fingerprint = new AdapterFingerPrint(total_args_passed, sig_bt);
@@ -2845,8 +2884,8 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
       CodeBuffer buffer(buf);
-      double locs_buf[20];
-      buffer.insts()->initialize_shared_locs((relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
+      struct { double data[20]; } locs_buf;
+      buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
 #if defined(AARCH64)
       // On AArch64 with ZGC and nmethod entry barriers, we need all oops to be
       // in the constant pool to ensure ordering between the barrier and oops
@@ -2872,11 +2911,8 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       assert(i == total_args_passed, "");
       BasicType ret_type = ss.type();
 
-      // Now get the compiled-Java layout as input (or output) arguments.
-      // NOTE: Stubs for compiled entry points of method handle intrinsics
-      // are just trampolines so the argument registers must be outgoing ones.
-      const bool is_outgoing = method->is_method_handle_intrinsic();
-      int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, is_outgoing);
+      // Now get the compiled-Java arguments layout.
+      int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
 
       // Generate the compiled-to-native wrapper code
       nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type, critical_entry);
@@ -2911,36 +2947,6 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   }
 }
 
-JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* thread))
-  assert(thread == JavaThread::current(), "must be");
-  // The code is about to enter a JNI lazy critical native method and
-  // _needs_gc is true, so if this thread is already in a critical
-  // section then just return, otherwise this thread should block
-  // until needs_gc has been cleared.
-  if (thread->in_critical()) {
-    return;
-  }
-  // Lock and unlock a critical section to give the system a chance to block
-  GCLocker::lock_critical(thread);
-  GCLocker::unlock_critical(thread);
-JRT_END
-
-JRT_LEAF(oopDesc*, SharedRuntime::pin_object(JavaThread* thread, oopDesc* obj))
-  assert(Universe::heap()->supports_object_pinning(), "Why we are here?");
-  assert(obj != NULL, "Should not be null");
-  oop o(obj);
-  o = Universe::heap()->pin_object(thread, o);
-  assert(o != NULL, "Should not be null");
-  return o;
-JRT_END
-
-JRT_LEAF(void, SharedRuntime::unpin_object(JavaThread* thread, oopDesc* obj))
-  assert(Universe::heap()->supports_object_pinning(), "Why we are here?");
-  assert(obj != NULL, "Should not be null");
-  oop o(obj);
-  Universe::heap()->unpin_object(thread, o);
-JRT_END
-
 // -------------------------------------------------------------------------
 // Java-Java calling convention
 // (what you use when Java calls Java)
@@ -2950,7 +2956,7 @@ JRT_END
 VMReg SharedRuntime::name_for_receiver() {
   VMRegPair regs;
   BasicType sig_bt = T_OBJECT;
-  (void) java_calling_convention(&sig_bt, &regs, 1, true);
+  (void) java_calling_convention(&sig_bt, &regs, 1);
   // Return argument 0 register.  In the LP64 build pointers
   // take 2 registers, but the VM wants only the 'main' name.
   return regs.first();
@@ -2981,7 +2987,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
   assert(cnt < 256, "grow table size");
 
   int comp_args_on_stack;
-  comp_args_on_stack = java_calling_convention(sig_bt, regs, cnt, true);
+  comp_args_on_stack = java_calling_convention(sig_bt, regs, cnt);
 
   // the calling convention doesn't count out_preserve_stack_slots so
   // we must add that in to get "true" stack offsets.
@@ -3022,6 +3028,12 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 // All of this is done NOT at any Safepoint, nor is any safepoint or GC allowed.
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
+  // During OSR migration, we unwind the interpreted frame and replace it with a compiled
+  // frame. The stack watermark code below ensures that the interpreted frame is processed
+  // before it gets unwound. This is helpful as the size of the compiled frame could be
+  // larger than the interpreted frame, which could result in the new frame not being
+  // processed correctly.
+  StackWatermarkSet::before_unwind(thread);
 
   //
   // This code is dependent on the memory layout of the interpreter local
@@ -3127,17 +3139,6 @@ void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
   st->cr();
 }
 
-#if INCLUDE_CDS
-
-void CDSAdapterHandlerEntry::init() {
-  assert(DumpSharedSpaces, "used during dump time only");
-  _c2i_entry_trampoline = (address)MetaspaceShared::misc_code_space_alloc(SharedRuntime::trampoline_size());
-  _adapter_trampoline = (AdapterHandlerEntry**)MetaspaceShared::misc_code_space_alloc(sizeof(AdapterHandlerEntry*));
-};
-
-#endif // INCLUDE_CDS
-
-
 #ifndef PRODUCT
 
 void AdapterHandlerLibrary::print_statistics() {
@@ -3147,11 +3148,9 @@ void AdapterHandlerLibrary::print_statistics() {
 #endif /* PRODUCT */
 
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* thread))
-  assert(thread->is_Java_thread(), "Only Java threads have a stack reserved zone");
-  if (thread->stack_reserved_zone_disabled()) {
-  thread->enable_stack_reserved_zone();
-  }
-  thread->set_reserved_stack_activation(thread->stack_base());
+  StackOverflow* overflow_state = thread->stack_overflow_state();
+  overflow_state->enable_stack_reserved_zone(/*check_if_disabled*/true);
+  overflow_state->set_reserved_stack_activation(thread->stack_base());
 JRT_END
 
 frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr) {

@@ -101,7 +101,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 
   frame_pointers_t *new_frame = (frame_pointers_t *)(return_address_ptr - 5);
 
-  JavaThread *thread = (JavaThread*)Thread::current();
+  JavaThread *thread = JavaThread::current();
   RegisterMap reg_map(thread, false);
   frame frame = thread->last_frame();
 
@@ -111,14 +111,11 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 
   LogTarget(Trace, nmethod, barrier) out;
   if (out.is_enabled()) {
-    Thread* thread = Thread::current();
-    assert(thread->is_Java_thread(), "must be JavaThread");
-    JavaThread* jth = (JavaThread*) thread;
     ResourceMark mark;
     log_trace(nmethod, barrier)("deoptimize(nmethod: %s(%p), return_addr: %p, osr: %d, thread: %p(%s), making rsp: %p) -> %p",
                                 nm->method()->name_and_sig_as_C_string(),
-                                nm, *(address *) return_address_ptr, nm->is_osr_method(), jth,
-                                jth->get_thread_name(), frame.sp(), nm->verified_entry_point());
+                                nm, *(address *) return_address_ptr, nm->is_osr_method(), thread,
+                                thread->get_thread_name(), frame.sp(), nm->verified_entry_point());
   }
 
   new_frame->sp = frame.sp();

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/nmethod.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -43,6 +44,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;
@@ -76,7 +78,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   region_size = clamp(region_size, HeapRegionBounds::min_size(), HeapRegionBounds::max_size());
 
   // Calculate the log for the region size.
-  int region_size_log = exact_log2_long((jlong)region_size);
+  int region_size_log = log2i_exact(region_size);
 
   // Now, set up the globals.
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
@@ -97,7 +99,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
 
-  LogCardsPerRegion = log2_long((jlong) CardsPerRegion);
+  LogCardsPerRegion = log2i(CardsPerRegion);
 
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(G1HeapRegionSize, GrainBytes);
@@ -515,9 +517,6 @@ public:
     obj->print_on(out);
 #endif // PRODUCT
   }
-
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 class VerifyLiveClosure : public G1VerificationClosure {
@@ -654,9 +653,6 @@ public:
   }
   virtual inline void do_oop(oop* p) { do_oop_work(p); }
   virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
-
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 void HeapRegion::verify(VerifyOption vo,

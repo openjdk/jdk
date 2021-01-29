@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2017 Marti Maria Saguer
+//  Copyright (c) 1998-2020 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -56,6 +56,10 @@
 #include "lcms2_internal.h"
 
 // Alpha copy ------------------------------------------------------------------------------------------------------------------
+
+// This macro return words stored as big endian
+#define CHANGE_ENDIAN(w)    (cmsUInt16Number) ((cmsUInt16Number) ((w)<<8)|((w)>>8))
+
 
 // Floor to byte, taking care of saturation
 cmsINLINE cmsUInt8Number _cmsQuickSaturateByte(cmsFloat64Number d)
@@ -104,6 +108,13 @@ void from8to16(void* dst, const void* src)
 }
 
 static
+void from8to16SE(void* dst, const void* src)
+{
+    cmsUInt8Number n = *(cmsUInt8Number*)src;
+    *(cmsUInt16Number*)dst = CHANGE_ENDIAN(FROM_8_TO_16(n));
+}
+
+static
 void from8toFLT(void* dst, const void* src)
 {
        *(cmsFloat32Number*)dst = (*(cmsUInt8Number*)src) / 255.0f;
@@ -137,19 +148,47 @@ void from16to8(void* dst, const void* src)
 }
 
 static
+void from16SEto8(void* dst, const void* src)
+{
+    cmsUInt16Number n = *(cmsUInt16Number*)src;
+    *(cmsUInt8Number*)dst = FROM_16_TO_8(CHANGE_ENDIAN(n));
+}
+
+static
 void copy16(void* dst, const void* src)
 {
        memmove(dst, src, 2);
 }
 
+static
+void from16to16(void* dst, const void* src)
+{
+    cmsUInt16Number n = *(cmsUInt16Number*)src;
+    *(cmsUInt16Number*)dst = CHANGE_ENDIAN(n);
+}
+
+static
 void from16toFLT(void* dst, const void* src)
 {
        *(cmsFloat32Number*)dst = (*(cmsUInt16Number*)src) / 65535.0f;
 }
 
+static
+void from16SEtoFLT(void* dst, const void* src)
+{
+    *(cmsFloat32Number*)dst = (CHANGE_ENDIAN(*(cmsUInt16Number*)src)) / 65535.0f;
+}
+
+static
 void from16toDBL(void* dst, const void* src)
 {
        *(cmsFloat64Number*)dst = (*(cmsUInt16Number*)src) / 65535.0f;
+}
+
+static
+void from16SEtoDBL(void* dst, const void* src)
+{
+    *(cmsFloat64Number*)dst = (CHANGE_ENDIAN(*(cmsUInt16Number*)src)) / 65535.0f;
 }
 
 static
@@ -164,33 +203,53 @@ void from16toHLF(void* dst, const void* src)
 #endif
 }
 
+static
+void from16SEtoHLF(void* dst, const void* src)
+{
+#ifndef CMS_NO_HALF_SUPPORT
+    cmsFloat32Number n = (CHANGE_ENDIAN(*(cmsUInt16Number*)src)) / 65535.0f;
+    *(cmsUInt16Number*)dst = _cmsFloat2Half(n);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
+}
 // From Float
 
 static
 void fromFLTto8(void* dst, const void* src)
 {
-       cmsFloat32Number n = *(cmsFloat32Number*)src;
-       *(cmsUInt8Number*)dst = _cmsQuickSaturateByte(n * 255.0f);
+    cmsFloat32Number n = *(cmsFloat32Number*)src;
+    *(cmsUInt8Number*)dst = _cmsQuickSaturateByte(n * 255.0f);
 }
 
 static
 void fromFLTto16(void* dst, const void* src)
 {
-       cmsFloat32Number n = *(cmsFloat32Number*)src;
-       *(cmsUInt16Number*)dst = _cmsQuickSaturateWord(n * 65535.0f);
+    cmsFloat32Number n = *(cmsFloat32Number*)src;
+    *(cmsUInt16Number*)dst = _cmsQuickSaturateWord(n * 65535.0f);
+}
+
+static
+void fromFLTto16SE(void* dst, const void* src)
+{
+    cmsFloat32Number n = *(cmsFloat32Number*)src;
+    cmsUInt16Number i = _cmsQuickSaturateWord(n * 65535.0f);
+
+    *(cmsUInt16Number*)dst = CHANGE_ENDIAN(i);
 }
 
 static
 void copy32(void* dst, const void* src)
 {
-       memmove(dst, src, sizeof(cmsFloat32Number));
+    memmove(dst, src, sizeof(cmsFloat32Number));
 }
 
 static
 void fromFLTtoDBL(void* dst, const void* src)
 {
-       cmsFloat32Number n = *(cmsFloat32Number*)src;
-       *(cmsFloat64Number*)dst = (cmsFloat64Number)n;
+    cmsFloat32Number n = *(cmsFloat32Number*)src;
+    *(cmsFloat64Number*)dst = (cmsFloat64Number)n;
 }
 
 static
@@ -227,6 +286,19 @@ void fromHLFto16(void* dst, const void* src)
 #ifndef CMS_NO_HALF_SUPPORT
        cmsFloat32Number n = _cmsHalf2Float(*(cmsUInt16Number*)src);
        *(cmsUInt16Number*)dst = _cmsQuickSaturateWord(n * 65535.0f);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
+}
+
+static
+void fromHLFto16SE(void* dst, const void* src)
+{
+#ifndef CMS_NO_HALF_SUPPORT
+    cmsFloat32Number n = _cmsHalf2Float(*(cmsUInt16Number*)src);
+    cmsUInt16Number i = _cmsQuickSaturateWord(n * 65535.0f);
+    *(cmsUInt16Number*)dst = CHANGE_ENDIAN(i);
 #else
     cmsUNUSED_PARAMETER(dst);
     cmsUNUSED_PARAMETER(src);
@@ -271,6 +343,14 @@ void fromDBLto16(void* dst, const void* src)
 }
 
 static
+void fromDBLto16SE(void* dst, const void* src)
+{
+    cmsFloat64Number n = *(cmsFloat64Number*)src;
+    cmsUInt16Number  i = _cmsQuickSaturateWord(n * 65535.0f);
+    *(cmsUInt16Number*)dst = CHANGE_ENDIAN(i);
+}
+
+static
 void fromDBLtoFLT(void* dst, const void* src)
 {
        cmsFloat64Number n = *(cmsFloat64Number*)src;
@@ -303,37 +383,42 @@ int FormatterPos(cmsUInt32Number frm)
     cmsUInt32Number  b = T_BYTES(frm);
 
     if (b == 0 && T_FLOAT(frm))
-        return 4; // DBL
+        return 5; // DBL
 #ifndef CMS_NO_HALF_SUPPORT
     if (b == 2 && T_FLOAT(frm))
-        return 2; // HLF
+        return 3; // HLF
 #endif
     if (b == 4 && T_FLOAT(frm))
-        return 3; // FLT
+        return 4; // FLT
     if (b == 2 && !T_FLOAT(frm))
-        return 1; // 16
+    {
+        if (T_ENDIAN16(frm))
+            return 2; // 16SE
+        else
+            return 1; // 16
+    }
     if (b == 1 && !T_FLOAT(frm))
         return 0; // 8
-
     return -1; // not recognized
 }
 
-// Obtains a alpha-to-alpha funmction formatter
+// Obtains an alpha-to-alpha function formatter
 static
 cmsFormatterAlphaFn _cmsGetFormatterAlpha(cmsContext id, cmsUInt32Number in, cmsUInt32Number out)
 {
-static cmsFormatterAlphaFn FormattersAlpha[5][5] = {
+static cmsFormatterAlphaFn FormattersAlpha[6][6] = {
 
-       /* from 8 */  { copy8,      from8to16,   from8toHLF,   from8toFLT,   from8toDBL   },
-       /* from 16*/  { from16to8,  copy16,      from16toHLF,  from16toFLT,  from16toDBL  },
-       /* from HLF*/ { fromHLFto8, fromHLFto16, copy16,       fromHLFtoFLT, fromHLFtoDBL },
-       /* from FLT*/ { fromFLTto8, fromFLTto16, fromFLTtoHLF, copy32,       fromFLTtoDBL },
-       /* from DBL*/ { fromDBLto8, fromDBLto16, fromDBLtoHLF, fromDBLtoFLT, copy64 }};
+       /* from 8 */  { copy8,       from8to16,   from8to16SE,   from8toHLF,   from8toFLT,    from8toDBL    },
+       /* from 16*/  { from16to8,   copy16,      from16to16,    from16toHLF,  from16toFLT,   from16toDBL   },
+       /* from 16SE*/{ from16SEto8, from16to16,  copy16,        from16SEtoHLF,from16SEtoFLT, from16SEtoDBL },
+       /* from HLF*/ { fromHLFto8,  fromHLFto16, fromHLFto16SE, copy16,       fromHLFtoFLT,  fromHLFtoDBL  },
+       /* from FLT*/ { fromFLTto8,  fromFLTto16, fromFLTto16SE, fromFLTtoHLF, copy32,        fromFLTtoDBL  },
+       /* from DBL*/ { fromDBLto8,  fromDBLto16, fromDBLto16SE, fromDBLtoHLF, fromDBLtoFLT,  copy64 }};
 
         int in_n  = FormatterPos(in);
         int out_n = FormatterPos(out);
 
-        if (in_n < 0 || out_n < 0 || in_n > 4 || out_n > 4) {
+        if (in_n < 0 || out_n < 0 || in_n > 5 || out_n > 5) {
 
                cmsSignalError(id, cmsERROR_UNKNOWN_EXTENSION, "Unrecognized alpha channel width");
                return NULL;
@@ -515,6 +600,8 @@ void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
 
     // Check for conversions 8, 16, half, float, dbl
     copyValueFn = _cmsGetFormatterAlpha(p->ContextID, p->InputFormat, p->OutputFormat);
+    if (copyValueFn == NULL)
+        return;
 
     if (nExtra == 1) { // Optimized routine for copying a single extra channel quickly
 

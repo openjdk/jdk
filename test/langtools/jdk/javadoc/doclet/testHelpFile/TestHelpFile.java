@@ -34,6 +34,8 @@
 import javadoc.tester.JavadocTester;
 
 public class TestHelpFile extends JavadocTester {
+    /** A constant value to be documented. */
+    public static final int ZERO = 0;
 
     public static void main(String... args) throws Exception {
         TestHelpFile tester = new TestHelpFile();
@@ -61,7 +63,7 @@ public class TestHelpFile extends JavadocTester {
                     <ul class="help-section-list">
                     <li>Interfaces</li>
                     <li>Classes</li>
-                    <li>Enums</li>""",
+                    <li>Enum Classes</li>""",
                 """
                     </section>
                     <section class="help-section">
