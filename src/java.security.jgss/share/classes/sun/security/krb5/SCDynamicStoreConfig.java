@@ -84,8 +84,8 @@ public class SCDynamicStoreConfig {
             }
             if (defaultRealm == null) {
                 defaultRealm = nextRealm;
-                Hashtable<String,String> dr = new Hashtable<>();
-                dr.put("default_realm", defaultRealm);
+                Hashtable<String,Object> dr = new Hashtable<>();
+                dr.put("default_realm", v1(defaultRealm));
                 v.put("libdefaults", dr);
             }
             Hashtable<String,Object> ri = new Hashtable<>();
@@ -105,16 +105,24 @@ public class SCDynamicStoreConfig {
         if (!realms.isEmpty()) {
             v.put("realms", realms);
         }
-        Hashtable<String,String> mapping = new Hashtable<>();
+        Hashtable<String,Object> mapping = new Hashtable<>();
         while (true) {
             if (!iterator.hasNext()) {
                 break;
             }
-            mapping.put(iterator.next(), iterator.next());
+            mapping.put(iterator.next(), v1(iterator.next()));
         }
         if (!mapping.isEmpty()) {
             v.put("domain_realm", mapping);
         }
         return v;
+    }
+
+    // Make a single value Vector. Config's stanzaTable always
+    // use Vector as end values.
+    private static Vector<String> v1(String s) {
+        Vector<String> out = new Vector<>();
+        out.add(s);
+        return out;
     }
 }
