@@ -800,9 +800,7 @@ void GenCollectedHeap::process_roots(ScanningOption so,
   // General roots.
   assert(code_roots != NULL, "code root closure should always be set");
 
-  {
-    ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
-  }
+  ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
 
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
   CodeBlobToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
@@ -810,35 +808,29 @@ void GenCollectedHeap::process_roots(ScanningOption so,
   Threads::oops_do(strong_roots, roots_from_code_p);
 
 #if INCLUDE_AOT
-  {
-    if (UseAOT) {
-      AOTLoader::oops_do(strong_roots);
-    }
+  if (UseAOT) {
+    AOTLoader::oops_do(strong_roots);
   }
 #endif
-  {
-    OopStorageSet::strong_oops_do(strong_roots);
+  OopStorageSet::strong_oops_do(strong_roots);
+
+  if (so & SO_ScavengeCodeCache) {
+    assert(code_roots != NULL, "must supply closure for code cache");
+
+    // We only visit parts of the CodeCache when scavenging.
+    ScavengableNMethods::nmethods_do(code_roots);
   }
+  if (so & SO_AllCodeCache) {
+    assert(code_roots != NULL, "must supply closure for code cache");
 
-  {
-    if (so & SO_ScavengeCodeCache) {
-      assert(code_roots != NULL, "must supply closure for code cache");
-
-      // We only visit parts of the CodeCache when scavenging.
-      ScavengableNMethods::nmethods_do(code_roots);
-    }
-    if (so & SO_AllCodeCache) {
-      assert(code_roots != NULL, "must supply closure for code cache");
-
-      // CMSCollector uses this to do intermediate-strength collections.
-      // We scan the entire code cache, since CodeCache::do_unloading is not called.
-      CodeCache::blobs_do(code_roots);
-    }
-    // Verify that the code cache contents are not subject to
-    // movement by a scavenging collection.
-    DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
-    DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
+    // CMSCollector uses this to do intermediate-strength collections.
+    // We scan the entire code cache, since CodeCache::do_unloading is not called.
+    CodeCache::blobs_do(code_roots);
   }
+  // Verify that the code cache contents are not subject to
+  // movement by a scavenging collection.
+  DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
+  DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
 }
 
 void GenCollectedHeap::full_process_roots(bool is_adjust_phase,
