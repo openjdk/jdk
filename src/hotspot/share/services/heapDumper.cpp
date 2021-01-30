@@ -645,36 +645,17 @@ class ParWriterBufferQueue : public CHeapObj<mtInternal> {
  public:
   ParWriterBufferQueue() : _head(NULL), _tail(NULL), _length(0) { }
 
-  bool enqueue(char* buffer, size_t size) {
-      if (_head == NULL) {
-        assert(is_empty() && _tail == NULL, "Sanity check");
-        _head = _tail =
-          (ParWriterBufferQueueElem*)os::malloc(sizeof(ParWriterBufferQueueElem), mtInternal);
-        if (_head == NULL) {
-          // "Could not allocate buffer list for writer"
-          return false;
-        }
-      _tail->_buffer = buffer;
-      _tail->_used = size;
-      _tail->_next = NULL;
-      _length++;
+  void enqueue(ParWriterBufferQueueElem* entry) {
+    if (_head == NULL) {
+      assert(is_empty() && _tail == NULL, "Sanity check");
+      _head = _tail = entry;
     } else {
       assert ((_tail->_next == NULL && _tail->_buffer != NULL), "Buffer queue is polluted");
-
-      ParWriterBufferQueueElem* entry =
-          (ParWriterBufferQueueElem*)os::malloc(sizeof(ParWriterBufferQueueElem), mtInternal);
-      if (entry == NULL) {
-        // "Could not allocate buffer list for writer"
-        return false;
-      }
-      entry->_buffer = buffer;
-      entry->_used = size;
-      entry->_next = NULL;
       _tail->_next = entry;
       _tail = entry;
-      _length++;
     }
-    return true;
+    _length++;
+    assert(_tail->_next == NULL, "Bufer queue is polluted");
   }
 
   ParWriterBufferQueueElem* dequeue() {
@@ -728,10 +709,11 @@ class ParDumpWriter : public AbstractDumpWriter {
   ParDumpWriter(DumpWriter* dw) :
     AbstractDumpWriter(),
     _backend_ptr(dw->backend_ptr()),
-    _buffer_queue(NULL),
+    _buffer_queue((new (std::nothrow) ParWriterBufferQueue())),
     _buffer_base(NULL),
     _splited_data(false) {
-    initialize();
+    // prepare internal buffer
+    allocate_internal_buffer();
   }
 
   ~ParDumpWriter() {
@@ -783,19 +765,9 @@ virtual void write_raw(void* s, size_t len) {
   virtual void deactivate()             { flush(true); _backend_ptr->deactivate(); }
 
  private:
-  void initialize() {
-    // allocate_work
-    allocate_internal_buffer();
-  }
-
   void allocate_internal_buffer() {
+    assert(_buffer_queue != NULL, "Internal buffer queue is not ready when allocate internal buffer");
     assert(_buffer == NULL && _buffer_base == NULL, "current buffer must be NULL before allocate");
-    _buffer_queue = (new (std::nothrow) ParWriterBufferQueue());
-    if (_buffer_queue == NULL) {
-      set_error("Could not allocate buffer queue for writer");
-      return;
-    }
-
     _buffer_base = _buffer = (char*)os::malloc(io_buffer_max_size, mtInternal);
     if (_buffer == NULL) {
       set_error("Could not allocate buffer for writer");
@@ -829,10 +801,18 @@ virtual void write_raw(void* s, size_t len) {
     // of limitation in write_xxx().
     assert(expected_total <= io_buffer_max_size, "buffer overflow");
     assert(_buffer - _buffer_base <= io_buffer_max_size, "internal buffer overflow");
-    if (!_buffer_queue->enqueue(_buffer_base, expected_total)) {
+    ParWriterBufferQueueElem* entry =
+        (ParWriterBufferQueueElem*)os::malloc(sizeof(ParWriterBufferQueueElem), mtInternal);
+    if (entry == NULL) {
+      // "Could not allocate buffer list for writer"
       set_error("Heap dumper can not enqueue to internal buffer");
       return;
     }
+    entry->_buffer = _buffer_base;
+    entry->_used = expected_total;
+    entry->_next = NULL;
+    // add to internal buffer queue
+    _buffer_queue->enqueue(entry);
     _buffer_base =_buffer = NULL;
     allocate_internal_buffer();
   }
