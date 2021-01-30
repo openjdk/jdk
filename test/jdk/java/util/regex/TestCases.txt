@@ -1233,10 +1233,10 @@ foo
 true  1 
 
 //----------------------------------------------------------------
-// Unary primality testing
+// Unary numeral primality testing
 //----------------------------------------------------------------
 
-// Unary prime (7), reluctant quantifier
+// Input is 7 (a prime), in unary; reluctant quantifier
 ^(11+?)\1+$
 1111111
 false 1
@@ -1245,7 +1245,7 @@ false 1
 1111111
 false 1
 
-// Unary power of two (8), reluctant quantifier
+// Input is 8 (a power of two), in unary; reluctant quantifier
 // group is shortest possible (2)
 ^(11+?)\1+$
 11111111
@@ -1255,7 +1255,7 @@ true 11111111 1 11
 11111111
 true 11111111 1 11
 
-// Unary prime (7), greedy quantifier
+// Input is 7 (a prime), in unary; greedy quantifier
 ^(11+)\1+$
 1111111
 false 1
@@ -1264,7 +1264,7 @@ false 1
 1111111
 false 1
 
-// Unary power of two (8), greedy quantifier
+// Input is 8 (a power of two), in unary; greedy quantifier
 // group is longest possible (4)
 ^(11+)\1+$
 11111111
