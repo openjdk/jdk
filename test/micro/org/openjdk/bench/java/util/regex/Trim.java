@@ -22,20 +22,14 @@
  */
 package org.openjdk.bench.java.util.regex;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Detecting trailing whitespace is a very common task that many programmers
+ * Detecting trailing whitespace is a very common problem that many programmers
  * have solved, but it's surprisingly difficult to avoid O(N^2) performance
  * when the input contains a long run of consecutive whitespace.  For
  * example, attempts to trim such whitespace caused a Stack Exchange outage.
@@ -43,16 +37,37 @@ import java.util.regex.Pattern;
  *
  * We use "[ \t]" as our definition of whitespace (easy, but not too easy!).
  *
- * The use of Matcher#find (instead of Matcher#matches) is convenient, but
- * introduces an implicit O(N) loop over the input.  In order for the
- * entire search operation to not be O(N^2), most of the regex match
- * operations while scanning the input need to be O(1), which may require
- * the use of less-obvious constructs like lookbehind.  The use of
- * possessive quantifiers in the regex itself is sadly **insufficient**.
+ * The use of Matcher#find (instead of Matcher#matches) is very convenient, but
+ * introduces an implicit O(N) loop over the input, or alternatively, a
+ * non-possessive "^.*?" prefix in the regex.  In order for the entire search
+ * operation to not be O(N^2), most of the regex match operations while
+ * scanning the input need to be O(1), which may require the use of less-obvious
+ * constructs like lookbehind.  The use of possessive quantifiers in the regex
+ * itself is sadly **insufficient**.
+ *
+ * When the subpattern following a possessive quantifier is as cheap as the
+ * subpattern governed by the quantifier (e.g. \s++$), the possessive quantifier
+ * gives you at most 2x speedup, reducing two linear scans to one.
+ *
+ * An explicit loop with find() using two matchers and possessive quantifiers is
+ * the most efficient, since there is no backtracking.  But that cannot work with
+ * simple APIs that take a regex as an argument, like grep(1) does.
  *
  * Here's a way to compare the per-char cost:
  *
  * (cd $(git rev-parse --show-toplevel) && for size in 16 64 256 1024; do make test TEST='micro:java.util.regex.Trim' MICRO="FORK=2;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
+ *
+ * some jdk17 numbers:
+ *
+ * Benchmark                    (size)  Mode  Cnt     Score    Error  Units
+ * Trim.find_loop_two_matchers    1024  avgt    8     2.252 ?  0.013  ns/op
+ * Trim.find_loop_usePattern      1024  avgt    8     2.328 ?  0.116  ns/op
+ * Trim.lookBehind_find           1024  avgt    8    21.740 ?  0.040  ns/op
+ * Trim.possessive2_find          1024  avgt    8  7151.592 ? 17.860  ns/op
+ * Trim.possessive2_matches       1024  avgt    8     2.625 ?  0.008  ns/op
+ * Trim.possessive3_find          1024  avgt    8    28.532 ?  1.889  ns/op
+ * Trim.possessive_find           1024  avgt    8  3113.776 ?  9.996  ns/op
+ * Trim.simple_find               1024  avgt    8  4199.480 ? 13.410  ns/op
  *
  * TODO: why is simple_find faster than possessive_find, for size below 512 ?
  *
@@ -66,8 +81,11 @@ public class Trim {
     @Param({"16", "64", "256", "1024"})
     int size;
 
-    /** String containing long run of whitespace */
+    /** String containing long interior run of whitespace */
     public String noMatch;
+
+    public Pattern whitespaceRunPattern;
+    public Pattern eolPattern;
 
     public Pattern simplePattern;
     public Pattern possessivePattern;
@@ -75,15 +93,30 @@ public class Trim {
     public Pattern possessivePattern3;
     public Pattern lookBehindPattern;
 
-    @Setup
+    @Setup(Level.Trial)
     public void setup() {
         noMatch = "xx" + " \t".repeat(size) + "yy";
+
+        whitespaceRunPattern = Pattern.compile("[ \t]++");
+        eolPattern = Pattern.compile("$", Pattern.MULTILINE);
 
         simplePattern = Pattern.compile("[ \t]+$");
         possessivePattern = Pattern.compile("[ \t]++$");
         possessivePattern2 = Pattern.compile("(.*+[^ \t]|^)([ \t]++)$");
         possessivePattern3 = Pattern.compile("(?:[^ \t]|^)([ \t]++)$");
         lookBehindPattern = Pattern.compile("(?<![ \t])[ \t]++$");
+
+        // ad-hoc correctness checking, enabled manually via
+        // make test ...TEST=... MICRO=VM_OPTIONS=-ea;...
+        // TODO: there must be a better way!
+        assert ! simple_find();
+        assert ! possessive_find();
+        assert ! possessive2_find();
+        assert ! possessive2_matches();
+        assert ! possessive3_find();
+        assert ! lookBehind_find();
+        assert ! find_loop_two_matchers();
+        assert ! find_loop_usePattern();
     }
 
     @Benchmark
@@ -115,4 +148,30 @@ public class Trim {
     public boolean lookBehind_find() {
         return lookBehindPattern.matcher(noMatch).find();
     }
+
+    @Benchmark
+    public boolean find_loop_two_matchers() {
+        Matcher m = whitespaceRunPattern.matcher(noMatch);
+        int endOfString = m.regionEnd();
+        while (m.find()) {
+            if (eolPattern.matcher(noMatch).region(m.end(), endOfString).lookingAt())
+                return true;
+        }
+        return false;
+    }
+
+    @Benchmark
+    public boolean find_loop_usePattern() {
+        Matcher m = whitespaceRunPattern.matcher(noMatch);
+        int endOfString = m.regionEnd();
+        while (m.find()) {
+            m.region(m.end(), endOfString);
+            m.usePattern(eolPattern);
+            if (m.lookingAt())
+                return true;
+            m.usePattern(whitespaceRunPattern);
+        }
+        return false;
+    }
+
 }

@@ -22,14 +22,7 @@
  */
 package org.openjdk.bench.java.util.regex;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -65,7 +58,7 @@ public class Primality {
     public Pattern greedy1 = Pattern.compile("^(11+)\\1+$");
     public Pattern greedy2 = Pattern.compile("^(1{2,})\\1+$");
 
-    @Setup
+    @Setup(Level.Trial)
     public void setup() {
         unary = "1".repeat(n);
     }
