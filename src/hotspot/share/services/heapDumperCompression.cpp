@@ -434,7 +434,6 @@ void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max
       // Otherwise return the rest of the buffer as the new buffer.
       if (_current->_in_max - _current->_in_used <= _max_waste || force_reset) {
         _current->_id = _next_id++;
-        assert(_current->_in_used > 0 || force_reset, "zlin - must enqueue non-empty buffer");
         _to_compress.add_last(_current);
         _current = NULL;
         ml.notify_all();

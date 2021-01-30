@@ -631,10 +631,67 @@ void DumpWriter::flush(bool force) {
   _backend.get_new_buffer(&_buffer, &_pos, &_size, force);
 }
 
-struct ParWriterBufferListEntry {
+struct ParWriterBufferQueueElem {
   char* _buffer;
   size_t _used;
-  ParWriterBufferListEntry* _next;
+  ParWriterBufferQueueElem* _next;
+};
+
+class ParWriterBufferQueue : public CHeapObj<mtInternal> {
+ private:
+  ParWriterBufferQueueElem* _head;
+  ParWriterBufferQueueElem* _tail;
+  uint _length;
+ public:
+  ParWriterBufferQueue() : _head(NULL), _tail(NULL), _length(0) { }
+
+  bool enqueue(char* buffer, size_t size) {
+      if (_head == NULL) {
+        assert(is_empty() && _tail == NULL, "Sanity check");
+        _head = _tail =
+          (ParWriterBufferQueueElem*)os::malloc(sizeof(ParWriterBufferQueueElem), mtInternal);
+        if (_head == NULL) {
+          // "Could not allocate buffer list for writer"
+          return false;
+        }
+      _tail->_buffer = buffer;
+      _tail->_used = size;
+      _tail->_next = NULL;
+      _length++;
+    } else {
+      assert ((_tail->_next == NULL && _tail->_buffer != NULL), "Buffer queue is polluted");
+
+      ParWriterBufferQueueElem* entry =
+          (ParWriterBufferQueueElem*)os::malloc(sizeof(ParWriterBufferQueueElem), mtInternal);
+      if (entry == NULL) {
+        // "Could not allocate buffer list for writer"
+        return false;
+      }
+      entry->_buffer = buffer;
+      entry->_used = size;
+      entry->_next = NULL;
+      _tail->_next = entry;
+      _tail = entry;
+      _length++;
+    }
+    return true;
+  }
+
+  ParWriterBufferQueueElem* dequeue() {
+    if (_head == NULL) return NULL;
+    ParWriterBufferQueueElem* entry = _head;
+    assert (entry->_buffer != NULL, "polluted buffer in writer list");
+    _head = entry->_next;
+    entry->_next = NULL;
+    _length--;
+    return entry;
+  }
+
+  bool is_empty() {
+    return _length == 0;
+  }
+
+  uint length() { return _length; }
 };
 
 // Support parallel heap dump.
@@ -645,9 +702,7 @@ class ParDumpWriter : public AbstractDumpWriter {
   // Pointer of backend from global DumpWriter.
   CompressionBackend* _backend_ptr;
   char const * _err;
-  ParWriterBufferListEntry* _list_head;
-  ParWriterBufferListEntry* _list_tail;
-  uint _list_length;
+  ParWriterBufferQueue* _buffer_queue;
   size_t _internal_buffer_used;
   char* _buffer_base;
   bool _splited_data;
@@ -673,16 +728,18 @@ class ParDumpWriter : public AbstractDumpWriter {
   ParDumpWriter(DumpWriter* dw) :
     AbstractDumpWriter(),
     _backend_ptr(dw->backend_ptr()),
-    _list_head(NULL),
-    _list_tail(NULL) {
-      // todo. assert backend has no data to compress.
-    _buffer_base = NULL;
-    _splited_data = false;
+    _buffer_queue(NULL),
+    _buffer_base(NULL),
+    _splited_data(false) {
     initialize();
   }
 
   ~ParDumpWriter() {
-     assert(_internal_buffer_used == 0 ,"All data must be send to backend");
+     assert(_buffer_queue != NULL, "Sanity check");
+     assert((_internal_buffer_used == 0) && (_buffer_queue->is_empty()),
+            "All data must be send to backend");
+     delete _buffer_queue;
+     _buffer_queue = NULL;
   }
 
   // total number of bytes written to the disk
@@ -727,15 +784,18 @@ virtual void write_raw(void* s, size_t len) {
 
  private:
   void initialize() {
-    assert(_buffer == NULL && _pos == 0 &&
-            _list_head == NULL, "Invalid state for initialize");
     // allocate_work
     allocate_internal_buffer();
-    _list_length = 0;
   }
 
   void allocate_internal_buffer() {
-    assert(_buffer == NULL && _buffer_base == NULL, "sanity check");
+    assert(_buffer == NULL && _buffer_base == NULL, "current buffer must be NULL before allocate");
+    _buffer_queue = (new (std::nothrow) ParWriterBufferQueue());
+    if (_buffer_queue == NULL) {
+      set_error("Could not allocate buffer queue for writer");
+      return;
+    }
+
     _buffer_base = _buffer = (char*)os::malloc(io_buffer_max_size, mtInternal);
     if (_buffer == NULL) {
       set_error("Could not allocate buffer for writer");
@@ -768,47 +828,16 @@ virtual void write_raw(void* s, size_t len) {
     // It is not possible here that expected_total is larger than io_buffer_max_size because
     // of limitation in write_xxx().
     assert(expected_total <= io_buffer_max_size, "buffer overflow");
-    // need new buffer.
-    if (_list_head == NULL) {
-
-      // TODO. list.isEmpty();
-      //       list.push();
-      assert(_list_tail == NULL, "Santy check");
-      _list_head = _list_tail =
-          (ParWriterBufferListEntry*)os::malloc(sizeof(ParWriterBufferListEntry), mtInternal);
-      if (_list_head == NULL) {
-        set_error("Could not allocate buffer list for writer");
-        return;
-      }
-      assert(_buffer - _buffer_base <= io_buffer_max_size, "internal buffer overflow");
-      _list_tail->_buffer = _buffer_base;
-      _list_tail->_used = expected_total;
-      _list_tail->_next = NULL;
-      _list_length++;
-      _buffer_base =_buffer = NULL;
-    } else {
-      assert ((_list_tail->_next == NULL && _list_tail->_buffer != NULL), "writer has polluted buffer list");
-
-      ParWriterBufferListEntry* entry =
-          (ParWriterBufferListEntry*)os::malloc(sizeof(ParWriterBufferListEntry), mtInternal);
-      if (entry == NULL) {
-        set_error("Could not allocate buffer list entry for writer");
-        return;
-      }
-      // Todo zlin: combine code above, enqueue()
-      assert(_buffer - _buffer_base <= io_buffer_max_size, "internal buffer overflow");
-      entry->_buffer = _buffer_base;
-      entry->_used = expected_total;
-      entry->_next = NULL;
-      _list_tail->_next = entry;
-      _list_tail = entry;
-      _list_length++;
-      _buffer_base =_buffer = NULL;
+    assert(_buffer - _buffer_base <= io_buffer_max_size, "internal buffer overflow");
+    if (!_buffer_queue->enqueue(_buffer_base, expected_total)) {
+      set_error("Heap dumper can not enqueue to internal buffer");
+      return;
     }
+    _buffer_base =_buffer = NULL;
     allocate_internal_buffer();
   }
 
-  void reclaim_entry(ParWriterBufferListEntry* entry) {
+  void reclaim_entry(ParWriterBufferQueueElem* entry) {
     assert(entry != NULL && entry->_buffer != NULL, "Invalid entry to reclaim");
     os::free(entry->_buffer);
     entry->_buffer = NULL;
@@ -823,26 +852,20 @@ virtual void write_raw(void* s, size_t len) {
   }
 
   bool should_flush_buf_list(bool force) {
-    return force || _list_length > backend_flush_threshold;
+    return force || _buffer_queue->length() > backend_flush_threshold;
   }
 
   void flush_to_backend(bool force) {
     // Guarantee there is only one writer update backend buffers.
     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-    while (_list_head !=  NULL) {
-      //TODO: zlin dequeue
-      ParWriterBufferListEntry* entry = _list_head;
-      assert (entry->_buffer != NULL, "polluted buffer in writer list");
-      _list_head = entry->_next;
-      entry->_next = NULL;
-      _list_length--;
+    while (!_buffer_queue->is_empty()) {
+      ParWriterBufferQueueElem* entry = _buffer_queue->dequeue();
       flush_buffer(entry->_buffer, entry->_used);
       // Delete buffer and entry.
       reclaim_entry(entry);
       entry = NULL;
     }
-    assert(_list_length == 0, "must send all list entries to backend!");
-    assert(_pos == 0, "_pos is not zero [%d]", (int)_pos);
+    assert(_pos == 0, "available buffer must be clean before flush");
     // Flush internal buffer.
     if (_internal_buffer_used > 0) {
       flush_buffer(_buffer_base, _internal_buffer_used);
@@ -853,9 +876,6 @@ virtual void write_raw(void* s, size_t len) {
       // Allocate internal buffer for future use.
       allocate_internal_buffer();
     }
-
-    assert(_list_head == NULL, "buffer list must be empty after flush to backend");
-    _list_tail = NULL;
   }
 };
 
