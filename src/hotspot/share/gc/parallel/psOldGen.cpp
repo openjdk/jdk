@@ -180,6 +180,7 @@ void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
 }
 
 bool PSOldGen::expand_for_allocate(size_t word_size) {
+  assert(word_size > 0, "allocating zero words?");
   bool result = expand(word_size*HeapWordSize);
   if (GCExpandToAllocateDelayMillis > 0) {
     os::naked_sleep(GCExpandToAllocateDelayMillis);
@@ -188,9 +189,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
 }
 
 bool PSOldGen::expand(size_t bytes) {
-  if (bytes == 0) {
-    return true;
-  }
+  assert(bytes > 0, "precondition");
   MutexLocker x(ExpandHeap_lock);
   const size_t alignment = virtual_space()->alignment();
   size_t aligned_bytes  = align_up(bytes, alignment);
@@ -201,13 +200,11 @@ bool PSOldGen::expand(size_t bytes) {
     // providing a page per lgroup. Alignment is larger or equal to the page size.
     aligned_expand_bytes = MAX2(aligned_expand_bytes, alignment * os::numa_get_groups_num());
   }
-  if (aligned_bytes == 0){
-    // The alignment caused the number of bytes to wrap.  An expand_by(0) will
-    // return true with the implication that and expansion was done when it
-    // was not.  A call to expand implies a best effort to expand by "bytes"
-    // but not a guarantee.  Align down to give a best effort.  This is likely
-    // the most that the generation can expand since it has some capacity to
-    // start with.
+  if (aligned_bytes == 0) {
+    // The alignment caused the number of bytes to wrap.  A call to expand
+    // implies a best effort to expand by "bytes" but not a guarantee.  Align
+    // down to give a best effort.  This is likely the most that the generation
+    // can expand since it has some capacity to start with.
     aligned_bytes = align_down(bytes, alignment);
   }
 
@@ -231,9 +228,7 @@ bool PSOldGen::expand(size_t bytes) {
 bool PSOldGen::expand_by(size_t bytes) {
   assert_lock_strong(ExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
-  if (bytes == 0) {
-    return true;  // That's what virtual_space()->expand_by(0) would return
-  }
+  assert(bytes > 0, "precondition");
   bool result = virtual_space()->expand_by(bytes);
   if (result) {
     if (ZapUnusedHeapArea) {
