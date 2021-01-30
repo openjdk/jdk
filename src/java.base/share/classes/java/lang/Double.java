@@ -1058,8 +1058,8 @@ public final class Double extends Number
      * Compares two {@code Double} objects numerically.
      *
      * This method imposes a total order on {@code Double} objects
-     * with two differences compared to the incomplete order defined the
-     * by Java language numerical comparison operators ({@code <, <=,
+     * with two differences compared to the incomplete order defined by
+     * the Java language numerical comparison operators ({@code <, <=,
      * ==, >=, >}) on {@code double} values.
      *
      * <ul><li> A NaN is <em>unordered</em> with respect to other
