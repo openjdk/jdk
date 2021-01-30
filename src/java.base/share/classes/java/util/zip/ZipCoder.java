@@ -99,7 +99,7 @@ class ZipCoder {
     // trailing slash was found, then called String.hashCode(). This
     // normalization ensures we can simplify and speed up lookups.
     // This function also checks the encoding of the array, throwing a
-    // ZipException if there's an decoding error
+    // ZipException if there's a decoding error
     int checkedHash(byte[] a, int off, int len) throws ZipException {
         if (len == 0) {
             return 0;
@@ -124,8 +124,7 @@ class ZipCoder {
         }
     }
 
-    // Hash code function for Strings matching the result of checkedHash
-    // for byte array
+    // Hash function equivalent of checkedHash for String inputs
     static int hash(String name) {
         int hsh = name.hashCode();
         int len = name.length();
@@ -217,16 +216,17 @@ class ZipCoder {
                 int h = 0;
                 while (off < end) {
                     byte b = a[off];
-                    if (b < 0) {
+                    if (b >= 0) {
+                        // ASCII, keep going
+                        h = 31 * h + b;
+                        off++;
+                    } else {
                         // Non-ASCII, fall back to decoding a String
                         // We avoid using decoder() here since the UTF8ZipCoder is
                         // shared and that decoder is not thread safe.
                         // We use the JLA.newStringUTF8NoRepl variant to throw
                         // exceptions eagerly when opening ZipFiles
                         return hash(JLA.newStringUTF8NoRepl(a, end - len, len));
-                    } else {
-                        h = 31 * h + b;
-                        off++;
                     }
                 }
 
@@ -234,7 +234,6 @@ class ZipCoder {
                     h = 31 * h + '/';
                 }
                 return h;
-
             } catch(Exception e) {
                 throw new ZipException("invalid CEN header (bad entry name)");
             }
