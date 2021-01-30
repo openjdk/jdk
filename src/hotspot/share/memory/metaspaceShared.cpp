@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/classListParser.hpp"
@@ -35,6 +36,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -499,7 +501,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
-  SystemDictionaryShared::serialize_well_known_klasses(soc);
+  SystemDictionaryShared::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
   CppVtables::serialize(soc);
@@ -779,7 +781,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _open_archive_heap_regions = NULL;
   dump_java_heap_objects();
 
-  builder.relocate_well_known_klasses();
+  builder.relocate_vm_classes();
 
   log_info(cds)("Update method trampolines");
   builder.update_method_trampolines();
@@ -847,7 +849,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   }
 
   // There may be pending VM operations. We have changed some global states
-  // (such as SystemDictionary::_well_known_klasses) that may cause these VM operations
+  // (such as vmClasses::_klasses) that may cause these VM operations
   // to fail. For safety, forget these operations and exit the VM directly.
   vm_direct_exit(0);
 }
@@ -1844,6 +1846,11 @@ intx MetaspaceShared::final_delta() {
 }
 
 bool MetaspaceShared::use_full_module_graph() {
+#if INCLUDE_CDS_JAVA_HEAP
+  if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
+    return true;
+  }
+#endif
   bool result = _use_optimized_module_handling && _use_full_module_graph &&
     (UseSharedSpaces || DumpSharedSpaces) && HeapShared::is_heap_object_archiving_allowed();
   if (result && UseSharedSpaces) {

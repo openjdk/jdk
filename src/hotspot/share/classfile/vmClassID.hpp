@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package nsk.jdi.VirtualMachine.redefineClasses;
+#ifndef SHARE_CLASSFILE_VMCLASSID_HPP
+#define SHARE_CLASSFILE_VMCLASSID_HPP
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdi.*;
+#include "classfile/vmClassMacros.hpp"
+#include "utilities/enumIterator.hpp"
 
-/**
- *  <code>redefineclasses023b</code> is deugee's part of the redefineclasses023.
- *  changing <public> class-modifier to <protected>
- */
+enum class VMClassID : int {
+  #define DECLARE_VM_CLASS(name, symbol) _VM_CLASS_ENUM(name), _VM_CLASS_ENUM(symbol) = _VM_CLASS_ENUM(name),
+  VM_CLASSES_DO(DECLARE_VM_CLASS)
+  #undef DECLARE_VM_CLASS
 
-public class redefineclasses023b {
+  LIMIT,             // exclusive upper limit
+  FIRST = 0,         // inclusive upper limit
+  LAST = LIMIT - 1   // inclusive upper limit
+};
 
-    redefineclasses023bc obj = new redefineclasses023bc();
+ENUMERATOR_RANGE(VMClassID, VMClassID::FIRST, VMClassID::LAST) // (inclusive start, inclusive end)
 
-    protected interface redefineclasses023bi {
-//  ^^^^^^^^^
-
-        void dummyMethod01();
-
-    }
-
-    class redefineclasses023bc implements redefineclasses023bi {
-
-        public void dummyMethod01() {
-        }
-
-    }
-}
+#endif // SHARE_CLASSFILE_VMCLASSID_HPP

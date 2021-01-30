@@ -180,7 +180,7 @@ void ShenandoahDegenGC::op_degenerated() {
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       }
 
-      if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+      if (ClassUnloading) {
          // Disarm nmethods that armed in concurrent cycle.
          // In above case, update roots should disarm them
          ShenandoahCodeRoots::disarm_nmethods();
@@ -240,6 +240,16 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   heap->parallel_cleaning(false /*full gc*/);
   // Prepare regions and collection set
   heap->prepare_regions_and_collection_set(false /*concurrent*/);
+
+  // Retire the TLABs, which will force threads to reacquire their TLABs after the pause.
+  // This is needed for two reasons. Strong one: new allocations would be with new freeset,
+  // which would be outside the collection set, so no cset writes would happen there.
+  // Weaker one: new allocations would happen past update watermark, and so less work would
+  // be needed for reference updates (would update the large filler instead).
+  if (UseTLAB) {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_final_manage_labs);
+    heap->tlabs_retire(false);
+  }
 
   if (!heap->collection_set()->is_empty()) {
     heap->set_evacuation_in_progress(true);

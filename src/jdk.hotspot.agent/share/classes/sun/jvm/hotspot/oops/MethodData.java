@@ -420,7 +420,7 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
   // Get a measure of how much mileage the method has on it.
   int mileageOf(Method method) {
     long mileage = 0;
-    int iic = method.interpreterInvocationCount();
+    long iic = method.interpreterInvocationCount();
     if (mileage < iic)  mileage = iic;
 
     long ic = method.getInvocationCount();

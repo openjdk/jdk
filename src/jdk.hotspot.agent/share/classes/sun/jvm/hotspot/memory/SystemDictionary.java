@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,25 +52,32 @@ public class SystemDictionary {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("SystemDictionary");
+    Type type = db.lookupType("vmClasses");
 
-    objectKlassField = type.getAddressField(WK_KLASS("Object_klass"));
-    classLoaderKlassField = type.getAddressField(WK_KLASS("ClassLoader_klass"));
-    stringKlassField = type.getAddressField(WK_KLASS("String_klass"));
-    systemKlassField = type.getAddressField(WK_KLASS("System_klass"));
-    threadKlassField = type.getAddressField(WK_KLASS("Thread_klass"));
-    threadGroupKlassField = type.getAddressField(WK_KLASS("ThreadGroup_klass"));
-    methodHandleKlassField = type.getAddressField(WK_KLASS("MethodHandle_klass"));
+    // Note, vmStructs contains a field with the name "_klasses[static_cast<int>(VMClassID::Object_klass_knum)]"
+    objectKlassField = type.getAddressField(VM_CLASS_AT("Object_klass"));
+    classLoaderKlassField = type.getAddressField(VM_CLASS_AT("ClassLoader_klass"));
+    stringKlassField = type.getAddressField(VM_CLASS_AT("String_klass"));
+    systemKlassField = type.getAddressField(VM_CLASS_AT("System_klass"));
+    threadKlassField = type.getAddressField(VM_CLASS_AT("Thread_klass"));
+    threadGroupKlassField = type.getAddressField(VM_CLASS_AT("ThreadGroup_klass"));
+    methodHandleKlassField = type.getAddressField(VM_CLASS_AT("MethodHandle_klass"));
   }
 
-  // This WK functions must follow the definitions in systemDictionary.hpp:
-  private static String WK_KLASS(String name) {
-      //#define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
-      return ("_well_known_klasses[SystemDictionary::"+WK_KLASS_ENUM_NAME(name)+"]");
+  // The following 3 methods must match the corresponding macros in vmClassMacros.hpp and vmClasses.hpp.
+  private static String _VM_CLASS_ENUM(String kname) {
+    // #define _VM_CLASS_ENUM(kname)    kname##_knum
+    return (kname+"_knum");
   }
-  private static String WK_KLASS_ENUM_NAME(String kname) {
-      //#define WK_KLASS_ENUM_NAME(kname)    kname##_knum
-      return (kname+"_knum");
+
+  private static String VM_CLASS_ID(String kname) {
+    // #define VM_CLASS_ID(kname)      VMClassID::_VM_CLASS_ENUM(kname)
+    return "VMClassID::" + _VM_CLASS_ENUM(kname);
+  }
+
+  private static String VM_CLASS_AT(String name) {
+    // #define VM_CLASS_AT(name) _klasses[static_cast<int>(VM_CLASS_ID(name))]
+    return "_klasses[static_cast<int>(" + VM_CLASS_ID(name) + ")]";
   }
 
   // few well known classes -- not all are added here.

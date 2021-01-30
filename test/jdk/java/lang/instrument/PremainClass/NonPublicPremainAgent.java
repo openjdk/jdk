@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,26 @@
  * questions.
  */
 
-package nsk.jdi.VirtualMachine.redefineClasses;
-
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdi.*;
-
-/**
- *  <code>redefineclasses021b</code> is deugee's part of the redefineclasses021.
- *  adding <code>private</code> modifier
+/*
+ * @test
+ * @bug 8165276
+ * @summary Test that agent with non-public premain method is rejected to load
+ * @library /test/lib
+ * @library /test
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.NonPublicPremainAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             NonPublicPremainAgent NonPublicPremainAgent.jar
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner NonPublicPremainAgent IllegalAccessException
  */
 
-public class redefineclasses021b {
+import java.lang.RuntimeException;
+import java.lang.instrument.Instrumentation;
 
-    redefineclasses021bc obj = new redefineclasses021bc();
+public class NonPublicPremainAgent {
 
-    private interface redefineclasses021bi {
-//  ^^^^^^^
-        void dummyMethod01();
-
-    }
-
-    class redefineclasses021bc implements redefineclasses021bi {
-
-        public void dummyMethod01() {
-        }
-
+    // This premain method is intentionally non-public to ensure it is rejected.
+    static void premain(String agentArgs, Instrumentation inst) {
+        throw new RuntimeException("premain: NonPublicPremainAgent was not expected to be loaded");
     }
 }

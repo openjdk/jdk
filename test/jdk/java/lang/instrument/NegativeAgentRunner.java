@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
+package jdk.java.lang.instrument;
 
-#include "memory/allocation.hpp"
+import java.lang.RuntimeException;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-class ShenandoahConcurrentRoots : public AllStatic {
-public:
-  // Can GC settings allow concurrent root processing
-  static bool can_do_concurrent_roots();
-  // If current GC cycle can process roots concurrently
-  static bool should_do_concurrent_roots();
+public class NegativeAgentRunner {
 
-  // If GC settings allow concurrent class unloading
-  static bool can_do_concurrent_class_unloading();
-  // If current GC cycle can unload classes concurrently
-  static bool should_do_concurrent_class_unloading();
-};
-
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
+    public static void main(String argv[]) throws Exception {
+        if (argv.length != 2) {
+            throw new RuntimeException("Agent and exception class names are expected in arguments");
+        }
+        String agentClassName = argv[0];
+        String excepClassName = argv[1];
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-javaagent:" + agentClassName + ".jar",
+                agentClassName);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain(excepClassName);
+        if (0 == output.getExitValue()) {
+            throw new RuntimeException("Expected error but got exit value 0");
+        }
+    }
+}

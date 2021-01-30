@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,31 +23,29 @@
  * questions.
  */
 
-package nsk.jdi.VirtualMachine.redefineClasses;
+#warn This file is preprocessed before being compiled
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdi.*;
+class XXX {
+#begin
 
-/**
- *  <code>redefineclasses021b</code> is deugee's part of the redefineclasses021.
- *  adding <code>static</code> modifier
- */
+    // -- $Ms$_$Type$_$SWAP$_$RO$
+#if[!RO]
 
-public class redefineclasses021b {
-
-    redefineclasses021bc obj = new redefineclasses021bc();
-
-    static interface redefineclasses021bi {
-//  ^^^^^^
-        void dummyMethod01();
-
-    }
-
-    class redefineclasses021bc implements redefineclasses021bi {
-
-        public void dummyMethod01() {
+    @Benchmark
+    public void test$Ms$LoopPut$Type$$SWAP$$RO$() {
+        for (int i = 0; i < $ms$ByteBuffer$SWAP$$RO$.capacity(); i+=$CarrierBW$) {
+            $ms$ByteBuffer$SWAP$$RO$.put{#if[!byte]?$Type$}(i, $type$Value);
         }
-
     }
+#end[RO]
+
+    @Benchmark
+    public int test$Ms$LoopGet$Type$$SWAP$$RO$() {
+        int r = 0;
+        for (int i = 0; i < $ms$ByteBuffer$SWAP$$RO$.capacity(); i+=$CarrierBW$) {
+            r += $ms$ByteBuffer$SWAP$$RO$.get{#if[!byte]?$Type$}(i);
+        }
+        return r;
+    }
+#end
 }
