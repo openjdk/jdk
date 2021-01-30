@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -58,7 +59,7 @@ class MutableSpace: public CHeapObj<mtGC> {
   size_t _alignment;
   HeapWord* _bottom;
   HeapWord* volatile _top;
-  HeapWord* _end;
+  HeapWord* volatile _end;
 
   MutableSpaceMangler* mangler() { return _mangler; }
 
@@ -67,21 +68,21 @@ class MutableSpace: public CHeapObj<mtGC> {
   void set_last_setup_region(MemRegion mr) { _last_setup_region = mr;   }
   MemRegion last_setup_region() const      { return _last_setup_region; }
 
+ protected:
+  HeapWord* volatile* top_addr()           { return &_top; }
+
  public:
   virtual ~MutableSpace();
   MutableSpace(size_t page_size);
 
   // Accessors
   HeapWord* bottom() const                 { return _bottom; }
-  HeapWord* top() const                    { return _top;    }
-  HeapWord* end() const                    { return _end; }
+  HeapWord* top() const                    { return Atomic::load(&_top); }
+  HeapWord* end() const                    { return Atomic::load(&_end); }
 
   void set_bottom(HeapWord* value)         { _bottom = value; }
-  virtual void set_top(HeapWord* value)    { _top = value;   }
-  void set_end(HeapWord* value)            { _end = value; }
-
-  HeapWord* volatile* top_addr()           { return &_top; }
-  HeapWord** end_addr()                    { return &_end; }
+  virtual void set_top(HeapWord* value)    { Atomic::store(&_top, value); }
+  void set_end(HeapWord* value)            { Atomic::store(&_end, value); }
 
   size_t alignment()                       { return _alignment; }
 
