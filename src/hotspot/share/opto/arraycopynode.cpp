@@ -502,21 +502,21 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
   }
   return true;
 }
-
-bool ArrayCopyNode::is_string_initialization(PhaseGVN* phase) const {
+// return true if the current ArrayCopy is for string::value:byte[]
+bool ArrayCopyNode::is_copy_for_string(PhaseGVN* phase) const {
   if (_kind == ArrayCopy && _alloc_tightly_coupled && _arguments_validated) {
       const TypeAryPtr* src_type = nullptr;
       const TypeAryPtr* dst_type = nullptr;
-      ConstraintCastNode* castnode;
+      const Node* n;
 
-      castnode = in(ArrayCopyNode::Src)->isa_ConstraintCast();
-      if (castnode != nullptr) {
-        src_type = castnode->type()->isa_aryptr();
+      n = in(ArrayCopyNode::Src);
+      if (n->isa_ConstraintCast() || n->Opcode() == Op_ConP) {
+        src_type = n->as_Type()->type()->isa_aryptr();
       }
 
-      castnode = in(ArrayCopyNode::Dest)->isa_ConstraintCast();
-      if (castnode != nullptr) {
-        dst_type = castnode->type()->isa_aryptr();
+      n = in(ArrayCopyNode::Dest);
+      if (n->is_ConstraintCast()) {
+        dst_type = n->as_ConstraintCast()->type()->isa_aryptr();
       }
 
       if (src_type != nullptr && src_type->elem() == TypeInt::BYTE &&
@@ -571,7 +571,7 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (count < 0 && can_reshape ) { // only in iterGVN
       // we rely on Eliminate_Allocations to remove AllocateArray.
       if (EliminateAllocations && OptimizeTempArray && phase->C->congraph() != nullptr &&
-          is_string_initialization(phase)) {
+          is_copy_for_string(phase)) {
         const ConnectionGraph& cg = *phase->C->congraph();
         CheckCastPPNode* dst = in(ArrayCopyNode::Dest)->as_CheckCastPP();
         AllocateNode* alloc = dst->in(1)->in(0)->as_AllocateArray();
@@ -595,10 +595,8 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         if (pt != nullptr && pt->escape_state() == PointsToNode::NoEscape) {
 #ifndef PRODUCT
           if (Verbose) dump(0);
-          tty->print("[ArrayCopyNode] count = %d\n", count);
-          //if (pt != nullptr && pt->is_JavaObject()) {
+          tty->print_cr("[ArrayCopyNode] is optimized");
           pt->dump(true);
-          //}
 #endif
 // Before
 //                   \c
@@ -661,7 +659,7 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 //
           PhaseIterGVN* igvn = phase->is_IterGVN();
           Node* src = in(ArrayCopyNode::Src);
-          assert(src->Opcode() == Op_CastPP, "must be CastPP");
+          assert(src->Opcode() == Op_CastPP || src->Opcode() == Op_ConP, "must be CastPP or ConP");
           AllocateArrayNode* aa = dst->in(1)->in(0)->as_AllocateArray();
           CheckCastPPNode* chkcast = aa->result_cast()->as_CheckCastPP();
 
