@@ -79,6 +79,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
@@ -379,7 +380,7 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
   #define CSIZE
 #endif // 64bit
 
-#ifdef TIERED
+#if COMPILER1_AND_COMPILER2
     const char* compiler_name = "HotSpot " CSIZE "Tiered Compilers";
 #else
 #if defined(COMPILER1)
@@ -387,11 +388,11 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
 #elif defined(COMPILER2)
     const char* compiler_name = "HotSpot " CSIZE "Server Compiler";
 #elif INCLUDE_JVMCI
-    #error "INCLUDE_JVMCI should imply TIERED"
+    #error "INCLUDE_JVMCI should imply COMPILER1_OR_COMPILER2"
 #else
     const char* compiler_name = "";
 #endif // compilers
-#endif // TIERED
+#endif // COMPILER1_AND_COMPILER2
 
     if (*compiler_name != '\0' &&
         (Arguments::mode() != Arguments::_int)) {
@@ -839,19 +840,6 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   return result;
 JVM_END
 
-static void is_lock_held_by_thread(Handle loader, PerfCounter* counter, TRAPS) {
-  if (loader.is_null()) {
-    return;
-  }
-
-  // check whether the current caller thread holds the lock or not.
-  // If not, increment the corresponding counter
-  if (ObjectSynchronizer::query_lock_ownership(THREAD->as_Java_thread(), loader) !=
-      ObjectSynchronizer::owner_self) {
-    counter->inc();
-  }
-}
-
 // common code for JVM_DefineClass() and JVM_DefineClassWithSource()
 static jclass jvm_define_class_common(const char *name,
                                       jobject loader, const jbyte *buf,
@@ -880,11 +868,6 @@ static jclass jvm_define_class_common(const char *name,
   ResourceMark rm(THREAD);
   ClassFileStream st((u1*)buf, len, source, ClassFileStream::verify);
   Handle class_loader (THREAD, JNIHandles::resolve(loader));
-  if (UsePerfData) {
-    is_lock_held_by_thread(class_loader,
-                           ClassLoader::sync_JVMDefineClassLockFreeCounter(),
-                           THREAD);
-  }
   Handle protection_domain (THREAD, JNIHandles::resolve(pd));
   Klass* k = SystemDictionary::resolve_from_stream(class_name,
                                                    class_loader,
@@ -1094,12 +1077,6 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   //   The Java level wrapper will perform the necessary security check allowing
   //   us to pass the NULL as the initiating class loader.
   Handle h_loader(THREAD, JNIHandles::resolve(loader));
-  if (UsePerfData) {
-    is_lock_held_by_thread(h_loader,
-                           ClassLoader::sync_JVMFindLoadedClassLockFreeCounter(),
-                           THREAD);
-  }
-
   Klass* k = SystemDictionary::find_instance_or_array_klass(klass_name,
                                                               h_loader,
                                                               Handle(),
