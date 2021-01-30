@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,22 +66,21 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * transitive. For more discussion of equivalence relations and object
  * equality, see the {@link Object#equals Object.equals}
  * specification. An equivalence relation partitions the values it
- * operates over into sets called <i>equivalence classes</i>. All the
+ * operates over into sets called <i>equivalence classes</i>.  All the
  * members of the equivalence class are equal to each other under the
- * relation. At least for some purposes, all the members of the
- * equivalence classes are substitutable for each other.  In
- * particular, in a numeric expression equivalent values can be
- * <em>substituted</em> for one another without changing the result of
- * the expression, meaning changing the equivalence class of the result
- * of the expression.
- * 
- * <p>Notably, the
- * built-in {@code ==} operation on floating-point values does
- * <em>not</em> implement an equivalence relation. Despite not
+ * relation. An equivalence class may contain only a single member. At
+ * least for some purposes, all the members of an equivalence class
+ * are substitutable for each other.  In particular, in a numeric
+ * expression equivalent values can be <em>substituted</em> for one
+ * another without changing the result of the expression, meaning
+ * changing the equivalence class of the result of the expression.
+ *
+ * <p>Notably, the built-in {@code ==} operation on floating-point
+ * values is <em>not</em> an equivalence relation. Despite not
  * defining an equivalence relation, the semantics of the IEEE 754
  * {@code ==} operator were deliberately designed to meet other needs
  * of numerical computation. There are two exceptions where the
- * properties of an equivalence relations are not satisfied by {@code
+ * properties of an equivalence relation are not satisfied by {@code
  * ==} on floating-point values:
  *
  * <ul>
@@ -112,10 +111,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * situation: a NaN is neither less than, nor greater than, nor equal
  * to any value, including itself. This means the <i>trichotomy of
  * comparison</i> does <em>not</em> hold.
- * 
- * <p>To provide the appropriate semantics for {@code equals} and {@code
- * compareTo} methods, those methods cannot simply to wrappers around
- * {@code ==} or ordered comparison operations. Instead, {@link
+ *
+ * <p>To provide the appropriate semantics for {@code equals} and
+ * {@code compareTo} methods, those methods cannot simply be wrappers
+ * around {@code ==} or ordered comparison operations. Instead, {@link
  * Double#equals equals} defines NaN arguments to be equal to each
  * other and defines {@code +0.0} to <em>not</em> be equal to {@code
  * -0.0}, restoring reflexivity. For comparisons, {@link
@@ -131,7 +130,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * compareTo} is {@linkplain Comparable consistent with equals}. That
  * is, two objects are reported as equal by {@code equals} if and only
  * if {@code compareTo} on those objects returns zero.
- * 
+ *
  * <p>The adjusted behaviors defined for {@code equals} and {@code
  * compareTo} allow instances of wrapper classes to work properly with
  * conventional data structures. For example, defining NaN
@@ -1057,12 +1056,12 @@ public final class Double extends Number
 
     /**
      * Compares two {@code Double} objects numerically.
-
+     *
      * This method imposes a total order on {@code Double} objects
      * with two differences compared to the incomplete order defined the
      * by Java language numerical comparison operators ({@code <, <=,
      * ==, >=, >}) on {@code double} values.
-
+     *
      * <ul><li> A NaN is <em>unordered</em> with respect to other
      *          values and unequal to itself under the comparison
      *          operators.  This method chooses to define {@code
@@ -1075,7 +1074,7 @@ public final class Double extends Number
      *      This method chooses to define positive zero ({@code +0.0d}),
      *      to be greater than negative zero ({@code -0.0d}).
      * </ul>
-     
+
      * This ensures that the <i>natural ordering</i> of {@code Double}
      * objects imposed by this method is <i>consistent with
      * equals</i>; see <a href="#equivalenceRelation">this
