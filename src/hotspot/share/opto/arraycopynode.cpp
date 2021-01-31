@@ -659,7 +659,8 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 //
           PhaseIterGVN* igvn = phase->is_IterGVN();
           Node* src = in(ArrayCopyNode::Src);
-          assert(src->Opcode() == Op_CastPP || src->Opcode() == Op_ConP, "must be CastPP or ConP");
+          assert(src->Opcode() == Op_CastPP || src->Opcode() == Op_CheckCastPP
+                 || src->Opcode() == Op_ConP, "must be CastPP, CheckedCastPP or ConP");
           AllocateArrayNode* aa = dst->in(1)->in(0)->as_AllocateArray();
           CheckCastPPNode* chkcast = aa->result_cast()->as_CheckCastPP();
 
@@ -684,19 +685,28 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   Node* res = memproj->fast_out(i);
 
                   if (res->is_MergeMem()) {
+                    uint num_edges = 0;
+
                     for (MergeMemStream mms(res->as_MergeMem()); mms.next_non_empty(); ) {
-                      if (cp.fallthrough_memproj == mms.memory()) {
+                      if (memproj == mms.memory()) {
                         mms.set_memory(mem);
+                        num_edges++;
                       }
                     }
+
+                    assert(num_edges > 0, "invalid mergeMemNoe");
                     igvn->rehash_node_delayed(res);
+                    --i;
+                    imax -= num_edges;
+                    continue;
                   } else if (res->is_Phi()) {
                     for (uint j = 0; j < res->req(); ++j) {
                       if (res->in(j) == memproj) {
                         igvn->replace_input_of(res, j, mem);
+                        break;
                       }
                     }
-                  } else if (res->is_SafePoint()) {
+                  } else if (res->is_SafePoint() || res->Opcode() == Op_Return) {
                     igvn->replace_input_of(res, TypeFunc::Memory, mem);
                   } else {
                     assert(res->is_Mem(), "not be a MemNode");
