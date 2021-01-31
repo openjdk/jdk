@@ -87,7 +87,6 @@ class outputStream : public ResourceObj {
    // sizing
    int width()    const { return _width;    }
    int position() const { return _position; }
-   int newlines() const { return _newlines; }
    julong count() const { return _precount + _position; }
    void set_count(julong count) { _precount = count - _position; }
    void set_position(int pos)   { _position = pos; }
@@ -192,11 +191,14 @@ class ttyUnlocker: StackObj {
 // for writing to strings; buffer will expand automatically.
 // Buffer will always be zero-terminated.
 class stringStream : public outputStream {
- protected:
-  char*  buffer;
-  size_t buffer_pos;
-  size_t buffer_length;
-  bool   buffer_fixed;
+  char*  _buffer;
+  size_t _written;  // Number of characters written, excluding termin. zero
+  size_t _capacity;
+  const bool _is_fixed;
+  char   _small_buffer[48];
+
+  // Grow backing buffer to desired capacity.
+  void grow(size_t new_capacity);
 
   // zero terminate at buffer_pos.
   void zero_terminate();
@@ -204,7 +206,7 @@ class stringStream : public outputStream {
  public:
   // Create a stringStream using an internal buffer of initially initial_bufsize size;
   // will be enlarged on demand. There is no maximum cap.
-  stringStream(size_t initial_bufsize = 256);
+  stringStream(size_t initial_capacity = 0);
   // Creates a stringStream using a caller-provided buffer. Will truncate silently if
   // it overflows.
   stringStream(char* fixed_buffer, size_t fixed_buffer_size);
@@ -212,8 +214,8 @@ class stringStream : public outputStream {
   virtual void write(const char* c, size_t len);
   // Return number of characters written into buffer, excluding terminating zero and
   // subject to truncation in static buffer mode.
-  size_t      size() const { return buffer_pos; }
-  const char* base() const { return buffer; }
+  size_t      size() const { return _written; }
+  const char* base() const { return _buffer; }
   void  reset();
   // copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;

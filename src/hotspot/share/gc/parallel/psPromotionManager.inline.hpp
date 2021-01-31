@@ -194,13 +194,13 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
           // Do we allocate directly, or flush and refill?
           if (new_obj_size > (OldPLABSize / 2)) {
             // Allocate this object directly
-            new_obj = (oop)old_gen()->cas_allocate(new_obj_size);
+            new_obj = (oop)old_gen()->allocate(new_obj_size);
             promotion_trace_event(new_obj, o, new_obj_size, age, true, NULL);
           } else {
             // Flush and fill
             _old_lab.flush();
 
-            HeapWord* lab_base = old_gen()->cas_allocate(OldPLABSize);
+            HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
             if(lab_base != NULL) {
 #ifdef ASSERT
               // Delay the initialization of the promotion lab (plab).

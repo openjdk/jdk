@@ -288,7 +288,7 @@ public class PhaserTest extends JSR166TestCase {
      * the phase number increments correctly when tripping the barrier
      */
     public void testPhaseIncrement1() {
-        for (int size = 1; size < nine; size++) {
+        for (int size = 1; size < 9; size++) {
             final Phaser phaser = new Phaser(size);
             for (int index = 0; index <= (1 << size); index++) {
                 int phase = phaser.arrive();

@@ -2187,7 +2187,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   assert(UseLoopCounter || !UseOnStackReplacement,
          "on-stack-replacement requires loop counters");
   Label backedge_counter_overflow;
-  Label profile_method;
   Label dispatch;
   if (UseLoopCounter) {
     // increment backedge counter for backward branches
@@ -2216,75 +2215,27 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ jcc(Assembler::zero, dispatch);
     __ bind(has_counters);
 
-    if (TieredCompilation) {
-      Label no_mdo;
-      int increment = InvocationCounter::count_increment;
-      if (ProfileInterpreter) {
-        // Are we profiling?
-        __ movptr(rbx, Address(rcx, in_bytes(Method::method_data_offset())));
-        __ testptr(rbx, rbx);
-        __ jccb(Assembler::zero, no_mdo);
-        // Increment the MDO backedge counter
-        const Address mdo_backedge_counter(rbx, in_bytes(MethodData::backedge_counter_offset()) +
-                                           in_bytes(InvocationCounter::counter_offset()));
-        const Address mask(rbx, in_bytes(MethodData::backedge_mask_offset()));
-        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, rax, false, Assembler::zero,
-                                   UseOnStackReplacement ? &backedge_counter_overflow : NULL);
-        __ jmp(dispatch);
-      }
-      __ bind(no_mdo);
-      // Increment backedge counter in MethodCounters*
-      __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
-      const Address mask(rcx, in_bytes(MethodCounters::backedge_mask_offset()));
-      __ increment_mask_and_jump(Address(rcx, be_offset), increment, mask,
-                                 rax, false, Assembler::zero,
-                                 UseOnStackReplacement ? &backedge_counter_overflow : NULL);
-    } else { // not TieredCompilation
-      // increment counter
-      __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
-      __ movl(rax, Address(rcx, be_offset));        // load backedge counter
-      __ incrementl(rax, InvocationCounter::count_increment); // increment counter
-      __ movl(Address(rcx, be_offset), rax);        // store counter
-
-      __ movl(rax, Address(rcx, inv_offset));    // load invocation counter
-
-      __ andl(rax, InvocationCounter::count_mask_value); // and the status bits
-      __ addl(rax, Address(rcx, be_offset));        // add both counters
-
-      if (ProfileInterpreter) {
-        // Test to see if we should create a method data oop
-        __ cmp32(rax, Address(rcx, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
-        __ jcc(Assembler::less, dispatch);
-
-        // if no method data exists, go to profile method
-        __ test_method_data_pointer(rax, profile_method);
-
-        if (UseOnStackReplacement) {
-          // check for overflow against rbx which is the MDO taken count
-          __ cmp32(rbx, Address(rcx, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
-          __ jcc(Assembler::below, dispatch);
-
-          // When ProfileInterpreter is on, the backedge_count comes
-          // from the MethodData*, which value does not get reset on
-          // the call to frequency_counter_overflow().  To avoid
-          // excessive calls to the overflow routine while the method is
-          // being compiled, add a second test to make sure the overflow
-          // function is called only once every overflow_frequency.
-          const int overflow_frequency = 1024;
-          __ andl(rbx, overflow_frequency - 1);
-          __ jcc(Assembler::zero, backedge_counter_overflow);
-
-        }
-      } else {
-        if (UseOnStackReplacement) {
-          // check for overflow against rax, which is the sum of the
-          // counters
-          __ cmp32(rax, Address(rcx, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
-          __ jcc(Assembler::aboveEqual, backedge_counter_overflow);
-
-        }
-      }
+    Label no_mdo;
+    int increment = InvocationCounter::count_increment;
+    if (ProfileInterpreter) {
+      // Are we profiling?
+      __ movptr(rbx, Address(rcx, in_bytes(Method::method_data_offset())));
+      __ testptr(rbx, rbx);
+      __ jccb(Assembler::zero, no_mdo);
+      // Increment the MDO backedge counter
+      const Address mdo_backedge_counter(rbx, in_bytes(MethodData::backedge_counter_offset()) +
+          in_bytes(InvocationCounter::counter_offset()));
+      const Address mask(rbx, in_bytes(MethodData::backedge_mask_offset()));
+      __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, rax, false, Assembler::zero,
+          UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+      __ jmp(dispatch);
     }
+    __ bind(no_mdo);
+    // Increment backedge counter in MethodCounters*
+    __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
+    const Address mask(rcx, in_bytes(MethodCounters::backedge_mask_offset()));
+    __ increment_mask_and_jump(Address(rcx, be_offset), increment, mask,
+        rax, false, Assembler::zero, UseOnStackReplacement ? &backedge_counter_overflow : NULL);
     __ bind(dispatch);
   }
 
@@ -2298,15 +2249,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   __ dispatch_only(vtos, true);
 
   if (UseLoopCounter) {
-    if (ProfileInterpreter && !TieredCompilation) {
-      // Out-of-line code to allocate method data oop.
-      __ bind(profile_method);
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-      __ set_method_data_pointer_for_bcp();
-      __ jmp(dispatch);
-    }
-
     if (UseOnStackReplacement) {
+      Label set_mdp;
       // invocation counter overflow
       __ bind(backedge_counter_overflow);
       __ negptr(rdx);

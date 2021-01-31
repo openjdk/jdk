@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciObjectFactory.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClassMacros.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
@@ -84,9 +84,9 @@ private:
   // Distinguished instances of certain ciObjects..
   static ciObject*              _null_object_instance;
 
-#define WK_KLASS_DECL(name, ignore_s) static ciInstanceKlass* _##name;
-  WK_KLASSES_DO(WK_KLASS_DECL)
-#undef WK_KLASS_DECL
+#define VM_CLASS_DECL(name, ignore_s) static ciInstanceKlass* _##name;
+  VM_CLASSES_DO(VM_CLASS_DECL)
+#undef VM_CLASS_DECL
 
   static ciSymbol*        _unloaded_cisymbol;
   static ciInstanceKlass* _unloaded_ciinstance_klass;
@@ -383,12 +383,12 @@ public:
 
 
   // Access to certain well known ciObjects.
-#define WK_KLASS_FUNC(name, ignore_s) \
+#define VM_CLASS_FUNC(name, ignore_s) \
   ciInstanceKlass* name() { \
     return _##name;\
   }
-  WK_KLASSES_DO(WK_KLASS_FUNC)
-#undef WK_KLASS_FUNC
+  VM_CLASSES_DO(VM_CLASS_FUNC)
+#undef VM_CLASS_FUNC
 
   ciInstance* NullPointerException_instance() {
     assert(_NullPointerException_instance != NULL, "initialization problem");
@@ -453,7 +453,7 @@ public:
 
   void record_failure(const char* reason);      // Record failure and report later
   void report_failure(const char* reason);      // Report failure immediately
-  void record_method_not_compilable(const char* reason, bool all_tiers = true);
+  void record_method_not_compilable(const char* reason, bool all_tiers = false);
   void record_out_of_memory_failure();
 
   // RedefineClasses support

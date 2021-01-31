@@ -38,4 +38,10 @@ private:
 
 public:
 
+#if !defined(ABI_ELFv2)
+  // ppc (not ppcle) has function descriptors
+  #define HAVE_FUNCTION_DESCRIPTORS 1
+  static void* resolve_function_descriptor(void* p);
+#endif
+
 #endif // OS_CPU_LINUX_PPC_OS_LINUX_PPC_HPP
