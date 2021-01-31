@@ -352,57 +352,15 @@ void WorkGangBarrierSync::abort() {
 // SubTasksDone functions.
 
 SubTasksDone::SubTasksDone(uint n) :
-  _tasks(NULL), _n_tasks(n), _threads_completed(0) {
+  _tasks(NULL), _n_tasks(n) {
   _tasks = NEW_C_HEAP_ARRAY(bool, n, mtInternal);
-  clear();
+  for (uint i = 0; i < _n_tasks; i++) {
+    _tasks[i] = false;
+  }
 }
 
 bool SubTasksDone::valid() {
   return _tasks != NULL;
-}
-
-void SubTasksDone::clear() {
-  for (uint i = 0; i < _n_tasks; i++) {
-    _tasks[i] = false;
-  }
-  _threads_completed = 0;
-}
-
-void SubTasksDone::all_tasks_completed_impl(uint n_threads,
-                                            uint skipped[],
-                                            size_t skipped_size) {
-#ifdef ASSERT
-  // all non-skipped tasks are claimed
-  for (uint i = 0; i < _n_tasks; ++i) {
-    if (!_tasks[i]) {
-      auto is_skipped = false;
-      for (size_t j = 0; j < skipped_size; ++j) {
-        if (i == skipped[j]) {
-          is_skipped = true;
-          break;
-        }
-      }
-      assert(is_skipped, "%d not claimed.", i);
-    }
-  }
-  // all skipped tasks are *not* claimed
-  for (size_t i = 0; i < skipped_size; ++i) {
-    auto task_index = skipped[i];
-    assert(task_index < _n_tasks, "Array in range.");
-    assert(!_tasks[task_index], "%d is both claimed and skipped.", task_index);
-  }
-#endif
-  uint observed = _threads_completed;
-  uint old;
-  do {
-    old = observed;
-    observed = Atomic::cmpxchg(&_threads_completed, old, old+1);
-  } while (observed != old);
-  // If this was the last thread checking in, clear the tasks.
-  uint adjusted_thread_count = (n_threads == 0 ? 1 : n_threads);
-  if (observed + 1 == adjusted_thread_count) {
-    clear();
-  }
 }
 
 bool SubTasksDone::try_claim_task(uint t) {
@@ -411,6 +369,7 @@ bool SubTasksDone::try_claim_task(uint t) {
 }
 
 SubTasksDone::~SubTasksDone() {
+  assert(_verification_done, "all_tasks_completed must have been called.");
   FREE_C_HEAP_ARRAY(bool, _tasks);
 }
 
