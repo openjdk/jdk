@@ -50,7 +50,7 @@ int removeMapping(SCDynamicStoreRef store) {
 }
 
 int addMapping(SCDynamicStoreRef store) {
-    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys:
+    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
         @"a", @"A",
         @"b", @"B",
         @"c", @"C",
@@ -64,20 +64,20 @@ int addAll(SCDynamicStoreRef store) {
     NSArray *keys = [NSArray arrayWithObjects:@"A.COM", @"B.COM", nil];
     fprintf(stderr, "%d\n", SCDynamicStoreSetValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS, keys));
 
-    NSDictionary *k1 = [[NSDictionary alloc] initWithObjectsAndKeys:
+    NSDictionary *k1 = [NSDictionary dictionaryWithObjectsAndKeys:
         @"kdc1.a.com", @"host", nil];
-    NSDictionary *k2 = [[NSDictionary alloc] initWithObjectsAndKeys:
+    NSDictionary *k2 = [NSDictionary dictionaryWithObjectsAndKeys:
         @"kdc2.a.com", @"host", nil];
-    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys:
+    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
         [NSArray arrayWithObjects: k1, k2, nil], @"kdc",
         nil];
     fprintf(stderr, "%d\n", SCDynamicStoreSetValue(store, (CFStringRef) [NSString stringWithFormat:KERBEROS_REALM_INFO, @"A.COM"], dict));
 
-    k1 = [[NSDictionary alloc] initWithObjectsAndKeys:
+    k1 = [NSDictionary dictionaryWithObjectsAndKeys:
         @"kdc1.b.com", @"host", nil];
-    k2 = [[NSDictionary alloc] initWithObjectsAndKeys:
+    k2 = [NSDictionary dictionaryWithObjectsAndKeys:
         @"kdc2.b.com", @"host", nil];
-    dict = [[NSDictionary alloc] initWithObjectsAndKeys:
+    dict = [NSDictionary dictionaryWithObjectsAndKeys:
         [NSArray arrayWithObjects: k1, k2, nil], @"kdc",
         nil];
     fprintf(stderr, "%d\n", SCDynamicStoreSetValue(store, (CFStringRef) [NSString stringWithFormat:KERBEROS_REALM_INFO, @"B.COM"], dict));
@@ -88,20 +88,24 @@ int addAll(SCDynamicStoreRef store) {
 JNIEXPORT jint JNICALL Java_TestDynamicStore_actionInternal(JNIEnv *env, jclass clazz, jchar what, jchar whom) {
     SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java-kerberos"), NULL, NULL);
     fprintf(stderr, ">>> action: %c %c\n", what, whom);
-    switch (what) {
-        case 'a':
-            switch (whom) {
-                case 'a': return addAll(store);
-                case 'm': return addMapping(store);
-            }
-            break;
-        case 'r':
-            switch (whom) {
-                case 'a': return removeAll(store);
-                case 'r': return removeRealm(store);
-                case 'm': return removeMapping(store);
-            }
-            break;
+    @try {
+        switch (what) {
+            case 'a':
+                switch (whom) {
+                    case 'a': return addAll(store);
+                    case 'm': return addMapping(store);
+                }
+                break;
+            case 'r':
+                switch (whom) {
+                    case 'a': return removeAll(store);
+                    case 'r': return removeRealm(store);
+                    case 'm': return removeMapping(store);
+                }
+                break;
+        }
+        return 0;
+    } @finally {
+        CFRelease(store);
     }
-    return 0;
 }
