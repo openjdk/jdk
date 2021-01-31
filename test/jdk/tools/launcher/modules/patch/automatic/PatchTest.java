@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *        jdk.test.lib.process.ProcessTools
  * @run testng PatchTest
  * @bug 8259395
- * @summary Runs tests that make use of automatic modules
+ * @summary Tests patching an automatic module
  */
 
 import java.io.File;
@@ -53,23 +53,23 @@ public class PatchTest {
 
     private static final String MODULE_NAME = "somelib";
 
-    private static final String PATCH1_NAME = "patch1";
-    private static final String PATCH2_NAME = "patch2";
+    private static final String EXTEND_PATCH_NAME = "patch1";
+    private static final String AUGMENT_PATCH_NAME = "patch2";
 
     private static final String APP_MAIN = "myapp.Main";
-    private static final String PATCH1_MAIN = "somelib.test.TestMain";
-    private static final String PATCH2_MAIN = "somelib.Dummy";
+    private static final String EXTEND_PATCH_MAIN = "somelib.test.TestMain";
+    private static final String AUGMENT_PATCH_MAIN = "somelib.Dummy";
 
     private static final String TEST_SRC = System.getProperty("test.src");
 
     private static final Path APP_SRC = Path.of(TEST_SRC, APP_NAME);
     private static final Path APP_CLASSES = Path.of("classes", APP_NAME);
     private static final Path SOMELIB_SRC = Path.of(TEST_SRC, MODULE_NAME);
-    private static final Path SOMELIB_PATCH1_SRC = Path.of(TEST_SRC, PATCH1_NAME);
-    private static final Path SOMELIB_PATCH2_SRC = Path.of(TEST_SRC, PATCH2_NAME);
+    private static final Path SOMELIB_EXTEND_PATCH_SRC = Path.of(TEST_SRC, EXTEND_PATCH_NAME);
+    private static final Path SOMELIB_AUGMENT_PATCH_SRC = Path.of(TEST_SRC, AUGMENT_PATCH_NAME);
     private static final Path SOMELIB_CLASSES = Path.of("classes", MODULE_NAME);
-    private static final Path SOMELIB_PATCH1_CLASSES = Path.of("classes", PATCH1_NAME);
-    private static final Path SOMELIB_PATCH2_CLASSES = Path.of("classes", PATCH2_NAME);
+    private static final Path SOMELIB_EXTEND_PATCH_CLASSES = Path.of("classes", EXTEND_PATCH_NAME);
+    private static final Path SOMELIB_AUGMENT_PATCH_CLASSES = Path.of("classes", AUGMENT_PATCH_NAME);
     private static final Path SOMELIB_JAR = Path.of("mods", MODULE_NAME + "-0.19.jar");
 
     private static final String MODULE_PATH = String.join(File.pathSeparator, SOMELIB_JAR.toString(), APP_CLASSES.toString());
@@ -82,8 +82,8 @@ public class PatchTest {
      *
      * And two patches:
      *
-     * patch1 - adds an additional package.
-     * patch2 - only replaces existing classes.
+     * patch1 - adds an additional package. (extend)
+     * patch2 - only replaces existing classes. (augment)
      *
      */
     @BeforeClass
@@ -99,17 +99,17 @@ public class PatchTest {
 
 
         // compile patch 1
-        compiled = CompilerUtils.compile(SOMELIB_PATCH1_SRC, SOMELIB_PATCH1_CLASSES,
+        compiled = CompilerUtils.compile(SOMELIB_EXTEND_PATCH_SRC, SOMELIB_EXTEND_PATCH_CLASSES,
                         "--module-path", SOMELIB_JAR.toString(),
                         "--add-modules", MODULE_NAME,
-                        "--patch-module", MODULE_NAME + "=" + SOMELIB_PATCH1_SRC);
+                        "--patch-module", MODULE_NAME + "=" + SOMELIB_EXTEND_PATCH_SRC);
         assertTrue(compiled);
 
         // compile patch 2
-        compiled = CompilerUtils.compile(SOMELIB_PATCH2_SRC, SOMELIB_PATCH2_CLASSES,
+        compiled = CompilerUtils.compile(SOMELIB_AUGMENT_PATCH_SRC, SOMELIB_AUGMENT_PATCH_CLASSES,
                         "--module-path", SOMELIB_JAR.toString(),
                         "--add-modules", MODULE_NAME,
-                        "--patch-module", MODULE_NAME + "=" + SOMELIB_PATCH2_SRC);
+                        "--patch-module", MODULE_NAME + "=" + SOMELIB_AUGMENT_PATCH_SRC);
         assertTrue(compiled);
 
         // compile app
@@ -119,10 +119,10 @@ public class PatchTest {
     }
 
     @Test
-    public void modulePathExtend() throws Exception {
+    public void testExtendAutomaticModuleOnModulePath() throws Exception {
         int exitValue
             = executeTestJava("--module-path", MODULE_PATH,
-                              "--patch-module", MODULE_NAME + "=" + SOMELIB_PATCH1_CLASSES,
+                              "--patch-module", MODULE_NAME + "=" + SOMELIB_EXTEND_PATCH_CLASSES,
                               "-m", APP_NAME + "/" + APP_MAIN, "patch1")
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -132,10 +132,10 @@ public class PatchTest {
     }
 
     @Test
-    public void modulePathAugment() throws Exception {
+    public void testAugmentAutomaticModuleOnModulePath() throws Exception {
         int exitValue
             = executeTestJava("--module-path", MODULE_PATH,
-                              "--patch-module", MODULE_NAME + "=" + SOMELIB_PATCH2_CLASSES,
+                              "--patch-module", MODULE_NAME + "=" + SOMELIB_AUGMENT_PATCH_CLASSES,
                               "-m", APP_NAME + "/" + APP_MAIN, "patch2")
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -145,11 +145,11 @@ public class PatchTest {
     }
 
     @Test
-    public void rootModuleExtend() throws Exception {
+    public void testExtendAutomaticModuleAsInitialModule() throws Exception {
         int exitValue
             = executeTestJava("--module-path", SOMELIB_JAR.toString(),
-                              "--patch-module", MODULE_NAME + "=" + SOMELIB_PATCH1_CLASSES,
-                              "-m", MODULE_NAME + "/" + PATCH1_MAIN)
+                              "--patch-module", MODULE_NAME + "=" + SOMELIB_EXTEND_PATCH_CLASSES,
+                              "-m", MODULE_NAME + "/" + EXTEND_PATCH_MAIN)
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .getExitValue();
@@ -158,11 +158,11 @@ public class PatchTest {
     }
 
     @Test
-    public void rootModuleAugment() throws Exception {
+    public void testAugmentAutomaticModuleAsInitialModule() throws Exception {
         int exitValue
             = executeTestJava("--module-path", SOMELIB_JAR.toString(),
-                              "--patch-module", MODULE_NAME + "=" + SOMELIB_PATCH2_CLASSES,
-                              "-m", MODULE_NAME + "/" + PATCH2_MAIN)
+                              "--patch-module", MODULE_NAME + "=" + SOMELIB_AUGMENT_PATCH_CLASSES,
+                              "-m", MODULE_NAME + "/" + AUGMENT_PATCH_MAIN)
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .getExitValue();
