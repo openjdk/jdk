@@ -36,8 +36,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
-import jtreg.SkippedException;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import static java.net.StandardProtocolFamily.UNIX;
 import static org.testng.Assert.assertFalse;
@@ -90,7 +90,7 @@ public class FileAttributes {
         try {
             SocketChannel.open(UNIX).close();
         } catch (UnsupportedOperationException e) {
-            throw new SkippedException("Unix domain channels not supported");
+            throw new SkipException("Unix domain channels not supported");
         } catch (Exception e) {
             // continue test to see what problem is
         }
