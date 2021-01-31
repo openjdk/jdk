@@ -109,7 +109,7 @@ class WindowsUserDefinedFileAttributeView
             Set<OpenOption> opts = new HashSet<>();
             opts.add(READ);
             if (!followLinks)
-                opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
+                opts.add(OPEN_REPARSE_POINT);
             fc = WindowsChannelFactory
                 .newFileChannel(join(file, name), null, opts, 0L);
         } catch (WindowsException x) {
@@ -136,7 +136,7 @@ class WindowsUserDefinedFileAttributeView
             Set<OpenOption> opts = new HashSet<>();
             opts.add(READ);
             if (!followLinks)
-                opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
+                opts.add(OPEN_REPARSE_POINT);
             fc = WindowsChannelFactory
                 .newFileChannel(join(file, name), null, opts, 0L);
         } catch (WindowsException x) {
@@ -190,7 +190,7 @@ class WindowsUserDefinedFileAttributeView
         try {
             Set<OpenOption> opts = new HashSet<>();
             if (!followLinks)
-                opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
+                opts.add(OPEN_REPARSE_POINT);
             opts.add(CREATE);
             opts.add(WRITE);
             opts.add(StandardOpenOption.TRUNCATE_EXISTING);

@@ -831,12 +831,42 @@ class WindowsPath implements Path {
         int flags = FILE_FLAG_BACKUP_SEMANTICS;
         if (!followLinks)
             flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+        try {
+            return openFileForRead(flags);
+        } catch (WindowsException e) {
+            if (!followLinks || e.lastError() != ERROR_CANT_ACCESS_FILE)
+                throw e;
+            // Object could be a Unix domain socket
+            return openSocketForReadAttributeAccess(e);
+        }
+    }
+
+    private long openFileForRead(int flags)
+        throws WindowsException
+    {
         return CreateFile(getPathForWin32Calls(),
-                          FILE_READ_ATTRIBUTES,
-                          (FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE),
-                          0L,
-                          OPEN_EXISTING,
-                          flags);
+                            FILE_READ_ATTRIBUTES,
+                            (FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE),
+                            0L,
+                            OPEN_EXISTING,
+                            flags);
+    }
+
+    private long openSocketForReadAttributeAccess(WindowsException originalException)
+        throws WindowsException
+    {
+        // needs one additional flag to open a Unix domain socket
+        int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
+
+        long handle = openFileForRead(flags);
+
+        // if not a socket throw original exception
+        WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(handle);
+        if (!attrs.isUnixDomainSocket()) {
+            CloseHandle(handle);
+            throw originalException;
+        }
+        return handle;
     }
 
     void checkRead() {

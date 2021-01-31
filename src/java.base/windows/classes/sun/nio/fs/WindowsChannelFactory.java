@@ -54,12 +54,6 @@ class WindowsChannelFactory {
     private WindowsChannelFactory() { }
 
     /**
-     * Do not follow reparse points when opening an existing file. Do not fail
-     * if the file is a reparse point.
-     */
-    static final OpenOption OPEN_REPARSE_POINT = new OpenOption() { };
-
-    /**
      * Represents the flags from a user-supplied set of open options.
      */
     private static class Flags {
