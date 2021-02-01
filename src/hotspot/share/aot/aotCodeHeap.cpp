@@ -28,6 +28,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -394,7 +395,7 @@ void AOTCodeHeap::link_known_klasses() {
       link_klass(arr_klass);
     }
   }
-  link_klass(SystemDictionary::Reference_klass());
+  link_klass(vmClasses::Reference_klass());
 }
 
 void AOTCodeHeap::register_stubs() {
