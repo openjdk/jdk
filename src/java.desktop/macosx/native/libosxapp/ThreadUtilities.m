@@ -117,7 +117,6 @@ AWT_ASSERT_APPKIT_THREAD;
         [target performSelector:aSelector withObject:arg];
     } else {
         [target performSelectorOnMainThread:aSelector withObject:arg waitUntilDone:wait modes:javaModes];
-        //[target performSelectorOnMainThread:aSelector withObject:arg waitUntilDone:wait];
     }
 }
 
