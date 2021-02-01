@@ -41,7 +41,7 @@ protected:
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                             Register base, RegisterOrConstant ind_or_offs, Register val,
                             Register tmp1, Register tmp2, Register tmp3,
-                            unsigned int preservation_level);
+                            MacroAssembler::PreservationLevel preservation_level);
 };
 
 #endif // CPU_PPC_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_PPC_HPP

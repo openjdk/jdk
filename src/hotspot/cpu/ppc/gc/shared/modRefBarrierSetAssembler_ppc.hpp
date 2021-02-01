@@ -41,7 +41,7 @@ protected:
 
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                             Register base, RegisterOrConstant ind_or_offs, Register val,
-                            Register tmp1, Register tmp2, Register tmp3, unsigned int preservation_level) = 0;
+                            Register tmp1, Register tmp2, Register tmp3, MacroAssembler::PreservationLevel preservation_level) = 0;
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count, Register preserve1, Register preserve2);
@@ -50,7 +50,7 @@ public:
 
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Register base, RegisterOrConstant ind_or_offs, Register val,
-                        Register tmp1, Register tmp2, Register tmp3, unsigned int preservation_level);
+                        Register tmp1, Register tmp2, Register tmp3, MacroAssembler::PreservationLevel preservation_level);
 };
 
 #endif // CPU_PPC_GC_SHARED_MODREFBARRIERSETASSEMBLER_PPC_HPP

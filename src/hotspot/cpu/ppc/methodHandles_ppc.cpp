@@ -179,7 +179,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv, FILE_AND_LINE);
 
-  const unsigned int preservation_level = for_compiler_entry
+  const MacroAssembler::PreservationLevel preservation_level = for_compiler_entry
     ? MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS
     : MacroAssembler::PRESERVATION_FRAME_LR;
 
@@ -320,7 +320,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   if (receiver_reg != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, receiver_reg);
   if (member_reg   != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, member_reg);
 
-  const unsigned int preservation_level = for_compiler_entry
+  const MacroAssembler::PreservationLevel preservation_level = for_compiler_entry
     ? MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS
     : MacroAssembler::PRESERVATION_FRAME_LR;
 

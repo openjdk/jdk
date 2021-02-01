@@ -108,7 +108,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators, Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
-                                                 Register tmp1, Register tmp2, unsigned int preservation_level) {
+                                                 Register tmp1, Register tmp2, MacroAssembler::PreservationLevel preservation_level) {
   bool not_null  = (decorators & IS_NOT_NULL) != 0,
        preloaded = obj == noreg;
   Register nv_save = noreg;
@@ -211,7 +211,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators, Register store_addr, Register new_val,
-                                                  Register tmp1, Register tmp2, Register tmp3, unsigned int preservation_level) {
+                                                  Register tmp1, Register tmp2, Register tmp3, MacroAssembler::PreservationLevel preservation_level) {
   bool not_null = (decorators & IS_NOT_NULL) != 0;
 
   Label runtime, filtered;
@@ -287,7 +287,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                        Register base, RegisterOrConstant ind_or_offs, Register val,
-                                       Register tmp1, Register tmp2, Register tmp3, unsigned int preservation_level) {
+                                       Register tmp1, Register tmp2, Register tmp3, MacroAssembler::PreservationLevel preservation_level) {
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;
@@ -312,7 +312,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                     Register base, RegisterOrConstant ind_or_offs, Register dst,
                                     Register tmp1, Register tmp2,
-                                    unsigned int preservation_level, Label *L_handle_null) {
+                                    MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null) {
   bool on_oop = is_reference_type(type);
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
@@ -333,7 +333,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   __ bind(done);
 }
 
-void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2, unsigned int preservation_level) {
+void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2, MacroAssembler::PreservationLevel preservation_level) {
   Label done, not_weak;
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.

@@ -59,7 +59,7 @@ void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Decorat
 void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                          Register base, RegisterOrConstant ind_or_offs, Register val,
                                          Register tmp1, Register tmp2, Register tmp3,
-                                         unsigned int preservation_level) {
+                                         MacroAssembler::PreservationLevel preservation_level) {
   if (is_reference_type(type)) {
     oop_store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, preservation_level);
   } else {

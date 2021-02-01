@@ -351,7 +351,7 @@ inline void MacroAssembler::null_check(Register a, int offset, Label *Lis_null) 
 inline void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                             Register base, RegisterOrConstant ind_or_offs, Register val,
                                             Register tmp1, Register tmp2, Register tmp3,
-                                            unsigned int preservation_level) {
+                                            MacroAssembler::PreservationLevel preservation_level) {
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
                          ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -371,7 +371,8 @@ inline void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorat
 inline void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                            Register base, RegisterOrConstant ind_or_offs, Register dst,
                                            Register tmp1, Register tmp2,
-                                           unsigned int preservation_level, Label *L_handle_null) {
+                                           MacroAssembler::PreservationLevel preservation_level,
+                                           Label *L_handle_null) {
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
                          ON_PHANTOM_OOP_REF | ON_WEAK_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -390,7 +391,7 @@ inline void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorato
 
 inline void MacroAssembler::load_heap_oop(Register d, RegisterOrConstant offs, Register s1,
                                           Register tmp1, Register tmp2,
-                                          unsigned int preservation_level,
+                                          MacroAssembler::PreservationLevel preservation_level,
                                           DecoratorSet decorators, Label *L_handle_null) {
   access_load_at(T_OBJECT, decorators | IN_HEAP, s1, offs, d, tmp1, tmp2,
                  preservation_level, L_handle_null);
@@ -398,7 +399,7 @@ inline void MacroAssembler::load_heap_oop(Register d, RegisterOrConstant offs, R
 
 inline void MacroAssembler::store_heap_oop(Register d, RegisterOrConstant offs, Register s1,
                                            Register tmp1, Register tmp2, Register tmp3,
-                                           unsigned int preservation_level,
+                                           MacroAssembler::PreservationLevel preservation_level,
                                            DecoratorSet decorators) {
   access_store_at(T_OBJECT, decorators | IN_HEAP, s1, offs, d, tmp1, tmp2, tmp3, preservation_level);
 }

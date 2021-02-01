@@ -35,7 +35,7 @@
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                    Register base, RegisterOrConstant ind_or_offs, Register val,
                                    Register tmp1, Register tmp2, Register tmp3,
-                                   unsigned int preservation_level) {
+                                   MacroAssembler::PreservationLevel preservation_level) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   bool not_null = (decorators & IS_NOT_NULL) != 0;
@@ -69,7 +69,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register base, RegisterOrConstant ind_or_offs, Register dst,
                                   Register tmp1, Register tmp2,
-                                  unsigned int preservation_level, Label *L_handle_null) {
+                                  MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   bool not_null = (decorators & IS_NOT_NULL) != 0;
@@ -108,7 +108,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 
 void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
                                           Register tmp1, Register tmp2,
-                                          unsigned int preservation_level) {
+                                          MacroAssembler::PreservationLevel preservation_level) {
   Label done;
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.

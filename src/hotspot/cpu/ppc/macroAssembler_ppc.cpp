@@ -3064,7 +3064,8 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
   bne(CCR0, slow_path);
 }
 
-void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2, unsigned int preservation_level) {
+void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2,
+                                     MacroAssembler::PreservationLevel preservation_level) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->resolve_jobject(this, value, tmp1, tmp2, preservation_level);
 }

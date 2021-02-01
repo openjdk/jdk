@@ -92,7 +92,7 @@ void CardTableBarrierSetAssembler::card_write_barrier_post(MacroAssembler* masm,
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                 Register base, RegisterOrConstant ind_or_offs, Register val,
                                                 Register tmp1, Register tmp2, Register tmp3,
-                                                unsigned int preservation_level) {
+                                                MacroAssembler::PreservationLevel preservation_level) {
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;

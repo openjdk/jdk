@@ -39,8 +39,7 @@ class MacroAssembler: public Assembler {
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
-  // Workaround (enum class is new in C++11; thus unavailable in previous versions)
-  enum RuntimeInvocationPreservationLevel {
+  enum PreservationLevel {
     PRESERVATION_NONE,
     PRESERVATION_FRAME_LR,
     PRESERVATION_FRAME_LR_GP_REGS,
@@ -668,7 +667,8 @@ class MacroAssembler: public Assembler {
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp_reg);
 
-  void resolve_jobject(Register value, Register tmp1, Register tmp2, unsigned int preservation_level);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2,
+                       MacroAssembler::PreservationLevel preservation_level);
 
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).
@@ -710,22 +710,23 @@ class MacroAssembler: public Assembler {
   inline void access_store_at(BasicType type, DecoratorSet decorators,
                               Register base, RegisterOrConstant ind_or_offs, Register val,
                               Register tmp1, Register tmp2, Register tmp3,
-                              unsigned int preservation_level);
+                              MacroAssembler::PreservationLevel preservation_level);
   inline void access_load_at(BasicType type, DecoratorSet decorators,
                              Register base, RegisterOrConstant ind_or_offs, Register dst,
                              Register tmp1, Register tmp2,
-                             unsigned int preservation_level, Label *L_handle_null = NULL);
+                             MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null = NULL);
 
  public:
   // Specify tmp1 for better code in certain compressed oops cases. Specify Label to bail out on null oop.
   // tmp1, tmp2 and needs_frame are used with decorators ON_PHANTOM_OOP_REF or ON_WEAK_OOP_REF.
   inline void load_heap_oop(Register d, RegisterOrConstant offs, Register s1,
                             Register tmp1, Register tmp2,
-                            unsigned int preservation_level, DecoratorSet decorators = 0, Label *L_handle_null = NULL);
+                            MacroAssembler::PreservationLevel preservation_level,
+                            DecoratorSet decorators = 0, Label *L_handle_null = NULL);
 
   inline void store_heap_oop(Register d, RegisterOrConstant offs, Register s1,
                              Register tmp1, Register tmp2, Register tmp3,
-                             unsigned int preservation_level, DecoratorSet decorators = 0);
+                             MacroAssembler::PreservationLevel preservation_level, DecoratorSet decorators = 0);
 
   // Encode/decode heap oop. Oop may not be null, else en/decoding goes wrong.
   // src == d allowed.

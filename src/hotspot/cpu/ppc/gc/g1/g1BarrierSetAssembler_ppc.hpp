@@ -42,13 +42,13 @@ protected:
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count, Register preserve);
 
   void g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators, Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
-                            Register tmp1, Register tmp2, unsigned int preservation_level);
+                            Register tmp1, Register tmp2, MacroAssembler::PreservationLevel preservation_level);
   void g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators, Register store_addr, Register new_val,
-                             Register tmp1, Register tmp2, Register tmp3, unsigned int preservation_level);
+                             Register tmp1, Register tmp2, Register tmp3, MacroAssembler::PreservationLevel preservation_level);
 
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                             Register base, RegisterOrConstant ind_or_offs, Register val,
-                            Register tmp1, Register tmp2, Register tmp3, unsigned int preservation_level);
+                            Register tmp1, Register tmp2, Register tmp3, MacroAssembler::PreservationLevel preservation_level);
 
 public:
 #ifdef COMPILER1
@@ -61,11 +61,11 @@ public:
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register base, RegisterOrConstant ind_or_offs, Register dst,
-                       Register tmp1, Register tmp2, unsigned int preservation_level,
+                       Register tmp1, Register tmp2, MacroAssembler::PreservationLevel preservation_level,
                        Label *L_handle_null = NULL);
 
   virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2,
-                               unsigned int preservation_level);
+                               MacroAssembler::PreservationLevel preservation_level);
 };
 
 #endif // CPU_PPC_GC_G1_G1BARRIERSETASSEMBLER_PPC_HPP
