@@ -249,8 +249,8 @@ public interface Path
     Path getFileName();
 
     /**
-     * Returns the extension of the file name of this path as a {@code String},
-     * where the extension is defined to be the portion of the {@code String}
+     * Returns the file name extension of this path as a {@code String}.
+     * The extension is defined to be the portion of the {@code String}
      * representation of the file name after the last dot ('.').  If the first
      * character in the file name string is a dot it is ignored.  If the
      * extension cannot be determined, then the empty string is returned.  This
