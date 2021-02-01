@@ -58,15 +58,7 @@ public class LambdaForClassInBaseArchive extends DynamicArchiveTestBase {
     private static void doTestCustomBase(String baseArchiveName, String topArchiveName) throws Exception {
         String appJar = ClassFileInstaller.getJarPath("simpleApp.jar");
         // dump class list by running the SimpleApp
-        CDSOptions opts = (new CDSOptions())
-            .setUseVersion(false)
-            .setXShareMode("auto")
-            .addPrefix("-XX:DumpLoadedClassList=" + classList,
-                       "-cp",
-                       appJar,
-                       appClass);
-        CDSTestUtils.run(opts)
-                    .assertNormalExit();
+        CDSTestUtils.dumpClassList(classList, "-cp", appJar, appClass);
 
         // create a custom base archive based on the class list
         TestCommon.dumpBaseArchive(baseArchiveName,

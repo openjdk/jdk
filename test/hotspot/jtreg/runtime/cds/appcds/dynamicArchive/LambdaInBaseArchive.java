@@ -52,17 +52,10 @@ public class LambdaInBaseArchive extends DynamicArchiveTestBase {
 
     static void createBaseArchive() throws Exception {
         // dump class list
-        CDSOptions opts = (new CDSOptions())
-            .setUseVersion(false)
-            .setXShareMode("auto")
-            .addSuffix("-XX:DumpLoadedClassList=" + classList,
-                       "-cp", appJar,
-                       mainClass);
-        CDSTestUtils.run(opts)
-                    .assertNormalExit();
+        CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass);
 
         // create archive with the class list
-        opts = (new CDSOptions())
+        CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-cp", appJar,
                        "-Xlog:class+load,cds")

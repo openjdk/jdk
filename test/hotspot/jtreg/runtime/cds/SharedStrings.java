@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
  * @run driver SharedStrings
  */
 
-import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class SharedStrings {
@@ -42,28 +42,27 @@ public class SharedStrings {
         // This also serves as a reference on how to use this feature,
         // hence the command lines are spelled out instead of using the
         // test utils methods.
-        CDSOptions opts = (new CDSOptions())
-            .addPrefix("-XX:+UnlockDiagnosticVMOptions",
-                       "-Xlog:cds,cds+hashtables",
-                       // Needed for bootclasspath match, for CDS to work with WhiteBox API
-                       "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"))
-            .setArchiveName("./SharedStrings.jsa");
-        OutputAnalyzer out = CDSTestUtils.createArchive(opts);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedArchiveFile=./SharedStrings.jsa",
+            "-Xlog:cds,cds+hashtables",
+            // Needed for bootclasspath match, for CDS to work with WhiteBox API
+            "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
+            "-Xshare:dump");
+
+        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "dump");
         CDSTestUtils.checkDump(out, "Shared string table stats");
 
-        opts = (new CDSOptions())
-            .setUseVersion(false)
-            // This test is run with the -Xshare:off vmoption prepended in tier3.
-            // Set CDSOptions.xShareMode to "off" so that the result checking
-            // would not always expect the word "sharing" in the output.
-            .setXShareMode("off")
-            .addPrefix("-XX:+UnlockDiagnosticVMOptions",
-                       "-XX:SharedArchiveFile=./SharedStrings.jsa",
-                       // needed for access to white box test API
-                       "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
-                       "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-                       "-Xshare:on", "-showversion", "SharedStringsWb");
-        CDSTestUtils.run(opts)
-                    .assertNormalExit();
+
+        pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:SharedArchiveFile=./SharedStrings.jsa",
+                // needed for access to white box test API
+                "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
+                "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+                "-Xshare:on", "-showversion", "SharedStringsWb");
+
+        out = CDSTestUtils.executeAndLog(pb, "exec");
+        CDSTestUtils.checkExec(out);
     }
 }

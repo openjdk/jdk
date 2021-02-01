@@ -81,14 +81,8 @@ public class MethodHandlesPermuteArgumentsTest {
         String jars = appJar + ps + junitJar;
 
         // dump class list
-        CDSOptions dumpOpts = (new CDSOptions())
-            .setUseVersion(false)
-            .setXShareMode("auto")
-            .addSuffix("-XX:DumpLoadedClassList=" + classList,
-                       "-cp", jars,
-                       mainClass, testPackageName + "." + testClassName);
-        CDSTestUtils.run(dumpOpts)
-                    .assertNormalExit();
+        CDSTestUtils.dumpClassList(classList, "-cp", jars, mainClass,
+                                   testPackageName + "." + testClassName);
 
         // create archive with the class list
         CDSOptions opts = (new CDSOptions())

@@ -83,10 +83,8 @@ public class GraalWithLimitedMetaspace {
     }
 
     static void dumpLoadedClasses(String[] expectedClasses) throws Exception {
-        CDSOptions opts = (new CDSOptions())
-            .setUseVersion(false)
-            .setXShareMode("auto")
-            .addPrefix("-XX:DumpLoadedClassList=" + CLASSLIST_FILE,
+        CDSTestUtils.dumpClassList(
+                       CLASSLIST_FILE,
                        // trigger JVMCI runtime init so that JVMCI classes will be
                        // included in the classlist
                        "-XX:+UnlockExperimentalVMOptions",
@@ -95,8 +93,7 @@ public class GraalWithLimitedMetaspace {
                        "-cp",
                        TESTJAR,
                        TESTNAME,
-                       TEST_OUT);
-        CDSTestUtils.run(opts)
+                       TEST_OUT)
             .assertNormalExit(output -> {
                 output.shouldContain(TEST_OUT);
             });

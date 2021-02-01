@@ -107,17 +107,10 @@ public class NoClassToArchive extends DynamicArchiveTestBase {
     private static void doTestCustomBase(String baseArchiveName, String topArchiveName) throws Exception {
         String appJar = ClassFileInstaller.getJarPath("strConcatApp.jar");
         // dump class list by running the StrConcatApp
-        CDSOptions opts = (new CDSOptions())
-            .setUseVersion(false)
-            .setXShareMode("auto")
-            .addSuffix("-XX:DumpLoadedClassList=" + classList,
-                       "-cp",
-                       appJar,
-                       appClass);
-        CDSTestUtils.run(opts)
-                    .assertNormalExit(output -> {
-                        output.shouldContain("length = 0");
-                    });
+        CDSTestUtils.dumpClassList(classList, "-cp", appJar, appClass)
+            .assertNormalExit(output -> {
+                output.shouldContain("length = 0");
+            });
 
         // create a custom base archive based on the class list
         TestCommon.dumpBaseArchive(baseArchiveName, "-XX:SharedClassListFile=" + classList);

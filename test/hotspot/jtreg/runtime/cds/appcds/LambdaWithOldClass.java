@@ -50,14 +50,7 @@ public class LambdaWithOldClass {
         String archiveName = namePrefix + ".jsa";
 
         // dump class list
-        CDSOptions dumpOpts = (new CDSOptions())
-            .setUseVersion(false)
-            .setXShareMode("auto")
-            .addSuffix("-XX:DumpLoadedClassList=" + classList,
-                       "-cp", appJar,
-                       mainClass);
-        CDSTestUtils.run(dumpOpts)
-                    .assertNormalExit();
+        CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass);
 
         // create archive with the class list
         CDSOptions opts = (new CDSOptions())

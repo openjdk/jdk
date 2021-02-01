@@ -44,14 +44,7 @@ public class StaticArchiveWithLambda {
         String archiveName = "StaticArchiveWithLambda.jsa";
 
         // dump class list
-        CDSOptions dumpOpts = (new CDSOptions())
-            .setUseVersion(false)
-            .setXShareMode("auto")
-            .addSuffix("-XX:DumpLoadedClassList=" + classList,
-                       "-cp", appJar,
-                       appClass);
-        CDSTestUtils.run(dumpOpts)
-                    .assertNormalExit();
+        CDSTestUtils.dumpClassList(classList, "-cp", appJar, appClass);
 
         // create archive with the class list
         CDSOptions opts = (new CDSOptions())

@@ -33,7 +33,6 @@
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.Platform;
-import jdk.test.lib.process.OutputAnalyzer;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,8 +82,7 @@ public class DeterministicDump {
             .addPrefix("-Xlog:cds=debug")
             .setArchiveName(archiveName)
             .addSuffix(more);
-        OutputAnalyzer out = CDSTestUtils.createArchive(opts);
-        CDSTestUtils.checkDump(out);
+        CDSTestUtils.createArchiveAndCheck(opts);
 
         return archiveName;
     }

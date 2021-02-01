@@ -32,7 +32,6 @@
  */
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.OutputAnalyzer;
 
 // This test does not use SharedStringsUtils.dumpXXX()
 // and SharedStringsUtils.runWithXXX() intentionally:
@@ -57,8 +56,8 @@ public class SharedStringsBasic {
             "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
             "-Xlog:cds,cds+hashtables")
             .setArchiveName("./SharedStringsBasic.jsa");
-        OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
-        output.shouldContain("Shared string table stats");
+        CDSTestUtils.createArchiveAndCheck(opts)
+            .shouldContain("Shared string table stats");
 
         opts = (new CDSOptions())
             .setUseVersion(false)

@@ -35,7 +35,6 @@
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
-import jdk.test.lib.process.OutputAnalyzer;
 
 public class DumpClassList {
     public static void main(String[] args) throws Exception {
@@ -75,16 +74,12 @@ public class DumpClassList {
         String appendJar = JarBuilder.build("bootappend", "boot/append/Foo");
 
         // dump class list
-        CDSOptions opts = (new CDSOptions())
-            .setUseVersion(false)
-            .setXShareMode("auto")
-            .addPrefix("-XX:DumpLoadedClassList=" + classList,
-                       "--patch-module=java.base=" + patchJar,
-                       "-Xbootclasspath/a:" + appendJar,
-                       "-cp",
-                       appJar,
-                       appClass[0]);
-        CDSTestUtils.run(opts)
+        CDSTestUtils.dumpClassList(classList,
+                                   "--patch-module=java.base=" + patchJar,
+                                   "-Xbootclasspath/a:" + appendJar,
+                                   "-cp",
+                                   appJar,
+                                   appClass[0])
             .assertNormalExit(output -> {
                 output.shouldContain("hello world");
                 // skip classes outside of jrt image
@@ -93,15 +88,15 @@ public class DumpClassList {
                 output.shouldNotContain("skip writing class boot/append/Foo");
             });
 
-        opts = (new CDSOptions())
+        CDSOptions opts = (new CDSOptions())
             .setClassList(appClass)
             .addPrefix("-cp", appJar,
                        "-Xbootclasspath/a:" + appendJar,
                        "-Xlog:class+load",
                        "-XX:SharedClassListFile=" + classList);
-        OutputAnalyzer out = CDSTestUtils.createArchive(opts);
-        CDSTestUtils.checkDump(out, "[info][class,load] boot.append.Foo")
+        CDSTestUtils.createArchiveAndCheck(opts)
             .shouldNotContain("Preload Warning: Cannot find java/lang/invoke/LambdaForm")
-            .shouldNotContain("Preload Warning: Cannot find boot/append/Foo");
+            .shouldNotContain("Preload Warning: Cannot find boot/append/Foo")
+            .shouldContain("[info][class,load] boot.append.Foo");
     }
 }
