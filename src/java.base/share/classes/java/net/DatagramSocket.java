@@ -160,7 +160,7 @@ import sun.nio.ch.DefaultSelectorProvider;
  * the SO_REUSEADDR option.
  *
  * <p> An instance of {@code DatagramSocket} can be used to send or
- * receive multicast datagram packets. It is no necessary to join a multicast
+ * receive multicast datagram packets. It is not necessary to join a multicast
  * group in order to send multicast datagrams. Before sending out multicast
  * datagram packets however, the default outgoing interface for sending
  * multicast datagram should first be configured using
@@ -217,10 +217,10 @@ import sun.nio.ch.DefaultSelectorProvider;
  * when developing an application that receives IP multicast datagrams:
  * <ol>
  *    <li> Contrarily to {@link DatagramChannel}, the constructors of {@code DatagramSocket}
- *        do not allow to specify the {@link ProtocolFamily} that corresponds
- *        to the address type of the multicast groups that the {@code DatagramSocket}
- *        will join. This is similar to a {@code DatagramChannel} that would be created
- *        using {@link DatagramChannel#open()}.
+ *        do not allow to specify the {@link ProtocolFamily} of the underlying socket.
+ *        Consequently, the protocol family of the underlying socket may not
+ *        correspond to the protocol family of the multicast groups that
+ *        the {@code DatagramSocket} will attempt to join.
  *        <br>
  *        There is no guarantee that a {@code DatagramSocket} with an underlying
  *        socket created in one protocol family can join and receive multicast
@@ -1225,7 +1225,7 @@ public class DatagramSocket implements java.io.Closeable {
     }
 
     /**
-     * Joins the specified multicast group at the specified interface.
+     * Joins a multicast group.
      *
      * <p> In order to join a multicast group, the caller should specify
      * the IP address of the multicast group to join, and the local
@@ -1246,6 +1246,11 @@ public class DatagramSocket implements java.io.Closeable {
      *       with a {@code SocketException}.
      *  </li>
      * </ul>
+     *
+     * <p> It is possible to call this method several times to join
+     * several different multicast groups, or join the same group
+     * in several different networks. However, if the socket is already a
+     * member of the group, an {@link IOException} will be thrown.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkMulticast} method with the {@code mcastaddr}
@@ -1283,10 +1288,16 @@ public class DatagramSocket implements java.io.Closeable {
      * {@code mcastaddr} argument as its argument.
      *
      * @apiNote
-     *     The {@code mcastaddr} and {@code netIf} arguments should identify
-     *     a multicast group that was previously {@linkplain
-     *     #joinGroup(SocketAddress, NetworkInterface) joined} by
-     *     this {@code DatagramSocket}.
+     * The {@code mcastaddr} and {@code netIf} arguments should identify
+     * a multicast group that was previously {@linkplain
+     * #joinGroup(SocketAddress, NetworkInterface) joined} by
+     * this {@code DatagramSocket}.
+     * <p> It is possible to call this method several times to leave
+     * multiple different multicast groups previously joined, or leave
+     * the same group previously joined in multiple different networks.
+     * However, if the socket is not a member of the group in the
+     * specified network, an {@link IOException} will be
+     * thrown.
      *
      * @param  mcastaddr is the multicast address to leave. This should
      *         contain the same IP address than that used for {@linkplain
