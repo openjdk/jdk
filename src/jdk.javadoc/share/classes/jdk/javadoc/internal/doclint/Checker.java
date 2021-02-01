@@ -144,6 +144,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private HtmlTag currHeadingTag;
 
     private int implicitHeadingRank;
+    private boolean inIndex;
+    private boolean inLink;
 
     // <editor-fold defaultstate="collapsed" desc="Top level">
 
@@ -783,6 +785,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitIndex(IndexTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
+        if (inIndex) {
+            env.messages.warning(HTML, tree, "dc.tag.nested.tag", "@" + tree.getTagName());
+        }
         for (TagStackItem tsi : tagStack) {
             if (tsi.tag == HtmlTag.A) {
                 env.messages.warning(HTML, tree, "dc.tag.a.within.a",
@@ -790,7 +795,13 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 break;
             }
         }
-        return super.visitIndex(tree, ignore);
+        boolean prevInIndex = inIndex;
+        try {
+            inIndex = true;
+            return super.visitIndex(tree, ignore);
+        } finally {
+            inIndex = prevInIndex;
+        }
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -804,14 +815,20 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitLink(LinkTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
+        if (inLink) {
+            env.messages.warning(HTML, tree, "dc.tag.nested.tag", "@" + tree.getTagName());
+        }
+        boolean prevInLink = inLink;
         // simulate inline context on tag stack
         HtmlTag t = (tree.getKind() == DocTree.Kind.LINK)
                 ? HtmlTag.CODE : HtmlTag.SPAN;
         tagStack.push(new TagStackItem(tree, t));
         try {
+            inLink = true;
             return super.visitLink(tree, ignore);
         } finally {
             tagStack.pop();
+            inLink = prevInLink;
         }
     }
 

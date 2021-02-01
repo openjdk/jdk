@@ -1051,22 +1051,52 @@ public class HtmlDocletWriter {
 
     public Content seeTagToContent(Element element, DocTree see) {
         Kind kind = see.getKind();
-        if (!(kind == LINK || kind == SEE || kind == LINK_PLAIN)) {
-            return new ContentBuilder();
-        }
-
         CommentHelper ch = utils.getCommentHelper(element);
         String tagName = ch.getTagName(see);
-        String seetext = replaceDocRootDir(removeTrailingSlash(utils.normalizeNewlines(ch.getText(see)).toString()));
-        // Check if @see is an href or "string"
-        if (seetext.startsWith("<") || seetext.startsWith("\"")) {
-            return new RawHtml(seetext);
+
+        String seeText = utils.normalizeNewlines(ch.getText(see)).toString();
+        List<? extends DocTree> label;
+        switch (kind) {
+            case LINK, LINK_PLAIN ->
+                // {@link[plain] reference label...}
+                label = ((LinkTree) see).getLabel();
+
+            case SEE -> {
+                List<? extends DocTree> ref = ((SeeTree) see).getReference();
+                assert !ref.isEmpty();
+                switch (ref.get(0).getKind()) {
+                    case TEXT -> {
+                        // @see "Reference"
+                        return new StringContent(seeText);
+                    }
+                    case START_ELEMENT -> {
+                        // @see <a href="...">...</a>
+                        return new RawHtml(replaceDocRootDir(removeTrailingSlash(seeText)));
+                    }
+                    case REFERENCE -> {
+                        // @see reference label...
+                        label = ref.subList(1, ref.size());
+                        break;
+                    }
+                    default -> {
+                        assert false;
+                        return HtmlTree.EMPTY;
+                    }
+                }
+            }
+
+            default -> {
+                assert false;
+                return HtmlTree.EMPTY;
+            }
         }
+
         boolean isLinkPlain = kind == LINK_PLAIN;
-        Content label = plainOrCode(isLinkPlain, new RawHtml(ch.getLabel(see)));
+        Content labelContent = plainOrCode(isLinkPlain,
+                commentTagsToContent(see, element, label, false));
 
         //The text from the @see tag.  We will output this text when a label is not specified.
-        Content text = plainOrCode(kind == LINK_PLAIN, new RawHtml(seetext));
+        Content text = plainOrCode(kind == LINK_PLAIN, new StringContent(removeTrailingSlash(seeText)));
 
         TypeElement refClass = ch.getReferencedClass(see);
         Element refMem =       ch.getReferencedMember(see);
@@ -1078,16 +1108,16 @@ public class HtmlDocletWriter {
         if (refClass == null) {
             ModuleElement refModule = ch.getReferencedModule(see);
             if (refModule != null && utils.isIncluded(refModule)) {
-                return getModuleLink(refModule, label.isEmpty() ? text : label);
+                return getModuleLink(refModule, labelContent.isEmpty() ? text : labelContent);
             }
             //@see is not referencing an included class
             PackageElement refPackage = ch.getReferencedPackage(see);
             if (refPackage != null && utils.isIncluded(refPackage)) {
                 //@see is referencing an included package
-                if (label.isEmpty())
-                    label = plainOrCode(isLinkPlain,
+                if (labelContent.isEmpty())
+                    labelContent = plainOrCode(isLinkPlain,
                             new StringContent(refPackage.getQualifiedName()));
-                return getPackageLink(refPackage, label);
+                return getPackageLink(refPackage, labelContent);
             } else {
                 // @see is not referencing an included class, module or package. Check for cross links.
                 String refModuleName =  ch.getReferencedModuleName(see);
@@ -1098,20 +1128,20 @@ public class HtmlDocletWriter {
                 if (elementCrossLink != null) {
                     // Element cross link found
                     return links.createExternalLink(elementCrossLink,
-                            (label.isEmpty() ? text : label));
+                            (labelContent.isEmpty() ? text : labelContent));
                 } else {
                     // No cross link found so print warning
                     messages.warning(ch.getDocTreePath(see),
                             "doclet.see.class_or_package_not_found",
                             "@" + tagName,
-                            seetext);
-                    return (label.isEmpty() ? text: label);
+                            seeText);
+                    return (labelContent.isEmpty() ? text: labelContent);
                 }
             }
         } else if (refMemName == null) {
             // Must be a class reference since refClass is not null and refMemName is null.
-            if (label.isEmpty()) {
-                if (!refClass.getTypeParameters().isEmpty() && seetext.contains("<")) {
+            if (labelContent.isEmpty()) {
+                if (!refClass.getTypeParameters().isEmpty() && seeText.contains("<")) {
                     // If this is a generic type link try to use the TypeMirror representation.
                     TypeMirror refType = ch.getReferencedType(see);
                     if (refType != null) {
@@ -1119,14 +1149,14 @@ public class HtmlDocletWriter {
                                 new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, refType)));
                     }
                 }
-                label = plainOrCode(isLinkPlain, new StringContent(utils.getSimpleName(refClass)));
+                labelContent = plainOrCode(isLinkPlain, new StringContent(utils.getSimpleName(refClass)));
             }
             return getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, refClass)
-                    .label(label));
+                    .label(labelContent));
         } else if (refMem == null) {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // However, refMem is null, so this referenced member does not exist.
-            return (label.isEmpty() ? text: label);
+            return (labelContent.isEmpty() ? text: labelContent);
         } else {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // refMem is not null, so this @see tag must be referencing a valid member.
@@ -1157,7 +1187,7 @@ public class HtmlDocletWriter {
                 } else {
                     messages.warning(
                         ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
-                        tagName, seetext);
+                        tagName, seeText);
                 }
             }
             if (configuration.currentTypeElement != containing) {
@@ -1178,7 +1208,7 @@ public class HtmlDocletWriter {
             text = plainOrCode(kind == LINK_PLAIN, new StringContent(refMemName));
 
             return getDocLink(LinkInfoImpl.Kind.SEE_TAG, containing,
-                    refMem, (label.isEmpty() ? text: label), false);
+                    refMem, (labelContent.isEmpty() ? text: labelContent), false);
         }
     }
 

@@ -139,9 +139,17 @@ public class TagletWriterImpl extends TagletWriter {
             tagText = tagText.substring(1, tagText.length() - 1)
                              .replaceAll("\\s+", " ");
         }
-        String desc = ch.getText(tag.getDescription());
 
-        return createAnchorAndSearchIndex(element, tagText, desc, tag);
+        Content desc = htmlWriter.commentTagsToContent(tag, element, tag.getDescription(), isFirstSentence, inSummary);
+        String descText = extractText(desc);
+
+        return createAnchorAndSearchIndex(element, tagText, descText, tag);
+    }
+
+    // ugly but simple;
+    // alternatives would be to walk the Content tree, or to add new functionality to Content
+    private String extractText(Content c) {
+        return c.toString().replaceAll("<[^>]+>", "");
     }
 
     @Override
