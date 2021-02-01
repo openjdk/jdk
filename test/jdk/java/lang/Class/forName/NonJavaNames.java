@@ -97,7 +97,7 @@ public class NonJavaNames {
     }
 
     @Test
-    public void testForNameReturnsSameClass() throws Throwable {
+    public void testForNameReturnsSameClass() throws ClassNotFoundException {
         NonJavaNames.Baz bz = new NonJavaNames.Baz();
         String name;
 
@@ -116,7 +116,7 @@ public class NonJavaNames {
     }
 
     @Test(dataProvider = "goodNonJavaClassNames")
-    public void testGoodNonJavaClassNames(String name) throws Throwable {
+    public void testGoodNonJavaClassNames(String name) throws ClassNotFoundException {
         System.out.println("Testing good class name ``" + name + "''");
         Class.forName(name);
     }
@@ -126,7 +126,7 @@ public class NonJavaNames {
         System.out.println("Testing bad class name ``" + name + "''");
         try {
             Class.forName(name);
-        } catch (Exception e) {
+        } catch (ClassNotFoundException e) {
             // Expected behavior
             return;
         }
