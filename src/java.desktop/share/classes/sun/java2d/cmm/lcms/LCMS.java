@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,45 +58,23 @@ public class LCMS implements PCMM {
     }
 
     @Override
-    public int getProfileSize(final Profile p) {
-        synchronized (p) {
-            return getProfileSizeNative(getLcmsProfile(p).getLcmsPtr());
+    public byte[] getProfileData(final Profile p) {
+        LCMSProfile lcmsProfile = getLcmsProfile(p);
+        synchronized (lcmsProfile) {
+            return getProfileDataNative(lcmsProfile.getLcmsPtr());
         }
     }
 
-    private native int getProfileSizeNative(long ptr);
-
-    @Override
-    public void getProfileData(final Profile p, byte[] data) {
-        synchronized (p) {
-            getProfileDataNative(getLcmsProfile(p).getLcmsPtr(), data);
-        }
-    }
-
-    private native void getProfileDataNative(long ptr, byte[] data);
-
-    @Override
-    public int getTagSize(Profile p, int tagSignature) {
-        final LCMSProfile profile = getLcmsProfile(p);
-
-        synchronized (profile) {
-            TagData t = profile.getTag(tagSignature);
-            return t == null ? 0 : t.getSize();
-        }
-    }
+    private native byte[] getProfileDataNative(long ptr);
 
     static native byte[] getTagNative(long profileID, int signature);
 
     @Override
-    public void getTagData(Profile p, int tagSignature, byte[] data)
-    {
-        final LCMSProfile profile = getLcmsProfile(p);
-
-        synchronized (profile) {
-            TagData t = profile.getTag(tagSignature);
-            if (t != null) {
-                t.copyDataTo(data);
-            }
+    public byte[] getTagData(Profile p, int tagSignature) {
+        final LCMSProfile lcmsProfile = getLcmsProfile(p);
+        synchronized (lcmsProfile) {
+            TagData t = lcmsProfile.getTag(tagSignature);
+            return t != null ? t.getData() : null;
         }
     }
 

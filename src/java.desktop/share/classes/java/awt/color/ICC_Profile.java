@@ -1206,22 +1206,8 @@ public class ICC_Profile implements Serializable {
      * @see #setData(int, byte[])
      */
     public byte[] getData() {
-    int profileSize;
-    byte[] profileData;
-
         activate();
-
-        PCMM mdl = CMSManager.getModule();
-
-        /* get the number of bytes needed for this profile */
-        profileSize = mdl.getProfileSize(cmmProfile);
-
-        profileData = new byte [profileSize];
-
-        /* get the data for the profile */
-        mdl.getProfileData(cmmProfile, profileData);
-
-        return profileData;
+        return CMSManager.getModule().getProfileData(cmmProfile);
     }
 
     /**
@@ -1245,25 +1231,12 @@ public class ICC_Profile implements Serializable {
     }
 
 
-    static byte[] getData(Profile p, int tagSignature) {
-    int tagSize;
-    byte[] tagData;
-
+    private static byte[] getData(Profile p, int tagSignature) {
         try {
-            PCMM mdl = CMSManager.getModule();
-
-            /* get the number of bytes needed for this tag */
-            tagSize = mdl.getTagSize(p, tagSignature);
-
-            tagData = new byte[tagSize]; /* get an array for the tag */
-
-            /* get the tag's data */
-            mdl.getTagData(p, tagSignature, tagData);
+            return CMSManager.getModule().getTagData(p, tagSignature);
         } catch(CMMException c) {
-            tagData = null;
+            return null;
         }
-
-        return tagData;
     }
 
     /**
