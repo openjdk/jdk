@@ -136,8 +136,9 @@ public class NodeQuickSearch implements SearchProvider {
                 // Rank the matches.
                 Collections.sort(matches,
                                  (InputNode a, InputNode b) ->
-                                 Integer.compare(rankMatch(rawValue, a.getProperties().get(name)),
-                                                 rankMatch(rawValue, b.getProperties().get(name))));
+                                 compareByRankThenNumVal(rawValue,
+                                                         a.getProperties().get(name),
+                                                         b.getProperties().get(name)));
 
                 // Single matches
                 for (final InputNode n : matches) {
@@ -188,6 +189,27 @@ public class NodeQuickSearch implements SearchProvider {
             );
         }
         return null;
+    }
+
+    /**
+     * Compare two matches for a given query, first by rank (see rankMatch()
+     * below) and then by numeric value, if applicable.
+     */
+    private int compareByRankThenNumVal(String qry, String prop1, String prop2) {
+        int key1 = rankMatch(qry, prop1);
+        int key2 = rankMatch(qry, prop2);
+        if (key1 == key2) {
+            // If the matches have the same rank, compare the numeric values of
+            // their first words, if applicable.
+            try {
+                key1 = Integer.parseInt(prop1.split("\\W+")[0]);
+                key2 = Integer.parseInt(prop2.split("\\W+")[0]);
+            } catch (Exception e) {
+                // Not applicable, return equality value.
+                return 0;
+            }
+        }
+        return Integer.compare(key1, key2);
     }
 
     /**
