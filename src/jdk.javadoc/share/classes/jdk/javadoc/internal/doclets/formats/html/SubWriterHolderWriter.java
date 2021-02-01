@@ -34,6 +34,7 @@ import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -283,13 +284,13 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * Adds a section for a summary tree with the given CSS {@code class} and {@code id} attribute.
      *
      * @param style         the CSS class for the section
-     * @param sectionName   the section name to use for the section id attribute
+     * @param htmlId        the id for the section
      * @param summariesList the list of summary sections to which the summary will be added
      * @param content       the content tree representing the summary
      */
-    public void addSummary(HtmlStyle style, SectionName sectionName, Content summariesList, Content content) {
+    public void addSummary(HtmlStyle style, HtmlId htmlId, Content summariesList, Content content) {
         HtmlTree htmlTree = HtmlTree.SECTION(style, content)
-                .setId(sectionName.getName());
+                .setId(htmlId);
         summariesList.add(getSummariesListItem(htmlTree));
     }
 

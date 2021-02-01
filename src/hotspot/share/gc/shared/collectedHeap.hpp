@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,10 @@
 #include "memory/heapInspection.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -48,6 +47,7 @@
 class AbstractGangTask;
 class AdaptiveSizePolicy;
 class BarrierSet;
+class GCHeapLog;
 class GCHeapSummary;
 class GCTimer;
 class GCTracer;
@@ -61,31 +61,6 @@ class ThreadClosure;
 class VirtualSpaceSummary;
 class WorkGang;
 class nmethod;
-
-class GCMessage : public FormatBuffer<1024> {
- public:
-  bool is_before;
-
- public:
-  GCMessage() {}
-};
-
-class CollectedHeap;
-
-class GCHeapLog : public EventLogBase<GCMessage> {
- private:
-  void log_heap(CollectedHeap* heap, bool before);
-
- public:
-  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History", "gc") {}
-
-  void log_heap_before(CollectedHeap* heap) {
-    log_heap(heap, true);
-  }
-  void log_heap_after(CollectedHeap* heap) {
-    log_heap(heap, false);
-  }
-};
 
 class ParallelObjectIterator : public CHeapObj<mtGC> {
 public:
@@ -271,14 +246,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   virtual uint32_t hash_oop(oop obj) const;
 
-  void set_gc_cause(GCCause::Cause v) {
-     if (UsePerfData) {
-       _gc_lastcause = _gc_cause;
-       _perf_gc_lastcause->set_value(GCCause::to_string(_gc_lastcause));
-       _perf_gc_cause->set_value(GCCause::to_string(v));
-     }
-    _gc_cause = v;
-  }
+  void set_gc_cause(GCCause::Cause v);
   GCCause::Cause gc_cause() { return _gc_cause; }
 
   oop obj_allocate(Klass* klass, int size, TRAPS);

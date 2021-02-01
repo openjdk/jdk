@@ -1565,7 +1565,7 @@ JavaThread::JavaThread() :
   _should_post_on_exceptions_flag(JNI_FALSE),
   _thread_stat(new ThreadStatistics()),
 
-  _parker(Parker::Allocate(this)),
+  _parker(),
   _cached_monitor_info(nullptr),
 
   _class_to_be_initialized(nullptr),
@@ -1603,6 +1603,9 @@ JavaThread::JavaThread(bool is_attaching_via_jni) : JavaThread() {
 // interrupt support
 
 void JavaThread::interrupt() {
+  // All callers should have 'this' thread protected by a
+  // ThreadsListHandle so that it cannot terminate and deallocate
+  // itself.
   debug_only(check_for_dangling_thread_pointer(this);)
 
   // For Windows _interrupt_event
@@ -1699,10 +1702,6 @@ JavaThread::~JavaThread() {
 
   // Ask ServiceThread to release the threadObj OopHandle
   ServiceThread::add_oop_handle_release(_threadObj);
-
-  // JSR166 -- return the parker to the free list
-  Parker::Release(_parker);
-  _parker = NULL;
 
   // Return the sleep event to the free list
   ParkEvent::Release(_SleepEvent);
@@ -1859,12 +1858,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   Handle threadObj(this, this->threadObj());
   assert(threadObj.not_null(), "Java thread object should be created");
 
-  // FIXIT: This code should be moved into else part, when reliable 1.2/1.3 check is in place
-  {
-    EXCEPTION_MARK;
-
-    CLEAR_PENDING_EXCEPTION;
-  }
   if (!destroy_vm) {
     if (uncaught_exception.not_null()) {
       EXCEPTION_MARK;
@@ -3023,7 +3016,7 @@ class PrintAndVerifyOopClosure: public OopClosure {
 // Print or validate the layout of stack frames
 void JavaThread::print_frame_layout(int depth, bool validate_only) {
   ResourceMark rm;
-  PRESERVE_EXCEPTION_MARK;
+  PreserveExceptionMark pm(this);
   FrameValues values;
   int frame_no = 0;
   for (StackFrameStream fst(this, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
@@ -3135,7 +3128,7 @@ bool JavaThread::sleep(jlong millis) {
     if (newtime - prevtime < 0) {
       // time moving backwards, should only happen if no monotonic clock
       // not a guarantee() because JVM should not abort on kernel/glibc bugs
-      assert(!os::supports_monotonic_clock(),
+      assert(false,
              "unexpected time moving backwards detected in JavaThread::sleep()");
     } else {
       millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKCOMPACT_HPP
 
 #include "gc/shared/gcTimer.hpp"
+#include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
+#include "gc/shenandoah/shenandoahMetrics.hpp"
 
 /**
  * This implements Full GC (e.g. when invoking System.gc()) using a mark-compact algorithm.
@@ -51,9 +53,14 @@
  */
 
 class PreservedMarksSet;
+class VM_ShenandoahFullGC;
+class ShenandoahDegenGC;
 
-class ShenandoahMarkCompact : public CHeapObj<mtGC> {
+class ShenandoahMarkCompact : public ShenandoahGC {
   friend class ShenandoahPrepareForCompactionObjectClosure;
+  friend class VM_ShenandoahFullGC;
+  friend class ShenandoahDegenGC;
+
 private:
   GCTimer* _gc_timer;
 
@@ -61,11 +68,16 @@ private:
 
 public:
   ShenandoahMarkCompact();
-  void initialize(GCTimer* gc_timer);
+  bool collect(GCCause::Cause cause);
+
+private:
+  // GC entries
+  void vmop_entry_full(GCCause::Cause cause);
+  void entry_full(GCCause::Cause cause);
+  void op_full(GCCause::Cause cause);
 
   void do_it(GCCause::Cause gc_cause);
 
-private:
   void phase1_mark_heap();
   void phase2_calculate_target_addresses(ShenandoahHeapRegionSet** worker_slices);
   void phase3_update_references();

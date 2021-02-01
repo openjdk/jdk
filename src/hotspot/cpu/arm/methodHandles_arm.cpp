@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
@@ -53,7 +54,7 @@
 
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg, Register temp1, Register temp2) {
   if (VerifyMethodHandles) {
-    verify_klass(_masm, klass_reg, temp1, temp2, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+    verify_klass(_masm, klass_reg, temp1, temp2, VM_CLASS_ID(java_lang_Class),
                  "MH argument is a Class");
   }
   __ ldr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset()));
@@ -71,10 +72,10 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj, Register temp1, Register temp2, SystemDictionary::WKID klass_id,
+                                 Register obj, Register temp1, Register temp2, VMClassID klass_id,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  Klass* klass = SystemDictionary::well_known_klass(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj);
@@ -305,7 +306,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
       // make sure the trailing argument really is a MemberName (caller responsibility)
-      verify_klass(_masm, member_reg, temp2, temp3, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_invoke_MemberName),
+      verify_klass(_masm, member_reg, temp2, temp3, VM_CLASS_ID(java_lang_invoke_MemberName),
                    "MemberName required for invokeVirtual etc.");
     }
 
@@ -511,14 +512,15 @@ void trace_method_handle_stub(const char* adaptername,
     {
       // dump last frame (from JavaThread::print_frame_layout)
 
-      // Note: code is robust but the dumped informationm may not be
+      // Note: code is robust but the dumped information may not be
       // 100% correct, particularly with respect to the dumped
       // "unextended_sp". Getting it right for all trace_method_handle
       // call paths is not worth the complexity/risk. The correct slot
       // will be identified by *Rsender_sp anyway in the dump.
       JavaThread* p = JavaThread::active();
 
-      PRESERVE_EXCEPTION_MARK;
+      // may not be needed by safer and unexpensive here
+      PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
       intptr_t* dump_fp = (intptr_t *) saved_bp;

@@ -819,8 +819,10 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_code_p);
 
 #if INCLUDE_AOT
-  if (UseAOT && _process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
-    AOTLoader::oops_do(strong_roots);
+  if (_process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
+    if (UseAOT) {
+      AOTLoader::oops_do(strong_roots);
+    }
   }
 #endif
   if (_process_strong_tasks->try_claim_task(GCH_PS_OopStorageSet_oops_do)) {
@@ -1259,7 +1261,7 @@ void GenCollectedHeap::gc_epilogue(bool full) {
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
   size_t actual_gap = pointer_delta((HeapWord*) (max_uintx-3), *(end_addr()));
-  guarantee(is_client_compilation_mode_vm() || actual_gap > (size_t)FastAllocateSizeLimit, "inline allocation wraps");
+  guarantee(!CompilerConfig::is_c2_or_jvmci_compiler_enabled() || actual_gap > (size_t)FastAllocateSizeLimit, "inline allocation wraps");
 #endif // COMPILER2_OR_JVMCI
 
   resize_all_tlabs();

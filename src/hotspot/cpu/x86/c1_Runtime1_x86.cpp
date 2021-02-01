@@ -176,8 +176,8 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 #ifdef _LP64
   // if there is any conflict use the stack
   if (arg1 == c_rarg2 || arg1 == c_rarg3 ||
-      arg2 == c_rarg1 || arg1 == c_rarg3 ||
-      arg3 == c_rarg1 || arg1 == c_rarg2) {
+      arg2 == c_rarg1 || arg2 == c_rarg3 ||
+      arg3 == c_rarg1 || arg3 == c_rarg2) {
     push(arg3);
     push(arg2);
     push(arg1);
@@ -720,12 +720,12 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   default:  ShouldNotReachHere();
   }
 
-#if !defined(_LP64) && defined(TIERED)
-  if (UseSSE < 2) {
+#if !defined(_LP64) && defined(COMPILER2)
+  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_aot_or_jvmci()) {
     // C2 can leave the fpu stack dirty
     __ empty_FPU_stack();
   }
-#endif // !_LP64 && TIERED
+#endif // !_LP64 && COMPILER2
 
   // verify that only rax, and rdx is valid at this time
   __ invalidate_registers(false, true, true, false, true, true);

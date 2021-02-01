@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,18 +72,6 @@ inline int os::ftruncate(int fd, jlong length) {
   return ::ftruncate(fd, length);
 }
 
-// macros for restartable system calls
-
-#define RESTARTABLE(_cmd, _result) do { \
-    _result = _cmd; \
-  } while(((int)_result == OS_ERR) && (errno == EINTR))
-
-#define RESTARTABLE_RETURN_INT(_cmd) do { \
-  int _result; \
-  RESTARTABLE(_cmd, _result); \
-  return _result; \
-} while(false)
-
 inline bool os::numa_has_static_binding()   { return true; }
 inline bool os::numa_has_group_homing()     { return false;  }
 
@@ -91,10 +79,6 @@ inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
   size_t res;
   RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
   return res;
-}
-
-inline int os::close(int fd) {
-  return ::close(fd);
 }
 
 inline int os::socket_close(int fd) {
@@ -123,14 +107,6 @@ inline int os::connect(int fd, struct sockaddr* him, socklen_t len) {
 
 inline struct hostent* os::get_host_by_name(char* name) {
   return ::gethostbyname(name);
-}
-
-inline bool os::supports_monotonic_clock() {
-#ifdef __APPLE__
-  return true;
-#else
-  return Bsd::_clock_gettime != NULL;
-#endif
 }
 
 inline void os::exit(int num) {

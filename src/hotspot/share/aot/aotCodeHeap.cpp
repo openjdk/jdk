@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -188,10 +189,6 @@ void AOTLib::verify_config() {
   verify_flag(_config->_enableContended, EnableContended, "EnableContended");
   verify_flag(_config->_restrictContended, RestrictContended, "RestrictContended");
 
-  if (!TieredCompilation && _config->_tieredAOT) {
-    handle_config_error("Shared file %s error: Expected to run with tiered compilation on", _name);
-  }
-
   // Shifts are static values which initialized by 0 until java heap initialization.
   // AOT libs are loaded before heap initialized so shift values are not set.
   // It is okay since ObjectAlignmentInBytes flag which defines shifts value is set before AOT libs are loaded.
@@ -353,7 +350,7 @@ void AOTCodeHeap::publish_aot(const methodHandle& mh, AOTMethodData* method_data
     _code_to_aot[code_id]._aot = NULL; // Clean
   } else { // success
     // Publish method
-#ifdef TIERED
+#if COMPILER1_OR_COMPILER2
     mh->set_aot_code(aot);
 #endif
     {
@@ -769,7 +766,7 @@ void AOTCodeHeap::sweep_dependent_methods(InstanceKlass* ik) {
 void AOTCodeHeap::sweep_method(AOTCompiledMethod *aot) {
   int indexes[] = {aot->method_index()};
   sweep_dependent_methods(indexes, 1);
-  vmassert(aot->method()->code() != aot TIERED_ONLY( && aot->method()->aot_code() == NULL), "method still active");
+  vmassert(aot->method()->code() != aot COMPILER1_OR_COMPILER2_PRESENT( && aot->method()->aot_code() == NULL), "method still active");
 }
 
 

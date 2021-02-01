@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1030,23 +1030,12 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
         THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
       ClassLoaderData *loader_data = register_loader(class_loader);
       Dictionary* dictionary = loader_data->dictionary();
-
       unsigned int d_hash = dictionary->compute_hash(name);
 
-      bool DoObjectLock = true;
-      if (is_parallelCapable(class_loader)) {
-        DoObjectLock = false;
-      }
-
-      // Make sure we are synchronized on the class loader before we proceed
-      //
       // Note: currently, find_or_load_shared_class is called only from
       // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
-      // which are parallel-capable loaders, so this lock is NOT taken.
-      Handle lockObject = compute_loader_lock_object(THREAD, class_loader);
-      check_loader_lock_contention(THREAD, lockObject);
-      ObjectLocker ol(lockObject, THREAD, DoObjectLock);
-
+      // which are parallel-capable loaders, so a lock here is NOT taken.
+      assert(is_parallelCapable(class_loader), "ObjectLocker not required");
       {
         MutexLocker mu(THREAD, SystemDictionary_lock);
         InstanceKlass* check = dictionary->find_class(d_hash, name);
@@ -1057,18 +1046,26 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
       k = load_shared_class_for_builtin_loader(name, class_loader, THREAD);
       if (k != NULL) {
-        define_instance_class(k, CHECK_NULL);
+        define_instance_class(k, class_loader, CHECK_NULL);
       }
     }
   }
   return k;
 }
 
-PackageEntry* SystemDictionaryShared::get_package_entry_from_class_name(Handle class_loader, Symbol* class_name) {
-  PackageEntry* pkg_entry = NULL;
-  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+PackageEntry* SystemDictionaryShared::get_package_entry_from_class(InstanceKlass* ik, Handle class_loader) {
+  PackageEntry* pkg_entry = ik->package();
+  if (MetaspaceShared::use_full_module_graph() && ik->is_shared() && pkg_entry != NULL) {
+    assert(MetaspaceShared::is_in_shared_metaspace(pkg_entry), "must be");
+    assert(!ik->is_shared_unregistered_class(), "unexpected archived package entry for an unregistered class");
+    assert(ik->module()->is_named(), "unexpected archived package entry for a class in an unnamed module");
+    return pkg_entry;
+  }
+  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(ik->name());
   if (pkg_name != NULL) {
     pkg_entry = class_loader_data(class_loader)->packages()->lookup_only(pkg_name);
+  } else {
+    pkg_entry = NULL;
   }
   return pkg_entry;
 }
@@ -1083,7 +1080,7 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
          SystemDictionary::is_system_class_loader(class_loader()))  ||
         (ik->is_shared_platform_class() &&
          SystemDictionary::is_platform_class_loader(class_loader()))) {
-      PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, class_name);
+      PackageEntry* pkg_entry = get_package_entry_from_class(ik, class_loader);
       Handle protection_domain =
         SystemDictionaryShared::init_security_info(class_loader, ik, pkg_entry, CHECK_NULL);
       return load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, THREAD);
@@ -1183,7 +1180,7 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   loader_data->add_class(ik);
 
   // Get the package entry.
-  PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, ik->name());
+  PackageEntry* pkg_entry = get_package_entry_from_class(ik, class_loader);
 
   // Load and check super/interfaces, restore unsharable info
   InstanceKlass* shared_klass = load_shared_class(ik, class_loader, protection_domain,
@@ -1695,7 +1692,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
                                                                          InstanceKlass* caller_ik, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
-  PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, caller_ik->name());
+  PackageEntry* pkg_entry = get_package_entry_from_class(caller_ik, class_loader);
   if (caller_ik->class_loader() != NULL) {
     protection_domain = SystemDictionaryShared::init_security_info(class_loader, caller_ik, pkg_entry, CHECK_NULL);
   }
@@ -2189,9 +2186,9 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
   }
 }
 
-void SystemDictionaryShared::serialize_well_known_klasses(SerializeClosure* soc) {
-  for (int i = FIRST_WKID; i < WKID_LIMIT; i++) {
-    soc->do_ptr((void**)&_well_known_klasses[i]);
+void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
+  for (auto id : EnumRange<VMClassID>{}) {
+    soc->do_ptr((void**)klass_addr_at(id));
   }
 }
 

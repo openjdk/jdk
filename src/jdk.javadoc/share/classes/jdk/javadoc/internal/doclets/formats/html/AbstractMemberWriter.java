@@ -42,8 +42,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.MemberWriter;
@@ -68,6 +66,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     protected final Contents contents;
     protected final Resources resources;
     protected final Links links;
+    protected final HtmlIds htmlIds;
 
     protected final TypeElement typeElement;
 
@@ -80,6 +79,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         this.contents = configuration.getContents();
         this.resources = configuration.docResources;
         this.links = writer.links;
+        this.htmlIds = configuration.htmlIds;
     }
 
     public AbstractMemberWriter(SubWriterHolderWriter writer) {

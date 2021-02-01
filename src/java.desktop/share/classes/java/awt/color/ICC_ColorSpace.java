@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 package java.awt.color;
 
 import java.io.IOException;
+import java.io.Serial;
 
 import sun.java2d.cmm.CMSManager;
 import sun.java2d.cmm.ColorTransform;
@@ -82,6 +83,7 @@ public class ICC_ColorSpace extends ColorSpace {
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 3455889114070431483L;
 
     /**
@@ -155,6 +157,7 @@ public class ICC_ColorSpace extends ColorSpace {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(java.io.ObjectInputStream s)
         throws ClassNotFoundException, java.io.IOException {
 

@@ -31,15 +31,12 @@ import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
-import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DeprecatedTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -117,7 +114,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Table table = new Table(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                .setId("all-classes-table")
+                .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(resources.getText("doclet.All_Classes"))
                 .addTab(contents.interfaceSummary, utils::isInterface)
                 .addTab(contents.classSummary, e -> utils.isOrdinaryClass((TypeElement)e))

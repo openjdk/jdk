@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1713,3 +1713,47 @@ eventHandler_installExternal(HandlerNode *node)
                           standardHandlers_defaultHandler(node->ei),
                           JNI_TRUE);
 }
+
+/***** debugging *****/
+
+#ifdef DEBUG
+
+void
+eventHandler_dumpAllHandlers(jboolean dumpPermanent)
+{
+    int ei;
+    for (ei = EI_min; ei <= EI_max; ++ei) {
+        eventHandler_dumpHandlers(ei, dumpPermanent);
+    }
+}
+
+void
+eventHandler_dumpHandlers(EventIndex ei, jboolean dumpPermanent)
+{
+  HandlerNode *nextNode;
+  nextNode = getHandlerChain(ei)->first;
+  if (nextNode != NULL) {
+      tty_message("\nHandlers for %s(%d)", eventIndex2EventName(ei), ei);
+      while (nextNode != NULL) {
+          HandlerNode *node = nextNode;
+          nextNode = NEXT(node);
+
+          if (node->permanent && !dumpPermanent) {
+              continue; // ignore permanent handlers
+          }
+
+          tty_message("node(%p) handlerID(%d) suspendPolicy(%d) permanent(%d)",
+                      node, node->handlerID, node->suspendPolicy, node->permanent);
+          eventFilter_dumpHandlerFilters(node);
+      }
+  }
+}
+
+void
+eventHandler_dumpHandler(HandlerNode *node)
+{
+    tty_message("Handler for %s(%d)\n", eventIndex2EventName(node->ei), node->ei);
+    eventFilter_dumpHandlerFilters(node);
+}
+
+#endif /* DEBUG */

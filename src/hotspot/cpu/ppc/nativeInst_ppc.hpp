@@ -30,6 +30,9 @@
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 
 // We have interfaces for the following instructions:
 //

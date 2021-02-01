@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "aot/aotLoader.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
@@ -195,12 +196,12 @@ void CodeCache::initialize_heaps() {
   size_t code_buffers_size = 0;
 #ifdef COMPILER1
   // C1 temporary code buffers (see Compiler::init_buffer_blob())
-  const int c1_count = CompilationPolicy::policy()->compiler_count(CompLevel_simple);
+  const int c1_count = CompilationPolicy::c1_count();
   code_buffers_size += c1_count * Compiler::code_buffer_size();
 #endif
 #ifdef COMPILER2
   // C2 scratch buffers (see Compile::init_scratch_buffer_blob())
-  const int c2_count = CompilationPolicy::policy()->compiler_count(CompLevel_full_optimization);
+  const int c2_count = CompilationPolicy::c2_count();
   // Initial size of constant table (this may be increased if a compiled method needs more space)
   code_buffers_size += c2_count * C2Compiler::initial_code_buffer_size();
 #endif
@@ -354,7 +355,7 @@ bool CodeCache::heap_available(int code_blob_type) {
   } else if (Arguments::is_interpreter_only()) {
     // Interpreter only: we don't need any method code heaps
     return (code_blob_type == CodeBlobType::NonNMethod);
-  } else if (TieredCompilation && (TieredStopAtLevel > CompLevel_simple)) {
+  } else if (CompilerConfig::is_c1_profiling()) {
     // Tiered compilation: use all code heaps
     return (code_blob_type < CodeBlobType::All);
   } else {
@@ -483,7 +484,7 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
  * run the constructor for the CodeBlob subclass he is busy
  * instantiating.
  */
-CodeBlob* CodeCache::allocate(int size, int code_blob_type, int orig_code_blob_type) {
+CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool handle_alloc_failure, int orig_code_blob_type) {
   // Possibly wakes up the sweeper thread.
   NMethodSweeper::report_allocation(code_blob_type);
   assert_locked_or_safepoint(CodeCache_lock);
@@ -531,11 +532,13 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, int orig_code_blob_t
             tty->print_cr("Extension of %s failed. Trying to allocate in %s.",
                           heap->name(), get_code_heap(type)->name());
           }
-          return allocate(size, type, orig_code_blob_type);
+          return allocate(size, type, handle_alloc_failure, orig_code_blob_type);
         }
       }
-      MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      CompileBroker::handle_full_code_cache(orig_code_blob_type);
+      if (handle_alloc_failure) {
+        MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+        CompileBroker::handle_full_code_cache(orig_code_blob_type);
+      }
       return NULL;
     }
     if (PrintCodeCacheExtension) {

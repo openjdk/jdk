@@ -43,8 +43,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -239,7 +237,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         addPreviewInfo(packageElement, packageContentTree);
         if (!utils.getBody(packageElement).isEmpty()) {
             HtmlTree tree = sectionTree;
-            tree.setId(SectionName.PACKAGE_DESCRIPTION.getName());
+            tree.setId(HtmlIds.PACKAGE_DESCRIPTION);
             addDeprecationInfo(tree);
             addInlineComment(packageElement, tree);
         }

@@ -44,6 +44,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -1689,97 +1690,78 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
     __ get_method_counters(R19_method, R4_counters, Lforward);
 
-    if (TieredCompilation) {
-      Label Lno_mdo, Loverflow;
-      const int increment = InvocationCounter::count_increment;
-      if (ProfileInterpreter) {
-        Register Rmdo = Rscratch1;
+    Label Lno_mdo, Loverflow;
+    const int increment = InvocationCounter::count_increment;
+    if (ProfileInterpreter) {
+      Register Rmdo = Rscratch1;
 
-        // If no method data exists, go to profile_continue.
-        __ ld(Rmdo, in_bytes(Method::method_data_offset()), R19_method);
-        __ cmpdi(CCR0, Rmdo, 0);
-        __ beq(CCR0, Lno_mdo);
+      // If no method data exists, go to profile_continue.
+      __ ld(Rmdo, in_bytes(Method::method_data_offset()), R19_method);
+      __ cmpdi(CCR0, Rmdo, 0);
+      __ beq(CCR0, Lno_mdo);
 
-        // Increment backedge counter in the MDO.
-        const int mdo_bc_offs = in_bytes(MethodData::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
-        __ lwz(Rscratch2, mdo_bc_offs, Rmdo);
-        __ lwz(Rscratch3, in_bytes(MethodData::backedge_mask_offset()), Rmdo);
-        __ addi(Rscratch2, Rscratch2, increment);
-        __ stw(Rscratch2, mdo_bc_offs, Rmdo);
-        if (UseOnStackReplacement) {
-          __ and_(Rscratch3, Rscratch2, Rscratch3);
-          __ bne(CCR0, Lforward);
-          __ b(Loverflow);
-        } else {
-          __ b(Lforward);
-        }
-      }
-
-      // If there's no MDO, increment counter in method.
-      const int mo_bc_offs = in_bytes(MethodCounters::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
-      __ bind(Lno_mdo);
-      __ lwz(Rscratch2, mo_bc_offs, R4_counters);
-      __ lwz(Rscratch3, in_bytes(MethodCounters::backedge_mask_offset()), R4_counters);
+      // Increment backedge counter in the MDO.
+      const int mdo_bc_offs = in_bytes(MethodData::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+      __ lwz(Rscratch2, mdo_bc_offs, Rmdo);
+      __ lwz(Rscratch3, in_bytes(MethodData::backedge_mask_offset()), Rmdo);
       __ addi(Rscratch2, Rscratch2, increment);
-      __ stw(Rscratch2, mo_bc_offs, R4_counters);
+      __ stw(Rscratch2, mdo_bc_offs, Rmdo);
       if (UseOnStackReplacement) {
         __ and_(Rscratch3, Rscratch2, Rscratch3);
         __ bne(CCR0, Lforward);
+        __ b(Loverflow);
       } else {
         __ b(Lforward);
       }
-      __ bind(Loverflow);
-
-      // Notify point for loop, pass branch bytecode.
-      __ subf(R4_ARG2, Rdisp, R14_bcp); // Compute branch bytecode (previous bcp).
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
-
-      // Was an OSR adapter generated?
-      __ cmpdi(CCR0, R3_RET, 0);
-      __ beq(CCR0, Lforward);
-
-      // Has the nmethod been invalidated already?
-      __ lbz(R0, nmethod::state_offset(), R3_RET);
-      __ cmpwi(CCR0, R0, nmethod::in_use);
-      __ bne(CCR0, Lforward);
-
-      // Migrate the interpreter frame off of the stack.
-      // We can use all registers because we will not return to interpreter from this point.
-
-      // Save nmethod.
-      const Register osr_nmethod = R31;
-      __ mr(osr_nmethod, R3_RET);
-      __ set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R11_scratch1);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), R16_thread);
-      __ reset_last_Java_frame();
-      // OSR buffer is in ARG1.
-
-      // Remove the interpreter frame.
-      __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
-
-      // Jump to the osr code.
-      __ ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
-      __ mtlr(R0);
-      __ mtctr(R11_scratch1);
-      __ bctr();
-
-    } else {
-
-      const Register invoke_ctr = Rscratch1;
-      // Update Backedge branch separately from invocations.
-      __ increment_backedge_counter(R4_counters, invoke_ctr, Rscratch2, Rscratch3);
-
-      if (ProfileInterpreter) {
-        __ test_invocation_counter_for_mdp(invoke_ctr, R4_counters, Rscratch2, Lforward);
-        if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(bumped_count, R4_counters, R14_bcp, Rdisp, Rscratch2);
-        }
-      } else {
-        if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(invoke_ctr, R4_counters, R14_bcp, Rdisp, Rscratch2);
-        }
-      }
     }
+
+    // If there's no MDO, increment counter in method.
+    const int mo_bc_offs = in_bytes(MethodCounters::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+    __ bind(Lno_mdo);
+    __ lwz(Rscratch2, mo_bc_offs, R4_counters);
+    __ lwz(Rscratch3, in_bytes(MethodCounters::backedge_mask_offset()), R4_counters);
+    __ addi(Rscratch2, Rscratch2, increment);
+    __ stw(Rscratch2, mo_bc_offs, R4_counters);
+    if (UseOnStackReplacement) {
+      __ and_(Rscratch3, Rscratch2, Rscratch3);
+      __ bne(CCR0, Lforward);
+    } else {
+      __ b(Lforward);
+    }
+    __ bind(Loverflow);
+
+    // Notify point for loop, pass branch bytecode.
+    __ subf(R4_ARG2, Rdisp, R14_bcp); // Compute branch bytecode (previous bcp).
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
+
+    // Was an OSR adapter generated?
+    __ cmpdi(CCR0, R3_RET, 0);
+    __ beq(CCR0, Lforward);
+
+    // Has the nmethod been invalidated already?
+    __ lbz(R0, nmethod::state_offset(), R3_RET);
+    __ cmpwi(CCR0, R0, nmethod::in_use);
+    __ bne(CCR0, Lforward);
+
+    // Migrate the interpreter frame off of the stack.
+    // We can use all registers because we will not return to interpreter from this point.
+
+    // Save nmethod.
+    const Register osr_nmethod = R31;
+    __ mr(osr_nmethod, R3_RET);
+    __ set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R11_scratch1);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), R16_thread);
+    __ reset_last_Java_frame();
+    // OSR buffer is in ARG1.
+
+    // Remove the interpreter frame.
+    __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
+
+    // Jump to the osr code.
+    __ ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
+    __ mtlr(R0);
+    __ mtctr(R11_scratch1);
+    __ bctr();
 
     __ bind(Lforward);
   }

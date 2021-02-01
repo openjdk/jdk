@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "runtime/handles.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "opto/c2compiler.hpp"
@@ -75,7 +76,7 @@ bool C2Compiler::init_c2_runtime() {
 }
 
 void C2Compiler::initialize() {
-  assert(!is_c1_or_interpreter_only(), "C2 compiler is launched, it's not c1/interpreter only mode");
+  assert(!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci(), "C2 compiler is launched, it's not c1/interpreter only mode");
   // The first compiler thread that gets here will initialize the
   // small amount of global state (and runtime stubs) that C2 needs.
 

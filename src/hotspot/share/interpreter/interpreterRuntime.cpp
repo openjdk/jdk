@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -632,6 +633,10 @@ JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(Ja
   THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
 JRT_END
 
+JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* thread))
+  THROW(vmSymbols::java_lang_NullPointerException());
+JRT_END
+
 //------------------------------------------------------------------------------------------------------------------------
 // Fields
 //
@@ -1018,7 +1023,7 @@ JRT_ENTRY(nmethod*,
   const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
   const int bci = branch_bcp != NULL ? method->bci_from(last_frame.bcp()) : InvocationEntryBci;
 
-  nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, NULL, THREAD);
+  nmethod* osr_nm = CompilationPolicy::event(method, method, branch_bci, bci, CompLevel_none, NULL, THREAD);
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (osr_nm != NULL && bs_nm != NULL) {
@@ -1057,25 +1062,6 @@ JRT_LEAF(jint, InterpreterRuntime::bcp_to_di(Method* method, address cur_bcp))
   if (mdo == NULL)  return 0;
   return mdo->bci_to_di(bci);
 JRT_END
-
-JRT_ENTRY(void, InterpreterRuntime::profile_method(JavaThread* thread))
-  // use UnlockFlagSaver to clear and restore the _do_not_unlock_if_synchronized
-  // flag, in case this method triggers classloading which will call into Java.
-  UnlockFlagSaver fs(thread);
-
-  assert(ProfileInterpreter, "must be profiling interpreter");
-  LastFrameAccessor last_frame(thread);
-  assert(last_frame.is_interpreted_frame(), "must come from interpreter");
-  methodHandle method(thread, last_frame.method());
-  Method::build_interpreter_method_data(method, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    // Only metaspace OOM is expected. No Java code executed.
-    assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
-    CLEAR_PENDING_EXCEPTION;
-    // and fall through...
-  }
-JRT_END
-
 
 #ifdef ASSERT
 JRT_LEAF(void, InterpreterRuntime::verify_mdp(Method* method, address bcp, address mdp))

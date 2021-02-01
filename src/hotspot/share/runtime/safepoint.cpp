@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -546,10 +546,12 @@ public:
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
   void work(uint worker_id) {
-    if (_do_lazy_roots && _subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
-      Tracer t("lazy partial thread root processing");
-      ParallelSPCleanupThreadClosure cl;
-      Threads::threads_do(&cl);
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
+      if (_do_lazy_roots) {
+        Tracer t("lazy partial thread root processing");
+        ParallelSPCleanupThreadClosure cl;
+        Threads::threads_do(&cl);
+      }
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
@@ -559,7 +561,7 @@ public:
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
       Tracer t("compilation policy safepoint handler");
-      CompilationPolicy::policy()->do_safepoint_work();
+      CompilationPolicy::do_safepoint_work();
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
