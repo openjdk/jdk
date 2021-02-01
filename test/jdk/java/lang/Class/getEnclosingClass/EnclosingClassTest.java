@@ -21,6 +21,16 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 4992173 4992170
+ * @library /test/lib
+ * @modules jdk.compiler
+ * @run testng/othervm EnclosingClassTest
+ * @summary Check getEnclosingClass and other methods
+ * @author Peter von der Ah\u00e9
+ */
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -37,16 +47,6 @@ import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-/*
- * @test
- * @bug 4992173 4992170
- * @library /test/lib
- * @modules jdk.compiler
- * @run testng/othervm EnclosingClassTest
- * @summary Check getEnclosingClass and other methods
- * @author Peter von der Ah\u00e9
- */
 
 /*
  * We have five kinds of classes:
@@ -148,9 +148,9 @@ public class EnclosingClassTest {
         }
         System.out.println(c);
         System.out.println("\tis enclosed by:\t\t" + encClass);
-        System.out.println("\thas simple name:\t`" + 
+        System.out.println("\thas simple name:\t`" +
                            c.getSimpleName() + "'");
-        System.out.println("\thas canonical name:\t`" + 
+        System.out.println("\thas canonical name:\t`" +
                            c.getCanonicalName() + "'");
     }
 

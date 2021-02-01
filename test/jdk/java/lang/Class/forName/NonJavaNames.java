@@ -151,7 +151,10 @@ public class NonJavaNames {
 
     @DataProvider(name = "badNonJavaClassNames")
     Object[][] getBadNonJavaClassNames() {
-        return new Object[][] {{";"}, {"["}, {"."}};
+        return new Object[][] {
+                {";"},
+                {"["},
+                {"."}
+        };
     }
-
 }
