@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
+import static java.lang.String.LATIN1;
+
 /**
  * A thread-safe, mutable sequence of characters.
  * A string buffer is like a {@link String}, but can be modified. At any
@@ -708,8 +710,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     public synchronized String toString() {
         if (toStringCache == null) {
             return toStringCache =
-                    isLatin1() ? StringLatin1.newString(value, 0, count)
-                               : StringUTF16.newString(value, 0, count);
+                    (coder == LATIN1) ? StringLatin1.newString(value, 0, count)
+                                      : StringUTF16.newString(value, 0, count);
         }
         return new String(toStringCache);
     }
@@ -745,7 +747,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
         throws java.io.IOException {
         java.io.ObjectOutputStream.PutField fields = s.putFields();
         char[] val = new char[capacity()];
-        if (isLatin1()) {
+        if (coder == LATIN1) {
             StringLatin1.getChars(value, 0, count, val, 0);
         } else {
             StringUTF16.getChars(value, 0, count, val, 0);

@@ -132,7 +132,7 @@ final class StringConcatHelper {
      */
     static long mix(long lengthCoder, String value) {
         lengthCoder += value.length();
-        if (value.coder() == String.UTF16) {
+        if (value.coder == String.UTF16) {
             lengthCoder |= UTF16;
         }
         return checkOverflow(lengthCoder);

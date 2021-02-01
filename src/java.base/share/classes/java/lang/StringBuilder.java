@@ -29,6 +29,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.IOException;
 
+import static java.lang.String.LATIN1;
+
 /**
  * A mutable sequence of characters.  This class provides an API compatible
  * with {@code StringBuffer}, but with no guarantee of synchronization.
@@ -446,8 +448,8 @@ public final class StringBuilder
     @IntrinsicCandidate
     public String toString() {
         // Create a copy, don't share the array
-        return isLatin1() ? StringLatin1.newString(value, 0, count)
-                          : StringUTF16.newString(value, 0, count);
+        return (coder == LATIN1) ? StringLatin1.newString(value, 0, count)
+                                 : StringUTF16.newString(value, 0, count);
     }
 
     /**
@@ -470,7 +472,7 @@ public final class StringBuilder
         s.defaultWriteObject();
         s.writeInt(count);
         char[] val = new char[capacity()];
-        if (isLatin1()) {
+        if (coder == LATIN1) {
             StringLatin1.getChars(value, 0, count, val, 0);
         } else {
             StringUTF16.getChars(value, 0, count, val, 0);
