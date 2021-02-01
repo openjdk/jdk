@@ -453,7 +453,7 @@ public:
 
   void record_failure(const char* reason);      // Record failure and report later
   void report_failure(const char* reason);      // Report failure immediately
-  void record_method_not_compilable(const char* reason, bool all_tiers = true);
+  void record_method_not_compilable(const char* reason, bool all_tiers = false);
   void record_out_of_memory_failure();
 
   // RedefineClasses support

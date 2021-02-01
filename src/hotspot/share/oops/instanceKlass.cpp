@@ -40,6 +40,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/dependencyContext.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -3222,31 +3223,22 @@ void InstanceKlass::adjust_default_methods(bool* trace_name_printed) {
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
   assert_lock_strong(CompiledMethod_lock);
 #ifndef PRODUCT
-  if (TieredCompilation) {
-    nmethod* prev = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), n->comp_level(), true);
-    assert(prev == NULL || !prev->is_in_use() COMPILER2_PRESENT(|| StressRecompilation),
-           "redundant OSR recompilation detected. memory leak in CodeCache!");
-  }
+  nmethod* prev = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), n->comp_level(), true);
+  assert(prev == NULL || !prev->is_in_use() COMPILER2_PRESENT(|| StressRecompilation),
+      "redundant OSR recompilation detected. memory leak in CodeCache!");
 #endif
   // only one compilation can be active
-  {
-    assert(n->is_osr_method(), "wrong kind of nmethod");
-    n->set_osr_link(osr_nmethods_head());
-    set_osr_nmethods_head(n);
-    // Raise the highest osr level if necessary
-    if (TieredCompilation) {
-      Method* m = n->method();
-      m->set_highest_osr_comp_level(MAX2(m->highest_osr_comp_level(), n->comp_level()));
-    }
-  }
+  assert(n->is_osr_method(), "wrong kind of nmethod");
+  n->set_osr_link(osr_nmethods_head());
+  set_osr_nmethods_head(n);
+  // Raise the highest osr level if necessary
+  n->method()->set_highest_osr_comp_level(MAX2(n->method()->highest_osr_comp_level(), n->comp_level()));
 
   // Get rid of the osr methods for the same bci that have lower levels.
-  if (TieredCompilation) {
-    for (int l = CompLevel_limited_profile; l < n->comp_level(); l++) {
-      nmethod *inv = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), l, true);
-      if (inv != NULL && inv->is_in_use()) {
-        inv->make_not_entrant();
-      }
+  for (int l = CompLevel_limited_profile; l < n->comp_level(); l++) {
+    nmethod *inv = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), l, true);
+    if (inv != NULL && inv->is_in_use()) {
+      inv->make_not_entrant();
     }
   }
 }
@@ -3264,7 +3256,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // Search for match
   bool found = false;
   while(cur != NULL && cur != n) {
-    if (TieredCompilation && m == cur->method()) {
+    if (m == cur->method()) {
       // Find max level before n
       max_level = MAX2(max_level, cur->comp_level());
     }
@@ -3283,17 +3275,15 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
     }
   }
   n->set_osr_link(NULL);
-  if (TieredCompilation) {
-    cur = next;
-    while (cur != NULL) {
-      // Find max level after n
-      if (m == cur->method()) {
-        max_level = MAX2(max_level, cur->comp_level());
-      }
-      cur = cur->osr_link();
+  cur = next;
+  while (cur != NULL) {
+    // Find max level after n
+    if (m == cur->method()) {
+      max_level = MAX2(max_level, cur->comp_level());
     }
-    m->set_highest_osr_comp_level(max_level);
+    cur = cur->osr_link();
   }
+  m->set_highest_osr_comp_level(max_level);
   return found;
 }
 
@@ -3335,7 +3325,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
         }
       } else {
         if (best == NULL || (osr->comp_level() > best->comp_level())) {
-          if (osr->comp_level() == CompLevel_highest_tier) {
+          if (osr->comp_level() == CompilationPolicy::highest_compile_level()) {
             // Found the best possible - return it.
             return osr;
           }

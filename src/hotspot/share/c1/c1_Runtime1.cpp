@@ -469,7 +469,7 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, Meth
     }
     bci = branch_bci + offset;
   }
-  osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
+  osr_nm = CompilationPolicy::event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
   return osr_nm;
 }
 
@@ -1401,8 +1401,6 @@ JRT_END
 
 JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
   ResourceMark rm;
-
-  assert(!TieredCompilation, "incompatible with tiered compilation");
 
   RegisterMap reg_map(thread, false);
   frame runtime_frame = thread->last_frame();
