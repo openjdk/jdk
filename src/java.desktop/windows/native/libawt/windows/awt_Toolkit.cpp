@@ -2605,6 +2605,10 @@ Java_sun_awt_windows_WToolkit_shutdown(JNIEnv *env, jobject self)
 
     tk.QuitMessageLoop(AwtToolkit::EXIT_ALL_ENCLOSING_LOOPS);
 
+    while (!tk.IsDisposed()) {
+        Sleep(100);
+    }
+
     CATCH_BAD_ALLOC;
 }
 
