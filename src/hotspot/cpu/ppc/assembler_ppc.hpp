@@ -1387,9 +1387,6 @@ class Assembler : public AbstractAssembler {
   inline void pla(  Register d, long si34);
   inline void pla(  Register d, Register a, long si34);
   inline void psubi(Register d, Register a, long si34);
-  // Generate a prefixed or non-prefixed add immediate instruction based on si34 value
-  inline void paddi_or_addi(Register d, Register a, long si34);
-  inline void pli_or_li(Register d, long si34);
 
  private:
   inline void addi_r0ok( Register d, Register a, int si16);
@@ -1521,12 +1518,9 @@ class Assembler : public AbstractAssembler {
   static bool is_paddi_suffix(int x) {
      return PADDI_SUFFIX_OPCODE == (x & PADDI_SUFFIX_OPCODE_MASK);
   }
-  static bool is_pli_prefix(int x) {
-     return is_paddi_prefix(x) && inv_r_eo(x) == 0;
-  }
-  static bool is_pli_suffix(int x) {
-     return is_paddi_suffix(x) && inv_ra_field(x) == 0;
-  }
+  // This function can skip a nop for 64-byte alignment and check the next word for a prefix.
+  // Since the alignement nop is uncommon case, we will keep callers of this function simple,
+  // as they which are often assertions and complex if-statement.
   static int is_paddi(const int* p, bool is_pli = false) {
      int32_t* p_inst = (int32_t*)p;
 
@@ -1540,7 +1534,6 @@ class Assembler : public AbstractAssembler {
         return false;
      }
   }
-  static bool is_pli(const int* p)   { return is_paddi(p, true); }
   static bool is_mtctr(int x) {
      return MTCTR_OPCODE == (x & MTCTR_OPCODE_MASK);
   }

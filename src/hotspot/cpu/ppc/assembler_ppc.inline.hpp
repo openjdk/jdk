@@ -154,14 +154,6 @@ inline void Assembler::paddi_r0ok(  Register d, Register a, long si34, bool r = 
   emit_int32( PADDI_SUFFIX_OPCODE | rt(d)   | ra(a)   | d1_eo(si34));
 }
 
-inline void Assembler::paddi_or_addi(Register d, Register a, long si34) {
-  if (is_simm(si34, 16)) {
-    Assembler::addi(d, a, (int)si34);
-  } else {
-    Assembler::paddi(d, a, si34);
-  }
-}
-
 // Fixed-Point Arithmetic Instructions with Overflow detection
 inline void Assembler::addo(    Register d, Register a, Register b) { emit_int32(ADD_OPCODE    | rt(d) | ra(a) | rb(b) | oe(1) | rc(0)); }
 inline void Assembler::addo_(   Register d, Register a, Register b) { emit_int32(ADD_OPCODE    | rt(d) | ra(a) | rb(b) | oe(1) | rc(1)); }
@@ -205,14 +197,6 @@ inline void Assembler::pli(  Register d, long si34)             { Assembler::pad
 inline void Assembler::pla(  Register d, long si34)             { Assembler::paddi_r0ok( d, R0, si34, true); }
 inline void Assembler::pla(  Register d, Register a, long si34) { Assembler::paddi( d, a, si34, false); }
 inline void Assembler::psubi(Register d, Register a, long si34) { Assembler::paddi( d, a, -si34, false); }
-
-inline void Assembler::pli_or_li(Register d, long si34) {
-  if (is_simm(si34, 16)) {
-    Assembler::li( d, (int)si34);
-  } else {
-    Assembler::pli(d, si34);
-  }
-}
 
 // PPC 1, section 3.3.9, Fixed-Point Compare Instructions
 inline void Assembler::cmpi(  ConditionRegister f, int l, Register a, int si16)   { emit_int32( CMPI_OPCODE  | bf(f) | l10(l) | ra(a) | simm(si16,16)); }

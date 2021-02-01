@@ -5836,6 +5836,9 @@ instruct loadConI32_lo16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
 
 instruct loadConI32(iRegIdst dst, immI32 src) %{
   match(Set dst src);
+  // This macro is valid only in Power 10 and up, but adding the following predicate here
+  // caused build error. So we comment it out for now.
+  // predicate(PowerArchitecturePPC64 >= 10);
   ins_cost(DEFAULT_COST+1);
 
   format %{ "(nop if crossing a 64-byte boundary)\n\t"
@@ -5921,6 +5924,9 @@ instruct loadConL32_Ex(iRegLdst dst, immL32 src) %{
 // Load 34-bit long constant using prefixed addi. No constant pool entries required.
 instruct loadConL34(iRegLdst dst, immL34 src) %{
   match(Set dst src);
+  // This macro is valid only in Power 10 and up, but adding the following predicate here
+  // caused build error. So we comment it out for now.
+  // predicate(PowerArchitecturePPC64 >= 10);
   ins_cost(DEFAULT_COST+1);
 
   format %{ "(nop if crossing 64byte boundary)\n\t"
