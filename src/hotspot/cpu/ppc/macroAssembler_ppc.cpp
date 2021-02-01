@@ -723,7 +723,7 @@ void MacroAssembler::clobber_volatile_gprs(Register excluded_register) {
 }
 
 void MacroAssembler::clobber_carg_stack_slots(Register tmp) {
-  const int magic_number = 0x42;
+  const int magic_number = 0x43;
 
   li(tmp, magic_number);
   for (int m = 1; m <= 8; m++) {
