@@ -286,10 +286,10 @@ class InvokerBytecodeGenerator {
         final List<ClassData> cd = classData;
         return switch(cd.size()) {
             case 0 -> List.of();
-            case 1 -> List.of(cd.get(0));
-            case 2 -> List.of(cd.get(0), cd.get(1));
-            case 3 -> List.of(cd.get(0), cd.get(1), cd.get(2));
-            case 4 -> List.of(cd.get(0), cd.get(1), cd.get(2), cd.get(3));
+            case 1 -> List.of(cd.get(0).value);
+            case 2 -> List.of(cd.get(0).value, cd.get(1).value);
+            case 3 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value);
+            case 4 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value, cd.get(3).value);
             default -> {
                 Object[] data = new Object[classData.size()];
                 for (int i = 0; i < classData.size(); i++) {
