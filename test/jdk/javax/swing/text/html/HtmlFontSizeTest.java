@@ -29,7 +29,7 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.Rectangle;
+import java.awt.Dimension;
 import java.util.Locale;
 
 import javax.swing.JFrame;
@@ -40,10 +40,10 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
 public class HtmlFontSizeTest {
-    static volatile Rectangle w3cFrameSize;
-    static volatile Rectangle stdFrameSize;
+    static volatile Dimension w3cFrameSize;
+    static volatile Dimension stdFrameSize;
 
-    private static Rectangle test(boolean w3ccheck) {
+    private static Dimension test(boolean w3ccheck) {
         JFrame frame = new JFrame();
         try {
             frame.setLayout(new BorderLayout());
@@ -77,7 +77,7 @@ public class HtmlFontSizeTest {
             frame.setVisible(true);
             frame.setLocationRelativeTo(null);
 
-            return frame.getBounds();
+            return htmlPane.getPreferredSize();
         } finally {
             frame.dispose();
         }
@@ -88,8 +88,8 @@ public class HtmlFontSizeTest {
             w3cFrameSize = test(true);
             stdFrameSize = test(false);
         });
-        System.out.println("frame height with W3C:" + w3cFrameSize);
-        System.out.println("frame height without W3C:" + stdFrameSize);
+        System.out.println("size with W3C:" + w3cFrameSize);
+        System.out.println("size without W3C:" + stdFrameSize);
 
         float ratio = (float)w3cFrameSize.width / (float)stdFrameSize.width;
         System.out.println("w3cFrameSize.width/stdFrameSize.width " + ratio);
