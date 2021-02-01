@@ -40,6 +40,7 @@ class JfrRecorderService : public StackObj {
   JfrChunkWriter& _chunkwriter;
   JfrRepository& _repository;
   JfrStackTraceRepository& _stack_trace_repository;
+  JfrStackTraceRepository& _leak_profiler_stack_trace_repository;
   JfrStorage& _storage;
   JfrStringPool& _string_pool;
 

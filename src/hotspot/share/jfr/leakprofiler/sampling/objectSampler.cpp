@@ -162,7 +162,7 @@ static traceid get_thread_id(JavaThread* thread) {
 static void record_stacktrace(JavaThread* thread) {
   assert(thread != NULL, "invariant");
   if (JfrEventSetting::has_stacktrace(EventOldObjectSample::eventId)) {
-    JfrStackTraceRepository::instance().record_and_cache(thread);
+    JfrStackTraceRepository::leak_profiler_instance().record_and_cache(thread);
   }
 }
 

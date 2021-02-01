@@ -281,6 +281,9 @@ bool JfrRecorder::create_components() {
   if (!create_stacktrace_repository()) {
     return false;
   }
+  if (!create_leak_profiler_stacktrace_repository()) {
+    return false;
+  }
   if (!create_os_interface()) {
     return false;
   }
@@ -302,6 +305,7 @@ static JfrStorage* _storage = NULL;
 static JfrCheckpointManager* _checkpoint_manager = NULL;
 static JfrRepository* _repository = NULL;
 static JfrStackTraceRepository* _stack_trace_repository;
+static JfrStackTraceRepository* _stack_trace_repository_leak_profiler;
 static JfrStringPool* _stringpool = NULL;
 static JfrOSInterface* _os_interface = NULL;
 static JfrThreadSampling* _thread_sampling = NULL;
@@ -353,6 +357,12 @@ bool JfrRecorder::create_stacktrace_repository() {
   return _stack_trace_repository != NULL && _stack_trace_repository->initialize();
 }
 
+bool JfrRecorder::create_leak_profiler_stacktrace_repository() {
+  assert(_stack_trace_repository_leak_profiler == NULL, "invariant");
+  _stack_trace_repository_leak_profiler = JfrStackTraceRepository::create_leak_profiler();
+  return _stack_trace_repository_leak_profiler != NULL && _stack_trace_repository_leak_profiler->initialize();
+}
+
 bool JfrRecorder::create_stringpool() {
   assert(_stringpool == NULL, "invariant");
   assert(_repository != NULL, "invariant");
@@ -391,6 +401,10 @@ void JfrRecorder::destroy_components() {
   if (_stack_trace_repository != NULL) {
     JfrStackTraceRepository::destroy();
     _stack_trace_repository = NULL;
+  }
+  if (_stack_trace_repository_leak_profiler != NULL) {
+    JfrStackTraceRepository::destroy_leak_profiler();
+    _stack_trace_repository_leak_profiler = NULL;
   }
   if (_stringpool != NULL) {
     JfrStringPool::destroy();

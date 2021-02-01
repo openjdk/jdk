@@ -50,6 +50,7 @@ class JfrRecorder : public JfrCHeapObj {
   static bool create_post_box();
   static bool create_recorder_thread();
   static bool create_stacktrace_repository();
+  static bool create_leak_profiler_stacktrace_repository();
   static bool create_storage();
   static bool create_stringpool();
   static bool create_thread_sampling();
