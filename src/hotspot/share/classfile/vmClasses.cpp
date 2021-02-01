@@ -135,7 +135,7 @@ void vmClasses::resolve_all(TRAPS) {
     //
     // HeapShared::fixup_mapped_heap_regions() fills the empty
     // spaces in the archived heap regions and may use
-    // SystemDictionary::Object_klass(), so we can do this only after
+    // vmClasses::Object_klass(), so we can do this only after
     // Object_klass is resolved. See the above resolve_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
