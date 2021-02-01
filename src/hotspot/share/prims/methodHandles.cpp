@@ -1577,7 +1577,6 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
 
   {
     ThreadToNativeFromVM ttnfv(thread);
-    Thread::WXExecFromWriteSetter wx_exec;
 
     int status = env->RegisterNatives(MHN_class, MHN_methods, sizeof(MHN_methods)/sizeof(JNINativeMethod));
     guarantee(status == JNI_OK && !env->ExceptionOccurred(),

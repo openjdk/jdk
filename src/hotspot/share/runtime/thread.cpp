@@ -106,6 +106,7 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
+#include "runtime/threadWXSetters.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -2511,7 +2512,7 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
 // Note only the native==>VM/Java barriers can call this function and when
 // thread state is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  Thread::WXWriteFromExecSetter wx_write;
+  ThreadWXEnable wx_write(WXWrite, thread);
 
   check_safepoint_and_suspend_for_native_trans(thread);
 
@@ -3989,7 +3990,6 @@ void Threads::shutdown_vm_agents() {
     if (unload_entry != NULL) {
       JavaThread* thread = JavaThread::current();
       ThreadToNativeFromVM ttn(thread);
-      Thread::WXExecFromWriteSetter wx_exec;
       HandleMark hm(thread);
       (*unload_entry)(&main_vm);
     }
@@ -4009,7 +4009,6 @@ void Threads::create_vm_init_libraries() {
       // Invoke the JVM_OnLoad function
       JavaThread* thread = JavaThread::current();
       ThreadToNativeFromVM ttn(thread);
-      Thread::WXExecFromWriteSetter wx_exec;
       HandleMark hm(thread);
       jint err = (*on_load_entry)(&main_vm, agent->options(), NULL);
       if (err != JNI_OK) {

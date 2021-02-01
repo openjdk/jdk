@@ -26,18 +26,19 @@
 #define SHARE_RUNTIME_STUBROUTINES_INLINE_HPP
 
 #include <runtime/thread.hpp>
+#include <runtime/threadWXSetters.hpp>
 #include <runtime/stubRoutines.hpp>
 
 // Safefetch allows to load a value from a location that's not known
 // to be valid. If the load causes a fault, the error value is returned.
 inline int SafeFetch32(int* adr, int errValue) {
   assert(StubRoutines::SafeFetch32_stub(), "stub not yet generated");
-  Thread::WXExecFromWriteSetter wx_exec;
+  ThreadWXEnable wx(WXExec);
   return StubRoutines::SafeFetch32_stub()(adr, errValue);
 }
 inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
   assert(StubRoutines::SafeFetchN_stub(), "stub not yet generated");
-  Thread::WXExecFromWriteSetter wx_exec;
+  ThreadWXEnable wx(WXExec);
   return StubRoutines::SafeFetchN_stub()(adr, errValue);
 }
 

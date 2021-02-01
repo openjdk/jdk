@@ -31,7 +31,8 @@
 // Entry macro to transition from JNI to VM state.
 
 #define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header) \
-  ClearPendingJniExcCheck _clearCheck(env);
+  ClearPendingJniExcCheck _clearCheck(env); \
+  ThreadWXEnable wx_write(WXWrite, thread);
 
 #define WB_END JNI_END
 

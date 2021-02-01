@@ -393,7 +393,6 @@ static JNINativeMethod jdk_internal_vm_vector_VectorSupport_methods[] = {
 
 JVM_ENTRY(void, JVM_RegisterVectorSupportMethods(JNIEnv* env, jclass vsclass)) {
   ThreadToNativeFromVM ttnfv(thread);
-  Thread::WXExecFromWriteSetter wx_exec;
 
   int ok = env->RegisterNatives(vsclass, jdk_internal_vm_vector_VectorSupport_methods, sizeof(jdk_internal_vm_vector_VectorSupport_methods)/sizeof(JNINativeMethod));
   guarantee(ok == 0, "register jdk.internal.vm.vector.VectorSupport natives");

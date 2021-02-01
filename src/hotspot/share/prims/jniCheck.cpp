@@ -65,7 +65,6 @@
 
 #define IN_VM(source_code)   {                                         \
     {                                                                  \
-      Thread::WXWriteFromExecSetter __wx_write;                        \
       ThreadInVMfromNative __tiv(thr);                                 \
       source_code                                                      \
     }                                                                  \
@@ -105,6 +104,7 @@ extern "C" {                                                             \
     if (env != xenv) {                                                   \
       NativeReportJNIFatalError(thr, warn_wrong_jnienv);                 \
     }                                                                    \
+    ThreadWXEnable __wx_write(WXWrite, thr);                             \
     VM_ENTRY_BASE(result_type, header, thr)
 
 

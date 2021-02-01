@@ -71,6 +71,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threadWXSetters.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -1426,7 +1427,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   }
 #endif
 
-  Thread::WXWriteFromExecSetter wx_write;
+  ThreadWXEnable wx_write(WXWrite, thread);
 
   thread->set_vm_result(exception);
   // Frame not compiled (handles deoptimization blob)

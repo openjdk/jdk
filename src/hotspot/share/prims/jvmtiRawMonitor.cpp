@@ -237,7 +237,6 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
     JavaThread* jt = self->as_Java_thread();
     // Transition to VM so we can check interrupt state
     ThreadInVMfromNative tivm(jt);
-    Thread::WXExecVerifier wx_exec;
     if (jt->is_interrupted(true)) {
         ret = M_INTERRUPTED;
     } else {
@@ -425,7 +424,6 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
         simple_exit(jt);
         {
           ThreadInVMfromNative tivm(jt);
-          Thread::WXExecVerifier wx_exec;
           {
             ThreadBlockInVM tbivm(jt);
             jt->java_suspend_self();

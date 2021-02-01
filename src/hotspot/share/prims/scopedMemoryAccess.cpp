@@ -180,7 +180,6 @@ static JNINativeMethod jdk_internal_misc_ScopedMemoryAccess_methods[] = {
 
 JVM_ENTRY(void, JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jclass scopedMemoryAccessClass))
   ThreadToNativeFromVM ttnfv(thread);
-  Thread::WXExecFromWriteSetter wx_exec;
 
   int ok = env->RegisterNatives(scopedMemoryAccessClass, jdk_internal_misc_ScopedMemoryAccess_methods, sizeof(jdk_internal_misc_ScopedMemoryAccess_methods)/sizeof(JNINativeMethod));
   guarantee(ok == 0, "register jdk.internal.misc.ScopedMemoryAccess natives");

@@ -109,14 +109,14 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
     _thread->clear_pending_exception();
   }
 
-  Thread::enable_wx_from_write(WXExec);
+  _thread->enable_wx(WXExec);
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
 
-  Thread::enable_wx_from_exec(WXWrite);
+  _thread->enable_wx(WXWrite);
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();

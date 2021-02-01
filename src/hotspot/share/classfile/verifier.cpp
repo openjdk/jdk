@@ -315,7 +315,6 @@ Symbol* Verifier::inference_verify(
   {
     HandleMark hm(thread);
     ThreadToNativeFromVM ttn(thread);
-    Thread::WXExecFromWriteSetter wx_exec;
     // ThreadToNativeFromVM takes care of changing thread_state, so safepoint
     // code knows that we have left the VM
     JNIEnv *env = thread->jni_environment();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,25 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "code/vmreg.hpp"
+#ifndef SHARE_RUNTIME_THREADWXSETTERS_HPP
+#define SHARE_RUNTIME_THREADWXSETTERS_HPP
 
-JNI_LEAF(jlong, NEP_vmStorageToVMReg(JNIEnv* env, jclass _unused, jint type, jint index))
-  return VMRegImpl::vmStorageToVMReg(type, index)->value();
-JNI_END
+#include "runtime/thread.hpp"
 
-#define CC (char*)  /*cast a literal from (const char*)*/
-#define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
+class ThreadWXEnable  {
+  Thread* _thread;
+  WXMode _old_mode;
 
-static JNINativeMethod NEP_methods[] = {
-  {CC "vmStorageToVMReg", CC "(II)J", FN_PTR(NEP_vmStorageToVMReg)},
+public:
+  ThreadWXEnable(WXMode new_mode, Thread* thread = NULL) :
+    _thread(thread ? thread : Thread::current()),
+    _old_mode(_thread->enable_wx(new_mode))
+  { }
+
+  ~ThreadWXEnable() {
+    _thread->enable_wx(_old_mode);
+  }
 };
 
-JNI_LEAF(void, JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass NEP_class))
-  int status = env->RegisterNatives(NEP_class, NEP_methods, sizeof(NEP_methods)/sizeof(JNINativeMethod));
-  guarantee(status == JNI_OK && !env->ExceptionOccurred(),
-            "register jdk.internal.invoke.NativeEntryPoint natives");
-JNI_END
+#endif // SHARE_RUNTIME_THREADWXSETTERS_HPP
+
