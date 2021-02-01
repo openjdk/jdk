@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8172474
+ * @bug 8172474 8247957
  * @summary javac should enable doclint checking for HTML 5
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -60,23 +60,20 @@ public class DocLintFormatTest {
             "/** This is an <mark>HTML 5</mark> comment. */ public class Test5 { }"
         );
 
-        test(src.resolve("Test4.java"), "html4");
-        test(src.resolve("Test4.java"), "html5",
-                "Test4.java:1:16: compiler.err.proc.messager: tag not supported in the generated HTML version: tt");
-        test(src.resolve("Test5.java"), "html4",
-                "Test5.java:1:16: compiler.err.proc.messager: tag not supported in the generated HTML version: mark");
-        test(src.resolve("Test5.java"), "html5");
+        test(src.resolve("Test4.java"),
+                "Test4.java:1:16: compiler.err.proc.messager: tag not supported in HTML5: tt");
+        test(src.resolve("Test5.java"));
 
         if (errors > 0) {
             throw new Exception(errors + " errors occurred");
         }
     }
 
-    void test(Path file, String format, String... expect) {
-        System.err.println("Test: " + format + " " + file);
+    void test(Path file, String... expect) {
+        System.err.println("Test: " + file);
         List<String> output = new JavacTask(tb)
                   .outdir(classes)
-                  .options("-XDrawDiagnostics", "-Xdoclint", "--doclint-format", format)
+                  .options("-XDrawDiagnostics", "-Xdoclint")
                   .files(file)
                   .run(expect.length == 0 ? Task.Expect.SUCCESS : Task.Expect.FAIL)
                   .writeAll()

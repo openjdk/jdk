@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ char Metachunk::get_state_char() const {
 
 #ifdef ASSERT
 void Metachunk::assert_have_expand_lock() {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 }
 #endif
 
@@ -200,7 +200,7 @@ bool Metachunk::commit_up_to(size_t new_committed_words) {
 bool Metachunk::ensure_committed(size_t new_committed_words) {
   bool rc = true;
   if (new_committed_words > committed_words()) {
-    MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker cl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
     rc = commit_up_to(new_committed_words);
   }
   return rc;
@@ -208,7 +208,7 @@ bool Metachunk::ensure_committed(size_t new_committed_words) {
 
 bool Metachunk::ensure_committed_locked(size_t new_committed_words) {
   // the .._locked() variant should be called if we own the lock already.
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   bool rc = true;
   if (new_committed_words > committed_words()) {
     rc = commit_up_to(new_committed_words);
@@ -220,13 +220,13 @@ bool Metachunk::ensure_committed_locked(size_t new_committed_words) {
 // commit granule size (in other words, we cannot uncommit chunks smaller than
 // a commit granule size).
 void Metachunk::uncommit() {
-  MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   uncommit_locked();
 }
 
 void Metachunk::uncommit_locked() {
   // Only uncommit chunks which are free, have no used words set (extra precaution) and are equal or larger in size than a single commit granule.
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(_state == State::Free && _used_words == 0 && word_size() >= Settings::commit_granule_words(),
          "Only free chunks equal or larger than commit granule size can be uncommitted "
          "(chunk " METACHUNK_FULL_FORMAT ").", METACHUNK_FULL_FORMAT_ARGS(this));
@@ -277,7 +277,7 @@ void Metachunk::verify_committed_words() const {
 // Verifies linking with neighbors in virtual space.
 // Can only be done under expand lock protection.
 void Metachunk::verify_neighborhood() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(!is_dead(), "Do not call on dead chunks.");
   verify_committed_words();
   if (is_root_chunk()) {

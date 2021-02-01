@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_JAVACLASSES_HPP
 
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "oops/oop.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
@@ -1717,13 +1718,13 @@ class java_lang_InternalError : AllStatic {
 
 class InjectedField {
  public:
-  const SystemDictionary::WKID klass_id;
+  const VMClassID klass_id;
   const vmSymbolID name_index;
   const vmSymbolID signature_index;
   const bool           may_be_java;
 
 
-  Klass* klass() const    { return SystemDictionary::well_known_klass(klass_id); }
+  Klass* klass() const      { return vmClasses::klass_at(klass_id); }
   Symbol* name() const      { return lookup_symbol(name_index); }
   Symbol* signature() const { return lookup_symbol(signature_index); }
 

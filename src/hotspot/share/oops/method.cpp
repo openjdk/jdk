@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/quickSort.hpp"
@@ -1010,7 +1011,7 @@ bool Method::is_not_compilable(int comp_level) const {
   if (is_always_compilable())
     return false;
   if (comp_level == CompLevel_any)
-    return is_not_c1_compilable() || is_not_c2_compilable();
+    return is_not_c1_compilable() && is_not_c2_compilable();
   if (is_c1_compile(comp_level))
     return is_not_c1_compilable();
   if (is_c2_compile(comp_level))
@@ -1041,7 +1042,7 @@ bool Method::is_not_osr_compilable(int comp_level) const {
   if (is_not_compilable(comp_level))
     return true;
   if (comp_level == CompLevel_any)
-    return is_not_c1_osr_compilable() || is_not_c2_osr_compilable();
+    return is_not_c1_osr_compilable() && is_not_c2_osr_compilable();
   if (is_c1_compile(comp_level))
     return is_not_c1_osr_compilable();
   if (is_c2_compile(comp_level))
@@ -1959,34 +1960,26 @@ void Method::clear_all_breakpoints() {
 #endif // INCLUDE_JVMTI
 
 int Method::invocation_count() {
-  MethodCounters *mcs = method_counters();
-  if (TieredCompilation) {
-    MethodData* const mdo = method_data();
-    if (((mcs != NULL) ? mcs->invocation_counter()->carry() : false) ||
-        ((mdo != NULL) ? mdo->invocation_counter()->carry() : false)) {
-      return InvocationCounter::count_limit;
-    } else {
-      return ((mcs != NULL) ? mcs->invocation_counter()->count() : 0) +
-             ((mdo != NULL) ? mdo->invocation_counter()->count() : 0);
-    }
+  MethodCounters* mcs = method_counters();
+  MethodData* mdo = method_data();
+  if (((mcs != NULL) ? mcs->invocation_counter()->carry() : false) ||
+      ((mdo != NULL) ? mdo->invocation_counter()->carry() : false)) {
+    return InvocationCounter::count_limit;
   } else {
-    return (mcs == NULL) ? 0 : mcs->invocation_counter()->count();
+    return ((mcs != NULL) ? mcs->invocation_counter()->count() : 0) +
+           ((mdo != NULL) ? mdo->invocation_counter()->count() : 0);
   }
 }
 
 int Method::backedge_count() {
-  MethodCounters *mcs = method_counters();
-  if (TieredCompilation) {
-    MethodData* const mdo = method_data();
-    if (((mcs != NULL) ? mcs->backedge_counter()->carry() : false) ||
-        ((mdo != NULL) ? mdo->backedge_counter()->carry() : false)) {
-      return InvocationCounter::count_limit;
-    } else {
-      return ((mcs != NULL) ? mcs->backedge_counter()->count() : 0) +
-             ((mdo != NULL) ? mdo->backedge_counter()->count() : 0);
-    }
+  MethodCounters* mcs = method_counters();
+  MethodData* mdo = method_data();
+  if (((mcs != NULL) ? mcs->backedge_counter()->carry() : false) ||
+      ((mdo != NULL) ? mdo->backedge_counter()->carry() : false)) {
+    return InvocationCounter::count_limit;
   } else {
-    return (mcs == NULL) ? 0 : mcs->backedge_counter()->count();
+    return ((mcs != NULL) ? mcs->backedge_counter()->count() : 0) +
+           ((mdo != NULL) ? mdo->backedge_counter()->count() : 0);
   }
 }
 

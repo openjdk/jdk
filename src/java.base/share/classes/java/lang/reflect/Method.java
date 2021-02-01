@@ -282,9 +282,9 @@ public final class Method extends Executable {
      *     specified in
      *     <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the underlying method's
-     *     return type refers to a non-existent type declaration
+     *     return type refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if the
-     *     underlying method's return typed refers to a parameterized
+     *     underlying method's return type refers to a parameterized
      *     type that cannot be instantiated for any reason
      * @since 1.5
      */
@@ -358,8 +358,7 @@ public final class Method extends Executable {
      * and formal parameter types and return type.
      */
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof Method) {
-            Method other = (Method)obj;
+        if (obj instanceof Method other) {
             if ((getDeclaringClass() == other.getDeclaringClass())
                 && (getName() == other.getName())) {
                 if (!returnType.equals(other.getReturnType()))
@@ -603,8 +602,7 @@ public final class Method extends Executable {
      * method; returns {@code false} otherwise.
      *
      * A default method is a public non-abstract instance method, that
-     * is, a non-static method with a body, declared in an interface
-     * type.
+     * is, a non-static method with a body, declared in an interface.
      *
      * @return true if and only if this method is a default
      * method as defined by the Java Language Specification.

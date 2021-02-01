@@ -77,8 +77,7 @@ public:
   void oop_since_save_marks_iterate(OopClosureType1* cur,
                                     OopClosureType2* older);
 
-  void young_process_roots(StrongRootsScope* scope,
-                           OopIterateClosure* root_closure,
+  void young_process_roots(OopIterateClosure* root_closure,
                            OopIterateClosure* old_gen_closure,
                            CLDClosure* cld_closure);
 };

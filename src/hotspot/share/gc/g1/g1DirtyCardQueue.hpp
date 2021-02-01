@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,18 +49,9 @@ public:
   // doing something else, with auto-flush on completion.
   ~G1DirtyCardQueue();
 
-  // Process queue entries and release resources.
-  void flush();
-
-  inline G1DirtyCardQueueSet* dirty_card_qset() const;
-
   G1ConcurrentRefineStats* refinement_stats() const {
     return _refinement_stats;
   }
-
-  // To be called by the barrier set's on_thread_detach, to notify this
-  // object of the corresponding state change of its owning thread.
-  void on_thread_detach();
 
   // Compiler support.
   static ByteSize byte_offset_of_index() {
@@ -313,6 +304,8 @@ public:
 
   G1BufferNodeList take_all_completed_buffers();
 
+  void flush_queue(G1DirtyCardQueue& queue);
+
   using CardValue = G1CardTable::CardValue;
   void enqueue(G1DirtyCardQueue& queue, volatile CardValue* card_ptr);
 
@@ -355,9 +348,5 @@ public:
   // Discard artificial increase of mutator refinement threshold.
   void discard_max_cards_padding();
 };
-
-inline G1DirtyCardQueueSet* G1DirtyCardQueue::dirty_card_qset() const {
-  return static_cast<G1DirtyCardQueueSet*>(qset());
-}
 
 #endif // SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
