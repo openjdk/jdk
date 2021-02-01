@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package somelib;
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
+// This class will be patched
+public class PatchInfo {
 
-#include "memory/allocation.hpp"
+    public static String patchName() {
+        return "original";
+    }
 
-class ShenandoahConcurrentRoots : public AllStatic {
-public:
-  // Can GC settings allow concurrent root processing
-  static bool can_do_concurrent_roots();
-  // If current GC cycle can process roots concurrently
-  static bool should_do_concurrent_roots();
-
-  // If GC settings allow concurrent class unloading
-  static bool can_do_concurrent_class_unloading();
-  // If current GC cycle can unload classes concurrently
-  static bool should_do_concurrent_class_unloading();
-};
-
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
+}
