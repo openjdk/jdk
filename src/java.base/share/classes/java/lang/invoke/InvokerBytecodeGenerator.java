@@ -232,7 +232,7 @@ class InvokerBytecodeGenerator {
         }
         String sfx = ctr.toString();
         while (sfx.length() < 3)
-            sfx = "0"+sfx;
+            sfx = "0" + sfx;
         className += sfx;
         return className;
     }
@@ -266,23 +266,38 @@ class InvokerBytecodeGenerator {
             desc = "Ljava/lang/Object;";
         }
 
-        Class<?> c = arg.getClass();
-        while (c.isArray()) {
-            c = c.getComponentType();
-        }
         // unique static variable name
-        String name = "_DATA_" + c.getSimpleName() + "_" + classData.size();
+        String name;
+        if (DUMP_CLASS_FILES) {
+            Class<?> c = arg.getClass();
+            while (c.isArray()) {
+                c = c.getComponentType();
+            }
+            name = "_DATA_" + c.getSimpleName() + "_" + classData.size();
+        } else {
+            name = "_D_" + classData.size();
+        }
         ClassData cd = new ClassData(name, desc, arg);
         classData.add(cd);
-        return cd.name();
+        return name;
     }
 
     List<Object> classDataValues() {
-        Object[] data = new Object[classData.size()];
-        for (int i = 0; i < classData.size(); i++) {
-            data[i] = classData.get(i).value;
-        }
-        return List.of(data);
+        final List<ClassData> cd = classData;
+        return switch(cd.size()) {
+            case 0 -> List.of();
+            case 1 -> List.of(cd.get(0));
+            case 2 -> List.of(cd.get(0), cd.get(1));
+            case 3 -> List.of(cd.get(0), cd.get(1), cd.get(2));
+            case 4 -> List.of(cd.get(0), cd.get(1), cd.get(2), cd.get(3));
+            default -> {
+                Object[] data = new Object[classData.size()];
+                for (int i = 0; i < classData.size(); i++) {
+                    data[i] = classData.get(i).value;
+                }
+                yield List.of(data);
+            }
+        };
     }
 
     private static String debugString(Object arg) {
@@ -325,8 +340,8 @@ class InvokerBytecodeGenerator {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
         setClassWriter(cw);
         cw.visit(Opcodes.V1_8, NOT_ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
-                CLASS_PREFIX + className, null, INVOKER_SUPER_NAME, null);
-        cw.visitSource(SOURCE_PREFIX + className, null);
+                CLASS_PREFIX.concat(className), null, INVOKER_SUPER_NAME, null);
+        cw.visitSource(SOURCE_PREFIX.concat(className), null);
         return cw;
     }
 
@@ -344,7 +359,7 @@ class InvokerBytecodeGenerator {
     }
 
     private String className() {
-        return CLASS_PREFIX + className;
+        return CLASS_PREFIX.concat(className);
     }
 
     private void clinit() {
@@ -651,17 +666,15 @@ class InvokerBytecodeGenerator {
      * Emits an actual return instruction conforming to the given return type.
      */
     private void emitReturnInsn(BasicType type) {
-        int opcode;
-        switch (type) {
-        case I_TYPE:  opcode = Opcodes.IRETURN;  break;
-        case J_TYPE:  opcode = Opcodes.LRETURN;  break;
-        case F_TYPE:  opcode = Opcodes.FRETURN;  break;
-        case D_TYPE:  opcode = Opcodes.DRETURN;  break;
-        case L_TYPE:  opcode = Opcodes.ARETURN;  break;
-        case V_TYPE:  opcode = Opcodes.RETURN;   break;
-        default:
-            throw new InternalError("unknown return type: " + type);
-        }
+        int opcode = switch (type) {
+            case I_TYPE -> Opcodes.IRETURN;
+            case J_TYPE -> Opcodes.LRETURN;
+            case F_TYPE -> Opcodes.FRETURN;
+            case D_TYPE -> Opcodes.DRETURN;
+            case L_TYPE -> Opcodes.ARETURN;
+            case V_TYPE -> Opcodes.RETURN;
+            default -> throw new InternalError("unknown return type: " + type);
+        };
         mv.visitInsn(opcode);
     }
 
