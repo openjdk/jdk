@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,14 +496,16 @@ public class BasicScrollPaneUI
 
     /**
      * Listener for viewport events.
-     * @deprecated As of JDK version 17
+     * This class exists only for backward compatibility.
+     * All its functionality has been moved into Handler.
+     * @deprecated As of JDK version 17.
      */
     @Deprecated(since = "17", forRemoval = true)
     public class ViewportChangeHandler implements ChangeListener
     {
         /**
          * Constructs a {@code ViewportChangeHandler}.
-         * @deprecated As of JDK version 17
+         * @deprecated As of JDK version 17.
          */
         @Deprecated(since = "17", forRemoval = true)
         public ViewportChangeHandler() {}
@@ -531,7 +533,9 @@ public class BasicScrollPaneUI
 
     /**
      * Horizontal scrollbar listener.
-     * @deprecated As of JDK version 17
+     * This class exists only for backward compatibility.
+     * All its functionality has been moved into Handler.
+     * @deprecated As of JDK version 17.
      */
     @Deprecated(since = "17", forRemoval = true)
     public class HSBChangeListener implements ChangeListener
@@ -575,7 +579,9 @@ public class BasicScrollPaneUI
 
     /**
      * Vertical scrollbar listener.
-     * @deprecated As of JDK version 17
+     * This class exists only for backward compatibility.
+     * All its functionality has been moved into Handler.
+     * @deprecated As of JDK version 17.
      */
     @Deprecated(since = "17", forRemoval = true)
     public class VSBChangeListener implements ChangeListener
@@ -785,7 +791,9 @@ public class BasicScrollPaneUI
 
     /**
      * Property change handler.
-     * @deprecated As of JDK version 17
+     * This class exists only for backward compatibility.
+     * All its functionality has been moved into Handler.
+     * @deprecated As of JDK version 17.
      */
     @Deprecated(since = "17", forRemoval = true)
     public class PropertyChangeHandler implements PropertyChangeListener
