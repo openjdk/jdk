@@ -271,6 +271,8 @@ public interface Path
      *
      * @return  the extension of the file name of this path, or the empty
      *          string if the extension is indeterminate
+     *
+     * @since 17
      */
     default String getExtension() {
         Path fileName = getFileName();
