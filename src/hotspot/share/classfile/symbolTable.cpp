@@ -53,6 +53,10 @@ const size_t REHASH_LEN = 100;
 
 const size_t ON_STACK_BUFFER_LENGTH = 128;
 
+// Controls selection of shared or dynamic table on lookup path.
+// If more than this number of misses happened, switch the table.
+const size_t SWITCH_TABLE_MISSES = 5;
+
 // --------------------------------------------------------------------------
 
 inline bool symbol_equals_compact_hashtable_entry(Symbol* value, const char* key, int len) {
@@ -91,7 +95,8 @@ static volatile bool   _has_items_to_clean = false;
 
 
 static volatile bool _alt_hash = false;
-static volatile bool _lookup_shared_first = false;
+static THREAD_LOCAL bool _lookup_shared_first = false;
+static THREAD_LOCAL size_t _lookup_misses_left = SWITCH_TABLE_MISSES;
 
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;
@@ -304,23 +309,28 @@ Symbol* SymbolTable::lookup_shared(const char* name,
 Symbol* SymbolTable::lookup_common(const char* name,
                             int len, unsigned int hash) {
   Symbol* sym;
+
   if (_lookup_shared_first) {
     sym = lookup_shared(name, len, hash);
-    if (sym == NULL) {
-      sym = lookup_dynamic(name, len, hash);
-      if (sym != NULL) {
-        _lookup_shared_first = false;
-      }
+    if (sym != NULL) {
+      return sym;
     }
+    sym = lookup_dynamic(name, len, hash);
   } else {
     sym = lookup_dynamic(name, len, hash);
-    if (sym == NULL) {
-      sym = lookup_shared(name, len, hash);
-      if (sym != NULL) {
-        _lookup_shared_first = true;
-      }
+    if (sym != NULL) {
+      return sym;
+    }
+    sym = lookup_shared(name, len, hash);
+  }
+
+  if (sym != NULL) {
+    if (--_lookup_misses_left == 0) {
+      _lookup_shared_first = !_lookup_shared_first;
+      _lookup_misses_left = SWITCH_TABLE_MISSES;
     }
   }
+
   return sym;
 }
 
