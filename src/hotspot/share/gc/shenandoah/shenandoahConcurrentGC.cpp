@@ -596,9 +596,9 @@ private:
   ShenandoahJavaThreadsIterator _java_threads;
 
 public:
-  ShenandoahConcurrentEvacUpdateThreadTask() :
+  ShenandoahConcurrentEvacUpdateThreadTask(uint n_workers) :
     AbstractGangTask("Shenandoah Evacuate/Update Concurrent Thread Roots"),
-    _java_threads(ShenandoahPhaseTimings::conc_thread_roots) {
+    _java_threads(ShenandoahPhaseTimings::conc_thread_roots, n_workers) {
   }
 
   void work(uint worker_id) {
@@ -614,7 +614,7 @@ void ShenandoahConcurrentGC::op_thread_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(heap->is_evacuation_in_progress(), "Checked by caller");
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_thread_roots);
-  ShenandoahConcurrentEvacUpdateThreadTask task;
+  ShenandoahConcurrentEvacUpdateThreadTask task(heap->workers()->active_workers());
   heap->workers()->run_task(&task);
 }
 
