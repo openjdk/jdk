@@ -2862,12 +2862,12 @@ public class CSS implements Serializable {
             lengthMapping.put("pc", 12f);
             lengthMapping.put("in", 72f);
             // mapping according to the CSS2.2 spec
-            w3cLengthMapping.put("pt", 1.3f); //1/72 of 1in
-            w3cLengthMapping.put("px", 1f); //1/96 of 1in
-            w3cLengthMapping.put("mm", 3.77952f); //1/10 of 1cm
-            w3cLengthMapping.put("cm", 37.7952f); //96px/2.54
-            w3cLengthMapping.put("pc", 16f); //1/6 of 1in
-            w3cLengthMapping.put("in", 96f); //96px
+            w3cLengthMapping.put("pt", 1.3f);     // 1/72 of 1in
+            w3cLengthMapping.put("px", 1f);       // 1/96 of 1in
+            w3cLengthMapping.put("mm", 3.77952f); // 1/10 of 1cm
+            w3cLengthMapping.put("cm", 37.7952f); // 96px/2.54
+            w3cLengthMapping.put("pc", 16f);      // 1/6 of 1in
+            w3cLengthMapping.put("in", 96f);      // 96px
         }
 
         LengthUnit(String value, short defaultType, float defaultValue) {
