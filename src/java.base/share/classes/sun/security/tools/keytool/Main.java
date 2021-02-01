@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1476,12 +1476,17 @@ public final class Main {
                 reqex = (CertificateExtensions)attr.getAttributeValue();
             }
         }
+
+        byte[] signerSubjectKeyIdExt = ((X509Certificate)signerCert).getExtensionValue(
+                KnownOIDs.SubjectKeyID.value());
+
         CertificateExtensions ext = createV3Extensions(
                 reqex,
                 null,
                 v3ext,
                 req.getSubjectPublicKeyInfo(),
-                signerCert.getPublicKey());
+                signerCert.getPublicKey(),
+                signerSubjectKeyIdExt);
         info.set(X509CertInfo.EXTENSIONS, ext);
         X509CertImpl cert = new X509CertImpl(info);
         cert.sign(privateKey, sigAlgName);
@@ -1575,7 +1580,7 @@ public final class Main {
             throw new Exception(form.format(source));
         }
         PKCS10 request = new PKCS10(cert.getPublicKey());
-        CertificateExtensions ext = createV3Extensions(null, null, v3ext, cert.getPublicKey(), null);
+        CertificateExtensions ext = createV3Extensions(null, null, v3ext, cert.getPublicKey(), null, null);
         // Attribute name is not significant
         request.getAttributes().setAttribute(X509CertInfo.EXTENSIONS,
                 new PKCS10Attribute(PKCS9Attribute.EXTENSION_REQUEST_OID, ext));
@@ -1901,6 +1906,7 @@ public final class Main {
                 null,
                 v3ext,
                 keypair.getPublicKeyAnyway(),
+                null,
                 null);
 
         X509Certificate[] chain = new X509Certificate[1];
@@ -2963,6 +2969,7 @@ public final class Main {
                 (CertificateExtensions)certInfo.get(X509CertInfo.EXTENSIONS),
                 v3ext,
                 oldCert.getPublicKey(),
+                null,
                 null);
         certInfo.set(X509CertInfo.EXTENSIONS, ext);
         // Sign the new certificate
@@ -4224,6 +4231,7 @@ public final class Main {
      * @param extstrs -ext values, Read keytool doc
      * @param pkey the public key for the certificate
      * @param akey the public key for the authority (issuer)
+     * @param aSubjectKeyIdExt the subject key identifier extension for the authority (issuer)
      * @return the created CertificateExtensions
      */
     private CertificateExtensions createV3Extensions(
@@ -4231,7 +4239,8 @@ public final class Main {
             CertificateExtensions existingEx,
             List <String> extstrs,
             PublicKey pkey,
-            PublicKey akey) throws Exception {
+            PublicKey akey,
+            byte[] aSubjectKeyIdExt) throws Exception {
 
         // By design, inside a CertificateExtensions object, all known
         // extensions uses name (say, "BasicConstraints") as key and
@@ -4582,8 +4591,20 @@ public final class Main {
             setExt(result, new SubjectKeyIdentifierExtension(
                     new KeyIdentifier(pkey).getIdentifier()));
             if (akey != null && !pkey.equals(akey)) {
-                setExt(result, new AuthorityKeyIdentifierExtension(
-                                new KeyIdentifier(akey), null, null));
+                if (aSubjectKeyIdExt == null) {
+                    setExt(result, new AuthorityKeyIdentifierExtension(
+                            new KeyIdentifier(akey), null, null));
+                } else {
+                    // To enforce compliance with RFC 5280 section 4.2.1.1: "Where a key
+                    // identifier has been previously established, the CA SHOULD use the
+                    // previously established identifier."
+                    // SubjectKeyIdentifierExtension in X509Certificate encapsulates its
+                    // value with two levels of OCTET_STRING wrapper.
+                    byte[] subjectKeyId1 = new DerValue(aSubjectKeyIdExt).getOctetString();
+                    byte[] subjectKeyId2 = new DerValue(subjectKeyId1).getOctetString();
+                    setExt(result, new AuthorityKeyIdentifierExtension(
+                            new KeyIdentifier(subjectKeyId2), null, null));
+                }
             }
         } catch(IOException e) {
             throw new RuntimeException(e);

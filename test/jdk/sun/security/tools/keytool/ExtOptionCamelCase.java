@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8231950
+ * @bug 8231950 8257497
  * @summary keytool -ext camel-case shorthand not working
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.tools.keytool:open
@@ -154,7 +154,8 @@ public class ExtOptionCamelCase {
                 CertificateExtensions.class,
                 List.class,
                 PublicKey.class,
-                PublicKey.class);
+                PublicKey.class,
+                byte[].class);
         createV3Extensions.setAccessible(true);
         ctor = Main.class.getDeclaredConstructor();
         ctor.setAccessible(true);
@@ -197,7 +198,7 @@ public class ExtOptionCamelCase {
         try {
             CertificateExtensions exts = (CertificateExtensions)
                     createV3Extensions.invoke(ctor.newInstance(),
-                            null, null, List.of(option), pk, null);
+                            null, null, List.of(option), pk, null, null);
 
             // ATTENTION: the extensions created above might contain raw
             // extensions (not of a subtype) and we need to store and reload
