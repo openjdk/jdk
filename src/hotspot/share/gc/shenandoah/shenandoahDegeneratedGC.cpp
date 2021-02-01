@@ -39,6 +39,7 @@
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
 ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point) :
