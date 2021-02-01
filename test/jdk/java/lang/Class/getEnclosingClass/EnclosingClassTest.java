@@ -148,8 +148,10 @@ public class EnclosingClassTest {
         }
         System.out.println(c);
         System.out.println("\tis enclosed by:\t\t" + encClass);
-        System.out.println("\thas simple name:\t`" + c.getSimpleName() + "'");
-        System.out.println("\thas canonical name:\t`" + c.getCanonicalName() + "'");
+        System.out.println("\thas simple name:\t`" + 
+                           c.getSimpleName() + "'");
+        System.out.println("\thas canonical name:\t`" + 
+                           c.getCanonicalName() + "'");
     }
 
     private void match(String actual, String expected) {
