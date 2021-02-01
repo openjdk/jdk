@@ -307,8 +307,10 @@ Symbol* SymbolTable::lookup_common(const char* name,
   if (_lookup_shared_first) {
     sym = lookup_shared(name, len, hash);
     if (sym == NULL) {
-      _lookup_shared_first = false;
       sym = lookup_dynamic(name, len, hash);
+      if (sym != NULL) {
+        _lookup_shared_first = false;
+      }
     }
   } else {
     sym = lookup_dynamic(name, len, hash);
