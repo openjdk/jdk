@@ -255,22 +255,20 @@ public interface Path
      * character in the file name string is a dot it is ignored.  If the
      * extension cannot be determined, then the empty string is returned.  This
      * will occur if the path has zero elements ({@link #getFileName()} returns
-     * {@code null}), or the file name string  has fewer than three characters,
-     * does not contain a dot, only the first character is a dot, or the last
-     * character is a dot.
+     * {@code null}), or the file name string does not contain a dot, only the
+     * first character is a dot, or the last character is a dot.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
      * <pre>{@code
      *     String name = getFileName().toString();
-     *     int length = name.length();
      *     int lastDot = name.lastIndexOf('.');
-     *     length > 2 && lastDot > 0 && lastDot < length - 1 ?
+     *     lastDot > 0 && lastDot < name.length() - 1 ?
      *         name.substring(lastDot + 1) : "";
      * }</pre>
      *
-     * @return  the extension of the file name of this path, or the empty
-     *          string if the extension is indeterminate
+     * @return  the file name extension of this path, or the empty string
+     *          if the extension is indeterminate
      *
      * @since 17
      */
