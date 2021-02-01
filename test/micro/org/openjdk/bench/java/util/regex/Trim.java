@@ -55,7 +55,7 @@ import java.util.regex.Pattern;
  *
  * Here's a way to compare the per-char cost:
  *
- * (cd $(git rev-parse --show-toplevel) && for size in 16 64 256 1024; do make test TEST='micro:java.util.regex.Trim' MICRO="FORK=2;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
+ * (cd $(git rev-parse --show-toplevel) && for size in 16 256 4096; do make test TEST='micro:java.util.regex.Trim' MICRO="FORK=2;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
  *
  * some jdk17 numbers:
  *
@@ -78,7 +78,7 @@ import java.util.regex.Pattern;
 @State(Scope.Benchmark)
 public class Trim {
     /** Run length of non-matching consecutive whitespace chars. */
-    @Param({"16", "64", "256", "1024"})
+    @Param({"16", "256", "4096"})
     int size;
 
     /** String containing long interior run of whitespace */

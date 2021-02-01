@@ -29,8 +29,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Benchmarks of Patterns that exhibit exponentially degraded performance due
- * to backtracking, when implemented naively.
+ * Benchmarks of Patterns that exhibit O(2^N) performance due to catastrophic
+ * backtracking, **when implemented naively**.
  *
  * See: jdk/test/java/util/regex/RegExTest.java#expoBacktracking
  * commit b45ea8903ec290ab194d9ebe040bc43edd5dd0a3
@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
  *
  * Here's a way to compare the per-char cost:
  *
- * (cd $(git rev-parse --show-toplevel) && for size in 8 16 32 64 128; do make test TEST='micro:java.util.regex.Exponential' MICRO="FORK=2;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
+ * (cd $(git rev-parse --show-toplevel) && for size in 16 256 4096; do make test TEST='micro:java.util.regex.Exponential' MICRO="FORK=2;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
  *
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -47,7 +47,7 @@ import java.util.regex.Pattern;
 @State(Scope.Benchmark)
 public class Exponential {
     /** Run length of non-matching consecutive whitespace chars. */
-    @Param({"8", "16", "32", "64", "128"})
+    @Param({"16", "246", "4096"})
     int size;
 
     public String justXs;

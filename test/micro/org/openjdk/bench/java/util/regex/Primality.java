@@ -47,7 +47,8 @@ import java.util.regex.Pattern;
 @State(Scope.Benchmark)
 public class Primality {
     /** Number to be primality tested. */
-    @Param({"16", "17", "64", "67", "256", "257", "1024", "1031", "4096", "4099"})//, "16384", "16411"})
+    @Param({"16", "17", "256", "257", "4096", "4099"})
+    //  "64", "67", "1024", "1031", "16384", "16411"})
     int n;
 
     /** Unary representation of n */
