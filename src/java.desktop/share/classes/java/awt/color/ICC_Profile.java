@@ -1234,7 +1234,7 @@ public class ICC_Profile implements Serializable {
     private static byte[] getData(Profile p, int tagSignature) {
         try {
             return CMSManager.getModule().getTagData(p, tagSignature);
-        } catch(CMMException c) {
+        } catch (CMMException c) {
             return null;
         }
     }

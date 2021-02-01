@@ -26,6 +26,7 @@ import java.awt.color.ICC_Profile;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -39,7 +40,7 @@ public final class MTGetData {
     static volatile boolean failed;
 
     public static void main(String[] args) throws Exception {
-        ICC_Profile[] profiles = new ICC_Profile[] {
+        ICC_Profile[] profiles = {
                 ICC_Profile.getInstance(ColorSpace.CS_sRGB),
                 ICC_Profile.getInstance(ColorSpace.CS_LINEAR_RGB),
                 ICC_Profile.getInstance(ColorSpace.CS_CIEXYZ),
@@ -47,7 +48,7 @@ public final class MTGetData {
                 ICC_Profile.getInstance(ColorSpace.CS_GRAY)
         };
 
-        ArrayList<Integer> tags = new ArrayList<>();
+        List<Integer> tags = new ArrayList<>();
         for (Field field : ICC_Profile.class.getDeclaredFields()) {
             if (Modifier.isStatic(field.getModifiers())
                     && Modifier.isPublic(field.getModifiers())
@@ -57,7 +58,7 @@ public final class MTGetData {
             }
         }
 
-        ArrayList<Thread> tasks = new ArrayList<>();
+        List<Thread> tasks = new ArrayList<>();
         for (int tag : tags) {
             for (ICC_Profile profile1 : profiles) {
                 for (ICC_Profile profile2 : profiles) {
