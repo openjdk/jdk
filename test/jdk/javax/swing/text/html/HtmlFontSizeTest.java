@@ -58,11 +58,8 @@ public class HtmlFontSizeTest {
             HTMLEditorKit kit = new HTMLEditorKit();
             htmlPane.setEditorKit(kit);
 
-            StyleSheet styleSheet = kit.getStyleSheet();
-            styleSheet.addRule("body { font-family: SansSerif; font-size: 16pt; }");
-
             String htmlString = "<html>\n"
-                + "<body>\n"
+                + "<body style=\"font-family:SansSerif; font-size:16pt\">\n"
                 + "<p>This should be 16 pt.</p>\n"
                 + "</body>\n"
                 + "</html>";
