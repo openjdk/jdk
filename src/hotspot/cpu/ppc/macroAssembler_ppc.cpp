@@ -726,8 +726,8 @@ void MacroAssembler::clobber_carg_stack_slots(Register tmp) {
   const int magic_number = 0x43;
 
   li(tmp, magic_number);
-  for (int m = 1; m <= 8; m++) {
-    std(tmp, 40 + m * 8, R1_SP);
+  for (int m = 0; m <= 7; m++) {
+    std(tmp, frame::abi_minframe_size + m * 8, R1_SP);
   }
 }
 
