@@ -798,8 +798,8 @@ class WindowsPath implements Path {
 
     @Override
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof WindowsPath)) {
-            return compareTo((Path)obj) == 0;
+        if (obj instanceof WindowsPath path) {
+            return compareTo(path) == 0;
         }
         return false;
     }

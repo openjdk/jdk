@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -477,18 +478,12 @@ class CompileReplay : public StackObj {
     if (!is_compile(comp_level)) {
       msg = NEW_RESOURCE_ARRAY(char, msg_len);
       jio_snprintf(msg, msg_len, "%d isn't compilation level", comp_level);
-    } else if (!TieredCompilation && (comp_level != CompLevel_highest_tier)) {
+    } else if (is_c1_compile(comp_level) && !CompilerConfig::is_c1_enabled()) {
       msg = NEW_RESOURCE_ARRAY(char, msg_len);
-      switch (comp_level) {
-        case CompLevel_simple:
-          jio_snprintf(msg, msg_len, "compilation level %d requires Client VM or TieredCompilation", comp_level);
-          break;
-        case CompLevel_full_optimization:
-          jio_snprintf(msg, msg_len, "compilation level %d requires Server VM", comp_level);
-          break;
-        default:
-          jio_snprintf(msg, msg_len, "compilation level %d requires TieredCompilation", comp_level);
-      }
+      jio_snprintf(msg, msg_len, "compilation level %d requires C1", comp_level);
+    } else if (is_c2_compile(comp_level) && !CompilerConfig::is_c2_enabled()) {
+      msg = NEW_RESOURCE_ARRAY(char, msg_len);
+      jio_snprintf(msg, msg_len, "compilation level %d requires C2", comp_level);
     }
     if (msg != NULL) {
       report_error(msg);
@@ -537,11 +532,7 @@ class CompileReplay : public StackObj {
     // old version w/o comp_level
     if (had_error() && (error_message() == comp_level_label)) {
       // use highest available tier
-      if (TieredCompilation) {
-        comp_level = TieredStopAtLevel;
-      } else {
-        comp_level = CompLevel_highest_tier;
-      }
+      comp_level = CompilationPolicy::highest_compile_level();
     }
     if (!is_valid_comp_level(comp_level)) {
       return;

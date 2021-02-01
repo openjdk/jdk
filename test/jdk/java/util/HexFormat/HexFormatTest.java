@@ -23,6 +23,7 @@
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import java.io.CharArrayWriter;
 import java.io.IOException;
@@ -42,7 +43,7 @@ import static org.testng.Assert.expectThrows;
 /*
  * @test
  * @summary Check HexFormat formatting and parsing
- * @run testng/othervm -Xmx4G HexFormatTest
+ * @run testng/othervm HexFormatTest
  */
 
 @Test
@@ -645,7 +646,7 @@ public class HexFormatTest {
                     Runtime.getRuntime().totalMemory(),
                     Runtime.getRuntime().freeMemory(),
                     Runtime.getRuntime().maxMemory());
-            throw oome;
+            throw new SkipException("Insufficient Memory to test OOME");
         }
 
     }

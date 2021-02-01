@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,9 +141,7 @@ public class MaterializeVirtualObjectTest {
         FRAME3_RESOLVED = CTVMUtilities.getResolvedMethod(FRAME3_METHOD);
         INVALIDATE = Boolean.getBoolean(
                 "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate");
-        COMPILE_THRESHOLD = WB.getBooleanVMFlag("TieredCompilation")
-                ? CompilerWhiteBoxTest.THRESHOLD
-                : CompilerWhiteBoxTest.THRESHOLD * 2;
+        COMPILE_THRESHOLD = CompilerWhiteBoxTest.THRESHOLD;
         MATERIALIZE_FIRST = Boolean.getBoolean(
                 "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst");
         MATERIALIZED_RESOLVED = MATERIALIZE_FIRST ? resolved1 : FRAME2_RESOLVED;

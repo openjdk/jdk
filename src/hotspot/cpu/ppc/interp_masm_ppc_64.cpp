@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of InterpreterMacroAssembler.
@@ -1193,95 +1194,6 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
 
   bind(verify_continue);
 #endif
-}
-
-void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocation_count,
-                                                                Register method_counters,
-                                                                Register Rscratch,
-                                                                Label &profile_continue) {
-  assert(ProfileInterpreter, "must be profiling interpreter");
-  // Control will flow to "profile_continue" if the counter is less than the
-  // limit or if we call profile_method().
-  Label done;
-
-  // If no method data exists, and the counter is high enough, make one.
-  lwz(Rscratch, in_bytes(MethodCounters::interpreter_profile_limit_offset()), method_counters);
-
-  cmpdi(CCR0, R28_mdx, 0);
-  // Test to see if we should create a method data oop.
-  cmpd(CCR1, Rscratch, invocation_count);
-  bne(CCR0, done);
-  bge(CCR1, profile_continue);
-
-  // Build it now.
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-  set_method_data_pointer_for_bcp();
-  b(profile_continue);
-
-  align(32, 12);
-  bind(done);
-}
-
-void InterpreterMacroAssembler::test_backedge_count_for_osr(Register backedge_count, Register method_counters,
-                                                            Register target_bcp, Register disp, Register Rtmp) {
-  assert_different_registers(backedge_count, target_bcp, disp, Rtmp, R4_ARG2);
-  assert(UseOnStackReplacement,"Must UseOnStackReplacement to test_backedge_count_for_osr");
-
-  Label did_not_overflow;
-  Label overflow_with_error;
-
-  lwz(Rtmp, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset()), method_counters);
-  cmpw(CCR0, backedge_count, Rtmp);
-
-  blt(CCR0, did_not_overflow);
-
-  // When ProfileInterpreter is on, the backedge_count comes from the
-  // methodDataOop, which value does not get reset on the call to
-  // frequency_counter_overflow(). To avoid excessive calls to the overflow
-  // routine while the method is being compiled, add a second test to make sure
-  // the overflow function is called only once every overflow_frequency.
-  if (ProfileInterpreter) {
-    const int overflow_frequency = 1024;
-    andi_(Rtmp, backedge_count, overflow_frequency-1);
-    bne(CCR0, did_not_overflow);
-  }
-
-  // Overflow in loop, pass branch bytecode.
-  subf(R4_ARG2, disp, target_bcp); // Compute branch bytecode (previous bcp).
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
-
-  // Was an OSR adapter generated?
-  cmpdi(CCR0, R3_RET, 0);
-  beq(CCR0, overflow_with_error);
-
-  // Has the nmethod been invalidated already?
-  lbz(Rtmp, nmethod::state_offset(), R3_RET);
-  cmpwi(CCR0, Rtmp, nmethod::in_use);
-  bne(CCR0, overflow_with_error);
-
-  // Migrate the interpreter frame off of the stack.
-  // We can use all registers because we will not return to interpreter from this point.
-
-  // Save nmethod.
-  const Register osr_nmethod = R31;
-  mr(osr_nmethod, R3_RET);
-  set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R11_scratch1);
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), R16_thread);
-  reset_last_Java_frame();
-  // OSR buffer is in ARG1
-
-  // Remove the interpreter frame.
-  merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
-
-  // Jump to the osr code.
-  ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
-  mtlr(R0);
-  mtctr(R11_scratch1);
-  bctr();
-
-  align(32, 12);
-  bind(overflow_with_error);
-  bind(did_not_overflow);
 }
 
 // Store a value at some constant offset from the method data pointer.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -477,7 +475,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     new TableHeader(contents.modifierLabel, contents.moduleLabel,
                             contents.descriptionLabel);
             HtmlTree section = HtmlTree.SECTION(HtmlStyle.modulesSummary)
-                    .setId(SectionName.MODULES.getName());
+                    .setId(HtmlIds.MODULES);
             addSummaryHeader(MarkerComments.START_OF_MODULES_SUMMARY, contents.navModules, section);
             if (display(requires)) {
                 String text = resources.getText("doclet.Requires_Summary");
@@ -519,7 +517,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
             HtmlTree section = HtmlTree.SECTION(HtmlStyle.packagesSummary)
-                    .setId(SectionName.PACKAGES.getName());;
+                    .setId(HtmlIds.PACKAGES);
             addSummaryHeader(MarkerComments.START_OF_PACKAGES_SUMMARY, contents.navPackages, section);
             if (display(packages)) {
                 addPackageSummary(section);
@@ -549,7 +547,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      */
     public void addPackageSummary(HtmlTree li) {
         Table table = new Table(HtmlStyle.summaryTable)
-                .setId("package-summary-table")
+                .setId(HtmlIds.PACKAGE_SUMMARY_TABLE)
                 .setDefaultTab(resources.getText("doclet.All_Packages"))
                 .addTab(resources.getText("doclet.Exported_Packages_Summary"), this::isExported)
                 .addTab(resources.getText("doclet.Opened_Packages_Summary"), this::isOpened)
@@ -617,6 +615,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 row.add(getPackageExportOpensTo(entry.openedTo));
             }
             Content summary = new ContentBuilder();
+            addPreviewSummary(pkg, summary);
             addSummaryComment(pkg, summary);
             row.add(summary);
 
@@ -691,7 +690,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
         if (haveProvides || haveUses) {
             HtmlTree section = HtmlTree.SECTION(HtmlStyle.servicesSummary)
-                    .setId(SectionName.SERVICES.getName());
+                    .setId(HtmlIds.SERVICES);
             addSummaryHeader(MarkerComments.START_OF_SERVICES_SUMMARY, contents.navServices, section);
             TableHeader usesProvidesTableHeader =
                     new TableHeader(contents.typeLabel, contents.descriptionLabel);
@@ -811,9 +810,10 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
     @Override
     public void addModuleDescription(Content moduleContentTree) {
+        addPreviewInfo(mdle, moduleContentTree);
         if (!utils.getFullBody(mdle).isEmpty()) {
-            HtmlTree tree = HtmlTree.SECTION(HtmlStyle.moduleDescription);
-            tree.setId(SectionName.MODULE_DESCRIPTION.getName());
+            HtmlTree tree = HtmlTree.SECTION(HtmlStyle.moduleDescription)
+                    .setId(HtmlIds.MODULE_DESCRIPTION);
             addDeprecationInfo(tree);
             tree.add(MarkerComments.START_OF_MODULE_DESCRIPTION);
             addInlineComment(mdle, tree);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8217375
+ * @bug 8217375 8260286
  * @summary This test is used to verify the compatibility of jarsigner across
  *     different JDK releases. It also can be used to check jar signing (w/
  *     and w/o TSA) and to verify some specific signing and digest algorithms.
@@ -720,6 +720,7 @@ public class Compatibility {
                             expectedKeySize() + "-bit key"
                     + ")|("
                     + "  Digest algorithm: " + signItem.expectedDigestAlg()
+                    + (isWeakAlg(signItem.expectedDigestAlg()) ? " \\(weak\\)" : "")
                     + (signItem.tsaIndex < 0 ? "" :
                       ")|("
                     + "Timestamped by \".+\" on .*"
@@ -805,7 +806,12 @@ public class Compatibility {
         boolean warning = false;
         for (String line : outputAnalyzer.getOutput().lines()
                 .toArray(String[]::new)) {
-            if (line.isBlank()) continue;
+            if (line.isBlank()) {
+                // If line is blank and warning flag is true, it is the end of warnings section
+                // This is needed when some info is added after warnings, such as timestamp expiration date
+                if (warning) warning = false;
+                continue;
+            }
             if (Test.JAR_VERIFIED.equals(line)) continue;
             if (line.matches(Test.ERROR + " ?") && expectedExitCode == 0) {
                 System.out.println("verifyingStatus: error: line.matches(" + Test.ERROR + "\" ?\"): " + line);
@@ -835,6 +841,9 @@ public class Compatibility {
                     + "not be able to validate this jar after the signer "
                     + "certificate's expiration date \\([^\\)]+\\) or after "
                     + "any future revocation date[.]") && !tsa) continue;
+
+            if (isWeakAlg(signItem.expectedDigestAlg())
+                    && line.contains(Test.WEAK_ALGORITHM_WARNING)) continue;
             if (Test.CERTIFICATE_SELF_SIGNED.equals(line)) continue;
             if (Test.HAS_EXPIRED_CERT_VERIFYING_WARNING.equals(line)
                     && signItem.certInfo.expired) continue;
@@ -842,6 +851,10 @@ public class Compatibility {
             return Status.ERROR; // treat unexpected warnings as error
         }
         return warning ? Status.WARNING : Status.NORMAL;
+    }
+
+    private static boolean isWeakAlg(String alg) {
+        return SHA1.equals(alg);
     }
 
     // Using specified jarsigner to sign the pre-created jar with specified

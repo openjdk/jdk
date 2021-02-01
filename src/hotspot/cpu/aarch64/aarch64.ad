@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2014, 2020, Red Hat, Inc. All rights reserved.
+// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1244,6 +1244,7 @@ source_hpp %{
 #include "gc/shared/collectedHeap.hpp"
 #include "opto/addnode.hpp"
 #include "opto/convertnode.hpp"
+#include "runtime/objectMonitor.hpp"
 
 extern RegMask _ANY_REG32_mask;
 extern RegMask _ANY_REG_mask;
@@ -1916,12 +1917,12 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ bind(L_skip_barrier);
   }
 
-  if (UseSVE > 0 && C->max_vector_size() >= 16) {
+  if (C->max_vector_size() >= 16) {
     __ reinitialize_ptrue();
   }
 
   int bangsize = C->output()->bang_size_in_bytes();
-  if (C->output()->need_stack_bang(bangsize) && UseStackBanging)
+  if (C->output()->need_stack_bang(bangsize))
     __ generate_stack_overflow_check(bangsize);
 
   __ build_frame(framesize);
@@ -3798,11 +3799,9 @@ encode %{
       }
     }
 
-    if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
-      // Only non uncommon_trap calls need to reinitialize ptrue.
-      if (uncommon_trap_request() == 0) {
-        __ reinitialize_ptrue();
-      }
+    // Only non uncommon_trap calls need to reinitialize ptrue.
+    if (Compile::current()->max_vector_size() >= 16 && uncommon_trap_request() == 0) {
+      __ reinitialize_ptrue();
     }
   %}
 
@@ -3813,7 +3812,7 @@ encode %{
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
-    } else if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
+    } else if (Compile::current()->max_vector_size() >= 16) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3851,7 +3850,7 @@ encode %{
       __ bind(retaddr);
       __ add(sp, sp, 2 * wordSize);
     }
-    if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
+    if (Compile::current()->max_vector_size() >= 16) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3864,7 +3863,7 @@ encode %{
   enc_class aarch64_enc_ret() %{
     C2_MacroAssembler _masm(&cbuf);
 #ifdef ASSERT
-    if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
+    if (Compile::current()->max_vector_size() >= 16) {
       __ verify_ptrue();
     }
 #endif
@@ -17106,98 +17105,6 @@ instruct reduce_mul2D(vRegD dst, vRegD dsrc, vecX vsrc, vecX tmp)
            as_FloatRegister($vsrc$$reg), 0, 1);
     __ fmuld(as_FloatRegister($dst$$reg),
              as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct reduce_max2F(vRegF dst, vRegF fsrc, vecD vsrc, vecD tmp) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (MaxReductionV fsrc vsrc));
-  ins_cost(INSN_COST);
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "fmaxs $dst, $fsrc, $vsrc\n\t"
-            "ins   $tmp, S, $vsrc, 0, 1\n\t"
-            "fmaxs $dst, $dst, $tmp\t# max reduction2F" %}
-  ins_encode %{
-    __ fmaxs(as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg), as_FloatRegister($vsrc$$reg));
-    __ ins(as_FloatRegister($tmp$$reg), __ S, as_FloatRegister($vsrc$$reg), 0, 1);
-    __ fmaxs(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct reduce_max4F(vRegF dst, vRegF fsrc, vecX vsrc) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (MaxReductionV fsrc vsrc));
-  ins_cost(INSN_COST);
-  effect(TEMP_DEF dst);
-  format %{ "fmaxv $dst, T4S, $vsrc\n\t"
-            "fmaxs $dst, $dst, $fsrc\t# max reduction4F" %}
-  ins_encode %{
-    __ fmaxv(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($vsrc$$reg));
-    __ fmaxs(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct reduce_max2D(vRegD dst, vRegD dsrc, vecX vsrc, vecX tmp) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (MaxReductionV dsrc vsrc));
-  ins_cost(INSN_COST);
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "fmaxd $dst, $dsrc, $vsrc\n\t"
-            "ins   $tmp, D, $vsrc, 0, 1\n\t"
-            "fmaxd $dst, $dst, $tmp\t# max reduction2D" %}
-  ins_encode %{
-    __ fmaxd(as_FloatRegister($dst$$reg), as_FloatRegister($dsrc$$reg), as_FloatRegister($vsrc$$reg));
-    __ ins(as_FloatRegister($tmp$$reg), __ D, as_FloatRegister($vsrc$$reg), 0, 1);
-    __ fmaxd(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct reduce_min2F(vRegF dst, vRegF fsrc, vecD vsrc, vecD tmp) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (MinReductionV fsrc vsrc));
-  ins_cost(INSN_COST);
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "fmins $dst, $fsrc, $vsrc\n\t"
-            "ins   $tmp, S, $vsrc, 0, 1\n\t"
-            "fmins $dst, $dst, $tmp\t# min reduction2F" %}
-  ins_encode %{
-    __ fmins(as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg), as_FloatRegister($vsrc$$reg));
-    __ ins(as_FloatRegister($tmp$$reg), __ S, as_FloatRegister($vsrc$$reg), 0, 1);
-    __ fmins(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct reduce_min4F(vRegF dst, vRegF fsrc, vecX vsrc) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (MinReductionV fsrc vsrc));
-  ins_cost(INSN_COST);
-  effect(TEMP_DEF dst);
-  format %{ "fminv $dst, T4S, $vsrc\n\t"
-            "fmins $dst, $dst, $fsrc\t# min reduction4F" %}
-  ins_encode %{
-    __ fminv(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($vsrc$$reg));
-    __ fmins(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct reduce_min2D(vRegD dst, vRegD dsrc, vecX vsrc, vecX tmp) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (MinReductionV dsrc vsrc));
-  ins_cost(INSN_COST);
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "fmind $dst, $dsrc, $vsrc\n\t"
-            "ins   $tmp, D, $vsrc, 0, 1\n\t"
-            "fmind $dst, $dst, $tmp\t# min reduction2D" %}
-  ins_encode %{
-    __ fmind(as_FloatRegister($dst$$reg), as_FloatRegister($dsrc$$reg), as_FloatRegister($vsrc$$reg));
-    __ ins(as_FloatRegister($tmp$$reg), __ D, as_FloatRegister($vsrc$$reg), 0, 1);
-    __ fmind(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));
   %}
   ins_pipe(pipe_class_default);
 %}

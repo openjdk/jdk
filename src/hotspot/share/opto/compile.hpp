@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,24 +392,23 @@ class Compile : public Phase {
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
   // pieces in order.
-  class PrintInliningBuffer : public ResourceObj {
+  class PrintInliningBuffer : public CHeapObj<mtCompiler> {
    private:
     CallGenerator* _cg;
-    stringStream* _ss;
+    stringStream   _ss;
+    static const size_t default_stream_buffer_size = 128;
 
    public:
     PrintInliningBuffer()
-      : _cg(NULL) { _ss = new stringStream(); }
+      : _cg(NULL), _ss(default_stream_buffer_size) {}
 
-    void freeStream() { _ss->~stringStream(); _ss = NULL; }
-
-    stringStream* ss() const { return _ss; }
-    CallGenerator* cg() const { return _cg; }
+    stringStream* ss()             { return &_ss; }
+    CallGenerator* cg()            { return _cg; }
     void set_cg(CallGenerator* cg) { _cg = cg; }
   };
 
   stringStream* _print_inlining_stream;
-  GrowableArray<PrintInliningBuffer>* _print_inlining_list;
+  GrowableArray<PrintInliningBuffer*>* _print_inlining_list;
   int _print_inlining_idx;
   char* _print_inlining_output;
 
@@ -429,7 +428,7 @@ class Compile : public Phase {
   void print_inlining_reinit();
   void print_inlining_commit();
   void print_inlining_push();
-  PrintInliningBuffer& print_inlining_current();
+  PrintInliningBuffer* print_inlining_current();
 
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
@@ -690,8 +689,9 @@ class Compile : public Phase {
     _predicate_opaqs.append(n);
   }
 
-  bool     post_loop_opts_phase() { return _post_loop_opts_phase; }
-  void set_post_loop_opts_phase() { _post_loop_opts_phase = true; }
+  bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
+  void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
+  void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
@@ -726,8 +726,7 @@ class Compile : public Phase {
 
   void record_failure(const char* reason);
   void record_method_not_compilable(const char* reason) {
-    // Bailouts cover "all_tiers" when TieredCompilation is off.
-    env()->record_method_not_compilable(reason, !TieredCompilation);
+    env()->record_method_not_compilable(reason);
     // Record failure reason.
     record_failure(reason);
   }
@@ -1040,9 +1039,6 @@ class Compile : public Phase {
 
   // returns true if adr overlaps with the given alias category
   bool can_alias(const TypePtr* adr, int alias_idx);
-
-  // If "objs" contains an ObjectValue whose id is "id", returns it, else NULL.
-  static ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
 
   // Stack slots that may be unused by the calling convention but must
   // otherwise be preserved.  On Intel this includes the return address.

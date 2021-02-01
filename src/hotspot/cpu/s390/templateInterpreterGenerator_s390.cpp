@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -725,7 +725,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
 //
 // Z_ARG2: method (see generate_fixed_frame())
 //
-void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
+void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   Label done;
   Register method = Z_ARG2; // Generate_fixed_frame() copies Z_method into Z_ARG2.
   Register m_counters = Z_ARG4;
@@ -734,68 +734,35 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
 
   // Note: In tiered we increment either counters in method or in MDO depending
   // if we are profiling or not.
-  if (TieredCompilation) {
-    int increment = InvocationCounter::count_increment;
-    if (ProfileInterpreter) {
-      NearLabel no_mdo;
-      Register mdo = m_counters;
-      // Are we profiling?
-      __ load_and_test_long(mdo, method2_(method, method_data));
-      __ branch_optimized(Assembler::bcondZero, no_mdo);
-      // Increment counter in the MDO.
-      const Address mdo_invocation_counter(mdo, MethodData::invocation_counter_offset() +
-                                           InvocationCounter::counter_offset());
-      const Address mask(mdo, MethodData::invoke_mask_offset());
-      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask,
-                                 Z_R1_scratch, false, Assembler::bcondZero,
-                                 overflow);
-      __ z_bru(done);
-      __ bind(no_mdo);
-    }
-
-    // Increment counter in MethodCounters.
-    const Address invocation_counter(m_counters,
-                                     MethodCounters::invocation_counter_offset() +
-                                     InvocationCounter::counter_offset());
-    // Get address of MethodCounters object.
-    __ get_method_counters(method, m_counters, done);
-    const Address mask(m_counters, MethodCounters::invoke_mask_offset());
-    __ increment_mask_and_jump(invocation_counter,
-                               increment, mask,
+  int increment = InvocationCounter::count_increment;
+  if (ProfileInterpreter) {
+    NearLabel no_mdo;
+    Register mdo = m_counters;
+    // Are we profiling?
+    __ load_and_test_long(mdo, method2_(method, method_data));
+    __ branch_optimized(Assembler::bcondZero, no_mdo);
+    // Increment counter in the MDO.
+    const Address mdo_invocation_counter(mdo, MethodData::invocation_counter_offset() +
+                                         InvocationCounter::counter_offset());
+    const Address mask(mdo, MethodData::invoke_mask_offset());
+    __ increment_mask_and_jump(mdo_invocation_counter, increment, mask,
                                Z_R1_scratch, false, Assembler::bcondZero,
                                overflow);
-  } else {
-    Register counter_sum = Z_ARG3; // The result of this piece of code.
-    Register tmp         = Z_R1_scratch;
-#ifdef ASSERT
-    {
-      NearLabel ok;
-      __ get_method(tmp);
-      __ compare64_and_branch(method, tmp, Assembler::bcondEqual, ok);
-      __ z_illtrap(0x66);
-      __ bind(ok);
-    }
-#endif
-
-    // Get address of MethodCounters object.
-    __ get_method_counters(method, m_counters, done);
-    // Update standard invocation counters.
-    __ increment_invocation_counter(m_counters, counter_sum);
-    if (ProfileInterpreter) {
-      __ add2mem_32(Address(m_counters, MethodCounters::interpreter_invocation_counter_offset()), 1, tmp);
-      if (profile_method != NULL) {
-        const Address profile_limit(m_counters, MethodCounters::interpreter_profile_limit_offset());
-        __ z_cl(counter_sum, profile_limit);
-        __ branch_optimized(Assembler::bcondLow, *profile_method_continue);
-        // If no method data exists, go to profile_method.
-        __ test_method_data_pointer(tmp, *profile_method);
-      }
-    }
-
-    const Address invocation_limit(m_counters, MethodCounters::interpreter_invocation_limit_offset());
-    __ z_cl(counter_sum, invocation_limit);
-    __ branch_optimized(Assembler::bcondNotLow, *overflow);
+    __ z_bru(done);
+    __ bind(no_mdo);
   }
+
+  // Increment counter in MethodCounters.
+  const Address invocation_counter(m_counters,
+                                   MethodCounters::invocation_counter_offset() +
+                                   InvocationCounter::counter_offset());
+  // Get address of MethodCounters object.
+  __ get_method_counters(method, m_counters, done);
+  const Address mask(m_counters, MethodCounters::invoke_mask_offset());
+  __ increment_mask_and_jump(invocation_counter,
+                             increment, mask,
+                             Z_R1_scratch, false, Assembler::bcondZero,
+                             overflow);
 
   __ bind(done);
 
@@ -1403,7 +1370,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Increment invocation count and check for overflow.
   NearLabel invocation_counter_overflow;
   if (inc_counter) {
-    generate_counter_incr(&invocation_counter_overflow, NULL, NULL);
+    generate_counter_incr(&invocation_counter_overflow);
   }
 
   Label continue_after_compile;
@@ -1775,14 +1742,9 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // Note: checking for negative value instead of overflow so we have a 'sticky'
   // overflow test (may be of importance as soon as we have true MT/MP).
   NearLabel invocation_counter_overflow;
-  NearLabel profile_method;
-  NearLabel profile_method_continue;
   NearLabel Lcontinue;
   if (inc_counter) {
-    generate_counter_incr(&invocation_counter_overflow, &profile_method, &profile_method_continue);
-    if (ProfileInterpreter) {
-      __ bind(profile_method_continue);
-    }
+    generate_counter_incr(&invocation_counter_overflow);
   }
   __ bind(Lcontinue);
 
@@ -1827,15 +1789,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // Invocation counter overflow.
   if (inc_counter) {
-    if (ProfileInterpreter) {
-      // We have decided to profile this method in the interpreter.
-      __ bind(profile_method);
-
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-      __ set_method_data_pointer_for_bcp();
-      __ z_bru(profile_method_continue);
-    }
-
     // Handle invocation counter overflow.
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(Lcontinue);
@@ -2066,13 +2019,11 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked. Only true for non-native. For native, we only bang the last page.
-  if (UseStackBanging) {
-    const int page_size      = os::vm_page_size();
-    const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size()/page_size);
-    const int start_page_num = native_call ? n_shadow_pages : 1;
-    for (int pages = start_page_num; pages <= n_shadow_pages; pages++) {
-      __ bang_stack_with_offset(pages*page_size);
-    }
+  const int page_size      = os::vm_page_size();
+  const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size()/page_size);
+  const int start_page_num = native_call ? n_shadow_pages : 1;
+  for (int pages = start_page_num; pages <= n_shadow_pages; pages++) {
+    __ bang_stack_with_offset(pages*page_size);
   }
 }
 

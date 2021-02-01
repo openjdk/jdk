@@ -798,8 +798,6 @@ public abstract class BaseConfiguration {
             doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags);
         }
 
-        doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + "html5");
-
         doclint = new DocLint();
         doclint.init(docEnv.getDocTrees(), docEnv.getElementUtils(), docEnv.getTypeUtils(),
                 doclintOpts.toArray(new String[0]));

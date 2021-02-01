@@ -601,37 +601,10 @@ void NativeMovConstReg::set_pcrel_data(intptr_t newData, CompiledMethod *passed_
 
 void NativeMovRegMem::verify() {
   address l1 = addr_at(0);
-  address l2 = addr_at(MacroAssembler::load_const_size());
 
   if (!MacroAssembler::is_load_const(l1)) {
     tty->cr();
     tty->print_cr("NativeMovRegMem::verify(): verifying addr " PTR_FORMAT, p2i(l1));
-    tty->cr();
-    ((NativeMovRegMem*)l1)->dump(64, "NativeMovConstReg::verify()");
-    fatal("this is not a `NativeMovRegMem' site");
-  }
-
-  unsigned long inst1;
-  Assembler::get_instruction(l2, &inst1);
-
-  if (!Assembler::is_z_lb(inst1)   &&
-      !Assembler::is_z_llgh(inst1) &&
-      !Assembler::is_z_lh(inst1)   &&
-      !Assembler::is_z_l(inst1)    &&
-      !Assembler::is_z_llgf(inst1) &&
-      !Assembler::is_z_lg(inst1)   &&
-      !Assembler::is_z_le(inst1)   &&
-      !Assembler::is_z_ld(inst1)   &&
-      !Assembler::is_z_stc(inst1)  &&
-      !Assembler::is_z_sth(inst1)  &&
-      !Assembler::is_z_st(inst1)   &&
-      !UseCompressedOops           &&
-      !Assembler::is_z_stg(inst1)  &&
-      !Assembler::is_z_ste(inst1)  &&
-      !Assembler::is_z_std(inst1)) {
-    tty->cr();
-    tty->print_cr("NativeMovRegMem::verify(): verifying addr " PTR_FORMAT
-                  ": wrong or missing load or store at " PTR_FORMAT, p2i(l1), p2i(l2));
     tty->cr();
     ((NativeMovRegMem*)l1)->dump(64, "NativeMovConstReg::verify()");
     fatal("this is not a `NativeMovRegMem' site");
