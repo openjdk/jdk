@@ -30,6 +30,7 @@
 
 import java.awt.BorderLayout;
 import java.awt.Rectangle;
+import java.util.Locale;
 
 import javax.swing.JFrame;
 import javax.swing.JEditorPane;
@@ -93,8 +94,7 @@ public class HtmlFontSizeTest {
         float ratio = (float)w3cFrameSize.width / (float)stdFrameSize.width;
         System.out.println("w3cFrameSize.width/stdFrameSize.width " + ratio);
 
-        String str = String.format("%.1g%n", ratio);
-        if (str.compareTo(String.format("%.1g%n", 1.3f)) != 0) {
+        if (!"1.3".equals(String.format(Locale.ENGLISH, "%.1f", ratio))) {
             throw new RuntimeException("HTML font size too large with high-DPI scaling and W3C_LENGTH_UNITS");
         }
     }
