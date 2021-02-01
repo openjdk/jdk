@@ -54,7 +54,7 @@ final class LCMSProfile extends Profile {
         tagCache.clear();
     }
 
-    final static class TagCache  {
+    static final class TagCache  {
         private final LCMSProfile profile;
         private final HashMap<Integer, TagData> tags = new HashMap<>();
 
@@ -79,7 +79,7 @@ final class LCMSProfile extends Profile {
         }
     }
 
-    final static class TagData {
+    static final class TagData {
         private final byte[] data;
 
         TagData(byte[] data) {
