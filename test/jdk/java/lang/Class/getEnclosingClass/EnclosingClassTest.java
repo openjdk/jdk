@@ -21,6 +21,32 @@
  * questions.
  */
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import common.TestMe;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.FileUtils;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+/*
+ * @test
+ * @bug 4992173 4992170
+ * @library /test/lib
+ * @modules jdk.compiler
+ * @run testng/othervm EnclosingClassTest
+ * @summary Check getEnclosingClass and other methods
+ * @author Peter von der Ah\u00e9
+ */
 
 /*
  * We have five kinds of classes:
@@ -48,57 +74,30 @@
  * e o x x x
  */
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import common.TestMe;
-import jdk.test.lib.compiler.CompilerUtils;
-import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
-/*
-* @test
-* @bug 4992173 4992170
-* @library /test/lib
-* @modules jdk.compiler
-* @run testng/othervm EnclosingClassTest
-* @summary Check getEnclosingClass and other methods
-* @author Peter von der Ah\u00e9
-*/
-
-
 public class EnclosingClassTest {
     private static final String SRC_DIR = System.getProperty("test.src");
-    private static final Path ENCLOSING_CLASS_SRC = Paths.get(SRC_DIR , "EnclosingClass.java");
+    private static final Path ENCLOSING_CLASS_SRC = Path.of(SRC_DIR, "EnclosingClass.java");
 
     @BeforeClass
     public void createEnclosingClasses() throws IOException {
-        Path pkg1Dir = Paths.get(SRC_DIR, "pkg1");
-        Path pkg2Dir = Paths.get(SRC_DIR, "pkg1", "pkg2");
+        Path pkg1Dir = Path.of(SRC_DIR, "pkg1");
+        Path pkg2Dir = Path.of(SRC_DIR, "pkg1", "pkg2");
         Path pkg1File = pkg1Dir.resolve("EnclosingClass.java");
         Path pkg2File = pkg2Dir.resolve("EnclosingClass.java");
 
-        if(!Files.notExists(pkg1Dir)) {
+        if (!Files.notExists(pkg1Dir)) {
             FileUtils.deleteFileTreeWithRetry(pkg1Dir);
         }
         Files.createDirectories(pkg2Dir);
         createAndWriteEnclosingClasses(ENCLOSING_CLASS_SRC, pkg1File, "pkg1");
         createAndWriteEnclosingClasses(ENCLOSING_CLASS_SRC, pkg2File, "pkg1.pkg2");
 
-        CompilerUtils.compile(ENCLOSING_CLASS_SRC, Paths.get(System.getProperty("test.classes", ".")), "--source-path",
-                SRC_DIR);
-        CompilerUtils.compile(pkg1File, Paths.get(System.getProperty("test.classes", ".")), "--source-path", SRC_DIR);
-        CompilerUtils.compile(pkg2File, Paths.get(System.getProperty("test.classes", ".")), "--source-path", SRC_DIR);
+        CompilerUtils.compile(ENCLOSING_CLASS_SRC, Path.of(System.getProperty("test.classes", ".")),
+                "--source-path", SRC_DIR);
+        CompilerUtils.compile(pkg1File, Path.of(System.getProperty("test.classes", ".")),
+                "--source-path", SRC_DIR);
+        CompilerUtils.compile(pkg2File, Path.of(System.getProperty("test.classes", ".")),
+                "--source-path", SRC_DIR);
     }
 
     @Test
@@ -108,24 +107,24 @@ public class EnclosingClassTest {
     }
 
     @Test
-    public void testEnclosingClassesInPackage() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, InstantiationException {
+    public void testEnclosingClassesInPackage() throws ClassNotFoundException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException, InstantiationException {
         test(Class.forName("pkg1.EnclosingClass").getDeclaredConstructor().newInstance());
     }
 
     @Test
-    public void testEnclosingClassesInNestedPackage() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, InstantiationException {
+    public void testEnclosingClassesInNestedPackage() throws ClassNotFoundException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException, InstantiationException {
         test(Class.forName("pkg1.pkg2.EnclosingClass").getDeclaredConstructor().newInstance());
     }
 
     @AfterClass
     public void deleteEnclosingClasses() throws IOException {
-        Path pkg1Dir = Paths.get(SRC_DIR, "/pkg1");
+        Path pkg1Dir = Path.of(SRC_DIR, "/pkg1");
         FileUtils.deleteFileTreeWithRetry(pkg1Dir);
     }
 
-    private void createAndWriteEnclosingClasses(final Path source, final Path target, final String packageName) throws IOException {
+    private void createAndWriteEnclosingClasses(Path source, Path target, String packageName) throws IOException {
         String className = packageName + ".EnclosingClass";
         try (BufferedReader br = new BufferedReader(new FileReader(source.toFile()));
         PrintWriter bw = new PrintWriter(new FileWriter(target.toFile()))) {
@@ -143,7 +142,7 @@ public class EnclosingClassTest {
         }
     }
 
-    private void info(final Class<?> c, final Class<?> encClass, final String desc) {
+    private void info(Class<?> c, Class<?> encClass, String desc) {
         if (!"".equals(desc)) {
             System.out.println(desc + ":");
         }
@@ -157,8 +156,8 @@ public class EnclosingClassTest {
         System.out.println("actual:" + actual + "expected:" + expected);
         assert((actual == null && expected == null) || actual.equals(expected.trim()));
         System.out.println("\t`" +
-                actual + "' matches expected `" +
-                expected + "'");
+                           actual + "' matches expected `" +
+                           expected + "'");
     }
 
     private void check(Class<?> c, Class<?> enc,
@@ -178,18 +177,18 @@ public class EnclosingClassTest {
         c.getEnclosingConstructor(); // make sure it does not crash
         info(c, encClass, annotation.desc());
         check(c, encClass,
-                ""+encClass, annotation.encl(),
-                c.getSimpleName(), annotation.simple(),
-                c.getCanonicalName(),
-                annotation.hasCanonical() ? annotation.canonical() : null);
+              ""+encClass, annotation.encl(),
+              c.getSimpleName(), annotation.simple(),
+              c.getCanonicalName(),
+              annotation.hasCanonical() ? annotation.canonical() : null);
         if (void.class.equals(c))
             return;
         Class<?> array = java.lang.reflect.Array.newInstance(c, 0).getClass();
         check(array, array.getEnclosingClass(),
-                "", "",
-                array.getSimpleName(), annotation.simple()+"[]",
-                array.getCanonicalName(),
-                annotation.hasCanonical() ? annotation.canonical()+"[]" : null);
+              "", "",
+              array.getSimpleName(), annotation.simple()+"[]",
+              array.getCanonicalName(),
+              annotation.hasCanonical() ? annotation.canonical()+"[]" : null);
     }
 
     private void test(Object tests) {
@@ -200,8 +199,8 @@ public class EnclosingClassTest {
                     testClass((Class<?>)f.get(tests), annotation, f);
                 } catch (AssertionError ex) {
                     System.err.println("Error in " +
-                            tests.getClass().getName() +
-                            "." + f.getName());
+                                       tests.getClass().getName() +
+                                       "." + f.getName());
                     throw ex;
                 } catch (IllegalAccessException ex) {
                     ex.printStackTrace();

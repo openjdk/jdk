@@ -24,10 +24,10 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /*
@@ -57,8 +57,8 @@ public class NonJavaNames {
      }
 
     private static final String SRC_DIR = System.getProperty("test.src");
-    private static final Path TEST_SRC = Paths.get(SRC_DIR,  "classes");
-    private static final Path TEST_CLASSES = Paths.get(System.getProperty("test.classes", "."));
+    private static final Path TEST_SRC = Path.of(SRC_DIR,  "classes");
+    private static final Path TEST_CLASSES = Path.of(System.getProperty("test.classes", "."));
 
     @BeforeClass
     public void createInvalidNameClasses() throws IOException {
@@ -97,7 +97,7 @@ public class NonJavaNames {
     }
 
     @Test
-    public void testGoodNonJavaClassNames() throws Throwable {
+    public void testForNameReturnsSameClass() throws Throwable {
         NonJavaNames.Baz bz = new NonJavaNames.Baz();
         String name;
 
@@ -113,39 +113,45 @@ public class NonJavaNames {
             System.err.println("Failures for class ``" + name + "''.");
             throw new RuntimeException();
         }
+    }
 
-        String goodNonJavaClassNames []  = {
-                ",",
-                "+",
-                "-",
-                "0",
-                "3",
+    @Test(dataProvider = "goodNonJavaClassNames")
+    public void testGoodNonJavaClassNames(String name) throws Throwable {
+        System.out.println("Testing good class name ``" + name + "''");
+        Class.forName(name);
+    }
+
+    @Test(dataProvider = "badNonJavaClassNames")
+    public void testBadNonJavaClassNames(String name) {
+        System.out.println("Testing bad class name ``" + name + "''");
+        try {
+            Class.forName(name);
+        } catch (Exception e) {
+            // Expected behavior
+            return;
+        }
+        throw new RuntimeException("Bad class name ``" + name + "'' accepted.");
+    }
+
+    @DataProvider(name = "goodNonJavaClassNames")
+    Object[][] getGoodNonJavaClassNames() {
+        return new Object[][] {
+                {","},
+                {"+"},
+                {"-"},
+                {"0"},
+                {"3"},
                 // ":", These names won't work under windows.
                 // "<",
                 // ">",
-                "Z",
-                "]"
+                {"Z"},
+                {"]"}
         };
-
-        for(String s : goodNonJavaClassNames) {
-            System.out.println("Testing good class name ``" + s + "''");
-            Class.forName(s);
-        }
     }
 
-    @Test
-    public void testBadNonJavaClassNames() {
-        String badNonJavaClassNames [] = {";", "[", "."};
-
-        for(String s : badNonJavaClassNames) {
-            System.out.println("Testing bad class name ``" + s + "''");
-            try {
-                Class.forName(s);
-            } catch (Exception e) {
-                // Expected behavior
-                continue;
-            }
-            throw new RuntimeException("Bad class name ``" + s + "'' accepted.");
-        }
+    @DataProvider(name = "badNonJavaClassNames")
+    Object[][] getBadNonJavaClassNames() {
+        return new Object[][] {{";"}, {"["}, {"."}};
     }
+
 }
