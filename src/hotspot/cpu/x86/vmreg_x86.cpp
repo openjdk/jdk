@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,4 +79,25 @@ VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
     case STACK_TYPE: return VMRegImpl::stack2reg(index LP64_ONLY(* 2)); // numbering on x64 goes per 64-bits
   }
   return VMRegImpl::Bad();
+}
+
+bool VMRegImpl::is_expressible(int slot_delta) {
+  if (is_Register()) {
+    int enc = (value() + slot_delta) / RegisterImpl::max_slots_per_register;
+    return as_Register()->encoding() == enc;
+  } else if (is_FloatRegister()) {
+    int enc = ((value() + slot_delta - ConcreteRegisterImpl::max_gpr) /
+               FloatRegisterImpl::max_slots_per_register);
+    return as_FloatRegister()->encoding() == enc;
+  } else if (is_XMMRegister()) {
+    int enc = ((value() + slot_delta - ConcreteRegisterImpl::max_fpr) /
+               XMMRegisterImpl::max_slots_per_register);
+    return as_XMMRegister()->encoding() == enc;
+  } else if (is_KRegister()) {
+    int enc = ((value() + slot_delta - ConcreteRegisterImpl::max_xmm) /
+               KRegisterImpl::max_slots_per_register);
+    return as_KRegister()->encoding() == enc;
+  } else {
+    return is_stack();
+  }
 }

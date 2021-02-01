@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,15 @@ class RegisterMap : public StackObj {
     if (_location_valid[index] & ((LocationValidType)1 << (reg->value() % location_valid_type_size))) {
       return (address) _location[reg->value()];
     } else {
-      return pd_location(reg);
+      return pd_location(reg, 0);
+    }
+  }
+
+  address location(VMReg reg, int slot) {
+    if (reg->is_expressible(slot)) {
+      return location(reg->next(slot));
+    } else {
+      return pd_location(reg, slot);
     }
   }
 

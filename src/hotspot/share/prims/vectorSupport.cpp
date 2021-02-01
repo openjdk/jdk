@@ -135,17 +135,10 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
     VMReg vreg = VMRegImpl::as_VMReg(location.register_number());
 
     for (int i = 0; i < num_elem; i++) {
-      bool contiguous = X86_ONLY(false) NOT_X86(true);
-      address elem_addr;
+      int vslot = (i * elem_size) / VMRegImpl::stack_slot_size;
+      int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
 
-      if (contiguous) {
-        elem_addr = reg_map->location(vreg) + (i * elem_size);
-      } else {
-        int vslot = (i * elem_size) / VMRegImpl::stack_slot_size;
-        int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
-
-        elem_addr = reg_map->location(vreg->next(vslot)) + off;
-      }
+      address elem_addr = reg_map->location(vreg, vslot) + off;
 
       init_payload_element(arr, is_mask, elem_bt, i, elem_addr);
     }

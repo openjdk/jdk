@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,7 +60,24 @@ VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
   switch(type) {
     case INTEGER_TYPE: return ::as_Register(index)->as_VMReg();
     case VECTOR_TYPE: return ::as_FloatRegister(index)->as_VMReg();
-    case STACK_TYPE: return VMRegImpl::stack2reg(index LP64_ONLY(* 2));
+    case STACK_TYPE: return VMRegImpl::stack2reg(index * 2);
   }
   return VMRegImpl::Bad();
+}
+
+bool VMRegImpl::is_expressible(int slot_delta) {
+  if (is_FloatRegister()) {
+    int enc = ((value() + slot_delta - ConcreteRegisterImpl::max_gpr)
+               / FloatRegisterImpl::max_slots_per_register);
+    return as_FloatRegister()->encoding() == enc;
+  } else if (is_PRegister()) {
+    int enc = ((value() + slot_delta - ConcreteRegisterImpl::max_fpr)
+               / PRegisterImpl::max_slots_per_register);
+    return as_PRegister()->encoding() == enc;
+  } else if (is_Register()) {
+    int enc = (value() + slot_delta) / RegisterImpl::max_slots_per_register;
+    return as_Register()->encoding() == enc;
+  } else {
+    return is_stack();
+  }
 }

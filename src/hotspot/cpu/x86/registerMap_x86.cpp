@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #include "runtime/registerMap.hpp"
 #include "vmreg_x86.inline.hpp"
 
-address RegisterMap::pd_location(VMReg reg) const {
+address RegisterMap::pd_location(VMReg reg, int slot) const {
+  assert(slot == 0, "unexpected");
   if (reg->is_XMMRegister()) {
     int reg_base = reg->value() - ConcreteRegisterImpl::max_fpr;
     int base_reg_enc = (reg_base / XMMRegisterImpl::max_slots_per_register);

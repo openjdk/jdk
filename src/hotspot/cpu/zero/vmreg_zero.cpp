@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,4 +65,8 @@ FloatRegister VMRegImpl::as_FloatRegister() {
 VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
   ShouldNotCallThis();
   return VMRegImpl::Bad();
+}
+
+bool VMRegImpl::is_expressible(int slot_delta) {
+  return true;
 }
