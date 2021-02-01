@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,25 @@
  * questions.
  */
 
-package nsk.jdi.VirtualMachine.redefineClasses;
+package somelib;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdi.*;
+import java.lang.module.ModuleDescriptor;
 
-/**
- *  <code>redefineclasses021b</code> is deugee's part of the redefineclasses021.
- *  adding <code>static</code> modifier
- */
+public class Invariants {
+    public static void test(String expectPatch) {
+        ModuleDescriptor ownDesc = Invariants.class.getModule().getDescriptor();
 
-public class redefineclasses021b {
-
-    redefineclasses021bc obj = new redefineclasses021bc();
-
-    static interface redefineclasses021bi {
-//  ^^^^^^
-        void dummyMethod01();
-
+        assertThat(ownDesc.isAutomatic(), "Expected to be executed in an automatic module");
+        assertThat(ownDesc.requires().stream().anyMatch(
+                r -> r.name().equals("java.base") && r.modifiers().contains(ModuleDescriptor.Requires.Modifier.MANDATED)),
+                "requires mandated java.base");
+        assertThat(Dummy.returnTrue(), "Dummy.returnTrue returns true");
+        assertThat(expectPatch.equals(PatchInfo.patchName()), "Module is patched with the right patch");
     }
 
-    class redefineclasses021bc implements redefineclasses021bi {
-
-        public void dummyMethod01() {
+    private static void assertThat(boolean expected, String message) {
+        if (!expected) {
+            throw new AssertionError(message);
         }
-
     }
 }

@@ -115,7 +115,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case conc_mark_roots:
     case conc_thread_roots:
     case conc_weak_roots_work:
-    case conc_weak_refs_work:
+    case conc_weak_refs:
     case conc_strong_roots:
       return true;
     default:

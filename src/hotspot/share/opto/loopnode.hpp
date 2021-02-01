@@ -914,7 +914,8 @@ private:
                                                IdealLoopTree* outer_loop, Node* input_proj);
   Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
                                       IdealLoopTree* outer_loop);
-  bool skeleton_predicate_has_opaque(IfNode* iff);
+  static bool skeleton_predicate_has_opaque(IfNode* iff);
+  static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
 #ifdef ASSERT

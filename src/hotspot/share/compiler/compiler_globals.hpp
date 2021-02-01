@@ -192,50 +192,29 @@
                                                                             \
   product(intx, Tier3AOTInvocationThreshold, 10000,                         \
           "Compile if number of method invocations crosses this "           \
-          "threshold if coming from AOT")                                   \
+          "threshold if coming from AOT;"                                   \
+          "with CompilationMode=high-only|high-only-quick-internal)"        \
+          "determines when to transition from AOT to interpreter")          \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3AOTMinInvocationThreshold, 1000,                       \
-          "Minimum invocation to compile at tier 3 if coming from AOT")     \
+          "Minimum invocation to compile at tier 3 if coming from AOT;"     \
+          "with CompilationMode=high-only|high-only-quick-internal)"        \
+          "determines when to transition from AOT to interpreter")          \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3AOTCompileThreshold, 15000,                            \
           "Threshold at which tier 3 compilation is invoked (invocation "   \
-          "minimum must be satisfied) if coming from AOT")                  \
+          "minimum must be satisfied) if coming from AOT;"                  \
+          "with CompilationMode=high-only|high-only-quick-internal)"        \
+          "determines when to transition from AOT to interpreter")          \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3AOTBackEdgeThreshold,  120000,                         \
           "Back edge threshold at which tier 3 OSR compilation is invoked " \
-          "if coming from AOT")                                             \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, Tier0AOTInvocationThreshold, 200, DIAGNOSTIC,               \
-          "Switch to interpreter to profile if the number of method "       \
-          "invocations crosses this threshold if coming from AOT "          \
-          "(applicable only with "                                          \
-          "CompilationMode=high-only|high-only-quick-internal)")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, Tier0AOTMinInvocationThreshold, 100, DIAGNOSTIC,            \
-          "Minimum number of invocations to switch to interpreter "         \
-          "to profile if coming from AOT "                                  \
-          "(applicable only with "                                          \
-          "CompilationMode=high-only|high-only-quick-internal)")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, Tier0AOTCompileThreshold, 2000, DIAGNOSTIC,                 \
-          "Threshold at which to switch to interpreter to profile "         \
-          "if coming from AOT "                                             \
-          "(invocation minimum must be satisfied, "                         \
-          "applicable only with "                                           \
-          "CompilationMode=high-only|high-only-quick-internal)")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, Tier0AOTBackEdgeThreshold,  60000, DIAGNOSTIC,              \
-          "Back edge threshold at which to switch to interpreter "          \
-          "to profile if coming from AOT "                                  \
-          "(applicable only with "                                          \
-          "CompilationMode=high-only|high-only-quick-internal)")            \
+          "if coming from AOT;"                                             \
+          "with CompilationMode=high-only|high-only-quick-internal)"        \
+          "determines when to transition from AOT to interpreter")          \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4InvocationThreshold, 5000,                             \
@@ -256,35 +235,9 @@
           "Back edge threshold at which tier 4 OSR compilation is invoked") \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, Tier40InvocationThreshold, 5000, DIAGNOSTIC,                \
-          "Compile if number of method invocations crosses this "           \
-          "threshold (applicable only with "                                \
-          "CompilationMode=high-only|high-only-quick-internal)")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, Tier40MinInvocationThreshold, 600, DIAGNOSTIC,              \
-          "Minimum number of invocations to compile at tier 4 "             \
-          "(applicable only with "                                          \
-          "CompilationMode=high-only|high-only-quick-internal)")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, Tier40CompileThreshold, 10000, DIAGNOSTIC,                  \
-          "Threshold at which tier 4 compilation is invoked (invocation "   \
-          "minimum must be satisfied, applicable only with "                \
-          "CompilationMode=high-only|high-only-quick-internal)")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, Tier40BackEdgeThreshold, 15000, DIAGNOSTIC,                 \
-          "Back edge threshold at which tier 4 OSR compilation is invoked " \
-          "(applicable only with "                                          \
-          "CompilationMode=high-only|high-only-quick-internal)")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, Tier0Delay, 5, DIAGNOSTIC,                                  \
+  product(intx, Tier0Delay, 20, DIAGNOSTIC,                                 \
           "If C2 queue size grows over this amount per compiler thread "    \
-          "do not start profiling in the interpreter "                      \
-          "(applicable only with "                                          \
-          "CompilationMode=high-only|high-only-quick-internal)")            \
+          "do not start profiling in the interpreter")                      \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3DelayOn, 5,                                            \
@@ -317,10 +270,9 @@
           range(0, 4)                                                       \
                                                                             \
   product(intx, Tier0ProfilingStartPercentage, 200,                         \
-          "Start profiling in interpreter if the counters exceed tier 3 "   \
-          "thresholds (tier 4 thresholds with "                             \
-          "CompilationMode=high-only|high-only-quick-internal)"             \
-          "by the specified percentage")                                    \
+          "Start profiling in interpreter if the counters exceed the "      \
+          "specified percentage of tier 3 thresholds (tier 4 thresholds "   \
+          "with CompilationMode=high-only|high-only-quick-internal)")       \
           range(0, max_jint)                                                \
                                                                             \
   product(uintx, IncreaseFirstTierCompileThresholdAt, 50,                   \

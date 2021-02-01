@@ -78,8 +78,8 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj_reg, VMClassID klass_id,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = VMClassses::klass_addr_at(klass_id);
-  Klass* klass = VMClassses::klass_at(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj_reg, FILE_AND_LINE);

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,19 +21,16 @@
  * questions.
  */
 
-package sun.java2d.cmm;
+package myapp;
 
-import java.awt.color.ProfileDataException;
+import somelib.Invariants;
 
 /**
- * An interface to allow the ProfileDeferralMgr to activate a
- * deferred profile.
+ * This test is modelled to use --patch-module to gain access to non-exported internals.
  */
-public interface ProfileActivator {
 
-    /**
-     * Activate a previously deferred ICC_Profile object.
-     */
-    public void activate() throws ProfileDataException;
-
+public class Main {
+    public static void main(String[] args) {
+        Invariants.test(args[0]);
+    }
 }
