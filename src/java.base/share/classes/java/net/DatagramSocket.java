@@ -1295,8 +1295,8 @@ public class DatagramSocket implements java.io.Closeable {
      * <p> It is possible to call this method several times to leave
      * multiple different multicast groups previously joined, or leave
      * the same group previously joined in multiple different networks.
-     * However, if the socket is not a member of the group in the
-     * specified network, an {@link IOException} will be
+     * However, if the socket is not a member of the specified group
+     * in the specified network, an {@link IOException} will be
      * thrown.
      *
      * @param  mcastaddr is the multicast address to leave. This should
