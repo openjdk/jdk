@@ -250,12 +250,14 @@ public interface Path
 
     /**
      * Returns the extension of the file name of this path as a {@code String},
-     * where the extension is defined to be the portion of the file name string
-     * after the last dot ('.').  If the first character in the name is a dot it
-     * is ignored.  If the extension cannot be determined, then the empty string
-     * is returned.  This will occur if the file name has fewer than three
-     * characters, does not contain a dot, only the first character is a dot,
-     * or the last character is a dot.
+     * where the extension is defined to be the portion of the {@code String}
+     * representation of the file name after the last dot ('.').  If the first
+     * character in the file name string is a dot it is ignored.  If the
+     * extension cannot be determined, then the empty string is returned.  This
+     * will occur if the path has zero elements ({@link #getFileName()} returns
+     * {@code null}), or the file name string  has fewer than three characters,
+     * does not contain a dot, only the first character is a dot, or the last
+     * character is a dot.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
@@ -271,15 +273,20 @@ public interface Path
      *          string if the extension is indeterminate
      */
     default String getExtension() {
-        String name = getFileName().toString();
-        int length = name.length();
+        Path fileName = getFileName();
+        if (fileName == null) {
+            return "";
+        }
 
-        // Indeterminate if name is too short
+        String fileNameString = fileName.toString();
+        int length = fileNameString.length();
+
+        // Indeterminate if fileNameString is too short
         if (length > 2) {
-            int lastDotIndex = name.lastIndexOf('.');
+            int lastDotIndex = fileNameString.lastIndexOf('.');
             // Indeterminate if no dot or found at last or only the first index
             if (lastDotIndex > 0 && lastDotIndex < length - 1) {
-                return name.substring(lastDotIndex + 1);
+                return fileNameString.substring(lastDotIndex + 1);
             }
         }
         return "";
