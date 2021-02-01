@@ -588,6 +588,10 @@ public abstract class FileChannel
      * operating systems can transfer bytes directly from the filesystem cache
      * to the target channel without actually copying them.  </p>
      *
+     * @apiNote
+     * This method only returns the number of bytes that were actually
+     * transferred, it will not return -1.
+     *
      * @param  position
      *         The position within the file at which the transfer is to begin;
      *         must be non-negative
@@ -654,6 +658,11 @@ public abstract class FileChannel
      * that reads from the source channel and writes to this channel.  Many
      * operating systems can transfer bytes directly from the source channel
      * into the filesystem cache without actually copying them.  </p>
+     *
+     * @apiNote
+     * This method only returns the number of bytes that were actually
+     * transferred, it will not return -1, e.g. in case of EOF of the
+     * {@code src} parameter.
      *
      * @param  src
      *         The source channel
