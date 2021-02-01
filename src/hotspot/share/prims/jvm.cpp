@@ -93,7 +93,6 @@
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
@@ -226,15 +225,6 @@ void trace_class_resolution(Klass* to_class) {
     CLEAR_PENDING_EXCEPTION;
   }
 }
-
-
-// Interface version /////////////////////////////////////////////////////////////////////
-
-
-JVM_LEAF(jint, JVM_GetInterfaceVersion())
-  return JVM_INTERFACE_VERSION;
-JVM_END
-
 
 // java.lang.System //////////////////////////////////////////////////////////////////////
 
