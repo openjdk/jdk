@@ -794,7 +794,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_gcc := sign-compare type-limits unused-result \
           maybe-uninitialized shift-negative-value implicit-fallthrough \
           unused-function, \
-      DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare, \
+      DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare \
+          deprecated-declarations, \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \

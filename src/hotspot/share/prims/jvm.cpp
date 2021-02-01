@@ -380,7 +380,7 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
   #define CSIZE
 #endif // 64bit
 
-#ifdef TIERED
+#if COMPILER1_AND_COMPILER2
     const char* compiler_name = "HotSpot " CSIZE "Tiered Compilers";
 #else
 #if defined(COMPILER1)
@@ -388,11 +388,11 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
 #elif defined(COMPILER2)
     const char* compiler_name = "HotSpot " CSIZE "Server Compiler";
 #elif INCLUDE_JVMCI
-    #error "INCLUDE_JVMCI should imply TIERED"
+    #error "INCLUDE_JVMCI should imply COMPILER1_OR_COMPILER2"
 #else
     const char* compiler_name = "";
 #endif // compilers
-#endif // TIERED
+#endif // COMPILER1_AND_COMPILER2
 
     if (*compiler_name != '\0' &&
         (Arguments::mode() != Arguments::_int)) {

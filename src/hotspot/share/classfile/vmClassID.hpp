@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,22 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
+#ifndef SHARE_CLASSFILE_VMCLASSID_HPP
+#define SHARE_CLASSFILE_VMCLASSID_HPP
 
-#include "memory/allocation.hpp"
+#include "classfile/vmClassMacros.hpp"
+#include "utilities/enumIterator.hpp"
 
-class ShenandoahConcurrentRoots : public AllStatic {
-public:
-  // Can GC settings allow concurrent root processing
-  static bool can_do_concurrent_roots();
-  // If current GC cycle can process roots concurrently
-  static bool should_do_concurrent_roots();
+enum class VMClassID : int {
+  #define DECLARE_VM_CLASS(name, symbol) _VM_CLASS_ENUM(name), _VM_CLASS_ENUM(symbol) = _VM_CLASS_ENUM(name),
+  VM_CLASSES_DO(DECLARE_VM_CLASS)
+  #undef DECLARE_VM_CLASS
 
-  // If GC settings allow concurrent class unloading
-  static bool can_do_concurrent_class_unloading();
-  // If current GC cycle can unload classes concurrently
-  static bool should_do_concurrent_class_unloading();
+  LIMIT,             // exclusive upper limit
+  FIRST = 0,         // inclusive upper limit
+  LAST = LIMIT - 1   // inclusive upper limit
 };
 
+ENUMERATOR_RANGE(VMClassID, VMClassID::FIRST, VMClassID::LAST) // (inclusive start, inclusive end)
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
+#endif // SHARE_CLASSFILE_VMCLASSID_HPP

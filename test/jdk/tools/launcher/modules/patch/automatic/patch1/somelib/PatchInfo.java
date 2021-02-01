@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,32 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package somelib;
 
-package nsk.jdi.VirtualMachine.redefineClasses;
+// This class will be patched
+public class PatchInfo {
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdi.*;
-
-/**
- *  <code>redefineclasses021b</code> is deugee's part of the redefineclasses021.
- *  adding <code>private</code> modifier
- */
-
-public class redefineclasses021b {
-
-    redefineclasses021bc obj = new redefineclasses021bc();
-
-    private interface redefineclasses021bi {
-//  ^^^^^^^
-        void dummyMethod01();
-
+    public static String patchName() {
+        return "patch1";
     }
 
-    class redefineclasses021bc implements redefineclasses021bi {
-
-        public void dummyMethod01() {
-        }
-
-    }
 }

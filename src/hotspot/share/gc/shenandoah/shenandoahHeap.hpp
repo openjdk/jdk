@@ -580,7 +580,6 @@ public:
 
   // SATB barriers hooks
   inline bool requires_marking(const void* entry) const;
-  void force_satb_flush_all_threads();
 
   // Support for bitmap uncommits
   bool commit_bitmap_slice(ShenandoahHeapRegion *r);
