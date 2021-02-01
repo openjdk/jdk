@@ -1746,40 +1746,180 @@ Zone	Asia/Baghdad	2:57:40	-	LMT	1890
 # high on my favorite-country list (and not only because my wife's
 # family is from India).
 
-# From Shanks & Pottenger:
+# From P Chan (2020-10-27), with corrections:
+#
+# 1940-1946 Supplement No. 2 to the Palestine Gazette
+# # issue page  Order No.   dated      start        end         note
+# 1 1010  729  67 of 1940 1940-05-22 1940-05-31* 1940-09-30* revoked by #2
+# 2 1013  758  73 of 1940 1940-05-31 1940-05-31  1940-09-30
+# 3 1055 1574 196 of 1940 1940-11-06 1940-11-16  1940-12-31
+# 4 1066 1811 208 of 1940 1940-12-17 1940-12-31  1941-12-31
+# 5 1156 1967 116 of 1941 1941-12-16 1941-12-31  1942-12-31* amended by #6
+# 6 1228 1608  86 of 1942 1942-10-14 1941-12-31  1942-10-31
+# 7 1256  279  21 of 1943 1943-03-18 1943-03-31  1943-10-31
+# 8 1323  249  19 of 1944 1944-03-13 1944-03-31  1944-10-31
+# 9 1402  328  20 of 1945 1945-04-05 1945-04-15  1945-10-31
+#10 1487  596  14 of 1946 1946-04-04 1946-04-15  1946-10-31
+#
+# 1948 Iton Rishmi (Official Gazette of the Provisional Government)
+# #    issue    page   dated      start       end
+#11 2             7 1948-05-20 1948-05-22 1948-10-31*
+#	^This moved timezone to +04, replaced by #12 from 1948-08-31 24:00 GMT.
+#12 17 (Annex B) 84 1948-08-22 1948-08-31 1948-10-31
+#
+# 1949-2000 Kovetz HaTakanot (Collection of Regulations)
+# # issue page  dated      start       end            note
+#13    6  133 1949-03-23 1949-04-30  1949-10-31
+#14   80  755 1950-03-17 1950-04-15  1950-09-14
+#15  164  782 1951-03-22 1951-03-31  1951-09-29* amended by #16
+#16  206 1940 1951-09-23 ----------  1951-10-22* amended by #17
+#17  212   78 1951-10-19 ----------  1951-11-10
+#18  254  652 1952-03-03 1952-04-19  1952-09-27* amended by #19
+#19  300   11 1952-09-15 ----------  1952-10-18
+#20  348  817 1953-03-03 1953-04-11  1953-09-12
+#21  420  385 1954-02-17 1954-06-12  1954-09-11
+#22  497  548 1955-01-14 1955-06-11  1955-09-10
+#23  591  608 1956-03-12 1956-06-02  1956-09-29
+#24  680  957 1957-02-08 1957-04-27  1957-09-21
+#25 3192 1418 1974-06-28 1974-07-06  1974-10-12
+#26 3322 1389 1975-04-03 1975-04-19  1975-08-30
+#27 4146 2089 1980-07-15 1980-08-02  1980-09-13
+#28 4604 1081 1984-02-22 1984-05-05* 1984-08-25* revoked by #29
+#29 4619 1312 1984-04-06 1984-05-05  1984-08-25
+#30 4744  475 1984-12-23 1985-04-13  1985-09-14* amended by #31
+#31 4851 1848 1985-08-18 ----------  1985-08-31
+#32 4932  899 1986-04-22 1986-05-17  1986-09-06
+#33 5013  580 1987-02-15 1987-04-18* 1987-08-22* revoked by #34
+#34 5021  744 1987-03-30 1987-04-14  1987-09-12
+#35 5096  659 1988-02-14 1988-04-09  1988-09-03
+#36 5167  514 1989-02-03 1989-04-29  1989-09-02
+#37 5248  375 1990-01-23 1990-03-24  1990-08-25
+#38 5335  612 1991-02-10 1991-03-09* 1991-08-31	 amended by #39
+#			 1992-03-28  1992-09-05
+#39 5339  709 1991-03-04 1991-03-23  ----------
+#40 5506  503 1993-02-18 1993-04-02  1993-09-05
+#			 1994-04-01  1994-08-28
+#			 1995-03-31  1995-09-03
+#41 5731  438 1996-01-01 1996-03-14  1996-09-15
+#			 1997-03-13* 1997-09-18* overridden by 1997 Temp Prov
+#			 1998-03-19* 1998-09-17* revoked by #42
+#42 5853 1243 1997-09-18 1998-03-19  1998-09-05
+#43 5937   77 1998-10-18 1999-04-02  1999-09-03
+#			 2000-04-14* 2000-09-15* revoked by #44
+#			 2001-04-13* 2001-09-14* revoked by #44
+#44 6024   39 2000-03-14 2000-04-14  2000-10-22* overridden by 2000 Temp Prov
+#			 2001-04-06* 2001-10-10* overridden by 2000 Temp Prov
+#			 2002-03-29* 2002-10-29* overridden by 2000 Temp Prov
+#
+# These are laws enacted by the Knesset since the Minister could only alter the
+# transition dates at least six months in advanced under the 1992 Law.
+#				dated		start		end
+# 1997 Temporary Provisions	1997-03-06	1997-03-20	1997-09-13
+# 2000 Temporary Provisions	2000-07-28	----------	2000-10-06
+#						2001-04-09	2001-09-24
+#						2002-03-29	2002-10-07
+#						2003-03-28	2003-10-03
+#						2004-04-07	2004-09-22
+# Note:
+# Transition times in 1940-1957 (#1-#24) were midnight GMT,
+# in 1974-1998 (#25-#42 and the 1997 Temporary Provisions) were midnight,
+# in 1999-April 2000 (#43,#44) were 02:00,
+# in the 2000 Temporary Provisions were 01:00.
+#
+# -----------------------------------------------------------------------------
+# Links:
+# 1 https://findit.library.yale.edu/images_layout/view?parentoid=15537490&increment=687
+# 2 https://findit.library.yale.edu/images_layout/view?parentoid=15537490&increment=716
+# 3 https://findit.library.yale.edu/images_layout/view?parentoid=15537491&increment=721
+# 4 https://findit.library.yale.edu/images_layout/view?parentoid=15537491&increment=958
+# 5 https://findit.library.yale.edu/images_layout/view?parentoid=15537502&increment=558
+# 6 https://findit.library.yale.edu/images_layout/view?parentoid=15537511&increment=105
+# 7 https://findit.library.yale.edu/images_layout/view?parentoid=15537516&increment=278
+# 8 https://findit.library.yale.edu/images_layout/view?parentoid=15537522&increment=248
+# 9 https://findit.library.yale.edu/images_layout/view?parentoid=15537530&increment=329
+#10 https://findit.library.yale.edu/images_layout/view?parentoid=15537537&increment=601
+#11 https://www.nevo.co.il/law_word/law12/er-002.pdf#page=3
+#12 https://www.nevo.co.il/law_word/law12/er-017-t2.pdf#page=4
+#13 https://www.nevo.co.il/law_word/law06/tak-0006.pdf#page=3
+#14 https://www.nevo.co.il/law_word/law06/tak-0080.pdf#page=7
+#15 https://www.nevo.co.il/law_word/law06/tak-0164.pdf#page=10
+#16 https://www.nevo.co.il/law_word/law06/tak-0206.pdf#page=4
+#17 https://www.nevo.co.il/law_word/law06/tak-0212.pdf#page=2
+#18 https://www.nevo.co.il/law_word/law06/tak-0254.pdf#page=4
+#19 https://www.nevo.co.il/law_word/law06/tak-0300.pdf#page=5
+#20 https://www.nevo.co.il/law_word/law06/tak-0348.pdf#page=3
+#21 https://www.nevo.co.il/law_word/law06/tak-0420.pdf#page=5
+#22 https://www.nevo.co.il/law_word/law06/tak-0497.pdf#page=10
+#23 https://www.nevo.co.il/law_word/law06/tak-0591.pdf#page=6
+#24 https://www.nevo.co.il/law_word/law06/tak-0680.pdf#page=3
+#25 https://www.nevo.co.il/law_word/law06/tak-3192.pdf#page=2
+#26 https://www.nevo.co.il/law_word/law06/tak-3322.pdf#page=5
+#27 https://www.nevo.co.il/law_word/law06/tak-4146.pdf#page=2
+#28 https://www.nevo.co.il/law_word/law06/tak-4604.pdf#page=7
+#29 https://www.nevo.co.il/law_word/law06/tak-4619.pdf#page=2
+#30 https://www.nevo.co.il/law_word/law06/tak-4744.pdf#page=11
+#31 https://www.nevo.co.il/law_word/law06/tak-4851.pdf#page=2
+#32 https://www.nevo.co.il/law_word/law06/tak-4932.pdf#page=19
+#33 https://www.nevo.co.il/law_word/law06/tak-5013.pdf#page=8
+#34 https://www.nevo.co.il/law_word/law06/tak-5021.pdf#page=8
+#35 https://www.nevo.co.il/law_word/law06/tak-5096.pdf#page=3
+#36 https://www.nevo.co.il/law_word/law06/tak-5167.pdf#page=2
+#37 https://www.nevo.co.il/law_word/law06/tak-5248.pdf#page=7
+#38 https://www.nevo.co.il/law_word/law06/tak-5335.pdf#page=6
+#39 https://www.nevo.co.il/law_word/law06/tak-5339.pdf#page=7
+#40 https://www.nevo.co.il/law_word/law06/tak-5506.pdf#page=19
+#41 https://www.nevo.co.il/law_word/law06/tak-5731.pdf#page=2
+#42 https://www.nevo.co.il/law_word/law06/tak-5853.pdf#page=3
+#43 https://www.nevo.co.il/law_word/law06/tak-5937.pdf#page=9
+#44 https://www.nevo.co.il/law_word/law06/tak-6024.pdf#page=4
+#
+# Time Determination (Temporary Provisions) Law, 1997
+# https://www.nevo.co.il/law_html/law19/p201_003.htm
+#
+# Time Determination (Temporary Provisions) Law, 2000
+# https://www.nevo.co.il/law_html/law19/p201_004.htm
+#
+# Time Determination Law, 1992 and amendments
+# https://www.nevo.co.il/law_html/law01/p201_002.htm
+# https://main.knesset.gov.il/Activity/Legislation/Laws/Pages/LawPrimary.aspx?lawitemid=2001174
+
+# From Paul Eggert (2020-10-27):
+# Several of the midnight transitions mentioned above are ambiguous;
+# are they 00:00, 00:00s, 24:00, or 24:00s?  When resolving these ambiguities,
+# try to minimize changes from previous tzdb versions, for lack of better info.
+# Commentary from previous versions is included below, to help explain this.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Zion	1940	only	-	Jun	 1	0:00	1:00	D
-Rule	Zion	1942	1944	-	Nov	 1	0:00	0	S
-Rule	Zion	1943	only	-	Apr	 1	2:00	1:00	D
-Rule	Zion	1944	only	-	Apr	 1	0:00	1:00	D
-Rule	Zion	1945	only	-	Apr	16	0:00	1:00	D
-Rule	Zion	1945	only	-	Nov	 1	2:00	0	S
-Rule	Zion	1946	only	-	Apr	16	2:00	1:00	D
-Rule	Zion	1946	only	-	Nov	 1	0:00	0	S
-Rule	Zion	1948	only	-	May	23	0:00	2:00	DD
-Rule	Zion	1948	only	-	Sep	 1	0:00	1:00	D
-Rule	Zion	1948	1949	-	Nov	 1	2:00	0	S
-Rule	Zion	1949	only	-	May	 1	0:00	1:00	D
-Rule	Zion	1950	only	-	Apr	16	0:00	1:00	D
-Rule	Zion	1950	only	-	Sep	15	3:00	0	S
-Rule	Zion	1951	only	-	Apr	 1	0:00	1:00	D
-Rule	Zion	1951	only	-	Nov	11	3:00	0	S
-Rule	Zion	1952	only	-	Apr	20	2:00	1:00	D
-Rule	Zion	1952	only	-	Oct	19	3:00	0	S
-Rule	Zion	1953	only	-	Apr	12	2:00	1:00	D
-Rule	Zion	1953	only	-	Sep	13	3:00	0	S
-Rule	Zion	1954	only	-	Jun	13	0:00	1:00	D
-Rule	Zion	1954	only	-	Sep	12	0:00	0	S
-Rule	Zion	1955	only	-	Jun	11	2:00	1:00	D
-Rule	Zion	1955	only	-	Sep	11	0:00	0	S
-Rule	Zion	1956	only	-	Jun	 3	0:00	1:00	D
-Rule	Zion	1956	only	-	Sep	30	3:00	0	S
-Rule	Zion	1957	only	-	Apr	29	2:00	1:00	D
-Rule	Zion	1957	only	-	Sep	22	0:00	0	S
-Rule	Zion	1974	only	-	Jul	 7	0:00	1:00	D
-Rule	Zion	1974	only	-	Oct	13	0:00	0	S
-Rule	Zion	1975	only	-	Apr	20	0:00	1:00	D
-Rule	Zion	1975	only	-	Aug	31	0:00	0	S
+Rule	Zion	1940	only	-	May	31	24:00u	1:00	D
+Rule	Zion	1940	only	-	Sep	30	24:00u	0	S
+Rule	Zion	1940	only	-	Nov	16	24:00u	1:00	D
+Rule	Zion	1942	1946	-	Oct	31	24:00u	0	S
+Rule	Zion	1943	1944	-	Mar	31	24:00u	1:00	D
+Rule	Zion	1945	1946	-	Apr	15	24:00u	1:00	D
+Rule	Zion	1948	only	-	May	22	24:00u	2:00	DD
+Rule	Zion	1948	only	-	Aug	31	24:00u	1:00	D
+Rule	Zion	1948	1949	-	Oct	31	24:00u	0	S
+Rule	Zion	1949	only	-	Apr	30	24:00u	1:00	D
+Rule	Zion	1950	only	-	Apr	15	24:00u	1:00	D
+Rule	Zion	1950	only	-	Sep	14	24:00u	0	S
+Rule	Zion	1951	only	-	Mar	31	24:00u	1:00	D
+Rule	Zion	1951	only	-	Nov	10	24:00u	0	S
+Rule	Zion	1952	only	-	Apr	19	24:00u	1:00	D
+Rule	Zion	1952	only	-	Oct	18	24:00u	0	S
+Rule	Zion	1953	only	-	Apr	11	24:00u	1:00	D
+Rule	Zion	1953	only	-	Sep	12	24:00u	0	S
+Rule	Zion	1954	only	-	Jun	12	24:00u	1:00	D
+Rule	Zion	1954	only	-	Sep	11	24:00u	0	S
+Rule	Zion	1955	only	-	Jun	11	24:00u	1:00	D
+Rule	Zion	1955	only	-	Sep	10	24:00u	0	S
+Rule	Zion	1956	only	-	Jun	 2	24:00u	1:00	D
+Rule	Zion	1956	only	-	Sep	29	24:00u	0	S
+Rule	Zion	1957	only	-	Apr	27	24:00u	1:00	D
+Rule	Zion	1957	only	-	Sep	21	24:00u	0	S
+Rule	Zion	1974	only	-	Jul	 6	24:00	1:00	D
+Rule	Zion	1974	only	-	Oct	12	24:00	0	S
+Rule	Zion	1975	only	-	Apr	19	24:00	1:00	D
+Rule	Zion	1975	only	-	Aug	30	24:00	0	S
 
 # From Alois Treindl (2019-03-06):
 # http://www.moin.gov.il/Documents/שעון%20קיץ/clock-50-years-7-2014.pdf
@@ -1792,25 +1932,24 @@ Rule	Zion	1975	only	-	Aug	31	0:00	0	S
 # From Paul Eggert (2019-03-06):
 # Also see this thread about the moin.gov.il URL:
 # https://mm.icann.org/pipermail/tz/2018-November/027194.html
-Rule	Zion	1980	only	-	Aug	 2	0:00	1:00	D
-Rule	Zion	1980	only	-	Sep	13	1:00	0	S
-Rule	Zion	1984	only	-	May	 5	0:00	1:00	D
-Rule	Zion	1984	only	-	Aug	25	1:00	0	S
+Rule	Zion	1980	only	-	Aug	 2	24:00s	1:00	D
+Rule	Zion	1980	only	-	Sep	13	24:00s	0	S
+Rule	Zion	1984	only	-	May	 5	24:00s	1:00	D
+Rule	Zion	1984	only	-	Aug	25	24:00s	0	S
 
-# From Shanks & Pottenger:
-Rule	Zion	1985	only	-	Apr	14	0:00	1:00	D
-Rule	Zion	1985	only	-	Sep	15	0:00	0	S
-Rule	Zion	1986	only	-	May	18	0:00	1:00	D
-Rule	Zion	1986	only	-	Sep	 7	0:00	0	S
-Rule	Zion	1987	only	-	Apr	15	0:00	1:00	D
-Rule	Zion	1987	only	-	Sep	13	0:00	0	S
+Rule	Zion	1985	only	-	Apr	13	24:00	1:00	D
+Rule	Zion	1985	only	-	Aug	31	24:00	0	S
+Rule	Zion	1986	only	-	May	17	24:00	1:00	D
+Rule	Zion	1986	only	-	Sep	 6	24:00	0	S
+Rule	Zion	1987	only	-	Apr	14	24:00	1:00	D
+Rule	Zion	1987	only	-	Sep	12	24:00	0	S
 
 # From Avigdor Finkelstein (2014-03-05):
 # I check the Parliament (Knesset) records and there it's stated that the
 # [1988] transition should take place on Saturday night, when the Sabbath
 # ends and changes to Sunday.
-Rule	Zion	1988	only	-	Apr	10	0:00	1:00	D
-Rule	Zion	1988	only	-	Sep	 4	0:00	0	S
+Rule	Zion	1988	only	-	Apr	 9	24:00	1:00	D
+Rule	Zion	1988	only	-	Sep	 3	24:00	0	S
 
 # From Ephraim Silverberg
 # (1997-03-04, 1998-03-16, 1998-12-28, 2000-01-17, 2000-07-25, 2004-12-22,
@@ -1840,14 +1979,14 @@ Rule	Zion	1988	only	-	Sep	 4	0:00	0	S
 # (the eve of the 7th of Tishrei in the lunar Hebrew calendar).
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Zion	1989	only	-	Apr	30	0:00	1:00	D
-Rule	Zion	1989	only	-	Sep	 3	0:00	0	S
-Rule	Zion	1990	only	-	Mar	25	0:00	1:00	D
-Rule	Zion	1990	only	-	Aug	26	0:00	0	S
-Rule	Zion	1991	only	-	Mar	24	0:00	1:00	D
-Rule	Zion	1991	only	-	Sep	 1	0:00	0	S
-Rule	Zion	1992	only	-	Mar	29	0:00	1:00	D
-Rule	Zion	1992	only	-	Sep	 6	0:00	0	S
+Rule	Zion	1989	only	-	Apr	29	24:00	1:00	D
+Rule	Zion	1989	only	-	Sep	 2	24:00	0	S
+Rule	Zion	1990	only	-	Mar	24	24:00	1:00	D
+Rule	Zion	1990	only	-	Aug	25	24:00	0	S
+Rule	Zion	1991	only	-	Mar	23	24:00	1:00	D
+Rule	Zion	1991	only	-	Aug	31	24:00	0	S
+Rule	Zion	1992	only	-	Mar	28	24:00	1:00	D
+Rule	Zion	1992	only	-	Sep	 5	24:00	0	S
 Rule	Zion	1993	only	-	Apr	 2	0:00	1:00	D
 Rule	Zion	1993	only	-	Sep	 5	0:00	0	S
 
@@ -1876,10 +2015,10 @@ Rule	Zion	1995	only	-	Sep	 3	0:00	0	S
 #       where YYYY is the relevant year.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Zion	1996	only	-	Mar	15	0:00	1:00	D
-Rule	Zion	1996	only	-	Sep	16	0:00	0	S
-Rule	Zion	1997	only	-	Mar	21	0:00	1:00	D
-Rule	Zion	1997	only	-	Sep	14	0:00	0	S
+Rule	Zion	1996	only	-	Mar	14	24:00	1:00	D
+Rule	Zion	1996	only	-	Sep	15	24:00	0	S
+Rule	Zion	1997	only	-	Mar	20	24:00	1:00	D
+Rule	Zion	1997	only	-	Sep	13	24:00	0	S
 Rule	Zion	1998	only	-	Mar	20	0:00	1:00	D
 Rule	Zion	1998	only	-	Sep	 6	0:00	0	S
 Rule	Zion	1999	only	-	Apr	 2	2:00	1:00	D
@@ -1931,14 +2070,15 @@ Rule	Zion	2010	only	-	Sep	12	2:00	0	S
 Rule	Zion	2011	only	-	Oct	 2	2:00	0	S
 Rule	Zion	2012	only	-	Sep	23	2:00	0	S
 
-# From Ephraim Silverberg (2013-06-27):
-# On June 23, 2013, the Israeli government approved changes to the
-# Time Decree Law.  The next day, the changes passed the First Reading
-# in the Knesset.  The law is expected to pass the Second and Third
-# (final) Readings by the beginning of September 2013.
-#
-# As of 2013, DST starts at 02:00 on the Friday before the last Sunday
-# in March.  DST ends at 02:00 on the last Sunday of October.
+# From Ephraim Silverberg (2020-10-26):
+# The current time law (2013) from the State of Israel can be viewed
+# (in Hebrew) at:
+# ftp://ftp.cs.huji.ac.il/pub/tz/israel/announcements/2013+law.pdf
+# It translates to:
+# Every year, in the period from the Friday before the last Sunday in
+# the month of March at 02:00 a.m. until the last Sunday of the month
+# of October at 02:00 a.m., Israel Time will be advanced an additional
+# hour such that it will be UTC+3.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	2013	max	-	Mar	Fri>=23	2:00	1:00	D

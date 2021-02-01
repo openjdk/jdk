@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8157000 8192850 8182765
+ * @bug 8157000 8192850 8182765 8223607
  * @summary  test the behavior of --override-methods option
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -304,35 +304,267 @@ public class TestOverrideMethods  extends JavadocTester {
                     <a href="pkg5/Classes.C.html#m7()">m7()</a>""",
                 """
                     <a href="pkg5/Classes.GP.html#m7()">m7()</a>""",
-                "Returns the enum constant of this type with the specified name.",
+                "Returns the enum constant of this class with the specified name.",
                 """
-                    Returns an array containing the constants of this enum type, in
+                    Returns an array containing the constants of this enum class, in
                     the order they are declared."""
         );
 
-        // Check methods with covariant return types
-        // Only m2 should be shown in summary; m1 and m3 should listed as declared in Base
+        // Check methods with covariant return types, changes in modifiers or thrown exceptions.
+        // Only those should be shown in summary; m1, m3, m9 should listed as declared in Base
         checkOutput("pkg6/Sub.html", true,
                 """
                     <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>java.lang.String</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#m2()">\
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.String</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m2()">\
                     m2</a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4">
                     <div class="block">This is Base::m2.</div>
                     </div>
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4"><code>void</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m4\
+                    ()">m4</a></span>()</code></div>
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab4">
+                    <div class="block">This is Base::m4.</div>
+                    </div>
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m\
+                    5()">m5</a></span>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4">
+                    <div class="block">This is Base::m5.</div>
+                    </div>
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m6\
+                    ()">m6</a></span>()</code></div>
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab4">
+                    <div class="block">This is Base::m6.</div>
+                    </div>
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m\
+                    7()">m7</a></span>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4">
+                    <div class="block">This is Base::m7.</div>
+                    </div>
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab3"><code>abstract java.lang.Object</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab3"><code><span class="member-name-link"><a href="#m8\
+                    ()">m8</a></span>()</code></div>
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab3">
+                    <div class="block">This is Base::m8.</div>
                     </div>
                     """,
                 """
                     <div class="inherited-list">
                     <h3 id="methods.inherited.from.class.pkg6.Base">Methods declared in class&nbsp;p\
                     kg6.<a href="Base.html" title="class in pkg6">Base</a></h3>
-                    <code><a href="Base.html#m1()">m1</a>, <a href="Base.html#m3()">m3</a></code></div>
+                    <code><a href="Base.html#m1()">m1</a>, <a href="Base.html#m3()">m3</a>, <a href="Base.html#m9()">m9</a></code></div>
                     """);
+    }
+
+    @Test
+    public void testSummaryAnnotations() {
+        javadoc("-d", "out-summary-annotations",
+                "-sourcepath", testSrc,
+                "--no-platform-links",
+                "-javafx",
+                "--disable-javafx-strict-checks",
+                "--override-methods=summary",
+                "-private",
+                "pkg7");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg7/AnnotatedSub1.html", true,
+                """
+                    <div class="inherited-list">
+                    <h3 id="methods.inherited.from.class.pkg7.AnnotatedBase">Methods declared in int\
+                    erface&nbsp;pkg7.<a href="AnnotatedBase.html" title="interface in pkg7">Annotate\
+                    dBase</a></h3>
+                    <code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></code></div>""");
+
+        checkOutput("pkg7/AnnotatedSub2.html", true,
+                """
+                    <div class="member-signature"><span class="annotations"><a href="A.html" title="\
+                    annotation in pkg7">@A</a>
+                    </span><span class="return-type"><a href="A.html" title="annotation in pkg7">@A<\
+                    /a> java.lang.Iterable&lt;java.lang.String&gt;</span>&nbsp;<span class="element-\
+                    name">m1</span>&#8203;<span class="parameters">(java.lang.Class&lt;? extends jav\
+                    a.lang.CharSequence&gt;&nbsp;p1,
+                     int[]&nbsp;p2)</span></div>
+                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
+                    otatedBase</a></code></span></div>
+                    <div class="block">This is AnnotatedBase::m1.</div>
+                    <dl class="notes">
+                    <dt>Specified by:</dt>
+                    <dd><code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></cod\
+                    e>&nbsp;in interface&nbsp;<code><a href="AnnotatedBase.html" title="interface in\
+                     pkg7">AnnotatedBase</a></code></dd>
+                    <dt>Parameters:</dt>
+                    <dd><code>p1</code> - first parameter</dd>
+                    <dd><code>p2</code> - second parameter</dd>
+                    <dt>Returns:</dt>
+                    <dd>something</dd>
+                    </dl>""");
+
+        checkOutput("pkg7/AnnotatedSub3.html", true,
+                """
+                    <div class="member-signature"><span class="annotations"><a href="A.html" title="\
+                    annotation in pkg7">@A</a>
+                    </span><span class="return-type"><a href="A.html" title="annotation in pkg7">@A<\
+                    /a> java.lang.Iterable&lt;java.lang.String&gt;</span>&nbsp;<span class="element-\
+                    name">m1</span>&#8203;<span class="parameters">(java.lang.Class&lt;? extends jav\
+                    a.lang.CharSequence&gt;&nbsp;p1,
+                     int[]&nbsp;p2)</span></div>
+                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
+                    otatedBase</a></code></span></div>
+                    <div class="block">This is AnnotatedBase::m1.</div>
+                    <dl class="notes">
+                    <dt>Specified by:</dt>
+                    <dd><code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></cod\
+                    e>&nbsp;in interface&nbsp;<code><a href="AnnotatedBase.html" title="interface in\
+                     pkg7">AnnotatedBase</a></code></dd>
+                    <dt>Parameters:</dt>
+                    <dd><code>p1</code> - first parameter</dd>
+                    <dd><code>p2</code> - second parameter</dd>
+                    <dt>Returns:</dt>
+                    <dd>something</dd>
+                    </dl>""");
+
+        checkOutput("pkg7/AnnotatedSub4.html", true,
+                """
+                    <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;<a\
+                     href="A.html" title="annotation in pkg7">@A</a> java.lang.String&gt;</span>&nbs\
+                    p;<span class="element-name">m1</span>&#8203;<span class="parameters">(java.lang\
+                    .Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
+                     int[]&nbsp;p2)</span></div>
+                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
+                    otatedBase</a></code></span></div>
+                    <div class="block">This is AnnotatedBase::m1.</div>
+                    <dl class="notes">
+                    <dt>Specified by:</dt>
+                    <dd><code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></cod\
+                    e>&nbsp;in interface&nbsp;<code><a href="AnnotatedBase.html" title="interface in\
+                     pkg7">AnnotatedBase</a></code></dd>
+                    <dt>Parameters:</dt>
+                    <dd><code>p1</code> - first parameter</dd>
+                    <dd><code>p2</code> - second parameter</dd>
+                    <dt>Returns:</dt>
+                    <dd>something</dd>
+                    </dl>""");
+
+        checkOutput("pkg7/AnnotatedSub5.html", true,
+                """
+                    <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
+                    class="parameters">(<a href="A.html" title="annotation in pkg7">@A</a>
+                     <a href="A.html" title="annotation in pkg7">@A</a> java.lang.Class&lt;? extends\
+                     java.lang.CharSequence&gt;&nbsp;p1,
+                     int[]&nbsp;p2)</span></div>
+                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
+                    otatedBase</a></code></span></div>
+                    <div class="block">This is AnnotatedBase::m1.</div>
+                    <dl class="notes">
+                    <dt>Specified by:</dt>
+                    <dd><code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></cod\
+                    e>&nbsp;in interface&nbsp;<code><a href="AnnotatedBase.html" title="interface in\
+                     pkg7">AnnotatedBase</a></code></dd>
+                    <dt>Parameters:</dt>
+                    <dd><code>p1</code> - first parameter</dd>
+                    <dd><code>p2</code> - second parameter</dd>
+                    <dt>Returns:</dt>
+                    <dd>something</dd>
+                    </dl>""");
+
+        checkOutput("pkg7/AnnotatedSub6.html", true,
+                """
+                    <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
+                    class="parameters">(java.lang.Class&lt;<a href="A.html" title="annotation in pkg\
+                    7">@A</a> ? extends java.lang.CharSequence&gt;&nbsp;p1,
+                     int[]&nbsp;p2)</span></div>
+                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
+                    otatedBase</a></code></span></div>
+                    <div class="block">This is AnnotatedBase::m1.</div>
+                    <dl class="notes">
+                    <dt>Specified by:</dt>
+                    <dd><code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></cod\
+                    e>&nbsp;in interface&nbsp;<code><a href="AnnotatedBase.html" title="interface in\
+                     pkg7">AnnotatedBase</a></code></dd>
+                    <dt>Parameters:</dt>
+                    <dd><code>p1</code> - first parameter</dd>
+                    <dd><code>p2</code> - second parameter</dd>
+                    <dt>Returns:</dt>
+                    <dd>something</dd>
+                    </dl>""");
+
+        checkOutput("pkg7/AnnotatedSub7.html", true,
+                """
+                    <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
+                    class="parameters">(java.lang.Class&lt;? extends <a href="A.html" title="annotat\
+                    ion in pkg7">@A</a> java.lang.CharSequence&gt;&nbsp;p1,
+                     int[]&nbsp;p2)</span></div>
+                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
+                    otatedBase</a></code></span></div>
+                    <div class="block">This is AnnotatedBase::m1.</div>
+                    <dl class="notes">
+                    <dt>Specified by:</dt>
+                    <dd><code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></cod\
+                    e>&nbsp;in interface&nbsp;<code><a href="AnnotatedBase.html" title="interface in\
+                     pkg7">AnnotatedBase</a></code></dd>
+                    <dt>Parameters:</dt>
+                    <dd><code>p1</code> - first parameter</dd>
+                    <dd><code>p2</code> - second parameter</dd>
+                    <dt>Returns:</dt>
+                    <dd>something</dd>
+                    </dl>""");
+
+        checkOutput("pkg7/AnnotatedSub8.html", true,
+                """
+                    <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
+                    class="parameters">(java.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
+                     int <a href="A.html" title="annotation in pkg7">@A</a> []&nbsp;p2)</span></div>
+                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
+                    otatedBase</a></code></span></div>
+                    <div class="block">This is AnnotatedBase::m1.</div>
+                    <dl class="notes">
+                    <dt>Specified by:</dt>
+                    <dd><code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></cod\
+                    e>&nbsp;in interface&nbsp;<code><a href="AnnotatedBase.html" title="interface in\
+                     pkg7">AnnotatedBase</a></code></dd>
+                    <dt>Parameters:</dt>
+                    <dd><code>p1</code> - first parameter</dd>
+                    <dd><code>p2</code> - second parameter</dd>
+                    <dt>Returns:</dt>
+                    <dd>something</dd>
+                    </dl>""");
     }
 }

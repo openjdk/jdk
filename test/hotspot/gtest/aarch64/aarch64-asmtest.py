@@ -1040,7 +1040,10 @@ class NEONReduceInstruction(Instruction):
 
     def cstr(self):
         buf = Instruction.cstr(self) + str(self.dstSIMDreg)
-        buf = '%s, __ T%s, %s);' % (buf, self.arrangement, self.srcSIMDreg)
+        if self._name == "fmaxp" or self._name == "fminp":
+            buf = '%s, %s, __ %s);' % (buf, self.srcSIMDreg, self.arrangement[1:])
+        else:
+            buf = '%s, __ T%s, %s);' % (buf, self.arrangement, self.srcSIMDreg)
         return buf
 
     def astr(self):
@@ -1401,6 +1404,8 @@ generate(NEONReduceInstruction,
           ["sminv", "sminv", "8B"], ["sminv", "sminv", "16B"],
           ["sminv", "sminv", "4H"], ["sminv", "sminv", "8H"],
           ["sminv", "sminv", "4S"], ["fminv", "fminv", "4S"],
+          ["fmaxp", "fmaxp", "2S"], ["fmaxp", "fmaxp", "2D"],
+          ["fminp", "fminp", "2S"], ["fminp", "fminp", "2D"],
           ])
 
 generate(TwoRegNEONOp,

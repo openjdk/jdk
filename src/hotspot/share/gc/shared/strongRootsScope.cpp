@@ -37,9 +37,16 @@ MarkScope::~MarkScope() {
 }
 
 StrongRootsScope::StrongRootsScope(uint n_threads) : _n_threads(n_threads) {
-  Threads::change_thread_claim_token();
+  // No need for thread claim for statically-known sequential case (_n_threads == 0)
+  // For positive values, clients of this class often unify sequential/parallel
+  // cases, so they expect the thread claim token to be updated.
+  if (_n_threads != 0) {
+    Threads::change_thread_claim_token();
+  }
 }
 
 StrongRootsScope::~StrongRootsScope() {
-  Threads::assert_all_threads_claimed();
+  if (_n_threads != 0) {
+    Threads::assert_all_threads_claimed();
+  }
 }

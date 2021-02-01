@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,31 +65,31 @@ public class TestNewLanguageFeatures extends JavadocTester {
     void checkEnums() {
        checkOutput("pkg/Coin.html", true,
                 // Make sure enum header is correct.
-                "Enum Coin</h1>",
+                "Enum Class Coin</h1>",
                 // Make sure enum signature is correct.
                """
                    <div class="type-signature"><span class="modifiers">public enum </span><span clas\
                    s="element-name type-name-label">Coin</span>
                    <span class="extends-implements">extends java.lang.Enum&lt;<a href="Coin.html" ti\
-                   tle="enum in pkg">Coin</a>&gt;</span></div>""",
+                   tle="enum class in pkg">Coin</a>&gt;</span></div>""",
                 // Check for enum constant section
                 "<div class=\"caption\"><span>Enum Constants</span></div>",
                 // Detail for enum constant
                 """
                     <span class="member-name-link"><a href="#Dime">Dime</a></span>""",
                 // Automatically insert documentation for values() and valueOf().
-                "Returns an array containing the constants of this enum type,",
-                "Returns the enum constant of this type with the specified name",
+                "Returns an array containing the constants of this enum class,",
+                "Returns the enum constant of this class with the specified name",
                 "Overloaded valueOf() method has correct documentation.",
                 "Overloaded values method  has correct documentation.",
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="return-type"><a href="Coin.html" title="enum in pkg">Coin</a></span\
+                    <span class="return-type"><a href="Coin.html" title="enum class in pkg">Coin</a></span\
                     >&nbsp;<span class="element-name">valueOf</span>&#8203;<span class="parameters">(java.la\
                     ng.String&nbsp;name)</span></div>
-                    <div class="block">Returns the enum constant of this type with the specified name.
+                    <div class="block">Returns the enum constant of this class with the specified name.
                     The string must match <i>exactly</i> an identifier used to declare an
-                    enum constant in this type.  (Extraneous whitespace characters are\s
+                    enum constant in this class.  (Extraneous whitespace characters are\s
                     not permitted.)</div>
                     <dl class="notes">
                     <dt>Parameters:</dt>
@@ -97,7 +97,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <dt>Returns:</dt>
                     <dd>the enum constant with the specified name</dd>
                     <dt>Throws:</dt>
-                    <dd><code>java.lang.IllegalArgumentException</code> - if this enum type has no constant with the specified name</dd>
+                    <dd><code>java.lang.IllegalArgumentException</code> - if this enum class has no constant with the specified name</dd>
                     <dd><code>java.lang.NullPointerException</code> - if the argument is null</dd>""");
 
         // NO constructor section
@@ -141,11 +141,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      V&nbsp;param2)</span></div>""",
                 // Method that returns TypeParameters
                 """
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code><a href="TypeParameters.html" title="type parame\
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><a href="TypeParameters.html" title="type parame\
                     ter in TypeParameters">E</a>[]</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#method\
                     ThatReturnsTypeParameterA(E%5B%5D)">methodThatReturnsTypeParameterA</a></span>&#\
                     8203;(<a href="TypeParameters.html" title="type parameter in TypeParameters">E</\
                     a>[]&nbsp;e)</code>""",
@@ -157,11 +157,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     le="type parameter in TypeParameters">E</a>[]&nbsp;e)</span></div>
                     """,
                 """
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>&lt;T extends java.lang.Object &amp; java.lang.C\
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>&lt;T extends java.lang.Object &amp; java.lang.C\
                     omparable&lt;? super T&gt;&gt;<br>T</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#method\
                     tThatReturnsTypeParametersB(java.util.Collection)">methodtThatReturnsTypeParamet\
                     ersB</a></span>&#8203;(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>""",
                 """
@@ -169,12 +169,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     """,
                 // Method takes a TypeVariable
                 """
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>&lt;X extends java.lang.Throwable&gt;<br><a href\
-                    ="TypeParameters.html" title="type parameter in TypeParameters">E</a></code></di\
-                    v>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#orElse\
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4"><code>&lt;X extends java.lang.Throwable&gt;<br><a href\
+                    ="TypeParameters.html" title="type parameter in TypeParameters">E</a></code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#orElse\
                     Throw(java.util.function.Supplier)">orElseThrow</a></span>&#8203;(java.util.func\
                     tion.Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"""
                 );

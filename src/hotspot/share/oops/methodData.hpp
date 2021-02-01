@@ -1984,7 +1984,11 @@ public:
 
   public:
     CompilerCounters() : _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
+#ifndef ZERO
+      // Some Zero platforms do not have expected alignment, and do not use
+      // this code. static_assert would still fire and fail for them.
       static_assert(sizeof(_trap_hist) % HeapWordSize == 0, "align");
+#endif
       uint size_in_words = sizeof(_trap_hist) / HeapWordSize;
       Copy::zero_to_words((HeapWord*) &_trap_hist, size_in_words);
     }
@@ -2148,6 +2152,7 @@ private:
 
   static bool profile_jsr292(const methodHandle& m, int bci);
   static bool profile_unsafe(const methodHandle& m, int bci);
+  static bool profile_memory_access(const methodHandle& m, int bci);
   static int profile_arguments_flag();
   static bool profile_all_arguments();
   static bool profile_arguments_for_invoke(const methodHandle& m, int bci);

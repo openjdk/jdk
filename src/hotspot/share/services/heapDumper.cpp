@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1408,15 +1408,12 @@ class VM_HeapDumper;
 
 class HeapObjectDumper : public ObjectClosure {
  private:
-  VM_HeapDumper* _dumper;
   DumpWriter* _writer;
 
-  VM_HeapDumper* dumper()               { return _dumper; }
   DumpWriter* writer()                  { return _writer; }
 
  public:
-  HeapObjectDumper(VM_HeapDumper* dumper, DumpWriter* writer) {
-    _dumper = dumper;
+  HeapObjectDumper(DumpWriter* writer) {
     _writer = writer;
   }
 
@@ -1826,7 +1823,7 @@ void VM_HeapDumper::work(uint worker_id) {
   // segment is started.
   // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
   // of the heap dump.
-  HeapObjectDumper obj_dumper(this, writer());
+  HeapObjectDumper obj_dumper(writer());
   Universe::heap()->object_iterate(&obj_dumper);
 
   // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
@@ -2032,7 +2029,7 @@ void HeapDumper::dump_heap(bool oome) {
   const int max_digit_chars = 20;
 
   const char* dump_file_name = "java_pid";
-  const char* dump_file_ext  = ".hprof";
+  const char* dump_file_ext  = HeapDumpGzipLevel > 0 ? ".hprof.gz" : ".hprof";
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
@@ -2099,6 +2096,6 @@ void HeapDumper::dump_heap(bool oome) {
 
   HeapDumper dumper(false /* no GC before heap dump */,
                     oome  /* pass along out-of-memory-error flag */);
-  dumper.dump(my_path, tty);
+  dumper.dump(my_path, tty, HeapDumpGzipLevel);
   os::free(my_path);
 }

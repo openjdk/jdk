@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -56,7 +57,7 @@ inline static RegisterOrConstant constant(int value) {
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg,
                                           Register temp_reg, Register temp2_reg) {
   if (VerifyMethodHandles) {
-    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+    verify_klass(_masm, klass_reg, VM_CLASS_ID(java_lang_Class),
                  temp_reg, temp2_reg, "MH argument is a Class");
   }
   __ ld(klass_reg, java_lang_Class::klass_offset(), klass_reg);
@@ -74,11 +75,11 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj_reg, SystemDictionary::WKID klass_id,
+                                 Register obj_reg, VMClassID klass_id,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  Klass* klass = SystemDictionary::well_known_klass(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj_reg, FILE_AND_LINE);
@@ -325,7 +326,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
       // make sure the trailing argument really is a MemberName (caller responsibility)
-      verify_klass(_masm, member_reg, SystemDictionary::WK_KLASS_ENUM_NAME(MemberName_klass),
+      verify_klass(_masm, member_reg, VM_CLASS_ID(MemberName_klass),
                    temp1, temp2,
                    "MemberName required for invokeVirtual etc.");
     }
@@ -519,7 +520,8 @@ void trace_method_handle_stub(const char* adaptername,
 
       JavaThread* p = JavaThread::active();
 
-      PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
+      // may not be needed by safer and unexpensive here
+      PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
       // Note: We want to allow trace_method_handle from any call site.
