@@ -54,15 +54,15 @@ final class LCMSProfile extends Profile {
         tagCache.clear();
     }
 
-    static final class TagCache  {
+    private static final class TagCache  {
         private final LCMSProfile profile;
         private final HashMap<Integer, TagData> tags = new HashMap<>();
 
-        TagCache(LCMSProfile p) {
+        private TagCache(LCMSProfile p) {
             profile = p;
         }
 
-        TagData getTag(int sig) {
+        private TagData getTag(int sig) {
             TagData t = tags.get(sig);
             if (t == null) {
                 byte[] tagData = LCMS.getTagNative(profile.getNativePtr(), sig);
@@ -74,7 +74,7 @@ final class LCMSProfile extends Profile {
             return t;
         }
 
-        void clear() {
+        private void clear() {
             tags.clear();
         }
     }
