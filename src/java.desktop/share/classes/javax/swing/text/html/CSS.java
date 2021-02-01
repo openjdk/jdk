@@ -2861,7 +2861,8 @@ public class CSS implements Serializable {
             lengthMapping.put("cm", 28.3464f);
             lengthMapping.put("pc", 12f);
             lengthMapping.put("in", 72f);
-            // mapping according to the CSS2.2 spec
+            // Mapping according to the CSS2.2 spec
+            // https://www.w3.org/TR/CSS22/syndata.html#x39
             w3cLengthMapping.put("pt", 1.3f);     // 1/72 of 1in
             w3cLengthMapping.put("px", 1f);       // 1/96 of 1in
             w3cLengthMapping.put("mm", 3.77952f); // 1/10 of 1cm
