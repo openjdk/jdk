@@ -32,6 +32,7 @@
 
 static JfrStackTraceRepository* _instance = NULL;
 static JfrStackTraceRepository* _leak_profiler_instance = NULL;
+static bool _serializer_registered = false;
 
 JfrStackTraceRepository::JfrStackTraceRepository() :
   _next_id(0),
@@ -76,7 +77,10 @@ class JfrFrameType : public JfrSerializer {
 };
 
 bool JfrStackTraceRepository::initialize() {
-  return JfrSerializer::register_serializer(TYPE_FRAMETYPE, true, new JfrFrameType());
+  if (!_serializer_registered) {
+    _serializer_registered = JfrSerializer::register_serializer(TYPE_FRAMETYPE, true, new JfrFrameType());
+  }
+  return _serializer_registered;
 }
 
 void JfrStackTraceRepository::destroy() {
