@@ -36,7 +36,6 @@
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
-
 class ShenandoahSTWMarkTask : public AbstractGangTask {
 private:
   ShenandoahSTWMark* const _mark;
