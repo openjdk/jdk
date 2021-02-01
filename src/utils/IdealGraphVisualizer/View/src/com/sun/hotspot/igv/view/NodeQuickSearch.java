@@ -136,8 +136,8 @@ public class NodeQuickSearch implements SearchProvider {
                 // Rank the matches.
                 Collections.sort(matches,
                                  (InputNode a, InputNode b) ->
-                                 Integer.valueOf(rankMatch(rawValue, a.getProperties().get(name)))
-                                 .compareTo(rankMatch(rawValue, b.getProperties().get(name))));
+                                 Integer.compare(rankMatch(rawValue, a.getProperties().get(name)),
+                                                 rankMatch(rawValue, b.getProperties().get(name))));
 
                 // Single matches
                 for (final InputNode n : matches) {
