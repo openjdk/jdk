@@ -28,11 +28,9 @@
  * @run main/othervm -Dsun.java2d.uiScale=1.0 HtmlFontSizeTest
  */
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.util.Locale;
 
-import javax.swing.JFrame;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
@@ -44,40 +42,27 @@ public class HtmlFontSizeTest {
     static volatile Dimension stdFrameSize;
 
     private static Dimension test(boolean w3ccheck) {
-        JFrame frame = new JFrame();
-        try {
-            frame.setLayout(new BorderLayout());
+        JEditorPane htmlPane = new JEditorPane();
+        htmlPane.setEditable(false);
 
-            JEditorPane htmlPane = new JEditorPane();
-            htmlPane.setEditable(false);
-
-            if (w3ccheck) {
-                htmlPane.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, Boolean.TRUE);
-            }
-
-            HTMLEditorKit kit = new HTMLEditorKit();
-            htmlPane.setEditorKit(kit);
-
-            String htmlString = "<html>\n"
-                + "<body style=\"font-family:SansSerif; font-size:16pt\">\n"
-                + "<p>This should be 16 pt.</p>\n"
-                + "</body>\n"
-                + "</html>";
-
-            Document doc = kit.createDefaultDocument();
-            htmlPane.setDocument(doc);
-            htmlPane.setText(htmlString);
-
-            frame.add(htmlPane, BorderLayout.CENTER);
-            frame.setUndecorated(true);
-            frame.pack();
-            frame.setVisible(true);
-            frame.setLocationRelativeTo(null);
-
-            return htmlPane.getPreferredSize();
-        } finally {
-            frame.dispose();
+        if (w3ccheck) {
+            htmlPane.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, Boolean.TRUE);
         }
+
+        HTMLEditorKit kit = new HTMLEditorKit();
+        htmlPane.setEditorKit(kit);
+
+        String htmlString = "<html>\n"
+            + "<body style=\"font-family:SansSerif; font-size:16pt\">\n"
+            + "<p>This should be 16 pt.</p>\n"
+            + "</body>\n"
+            + "</html>";
+
+        Document doc = kit.createDefaultDocument();
+        htmlPane.setDocument(doc);
+        htmlPane.setText(htmlString);
+
+        return htmlPane.getPreferredSize();
     }
 
     public static void main(String[] args) throws Exception {
