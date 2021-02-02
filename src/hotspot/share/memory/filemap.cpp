@@ -1667,7 +1667,7 @@ char* FileMapInfo::map_bitmap_region() {
   char* bitmap_base = os::map_memory(_fd, _full_path, si->file_offset(),
                                      requested_addr, si->used_aligned(), read_only, allow_exec, mtClassShared);
   if (bitmap_base == NULL) {
-    log_error(cds)("failed to map relocation bitmap");
+    log_info(cds)("failed to map relocation bitmap");
     return NULL;
   }
 
