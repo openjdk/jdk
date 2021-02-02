@@ -1506,6 +1506,8 @@ void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const c
 
   JavaThread *thread  = JavaThread::current();
 
+  log_error(os)("Resource Exhausted (%s)", description != nullptr ? description : "no info");
+
   // JDK-8213834: handlers of ResourceExhausted may attempt some analysis
   // which often requires running java.
   // This will cause problems on threads not able to run java, e.g. compiler
