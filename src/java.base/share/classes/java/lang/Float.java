@@ -54,9 +54,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <h2><a id=equivalenceRelation>Floating-point Equality, Equivalence,
  * and Comparison</a></h2>
  *
- * The class {@code java.lang.Double} has a {a
+ * The class {@code java.lang.Double} has a <a
  * href="Double.html#equivalenceRelation">discussion of equality,
- * equivalence, and comparison of floating-point values} that is
+ * equivalence, and comparison of floating-point values</a> that is
  * equality applicable to {@code float} values.
  *
  * @author  Lee Boynton
