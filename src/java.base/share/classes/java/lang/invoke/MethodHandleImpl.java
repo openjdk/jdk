@@ -1139,7 +1139,7 @@ abstract class MethodHandleImpl {
      * class loader, runtime package, and protection domain as the lookup class.
      */
     static boolean isInjectedInvoker(Class<?> invoker) {
-        return BindCaller.isInjectedInvoker(invoker);
+        return invoker != null && BindCaller.isInjectedInvoker(invoker);
     }
 
     // Put the whole mess into its own nested class.
@@ -1162,7 +1162,7 @@ abstract class MethodHandleImpl {
             MemberName member = mh.internalMemberName();
             if (member != null) {
                 // Look up the alternate non-CSM method named "reflected$<method-name>"
-                // with the lookup class as the trailing parameter.  If present,
+                // with an additional trailing caller class parameter.  If present,
                 // bind the alternate method handle with the lookup class as
                 // the caller class argument
                 MemberName alt = IMPL_LOOKUP.resolveOrNull(member.getReferenceKind(),
@@ -1179,8 +1179,9 @@ abstract class MethodHandleImpl {
                 }
             }
 
-            // If no alternate method for CSM is present, then inject an invoker class
-            // as the caller to invoke the method handle
+            // If no alternate method for CSM with an additional trailing Class
+            // parameter is present, then inject an invoker class that is the caller
+            // invoking the method handle of the CSM
             try {
                 return bindCallerWithInjectedInvoker(mh, hostClass);
             } catch (ReflectiveOperationException ex) {
@@ -1189,7 +1190,7 @@ abstract class MethodHandleImpl {
         }
 
         static boolean isInjectedInvoker(Class<?> c) {
-            if (c != null && c.isHidden() && c.getName().contains(INVOKER_SUFFIX)) {
+            if (c.isHidden() && c.getName().contains(INVOKER_SUFFIX)) {
                 Lookup lookup = new Lookup(c);
                 try {
                     Object cd = MethodHandles.classData(lookup, ConstantDescs.DEFAULT_NAME, Object.class);
@@ -1198,8 +1199,8 @@ abstract class MethodHandleImpl {
                         //    return c.isNestmateOf(caller) && BindCaller.CV_makeInjectedInvoker.get(caller) == c;
                         // This will incur the overhead to cause an unused injected invoker
                         // class be defined but unused for application-defined hidden class
-                        // whose name contains the injected invoker name suffix, it's not
-                        // the invoker injected by BindCaller.
+                        // whose name contains the injected invoker name suffix.  This approach
+                        // can be considered in the future if this is needed at runtime.
                         return c.isNestmateOf(caller);
                     }
                 } catch (IllegalAccessException e) {

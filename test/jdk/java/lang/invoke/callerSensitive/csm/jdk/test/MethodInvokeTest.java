@@ -50,22 +50,12 @@ public class MethodInvokeTest {
     private static final String CALLER_NO_ALT_METHOD = "callerNoAlternateImpl";
 
     public static void main(String... args) throws Throwable {
-        boolean sm = false;
-        if (args.length > 0 && args[0].equals("sm")) {
-            sm = true;
-            PermissionCollection perms = new Permissions();
-            perms.add(new RuntimePermission("getStackWalkerWithClassReference"));
-            Policy.setPolicy(new Policy() {
-                @Override
-                public boolean implies(ProtectionDomain domain, Permission p) {
-                    return perms.implies(p) || DEFAULT_POLICY.implies(domain, p);
-                }
-            });
-            System.setSecurityManager(new SecurityManager());
-        }
-
+        boolean sm = args.length > 0 && args[0].equals("sm");
         System.err.format("Test %s security manager.%n",
                           sm ? "with" : "without");
+        if (sm) {
+            setupSecurityManager();
+        }
 
         MethodInvokeTest test = new MethodInvokeTest();
         // test static call to java.util.CSM::caller
@@ -76,6 +66,18 @@ public class MethodInvokeTest {
         test.invokeMethodHandle();
         // test method ref
         test.lambda();
+    }
+
+    static void setupSecurityManager() {
+        PermissionCollection perms = new Permissions();
+        perms.add(new RuntimePermission("getStackWalkerWithClassReference"));
+        Policy.setPolicy(new Policy() {
+            @Override
+            public boolean implies(ProtectionDomain domain, Permission p) {
+                return perms.implies(p) || DEFAULT_POLICY.implies(domain, p);
+            }
+        });
+        System.setSecurityManager(new SecurityManager());
     }
 
     void staticMethodCall() {
