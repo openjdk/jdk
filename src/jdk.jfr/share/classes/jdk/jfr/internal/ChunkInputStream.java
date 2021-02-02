@@ -29,22 +29,23 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 final class ChunkInputStream extends InputStream {
-    private final List<RepositoryChunk> chunks;
-    private int nextIndex = 0;
+    private final Iterator<RepositoryChunk> chunks;
     private long unstreamedSize = 0;
     private RepositoryChunk currentChunk;
     private InputStream stream;
 
-    ChunkInputStream(List<RepositoryChunk> inputChunks) throws IOException {
-        chunks = new ArrayList<>(inputChunks.size());
-        for (RepositoryChunk c : inputChunks) {
+    ChunkInputStream(List<RepositoryChunk> chunks) throws IOException {
+        List<RepositoryChunk> l = new ArrayList<>(chunks.size());
+        for (RepositoryChunk c : chunks) {
             c.use(); // keep alive while we're reading.
-            chunks.add(c);
+            l.add(c);
             unstreamedSize += c.getSize();
         }
+        this.chunks = l.iterator();
         nextStream();
     }
 
@@ -68,10 +69,10 @@ final class ChunkInputStream extends InputStream {
     }
 
     private boolean nextChunk() {
-        if (nextIndex >= chunks.size()) {
+        if (!chunks.hasNext()) {
             return false;
         }
-        currentChunk = chunks.get(nextIndex++);
+        currentChunk = chunks.next();
         return true;
     }
 
