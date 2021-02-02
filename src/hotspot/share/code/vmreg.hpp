@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,21 +92,21 @@ public:
   static const int stack_slot_size;
   static const int slots_per_word;
 
-  // Platform dependent function that returns true if offsetting this
-  // VMReg by slot_delta slots gives another valid VMReg which is part
-  // of the same physical register.
-  bool is_expressible(int slot_delta);
 
+  // This really ought to check that the register is "real" in the sense that
+  // we don't try and get the VMReg number of a physical register that doesn't
+  // have an expressible part. That would be pd specific code
   VMReg next() {
-    return next(1);
+    assert((is_reg() && value() < stack0->value() - 1) || is_stack(), "must be");
+    return (VMReg)(intptr_t)(value() + 1);
   }
   VMReg next(int i) {
     assert((is_reg() && value() < stack0->value() - i) || is_stack(), "must be");
-    assert(is_expressible(i), "not expressible");
     return (VMReg)(intptr_t)(value() + i);
   }
   VMReg prev() {
-    return next(-1);
+    assert((is_stack() && value() > stack0->value()) || (is_reg() && value() != 0), "must be");
+    return (VMReg)(intptr_t)(value() - 1);
   }
 
 

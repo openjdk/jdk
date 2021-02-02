@@ -26,8 +26,7 @@
 #include "runtime/registerMap.hpp"
 #include "vmreg_x86.inline.hpp"
 
-address RegisterMap::pd_location(VMReg reg, int slot) const {
-  assert(slot == 0, "unexpected");
+address RegisterMap::pd_location(VMReg reg) const {
   if (reg->is_XMMRegister()) {
     int reg_base = reg->value() - ConcreteRegisterImpl::max_fpr;
     int base_reg_enc = (reg_base / XMMRegisterImpl::max_slots_per_register);
@@ -61,4 +60,8 @@ address RegisterMap::pd_location(VMReg reg, int slot) const {
     }
   }
   return NULL;
+}
+
+address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
+  return location(base_reg->next(slot_idx));
 }

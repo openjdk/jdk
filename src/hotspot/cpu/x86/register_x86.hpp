@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,7 @@ inline FloatRegister as_FloatRegister(int encoding) {
 class FloatRegisterImpl: public AbstractRegisterImpl {
  public:
   enum {
-    number_of_registers = 8,
-    max_slots_per_register = 2
+    number_of_registers = 8
   };
 
   // construction
@@ -258,7 +257,7 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   // it's optoregs.
 
     number_of_registers = RegisterImpl::number_of_registers * RegisterImpl::max_slots_per_register +
-      FloatRegisterImpl::max_slots_per_register * FloatRegisterImpl::number_of_registers +
+      2 * FloatRegisterImpl::number_of_registers +
       XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers +
       KRegisterImpl::number_of_registers + // mask registers
       1 // eflags

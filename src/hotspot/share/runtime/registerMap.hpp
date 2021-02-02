@@ -95,15 +95,15 @@ class RegisterMap : public StackObj {
     if (_location_valid[index] & ((LocationValidType)1 << (reg->value() % location_valid_type_size))) {
       return (address) _location[reg->value()];
     } else {
-      return pd_location(reg, 0);
+      return pd_location(reg);
     }
   }
 
-  address location(VMReg reg, int slot) {
-    if (reg->is_expressible(slot)) {
-      return location(reg->next(slot));
+  address location(VMReg base_reg, int slot_idx) const {
+    if (slot_idx > 0) {
+      return pd_location(base_reg, slot_idx);
     } else {
-      return pd_location(reg, slot);
+      return location(base_reg);
     }
   }
 

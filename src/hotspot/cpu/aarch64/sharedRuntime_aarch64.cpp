@@ -223,9 +223,9 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
                    Matcher::scalable_vector_reg_size(T_BYTE));
 #else
 #if !INCLUDE_JVMCI
-  assert(!restore_vectors, "vectors are generated only by C2 and JVMCI");
+  assert(!_save_vectors, "vectors are generated only by C2 and JVMCI");
 #endif
-  __ pop_CPU_state(restore_vectors);
+  __ pop_CPU_state(_save_vectors);
 #endif
   __ leave();
 

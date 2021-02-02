@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,8 +51,4 @@ void VMRegImpl::set_regName() {
 VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
   Unimplemented();
   return VMRegImpl::Bad();
-}
-
-bool VMRegImpl::is_expressible(int slot_delta) {
-  return true;
 }

@@ -32,7 +32,11 @@
   // This is the hook for finding a register in an "well-known" location,
   // such as a register block of a predetermined format.
   // Since there is none, we just return NULL.
-  address pd_location(VMReg reg, int slot) const { return NULL; }
+  address pd_location(VMReg reg) const { return NULL; }
+
+  address pd_location(VMReg base_reg, int slot_idx) const {
+    return location(base_reg->next(slot_idx));
+  }
 
   // no PD state to clear or copy:
   void pd_clear() {}
