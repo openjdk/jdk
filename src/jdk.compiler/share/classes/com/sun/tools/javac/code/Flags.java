@@ -520,7 +520,6 @@ public class Flags {
         DEPRECATED_REMOVAL(Flags.DEPRECATED_REMOVAL),
         PREVIEW_API(Flags.PREVIEW_API),
         PREVIEW_REFLECTIVE(Flags.PREVIEW_REFLECTIVE),
-//<<<<<<< HEAD
         BRIDGE(Flags.BRIDGE),
         PARAMETER(Flags.PARAMETER),
         VARARGS(Flags.VARARGS),
@@ -536,12 +535,6 @@ public class Flags {
         BLOCK(Flags.BLOCK),
         HASINIT(Flags.HASINIT),
         THROWS(Flags.THROWS),
-//=======
-//        MATCH_BINDING(Flags.MATCH_BINDING),
-//        MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER),
-//        RECORD(Flags.RECORD),
-//        RECOVERABLE(Flags.RECOVERABLE),
-//>>>>>>> master
         SEALED(Flags.SEALED),
         NON_SEALED(Flags.NON_SEALED) {
             @Override
