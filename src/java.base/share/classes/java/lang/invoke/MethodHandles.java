@@ -115,7 +115,9 @@ public class MethodHandles {
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
     public static Lookup lookup() {
-        return new Lookup(Reflection.getCallerClass());
+        Class<?> caller = Reflection.getCallerClass();
+        assert !MethodHandleImpl.isInjectedInvoker(caller);
+        return new Lookup(caller);
     }
 
     /**
@@ -128,6 +130,16 @@ public class MethodHandles {
         if (caller.getClassLoader() == null) {
             throw newIllegalArgumentException("illegal lookupClass: "+caller);
         }
+        return new Lookup(caller);
+    }
+
+    /**
+     * This reflected$lookup method is the alternate implementation of
+     * the lookup method with a trailing caller class argument which is
+     * non-caller-sensitive.
+     */
+    private static Lookup reflected$lookup(Class<?> caller) {
+        assert !MethodHandleImpl.isInjectedInvoker(caller);
         return new Lookup(caller);
     }
 
@@ -2369,15 +2381,16 @@ public class MethodHandles {
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
-         * from the given bytes.  No package name check on the given name.
+         * from the given bytes and the given options.  No package name check on the given name.
          *
          * @param name    fully-qualified name that specifies the prefix of the hidden class
          * @param bytes   class bytes
-         * @return ClassDefiner that defines a hidden class of the given bytes.
+         * @param options class options
+         * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes) {
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options) {
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), Set.of(), false);
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false);
         }
 
         /**

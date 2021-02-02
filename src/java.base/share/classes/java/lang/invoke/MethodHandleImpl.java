@@ -40,6 +40,7 @@ import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
+import java.lang.constant.ConstantDescs;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.nio.ByteOrder;
@@ -49,11 +50,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleStatics.*;
+import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -1126,14 +1129,27 @@ abstract class MethodHandleImpl {
         return BindCaller.bindCaller(mh, hostClass);
     }
 
+    /*
+     * If the given invoker class is a hidden InjectedInvoker class,
+     * this method returns the class that is stored as the class data of
+     * the injected invoker class which is the lookup class bound to
+     * the method handle for a caller-sensitive method at lookup time.
+     * This injected invoker class is a nestmate of the lookup class that
+     * looks up the caller-sensitive method.  It has the same defining
+     * class loader, runtime package, and protection domain as the lookup class.
+     */
+    static boolean isInjectedInvoker(Class<?> invoker) {
+        return BindCaller.isInjectedInvoker(invoker);
+    }
+
     // Put the whole mess into its own nested class.
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
         private static MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
-
+        private static final String INVOKER_SUFFIX = "$$InjectedInvoker";
         static MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
             // Code in the boot layer should now be careful while creating method handles or
-            // functional interface instances created from method references to @CallerSensitive  methods,
+            // functional interface instances created from method references to @CallerSensitive methods,
             // it needs to be ensured the handles or interface instances are kept safe and are not passed
             // from the boot layer to untrusted code.
             if (hostClass == null
@@ -1142,39 +1158,90 @@ abstract class MethodHandleImpl {
                        hostClass.getName().startsWith("java.lang.invoke."))) {
                 throw new InternalError();  // does not happen, and should not anyway
             }
-            // For simplicity, convert mh to a varargs-like method.
-            MethodHandle vamh = prepareForInvoker(mh);
-            // Cache the result of makeInjectedInvoker once per argument class.
-            MethodHandle bccInvoker = CV_makeInjectedInvoker.get(hostClass);
-            return restoreToType(bccInvoker.bindTo(vamh), mh, hostClass);
-        }
 
-        private static MethodHandle makeInjectedInvoker(Class<?> targetClass) {
-            try {
-                /*
-                 * The invoker class defined to the same class loader as the lookup class
-                 * but in an unnamed package so that the class bytes can be cached and
-                 * reused for any @CSM.
-                 *
-                 * @CSM must be public and exported if called by any module.
-                 */
-                String name = targetClass.getName() + "$$InjectedInvoker";
-                if (targetClass.isHidden()) {
-                    // use the original class name
-                    name = name.replace('/', '_');
+            MemberName member = mh.internalMemberName();
+            if (member != null) {
+                // Look up the alternate non-CSM method named "reflected$<method-name>"
+                // with the lookup class as the trailing parameter.  If present,
+                // bind the alternate method handle with the lookup class as
+                // the caller class argument
+                MemberName alt = IMPL_LOOKUP.resolveOrNull(member.getReferenceKind(),
+                            new MemberName(member.getDeclaringClass(),
+                                           "reflected$" + member.getName(),
+                                           member.getMethodType().appendParameterTypes(Class.class),
+                                           member.getReferenceKind()));
+                if (alt != null) {
+                    assert !alt.isCallerSensitive();
+                    MethodHandle dmh = DirectMethodHandle.make(alt);
+                    dmh = MethodHandles.insertArguments(dmh, dmh.type().parameterCount() - 1, hostClass);
+                    dmh = new WrappedMember(dmh, mh.type(), member, mh.isInvokeSpecial(), hostClass);
+                    return dmh;
                 }
-                Class<?> invokerClass = new Lookup(targetClass)
-                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE)
-                        .defineClass(true);
-                assert checkInjectedInvoker(targetClass, invokerClass);
-                return IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);
+            }
+
+            // If no alternate method for CSM is present, then inject an invoker class
+            // as the caller to invoke the method handle
+            try {
+                return bindCallerWithInjectedInvoker(mh, hostClass);
             } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
         }
 
-        private static ClassValue<MethodHandle> CV_makeInjectedInvoker = new ClassValue<MethodHandle>() {
-            @Override protected MethodHandle computeValue(Class<?> hostClass) {
+        static boolean isInjectedInvoker(Class<?> c) {
+            if (c != null && c.isHidden() && c.getName().contains(INVOKER_SUFFIX)) {
+                Lookup lookup = new Lookup(c);
+                try {
+                    Object cd = MethodHandles.classData(lookup, ConstantDescs.DEFAULT_NAME, Object.class);
+                    if (cd instanceof Class<?> caller) {
+                        // An alternate approach could be:
+                        //    return c.isNestmateOf(caller) && BindCaller.CV_makeInjectedInvoker.get(caller) == c;
+                        // This will incur the overhead to cause an unused injected invoker
+                        // class be defined but unused for application-defined hidden class
+                        // whose name contains the injected invoker name suffix, it's not
+                        // the invoker injected by BindCaller.
+                        return c.isNestmateOf(caller);
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new InternalError(e);
+                }
+            }
+            return false;
+        }
+
+        private static MethodHandle bindCallerWithInjectedInvoker(MethodHandle mh, Class<?> hostClass)
+                throws ReflectiveOperationException
+        {
+            // For simplicity, convert mh to a varargs-like method.
+            MethodHandle vamh = prepareForInvoker(mh);
+            // Cache the result of makeInjectedInvoker once per argument class.
+            Class<?> invokerClass = CV_makeInjectedInvoker.get(hostClass);
+            MethodHandle bccInvoker = IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);
+            return restoreToType(bccInvoker.bindTo(vamh), mh, hostClass);
+        }
+
+        private static Class<?> makeInjectedInvoker(Class<?> targetClass) {
+            /*
+             * The invoker class defined to the same class loader as the lookup class
+             * but in an unnamed package so that the class bytes can be cached and
+             * reused for any @CSM.
+             *
+             * @CSM must be public and exported if called by any module.
+             */
+            String name = targetClass.getName() + INVOKER_SUFFIX;
+            if (targetClass.isHidden()) {
+                // use the original class name
+                name = name.replace('/', '_');
+            }
+            Class<?> invokerClass = new Lookup(targetClass)
+                    .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, Set.of(NESTMATE))
+                    .defineClass(true, targetClass);
+            assert checkInjectedInvoker(targetClass, invokerClass);
+            return invokerClass;
+        }
+
+        private static ClassValue<Class<?>> CV_makeInjectedInvoker = new ClassValue<Class<?>>() {
+            @Override protected Class<?> computeValue(Class<?> hostClass) {
                 return makeInjectedInvoker(hostClass);
             }
         };
