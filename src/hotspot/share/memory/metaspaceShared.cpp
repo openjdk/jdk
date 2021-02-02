@@ -1725,8 +1725,8 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
   mapinfo->set_is_mapped(false);
 
   if (mapinfo->alignment() != (size_t)os::vm_allocation_granularity()) {
-    log_error(cds)("Unable to map CDS archive -- os::vm_allocation_granularity() expected: " SIZE_FORMAT
-                   " actual: %d", mapinfo->alignment(), os::vm_allocation_granularity());
+    log_info(cds)("Unable to map CDS archive -- os::vm_allocation_granularity() expected: " SIZE_FORMAT
+                  " actual: %d", mapinfo->alignment(), os::vm_allocation_granularity());
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
