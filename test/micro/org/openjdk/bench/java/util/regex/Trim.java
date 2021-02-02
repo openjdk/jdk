@@ -93,30 +93,32 @@ public class Trim {
     public Pattern possessivePattern3;
     public Pattern lookBehindPattern;
 
+    Pattern compile(String regex) {
+        Pattern pat = Pattern.compile(regex);
+        // ad hoc correctness checking
+        if (pat.matcher(noMatch).find()) {
+            throw new AssertionError("unexpected matching: " + regex);
+        }
+        return pat;
+    }
+
     @Setup(Level.Trial)
     public void setup() {
         noMatch = "xx" + " \t".repeat(size) + "yy";
 
+        simplePattern = compile("[ \t]+$");
+        possessivePattern = compile("[ \t]++$");
+        possessivePattern2 = compile("(.*+[^ \t]|^)([ \t]++)$");
+        possessivePattern3 = compile("(?:[^ \t]|^)([ \t]++)$");
+        lookBehindPattern = compile("(?<![ \t])[ \t]++$");
+
         whitespaceRunPattern = Pattern.compile("[ \t]++");
         eolPattern = Pattern.compile("$", Pattern.MULTILINE);
 
-        simplePattern = Pattern.compile("[ \t]+$");
-        possessivePattern = Pattern.compile("[ \t]++$");
-        possessivePattern2 = Pattern.compile("(.*+[^ \t]|^)([ \t]++)$");
-        possessivePattern3 = Pattern.compile("(?:[^ \t]|^)([ \t]++)$");
-        lookBehindPattern = Pattern.compile("(?<![ \t])[ \t]++$");
-
-        // ad-hoc correctness checking, enabled manually via
-        // make test ...TEST=... MICRO=VM_OPTIONS=-ea;...
-        // TODO: there must be a better way!
-        assert ! simple_find();
-        assert ! possessive_find();
-        assert ! possessive2_find();
-        assert ! possessive2_matches();
-        assert ! possessive3_find();
-        assert ! lookBehind_find();
-        assert ! find_loop_two_matchers();
-        assert ! find_loop_usePattern();
+        // more ad hoc correctness checking
+        if (possessive2_matches()) throw new AssertionError();
+        if (find_loop_two_matchers()) throw new AssertionError();
+        if (find_loop_usePattern()) throw new AssertionError();
     }
 
     @Benchmark

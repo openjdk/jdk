@@ -51,17 +51,34 @@ public class Primality {
     //  "64", "67", "1024", "1031", "16384", "16411"})
     int n;
 
-    /** Unary representation of n */
+    /** Unary numeral representation of int n */
     public String unary;
 
-    public Pattern reluctant1 = Pattern.compile("^(11+?)\\1+$");
-    public Pattern reluctant2 = Pattern.compile("^(1{2,}?)\\1+$");
-    public Pattern greedy1 = Pattern.compile("^(11+)\\1+$");
-    public Pattern greedy2 = Pattern.compile("^(1{2,})\\1+$");
+    // Patterns that match composite numbers represented as unary numerals.
+    public Pattern reluctant1;
+    public Pattern reluctant2;
+    public Pattern greedy1;
+    public Pattern greedy2;
+
+    Pattern compile(String regex) {
+        Pattern pat = Pattern.compile(regex);
+        // ad hoc correctness checking
+        boolean isPrime1 = ! pat.matcher(unary).matches();
+        boolean isPrime2 = java.math.BigInteger.valueOf(n).isProbablePrime(100);
+        if (isPrime1 != isPrime2) {
+            throw new AssertionError("regex=" + regex + ", n=" + n);
+        }
+        return pat;
+    }
 
     @Setup(Level.Trial)
     public void setup() {
         unary = "1".repeat(n);
+
+        reluctant1 = compile("^(11+?)\\1+$");
+        reluctant2 = compile("^(1{2,}?)\\1+$");
+        greedy1 = compile("^(11+)\\1+$");
+        greedy2 = compile("^(1{2,})\\1+$");
     }
 
     @Benchmark

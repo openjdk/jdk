@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
  *
  * Here's a way to compare the per-char cost:
  *
- * (cd $(git rev-parse --show-toplevel) && for size in 16 256 4096; do make test TEST='micro:java.util.regex.Exponential' MICRO="FORK=2;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
+ * (cd $(git rev-parse --show-toplevel) && for size in 16 128 1024; do make test TEST='micro:java.util.regex.Exponential' MICRO="FORK=2;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
  *
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -47,7 +47,8 @@ import java.util.regex.Pattern;
 @State(Scope.Benchmark)
 public class Exponential {
     /** Run length of non-matching consecutive whitespace chars. */
-    @Param({"16", "246", "4096"})
+    @Param({"16", "128", "1024"})
+    // 2048+ runs into StackOverflowError; see JDK-8260866
     int size;
 
     public String justXs;
@@ -59,32 +60,30 @@ public class Exponential {
     public Pattern pat3;
     public Pattern pat4;
 
+    Pattern compile(String regex) {
+        Pattern pat = Pattern.compile(regex);
+        // ad hoc correctness checking
+        if (!  pat.matcher(justXs).matches()
+            || pat.matcher(notJustXs).matches()) {
+            throw new AssertionError("unexpected matching: " + regex);
+        }
+        return pat;
+    }
+
     @Setup(Level.Trial)
     public void setup() {
         justXs = "X".repeat(size);
         notJustXs = justXs + "!";
 
         // Will (or should) the engine optimize (?:X|X) to X ?
-        pat1 = Pattern.compile("(?:X|X)*");
+        pat1 = compile("(?:X|X)*");
 
         // Tougher to optimize than pat1
-        pat2 = Pattern.compile("(?:[XY]|[XZ])*");
+        pat2 = compile("(?:[XY]|[XZ])*");
 
-        pat3 = Pattern.compile("(X+)+");
+        pat3 = compile("(X+)+");
 
-        pat4 = Pattern.compile("^(X+)+$");
-
-        // ad-hoc correctness checking, enabled manually via
-        // make test ...TEST=... MICRO=VM_OPTIONS=-ea;...
-        // TODO: there must be a better way!
-        assert pat1_justXs();
-        assert ! pat1_notJustXs();
-        assert pat2_justXs();
-        assert ! pat2_notJustXs();
-        assert pat3_justXs();
-        assert ! pat3_notJustXs();
-        assert pat4_justXs();
-        assert ! pat4_notJustXs();
+        pat4 = compile("^(X+)+$");
      }
 
     /** O(N) */
