@@ -311,6 +311,7 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "UseCompressedOops");
         vmOptFinalFlag(map, "EnableJVMCI");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "CompactStrings");
     }
 
     /**
