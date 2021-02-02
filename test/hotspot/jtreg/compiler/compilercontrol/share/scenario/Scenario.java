@@ -125,17 +125,17 @@ public final class Scenario {
             // two cases for invalid inputs.
             if (mainOutput.getExitValue() == 0) {
                 if (!isJcmdValid) {
-            	    boolean parse_error_found = false;
-            	    for(OutputAnalyzer out : outputList) {
-            	        if (out.getOutput().contains("Parsing of compiler directives failed")) {
-            	           parse_error_found = true;
-            	           break;
-            	        }
-            	    }
-            	    Asserts.assertTrue(parse_error_found, "'Parsing of compiler directives failed' missing from output");
-            	} else {
-            	    mainOutput.shouldContain("CompileCommand: An error occurred during parsing");
-            	}
+                    boolean parse_error_found = false;
+                    for(OutputAnalyzer out : outputList) {
+                        if (out.getOutput().contains("Parsing of compiler directives failed")) {
+                            parse_error_found = true;
+                            break;
+                        }
+                    }
+                    Asserts.assertTrue(parse_error_found, "'Parsing of compiler directives failed' missing from output");
+                } else {
+                    mainOutput.shouldContain("CompileCommand: An error occurred during parsing");
+                }
             } else {
                 Asserts.assertNE(mainOutput.getExitValue(), 0, "VM should exit with "
                         + "error for incorrect directives");
