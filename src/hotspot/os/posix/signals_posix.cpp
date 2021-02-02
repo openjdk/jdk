@@ -89,10 +89,13 @@ extern "C" {
 
 // At various places we store handler information for each installed handler.
 //  SavedSignalHandlers is a helper class for those cases, keeping an array of sigaction
-//  structures and membership information.
+//  structures.
 class SavedSignalHandlers {
-  struct sigaction _sa[NSIG];
-  sigset_t _set;
+  // Note: NSIG can be largish, depending on platform, and this array is expected
+  // to be sparsely populated. To save space the contained structures are
+  // C-heap allocated. Since they only get added outside of signal handling
+  // this is no problem.
+  struct sigaction* _sa[NSIG];
 
   bool check_signal_number(int sig) const {
     assert(sig > 0 && sig < NSIG, "invalid signal number %d", sig);
@@ -102,27 +105,32 @@ class SavedSignalHandlers {
 public:
 
   SavedSignalHandlers() {
-    sigemptyset(&_set);
     ::memset(_sa, 0, sizeof(_sa));
+  }
+
+  ~SavedSignalHandlers() {
+    for (int i = 0; i < NSIG; i ++) {
+      FREE_C_HEAP_OBJ(_sa[i]);
+    }
   }
 
   void set(int sig, const struct sigaction* act) {
     if (check_signal_number(sig)) {
-      _sa[sig] = *act;
-      sigaddset(&_set, sig);
+      assert(_sa[sig] == NULL, "Overwriting signal handler?");
+      _sa[sig] = NEW_C_HEAP_OBJ(struct sigaction, mtInternal);
     }
   }
 
   void clear(int sig) {
     if (check_signal_number(sig)) {
-      sigdelset(&_set, sig);
-      ::memset(_sa + sig, 0, sizeof(struct sigaction));
+      FREE_C_HEAP_OBJ(_sa[sig]);
+      _sa[sig] = NULL;
     }
   }
 
   const struct sigaction* get(int sig) const {
-    if (check_signal_number(sig) && sigismember(&_set, sig) == 1) {
-      return _sa + sig;
+    if (check_signal_number(sig)) {
+      return _sa[sig];
     }
     return NULL;
   }
