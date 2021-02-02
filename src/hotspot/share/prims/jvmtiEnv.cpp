@@ -29,6 +29,7 @@
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"

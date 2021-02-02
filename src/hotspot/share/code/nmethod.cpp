@@ -38,6 +38,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

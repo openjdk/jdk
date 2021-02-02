@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // setup and cleanup actions

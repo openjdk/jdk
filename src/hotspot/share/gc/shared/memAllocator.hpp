@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_SHARED_MEMALLOCATOR_HPP
 #define SHARE_GC_SHARED_MEMALLOCATOR_HPP
 
-#include "gc/shared/collectedHeap.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 
 static void trace_class_resolution(oop mirror) {
   if (mirror == NULL || java_lang_Class::is_primitive(mirror)) {
