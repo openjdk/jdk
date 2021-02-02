@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner.Cleanable;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -1158,28 +1159,36 @@ public class ZipFile implements ZipConstants, Closeable {
         private int checkAndAddEntry(int pos, int index)
             throws ZipException
         {
-            if (CENSIG(cen, pos) != CENSIG)
+            byte[] cen = this.cen;
+            if (CENSIG(cen, pos) != CENSIG) {
                 zerror("invalid CEN header (bad signature)");
+            }
             int method = CENHOW(cen, pos);
             int flag   = CENFLG(cen, pos);
-            if ((flag & 1) != 0)
+            if ((flag & 1) != 0) {
                 zerror("invalid CEN header (encrypted entry)");
-            if (method != STORED && method != DEFLATED)
+            }
+            if (method != STORED && method != DEFLATED) {
                 zerror("invalid CEN header (bad compression method: " + method + ")");
-
+            }
             int entryPos = pos + CENHDR;
             int nlen = CENNAM(cen, pos);
-            if (entryPos + nlen > cen.length - ENDHDR)
+            if (entryPos + nlen > cen.length - ENDHDR) {
                 zerror("invalid CEN header (bad header size)");
-            ZipCoder zcp = zipCoderForPos(pos);
-            int hash = zcp.checkedHash(cen, entryPos, nlen);
-            int hsh = (hash & 0x7fffffff) % tablelen;
-            int next = table[hsh];
-            table[hsh] = index;
-            // Record the CEN offset and the name hash in our hash cell.
-            entries[index++] = hash;
-            entries[index++] = next;
-            entries[index++] = pos;
+            }
+            try {
+                ZipCoder zcp = zipCoderForPos(pos);
+                int hash = zcp.checkedHash(cen, entryPos, nlen);
+                int hsh = (hash & 0x7fffffff) % tablelen;
+                int next = table[hsh];
+                table[hsh] = index;
+                // Record the CEN offset and the name hash in our hash cell.
+                entries[index++] = hash;
+                entries[index++] = next;
+                entries[index  ] = pos;
+            } catch (Exception e) {
+                zerror("invalid CEN header (bad entry name)");
+            }
             return nlen;
         }
 

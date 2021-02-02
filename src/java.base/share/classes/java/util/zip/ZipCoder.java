@@ -98,30 +98,29 @@ class ZipCoder {
     // we first decoded the byte sequence to a String, then appended '/' if no
     // trailing slash was found, then called String.hashCode(). This
     // normalization ensures we can simplify and speed up lookups.
-    // This function also checks the encoding of the array, throwing a
-    // ZipException if there's a decoding error
-    int checkedHash(byte[] a, int off, int len) throws ZipException {
+    //
+    // Does encoding error checking and hashing in a single pass for efficiency.
+    // On an error, this function will throw CharacterCodingException while the
+    // UTF8ZipCoder override will throw IllegalArgumentException, so we declare
+    // throws Exception to keep things simple.
+    int checkedHash(byte[] a, int off, int len) throws Exception {
         if (len == 0) {
             return 0;
         }
 
-        try {
-            int h = 0;
-            // cb will be a newly allocated CharBuffer with pos == 0,
-            // arrayOffset == 0, backed by an array.
-            CharBuffer cb = decoder().decode(ByteBuffer.wrap(a, off, len));
-            int limit = cb.limit();
-            char[] decoded = cb.array();
-            for (int i = 0; i < limit; i++) {
-                h = 31 * h + decoded[i];
-            }
-            if (limit > 0 && decoded[limit - 1] != '/') {
-                h = 31 * h + '/';
-            }
-            return h;
-        } catch (CharacterCodingException cce) {
-            throw new ZipException("invalid CEN header (bad entry name)");
+        int h = 0;
+        // cb will be a newly allocated CharBuffer with pos == 0,
+        // arrayOffset == 0, backed by an array.
+        CharBuffer cb = decoder().decode(ByteBuffer.wrap(a, off, len));
+        int limit = cb.limit();
+        char[] decoded = cb.array();
+        for (int i = 0; i < limit; i++) {
+            h = 31 * h + decoded[i];
         }
+        if (limit > 0 && decoded[limit - 1] != '/') {
+            h = 31 * h + '/';
+        }
+        return h;
     }
 
     // Hash function equivalent of checkedHash for String inputs
@@ -206,37 +205,33 @@ class ZipCoder {
         }
 
         @Override
-        int checkedHash(byte[] a, int off, int len) throws ZipException {
+        int checkedHash(byte[] a, int off, int len) throws Exception {
             if (len == 0) {
                 return 0;
             }
 
-            try {
-                int end = off + len;
-                int h = 0;
-                while (off < end) {
-                    byte b = a[off];
-                    if (b >= 0) {
-                        // ASCII, keep going
-                        h = 31 * h + b;
-                        off++;
-                    } else {
-                        // Non-ASCII, fall back to decoding a String
-                        // We avoid using decoder() here since the UTF8ZipCoder is
-                        // shared and that decoder is not thread safe.
-                        // We use the JLA.newStringUTF8NoRepl variant to throw
-                        // exceptions eagerly when opening ZipFiles
-                        return hash(JLA.newStringUTF8NoRepl(a, end - len, len));
-                    }
+            int end = off + len;
+            int h = 0;
+            while (off < end) {
+                byte b = a[off];
+                if (b >= 0) {
+                    // ASCII, keep going
+                    h = 31 * h + b;
+                    off++;
+                } else {
+                    // Non-ASCII, fall back to decoding a String
+                    // We avoid using decoder() here since the UTF8ZipCoder is
+                    // shared and that decoder is not thread safe.
+                    // We use the JLA.newStringUTF8NoRepl variant to throw
+                    // exceptions eagerly when opening ZipFiles
+                    return hash(JLA.newStringUTF8NoRepl(a, end - len, len));
                 }
-
-                if (a[end - 1] != '/') {
-                    h = 31 * h + '/';
-                }
-                return h;
-            } catch(Exception e) {
-                throw new ZipException("invalid CEN header (bad entry name)");
             }
+
+            if (a[end - 1] != '/') {
+                h = 31 * h + '/';
+            }
+            return h;
         }
 
         @Override
