@@ -764,8 +764,8 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     //    Allow parallel classloading of a class/classloader pair where mutual
     //    exclusion is provided by this lock in the class loader Java code.
     // case 3. traditional classloaders that rely on the classloader object lock
-    //    There should be no need for need for LOAD_INSTANCE
-    //    except if the traditional classloaders break the classloader object lock
+    //    There should be no need for need for LOAD_INSTANCE, except:
+    // case 4. traditional class loaders that break the classloader object lock
     //    as a legacy deadlock workaround. Detection of this case requires that
     //    this check is done while holding the classloader object lock,
     //    and that lock is still held when calling classloader's loadClass.
@@ -789,7 +789,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
               if (class_loader.is_null()) {
                 SystemDictionary_lock->wait();
               } else {
-              // case 3: traditional with broken classloader lock. wait on first
+              // case 4: traditional with broken classloader lock. wait on first
               // requestor.
                 double_lock_wait(THREAD, lockObject);
               }
