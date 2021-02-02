@@ -39,11 +39,14 @@ import java.util.regex.Pattern;
  *
  * Here's a way to compare the per-char cost:
  *
- * (cd $(git rev-parse --show-toplevel) && for size in 16 128 1024; do make test TEST='micro:java.util.regex.Exponential' MICRO="FORK=2;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
+ * (cd $(git rev-parse --show-toplevel) && for size in 16 128 1024; do make test TEST='micro:java.util.regex.Exponential' MICRO="FORK=1;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
  *
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Fork(1)
+@Warmup(iterations = 1)
+@Measurement(iterations = 4)
 @State(Scope.Benchmark)
 public class Exponential {
     /** Run length of non-matching consecutive whitespace chars. */

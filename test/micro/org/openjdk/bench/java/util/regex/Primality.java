@@ -40,10 +40,13 @@ import java.util.regex.Pattern;
  *
  * Here's a way to compare the per-input-char cost:
  *
- * (cd $(git rev-parse --show-toplevel) && for n in 16 17 256 257 4096 4099; do make test TEST='micro:java.util.regex.Primality' MICRO="FORK=2;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $n -p n=$n" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
+ * (cd $(git rev-parse --show-toplevel) && for n in 16 17 256 257 4096 4099; do make test TEST='micro:java.util.regex.Primality' MICRO="FORK=1;WARMUP_ITER=1;ITER=4;OPTIONS=-opi $n -p n=$n" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Fork(1)
+@Warmup(iterations = 1)
+@Measurement(iterations = 4)
 @State(Scope.Benchmark)
 public class Primality {
     /** Number to be primality tested. */
