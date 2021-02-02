@@ -45,6 +45,7 @@ final class ChunkInputStream extends InputStream {
             l.add(c);
             unstreamedSize += c.getSize();
         }
+
         this.chunks = l.iterator();
         nextStream();
     }
