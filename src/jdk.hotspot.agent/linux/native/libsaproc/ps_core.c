@@ -783,7 +783,7 @@ Pgrab_core(const char* exec_file, const char* core_file) {
   if (exec_base_addr == 0L) {
     goto err;
   }
-  print_debug("DEBUG: exec_base_addr = 0x%lx\n", exec_base_addr);
+  print_debug("exec_base_addr = 0x%lx\n", exec_base_addr);
   if (add_lib_info_fd(ph, exec_file, ph->core->exec_fd, exec_base_addr) == NULL) {
     goto err;
   }
