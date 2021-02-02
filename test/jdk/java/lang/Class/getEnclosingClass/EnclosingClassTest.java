@@ -45,7 +45,6 @@ import common.TestMe;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -78,11 +77,12 @@ import org.testng.annotations.Test;
 public class EnclosingClassTest {
     private static final String SRC_DIR = System.getProperty("test.src");
     private static final Path ENCLOSING_CLASS_SRC = Path.of(SRC_DIR, "EnclosingClass.java");
+    private static final String GEN_SRC_DIR = "gensrc";
 
     @BeforeClass
     public void createEnclosingClasses() throws IOException {
-        Path pkg1Dir = Path.of(SRC_DIR, "pkg1");
-        Path pkg2Dir = Path.of(SRC_DIR, "pkg1", "pkg2");
+        Path pkg1Dir = Path.of(GEN_SRC_DIR, "pkg1");
+        Path pkg2Dir = Path.of(GEN_SRC_DIR, "pkg1", "pkg2");
         Path pkg1File = pkg1Dir.resolve("EnclosingClass.java");
         Path pkg2File = pkg2Dir.resolve("EnclosingClass.java");
 
@@ -93,12 +93,12 @@ public class EnclosingClassTest {
         createAndWriteEnclosingClasses(ENCLOSING_CLASS_SRC, pkg1File, "pkg1");
         createAndWriteEnclosingClasses(ENCLOSING_CLASS_SRC, pkg2File, "pkg1.pkg2");
 
-        CompilerUtils.compile(ENCLOSING_CLASS_SRC, Path.of(System.getProperty("test.classes", ".")),
-                "--source-path", SRC_DIR);
-        CompilerUtils.compile(pkg1File, Path.of(System.getProperty("test.classes", ".")),
-                "--source-path", SRC_DIR);
-        CompilerUtils.compile(pkg2File, Path.of(System.getProperty("test.classes", ".")),
-                "--source-path", SRC_DIR);
+        Assert.assertTrue(CompilerUtils.compile(ENCLOSING_CLASS_SRC, Path.of(System.getProperty("test.classes")),
+                "--source-path", SRC_DIR));
+        Assert.assertTrue(CompilerUtils.compile(pkg1File, Path.of(System.getProperty("test.classes")),
+                "-classpath", System.getProperty("test.class.path")));
+        Assert.assertTrue(CompilerUtils.compile(pkg2File, Path.of(System.getProperty("test.classes")),
+                        "-classpath", System.getProperty("test.class.path")));
     }
 
     @Test
@@ -117,12 +117,6 @@ public class EnclosingClassTest {
     public void testEnclosingClassesInNestedPackage() throws ClassNotFoundException, NoSuchMethodException,
             IllegalAccessException, InvocationTargetException, InstantiationException {
         test(Class.forName("pkg1.pkg2.EnclosingClass").getDeclaredConstructor().newInstance());
-    }
-
-    @AfterClass
-    public void deleteEnclosingClasses() throws IOException {
-        Path pkg1Dir = Path.of(SRC_DIR, "/pkg1");
-        FileUtils.deleteFileTreeWithRetry(pkg1Dir);
     }
 
     private void createAndWriteEnclosingClasses(Path source, Path target, String packageName) throws IOException {
