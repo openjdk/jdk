@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -56,6 +57,11 @@ public class LinkInfoImpl extends LinkInfo {
          * Indicate that the link appears in member documentation.
          */
         MEMBER,
+
+        /**
+         * Indicate that the link appears in member documentation on the Deprecated or Preview page.
+         */
+        MEMBER_DEPRECATED_PREVIEW,
 
         /**
          * Indicate that the link appears in class use documentation.
@@ -236,9 +242,10 @@ public class LinkInfoImpl extends LinkInfo {
     public String where = "";
 
     /**
-     * The value of the target.
+     * The member this link points to (if any).
      */
-    public String target = "";
+    public Element targetMember;
+
     public  final Utils utils;
     /**
      * Construct a LinkInfo object.
@@ -313,15 +320,6 @@ public class LinkInfoImpl extends LinkInfo {
     }
 
     /**
-     * Set the target to be used for the link.
-     * @param target the target name.
-     */
-    public LinkInfoImpl target(String target) {
-        this.target = target;
-        return this;
-    }
-
-    /**
      * Set whether or not this is a link to a varargs parameter.
      */
     public LinkInfoImpl varargs(boolean varargs) {
@@ -335,7 +333,23 @@ public class LinkInfoImpl extends LinkInfo {
     public LinkInfoImpl where(String where) {
         this.where = where;
         return this;
-     }
+    }
+
+    /**
+     * Set the member this link points to (if any).
+     */
+    public LinkInfoImpl targetMember(Element el) {
+        this.targetMember = el;
+        return this;
+    }
+
+    /**
+     * Set whether or not the preview flags should be skipped for this link.
+     */
+    public LinkInfoImpl skipPreview(boolean skipPreview) {
+        this.skipPreview = skipPreview;
+        return this;
+    }
 
     public Kind getContext() {
         return context;
@@ -424,7 +438,6 @@ public class LinkInfoImpl extends LinkInfo {
         return "LinkInfoImpl{" +
                 "context=" + context +
                 ", where=" + where +
-                ", target=" + target +
                 super.toString() + '}';
     }
 }

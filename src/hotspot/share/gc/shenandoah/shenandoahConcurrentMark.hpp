@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,69 +27,30 @@
 
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskTerminator.hpp"
+#include "gc/shenandoah/shenandoahMark.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 class ShenandoahStrDedupQueue;
 class ShenandoahReferenceProcessor;
 
-class ShenandoahConcurrentMark: public CHeapObj<mtGC> {
+class ShenandoahConcurrentMark: public ShenandoahMark {
+  friend class ShenandoahConcurrentMarkingTask;
+  friend class ShenandoahFinalMarkingTask;
+
+public:
+  ShenandoahConcurrentMark();
+  // Concurrent mark roots
+  void mark_concurrent_roots();
+  // Concurrent mark
+  void concurrent_mark();
+  // Finish mark at a safepoint
+  void finish_mark();
+
+  static void cancel();
+
 private:
-  ShenandoahHeap* _heap;
-  ShenandoahObjToScanQueueSet* _task_queues;
-
-public:
-  void initialize(uint workers);
-  void cancel();
-
-// ---------- Marking loop and tasks
-//
-private:
-  template <class T>
-  inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task);
-
-  template <class T>
-  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, bool weak);
-
-  template <class T>
-  inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow, bool weak);
-
-  inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
-
-  template <class T, bool CANCELLABLE>
-  void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
-
-  template <bool CANCELLABLE>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor* rp, bool strdedup);
-
-public:
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor* rp,
-                 bool cancellable, bool strdedup) {
-    if (cancellable) {
-      mark_loop_prework<true>(worker_id, terminator, rp, strdedup);
-    } else {
-      mark_loop_prework<false>(worker_id, terminator, rp, strdedup);
-    }
-  }
-
-  template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
-
-  void mark_from_roots();
-  void finish_mark_from_roots(bool full_gc);
-
-  void mark_roots(ShenandoahPhaseTimings::Phase root_phase);
-  void update_roots(ShenandoahPhaseTimings::Phase root_phase);
-  void update_thread_roots(ShenandoahPhaseTimings::Phase root_phase);
-
-// ---------- Helpers
-// Used from closures, need to be public
-//
-public:
-  ShenandoahObjToScanQueue* get_queue(uint worker_id);
-  ShenandoahObjToScanQueueSet* task_queues() { return _task_queues; }
-
+  void finish_mark_work();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP

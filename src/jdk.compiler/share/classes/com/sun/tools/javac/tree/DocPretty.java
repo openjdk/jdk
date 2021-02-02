@@ -399,9 +399,15 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReturn(ReturnTree node, Void p) {
         try {
+            if (node.isInline()) {
+                print("{");
+            }
             printTagName(node);
             print(" ");
             print(node.getDescription());
+            if (node.isInline()) {
+                print("}");
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

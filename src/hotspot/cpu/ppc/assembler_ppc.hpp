@@ -26,6 +26,7 @@
 #ifndef CPU_PPC_ASSEMBLER_PPC_HPP
 #define CPU_PPC_ASSEMBLER_PPC_HPP
 
+#include "asm/assembler.hpp"
 #include "asm/register.hpp"
 
 // Address is an abstraction used to represent a memory location
@@ -264,6 +265,7 @@ class Assembler : public AbstractAssembler {
     SUBFME_OPCODE = (31u << OPCODE_SHIFT | 232u << 1),
     SUBFZE_OPCODE = (31u << OPCODE_SHIFT | 200u << 1),
     DIVW_OPCODE   = (31u << OPCODE_SHIFT | 491u << 1),
+    DIVWU_OPCODE  = (31u << OPCODE_SHIFT | 459u << 1),
     MULLW_OPCODE  = (31u << OPCODE_SHIFT | 235u << 1),
     MULHW_OPCODE  = (31u << OPCODE_SHIFT |  75u << 1),
     MULHWU_OPCODE = (31u << OPCODE_SHIFT |  11u << 1),
@@ -524,10 +526,13 @@ class Assembler : public AbstractAssembler {
 
     // Vector-Scalar (VSX) instruction support.
     LXV_OPCODE     = (61u << OPCODE_SHIFT |    1u     ),
+    LXVL_OPCODE    = (31u << OPCODE_SHIFT |  269u << 1),
     STXV_OPCODE    = (61u << OPCODE_SHIFT |    5u     ),
+    STXVL_OPCODE   = (31u << OPCODE_SHIFT |  397u << 1),
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
+    MTVSRDD_OPCODE = (31u << OPCODE_SHIFT |  435u << 1),
     MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
     MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
     MTVSRWA_OPCODE = (31u << OPCODE_SHIFT |  211u << 1),
@@ -1343,6 +1348,8 @@ class Assembler : public AbstractAssembler {
   inline void divd_(  Register d, Register a, Register b);
   inline void divw(   Register d, Register a, Register b);
   inline void divw_(  Register d, Register a, Register b);
+  inline void divwu(  Register d, Register a, Register b);
+  inline void divwu_( Register d, Register a, Register b);
 
   // Fixed-Point Arithmetic Instructions with Overflow detection
   inline void addo(    Register d, Register a, Register b);
@@ -2263,6 +2270,8 @@ class Assembler : public AbstractAssembler {
   // Vector-Scalar (VSX) instructions.
   inline void lxv(      VectorSRegister d, int si16, Register a);
   inline void stxv(     VectorSRegister d, int si16, Register a);
+  inline void lxvl(     VectorSRegister d, Register a, Register b);
+  inline void stxvl(    VectorSRegister d, Register a, Register b);
   inline void lxvd2x(   VectorSRegister d, Register a);
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a);
@@ -2277,6 +2286,7 @@ class Assembler : public AbstractAssembler {
   inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void mtvsrd(   VectorSRegister d, Register a);
   inline void mfvsrd(   Register        d, VectorSRegister a);
+  inline void mtvsrdd(  VectorSRegister d, Register a, Register b);
   inline void mtvsrwz(  VectorSRegister d, Register a);
   inline void mfvsrwz(  Register        d, VectorSRegister a);
   inline void xxspltw(  VectorSRegister d, VectorSRegister b, int ui2);

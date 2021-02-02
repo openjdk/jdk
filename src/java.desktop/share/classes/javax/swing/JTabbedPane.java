@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,48 +22,44 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.Component;
 import java.awt.Color;
-import java.awt.Point;
+import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.Rectangle;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Cursor;
-
-import java.awt.event.MouseEvent;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.FocusListener;
-
-import java.beans.JavaBean;
+import java.awt.event.MouseEvent;
 import java.beans.BeanProperty;
+import java.beans.JavaBean;
 import java.beans.Transient;
-
-import java.util.Locale;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Locale;
 
-import javax.swing.event.ChangeListener;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleIcon;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
 import javax.swing.event.ChangeEvent;
-
+import javax.swing.event.ChangeListener;
 import javax.swing.plaf.TabbedPaneUI;
 import javax.swing.plaf.UIResource;
 
-import javax.accessibility.AccessibleContext;
-import javax.accessibility.Accessible;
-import javax.accessibility.AccessibleRole;
-import javax.accessibility.AccessibleComponent;
-import javax.accessibility.AccessibleStateSet;
-import javax.accessibility.AccessibleIcon;
-import javax.accessibility.AccessibleSelection;
-import javax.accessibility.AccessibleState;
-
 import sun.swing.SwingUtilities2;
-
-import java.io.Serializable;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.IOException;
 
 /**
  * A component that lets the user switch between a group of components by
@@ -1804,6 +1800,7 @@ public class JTabbedPane extends JComponent
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -1833,6 +1830,7 @@ public class JTabbedPane extends JComponent
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException

@@ -373,7 +373,7 @@ public class GraalHotSpotVMConfigAccess {
     /**
      * @see HotSpotVMConfigAccess#getFlag(String, Class, Object)
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     public <T> T getFlag(String name, Class<T> type, T notPresent, boolean expectPresent) {
         if (expectPresent) {
             return getFlag(name, type);
