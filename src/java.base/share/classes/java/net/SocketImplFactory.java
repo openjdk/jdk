@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,10 @@ package java.net;
  * @see     java.net.Socket
  * @see     java.net.ServerSocket
  * @since   1.0
+ * @deprecated Use {@link java.nio.channels.SocketChannel} or subclass
+ * {@link Socket} directly.
  */
+@Deprecated(since = "17")
 public interface SocketImplFactory {
     /**
      * Creates a new {@code SocketImpl} instance.
