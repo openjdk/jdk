@@ -35,10 +35,7 @@ package java.net;
  * @see     java.net.Socket
  * @see     java.net.ServerSocket
  * @since   1.0
- * @deprecated Use {@link java.nio.channels.SocketChannel} or subclass
- * {@link Socket} directly.
  */
-@Deprecated(since = "17")
 public interface SocketImplFactory {
     /**
      * Creates a new {@code SocketImpl} instance.
