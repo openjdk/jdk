@@ -91,42 +91,38 @@ extern "C" {
 //  SavedSignalHandlers is a helper class for those cases, keeping an array of sigaction
 //  structures and membership information.
 class SavedSignalHandlers {
-  struct sigaction _v[NSIG];
+  struct sigaction _sa[NSIG];
   sigset_t _set;
 
   bool check_signal_number(int sig) const {
-    assert(sig > 0 || sig < NSIG, "invalid signal number %d", sig);
-    return sig > 0 || sig < NSIG;
+    assert(sig > 0 && sig < NSIG, "invalid signal number %d", sig);
+    return sig > 0 && sig < NSIG;
   }
-
-  bool is_set(int sig) const  { return sigismember(&_set, sig); }
-  void mark_as_set(int sig)   { sigaddset(&_set, sig); }
-  void mark_as_clear(int sig) { sigdelset(&_set, sig); }
 
 public:
 
   SavedSignalHandlers() {
     sigemptyset(&_set);
-    ::memset(_v, 0, sizeof(_v));
+    ::memset(_sa, 0, sizeof(_sa));
   }
 
   void set(int sig, const struct sigaction* act) {
     if (check_signal_number(sig)) {
-      _v[sig] = *act;
-      mark_as_set(sig);
+      _sa[sig] = *act;
+      sigaddset(&_set, sig);
     }
   }
 
   void clear(int sig) {
     if (check_signal_number(sig)) {
-      mark_as_clear(sig);
-      ::memset(_v + sig, 0, sizeof(struct sigaction));
+      sigdelset(&_set, sig);
+      ::memset(_sa + sig, 0, sizeof(struct sigaction));
     }
   }
 
   const struct sigaction* get(int sig) const {
-    if (check_signal_number(sig) && is_set(sig)) {
-      return _v + sig;
+    if (check_signal_number(sig) && sigismember(&_set, sig) == 1) {
+      return _sa + sig;
     }
     return NULL;
   }
@@ -139,7 +135,7 @@ static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
 // For CheckJNI:
 //  Our own hotspot signal handlers should never ever get replaced by a third
 //  party one. To check that, store a copy of the handler setup and compare it
-//  periodically against reality (see see os::run_periodic_checks()).
+//  periodically against reality (see os::run_periodic_checks()).
 static bool check_signals = true;
 static SavedSignalHandlers expected_handlers;
 
@@ -827,7 +823,7 @@ static void check_signal_handler(int sig) {
 
   // Compare both sigaction structures (intelligently; only the members we care about).
 
-  // Handler?
+  // Check handler
   address this_handler = get_signal_handler(&act);
   address expected_handler = get_signal_handler(expected_act);
   if (this_handler != expected_handler) {
@@ -839,13 +835,13 @@ static void check_signal_handler(int sig) {
     print_signal_handler_name(tty, this_handler, buf, O_BUFLEN);
     tty->cr();
     // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
-    if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {    // Flags?
+    if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
       tty->print_cr("Running in non-interactive shell, %s handler is replaced by shell",
                     os::exception_name(sig, buf, O_BUFLEN));    // When comparing, ignore the SA_RESTORER flag on Linux
     }
   }
 
-  // Flags?
+  // Check flags
 
   // When comparing, ignore the SA_RESTORER flag on Linux
   int this_flags = act.sa_flags;
@@ -861,8 +857,6 @@ static void check_signal_handler(int sig) {
     print_sa_flags(tty, this_flags);
     tty->cr();
   }
-
-  // Mask? omitted for now.
 
   // If we had a mismatch:
   // - remove the signal setup from the expected set since we do not need to check again
