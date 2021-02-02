@@ -56,7 +56,7 @@ public final class Scenario {
     private final Consumer<List<OutputAnalyzer>> jcmdProcessor;
 
     private Scenario(boolean isValid,
-    		     boolean isJcmdValid,
+                     boolean isJcmdValid,
                      List<String> vmopts,
                      Map<Executable, State> states,
                      List<CompileCommand> compileCommands,
