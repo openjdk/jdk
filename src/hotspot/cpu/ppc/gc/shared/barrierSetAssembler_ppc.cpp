@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                    Register base, RegisterOrConstant ind_or_offs, Register val,
-                                   Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
+                                   Register tmp1, Register tmp2, Register tmp3,
+                                   MacroAssembler::PreservationLevel preservation_level) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   bool not_null = (decorators & IS_NOT_NULL) != 0;
@@ -67,7 +68,8 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register base, RegisterOrConstant ind_or_offs, Register dst,
-                                  Register tmp1, Register tmp2, bool needs_frame, Label *L_handle_null) {
+                                  Register tmp1, Register tmp2,
+                                  MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   bool not_null = (decorators & IS_NOT_NULL) != 0;
@@ -105,7 +107,8 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 }
 
 void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
-                                          Register tmp1, Register tmp2, bool needs_frame) {
+                                          Register tmp1, Register tmp2,
+                                          MacroAssembler::PreservationLevel preservation_level) {
   Label done;
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.

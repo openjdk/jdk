@@ -37,7 +37,6 @@
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class LambdaWithOldClass {
 
@@ -51,12 +50,7 @@ public class LambdaWithOldClass {
         String archiveName = namePrefix + ".jsa";
 
         // dump class list
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:DumpLoadedClassList=" + classList,
-            "-cp", appJar,
-            mainClass);
-        OutputAnalyzer output = TestCommon.executeAndLog(pb, namePrefix);
-        output.shouldHaveExitValue(0);
+        CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass);
 
         // create archive with the class list
         CDSOptions opts = (new CDSOptions())
@@ -72,7 +66,7 @@ public class LambdaWithOldClass {
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(mainClass);
-        output = CDSTestUtils.runWithArchive(runOpts);
+        OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
         output.shouldContain("[class,load] LambdaWithOldClassApp source: shared objects file")
               .shouldMatch(".class.load. LambdaWithOldClassApp[$][$]Lambda[$].*/0x.*source:.*LambdaWithOldClassApp")
               .shouldHaveExitValue(0);
