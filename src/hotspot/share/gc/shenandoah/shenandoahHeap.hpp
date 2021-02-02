@@ -56,7 +56,7 @@ class ShenandoahHeapRegionClosure;
 class ShenandoahCollectionSet;
 class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
-class ShenandoahMarkCompact;
+class ShenandoahFullGC;
 class ShenandoahMonitoringSupport;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
@@ -125,7 +125,7 @@ class ShenandoahHeap : public CollectedHeap {
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
-  friend class ShenandoahMarkCompact;
+  friend class ShenandoahFullGC;
 
 // ---------- Locks that guard important data structures in Heap
 //
@@ -580,7 +580,6 @@ public:
 
   // SATB barriers hooks
   inline bool requires_marking(const void* entry) const;
-  void force_satb_flush_all_threads();
 
   // Support for bitmap uncommits
   bool commit_bitmap_slice(ShenandoahHeapRegion *r);

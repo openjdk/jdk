@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,12 +152,12 @@ void ciObjectFactory::init_shared_objects() {
   ciEnv::_null_object_instance = new (_arena) ciNullObject();
   init_ident_of(ciEnv::_null_object_instance);
 
-#define WK_KLASS_DEFN(name, ignore_s)                              \
+#define VM_CLASS_DEFN(name, ignore_s)                              \
   if (SystemDictionary::name##_is_loaded()) \
     ciEnv::_##name = get_metadata(SystemDictionary::name())->as_instance_klass();
 
-  WK_KLASSES_DO(WK_KLASS_DEFN)
-#undef WK_KLASS_DEFN
+  VM_CLASSES_DO(VM_CLASS_DEFN)
+#undef VM_CLASS_DEFN
 
   for (int len = -1; len != _ci_metadata.length(); ) {
     len = _ci_metadata.length();
