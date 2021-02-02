@@ -135,7 +135,7 @@ static jobjectArray CreateJavaFilenameArray(JNIEnv *env, NSArray *filenameArray)
     // Get the java.lang.String class object:
     jclass stringClazz = (*env)->FindClass(env, "java/lang/String");
     CHECK_NULL_RETURN(stringClazz, nil);
-    jobject jfilenameArray = (*env)->NewObjectArray(env, filenameCount, stringClazz, NULL); // AWT_THREADING Safe (known object)
+    jobject jfilenameArray = (*env)->NewObjectArray(env, filenameCount, stringClazz, NULL);
     if ((*env)->ExceptionOccurred(env)) {
         (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);

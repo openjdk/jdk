@@ -291,7 +291,7 @@ AWT_ASSERT_APPKIT_THREAD;
     jstring jURL = NSStringToJavaString(env, url);
     GET_APPEVENTHANDLER_CLASS();
     DECLARE_STATIC_METHOD(jm_handleOpenURI, sjc_AppEventHandler, "handleOpenURI", "(Ljava/lang/String;)V");
-    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleOpenURI, jURL); // AWT_THREADING Safe (event)
+    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleOpenURI, jURL);
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jURL);
 
@@ -310,7 +310,7 @@ AWT_ASSERT_APPKIT_THREAD;
     DECLARE_METHOD_RETURN(jm_ArrayList_ctor, sjc_ArrayList, "<init>", "(I)V", NULL);
     DECLARE_METHOD_RETURN(jm_ArrayList_add, sjc_ArrayList, "add", "(Ljava/lang/Object;)Z", NULL);
 
-    jobject jFileNamesArray = (*env)->NewObject(env, sjc_ArrayList, jm_ArrayList_ctor, (jint)[filenames count]); // AWT_THREADING Safe (known object)
+    jobject jFileNamesArray = (*env)->NewObject(env, sjc_ArrayList, jm_ArrayList_ctor, (jint)[filenames count]);
     CHECK_EXCEPTION_NULL_RETURN(jFileNamesArray, NULL);
 
     for (NSString *filename in filenames) {
@@ -363,7 +363,7 @@ AWT_ASSERT_APPKIT_THREAD;
     GET_APPEVENTHANDLER_CLASS_RETURN(NSPrintingCancelled);
     DECLARE_STATIC_METHOD_RETURN(jm_handlePrintFile, sjc_AppEventHandler,
                               "handlePrintFiles", "(Ljava/util/List;)V", NSPrintingCancelled);
-    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handlePrintFile, jFileNamesArray); // AWT_THREADING Safe (event)
+    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handlePrintFile, jFileNamesArray);
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jFileNamesArray);
 
@@ -378,7 +378,7 @@ AWT_ASSERT_APPKIT_THREAD;
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     GET_APPEVENTHANDLER_CLASS();
     DECLARE_STATIC_METHOD(jm_handleNativeNotification, sjc_AppEventHandler, "handleNativeNotification", "(I)V");
-    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleNativeNotification, notificationType); // AWT_THREADING Safe (event)
+    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleNativeNotification, notificationType);
     CHECK_EXCEPTION();
 }
 
@@ -622,7 +622,7 @@ JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(_registerForNotification:)
                                       on:[ApplicationDelegate class]
                               withObject:[NSNumber numberWithInt:notificationType]
-                           waitUntilDone:NO]; // AWT_THREADING Safe (non-blocking)
+                           waitUntilDone:NO];
 JNI_COCOA_EXIT(env);
 }
 

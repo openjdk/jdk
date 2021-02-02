@@ -323,7 +323,7 @@ AWT_ASSERT_APPKIT_THREAD;
 + (void) runAWTLoopWithApp:(NSApplication*)app {
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
 
-    // Make sure that when we run in AWTRunLoopMode we don't exit randomly
+    // Make sure that when we run in javaRunLoopMode we don't exit randomly
     [[NSRunLoop currentRunLoop] addPort:[NSPort port] forMode:[ThreadUtilities javaRunLoopMode]];
 
     do {

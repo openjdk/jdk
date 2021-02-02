@@ -58,6 +58,19 @@ jstring NSStringToJavaString(JNIEnv* env, NSString *str) {
  */
 
 /*
+ * Returns an NSString in decomposed UTF16 format that is compatible with HFS's
+ * expectation of the UTF16 format for file system paths.
+ * 
+ * Example string: "/Users/Amélie/"
+ * 
+ * Java's UTF16 string is "/ U s e r s / A m \351 l i e /"
+ * macOS UTF16 string suitable for HFS is "/ U s e r s / A m e \314 \201 l i e /"
+ * 
+ * There is no direct API that takes in NSString UTF16 encoded by Java
+ * and produces NSString UTF16 for HFS, so we first need to decompose it
+ * into chars (suitable for low level C file APIs), and only then
+ * create NSString representation of this decomposition back into UTF16 string.
+ *
  * https://developer.apple.com/documentation/foundation/nsstring/1414559-filesystemrepresentation?language=objc
  * describes how to get a file system representation as a char* from an NSString
  * and then using FileManager (!) convert it to an NSString.

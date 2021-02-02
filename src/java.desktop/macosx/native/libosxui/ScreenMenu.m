@@ -108,7 +108,7 @@ JNI_COCOA_ENTER(env);
     //NSLog(@"menuWillOpen %@", [menu title]);
     GET_SCREENMENU_CLASS();
     DECLARE_METHOD(jm_ScreenMenu_invokeOpenLater, sjc_ScreenMenu, "invokeOpenLater", "()V");
-    (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_invokeOpenLater); // AWT_THREADING Safe (AWTRunLoopMode)
+    (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_invokeOpenLater);
     CHECK_EXCEPTION();
 JNI_COCOA_EXIT(env);
 
@@ -128,7 +128,7 @@ JNI_COCOA_ENTER(env);
     //NSLog(@"menuDidClose %@", [menu title]);
     GET_SCREENMENU_CLASS();
     DECLARE_METHOD(jm_ScreenMenu_invokeMenuClosing, sjc_ScreenMenu, "invokeMenuClosing", "()V");
-    (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_invokeMenuClosing); // AWT_THREADING Safe (AWTRunLoopMode)
+    (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_invokeMenuClosing);
     CHECK_EXCEPTION();
 JNI_COCOA_EXIT(env);
 }
@@ -149,7 +149,7 @@ JNI_COCOA_ENTER(env);
     GET_SCREENMENU_CLASS();
     DECLARE_METHOD(jm_ScreenMenu_updateSelectedItem, sjc_ScreenMenu, "handleItemTargeted", "(IIIII)V");
     (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_updateSelectedItem, menuIndex,
-                    NSMinY(rect), NSMinX(rect), NSMaxY(rect), NSMaxX(rect)); // AWT_THREADING Safe (AWTRunLoopMode)
+                    NSMinY(rect), NSMinX(rect), NSMaxY(rect), NSMaxX(rect));
     CHECK_EXCEPTION();
 
 JNI_COCOA_EXIT(env);
@@ -204,7 +204,7 @@ JNI_COCOA_ENTER(env);
     GET_SCREENMENU_CLASS();
     DECLARE_METHOD(jm_ScreenMenu_handleMouseEvent, sjc_ScreenMenu, "handleMouseEvent", "(IIIIJ)V");
     (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_handleMouseEvent,
-             javaKind, javaX, javaY, javaModifiers, javaWhen); // AWT_THREADING Safe (AWTRunLoopMode)
+             javaKind, javaX, javaY, javaModifiers, javaWhen);
     CHECK_EXCEPTION();
 JNI_COCOA_EXIT(env);
 }

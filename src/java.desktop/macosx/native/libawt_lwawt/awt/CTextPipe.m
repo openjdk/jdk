@@ -608,6 +608,7 @@ JNI_COCOA_ENTER(env);
         // Get string to draw and the length
         const jchar *unichars = (*env)->GetStringChars(env, str, NULL);
         if (unichars == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "Could not get string chars");
             return;
         }
 

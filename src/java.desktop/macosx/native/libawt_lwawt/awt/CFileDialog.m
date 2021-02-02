@@ -146,7 +146,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
 
     DECLARE_CLASS_RETURN(jc_CFileDialog, "sun/lwawt/macosx/CFileDialog", NO);
     DECLARE_METHOD_RETURN(jm_queryFF, jc_CFileDialog, "queryFilenameFilter", "(Ljava/lang/String;)Z", NO);
-    BOOL returnValue = (*env)->CallBooleanMethod(env, fFileDialog, jm_queryFF, jString); // AWT_THREADING Safe (AWTRunLoopMode)
+    BOOL returnValue = (*env)->CallBooleanMethod(env, fFileDialog, jm_queryFF, jString);
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jString);
 
