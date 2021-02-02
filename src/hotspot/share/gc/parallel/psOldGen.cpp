@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 
 PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
@@ -381,9 +380,9 @@ void PSOldGen::post_resize() {
   WorkGang* workers = Thread::current()->is_VM_thread() ?
                       &ParallelScavengeHeap::heap()->workers() : NULL;
 
-  // Ensure the space bounds are updated and made visible to other
-  // threads after the other data structures have been resized.
-  OrderAccess::storestore();
+  // The update of the space's end is done by this call.  As that
+  // makes the new space available for concurrent allocation, this
+  // must be the last step when expanding.
   object_space()->initialize(new_memregion,
                              SpaceDecorator::DontClear,
                              SpaceDecorator::DontMangle,
