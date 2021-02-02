@@ -726,6 +726,7 @@ uintx ArchiveBuilder::buffer_to_offset(address p) const {
 
 uintx ArchiveBuilder::any_to_offset(address p) const {
   if (is_in_mapped_static_archive(p)) {
+    assert(DynamicDumpSharedSpaces, "must be");
     return p - _mapped_static_archive_bottom;
   }
   return buffer_to_offset(p);

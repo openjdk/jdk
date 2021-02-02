@@ -678,9 +678,9 @@ void Metaspace::global_initialize() {
   }
 
   // If UseCompressedClassPointers=1, we have two cases:
-  // a) if CDS archive has been mapped, it will create the ccs
-  //    for us, initialize it and set up CompressedKlassPointers encoding.
-  //    Class space will be reserved above the mapped archives.
+  // a) if CDS archive(s) have been mapped, we would have already reserved the
+  //    ccs (immediately above the mapped archives) and initialized
+  //    the CompressedKlassPointers encoding.
   // b) otherwise, we will create the ccs on our own. It will be
   //    placed above the java heap, since we assume it has been placed in low
   //    address regions. We may rethink this (see JDK-8244943). Failing that,
@@ -689,8 +689,6 @@ void Metaspace::global_initialize() {
 #if INCLUDE_CDS
   // case (a)
   if (UseSharedSpaces) {
-    // If any of the archived space fails to map, UseSharedSpaces
-    // is reset to false.
     MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
   }
 

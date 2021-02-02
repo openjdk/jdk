@@ -94,6 +94,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         // (1) Dump base archive (static)
 
         OutputAnalyzer out = TestCommon.dumpBaseArchive(baseArchiveName, unlockArg, logArg);
+        out.shouldContain("Relocating archive from");
 
         // (2) Dump top archive (dynamic)
 
