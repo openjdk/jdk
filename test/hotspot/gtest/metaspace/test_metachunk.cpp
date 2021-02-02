@@ -261,12 +261,12 @@ TEST_VM_ASSERT_MSG(metaspace, chunk_commit_mismatch, ".*commit mismatch.*") {
 
   // uncommit underlying space
   {
-    MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker cl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
     c->vsnode()->uncommit_range(c->base() + Settings::commit_granule_words(), Settings::commit_granule_words());
   }
 
   {
-    MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker cl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
     // This will assert (see: Metachunk::verify_committed_words())
     c->verify_neighborhood();
   }

@@ -214,7 +214,7 @@ void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
 #ifdef ASSERT
 // Returns true if range [p, p + word_size) is fully committed.
 bool VirtualSpaceNode::is_range_fully_committed(const MetaWord* p, size_t word_size) const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   if (word_size == 0) {
     return true;
   }

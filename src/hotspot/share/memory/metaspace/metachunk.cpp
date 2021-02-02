@@ -63,7 +63,7 @@ bool Metachunk::commit_up_to(size_t new_committed_words) {
   assert(new_committed_words <= word_size(), "parameter error");
 
   // lock protection needed since it may modify neighboring chunks.
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   // This function commits additional space within the Metachunk. Committing is done
   //  for whole commit granules only.
@@ -266,7 +266,7 @@ void Metachunk::zap_header(uint8_t c) {
 
 // Checks the chunk local commit watermark against the underlying commit mask.
 void Metachunk::verify_committed_words() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   if (_committed_words > 0) {
     assert(_vsnode->is_range_fully_committed(base(), committed_words()),
            "commit mismatch - Chunk: " METACHUNK_FULL_FORMAT ".",
