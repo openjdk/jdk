@@ -128,6 +128,7 @@ final class Metadata extends Command {
 
     @Override
     public void displayOptionUsage(PrintStream stream) {
+        char q = quoteCharacter();
         stream.println("  --categories <filter>   Select events matching a category name.");
         stream.println("                          The filter is a comma-separated list of names,");
         stream.println("                          simple and/or qualified, and/or quoted glob patterns");
@@ -136,19 +137,23 @@ final class Metadata extends Command {
         stream.println("                          The filter is a comma-separated list of names,");
         stream.println("                          simple and/or qualified, and/or quoted glob patterns");
         stream.println();
-        stream.println("  <file>                  Location of the recording file (.jfr), it's optional.");
+        stream.println("  <file>                  Location of the recording file (.jfr)");
+        stream.println();
+        stream.println("If the <file> parameter is omitted, metadata from the JDK where");
+        stream.println("the " + q + "jfr" + q + " tool is located will be used");
         stream.println();
         stream.println();
         stream.println("Example usage:");
+        stream.println();
+        stream.println(" jfr metadata");
         stream.println();
         stream.println(" jfr metadata --events jdk.ThreadStart recording.jfr");
         stream.println();
         stream.println(" jfr metadata --events CPULoad,GarbageCollection");
         stream.println();
-        char q = quoteCharacter();
         stream.println(" jfr metadata --categories " + q + "GC,JVM,Java*" + q);
         stream.println();
-        stream.println(" jfr metadata --events "+ q + "Thread*" + q);
+        stream.println(" jfr metadata --events " + q + "Thread*" + q);
         stream.println();
     }
 
@@ -200,7 +205,8 @@ final class Metadata extends Command {
                 filter = addCache(filter, eventType -> eventType.getId());
             }
 
-            // determine whether reading from recording file or reading from metadata.bin
+            // determine whether reading from recording file or reading from the JDK where
+            // the jfr tool is located will be used
             List<EventType> types = null;
             if (file != null) {
                 try (RecordingFile rf = new RecordingFile(file)) {
@@ -210,7 +216,7 @@ final class Metadata extends Command {
                 }
             } else {
                 // FlightRecorder.getEventTypes returns unmodifiable list thus disallowing sorting
-                // so copy its elements to new list and allow further sorting
+                // so copy its elements to a new list and sort it
                 types = new ArrayList<>(FlightRecorder.getFlightRecorder().getEventTypes());
             }
             if (types != null) {
@@ -220,7 +226,8 @@ final class Metadata extends Command {
                 if (filter != null && !filter.test(type)) {
                     continue;
                 }
-                prettyWriter.printType(type);
+
+                prettyWriter.printType(PrivateAccess.getInstance().getType(type));
             }
             prettyWriter.flush(true);
             pw.flush();

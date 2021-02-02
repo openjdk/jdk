@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.StringJoiner;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.DataAmount;
-import jdk.jfr.EventType;
 import jdk.jfr.Frequency;
 import jdk.jfr.MemoryAddress;
 import jdk.jfr.Name;
@@ -75,10 +74,6 @@ public final class PrettyWriter extends EventPrintWriter {
             print(e);
             flush(false);
         }
-    }
-
-    public void printType(EventType t) {
-        printType(PrivateAccess.getInstance().getType(t));
     }
 
     public void printType(Type t) {
