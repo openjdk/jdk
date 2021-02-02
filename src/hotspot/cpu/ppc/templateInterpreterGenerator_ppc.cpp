@@ -525,7 +525,8 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ cmpdi(CCR0, R3_RET, 0);
   __ beq(CCR0, slow_path);
 
-  __ load_heap_oop(R3_RET, referent_offset, R3_RET, /* non-volatile temp */ R31, R11_scratch1,
+  __ load_heap_oop(R3_RET, referent_offset, R3_RET,
+                   /* non-volatile temp */ R31, R11_scratch1,
                    MacroAssembler::PRESERVATION_FRAME_LR,
                    ON_WEAK_OOP_REF);
 

@@ -39,6 +39,7 @@ class MacroAssembler: public Assembler {
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
+  // Indicates whether and, if so, which registers must be preserved when calling runtime code.
   enum PreservationLevel {
     PRESERVATION_NONE,
     PRESERVATION_FRAME_LR,
@@ -269,7 +270,7 @@ class MacroAssembler: public Assembler {
   // some ABI-related functions
 
   // Clobbers all volatile, (non-floating-point) general-purpose registers for debugging purposes.
-  // This is especially useful for making calls to the JRT in places in which this haven't been done before;
+  // This is especially useful for making calls to the JRT in places in which this hasn't been done before;
   // e.g. with the introduction of LRBs (load reference barriers) for concurrent garbage collection.
   void clobber_volatile_gprs(Register excluded_register = noreg);
   void clobber_carg_stack_slots(Register tmp);

@@ -97,7 +97,10 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;
 
-  BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, preservation_level);
+  BarrierSetAssembler::store_at(masm, decorators, type,
+                                base, ind_or_offs, val,
+                                tmp1, tmp2, tmp3,
+                                preservation_level);
 
   // No need for post barrier if storing NULL
   if (val != noreg) {

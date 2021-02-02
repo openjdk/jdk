@@ -305,20 +305,18 @@ void TemplateTable::fast_aldc(bool wide) {
   transition(vtos, atos);
 
   int index_size = wide ? sizeof(u2) : sizeof(u1);
-  const Register tmp1 = R11_scratch1,
-                 tmp2 = R12_scratch2;
   Label is_null;
 
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (CallSite, etc.)
-  __ get_cache_index_at_bcp(tmp1, 1, index_size);  // Load index.
-  __ load_resolved_reference_at_index(R17_tos, tmp1, tmp2, &is_null);
+  __ get_cache_index_at_bcp(R11_scratch1, 1, index_size);  // Load index.
+  __ load_resolved_reference_at_index(R17_tos, R11_scratch1, R12_scratch2, &is_null);
 
   // Convert null sentinel to NULL
-  int simm16_rest = __ load_const_optimized(tmp1, Universe::the_null_sentinel_addr(), R0, true);
-  __ ld(tmp1, simm16_rest, tmp1);
-  __ resolve_oop_handle(tmp1);
-  __ cmpld(CCR0, R17_tos, tmp1);
+  int simm16_rest = __ load_const_optimized(R11_scratch1, Universe::the_null_sentinel_addr(), R0, true);
+  __ ld(R11_scratch1, simm16_rest, R11_scratch1);
+  __ resolve_oop_handle(R11_scratch1);
+  __ cmpld(CCR0, R17_tos, R11_scratch1);
   if (VM_Version::has_isel()) {
     __ isel_0(R17_tos, CCR0, Assembler::equal);
   } else {

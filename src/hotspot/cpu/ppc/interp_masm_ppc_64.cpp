@@ -475,6 +475,8 @@ void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
 }
 
 // Load object from cpool->resolved_references(index).
+// Kills:
+//   - index
 void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Register tmp1,
                                                                  Label *L_handle_null) {
   assert_different_registers(result, index);
@@ -499,7 +501,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
 #endif
   // Add in the index.
   add(result, tmp1, result);
-  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, tmp1, tmp2,
+  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result,
+                tmp1, tmp2,
                 MacroAssembler::PRESERVATION_FRAME_LR,
                 0, L_handle_null);
 }

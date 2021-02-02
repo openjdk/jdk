@@ -32,7 +32,9 @@
 void ModRefBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                    Register src, Register dst, Register count, Register preserve1, Register preserve2) {
   if (type == T_OBJECT) {
-    gen_write_ref_array_pre_barrier(masm, decorators, src, dst, count, preserve1, preserve2);
+    gen_write_ref_array_pre_barrier(masm, decorators,
+                                    src, dst, count,
+                                    preserve1, preserve2);
 
     bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
     if (!checkcast) {
@@ -61,8 +63,14 @@ void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet deco
                                          Register tmp1, Register tmp2, Register tmp3,
                                          MacroAssembler::PreservationLevel preservation_level) {
   if (is_reference_type(type)) {
-    oop_store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, preservation_level);
+    oop_store_at(masm, decorators, type,
+                 base, ind_or_offs, val,
+                 tmp1, tmp2, tmp3,
+                 preservation_level);
   } else {
-    BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, preservation_level);
+    BarrierSetAssembler::store_at(masm, decorators, type,
+                                  base, ind_or_offs, val,
+                                  tmp1, tmp2, tmp3,
+                                  preservation_level);
   }
 }

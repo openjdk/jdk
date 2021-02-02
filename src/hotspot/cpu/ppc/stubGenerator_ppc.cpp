@@ -2226,12 +2226,10 @@ class StubGenerator: public StubCodeGenerator {
 
     // ======== loop entry is here ========
     __ bind(load_element);
-    {
-      Register tmp1 = R12_tmp, tmp2 = R11_klass;
-      __ load_heap_oop(R10_oop, R8_offset, R3_from, tmp1, tmp2,
-                       MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,
-                       AS_RAW, &store_null);
-    }
+    __ load_heap_oop(R10_oop, R8_offset, R3_from,
+                     R11_scratch1, R12_tmp,
+                     MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,
+                     AS_RAW, &store_null);
 
     __ load_klass(R11_klass, R10_oop); // Query the object klass.
 

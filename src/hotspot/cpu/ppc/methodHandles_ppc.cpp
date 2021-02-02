@@ -235,9 +235,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
-  Register argbase    = R15_esp; // parameter (preserved)
-  Register temp1      = R30;
-  Register param_size = R7;
+  Register R15_argbase   = R15_esp; // parameter (preserved)
+  Register R30_tmp1      = R30;
+  Register R7_param_size = R7;
 
   // here's where control starts out:
   __ align(CodeEntryAlignment);
@@ -248,9 +248,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ load_sized_value(temp1, Method::intrinsic_id_offset_in_bytes(), R19_method,
+    __ load_sized_value(R30_tmp1, Method::intrinsic_id_offset_in_bytes(), R19_method,
                         sizeof(u2), /*is_signed*/ false);
-    __ cmpwi(CCR1, temp1, (int) iid);
+    __ cmpwi(CCR1, R30_tmp1, (int) iid);
     __ beq(CCR1, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
         iid == vmIntrinsics::_linkToSpecial) {
@@ -266,18 +266,18 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   int ref_kind = signature_polymorphic_intrinsic_ref_kind(iid);
   assert(ref_kind != 0 || iid == vmIntrinsics::_invokeBasic, "must be _invokeBasic or a linkTo intrinsic");
   if (ref_kind == 0 || MethodHandles::ref_kind_has_receiver(ref_kind)) {
-    __ ld(param_size, in_bytes(Method::const_offset()), R19_method);
-    __ load_sized_value(param_size, in_bytes(ConstMethod::size_of_parameters_offset()), param_size,
+    __ ld(R7_param_size, in_bytes(Method::const_offset()), R19_method);
+    __ load_sized_value(R7_param_size, in_bytes(ConstMethod::size_of_parameters_offset()), R7_param_size,
                         sizeof(u2), /*is_signed*/ false);
     // assert(sizeof(u2) == sizeof(ConstMethod::_size_of_parameters), "");
   } else {
-    DEBUG_ONLY(param_size = noreg);
+    DEBUG_ONLY(R7_param_size = noreg);
   }
 
   Register tmp_mh = noreg;
   if (!is_signature_polymorphic_static(iid)) {
-    __ ld(tmp_mh = temp1, __ argument_offset(param_size, param_size, 0), argbase);
-    DEBUG_ONLY(param_size = noreg);
+    __ ld(tmp_mh = R30_tmp1, __ argument_offset(R7_param_size, R7_param_size, 0), R15_argbase);
+    DEBUG_ONLY(R7_param_size = noreg);
   }
 
   if (log_is_enabled(Info, methodhandles)) {
@@ -295,12 +295,12 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     Register tmp_recv = noreg;
     if (MethodHandles::ref_kind_has_receiver(ref_kind)) {
       // Load the receiver (not the MH; the actual MemberName's receiver) up from the interpreter stack.
-      __ ld(tmp_recv = temp1, __ argument_offset(param_size, param_size, 0), argbase);
-      DEBUG_ONLY(param_size = noreg);
+      __ ld(tmp_recv = R30_tmp1, __ argument_offset(R7_param_size, R7_param_size, 0), R15_argbase);
+      DEBUG_ONLY(R7_param_size = noreg);
     }
     Register R19_member = R19_method;  // MemberName ptr; incoming method ptr is dead now
-    __ ld(R19_member, RegisterOrConstant((intptr_t)8), argbase);
-    __ add(argbase, Interpreter::stackElementSize, argbase);
+    __ ld(R19_member, RegisterOrConstant((intptr_t)8), R15_argbase);
+    __ add(R15_argbase, Interpreter::stackElementSize, R15_argbase);
     generate_method_handle_dispatch(_masm, iid, tmp_recv, R19_member, not_for_compiler_entry);
   }
 
@@ -313,7 +313,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                                     Register member_reg,
                                                     bool for_compiler_entry) {
   assert(is_signature_polymorphic(iid), "expected invoke iid");
-  Register temp1 = (for_compiler_entry ? R25_tmp5 : R31);
+  Register temp1 = (for_compiler_entry ? R25_tmp5 : R31); // must be non-volatile due to runtime calls
   Register temp2 = (for_compiler_entry ? R22_tmp2 : R8);
   Register temp3 = (for_compiler_entry ? R23_tmp3 : R9);
   Register temp4 = (for_compiler_entry ? R24_tmp4 : R10);
