@@ -37,17 +37,17 @@ class MetaspaceClosure;
 class vmClasses : AllStatic {
   friend class VMStructs;
 
-  static VMClassID check_id(VMClassID id) {
-    assert((int)id >= (int)VMClassID::FIRST && (int)id < (int)VMClassID::LIMIT, "oob");
+  static vmClassID check_id(vmClassID id) {
+    assert((int)id >= (int)vmClassID::FIRST && (int)id < (int)vmClassID::LIMIT, "oob");
     return id;
   }
 
-  static int as_int(VMClassID id) {
+  static int as_int(vmClassID id) {
     return static_cast<int>(check_id(id));
   }
 
-  static VMClassID as_id(int i) {
-    VMClassID id = static_cast<VMClassID>(i);
+  static vmClassID as_id(int i) {
+    vmClassID id = static_cast<vmClassID>(i);
     return check_id(id);
   }
 
@@ -57,9 +57,9 @@ class vmClasses : AllStatic {
   }
 
   static bool is_loaded(InstanceKlass* klass);
-  static bool resolve(VMClassID id, TRAPS);
-  static void resolve_until(VMClassID limit_id, VMClassID &start_id, TRAPS);
-  static void resolve_through(VMClassID last_id, VMClassID &start_id, TRAPS) {
+  static bool resolve(vmClassID id, TRAPS);
+  static void resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS);
+  static void resolve_through(vmClassID last_id, vmClassID &start_id, TRAPS) {
     int limit = as_int(last_id) + 1;
     resolve_until(as_id(limit), start_id, THREAD);
   }
@@ -87,11 +87,11 @@ public:
   VM_CLASSES_DO(_VM_CLASS_DECLARE);
   #undef _VM_CLASS_DECLARE
 
-  static InstanceKlass* klass_at(VMClassID id) {
+  static InstanceKlass* klass_at(vmClassID id) {
     return _klasses[as_int(id)];
   }
 
-  static InstanceKlass** klass_addr_at(VMClassID id) {
+  static InstanceKlass** klass_addr_at(vmClassID id) {
     return &_klasses[as_int(id)];
   }
 
