@@ -147,12 +147,6 @@ static bool libjsig_is_loaded = false;
 typedef struct sigaction *(*get_signal_t)(int);
 static get_signal_t get_signal_action = NULL;
 
-// For diagnostics:
-//  when installing a signal handler (any - our own and on behalf of user code),
-//  keep a copy of the old setup for display purposes. This is independent from
-//  signal chaining.
-static SavedSignalHandlers replaced_handlers;
-
 // suspend/resume support
 #if defined(__APPLE__)
   static OSXSemaphore sr_semaphore;
@@ -885,14 +879,7 @@ void* os::signal(int signal_number, void* handler) {
     return (void *)-1;
   }
 
-  // For diagnostic purposes (see print_signal_handler) store information about
-  // the preexisting handler if one had been installed.
-  address oldhand = get_signal_handler(&oldSigAct);
-  if (!HANDLER_IS_IGN_OR_DFL(oldhand)) {
-    replaced_handlers.set(signal_number, &oldSigAct);
-  }
-
-  return oldhand;
+  return get_signal_handler(&oldSigAct);
 }
 
 void os::signal_raise(int signal_number) {
@@ -1277,11 +1264,6 @@ void set_signal_handler(int sig) {
   void* oldhand2  = get_signal_handler(&oldAct);
   assert(oldhand2 == oldhand, "no concurrent signal handler installation");
 
-  // For diagnostic purposes (see print_signal_handler) store information about
-  // the preexisting handler if it was non-default and non-ignore
-  if (!HANDLER_IS_IGN_OR_DFL(oldhand2)) {
-    replaced_handlers.set(sig, &oldAct);
-  }
 }
 
 // install signal handlers for signals that HotSpot needs to
@@ -1424,13 +1406,6 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
     st->print("  chained to: ");
     print_single_signal_handler(st, sig, &current_act, buf, buflen);
     st->cr();
-  } else {
-    const struct sigaction* replaced_act = replaced_handlers.get(sig);
-    if (replaced_act != NULL) {
-      st->print("  replaced: ");
-      print_single_signal_handler(st, sig, replaced_act, buf, buflen);
-      st->cr();
-    }
   }
 }
 
