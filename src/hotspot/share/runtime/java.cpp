@@ -328,7 +328,7 @@ void print_statistics() {
     MemTracker::final_report(tty);
   }
 
-  if (PrintMetaspaceStatistics) {
+  if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
@@ -374,7 +374,7 @@ void print_statistics() {
     MemTracker::final_report(tty);
   }
 
-  if (PrintMetaspaceStatistics) {
+  if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 

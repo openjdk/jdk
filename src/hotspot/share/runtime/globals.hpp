@@ -1484,7 +1484,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
                                                                             \
-  product(bool, PrintMetaspaceStatistics, false, DIAGNOSTIC,                \
+  product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
   product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
