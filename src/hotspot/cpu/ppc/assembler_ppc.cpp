@@ -60,7 +60,9 @@ bool Assembler::in_scratch_emit_size() {
 #ifdef COMPILER2
   Thread* thread = Thread::current();
 
-  if (!thread->is_Compiler_thread())       return false;
+  if (!thread->is_Compiler_thread()) {
+    return false;
+  }
 
   AbstractCompiler* comp = ((CompilerThread *)thread)->compiler();
 

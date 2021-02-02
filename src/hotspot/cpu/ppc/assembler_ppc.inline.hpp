@@ -40,7 +40,7 @@ inline void Assembler::emit_prefix(int x) {
 
   // Add nop if a prefixed (two-word) instruction is going to cross a 64-byte boundary.
   // (See Section 1.6 of Power ISA Version 3.1)
-  if(is_aligned(reinterpret_cast<uintptr_t>(pc()) + sizeof(int32_t), 64) ||
+  if (is_aligned(reinterpret_cast<uintptr_t>(pc()) + sizeof(int32_t), 64) ||
      Assembler::in_scratch_emit_size()) {
     Assembler::nop();
   }
@@ -144,12 +144,12 @@ inline void Assembler::divwu(  Register d, Register a, Register b) { emit_int32(
 inline void Assembler::divwu_( Register d, Register a, Register b) { emit_int32(DIVWU_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
 
 // Prefixed instructions, introduced by POWER10
-inline void Assembler::paddi(  Register d, Register a, long si34, bool r = false) {
+inline void Assembler::paddi(Register d, Register a, long si34, bool r = false) {
   assert(a != R0 || r, "r0 not allowed, unless R is set (CIA relative)");
   paddi_r0ok( d, a, si34, r);
 }
 
-inline void Assembler::paddi_r0ok(  Register d, Register a, long si34, bool r = false) {
+inline void Assembler::paddi_r0ok(Register d, Register a, long si34, bool r = false) {
   emit_prefix(PADDI_PREFIX_OPCODE | r_eo(r) | d0_eo(si34));
   emit_int32( PADDI_SUFFIX_OPCODE | rt(d)   | ra(a)   | d1_eo(si34));
 }
@@ -193,10 +193,7 @@ inline void Assembler::addir(Register d, int si16, Register a) { Assembler::addi
 inline void Assembler::subi( Register d, Register a, int si16) { Assembler::addi(d, a, -si16); }
 
 // Prefixed instructions, introduced by POWER10
-inline void Assembler::pli(  Register d, long si34)             { Assembler::paddi_r0ok( d, R0, si34, false); }
-inline void Assembler::pla(  Register d, long si34)             { Assembler::paddi_r0ok( d, R0, si34, true); }
-inline void Assembler::pla(  Register d, Register a, long si34) { Assembler::paddi( d, a, si34, false); }
-inline void Assembler::psubi(Register d, Register a, long si34) { Assembler::paddi( d, a, -si34, false); }
+inline void Assembler::pli(Register d, long si34) { Assembler::paddi_r0ok( d, R0, si34, false); }
 
 // PPC 1, section 3.3.9, Fixed-Point Compare Instructions
 inline void Assembler::cmpi(  ConditionRegister f, int l, Register a, int si16)   { emit_int32( CMPI_OPCODE  | bf(f) | l10(l) | ra(a) | simm(si16,16)); }

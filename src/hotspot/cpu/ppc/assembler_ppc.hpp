@@ -1110,18 +1110,18 @@ class Assembler : public AbstractAssembler {
   static int inv_bi_field(int x)  { return inv_opp_u_field(x, 15, 11); }
 
   // For extended opcodes (prefixed instructions) introduced with Power 10
-  static long inv_r_eo(     int        x)  { return  inv_opp_u_field(x, 11, 11); }
-  static long inv_type(     int        x)  { return  inv_opp_u_field(x, 7,  6); }
-  static long inv_st_x0(    int        x)  { return  inv_opp_u_field(x, 8,  8); }
-  static long inv_st_x1(    int        x)  { return  inv_opp_u_field(x, 11,  8); }
+  static long inv_r_eo(   int x)  { return  inv_opp_u_field(x, 11, 11); }
+  static long inv_type(   int x)  { return  inv_opp_u_field(x,  7,  6); }
+  static long inv_st_x0(  int x)  { return  inv_opp_u_field(x,  8,  8); }
+  static long inv_st_x1(  int x)  { return  inv_opp_u_field(x, 11,  8); }
 
   //  - 8LS:D/MLS:D Formats
-  static long inv_d0_eo(    long       x)  { return  inv_opp_u_field(x, 31, 14); }
+  static long inv_d0_eo( long x)  { return  inv_opp_u_field(x, 31, 14); }
 
   //  - 8RR:XX4/8RR:D Formats
-  static long inv_imm0_eo(  int        x)  { return  inv_opp_u_field(x, 31, 16); }
-  static long inv_uimm_eo(  int        x)  { return  inv_opp_u_field(x, 31, 29); }
-  static long inv_imm_eo(   int        x)  { return  inv_opp_u_field(x, 31, 24); }
+  static long inv_imm0_eo(int x)  { return  inv_opp_u_field(x, 31, 16); }
+  static long inv_uimm_eo(int x)  { return  inv_opp_u_field(x, 31, 29); }
+  static long inv_imm_eo( int x)  { return  inv_opp_u_field(x, 31, 24); }
 
   #define opp_u_field(x, hi_bit, lo_bit) u_field(x, 31-(lo_bit), 31-(hi_bit))
   #define opp_s_field(x, hi_bit, lo_bit) s_field(x, 31-(lo_bit), 31-(hi_bit))
@@ -1318,8 +1318,8 @@ class Assembler : public AbstractAssembler {
     return (((int *)a)[instruction_number] << 14) >> 14;
   }
 
-  static inline int hi18_signed(  int x) { return hi16_signed(x); }
-  static inline int hi18_signed( long x) { return (int)((x << 30) >> 46); }
+  static inline int hi18_signed( int x) { return hi16_signed(x); }
+  static inline int hi18_signed(long x) { return (int)((x << 30) >> 46); }
 
  protected:
 
@@ -1384,9 +1384,6 @@ class Assembler : public AbstractAssembler {
   // Prefixed add immediate, introduced by POWER10
   inline void paddi(Register d, Register a, long si34, bool r);
   inline void pli(  Register d, long si34);
-  inline void pla(  Register d, long si34);
-  inline void pla(  Register d, Register a, long si34);
-  inline void psubi(Register d, Register a, long si34);
 
  private:
   inline void addi_r0ok( Register d, Register a, int si16);
