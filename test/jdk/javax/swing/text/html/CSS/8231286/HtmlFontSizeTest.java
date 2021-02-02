@@ -35,7 +35,6 @@ import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
 import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.StyleSheet;
 
 public class HtmlFontSizeTest {
     static volatile Dimension w3cFrameSize;
