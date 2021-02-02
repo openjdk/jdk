@@ -240,7 +240,7 @@ class LinuxDosFileAttributeView
             throw new UnixException("Value of " + DOS_XATTR_NAME + " attribute is invalid");
         } catch (UnixException x) {
             // default value when attribute does not exist
-            if (x.errno() == ENODATA)
+            if (x.errno() == XATTR_NOT_FOUND)
                 return 0;
             throw x;
         } finally {

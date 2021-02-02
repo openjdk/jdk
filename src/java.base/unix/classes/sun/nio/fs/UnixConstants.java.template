@@ -110,16 +110,14 @@ class UnixConstants {
     static final int PREFIX_ELOOP = ELOOP;
     static final int PREFIX_EROFS = EROFS;
 
-#ifndef ENODATA
-    // Only used in Linux java source, provide any value so it compiles
-    static final int PREFIX_ENODATA = ELAST;
+// fgetxattr error codes for absent attributes depend on the OS:
+#ifdef _ALLBSD_SOURCE
+    static final int PREFIX_XATTR_NOT_FOUND = ENOATTR;
+#elif __linux__
+    static final int PREFIX_XATTR_NOT_FOUND = ENODATA;
 #else
-    static final int PREFIX_ENODATA = ENODATA;
-#endif
-
-#ifdef ENOATTR
-    // BSD uses ENOATTR instead of ENODATA during xattr calls
-    static final int PREFIX_ENOATTR = ENOATTR;
+    // not supported (dummy values will not be used at runtime).
+    static final int PREFIX_XATTR_NOT_FOUND = 00;
 #endif
 
     static final int PREFIX_ERANGE = ERANGE;
