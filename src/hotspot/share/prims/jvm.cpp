@@ -1058,7 +1058,15 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
 
   // Internalize the string, converting '.' to '/' in string.
   char* p = (char*)str;
+  if (*p == '[') {
+    // Disallow array classes
+    return NULL;
+  }
   while (*p != '\0') {
+    if (*p == '/') {
+      // Disallow slashes in input
+      return NULL;
+    }
     if (*p == '.') {
       *p = '/';
     }

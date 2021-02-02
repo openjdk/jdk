@@ -1255,8 +1255,6 @@ public abstract class ClassLoader {
      * or return null if not found.
      */
     Class<?> findBootstrapClassOrNull(String name) {
-        if (!checkName(name)) return null;
-
         return findBootstrapClass(name);
     }
 
@@ -1278,8 +1276,6 @@ public abstract class ClassLoader {
      * @since  1.1
      */
     protected final Class<?> findLoadedClass(String name) {
-        if (!checkName(name))
-            return null;
         return findLoadedClass0(name);
     }
 

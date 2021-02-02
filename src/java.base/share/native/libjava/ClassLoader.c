@@ -287,9 +287,12 @@ Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jobject loader,
         JNU_ThrowOutOfMemoryError(env, NULL);
         return NULL;
     }
-    fixClassname(clname);
-
-    if (!verifyClassname(clname, JNI_TRUE)) {  /* expects slashed name */
+    // disallow slashes in input, change '.' to '/'
+    if (verifyFixClassname(clname)) {
+        goto done;
+    }
+    // expect slashed name, disallow array names
+    if (!verifyClassname(clname, JNI_FALSE)) {
         goto done;
     }
 
