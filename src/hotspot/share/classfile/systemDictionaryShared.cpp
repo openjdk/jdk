@@ -1046,18 +1046,26 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
       k = load_shared_class_for_builtin_loader(name, class_loader, THREAD);
       if (k != NULL) {
-        define_instance_class(k, class_loader, CHECK_NULL);
+        k = find_or_define_instance_class(name, class_loader, k, CHECK_NULL);
       }
     }
   }
   return k;
 }
 
-PackageEntry* SystemDictionaryShared::get_package_entry_from_class_name(Handle class_loader, Symbol* class_name) {
-  PackageEntry* pkg_entry = NULL;
-  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+PackageEntry* SystemDictionaryShared::get_package_entry_from_class(InstanceKlass* ik, Handle class_loader) {
+  PackageEntry* pkg_entry = ik->package();
+  if (MetaspaceShared::use_full_module_graph() && ik->is_shared() && pkg_entry != NULL) {
+    assert(MetaspaceShared::is_in_shared_metaspace(pkg_entry), "must be");
+    assert(!ik->is_shared_unregistered_class(), "unexpected archived package entry for an unregistered class");
+    assert(ik->module()->is_named(), "unexpected archived package entry for a class in an unnamed module");
+    return pkg_entry;
+  }
+  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(ik->name());
   if (pkg_name != NULL) {
     pkg_entry = class_loader_data(class_loader)->packages()->lookup_only(pkg_name);
+  } else {
+    pkg_entry = NULL;
   }
   return pkg_entry;
 }
@@ -1072,7 +1080,7 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
          SystemDictionary::is_system_class_loader(class_loader()))  ||
         (ik->is_shared_platform_class() &&
          SystemDictionary::is_platform_class_loader(class_loader()))) {
-      PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, class_name);
+      PackageEntry* pkg_entry = get_package_entry_from_class(ik, class_loader);
       Handle protection_domain =
         SystemDictionaryShared::init_security_info(class_loader, ik, pkg_entry, CHECK_NULL);
       return load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, THREAD);
@@ -1172,7 +1180,7 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   loader_data->add_class(ik);
 
   // Get the package entry.
-  PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, ik->name());
+  PackageEntry* pkg_entry = get_package_entry_from_class(ik, class_loader);
 
   // Load and check super/interfaces, restore unsharable info
   InstanceKlass* shared_klass = load_shared_class(ik, class_loader, protection_domain,
@@ -1211,14 +1219,14 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
 }
 
 // This function is called to resolve the super/interfaces of shared classes for
-// non-built-in loaders. E.g., ChildClass in the below example
+// non-built-in loaders. E.g., SharedClass in the below example
 // where "super:" (and optionally "interface:") have been specified.
 //
 // java/lang/Object id: 0
 // Interface   id: 2 super: 0 source: cust.jar
-// ChildClass  id: 4 super: 0 interfaces: 2 source: cust.jar
+// SharedClass  id: 4 super: 0 interfaces: 2 source: cust.jar
 InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
-    Symbol* child_name, Symbol* class_name, Handle class_loader,
+    Symbol* class_name, Symbol* super_name, Handle class_loader,
     Handle protection_domain, bool is_superclass, TRAPS) {
 
   assert(DumpSharedSpaces, "only when dumping");
@@ -1228,13 +1236,13 @@ InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
     // We're still loading the well-known classes, before the ClassListParser is created.
     return NULL;
   }
-  if (child_name->equals(parser->current_class_name())) {
+  if (class_name->equals(parser->current_class_name())) {
     // When this function is called, all the numbered super and interface types
     // must have already been loaded. Hence this function is never recursively called.
     if (is_superclass) {
-      return parser->lookup_super_for_current_class(class_name);
+      return parser->lookup_super_for_current_class(super_name);
     } else {
-      return parser->lookup_interface_for_current_class(class_name);
+      return parser->lookup_interface_for_current_class(super_name);
     }
   } else {
     // The VM is not trying to resolve a super type of parser->current_class_name().
@@ -1684,7 +1692,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
                                                                          InstanceKlass* caller_ik, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
-  PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, caller_ik->name());
+  PackageEntry* pkg_entry = get_package_entry_from_class(caller_ik, class_loader);
   if (caller_ik->class_loader() != NULL) {
     protection_domain = SystemDictionaryShared::init_security_info(class_loader, caller_ik, pkg_entry, CHECK_NULL);
   }
@@ -2178,9 +2186,9 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
   }
 }
 
-void SystemDictionaryShared::serialize_well_known_klasses(SerializeClosure* soc) {
-  for (int i = FIRST_WKID; i < WKID_LIMIT; i++) {
-    soc->do_ptr((void**)&_well_known_klasses[i]);
+void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
+  for (auto id : EnumRange<VMClassID>{}) {
+    soc->do_ptr((void**)klass_addr_at(id));
   }
 }
 

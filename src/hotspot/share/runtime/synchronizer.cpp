@@ -58,31 +58,6 @@
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"
 
-class MonitorList {
-  ObjectMonitor* volatile _head;
-  volatile size_t _count;
-  volatile size_t _max;
-
-public:
-  void add(ObjectMonitor* monitor);
-  size_t unlink_deflated(Thread* self, LogStream* ls, elapsedTimer* timer_p,
-                         GrowableArray<ObjectMonitor*>* unlinked_list);
-  size_t count() const;
-  size_t max() const;
-
-  class Iterator;
-  Iterator iterator() const;
-};
-
-class MonitorList::Iterator {
-  ObjectMonitor* _current;
-
-public:
-  Iterator(ObjectMonitor* head) : _current(head) {}
-  bool has_next() const { return _current != NULL; }
-  ObjectMonitor* next();
-};
-
 void MonitorList::add(ObjectMonitor* m) {
   ObjectMonitor* head;
   do {
@@ -240,7 +215,7 @@ void ObjectSynchronizer::initialize() {
   set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);
 }
 
-static MonitorList _in_use_list;
+MonitorList ObjectSynchronizer::_in_use_list;
 // monitors_used_above_threshold() policy is as follows:
 //
 // The ratio of the current _in_use_list count to the ceiling is used

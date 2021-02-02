@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,18 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
+package myapp;
 
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+import somelib.Invariants;
 
-bool ShenandoahConcurrentRoots::can_do_concurrent_roots() {
-  return true;
-}
+/**
+ * This test is modelled to use --patch-module to gain access to non-exported internals.
+ */
 
-bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
-  return can_do_concurrent_roots() &&
-         !ShenandoahHeap::heap()->is_stw_gc_in_progress();
-}
-
-bool ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() {
-  return ClassUnloading;
-}
-
-bool ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  return can_do_concurrent_class_unloading() &&
-         heap->unload_classes() &&
-         !heap->is_stw_gc_in_progress();
+public class Main {
+    public static void main(String[] args) {
+        Invariants.test(args[0]);
+    }
 }

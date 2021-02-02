@@ -184,6 +184,7 @@ private:
   void add_list_common_start(FreeRegionList* from_list);
   void add_list_common_end(FreeRegionList* from_list);
 
+  void verify_region_to_remove(HeapRegion* curr, HeapRegion* next) NOT_DEBUG_RETURN;
 protected:
   // See the comment for HeapRegionSetBase::clear()
   virtual void clear();
