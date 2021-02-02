@@ -34,6 +34,7 @@ import java.util.List;
 final class ChunkInputStream extends InputStream {
     private final List<RepositoryChunk> chunks;
     private int nextIndex = 0;
+    private long unstreamedSize = 0;
     private RepositoryChunk currentChunk;
     private InputStream stream;
 
@@ -42,24 +43,18 @@ final class ChunkInputStream extends InputStream {
         for (RepositoryChunk c : inputChunks) {
             c.use(); // keep alive while we're reading.
             chunks.add(c);
+            unstreamedSize += c.getSize();
         }
         nextStream();
     }
 
     @Override
     public int available() throws IOException {
-        int total = 0;
+        long total = unstreamedSize;
         if (stream != null) {
             total += stream.available();
         }
-        for (int i = nextIndex; i < chunks.size(); i++) {
-            long size = chunks.get(i).getSize();
-            if (size >= (long) Integer.MAX_VALUE || (int) size > (Integer.MAX_VALUE - total)) {
-                return Integer.MAX_VALUE;
-            }
-            total += (int) size;
-        }
-        return total;
+        return total <= Integer.MAX_VALUE ? (int) total : Integer.MAX_VALUE;
     }
 
     private boolean nextStream() throws IOException {
@@ -68,6 +63,7 @@ final class ChunkInputStream extends InputStream {
         }
 
         stream = new BufferedInputStream(SecuritySupport.newFileInputStream(currentChunk.getFile()));
+        unstreamedSize -= currentChunk.getSize();
         return true;
     }
 
