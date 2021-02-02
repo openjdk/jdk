@@ -44,6 +44,7 @@ import java.nio.file.Path;
 import common.TestMe;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
+import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -133,7 +134,7 @@ public class EnclosingClassTest {
                 if (line.contains("canonical=\"EnclosingClass")) {
                     line = line.replaceAll("canonical=\"EnclosingClass", "canonical=\"" + className);
                 } else if (line.contains("\"class EnclosingClass")) {
-                    line = line.replaceAll("\"class EnclosingClass", "\" class " + className);
+                    line = line.replaceAll("\"class EnclosingClass", "\"class " + className);
                 } else if (line.contains("//package")) {
                     line = line.replaceAll("//package", "package " + packageName + ";");
                 }
@@ -155,8 +156,7 @@ public class EnclosingClassTest {
     }
 
     private void match(String actual, String expected) {
-        System.out.println("actual:" + actual + "expected:" + expected);
-        assert((actual == null && expected == null) || actual.equals(expected.trim()));
+        Assert.assertTrue((actual == null && expected == null) || actual.equals(expected));
         System.out.println("\t`" +
                            actual + "' matches expected `" +
                            expected + "'");
