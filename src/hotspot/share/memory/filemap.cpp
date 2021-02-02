@@ -1672,7 +1672,7 @@ char* FileMapInfo::map_bitmap_region() {
   }
 
   if (VerifySharedSpaces && !region_crc_check(bitmap_base, si->used_aligned(), si->crc())) {
-    log_info(cds)("relocation bitmap CRC error");
+    log_error(cds)("relocation bitmap CRC error");
     if (!os::unmap_memory(bitmap_base, si->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
     }
