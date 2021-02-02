@@ -307,7 +307,7 @@ void CardGeneration::space_iterate(SpaceClosure* blk,
   blk->do_space(space());
 }
 
-void CardGeneration::younger_refs_iterate(OopIterateClosure* blk, uint n_threads) {
+void CardGeneration::younger_refs_iterate(OopIterateClosure* blk) {
   // Apply "cl->do_oop" to (the address of) (exactly) all the ref fields in
   // "sp" that point into younger generations.
   // The iteration is only over objects allocated at the start of the
@@ -315,5 +315,5 @@ void CardGeneration::younger_refs_iterate(OopIterateClosure* blk, uint n_threads
   // not included.
 
   HeapWord* gen_boundary = reserved().start();
-  _rs->younger_refs_in_space_iterate(space(), gen_boundary, blk, n_threads);
+  _rs->younger_refs_in_space_iterate(space(), gen_boundary, blk);
 }

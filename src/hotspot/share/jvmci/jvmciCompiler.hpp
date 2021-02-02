@@ -67,9 +67,6 @@ public:
 
   virtual const char* name() { return UseJVMCINativeLibrary ? "JVMCI-native" : "JVMCI"; }
 
-  virtual bool supports_native()                 { return true; }
-  virtual bool supports_osr   ()                 { return true; }
-
   bool is_jvmci()                                { return true; }
   bool is_c1   ()                                { return false; }
   bool is_c2   ()                                { return false; }
