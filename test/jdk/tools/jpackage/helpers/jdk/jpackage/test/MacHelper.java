@@ -42,6 +42,7 @@ import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
+import jdk.jpackage.internal.RetryExecutor;
 import org.xml.sax.SAXException;
 import org.w3c.dom.NodeList;
 
