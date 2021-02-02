@@ -934,7 +934,9 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Register Rsize_of_parameters, Register Rsize_of_locals) {
   Register parent_frame_resize = R6_ARG4, // Frame will grow by this number of bytes.
            top_frame_size      = R7_ARG5,
-           Rconst_method       = R8_ARG6;
+           Rconst_method       = R8_ARG6,
+           Rconst_pool         = R9_ARG7,
+           R10_tmp             = R10_ARG8;
 
   assert_different_registers(Rsize_of_parameters, Rsize_of_locals, parent_frame_resize, top_frame_size);
 
@@ -990,8 +992,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   // Set up interpreter state registers.
 
   __ add(R18_locals, R15_esp, Rsize_of_parameters);
-  __ ld(R27_constPoolCache, in_bytes(ConstMethod::constants_offset()), Rconst_method);
-  __ ld(R27_constPoolCache, ConstantPool::cache_offset_in_bytes(), R27_constPoolCache);
+  __ ld(Rconst_pool, in_bytes(ConstMethod::constants_offset()), Rconst_method);
+  __ ld(R27_constPoolCache, ConstantPool::cache_offset_in_bytes(), Rconst_pool);
 
   // Set method data pointer.
   if (ProfileInterpreter) {
@@ -1016,14 +1018,16 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ std(R12_scratch2, _abi0(lr), R1_SP);
 
   // Get mirror and store it in the frame as GC root for this Method*.
-  __ load_mirror_from_const_method(R12_scratch2, Rconst_method);
+  __ ld(R10_tmp, ConstantPool::pool_holder_offset_in_bytes(), Rconst_pool);
+  __ ld(R10_tmp, in_bytes(Klass::java_mirror_offset()), R10_tmp);
+  __ resolve_oop_handle(R10_tmp, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS);
 
   __ addi(R26_monitor, R1_SP, -frame::ijava_state_size);
   __ addi(R15_esp, R26_monitor, -Interpreter::stackElementSize);
 
   // Store values.
   __ std(R19_method, _ijava_state_neg(method), R1_SP);
-  __ std(R12_scratch2, _ijava_state_neg(mirror), R1_SP);
+  __ std(R10_tmp, _ijava_state_neg(mirror), R1_SP);
   __ std(R18_locals, _ijava_state_neg(locals), R1_SP);
   __ std(R27_constPoolCache, _ijava_state_neg(cpoolCache), R1_SP);
 
