@@ -966,7 +966,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
         guarantee_property(unresolved_klass->char_at(0) != JVM_SIGNATURE_ARRAY,
                            "Bad interface name in class file %s", CHECK);
 
-        // Call resolve_super so classcircularity is checked
+        // Call resolve_super so class circularity is checked
         interf = SystemDictionary::resolve_super_or_fail(
                                                   _class_name,
                                                   unresolved_klass,
@@ -6206,7 +6206,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                    CHECK);
   }
   // We check super class after class file is parsed and format is checked
-  if (_super_class_index > 0 && NULL ==_super_klass) {
+  if (_super_class_index > 0 && NULL == _super_klass) {
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);
     if (_access_flags.is_interface()) {
       // Before attempting to resolve the superclass, check for class format
