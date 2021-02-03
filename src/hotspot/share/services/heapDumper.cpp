@@ -687,7 +687,7 @@ class ParDumpWriter : public AbstractDumpWriter {
   size_t _internal_buffer_used;
   char* _buffer_base;
   bool _splited_data;
-  static const uint backend_flush_threshold = 2;
+  static const uint BackendFlushThreshold = 2;
  protected:
   virtual void flush(bool force = false) {
     assert(_pos != 0, "must not be zero");
@@ -832,7 +832,7 @@ virtual void write_raw(void* s, size_t len) {
   }
 
   bool should_flush_buf_list(bool force) {
-    return force || _buffer_queue->length() > backend_flush_threshold;
+    return force || _buffer_queue->length() > BackendFlushThreshold;
   }
 
   void flush_to_backend(bool force) {
@@ -1781,15 +1781,20 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
 
   void prepare_parallel_dump(uint num_total) {
     assert (_dumper_controller == NULL, "dumper controller must be NULL");
+    assert (num_total > 0, "active workers number must >= 1");
+    // Dumper threads number must not be larger than active workers number.
     if (num_total < _num_dumper_threads) {
       _num_dumper_threads = num_total - 1 /* VMThread */;
     }
-    // Calculate dumper and writter threads number
+    // Calculate dumper and writter threads number.
     _num_writter_threads = num_total - _num_dumper_threads;
-    if (_num_writter_threads < 1) {
+    // If dumper threads number is zero, there is only VMThread work as a dumper.
+    // If dumper threads number is equal to active workers, need at lest one thread work as writter.
+    if (_num_dumper_threads > 0 && _num_writter_threads == 0) {
       _num_writter_threads = 1;
       _num_dumper_threads = num_total - _num_writter_threads;
     }
+
     uint total_dumper_threads = _num_dumper_threads + 1 /* VMThread */;
     // prepare parallel writer.
     if (_num_dumper_threads > 0) {
