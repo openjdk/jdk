@@ -258,6 +258,24 @@ jlong lookupByNameIncore(
   return addr;
 }
 
+/* Create a pool and initiate a try block to catch any exception */
+#define JNI_COCOA_ENTER(env) \
+ NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+ @try {
+
+/* Don't allow NSExceptions to escape to Java.
+ * If there is a Java exception that has been thrown that should escape.
+ * And ensure we drain the auto-release pool.
+ */
+#define JNI_COCOA_EXIT(env) \
+ } \
+ @catch (NSException *e) { \
+     NSLog(@"%@", [e callStackSymbols]); \
+ } \
+ @finally { \
+    [pool drain]; \
+ };
+
 static NSString* JavaStringToNSString(JNIEnv *env, jstring jstr) {
 
     if (jstr == NULL) {
@@ -290,8 +308,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(
 
   jlong address = 0;
 
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  @try {
+  JNI_COCOA_ENTER(env);
 
   NSString *symbolNameString = JavaStringToNSString(env, symbolName);
 
@@ -304,11 +321,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(
   }
 
   print_debug("address of symbol %s = %llx\n", [symbolNameString UTF8String], address);
-  } @catch (NSException *e) {
-    NSLog(@"%@", [e callStackSymbols]);
-  } @finally {
-     [pool drain];
-  }
+  JNI_COCOA_EXIT(env);
 
   return address;
 }
@@ -831,8 +844,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
 {
   print_debug("attach0 called for jpid=%d\n", (int)jpid);
 
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  @try {
+  JNI_COCOA_ENTER(env);
 
   kern_return_t result;
   task_t gTask = 0;
@@ -946,11 +958,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
     THROW_NEW_DEBUGGER_EXCEPTION("Can't attach symbolicator to the process");
   }
 
-  } @catch (NSException *e) {
-    NSLog(@"%@", [e callStackSymbols]);
-  } @finally {
-     [pool drain];
-  }
+  JNI_COCOA_EXIT(env);
 }
 
 /** For core file,
@@ -1045,8 +1053,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
      return;
   }
 
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  @try {
+  JNI_COCOA_ENTER(env);
 
   task_t gTask = getTask(env, this_obj);
   kern_return_t k_res = 0;
@@ -1097,9 +1104,5 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
 
   detach_cleanup(gTask, env, this_obj, false);
 
-  } @catch (NSException *e) {
-    NSLog(@"%@", [e callStackSymbols]);
-  } @finally {
-     [pool drain];
-  }
+  JNI_COCOA_EXIT(env);
 }
