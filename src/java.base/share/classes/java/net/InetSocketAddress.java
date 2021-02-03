@@ -383,8 +383,8 @@ public class InetSocketAddress
      * example {@code "foo/<unresolved>:80"}.
      * <p>
      * To retrieve a string representation of the hostname or the address, use
-     * {@link #getHostString()}, rather than parsing the string representation
-     * returned by this method.
+     * {@link #getHostString()}, rather than parsing the string returned by this
+     * {@link #toString()} method.
      *
      * @return  a string representation of this object.
      */
