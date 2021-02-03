@@ -177,5 +177,8 @@ public:
   // which is not NULL and contains bits in every word.
   static const intptr_t segfault_address = LP64_ONLY(0xABC0000000000ABCULL) NOT_LP64(0x00000ABC);
 
+  // Needed when printing signal handlers.
+  NOT_WINDOWS(static const void* crash_handler_address;)
+
 };
 #endif // SHARE_UTILITIES_VMERROR_HPP

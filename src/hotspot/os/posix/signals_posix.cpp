@@ -118,6 +118,7 @@ public:
     if (check_signal_number(sig)) {
       assert(_sa[sig] == NULL, "Overwriting signal handler?");
       _sa[sig] = NEW_C_HEAP_OBJ(struct sigaction, mtInternal);
+      *_sa[sig] = *act;
     }
   }
 
@@ -149,7 +150,7 @@ static SavedSignalHandlers expected_handlers;
 
 // For signal-chaining:
 //  if chaining is active, chained_handlers contains all handlers which we
-//  did replace with our own and to which we must delegate.
+//  replaced with our own and to which we must delegate.
 static SavedSignalHandlers chained_handlers;
 static bool libjsig_is_loaded = false;
 typedef struct sigaction *(*get_signal_t)(int);
@@ -839,7 +840,7 @@ static void check_signal_handler(int sig) {
     // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
     if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
       tty->print_cr("Running in non-interactive shell, %s handler is replaced by shell",
-                    os::exception_name(sig, buf, O_BUFLEN));    // When comparing, ignore the SA_RESTORER flag on Linux
+                    os::exception_name(sig, buf, O_BUFLEN));
     }
   }
 
@@ -1390,7 +1391,7 @@ static void print_single_signal_handler(outputStream* st, int sig,
 
   st->print(", flags=");
   int flags = act->sa_flags;
-  // On Linux, hide the SA_RESTORE flag
+  // On Linux, hide the SA_RESTORER flag
   LINUX_ONLY(flags &= SA_RESTORER_FLAG_MASK;)
   print_sa_flags(st, flags);
 
@@ -1398,7 +1399,7 @@ static void print_single_signal_handler(outputStream* st, int sig,
 
 // Print established signal handler for this signal.
 // - if this signal handler was installed by us and is chained to a pre-established user handler
-//    it did replace, print that one too.
+//    it replaced, print that one too.
 // - otherwise, if this signal handler was installed by us and replaced another handler to which we
 //    are not chained (e.g. if chaining is off), print that one too.
 void PosixSignals::print_signal_handler(outputStream* st, int sig,
@@ -1409,6 +1410,23 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   print_single_signal_handler(st, sig, &current_act, buf, buflen);
   st->cr();
 
+  // If we expected to see our own hotspot signal handler but found a different one,
+  //  print a warning. Unless it had been replaced with our own secondary crash handler.
+  const struct sigaction* expected_act = expected_handlers.get(sig);
+  if (expected_act != NULL) {
+    const address current_handler = get_signal_handler(&current_act);
+    if (!(HANDLER_IS(current_handler, VMError::crash_handler_address))) {
+      const address expected_handler = get_signal_handler(expected_act);
+      if (current_handler != expected_handler) {
+        st->print_cr("  *** Handler changed! Expected hotspot signal handler. Consider using jsig library.");
+      }
+      if (current_act.sa_flags LINUX_ONLY(& SA_RESTORER_FLAG_MASK) != expected_act->sa_flags) {
+        st->print_cr("  *** Flags changed! Consider using jsig library.");
+      }
+    }
+  }
+
+  // If there is a chained handler waiting behind the current one, print it too.
   const struct sigaction* chained_act = get_chained_signal_action(sig);
   if (chained_act != NULL) {
     st->print("  chained to: ");

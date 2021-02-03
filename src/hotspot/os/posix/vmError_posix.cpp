@@ -95,6 +95,8 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   VMError::report_and_die(NULL, sig, pc, info, ucVoid);
 }
 
+const void* VMError::crash_handler_address = CAST_FROM_FN_PTR(void *, crash_handler);
+
 void VMError::install_secondary_signal_handler() {
   static const int signals_to_handle[] = {
     SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP,
