@@ -39,10 +39,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import static java.lang.invoke.LambdaForm.basicTypeSignature;
-import static java.lang.invoke.LambdaForm.shortenSignature;
 import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.TRACE_RESOLVE;
+import static java.lang.invoke.MethodHandleStatics.LF_RESOLVE;
+import static java.lang.invoke.MethodHandleStatics.SPECIES_RESOLVE;
 import static java.lang.invoke.MethodTypeForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
 
@@ -51,29 +50,6 @@ import static java.lang.invoke.LambdaForm.Kind.*;
  * generate classes ahead of time.
  */
 class GenerateJLIClassesHelper {
-    private static final String LF_RESOLVE = "[LF_RESOLVE]";
-    private static final String SPECIES_RESOLVE = "[SPECIES_RESOLVE]";
-
-    static void traceLambdaForm(String name, MethodType type, Class<?> holder, MemberName resolvedMember) {
-        if (TRACE_RESOLVE) {
-            System.out.println(LF_RESOLVE + " " + holder.getName() + " " + name + " " +
-                    shortenSignature(basicTypeSignature(type)) +
-                    (resolvedMember != null ? " (success)" : " (fail)"));
-        }
-        if (CDS.isDumpingClassList()) {
-            CDS.traceLambdaFormInvoker(LF_RESOLVE, holder.getName(), name, shortenSignature(basicTypeSignature(type)));
-        }
-    }
-
-    static void traceSpeciesType(String cn, Class<?> salvage) {
-        if (TRACE_RESOLVE) {
-            System.out.println(SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
-        }
-        if (CDS.isDumpingClassList()) {
-            CDS.traceSpeciesType(SPECIES_RESOLVE, cn);
-        }
-    }
-
     // Map from DirectMethodHandle method type name to index to LambdForms
     static final Map<String, Integer> DMH_METHOD_TYPE_MAP =
             Map.of(

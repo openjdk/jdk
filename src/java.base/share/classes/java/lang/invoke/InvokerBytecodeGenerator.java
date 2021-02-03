@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static java.lang.invoke.GenerateJLIClassesHelper.traceLambdaForm;
 import static java.lang.invoke.LambdaForm.BasicType;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.LambdaForm.*;

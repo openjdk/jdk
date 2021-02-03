@@ -25,10 +25,14 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
 
 import java.util.Properties;
+
+import static java.lang.invoke.LambdaForm.basicTypeSignature;
+import static java.lang.invoke.LambdaForm.shortenSignature;
 
 /**
  * This class consists exclusively of static names internal to the
@@ -57,6 +61,11 @@ class MethodHandleStatics {
     static final boolean VAR_HANDLE_GUARDS;
     static final int MAX_ARITY;
     static final boolean VAR_HANDLE_IDENTITY_ADAPT;
+
+    // Markers used by LambdaForm and Species resolution code to communicate
+    // classes that have been or could have be pre-generated
+    static final String LF_RESOLVE = "[LF_RESOLVE]";
+    static final String SPECIES_RESOLVE = "[SPECIES_RESOLVE]";
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -108,6 +117,27 @@ class MethodHandleStatics {
                 LOG_LF_COMPILATION_FAILURE);
     }
 
+    /*non-public*/
+    static void traceLambdaForm(String name, MethodType type, Class<?> holder, MemberName resolvedMember) {
+        if (TRACE_RESOLVE) {
+            System.out.println(LF_RESOLVE + " " + holder.getName() + " " + name + " " +
+                    shortenSignature(basicTypeSignature(type)) +
+                    (resolvedMember != null ? " (success)" : " (fail)"));
+        }
+        if (CDS.isDumpingClassList()) {
+            CDS.traceLambdaFormInvoker(LF_RESOLVE, holder.getName(), name, shortenSignature(basicTypeSignature(type)));
+        }
+    }
+
+    /*non-public*/
+    static void traceSpeciesType(String cn, Class<?> salvage) {
+        if (TRACE_RESOLVE) {
+            System.out.println(SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
+        }
+        if (CDS.isDumpingClassList()) {
+            CDS.traceSpeciesType(SPECIES_RESOLVE, cn);
+        }
+    }
     // handy shared exception makers (they simplify the common case code)
     /*non-public*/
     static InternalError newInternalError(String message) {
