@@ -21,12 +21,15 @@
  * questions.
  */
 import java.security.*;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.*;
 import java.util.*;
 import java.util.stream.IntStream;
 import static javax.crypto.Cipher.PRIVATE_KEY;
 import static javax.crypto.Cipher.PUBLIC_KEY;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.SigTestUtil;
 import static jdk.test.lib.SigTestUtil.SignatureType;
 
@@ -132,9 +135,17 @@ public class SignatureTest {
                 } catch (InvalidKeySpecException expected) {
                 }
 
+                RSAPublicKeySpec pubKeySpec1 = kf.getKeySpec(key, RSAPublicKeySpec.class);
+                RSAPublicKeySpec pubKeySpec2 = new RSAPublicKeySpec(
+                        ((RSAPublicKey) key).getModulus(),
+                        ((RSAPublicKey) key).getPublicExponent());
+
+                Asserts.assertTrue(keySpecEquals(pubKeySpec1, pubKeySpec2),
+                        "Both RSAPublicKeySpec should be equal");
+
                 return new Key[]{
-                    kf.generatePublic(kf.getKeySpec(key, RSAPublicKeySpec.class)),
-                    kf.generatePublic(new X509EncodedKeySpec(key.getEncoded()))
+                        kf.generatePublic(pubKeySpec1),
+                        kf.generatePublic(new X509EncodedKeySpec(key.getEncoded()))
                 };
             case PRIVATE_KEY:
                 try {
@@ -143,11 +154,18 @@ public class SignatureTest {
                             + " not thrown");
                 } catch (InvalidKeySpecException expected) {
                 }
+                RSAPrivateKeySpec privKeySpec1 = kf.getKeySpec(key, RSAPrivateKeySpec.class);
+                RSAPrivateKeySpec privKeySpec2 = new RSAPrivateKeySpec(
+                        ((RSAPrivateKey) key).getModulus(),
+                        ((RSAPrivateKey) key).getPrivateExponent());
+
+                Asserts.assertTrue(keySpecEquals(privKeySpec1, privKeySpec2),
+                        "Both RSAPrivateKeySpec should be equal");
+
                 return new Key[]{
-                    kf.generatePrivate(kf.getKeySpec(key,
-                    RSAPrivateKeySpec.class)),
-                    kf.generatePrivate(new PKCS8EncodedKeySpec(
-                    key.getEncoded()))
+                        kf.generatePrivate(privKeySpec1),
+                        kf.generatePrivate(new PKCS8EncodedKeySpec(
+                                key.getEncoded()))
                 };
         }
         throw new RuntimeException("We shouldn't reach here");
@@ -191,4 +209,17 @@ public class SignatureTest {
                     + " signature");
         }
     }
+
+    private static boolean keySpecEquals(RSAPublicKeySpec spec1, RSAPublicKeySpec spec2) {
+        return spec1.getModulus().equals(spec2.getModulus())
+                && spec1.getPublicExponent().equals(spec2.getPublicExponent())
+                && Objects.equals(spec1.getParams(), spec2.getParams());
+    }
+
+    private static boolean keySpecEquals(RSAPrivateKeySpec spec1, RSAPrivateKeySpec spec2) {
+        return spec1.getModulus().equals(spec2.getModulus())
+                && spec1.getPrivateExponent().equals(spec2.getPrivateExponent())
+                && Objects.equals(spec1.getParams(), spec2.getParams());
+    }
+
 }
