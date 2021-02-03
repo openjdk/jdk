@@ -268,13 +268,58 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * Returns a pseudorandom {@code int} value between zero (inclusive)
-     * and the specified bound (exclusive).
+     * Returns a pseudorandom, uniformly distributed {@code int} value
+     * between 0 (inclusive) and the specified value (exclusive), drawn from
+     * this random number generator's sequence.  The general contract of
+     * {@code nextInt} is that one {@code int} value in the specified range
+     * is pseudorandomly generated and returned.  All {@code bound} possible
+     * {@code int} values are produced with (approximately) equal
+     * probability.  The method {@code nextInt(int bound)} is implemented by
+     * class {@code Random} as if by:
+     *  <pre> {@code
+     * public int nextInt(int bound) {
+     *   if (bound <= 0)
+     *     throw new IllegalArgumentException("bound must be positive");
+     *
+     *   if ((bound & -bound) == bound)  // i.e., bound is a power of 2
+     *     return (int)((bound * (long)next(31)) >> 31);
+     *
+     *   int bits, val;
+     *   do {
+     *       bits = next(31);
+     *       val = bits % bound;
+     *   } while (bits - val + (bound-1) < 0);
+     *   return val;
+     * }}</pre>
+     *
+     * <p>The hedge "approximately" is used in the foregoing description only
+     * because the next method is only approximately an unbiased source of
+     * independently chosen bits.  If it were a perfect source of randomly
+     * chosen bits, then the algorithm shown would choose {@code int}
+     * values from the stated range with perfect uniformity.
+     * <p>
+     * The algorithm is slightly tricky.  It rejects values that would result
+     * in an uneven distribution (due to the fact that 2^31 is not divisible
+     * by n). The probability of a value being rejected depends on n.  The
+     * worst case is n=2^30+1, for which the probability of a reject is 1/2,
+     * and the expected number of iterations before the loop terminates is 2.
+     * <p>
+     * The algorithm treats the case where n is a power of two specially: it
+     * returns the correct number of high-order bits from the underlying
+     * pseudo-random number generator.  In the absence of special treatment,
+     * the correct number of <i>low-order</i> bits would be returned.  Linear
+     * congruential pseudo-random number generators such as the one
+     * implemented by this class are known to have short periods in the
+     * sequence of values of their low-order bits.  Thus, this special case
+     * greatly increases the length of the sequence of values returned by
+     * successive calls to this method if n is a small power of two.
      *
      * @param bound the upper bound (exclusive).  Must be positive.
-     * @return a pseudorandom {@code int} value between zero
-     *         (inclusive) and the bound (exclusive)
-     * @throws IllegalArgumentException if {@code bound} is not positive
+     * @return the next pseudorandom, uniformly distributed {@code int}
+     *         value between zero (inclusive) and {@code bound} (exclusive)
+     *         from this random number generator's sequence
+     * @throws IllegalArgumentException if bound is not positive
+     * @since 1.2
      */
     @Override
     public int nextInt(int bound) {
@@ -583,61 +628,121 @@ public class Random extends AbstractSpliteratorGenerator
         return new RandomDoublesSpliterator(this, index, fence, origin, bound);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public IntStream ints(long streamSize) {
         return super.ints(streamSize);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public IntStream ints() {
         return super.ints();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
         return super.ints(streamSize, randomNumberOrigin, randomNumberBound);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
         return super.ints(randomNumberOrigin, randomNumberBound);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public LongStream longs(long streamSize) {
         return super.longs(streamSize);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public LongStream longs() {
         return super.longs();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
         return super.longs(streamSize, randomNumberOrigin, randomNumberBound);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
         return super.longs(randomNumberOrigin, randomNumberBound);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public DoubleStream doubles(long streamSize) {
         return super.doubles(streamSize);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public DoubleStream doubles() {
         return super.doubles();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
         return super.doubles(streamSize, randomNumberOrigin, randomNumberBound);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     */
     @Override
     public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
         return super.doubles(randomNumberOrigin, randomNumberBound);

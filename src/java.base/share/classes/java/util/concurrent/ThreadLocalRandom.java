@@ -420,17 +420,6 @@ public class ThreadLocalRandom extends Random {
         }
     }
 
-    /**
-     * Returns a {@code RandomGenerator} object that uses {@code ThreadLocalRandom}.
-     * This object is threadsafe (methods of this object may be called by threads
-     * other than the current one).
-     *
-     * @return a {@code RandomGenerator} object that uses {@code ThreadLocalRandom}
-     */
-    public static RandomGenerator proxy() {
-        return ThreadLocalRandomProxy.proxy;
-    }
-
     // Methods required by class AbstractSpliteratorGenerator
     public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
         return new RandomIntsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);

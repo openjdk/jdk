@@ -101,7 +101,7 @@ import java.util.stream.Stream;
  * <p>Unless explicit stated otherwise, the use of null for any method argument
  * will cause a NullPointerException.
  *
- * @since   17
+ * @since 17
  *
  */
 public interface RandomGenerator {
@@ -123,41 +123,11 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a {@link RandomGeneratorFactory} that can produce instances of
-     * {@link RandomGenerator} that utilize the {@code name} algorithm.
-     *
-     * @param name  Name of random number generator algorithm
-     *
-     * @return {@link RandomGeneratorFactory} of {@link RandomGenerator}
-     *
-     * @throws NullPointerException if name is null
-     * @throws IllegalArgumentException if the named algorithm is not found
-     */
-    static RandomGeneratorFactory<RandomGenerator> factoryOf(String name) {
-        Objects.requireNonNull(name);
-
-        return RandomGeneratorFactory.factoryOf(name, RandomGenerator.class);
-    }
-
-    /**
-     * Returns a {@link RandomGeneratorFactory} meeting the minimal requirement
-     * of having an algorithm whose state bits are greater than or equal 64.
-     *
-     * @implNote  Since algorithms will improve over time, there is no
-     * guarantee that this method will return the same algorithm each time.
-     *
-     * @return a {@link RandomGeneratorFactory}
-     */
-    static RandomGeneratorFactory<RandomGenerator> getDefaultFactory() {
-        return factoryOf("L32X64MixRandom");
-    }
-
-    /**
      * Returns a {@link RandomGenerator} meeting the minimal requirement
      * of having an algorithm whose state bits are greater than or equal 64.
      *
-     * @implNote  Since algorithms will improve over time, there is no
-     * guarantee that this method will return the same algorithm each time.
+     * @implSpec  Since algorithms will improve over time, there is no
+     * guarantee that this method will return the same algorithm over time.
      *
      * @return a {@link RandomGenerator}
      */
@@ -167,6 +137,9 @@ public interface RandomGenerator {
 
     /**
      * Returns a stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
+     *
+     * @implNote Availability is determined by RandomGeneratorFactory using the
+     * service provider API to locate implementations of the RandomGenerator interface.
      *
      * @return Stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
@@ -765,26 +738,6 @@ public interface RandomGenerator {
     }
 
     /**
-     * The property returned by {@link RandomGeneratorFactory#period() period}()
-     * if the period is unknown.
-     */
-    BigInteger UNKNOWN_PERIOD = BigInteger.ZERO;
-
-    /**
-     * The (negative) value returned by the
-     * {@link RandomGeneratorFactory#period() period}() if this generator has no
-     * period because it is truly random rather than just pseudorandom.
-     */
-    BigInteger TRULY_RANDOM = BigInteger.valueOf(-1);
-
-    /**
-     * The (negative) value that may be returned by the
-     * {@link RandomGeneratorFactory#period() period}() if this generator has a
-     * huge period (larger than 2**(2**16)).
-     */
-    BigInteger HUGE_PERIOD = BigInteger.valueOf(-2);
-
-    /**
      * The {@link StreamableGenerator} interface augments the
      * {@link RandomGenerator} interface to provide methods that return streams
      * of {@link RandomGenerator} objects. Ideally, such a stream of objects
@@ -818,6 +771,10 @@ public interface RandomGenerator {
         /**
          * Returns a stream of all available {@link StreamableGenerator} factories.
          *
+         * @implNote Availability is determined by RandomGeneratorFactory using the
+         * service provider API to locate implementations of the RandomGenerator
+         * interface and filtering on the StreamableGenerator interface.
+         *
          * @return Stream of all available {@link StreamableGenerator} factories.
          */
         static Stream<RandomGeneratorFactory<StreamableGenerator>> all() {
@@ -839,24 +796,6 @@ public interface RandomGenerator {
             Objects.requireNonNull(name);
 
             return RandomGeneratorFactory.of(name, StreamableGenerator.class);
-        }
-
-        /**
-         * Returns a {@link RandomGeneratorFactory} that can produce instances
-         * of {@link StreamableGenerator} that utilize the {@code name}
-         * algorithm.
-         *
-         * @param name  Name of random number generator algorithm
-         *
-         * @return {@link RandomGeneratorFactory} of {@link StreamableGenerator}
-         *
-         * @throws NullPointerException if name is null
-         * @throws IllegalArgumentException if the named algorithm is not found
-         */
-        static RandomGeneratorFactory<StreamableGenerator> factoryOf(String name) {
-            Objects.requireNonNull(name);
-
-            return RandomGeneratorFactory.factoryOf(name, StreamableGenerator.class);
         }
 
         /**
@@ -938,6 +877,10 @@ public interface RandomGenerator {
          * Returns an instance of {@link SplittableGenerator} that utilizes the
          * {@code name} algorithm.
          *
+         * @implNote Availability is determined by RandomGeneratorFactory using the
+         * service provider API to locate implementations of the RandomGenerator
+         * interface and filtering on the SplittableGenerator interface.
+         *
          * @param name  Name of random number generator algorithm
          *
          * @return An instance of {@link SplittableGenerator}
@@ -949,24 +892,6 @@ public interface RandomGenerator {
             Objects.requireNonNull(name);
 
             return RandomGeneratorFactory.of(name, SplittableGenerator.class);
-        }
-
-        /**
-         * Returns a {@link RandomGeneratorFactory} that can produce instances
-         * of {@link SplittableGenerator} that utilize the {@code name}
-         * algorithm.
-         *
-         * @param name  Name of random number generator algorithm
-         *
-         * @return {@link RandomGeneratorFactory} of {@link SplittableGenerator}
-         *
-         * @throws NullPointerException if name is null
-         * @throws IllegalArgumentException if the named algorithm is not found
-         */
-        static RandomGeneratorFactory<SplittableGenerator> factoryOf(String name) {
-            Objects.requireNonNull(name);
-
-            return RandomGeneratorFactory.factoryOf(name, SplittableGenerator.class);
         }
 
         /**
@@ -1145,6 +1070,10 @@ public interface RandomGenerator {
         /**
          * Returns a stream of all available {@link JumpableGenerator} factories.
          *
+         * @implNote Availability is determined by RandomGeneratorFactory using the
+         * service provider API to locate implementations of the RandomGenerator
+         * interface and filtering on the JumpableGenerator interface.
+         *
          * @return Stream of all available {@link JumpableGenerator} factories.
          */
         static Stream<RandomGeneratorFactory<JumpableGenerator>> all() {
@@ -1166,23 +1095,6 @@ public interface RandomGenerator {
             Objects.requireNonNull(name);
 
             return RandomGeneratorFactory.of(name, JumpableGenerator.class);
-        }
-
-        /**
-         * Returns a {@link RandomGeneratorFactory} that can produce instances
-         * of {@link JumpableGenerator} that utilize the {@code name} algorithm.
-         *
-         * @param name  Name of random number generator algorithm
-         *
-         * @return {@link RandomGeneratorFactory} of {@link JumpableGenerator}
-         *
-         * @throws NullPointerException if name is null
-         * @throws IllegalArgumentException if the named algorithm is not found
-         */
-        static RandomGeneratorFactory<JumpableGenerator> factoryOf(String name) {
-            Objects.requireNonNull(name);
-
-            return RandomGeneratorFactory.factoryOf(name, JumpableGenerator.class);
         }
 
         /**
@@ -1342,6 +1254,10 @@ public interface RandomGenerator {
         /**
          * Returns a stream of all available {@link LeapableGenerator} factories.
          *
+         * @implNote Availability is determined by RandomGeneratorFactory using the
+         * service provider API to locate implementations of the RandomGenerator
+         * interface and filtering on the LeapableGenerator interface.
+         *
          * @return Stream of all available {@link LeapableGenerator} factories.
          */
         static Stream<RandomGeneratorFactory<LeapableGenerator>> all() {
@@ -1363,23 +1279,6 @@ public interface RandomGenerator {
             Objects.requireNonNull(name);
 
             return RandomGeneratorFactory.of(name, LeapableGenerator.class);
-        }
-
-        /**
-         * Returns a {@link RandomGeneratorFactory} that can produce instances
-         * of {@link LeapableGenerator} that utilize the {@code name} algorithm.
-         *
-         * @param name  Name of random number generator algorithm
-         *
-         * @return {@link RandomGeneratorFactory} of {@link LeapableGenerator}
-         *
-         * @throws NullPointerException if name is null
-         * @throws IllegalArgumentException if the named algorithm is not found
-         */
-        static RandomGeneratorFactory<LeapableGenerator> factoryOf(String name) {
-            Objects.requireNonNull(name);
-
-            return RandomGeneratorFactory.factoryOf(name, LeapableGenerator.class);
         }
 
         /**
@@ -1506,6 +1405,10 @@ public interface RandomGenerator {
          * Returns a stream of all available {@link ArbitrarilyJumpableGenerator}
          * factories.
          *
+         * @implNote Availability is determined by RandomGeneratorFactory using the
+         * service provider API to locate implementations of the RandomGenerator
+         * interface and filtering on the ArbitrarilyJumpableGenerator interface.
+         *
          * @return Stream of all available {@link ArbitrarilyJumpableGenerator}
          * factories.
          */
@@ -1528,24 +1431,6 @@ public interface RandomGenerator {
             Objects.requireNonNull(name);
 
             return RandomGeneratorFactory.of(name, ArbitrarilyJumpableGenerator.class);
-        }
-
-        /**
-         * Returns a {@link RandomGeneratorFactory} that can produce instances
-         * of {@link ArbitrarilyJumpableGenerator} that utilize the {@code name}
-         * algorithm.
-         *
-         * @param name  Name of random number generator algorithm
-         *
-         * @return {@link RandomGeneratorFactory} of {@link ArbitrarilyJumpableGenerator}
-         *
-         * @throws NullPointerException if name is null
-         * @throws IllegalArgumentException if the named algorithm is not found
-         */
-        static RandomGeneratorFactory<ArbitrarilyJumpableGenerator> factoryOf(String name) {
-            Objects.requireNonNull(name);
-
-            return RandomGeneratorFactory.factoryOf(name, ArbitrarilyJumpableGenerator.class);
         }
 
         /**
@@ -1577,7 +1462,7 @@ public interface RandomGenerator {
          *
          * @param distance the distance to jump forward within the state cycle
          *
-         * @throws IllegalArgumentException if {@code distance} is Nan, negative, or greater than the
+         * @throws IllegalArgumentException if {@code distance} is NaN, negative, or greater than the
          *                                  period of this generator
          */
         void jump(double distance);

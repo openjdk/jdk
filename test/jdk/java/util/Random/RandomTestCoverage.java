@@ -111,7 +111,7 @@ public class RandomTestCoverage {
 
     static void coverOf(String name) {
         coverRandomGenerator(RandomGenerator.of(name));
-        coverFactory(RandomGenerator.factoryOf(name));
+        coverFactory(RandomGeneratorFactory.of(name));
     }
 
     static void coverFactory(RandomGeneratorFactory factory) {
@@ -135,7 +135,7 @@ public class RandomTestCoverage {
 
     static void coverDefaults() {
         RandomGeneratorFactory<RandomGenerator> factory =
-            RandomGenerator.getDefaultFactory();
+            RandomGeneratorFactory.getDefault();
         RandomGenerator rng = RandomGenerator.getDefault();
     }
 

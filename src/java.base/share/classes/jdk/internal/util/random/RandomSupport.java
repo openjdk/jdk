@@ -48,7 +48,7 @@ import java.util.stream.StreamSupport;
  * implementations of the interface {@link RandomGenerator}. As an
  * internal package it is not intended for general use.
  *
- * @since   16
+ * @since 17
  * @hidden
  *
  */
@@ -1428,7 +1428,7 @@ public class RandomSupport {
      * classes {@link AbstractSplittableGenerator}, and
      * {@link AbstractArbitrarilyJumpableGenerator}.
      *
-     * @since   16
+     * @since 17
      * @hidden
      */
     public abstract static class AbstractSpliteratorGenerator implements RandomGenerator {
@@ -1519,6 +1519,9 @@ public class RandomSupport {
          * (pseudo)random {@code int} values from this generator and/or one
          * split from it.
          *
+         * <p>The (pseudo)random {@code int} values are generated as if it's the result of
+         * calling the method {@link #nextInt()}.
+         *
          * @param streamSize the number of values to generate
          *
          * @return a stream of (pseudo)random {@code int} values
@@ -1533,6 +1536,9 @@ public class RandomSupport {
         /**
          * Returns an effectively unlimited stream of (pseudo)randomly chosen
          * {@code int} values.
+         *
+         * <p>The (pseudo)random {@code int} values are generated as if the result of
+         * calling the method {@link #nextInt()}.
          *
          * @implNote The implementation of this method is effectively
          * equivalent to {@code ints(Long.MAX_VALUE)}.
@@ -1549,6 +1555,23 @@ public class RandomSupport {
          * (pseudo)random {@code int} values from this generator and/or one
          * split from it; each value conforms to the given origin (inclusive)
          * and bound (exclusive).
+         *
+         * <p>The (pseudo)random {@code int} values are generated as if the result of
+         * calling the following method with the origin and bound:
+         * <pre> {@code
+         * int nextInt(int origin, int bound) {
+         *   int n = bound - origin;
+         *   if (n > 0) {
+         *     return nextInt(n) + origin;
+         *   }
+         *   else {  // range not representable as int
+         *     int r;
+         *     do {
+         *       r = nextInt();
+         *     } while (r < origin || r >= bound);
+         *     return r;
+         *   }
+         * }}</pre>
          *
          * @param streamSize         the number of values to generate
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1572,6 +1595,26 @@ public class RandomSupport {
          * values from this generator and/or one split from it; each value
          * conforms to the given origin (inclusive) and bound (exclusive).
          *
+         * <p>The (pseudo)random {@code int} values are generated as if the result of
+         * calling the following method with the origin and bound:
+         * <pre> {@code
+         * int nextInt(int origin, int bound) {
+         *   int n = bound - origin;
+         *   if (n > 0) {
+         *     return nextInt(n) + origin;
+         *   }
+         *   else {  // range not representable as int
+         *     int r;
+         *     do {
+         *       r = nextInt();
+         *     } while (r < origin || r >= bound);
+         *     return r;
+         *   }
+         * }}</pre>
+         *
+         * @implNote This method is implemented to be equivalent to {@code
+         * ints(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+         *
          * @param randomNumberOrigin the origin (inclusive) of each random value
          * @param randomNumberBound  the bound (exclusive) of each random value
          *
@@ -1580,9 +1623,6 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code randomNumberOrigin} is greater than or equal to
          *                                  {@code randomNumberBound}
-         *
-         * @implNote This method is implemented to be equivalent to {@code ints(Long.MAX_VALUE,
-         *         randomNumberOrigin, randomNumberBound)}.
          */
         public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -1593,6 +1633,9 @@ public class RandomSupport {
          * Returns a stream producing the given {@code streamSize} number of
          * (pseudo)random {@code long} values from this generator and/or one
          * split from it.
+         *
+         * <p>The (pseudo)random {@code long} values are generated as if the result
+         * of calling the method {@link #nextLong()}.
          *
          * @param streamSize the number of values to generate
          *
@@ -1609,6 +1652,9 @@ public class RandomSupport {
          * Returns an effectively unlimited stream of (pseudo)random
          * {@code long} values from this generator and/or one split from it.
          *
+         * <p>The (pseudo)random {@code long} values are generated as if the result
+         * of calling the method {@link #nextLong()}.
+         *
          * @return a stream of (pseudo)random {@code long} values
          *
          * @implNote This method is implemented to be equivalent to {@code
@@ -1623,6 +1669,28 @@ public class RandomSupport {
          * (pseudo)random {@code long} values from this generator and/or one
          * split from it; each value conforms to the given origin (inclusive)
          * and bound (exclusive).
+         *
+         * <p>The (pseudo)random {@code long} values are generated as if the result
+         * of calling the following method with the origin and bound:
+         * <pre> {@code
+         * long nextLong(long origin, long bound) {
+         *   long r = nextLong();
+         *   long n = bound - origin, m = n - 1;
+         *   if ((n & m) == 0L)  // power of two
+         *     r = (r & m) + origin;
+         *   else if (n > 0L) {  // reject over-represented candidates
+         *     for (long u = r >>> 1;            // ensure nonnegative
+         *          u + m - (r = u % n) < 0L;    // rejection check
+         *          u = nextLong() >>> 1) // retry
+         *         ;
+         *     r += origin;
+         *   }
+         *   else {              // range not representable as long
+         *     while (r < origin || r >= bound)
+         *       r = nextLong();
+         *   }
+         *   return r;
+         * }}</pre>
          *
          * @param streamSize         the number of values to generate
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1648,6 +1716,31 @@ public class RandomSupport {
          * each value conforms to the given origin (inclusive) and bound
          * (exclusive).
          *
+         * <p>The (pseudo)random {@code long} values are generated as if the result
+         * of calling the following method with the origin and bound:
+         * <pre> {@code
+         * long nextLong(long origin, long bound) {
+         *   long r = nextLong();
+         *   long n = bound - origin, m = n - 1;
+         *   if ((n & m) == 0L)  // power of two
+         *     r = (r & m) + origin;
+         *   else if (n > 0L) {  // reject over-represented candidates
+         *     for (long u = r >>> 1;            // ensure nonnegative
+         *          u + m - (r = u % n) < 0L;    // rejection check
+         *          u = nextLong() >>> 1) // retry
+         *         ;
+         *     r += origin;
+         *   }
+         *   else {              // range not representable as long
+         *     while (r < origin || r >= bound)
+         *       r = nextLong();
+         *   }
+         *   return r;
+         * }}</pre>
+         *
+         * @implNote This method is implemented to be equivalent to {@code
+         * longs(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+         *
          * @param randomNumberOrigin the origin (inclusive) of each random value
          * @param randomNumberBound  the bound (exclusive) of each random value
          *
@@ -1656,9 +1749,6 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code randomNumberOrigin} is greater than or equal to
          *                                  {@code randomNumberBound}
-         *
-         * @implNote This method is implemented to be equivalent to {@code longs(Long.MAX_VALUE,
-         *         randomNumberOrigin, randomNumberBound)}.
          */
         public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -1672,6 +1762,9 @@ public class RandomSupport {
          * (pseudo)random {@code double} values from this generator and/or one
          * split from it; each value is between zero (inclusive) and one
          * (exclusive).
+         *
+         * <p>The pseudorandom {@code double} values are generated as ifs the result
+         * of calling the method {@link #nextDouble()}.
          *
          * @param streamSize the number of values to generate
          *
@@ -1689,10 +1782,13 @@ public class RandomSupport {
          * {@code double} values from this generator and/or one split from it;
          * each value is between zero (inclusive) and one (exclusive).
          *
-         * @return a stream of (pseudo)random {@code double} values
+         * <p>The (pseudo)random {@code double} values are generated as if the result
+         * of calling the method {@link #nextDouble()}.
          *
          * @implNote This method is implemented to be equivalent to {@code
-         *         doubles(Long.MAX_VALUE)}.
+         * doubles(Long.MAX_VALUE)}.
+         *
+         * @return a stream of (pseudo)random {@code double} values
          */
         public DoubleStream doubles() {
             return doubleStream(makeDoublesSpliterator(0L, Long.MAX_VALUE, Double.MAX_VALUE, 0.0));
@@ -1703,6 +1799,17 @@ public class RandomSupport {
          * (pseudo)random {@code double} values from this generator and/or one
          * split from it; each value conforms to the given origin (inclusive)
          * and bound (exclusive).
+         *
+         * <p>The (pseudo)random {@code double} values are generated as if the result
+         * of calling the following method with the origin and bound:
+         * <pre> {@code
+         * double nextDouble(double origin, double bound) {
+         *   double r = nextDouble();
+         *   r = r * (bound - origin) + origin;
+         *   if (r >= bound) // correct for rounding
+         *     r = Math.nextDown(bound);
+         *   return r;
+         * }}</pre>
          *
          * @param streamSize         the number of values to generate
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1727,6 +1834,20 @@ public class RandomSupport {
          * each value conforms to the given origin (inclusive) and bound
          * (exclusive).
          *
+         * <p>The (pseudo)random {@code double} values are generated as if the result
+         * of calling the following method with the origin and bound:
+         * <pre> {@code
+         * double nextDouble(double origin, double bound) {
+         *   double r = nextDouble();
+         *   r = r * (bound - origin) + origin;
+         *   if (r >= bound) // correct for rounding
+         *     r = Math.nextDown(bound);
+         *   return r;
+         * }}</pre>
+         *
+         * @implNote This method is implemented to be equivalent to {@code
+         * doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+         *
          * @param randomNumberOrigin the origin (inclusive) of each random value
          * @param randomNumberBound  the bound (exclusive) of each random value
          *
@@ -1735,9 +1856,6 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code randomNumberOrigin} is greater than or equal to
          *                                  {@code randomNumberBound}
-         *
-         * @implNote This method is implemented to be equivalent to {@code
-         *         doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
          */
         public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -1795,7 +1913,7 @@ public class RandomSupport {
      * overridden if the (pseudo)random number generator being implemented
      * admits a more efficient implementation.
      *
-     * @since   16
+     * @since 17
      * @hidden
      */
     public abstract static class AbstractArbitrarilyJumpableGenerator
@@ -2314,7 +2432,7 @@ public class RandomSupport {
      * overridden if the (pseudo)random number generator being implemented
      * admits a more efficient implementation.
      *
-     * @since   16
+     * @since 17
      * @hidden
      */
     public abstract static class AbstractSplittableGenerator extends AbstractSpliteratorGenerator implements SplittableGenerator {
@@ -2665,7 +2783,7 @@ public class RandomSupport {
      * overridden if the (pseudo)random number generator being implemented
      * admits a more efficient implementation.
      *
-     * @since   16
+     * @since 17
      * @hidden
      */
     public abstract static class AbstractSplittableWithBrineGenerator
