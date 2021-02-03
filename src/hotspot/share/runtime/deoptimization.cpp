@@ -2455,6 +2455,9 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
 }
 
 Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, jint trap_request, jint exec_mode) {
+  // Enable WXWrite: current function is called from methods compiled by C2 directly
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+
   if (TraceDeoptimization) {
     tty->print("Uncommon trap ");
   }
@@ -2463,7 +2466,6 @@ Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, j
     // This enters VM and may safepoint
     uncommon_trap_inner(thread, trap_request);
   }
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx_write(WXWrite, thread));
   return fetch_unroll_info_helper(thread, exec_mode);
 }
 

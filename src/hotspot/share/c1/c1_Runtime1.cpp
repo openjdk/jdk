@@ -1268,7 +1268,9 @@ JRT_END
 void Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id) {
   NOT_PRODUCT(_patch_code_slowcase_cnt++);
 
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx_write(WXWrite, thread));
+  // Enable WXWrite: the function is called by c1 stub as a runtime function
+  // (see another implementation above).
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   if (TracePatching) {
     tty->print_cr("Deoptimizing because patch is needed");

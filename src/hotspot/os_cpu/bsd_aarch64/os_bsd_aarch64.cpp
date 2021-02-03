@@ -209,8 +209,9 @@ NOINLINE frame os::current_frame() {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-
-  ThreadWXEnable wx_write(WXWrite, thread);
+  // Enable WXWrite: this function is called by the signal handler at arbitrary
+  // point of execution.
+  ThreadWXEnable wx(WXWrite, thread);
 
 /*
   NOTE: does not seem to work on bsd.
