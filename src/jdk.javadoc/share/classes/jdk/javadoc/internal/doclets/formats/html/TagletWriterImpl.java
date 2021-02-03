@@ -469,7 +469,7 @@ public class TagletWriterImpl extends TagletWriter {
     @SuppressWarnings("preview")
     private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, DocTree tree) {
         Content result = null;
-        if (context.isFirstSentence && context.inSummary) {
+        if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)) {
             result = new StringContent(tagText);
         } else {
             HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);

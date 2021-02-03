@@ -76,7 +76,6 @@ public class TestNestedIndexTag extends JavadocTester {
                     /** First sentence. {@index abc ABC {@index def DEF} GHI} */
                     public class C { }
                     """);
-        setAutomaticCheckLinks(false); // nested index causes broken links; uugh
         javadoc("-d", base.resolve("api").toString(),
                 "-sourcepath", src.toString(),
                 dlk.option,
