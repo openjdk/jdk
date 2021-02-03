@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ AC_DEFUN([FLAGS_SETUP_MACOSX_VERSION],
     if test "x$OPENJDK_TARGET_CPU_ARCH" = xaarch64; then
       MACOSX_VERSION_MIN=11.00.00
     else
-      MACOSX_VERSION_MIN=10.9.0
+      MACOSX_VERSION_MIN=10.12.0
     fi
     MACOSX_VERSION_MIN_NODOTS=${MACOSX_VERSION_MIN//\./}
 

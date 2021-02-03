@@ -25,9 +25,9 @@
 #ifndef SHARE_RUNTIME_STUBROUTINES_INLINE_HPP
 #define SHARE_RUNTIME_STUBROUTINES_INLINE_HPP
 
-#include <runtime/thread.hpp>
-#include <runtime/threadWXSetters.hpp>
-#include <runtime/stubRoutines.hpp>
+#include "runtime/thread.hpp"
+#include "runtime/threadWXSetters.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // Safefetch allows to load a value from a location that's not known
 // to be valid. If the load causes a fault, the error value is returned.

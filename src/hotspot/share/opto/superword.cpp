@@ -4705,7 +4705,7 @@ bool SuperWord::fix_commutative_inputs(Node* gold, Node* fix) {
   Node* fin2 = fix->in(2);
   bool swapped = false;
 
-  if (in_bb(gin1) && in_bb(gin2) && in_bb(fin1) && in_bb(fin1)) {
+  if (in_bb(gin1) && in_bb(gin2) && in_bb(fin1) && in_bb(fin2)) {
     if (same_origin_idx(gin1, fin1) &&
         same_origin_idx(gin2, fin2)) {
       return true; // nothing to fix

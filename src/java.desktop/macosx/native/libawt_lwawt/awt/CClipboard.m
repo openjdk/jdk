@@ -66,9 +66,9 @@
     @synchronized(self) {
         if (owner != NULL) {
             if (self.clipboardOwner != NULL) {
-                JNFDeleteGlobalRef(env, self.clipboardOwner);
+                (*env)->DeleteGlobalRef(env, self.clipboardOwner);
             }
-            self.clipboardOwner = JNFNewGlobalRef(env, owner);
+            self.clipboardOwner = (*env)->NewGlobalRef(env, owner);
         }
     }
     [ThreadUtilities performOnMainThreadWaiting:YES block:^() {
@@ -101,7 +101,7 @@
             if (self.clipboardOwner) {
                 (*env)->CallVoidMethod(env, self.clipboardOwner, jm_lostOwnership); // AWT_THREADING Safe (event)
                 CHECK_EXCEPTION();
-                JNFDeleteGlobalRef(env, self.clipboardOwner);
+                (*env)->DeleteGlobalRef(env, self.clipboardOwner);
                 self.clipboardOwner = NULL;
             }
         }

@@ -1921,8 +1921,9 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Delay following optimizations until all loop optimizations
   // done to keep Ideal graph simple.
-  if (!can_reshape || phase->C->major_progress())
+  if (!can_reshape || !phase->C->post_loop_opts_phase()) {
     return NULL;
+  }
 
   const TypeInt* init_t  = phase->type(in(Init) )->is_int();
   const TypeInt* limit_t = phase->type(in(Limit))->is_int();
