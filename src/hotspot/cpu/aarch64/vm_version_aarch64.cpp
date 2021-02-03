@@ -46,6 +46,8 @@ int VM_Version::_dcache_line_size;
 int VM_Version::_icache_line_size;
 int VM_Version::_initial_sve_vector_length;
 
+extern void generate_atomic_entry_points();
+
 void VM_Version::initialize() {
   _supports_cx8 = true;
   _supports_atomic_getset4 = true;

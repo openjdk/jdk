@@ -1,0 +1,18 @@
+--- src/hotspot/cpu/aarch64/interpreterRT_aarch64.cpp
++++ src/hotspot/cpu/aarch64/interpreterRT_aarch64.cpp
+@@ -294,7 +240,6 @@ class SlowSignatureHandler
+   unsigned int _num_int_args;
+   unsigned int _num_fp_args;
+ 
+-#ifdef __APPLE__
+   virtual void pass_byte()
+   {
+     jbyte from_obj = *(jbyte *)(_from+Interpreter::local_offset_in_bytes(0));
+@@ -320,7 +265,6 @@ class SlowSignatureHandler
+     }
+     _num_int_args++;
+   }
+-#endif
+ 
+   virtual void pass_int()
+   {

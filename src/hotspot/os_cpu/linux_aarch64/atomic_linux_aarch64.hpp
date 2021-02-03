@@ -32,52 +32,143 @@
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
 
+typedef uint64_t (*aarch64_atomic_fetch_add_8_type)(volatile uint64_t *ptr, long val);
+extern aarch64_atomic_fetch_add_8_type aarch64_atomic_fetch_add_8_impl;
+typedef uint32_t (*aarch64_atomic_fetch_add_4_type)(volatile uint32_t *ptr, int val);
+extern aarch64_atomic_fetch_add_4_type aarch64_atomic_fetch_add_4_impl;
+
+typedef uint32_t (*aarch64_atomic_xchg_4_type)(volatile uint32_t *ptr, uint32_t val);
+extern aarch64_atomic_xchg_4_type aarch64_atomic_xchg_4_impl;
+typedef uint64_t (*aarch64_atomic_xchg_8_type)(volatile uint64_t *ptr, uint64_t val);
+extern aarch64_atomic_xchg_8_type aarch64_atomic_xchg_8_impl;
+
+typedef uint8_t (*aarch64_atomic_cmpxchg_1_type)(volatile uint8_t *ptr,
+                                         uint8_t compare_val,
+                                         uint8_t exchange_val);
+extern aarch64_atomic_cmpxchg_1_type aarch64_atomic_cmpxchg_1_impl;
+typedef uint32_t (*aarch64_atomic_cmpxchg_4_type)(volatile uint32_t *ptr,
+                                          uint32_t compare_val,
+                                          uint32_t exchange_val);
+extern aarch64_atomic_cmpxchg_4_type aarch64_atomic_cmpxchg_4_impl;
+typedef uint64_t (*aarch64_atomic_cmpxchg_8_type)(volatile uint64_t *ptr,
+                                          uint64_t compare_val,
+                                          uint64_t exchange_val);
+extern aarch64_atomic_cmpxchg_8_type aarch64_atomic_cmpxchg_8_impl;
+
+
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
-    FULL_MEM_BARRIER;
-    return res;
-  }
+  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
-  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_and_fetch(dest, add_value, order) - add_value;
+  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+    D old_value = fetch_and_add(dest, add_value, order) + add_value;
+    FULL_MEM_BARRIER;
+    return old_value;
   }
 };
 
-template<size_t byte_size>
-template<typename T>
-inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
-                                                     T exchange_value,
-                                                     atomic_memory_order order) const {
-  STATIC_ASSERT(byte_size == sizeof(T));
-  T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELEASE);
-  FULL_MEM_BARRIER;
-  return res;
+template<>
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<4>::fetch_and_add(D volatile* dest, I add_value,
+                                               atomic_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(I));
+  STATIC_ASSERT(4 == sizeof(D));
+  D old_value = (D)aarch64_atomic_fetch_add_4_impl((volatile uint32_t *)dest, add_value);
+  return old_value;
 }
 
-// __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
-template<size_t byte_size>
+template<>
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<8>::fetch_and_add(D volatile* dest, I add_value,
+                                               atomic_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(I));
+  STATIC_ASSERT(8 == sizeof(D));
+  D old_value = (D)aarch64_atomic_fetch_add_8_impl((volatile uint64_t *)dest, add_value);
+  return old_value;
+}
+
+template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attribute__((unused)),
-                                                        T compare_value,
-                                                        T exchange_value,
-                                                        atomic_memory_order order) const {
-  STATIC_ASSERT(byte_size == sizeof(T));
+inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
+                                             T exchange_value,
+                                             atomic_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  T old_value = (T)aarch64_atomic_xchg_4_impl((volatile uint32_t *)dest, (uint32_t)exchange_value);
+  FULL_MEM_BARRIER;
+  return old_value;
+}
+
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest, T exchange_value,
+                                             atomic_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T old_value = (T)aarch64_atomic_xchg_8_impl((volatile uint64_t *)dest, (uint64_t)exchange_value);
+  FULL_MEM_BARRIER;
+  return old_value;
+}
+
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
+                                                T compare_value,
+                                                T exchange_value,
+                                                atomic_memory_order order) const {
+  STATIC_ASSERT(1 == sizeof(T));
   if (order == memory_order_relaxed) {
-    T value = compare_value;
-    __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
-                              __ATOMIC_RELAXED, __ATOMIC_RELAXED);
-    return value;
+    T old_value = (T)aarch64_atomic_cmpxchg_1_impl((volatile uint8_t *)dest,
+                                              (uint8_t)compare_value, (uint8_t)exchange_value);
+    return old_value;
   } else {
-    T value = compare_value;
     FULL_MEM_BARRIER;
-    __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
-                              __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+    T old_value = (T)aarch64_atomic_cmpxchg_1_impl((volatile uint8_t *)dest,
+                                              (uint8_t)compare_value, (uint8_t)exchange_value);
     FULL_MEM_BARRIER;
-    return value;
+    return old_value;
+  }
+}
+
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
+                                                T compare_value,
+                                                T exchange_value,
+                                                atomic_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  if (order == memory_order_relaxed) {
+    T old_value = (T)aarch64_atomic_cmpxchg_4_impl((volatile uint32_t *)dest,
+                                              (uint32_t)compare_value, (uint32_t)exchange_value);
+    return old_value;
+  } else {
+    FULL_MEM_BARRIER;
+    T old_value = (T)aarch64_atomic_cmpxchg_4_impl((volatile uint32_t *)dest,
+                                              (uint32_t)compare_value, (uint32_t)exchange_value);
+    FULL_MEM_BARRIER;
+    return old_value;
+  }
+}
+
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
+                                                T compare_value,
+                                                T exchange_value,
+                                                atomic_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  if (order == memory_order_relaxed) {
+    T old_value
+      = (T)aarch64_atomic_cmpxchg_8_impl((volatile uint64_t *)dest,
+                                    (uint64_t)compare_value, (uint64_t)exchange_value);
+    return old_value;
+  } else {
+    FULL_MEM_BARRIER;
+    T old_value
+      = (T)aarch64_atomic_cmpxchg_8_impl((volatile uint64_t *)dest,
+                                    (uint64_t)compare_value, (uint64_t)exchange_value);
+    FULL_MEM_BARRIER;
+    return old_value;
   }
 }
 

@@ -38,6 +38,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -5571,6 +5572,81 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+
+  void generate_atomic_entry_points() {
+    // address code_mem = (address)os::reserve_memory(65536, /*exec*/true);
+    // if (! os::commit_memory((char*)code_mem, 65536, /*exec*/true)) {
+    //   abort();
+    // }
+    // CodeBuffer cbuf(code_mem, 65536);
+    // MacroAssembler masm(&cbuf);
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "atomic entry points");
+
+    aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_fetch_add_8_type)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+      __ atomic_addal(prev, incr, addr);
+      __ mov(r0, prev);
+      __ ret(lr);
+    }
+    aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_fetch_add_4_type)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+      __ atomic_addalw(prev, incr, addr);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    aarch64_atomic_xchg_4_impl = (aarch64_atomic_xchg_4_type)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, newv = c_rarg1;
+      __ atomic_xchglw(prev, newv, addr);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    aarch64_atomic_xchg_8_impl = (aarch64_atomic_xchg_8_type)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, newv = c_rarg1;
+      __ atomic_xchgl(prev, newv, addr);
+      __ mov(r0, prev);
+      __ ret(lr);
+    }
+    aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_cmpxchg_1_type)__ pc();
+    {
+      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+        exchange_val = c_rarg2;
+      __ cmpxchg(ptr, compare_val, exchange_val,
+                 MacroAssembler::byte,
+                 /*acquire*/false, /*release*/false, /*weak*/false,
+                 prev);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_cmpxchg_4_type)__ pc();
+    {
+      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+        exchange_val = c_rarg2;
+      __ cmpxchg(ptr, compare_val, exchange_val,
+                 MacroAssembler::word,
+                 /*acquire*/false, /*release*/false, /*weak*/false,
+                 prev);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_cmpxchg_8_type)__ pc();
+    {
+      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+        exchange_val = c_rarg2;
+      __ cmpxchg(ptr, compare_val, exchange_val,
+                 MacroAssembler::xword,
+                 /*acquire*/false, /*release*/false, /*weak*/false,
+                 prev);
+      __ mov(r0, prev);
+      __ ret(lr);
+    }
+  }
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -6503,7 +6579,6 @@ class StubGenerator: public StubCodeGenerator {
     // }
   };
 
-
   // Initialization
   void generate_initial() {
     // Generate initial stubs and initializes the entry points
@@ -6683,6 +6758,8 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
+    generate_atomic_entry_points();
+
     StubRoutines::aarch64::set_completed();
   }
 
@@ -6703,3 +6780,36 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
   }
   StubGenerator g(code, all);
 }
+
+
+extern "C" {
+  uint64_t aarch64_atomic_fetch_add_8_default_impl(volatile uint64_t *ptr, long val);
+  uint32_t aarch64_atomic_fetch_add_4_default_impl(volatile uint32_t *ptr, int val);
+
+  uint32_t aarch64_atomic_xchg_4_default_impl(volatile uint32_t *ptr, uint32_t val);
+  uint64_t aarch64_atomic_xchg_8_default_impl(volatile uint64_t *ptr, uint64_t val);
+
+  uint8_t aarch64_atomic_cmpxchg_1_default_impl(volatile uint8_t *ptr,
+                                                uint8_t compare_val,
+                                                uint8_t exchange_val);
+  uint32_t aarch64_atomic_cmpxchg_4_default_impl(volatile uint32_t *ptr,
+                                                 uint32_t compare_val,
+                                                 uint32_t exchange_val);
+  uint64_t aarch64_atomic_cmpxchg_8_default_impl(volatile uint64_t *ptr,
+                                                 uint64_t compare_val,
+                                                 uint64_t exchange_val);
+};
+
+#define DEFAULT_ATOMIC_OP(OPNAME, SIZE)                                 \
+  aarch64_atomic_ ## OPNAME ## _ ## SIZE ## _type aarch64_atomic_ ## OPNAME ## _ ## SIZE ## _impl \
+    = aarch64_atomic_ ## OPNAME ## _ ## SIZE ## _default_impl;
+
+DEFAULT_ATOMIC_OP(fetch_add, 4)
+DEFAULT_ATOMIC_OP(fetch_add, 8)
+DEFAULT_ATOMIC_OP(xchg, 4)
+DEFAULT_ATOMIC_OP(xchg, 8)
+DEFAULT_ATOMIC_OP(cmpxchg, 1)
+DEFAULT_ATOMIC_OP(cmpxchg, 4)
+DEFAULT_ATOMIC_OP(cmpxchg, 8)
+
+
