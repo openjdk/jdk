@@ -38,11 +38,12 @@ import javax.swing.text.View;
  * @test
  * @bug 8257664
  * @summary  Tests inherited font-size with parent percentage specification.
- * @run main TestWrongCSSFontSize
+ * @run main TestWrongCSSFontSize false
+ * @run main TestWrongCSSFontSize true
  */
 public class TestWrongCSSFontSize {
 
-    private static String text =
+    private static final String TEXT =
             "<html><head><style>" +
             "body { font-size: 14 }" +
             "div span { font-size: 150% }" +
@@ -61,15 +62,24 @@ public class TestWrongCSSFontSize {
 
             "</body></html>";
 
-    private static int expectedFontSize = 21;
-    private static int expectedAssertions = 8;
+    private static final int expectedFontSize = 21;
+    private static final int expectedAssertions = 8;
+
+    private final boolean w3cUnits;
 
     private JEditorPane editor;
+
+    public TestWrongCSSFontSize(boolean w3cUnits) {
+        this.w3cUnits = w3cUnits;
+    }
 
     public void setUp() {
         editor = new JEditorPane();
         editor.setContentType("text/html");
-        editor.setText(text);
+        if (w3cUnits) {
+            editor.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, Boolean.TRUE);
+        }
+        editor.setText(TEXT);
         editor.setSize(editor.getPreferredSize()); // layout
     }
 
@@ -77,7 +87,8 @@ public class TestWrongCSSFontSize {
         int count = forEachTextRun(editor.getUI()
                 .getRootView(editor), this::assertFontSize);
         if (count != expectedAssertions) {
-            throw new AssertionError("assertion count expected ["
+            throw new AssertionError((w3cUnits ? "w3cUnits - " : "")
+                    + "assertion count expected ["
                     + expectedAssertions + "] but found [" + count + "]");
         }
     }
@@ -104,7 +115,8 @@ public class TestWrongCSSFontSize {
         printSource(child);
         int actualFontSize = child.getFont().getSize();
         if (actualFontSize != expectedFontSize) {
-            throw new AssertionError("font size expected ["
+            throw new AssertionError((w3cUnits ? "w3cUnits - " : "")
+                    + "font size expected ["
                     + expectedFontSize + "] but found [" + actualFontSize +"]");
         }
     }
@@ -134,7 +146,8 @@ public class TestWrongCSSFontSize {
     }
 
     public static void main(String[] args) throws Throwable {
-        TestWrongCSSFontSize test = new TestWrongCSSFontSize();
+        TestWrongCSSFontSize test = new TestWrongCSSFontSize(
+                (args.length > 0) && Boolean.parseBoolean(args[0]));
         AtomicReference<Throwable> failure = new AtomicReference<>();
         SwingUtilities.invokeAndWait(() -> {
             try {
