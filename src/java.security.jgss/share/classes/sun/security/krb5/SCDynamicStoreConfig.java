@@ -88,7 +88,6 @@ public class SCDynamicStoreConfig {
                 dr.put("default_realm", v1(defaultRealm));
                 v.put("libdefaults", dr);
             }
-            Hashtable<String,Object> ri = new Hashtable<>();
             Vector<String> kdcs = new Vector<>();
             while (true) {
                 String nextKdc = iterator.next();
@@ -98,9 +97,10 @@ public class SCDynamicStoreConfig {
                 kdcs.add(nextKdc);
             }
             if (!kdcs.isEmpty()) {
+                Hashtable<String,Object> ri = new Hashtable<>();
                 ri.put("kdc", kdcs);
+                realms.put(nextRealm, ri);
             }
-            realms.put(nextRealm, ri);
         }
         if (!realms.isEmpty()) {
             v.put("realms", realms);
