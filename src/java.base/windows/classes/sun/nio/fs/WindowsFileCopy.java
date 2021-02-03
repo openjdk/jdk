@@ -142,7 +142,7 @@ class WindowsFileCopy {
         // if source is a Unix domain socket, we don't want to copy it for various
         // reasons including consistency with Unix
         if (sourceAttrs.isUnixDomainSocket()) {
-            throw new IOException("operation not supported");
+            throw new IOException("Can not copy socket file");
         }
 
         final String sourcePath = asWin32Path(source);

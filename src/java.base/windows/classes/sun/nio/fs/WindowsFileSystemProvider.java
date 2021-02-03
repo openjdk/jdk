@@ -321,8 +321,6 @@ class WindowsFileSystemProvider
         return hasRights;
     }
 
-    private static final Set<OpenOption> reparseOpt = Set.of(OPEN_REPARSE_POINT);
-
     /**
      * Checks if the given file(or directory) exists and is readable.
      */
@@ -341,12 +339,12 @@ class WindowsFileSystemProvider
                     FileChannel fc = WindowsChannelFactory
                         .newFileChannel(file.getPathForWin32Calls(),
                                 file.getPathForPermissionCheck(),
-                                reparseOpt,
+                                Set.of(WindowsChannelFactory.OPEN_REPARSE_POINT),
                                 0L);
                     fc.close();
                     return;
                 }
-            } catch (WindowsException exc1) {}
+            } catch (WindowsException ignore) {}
 
             // Windows errors are very inconsistent when the file is a directory
             // (ERROR_PATH_NOT_FOUND returned for root directories for example)

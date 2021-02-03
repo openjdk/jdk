@@ -25,8 +25,6 @@
 
 package sun.nio.fs;
 
-import java.nio.file.OpenOption;
-
 /**
  * Win32 APIs constants.
  */
@@ -204,7 +202,4 @@ class WindowsConstants {
 
     public static final int TokenUser                   = 1;
     public static final int PROCESS_QUERY_INFORMATION   = 0x0400;
-
-    // internal option to open a reparse point
-    static final OpenOption OPEN_REPARSE_POINT          = new OpenOption() { };
 }

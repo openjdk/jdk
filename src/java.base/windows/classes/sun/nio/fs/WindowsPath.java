@@ -832,16 +832,19 @@ class WindowsPath implements Path {
         if (!followLinks)
             flags |= FILE_FLAG_OPEN_REPARSE_POINT;
         try {
-            return openFileForRead(flags);
+            return openFileForReadAttributeAccess(flags);
         } catch (WindowsException e) {
             if (!followLinks || e.lastError() != ERROR_CANT_ACCESS_FILE)
                 throw e;
             // Object could be a Unix domain socket
-            return openSocketForReadAttributeAccess(e);
+            long handle = openSocketForReadAttributeAccess();
+            if (handle == INVALID_HANDLE_VALUE)
+                throw e;
+            return handle;
         }
     }
 
-    private long openFileForRead(int flags)
+    private long openFileForReadAttributeAccess(int flags)
         throws WindowsException
     {
         return CreateFile(getPathForWin32Calls(),
@@ -852,21 +855,33 @@ class WindowsPath implements Path {
                             flags);
     }
 
-    private long openSocketForReadAttributeAccess(WindowsException originalException)
-        throws WindowsException
-    {
-        // needs one additional flag to open a Unix domain socket
-        int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
+    /**
+     * returns INVALID_HANDLE_VALUE if path is not a socket
+     * and a handle to the socket file if it is.
+     */
+    private long openSocketForReadAttributeAccess() {
+        long handle;
 
-        long handle = openFileForRead(flags);
+        try {
+            // needs one additional flag to open a Unix domain socket
+            int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
 
-        // if not a socket throw original exception
-        WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(handle);
-        if (!attrs.isUnixDomainSocket()) {
-            CloseHandle(handle);
-            throw originalException;
+            handle = openFileForReadAttributeAccess(flags);
+        } catch (WindowsException ignore) {
+            return INVALID_HANDLE_VALUE;
         }
-        return handle;
+
+        try {
+            WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(handle);
+            if (!attrs.isUnixDomainSocket()) {
+                CloseHandle(handle);
+                return INVALID_HANDLE_VALUE;
+            }
+            return handle;
+        } catch (WindowsException ignore) {
+            CloseHandle(handle);
+            return INVALID_HANDLE_VALUE;
+        }
     }
 
     void checkRead() {
