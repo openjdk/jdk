@@ -44,8 +44,6 @@ class GCLocker: public AllStatic {
   // unlocking.
   static volatile jint _jni_lock_count;  // number of jni active instances.
   static volatile bool _needs_gc;        // heap is filling, we need a GC
-                                         // note: bool is typedef'd as jint
-  static volatile bool _doing_gc;        // unlock_critical() is doing a GC
   static uint _total_collections;        // value for _gc_locker collection
 
 #ifdef ASSERT
