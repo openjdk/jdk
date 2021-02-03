@@ -389,7 +389,7 @@ public class Main {
                     }
                     try {
                         //This is the hack code because named package class has
-                        //difficulty in accessing unamed package class. This
+                        //difficulty in accessing unnamed package class. This
                         //should be removed ater JDK-8003358 is finished.
                         port = (int) Class.forName("TestLibrary")
                                 .getMethod("getUnusedRandomPort")

@@ -34,21 +34,21 @@
  *     1)
  *     - adds the <can_generate_exception_events> capability during
  *       the OnLoad phase;
- *     - sets callbacks for VM_INIT and choosen events during the OnLoad phase;
+ *     - sets callbacks for VM_INIT and chosen events during the OnLoad phase;
  *     - enables all optional events via SetEventNotificationMode during
  *       the OnLoad phase;
  *     - starts debuggee's threads which throw exceptions;
  *     - expects that at least one EXCEPTION and EXCEPTION_CATCH events will
  *       be sent.
  *     2)
- *     - changes callbacks for choosen event;
+ *     - changes callbacks for chosen event;
  *     - starts debuggee's threads which throw exceptions;
  *     - checks that altered callback works and at least one EXCEPTION and
  *       EXCEPTION_CATCH events will be sent.
  *     3)
- *     - sets off callbacks for choosen event;
+ *     - sets off callbacks for chosen event;
  *     - sets callback for VM_DEATH event;
- *     - checks that no choosen events are sent until VMDeath event.
+ *     - checks that no chosen events are sent until VMDeath event.
  * COMMENTS
  *     Modified due to fix of the bug
  *     5010571 TEST_BUG: jvmti tests with VMObjectAlloc callbacks should

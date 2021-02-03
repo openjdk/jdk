@@ -39,7 +39,7 @@ if [ $? -eq 2 ]; then
     exit 0
 fi
 
-# -e option with JavaScript explicitly choosen as language
+# -e option with JavaScript explicitly chosen as language
 
 rm -f jrunscript-eTest.out 2>/dev/null
 ${JRUNSCRIPT} -J-Dnashorn.args.prepend=--no-deprecation-warning -J-Djava.awt.headless=true -l nashorn -e "println('hello')" > jrunscript-eTest.out 2>&1

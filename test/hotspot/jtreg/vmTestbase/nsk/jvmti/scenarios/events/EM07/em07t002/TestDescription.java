@@ -37,7 +37,7 @@
  *     (2) sets callbacks for COMPILED_METHOD_LOAD, COMPILED_METHOD_UNLOAD events
  *         during the OnLoad phase;
  *     (3) enables these events during the OnLoad phase;
- *     (4) provides the state to provoke generation of choosen events (see details
+ *     (4) provides the state to provoke generation of chosen events (see details
  *         in comments of em07t002.java)
  *     (5) checks number of COMPILED_METHOD_UNLOAD events is less than
  *         COMPILED_METHOD_LOAD or equal.

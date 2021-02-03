@@ -317,7 +317,7 @@ bool PSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
     if (orig_size == max_gen_size()) {
       log_trace(gc)("PSYoung generation size at maximum: " SIZE_FORMAT "K", orig_size/K);
     } else if (orig_size == min_gen_size()) {
-      log_trace(gc)("PSYoung generation size at minium: " SIZE_FORMAT "K", orig_size/K);
+      log_trace(gc)("PSYoung generation size at minimum: " SIZE_FORMAT "K", orig_size/K);
     }
   }
 

@@ -187,7 +187,7 @@ class TestUI {
         String instructions
             = "See for different look and feel tabbed panes titles \n"
             + "   contain three dots(...) at the end if the pane size \n"
-            + "   cannot accommadate the title completely.\n"
+            + "   cannot accommodate the title completely.\n"
             + "If yes, click on 'pass' else click on 'fail'\n";
 
         instructionTextArea = new JTextArea();

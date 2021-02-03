@@ -149,7 +149,7 @@ public class ModuleTest {
      * @throws Exception
      */
     @Test
-    public void testClientInUnamedModule() throws Exception {
+    public void testClientInUnnamedModule() throws Exception {
         assertEquals(executeTestJava("--module-path", pathJoin(MTEST_JAR, SERVER_JAR),
                 "--add-modules", "mserver",
                 "-cp", CLIENT_JAR,

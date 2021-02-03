@@ -40,7 +40,7 @@ public class StandardThreadMonitoringScenarioFactory implements ThreadMonitoring
         }
 
         public int getScenarioCount(int basicThreadCount) {
-                // This is choosen to have one scenario of each type and recursionType.
+                // This is chosen to have one scenario of each type and recursionType.
                 basicThreadCount = Math.min(basicThreadCount, 3);
                 return basicThreadCount * typeCount * 3;
         }
