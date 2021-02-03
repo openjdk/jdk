@@ -643,7 +643,7 @@ public abstract class FileChannel
      * {@code count} bytes remaining, or if the source channel is non-blocking
      * and has fewer than {@code count} bytes immediately available in its
      * input buffer. No bytes are transferred if the source channel has reached
-     * end-of-stream.
+     * the end-of-stream in which case zero will be returned.
      *
      * <p> This method does not modify this channel's position.  If the given
      * position is greater than the file's current size then no bytes are
@@ -655,11 +655,6 @@ public abstract class FileChannel
      * that reads from the source channel and writes to this channel.  Many
      * operating systems can transfer bytes directly from the source channel
      * into the filesystem cache without actually copying them.  </p>
-     *
-     * @apiNote
-     * This method only returns the number of bytes that were actually
-     * transferred, it will not return -1, e.g. in case of end-of-stream of the
-     * {@code src} parameter.
      *
      * @param  src
      *         The source channel
