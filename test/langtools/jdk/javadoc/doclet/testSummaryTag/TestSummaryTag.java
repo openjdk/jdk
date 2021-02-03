@@ -63,7 +63,7 @@ public class TestSummaryTag extends JavadocTester {
                 <dt><span class="member-name-link"><a href="p1/A.html#m1()">m1()</a></span> - Me\
                 thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
                 <dd>
-                <div class="block"> First sentence </div>
+                <div class="block"> First sentence</div>
                 </dd>
                 <dt><span class="member-name-link"><a href="p1/A.html#m2()">m2()</a></span> - Me\
                 thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
@@ -73,7 +73,7 @@ public class TestSummaryTag extends JavadocTester {
                 <dt><span class="member-name-link"><a href="p1/A.html#m3()">m3()</a></span> - Me\
                 thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
                 <dd>
-                <div class="block">First sentence </div>
+                <div class="block">First sentence</div>
                 </dd>
                 <dt><span class="member-name-link"><a href="p1/A.html#m4()">m4()</a></span> - Me\
                 thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>

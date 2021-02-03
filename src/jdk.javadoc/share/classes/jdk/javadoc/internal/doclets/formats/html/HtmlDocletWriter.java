@@ -382,8 +382,8 @@ public class HtmlDocletWriter {
         return !output.isEmpty();
     }
 
-    private Content getInlineTagOutput(Element element, DocTree holder, DocTree tree, boolean isFirstSentence, boolean inSummary) {
-        return getTagletWriterInstance(isFirstSentence, inSummary)
+    private Content getInlineTagOutput(Element element, DocTree holder, DocTree tree, TagletWriterImpl.Context context) {
+        return getTagletWriterInstance(context)
                 .getInlineTagOutput(element, configuration.tagletManager, holder, tree);
     }
 
@@ -400,12 +400,11 @@ public class HtmlDocletWriter {
     /**
      * Returns a TagletWriter that knows how to write HTML.
      *
-     * @param isFirstSentence  true if we want to write the first sentence
-     * @param inSummary  true if tags are to be added in a summary section
+     * @param context  the enclosing context for the trees
      * @return a TagletWriter
      */
-    public TagletWriter getTagletWriterInstance(boolean isFirstSentence, boolean inSummary) {
-        return new TagletWriterImpl(this, isFirstSentence, inSummary);
+    public TagletWriter getTagletWriterInstance(TagletWriterImpl.Context context) {
+        return new TagletWriterImpl(this, context);
     }
 
     /**
@@ -1049,7 +1048,7 @@ public class HtmlDocletWriter {
         }
     }
 
-    public Content seeTagToContent(Element element, DocTree see) {
+    public Content seeTagToContent(Element element, DocTree see, TagletWriterImpl.Context context) {
         Kind kind = see.getKind();
         CommentHelper ch = utils.getCommentHelper(element);
         String tagName = ch.getTagName(see);
@@ -1093,7 +1092,7 @@ public class HtmlDocletWriter {
 
         boolean isLinkPlain = kind == LINK_PLAIN;
         Content labelContent = plainOrCode(isLinkPlain,
-                commentTagsToContent(see, element, label, false));
+                commentTagsToContent(see, element, label, context));
 
         //The text from the @see tag.  We will output this text when a label is not specified.
         Content text = plainOrCode(kind == LINK_PLAIN, new StringContent(removeTrailingSlash(seeText)));
@@ -1420,7 +1419,29 @@ public class HtmlDocletWriter {
                                         Element element,
                                         List<? extends DocTree> trees,
                                         boolean isFirstSentence,
-                                        boolean inSummary)
+                                        boolean inSummary) {
+        return commentTagsToContent(holderTag, element, trees,
+                new TagletWriterImpl.Context(isFirstSentence, inSummary));
+    }
+
+    /**
+     * Converts inline tags and text to text strings, expanding the
+     * inline tags along the way.  Called wherever text can contain
+     * an inline tag, such as in comments or in free-form text arguments
+     * to block tags.
+     *
+     * @param holderTag specific tag where comment resides
+     * @param element   specific element where comment resides
+     * @param trees     list of text trees and inline tag trees (often alternating)
+     *                  present in the text of interest for this element
+     * @param context   the enclosing context for the trees
+     *
+     * @return a Content object
+     */
+    public Content commentTagsToContent(DocTree holderTag,
+                                        Element element,
+                                        List<? extends DocTree> trees,
+                                        TagletWriterImpl.Context context)
     {
         final Content result = new ContentBuilder() {
             @Override
@@ -1438,7 +1459,7 @@ public class HtmlDocletWriter {
             DocTree tag = iterator.next();
             boolean isLastNode  = !iterator.hasNext();
 
-            if (isFirstSentence) {
+            if (context.isFirstSentence) {
                 // Ignore block tags
                 if (ignoreNonInlineTag(tag))
                     continue;
@@ -1536,8 +1557,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitDocRoot(DocRootTree node, Content c) {
-                    Content docRootContent = getInlineTagOutput(element, holderTag, node,
-                            isFirstSentence, false);
+                    Content docRootContent = getInlineTagOutput(element, holderTag, node, context);
                     if (c != null) {
                         c.add(docRootContent);
                     } else {
@@ -1569,16 +1589,15 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitInheritDoc(InheritDocTree node, Content c) {
-                    Content output = getInlineTagOutput(element, holderTag, node,
-                            isFirstSentence, false);
+                    Content output = getInlineTagOutput(element, holderTag, node, context);
                     result.add(output);
                     // if we obtained the first sentence successfully, nothing more to do
-                    return (isFirstSentence && !output.isEmpty());
+                    return (context.isFirstSentence && !output.isEmpty());
                 }
 
                 @Override
                 public Boolean visitIndex(IndexTree node, Content p) {
-                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, inSummary);
+                    Content output = getInlineTagOutput(element, holderTag, node, context);
                     if (output != null) {
                         result.add(output);
                     }
@@ -1588,7 +1607,7 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitLink(LinkTree node, Content c) {
                     // we need to pass the DocTreeImpl here, so ignore node
-                    Content content = seeTagToContent(element, tag);
+                    Content content = seeTagToContent(element, tag, context);
                     result.add(content);
                     return false;
                 }
@@ -1606,7 +1625,7 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitSee(SeeTree node, Content c) {
                     // we need to pass the DocTreeImpl here, so ignore node
-                    result.add(seeTagToContent(element, tag));
+                    result.add(seeTagToContent(element, tag, context));
                     return false;
                 }
 
@@ -1625,14 +1644,14 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitSummary(SummaryTree node, Content c) {
-                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, false);
+                    Content output = getInlineTagOutput(element, holderTag, node, context);
                     result.add(output);
                     return false;
                 }
 
                 @Override
                 public Boolean visitSystemProperty(SystemPropertyTree node, Content p) {
-                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, inSummary);
+                    Content output = getInlineTagOutput(element, holderTag, node, context);
                     if (output != null) {
                         result.add(output);
                     }
@@ -1644,7 +1663,7 @@ public class HtmlDocletWriter {
                 }
 
                 private CharSequence textCleanup(String text, boolean isLast, boolean stripLeading) {
-                    boolean stripTrailing = isFirstSentence && isLast;
+                    boolean stripTrailing = context.isFirstSentence && isLast;
                     if (stripLeading && stripTrailing) {
                         text = text.strip();
                     } else if (stripLeading) {
@@ -1665,7 +1684,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 protected Boolean defaultAction(DocTree node, Content c) {
-                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, false);
+                    Content output = getInlineTagOutput(element, holderTag, node, context);
                     if (output != null) {
                         result.add(output);
                     }
