@@ -366,9 +366,6 @@ void LIRGenerator::set_card(LIR_Opr value, LIR_Address* card_addr) {
 void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base) {
   assert(addr->is_register(), "must be a register at this point");
 
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
-
   LIR_Opr tmp = FrameMap::LR_ptr_opr;
 
   bool load_card_table_base_const = VM_Version::supports_movw();
@@ -382,9 +379,6 @@ void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LI
   // byte instruction does not support the addressing mode we need.
   LIR_Address* card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTable::card_shift, 0, T_BOOLEAN);
   if (UseCondCardMark) {
-    if (ct->scanned_concurrently()) {
-      __ membar_storeload();
-    }
     LIR_Opr cur_value = new_register(T_INT);
     __ move(card_addr, cur_value);
 
@@ -394,9 +388,6 @@ void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LI
     set_card(tmp, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
-    if (ct->scanned_concurrently()) {
-      __ membar_storestore();
-    }
     set_card(tmp, card_addr);
   }
 }

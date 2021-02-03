@@ -90,9 +90,6 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   // register obj is destroyed afterwards.
   BarrierSet* bs = BarrierSet::barrier_set();
 
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-
   __ shrptr(obj, CardTable::card_shift);
 
   Address card_addr;
@@ -118,9 +115,6 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   int dirty = CardTable::dirty_card_val();
   if (UseCondCardMark) {
     Label L_already_dirty;
-    if (ct->scanned_concurrently()) {
-      __ membar(Assembler::StoreLoad);
-    }
     __ cmpb(card_addr, dirty);
     __ jcc(Assembler::equal, L_already_dirty);
     __ movb(card_addr, dirty);
