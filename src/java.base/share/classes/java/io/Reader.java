@@ -217,6 +217,12 @@ public abstract class Reader implements Readable, Closeable {
      * Reads characters into an array.  This method will block until some input
      * is available, an I/O error occurs, or the end of the stream is reached.
      *
+     * <p> If the length of {@code cbuf} is zero, then no characters are read
+     * and {@code 0} is returned; otherwise, there is an attempt to read at
+     * least one character.  If no character is available because the stream is
+     * at its end, the value {@code -1} is returned; otherwise, at least one
+     * character is read and stored into {@code cbuf}.
+     *
      * @param       cbuf  Destination buffer
      *
      * @return      The number of characters read, or -1
@@ -233,6 +239,12 @@ public abstract class Reader implements Readable, Closeable {
      * Reads characters into a portion of an array.  This method will block
      * until some input is available, an I/O error occurs, or the end of the
      * stream is reached.
+     *
+     * <p> If {@code len} is zero, then no characters are read and {@code 0} is
+     * returned; otherwise, there is an attempt to read at least one character.
+     * If no character is available because the stream is at its end, the value
+     * {@code -1} is returned; otherwise, at least one character is read and
+     * stored into {@code cbuf}.
      *
      * @param      cbuf  Destination buffer
      * @param      off   Offset at which to start storing characters

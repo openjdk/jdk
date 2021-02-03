@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -1268,10 +1267,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
-#ifndef SUPPORTS_CLOCK_MONOTONIC
-#error "Build platform doesn't support clock_gettime and related functionality"
-#endif
-
 // Time since start-up in seconds to a fine granularity.
 // Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
@@ -1300,38 +1295,6 @@ double os::elapsedVTime() {
   }
 }
 
-jlong os::javaTimeMillis() {
-  if (os::Posix::supports_clock_gettime()) {
-    struct timespec ts;
-    int status = os::Posix::clock_gettime(CLOCK_REALTIME, &ts);
-    assert_status(status == 0, status, "gettime error");
-    return jlong(ts.tv_sec) * MILLIUNITS +
-           jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
-  } else {
-    timeval time;
-    int status = gettimeofday(&time, NULL);
-    assert(status != -1, "linux error");
-    return jlong(time.tv_sec) * MILLIUNITS  +
-           jlong(time.tv_usec) / (MICROUNITS / MILLIUNITS);
-  }
-}
-
-void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  if (os::Posix::supports_clock_gettime()) {
-    struct timespec ts;
-    int status = os::Posix::clock_gettime(CLOCK_REALTIME, &ts);
-    assert_status(status == 0, status, "gettime error");
-    seconds = jlong(ts.tv_sec);
-    nanos = jlong(ts.tv_nsec);
-  } else {
-    timeval time;
-    int status = gettimeofday(&time, NULL);
-    assert(status != -1, "linux error");
-    seconds = jlong(time.tv_sec);
-    nanos = jlong(time.tv_usec) * (NANOUNITS / MICROUNITS);
-  }
-}
-
 void os::Linux::fast_thread_clock_init() {
   if (!UseLinuxPosixThreadCPUClocks) {
     return;
@@ -1352,45 +1315,10 @@ void os::Linux::fast_thread_clock_init() {
 
   if (pthread_getcpuclockid_func &&
       pthread_getcpuclockid_func(_main_thread, &clockid) == 0 &&
-      os::Posix::clock_getres(clockid, &tp) == 0 && tp.tv_sec == 0) {
+      clock_getres(clockid, &tp) == 0 && tp.tv_sec == 0) {
     _supports_fast_thread_cpu_time = true;
     _pthread_getcpuclockid = pthread_getcpuclockid_func;
   }
-}
-
-jlong os::javaTimeNanos() {
-  if (os::supports_monotonic_clock()) {
-    struct timespec tp;
-    int status = os::Posix::clock_gettime(CLOCK_MONOTONIC, &tp);
-    assert(status == 0, "gettime error");
-    jlong result = jlong(tp.tv_sec) * (1000 * 1000 * 1000) + jlong(tp.tv_nsec);
-    return result;
-  } else {
-    timeval time;
-    int status = gettimeofday(&time, NULL);
-    assert(status != -1, "linux error");
-    jlong usecs = jlong(time.tv_sec) * (1000 * 1000) + jlong(time.tv_usec);
-    return 1000 * usecs;
-  }
-}
-
-void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  if (os::supports_monotonic_clock()) {
-    info_ptr->max_value = ALL_64_BITS;
-
-    // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
-    info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
-    info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
-  } else {
-    // gettimeofday - based on time in seconds since the Epoch thus does not wrap
-    info_ptr->max_value = ALL_64_BITS;
-
-    // gettimeofday is a real time clock so it skips
-    info_ptr->may_skip_backward = true;
-    info_ptr->may_skip_forward = true;
-  }
-
-  info_ptr->kind = JVMTI_TIMER_ELAPSED;                // elapsed not CPU time
 }
 
 // Return the real, user, and system times in seconds from an
@@ -2464,10 +2392,10 @@ static bool print_model_name_and_flags(outputStream* st, char* buf, size_t bufle
   // Other platforms have less repetitive cpuinfo files
   FILE *fp = fopen("/proc/cpuinfo", "r");
   if (fp) {
+    bool model_name_printed = false;
     while (!feof(fp)) {
       if (fgets(buf, buflen, fp)) {
         // Assume model name comes before flags
-        bool model_name_printed = false;
         if (strstr(buf, "model name") != NULL) {
           if (!model_name_printed) {
             st->print_raw("CPU Model and flags from /proc/cpuinfo:\n");
@@ -2637,6 +2565,7 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   char dli_fname[MAXPATHLEN];
+  dli_fname[0] = '\0';
   bool ret = dll_address_to_library_name(
                                          CAST_FROM_FN_PTR(address, os::jvm_path),
                                          dli_fname, sizeof(dli_fname), NULL);
@@ -3272,7 +3201,7 @@ struct bitmask* os::Linux::_numa_nodes_ptr;
 struct bitmask* os::Linux::_numa_interleave_bitmask;
 struct bitmask* os::Linux::_numa_membind_bitmask;
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   return res  != (uintptr_t) MAP_FAILED;
@@ -3516,7 +3445,7 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes) {
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
   return anon_mmap(NULL, bytes);
 }
 
@@ -3769,9 +3698,7 @@ size_t os::Linux::setup_large_page_size() {
 
   const size_t default_page_size = (size_t)Linux::page_size();
   if (_large_page_size > default_page_size) {
-    _page_sizes[0] = _large_page_size;
-    _page_sizes[1] = default_page_size;
-    _page_sizes[2] = 0;
+    _page_sizes.add(_large_page_size);
   }
 
   return _large_page_size;
@@ -4199,7 +4126,7 @@ bool os::can_execute_large_page_memory() {
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
-  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes);
+  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem);
   if (result != NULL) {
     if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == NULL) {
       vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
@@ -4211,7 +4138,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
   // Assert only that the size is a multiple of the page size, since
   // that's all that mmap requires, and since that's all we really know
   // about at this low abstraction level.  If we need higher alignment,
@@ -4345,10 +4272,40 @@ OSReturn os::get_native_priority(const Thread* const thread,
 
 jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   struct timespec tp;
-  int rc = os::Posix::clock_gettime(clockid, &tp);
-  assert(rc == 0, "clock_gettime is expected to return 0 code");
-
+  int status = clock_gettime(clockid, &tp);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
+}
+
+// Determine if the vmid is the parent pid for a child in a PID namespace.
+// Return the namespace pid if so, otherwise -1.
+int os::Linux::get_namespace_pid(int vmid) {
+  char fname[24];
+  int retpid = -1;
+
+  snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
+  FILE *fp = fopen(fname, "r");
+
+  if (fp) {
+    int pid, nspid;
+    int ret;
+    while (!feof(fp) && !ferror(fp)) {
+      ret = fscanf(fp, "NSpid: %d %d", &pid, &nspid);
+      if (ret == 1) {
+        break;
+      }
+      if (ret == 2) {
+        retpid = nspid;
+        break;
+      }
+      for (;;) {
+        int ch = fgetc(fp);
+        if (ch == EOF || ch == (int)'\n') break;
+      }
+    }
+    fclose(fp);
+  }
+  return retpid;
 }
 
 extern void report_error(char* file_name, int line_no, char* title,
@@ -4394,14 +4351,12 @@ void os::init(void) {
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
 
-  init_random(1234567);
-
   Linux::set_page_size(sysconf(_SC_PAGESIZE));
   if (Linux::page_size() == -1) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",
           os::strerror(errno));
   }
-  init_page_sizes((size_t) Linux::page_size());
+  _page_sizes.add(Linux::page_size());
 
   Linux::initialize_system_info();
 
@@ -4426,12 +4381,6 @@ void os::init(void) {
   os::Posix::init();
 
   initial_time_count = javaTimeNanos();
-
-  // Always warn if no monotonic clock available
-  if (!os::Posix::supports_monotonic_clock()) {
-    warning("No monotonic clock was available - timed services may "    \
-            "be adversely affected if the time-of-day clock changes");
-  }
 }
 
 // To install functions for atexit system call
@@ -4538,7 +4487,7 @@ jint os::init_2(void) {
     return JNI_ERR;
   }
 
-#if defined(IA32)
+#if defined(IA32) && !defined(ZERO)
   // Need to ensure we've determined the process's initial stack to
   // perform the workaround
   Linux::capture_initial_stack(JavaThread::stack_size_at_create());
@@ -5483,6 +5432,35 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
 
 bool os::supports_map_sync() {
   return true;
+}
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
+  unsigned long long start = (unsigned long long)addr;
+  unsigned long long end = start + bytes;
+  FILE* f = ::fopen("/proc/self/maps", "r");
+  int num_found = 0;
+  if (f != NULL) {
+    st->print("Range [%llx-%llx) contains: ", start, end);
+    char line[512];
+    while(fgets(line, sizeof(line), f) == line) {
+      unsigned long long a1 = 0;
+      unsigned long long a2 = 0;
+      if (::sscanf(line, "%llx-%llx", &a1, &a2) == 2) {
+        // Lets print out every range which touches ours.
+        if ((a1 >= start && a1 < end) || // left leg in
+            (a2 >= start && a2 < end) || // right leg in
+            (a1 < start && a2 >= end)) { // superimposition
+          num_found ++;
+          st->print("%s", line); // line includes \n
+        }
+      }
+    }
+    ::fclose(f);
+    if (num_found == 0) {
+      st->print("nothing.");
+    }
+    st->cr();
+  }
 }
 
 /////////////// Unit tests ///////////////

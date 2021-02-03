@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,10 +100,10 @@ public abstract class Reference<T> {
      *   [active/unregistered] [1]
      *
      * Transitions:
-     *                            clear
+     *                            clear [2]
      *   [active/registered]     ------->   [inactive/registered]
      *          |                                 |
-     *          |                                 | enqueue [2]
+     *          |                                 | enqueue
      *          | GC              enqueue [2]     |
      *          |                -----------------|
      *          |                                 |
@@ -114,7 +114,7 @@ public abstract class Reference<T> {
      *          v                   |             |
      *   [pending/enqueued]      ---              |
      *          |                                 | poll/remove
-     *          | poll/remove                     |
+     *          | poll/remove                     | + clear [4]
      *          |                                 |
      *          v            ReferenceHandler     v
      *   [pending/dequeued]      ------>    [inactive/dequeued]
@@ -140,12 +140,14 @@ public abstract class Reference<T> {
      * [1] Unregistered is not permitted for FinalReferences.
      *
      * [2] These transitions are not possible for FinalReferences, making
-     * [pending/enqueued] and [pending/dequeued] unreachable, and
-     * [inactive/registered] terminal.
+     * [pending/enqueued], [pending/dequeued], and [inactive/registered]
+     * unreachable.
      *
      * [3] The garbage collector may directly transition a Reference
      * from [active/unregistered] to [inactive/unregistered],
      * bypassing the pending-Reference list.
+     *
+     * [4] The queue handler for FinalReferences also clears the reference.
      */
 
     private T referent;         /* Treated specially by GC */
@@ -182,7 +184,7 @@ public abstract class Reference<T> {
      *     pending: next element in the pending-Reference list (null if last)
      *    inactive: null
      */
-    private transient Reference<T> discovered;
+    private transient Reference<?> discovered;
 
 
     /* High-priority thread to enqueue pending References
@@ -218,7 +220,7 @@ public abstract class Reference<T> {
     /*
      * Atomically get and clear (set to null) the VM's pending-Reference list.
      */
-    private static native Reference<Object> getAndClearReferencePendingList();
+    private static native Reference<?> getAndClearReferencePendingList();
 
     /*
      * Test whether the VM's pending-Reference list contains any entries.
@@ -230,6 +232,16 @@ public abstract class Reference<T> {
      */
     private static native void waitForReferencePendingList();
 
+    /*
+     * Enqueue a Reference taken from the pending list.  Calling this method
+     * takes us from the Reference<?> domain of the pending list elements to
+     * having a Reference<T> with a correspondingly typed queue.
+     */
+    private void enqueueFromPending() {
+        var q = queue;
+        if (q != ReferenceQueue.NULL) q.enqueue(this);
+    }
+
     private static final Object processPendingLock = new Object();
     private static boolean processPendingActive = false;
 
@@ -239,13 +251,13 @@ public abstract class Reference<T> {
         // These are separate operations to avoid a race with other threads
         // that are calling waitForReferenceProcessing().
         waitForReferencePendingList();
-        Reference<Object> pendingList;
+        Reference<?> pendingList;
         synchronized (processPendingLock) {
             pendingList = getAndClearReferencePendingList();
             processPendingActive = true;
         }
         while (pendingList != null) {
-            Reference<Object> ref = pendingList;
+            Reference<?> ref = pendingList;
             pendingList = ref.discovered;
             ref.discovered = null;
 
@@ -258,8 +270,7 @@ public abstract class Reference<T> {
                     processPendingLock.notifyAll();
                 }
             } else {
-                ReferenceQueue<? super Object> q = ref.queue;
-                if (q != ReferenceQueue.NULL) q.enqueue(ref);
+                ref.enqueueFromPending();
             }
         }
         // Notify any waiters of completion of current round.
@@ -335,26 +346,10 @@ public abstract class Reference<T> {
      *
      * @return   The object to which this reference refers, or
      *           {@code null} if this reference object has been cleared
-     * @see refersTo
+     * @see #refersTo
      */
     @IntrinsicCandidate
     public T get() {
-        return this.referent;
-    }
-
-    /**
-     * Load referent with strong semantics. Treating the referent
-     * as strong referent is ok when the Reference is inactive,
-     * because then the referent is switched to strong semantics
-     * anyway.
-     *
-     * This is only used from Finalizer to bypass the intrinsic,
-     * which might return a null referent, even though it is not
-     * null, and would subsequently not finalize the referent/finalizee.
-     */
-    T getInactive() {
-        assert this instanceof FinalReference;
-        assert next == this; // I.e. FinalReference is inactive
         return this.referent;
     }
 
@@ -373,6 +368,7 @@ public abstract class Reference<T> {
 
     /* Implementation of refersTo(), overridden for phantom references.
      */
+    @IntrinsicCandidate
     native boolean refersTo0(Object o);
 
     /**
@@ -383,20 +379,76 @@ public abstract class Reference<T> {
      * clears references it does so directly, without invoking this method.
      */
     public void clear() {
+        clear0();
+    }
+
+    /* Implementation of clear(), also used by enqueue().  A simple
+     * assignment of the referent field won't do for some garbage
+     * collectors.
+     */
+    private native void clear0();
+
+    /* -- Operations on inactive FinalReferences -- */
+
+    /* These functions are only used by FinalReference, and must only be
+     * called after the reference becomes inactive. While active, a
+     * FinalReference is considered weak but the referent is not normally
+     * accessed. Once a FinalReference becomes inactive it is considered a
+     * strong reference. These functions are used to bypass the
+     * corresponding weak implementations, directly accessing the referent
+     * field with strong semantics.
+     */
+
+    /**
+     * Load referent with strong semantics.
+     */
+    T getFromInactiveFinalReference() {
+        assert this instanceof FinalReference;
+        assert next != null; // I.e. FinalReference is inactive
+        return this.referent;
+    }
+
+    /**
+     * Clear referent with strong semantics.
+     */
+    void clearInactiveFinalReference() {
+        assert this instanceof FinalReference;
+        assert next != null; // I.e. FinalReference is inactive
         this.referent = null;
     }
 
     /* -- Queue operations -- */
 
     /**
-     * Tells whether or not this reference object has been enqueued, either by
-     * the program or by the garbage collector.  If this reference object was
-     * not registered with a queue when it was created, then this method will
-     * always return {@code false}.
+     * Tests if this reference object is in its associated queue, if any.
+     * This method returns {@code true} only if all of the following conditions
+     * are met:
+     * <ul>
+     * <li>this reference object was registered with a queue when it was created; and
+     * <li>the garbage collector has added this reference object to the queue
+     *     or {@link #enqueue()} is called; and
+     * <li>this reference object is not yet removed from the queue.
+     * </ul>
+     * Otherwise, this method returns {@code false}.
+     * This method may return {@code false} if this reference object has been cleared
+     * but not enqueued due to the race condition.
      *
-     * @return   {@code true} if and only if this reference object has
-     *           been enqueued
+     * @deprecated
+     * This method was originally specified to test if a reference object has
+     * been cleared and enqueued but was never implemented to do this test.
+     * This method could be misused due to the inherent race condition
+     * or without an associated {@code ReferenceQueue}.
+     * An application relying on this method to release critical resources
+     * could cause serious performance issue.
+     * An application should use {@link ReferenceQueue} to reliably determine
+     * what reference objects that have been enqueued or
+     * {@link #refersTo(Object) refersTo(null)} to determine if this reference
+     * object has been cleared.
+     *
+     * @return   {@code true} if and only if this reference object is
+     *           in its associated queue (if any).
      */
+    @Deprecated(since="16")
     public boolean isEnqueued() {
         return (this.queue == ReferenceQueue.ENQUEUED);
     }
@@ -413,7 +465,7 @@ public abstract class Reference<T> {
      *           it was not registered with a queue when it was created
      */
     public boolean enqueue() {
-        this.referent = null;
+        clear0();               // Intentionally clear0() rather than clear()
         return this.queue.enqueue(this);
     }
 

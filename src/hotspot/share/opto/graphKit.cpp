@@ -25,6 +25,9 @@
 #include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.hpp"
+#include "ci/ciNativeEntryPoint.hpp"
+#include "ci/ciObjArray.hpp"
+#include "asm/register.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -47,6 +50,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/growableArray.hpp"
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.
@@ -819,8 +823,7 @@ bool GraphKit::dead_locals_are_killed() {
 
 #endif //ASSERT
 
-// Helper function for enforcing certain bytecodes to reexecute if
-// deoptimization happens
+// Helper function for enforcing certain bytecodes to reexecute if deoptimization happens.
 static bool should_reexecute_implied_by_bytecode(JVMState *jvms, bool is_anewarray) {
   ciMethod* cur_method = jvms->method();
   int       cur_bci   = jvms->bci();
@@ -835,8 +838,9 @@ static bool should_reexecute_implied_by_bytecode(JVMState *jvms, bool is_anewarr
     // is limited by dimensions and guarded by flag so in some cases
     // multianewarray() runtime calls will be generated and
     // the bytecode should not be reexecutes (stack will not be reset).
-  } else
+  } else {
     return false;
+  }
 }
 
 // Helper function for adding JVMState and debug information to node
@@ -890,6 +894,12 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   // deoptimization happens. We set the reexecute state for them here
   if (out_jvms->is_reexecute_undefined() && //don't change if already specified
       should_reexecute_implied_by_bytecode(out_jvms, call->is_AllocateArray())) {
+#ifdef ASSERT
+    int inputs = 0, not_used; // initialized by GraphKit::compute_stack_effects()
+    assert(method() == youngest_jvms->method(), "sanity");
+    assert(compute_stack_effects(inputs, not_used), "unknown bytecode: %s", Bytecodes::name(java_bc()));
+    assert(out_jvms->sp() >= (uint)inputs, "not enough operands for reexecution");
+#endif // ASSERT
     out_jvms->set_should_reexecute(true); //NOTE: youngest_jvms not changed
   }
 
@@ -1456,6 +1466,7 @@ void GraphKit::replace_in_map(Node* old, Node* neww) {
 Node* GraphKit::memory(uint alias_idx) {
   MergeMemNode* mem = merged_memory();
   Node* p = mem->memory_at(alias_idx);
+  assert(p != mem->empty_memory(), "empty");
   _gvn.set_type(p, Type::MEMORY);  // must be mapped
   return p;
 }
@@ -2490,8 +2501,7 @@ Node* GraphKit::make_runtime_call(int flags,
   }
   CallNode* call;
   if (!is_leaf) {
-    call = new CallStaticJavaNode(call_type, call_addr, call_name,
-                                           bci(), adr_type);
+    call = new CallStaticJavaNode(call_type, call_addr, call_name, adr_type);
   } else if (flags & RC_NO_FP) {
     call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
   } else {
@@ -2558,6 +2568,128 @@ Node* GraphKit::make_runtime_call(int flags,
   }
   return call;
 
+}
+
+// i2b
+Node* GraphKit::sign_extend_byte(Node* in) {
+  Node* tmp = _gvn.transform(new LShiftINode(in, _gvn.intcon(24)));
+  return _gvn.transform(new RShiftINode(tmp, _gvn.intcon(24)));
+}
+
+// i2s
+Node* GraphKit::sign_extend_short(Node* in) {
+  Node* tmp = _gvn.transform(new LShiftINode(in, _gvn.intcon(16)));
+  return _gvn.transform(new RShiftINode(tmp, _gvn.intcon(16)));
+}
+
+//-----------------------------make_native_call-------------------------------
+Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep) {
+  uint n_filtered_args = nargs - 2; // -fallback, -nep;
+  ResourceMark rm;
+  Node** argument_nodes = NEW_RESOURCE_ARRAY(Node*, n_filtered_args);
+  const Type** arg_types = TypeTuple::fields(n_filtered_args);
+  GrowableArray<VMReg> arg_regs(C->comp_arena(), n_filtered_args, n_filtered_args, VMRegImpl::Bad());
+
+  VMReg* argRegs = nep->argMoves();
+  {
+    for (uint vm_arg_pos = 0, java_arg_read_pos = 0;
+        vm_arg_pos < n_filtered_args; vm_arg_pos++) {
+      uint vm_unfiltered_arg_pos = vm_arg_pos + 1; // +1 to skip fallback handle argument
+      Node* node = argument(vm_unfiltered_arg_pos);
+      const Type* type = call_type->domain()->field_at(TypeFunc::Parms + vm_unfiltered_arg_pos);
+      VMReg reg = type == Type::HALF
+        ? VMRegImpl::Bad()
+        : argRegs[java_arg_read_pos++];
+
+      argument_nodes[vm_arg_pos] = node;
+      arg_types[TypeFunc::Parms + vm_arg_pos] = type;
+      arg_regs.at_put(vm_arg_pos, reg);
+    }
+  }
+
+  uint n_returns = call_type->range()->cnt() - TypeFunc::Parms;
+  GrowableArray<VMReg> ret_regs(C->comp_arena(), n_returns, n_returns, VMRegImpl::Bad());
+  const Type** ret_types = TypeTuple::fields(n_returns);
+
+  VMReg* retRegs = nep->returnMoves();
+  {
+    for (uint vm_ret_pos = 0, java_ret_read_pos = 0;
+        vm_ret_pos < n_returns; vm_ret_pos++) { // 0 or 1
+      const Type* type = call_type->range()->field_at(TypeFunc::Parms + vm_ret_pos);
+      VMReg reg = type == Type::HALF
+        ? VMRegImpl::Bad()
+        : retRegs[java_ret_read_pos++];
+
+      ret_regs.at_put(vm_ret_pos, reg);
+      ret_types[TypeFunc::Parms + vm_ret_pos] = type;
+    }
+  }
+
+  const TypeFunc* new_call_type = TypeFunc::make(
+    TypeTuple::make(TypeFunc::Parms + n_filtered_args, arg_types),
+    TypeTuple::make(TypeFunc::Parms + n_returns, ret_types)
+  );
+
+  address call_addr = nep->entry_point();
+  if (nep->need_transition()) {
+    BufferBlob* invoker = SharedRuntime::make_native_invoker(call_addr,
+                                                             nep->shadow_space(),
+                                                             arg_regs, ret_regs);
+    if (invoker == NULL) {
+      C->record_failure("native invoker not implemented on this platform");
+      return NULL;
+    }
+    C->add_native_invoker(invoker);
+    call_addr = invoker->code_begin();
+  }
+  assert(call_addr != NULL, "sanity");
+
+  CallNativeNode* call = new CallNativeNode(new_call_type, call_addr, nep->name(), TypePtr::BOTTOM,
+                                            arg_regs,
+                                            ret_regs,
+                                            nep->shadow_space(),
+                                            nep->need_transition());
+
+  if (call->_need_transition) {
+    add_safepoint_edges(call);
+  }
+
+  set_predefined_input_for_runtime_call(call);
+
+  for (uint i = 0; i < n_filtered_args; i++) {
+    call->init_req(i + TypeFunc::Parms, argument_nodes[i]);
+  }
+
+  Node* c = gvn().transform(call);
+  assert(c == call, "cannot disappear");
+
+  set_predefined_output_for_runtime_call(call);
+
+  Node* ret;
+  if (method() == NULL || method()->return_type()->basic_type() == T_VOID) {
+    ret = top();
+  } else {
+    ret =  gvn().transform(new ProjNode(call, TypeFunc::Parms));
+    // Unpack native results if needed
+    // Need this method type since it's unerased
+    switch (nep->method_type()->rtype()->basic_type()) {
+      case T_CHAR:
+        ret = _gvn.transform(new AndINode(ret, _gvn.intcon(0xFFFF)));
+        break;
+      case T_BYTE:
+        ret = sign_extend_byte(ret);
+        break;
+      case T_SHORT:
+        ret = sign_extend_short(ret);
+        break;
+      default: // do nothing
+        break;
+    }
+  }
+
+  push_node(method()->return_type()->basic_type(), ret);
+
+  return call;
 }
 
 //------------------------------merge_memory-----------------------------------
@@ -3185,7 +3317,13 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
       case Compile::SSC_always_false:
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
-        return null_assert(obj);
+        if (!objtp->maybe_null()) {
+          builtin_throw(Deoptimization::Reason_class_check, makecon(TypeKlassPtr::make(objtp->klass())));
+          return top();
+        } else if (!too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
+          return null_assert(obj);
+        }
+        break; // Fall through to full check
       }
     }
   }

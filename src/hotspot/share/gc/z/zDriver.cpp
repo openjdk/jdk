@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -322,6 +323,7 @@ void ZDriver::concurrent_mark_continue() {
 
 void ZDriver::concurrent_process_non_strong_references() {
   ZStatTimer timer(ZPhaseConcurrentProcessNonStrongReferences);
+  ZBreakpoint::at_after_reference_processing_started();
   ZHeap::heap()->process_non_strong_references();
 }
 

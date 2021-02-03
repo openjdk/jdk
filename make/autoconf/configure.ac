@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,8 @@ BASIC_SETUP_DEVKIT
 # To properly create a configuration name, we need to have the OpenJDK target
 # and options (variants and debug level) parsed.
 BASIC_SETUP_OUTPUT_DIR
+# After we have the output dir we can finalize the fixpath wrapper
+BASIC_WINDOWS_FINALIZE_FIXPATH
 
 # Must be done before we can call HELP_MSG_MISSING_DEPENDENCY.
 HELP_SETUP_DEPENDENCY_HELP
@@ -142,6 +144,7 @@ JDKVER_SETUP_JDK_VERSION_NUMBERS
 
 BOOTJDK_SETUP_BOOT_JDK
 BOOTJDK_SETUP_BUILD_JDK
+BOOTJDK_SETUP_DOCS_REFERENCE_JDK
 
 ###############################################################################
 #
@@ -203,7 +206,8 @@ FLAGS_POST_TOOLCHAIN
 PLATFORM_SETUP_OPENJDK_TARGET_BITS
 PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS
 
-# Configure flags for the tools
+# Configure flags for the tools. Need to know if we should build reproducible.
+JDKOPT_SETUP_REPRODUCIBLE_BUILD
 FLAGS_SETUP_FLAGS
 
 # Setup debug symbols (need objcopy from the toolchain for that)
@@ -218,9 +222,6 @@ JDKOPT_SETUP_ADDRESS_SANITIZER
 # Check dependencies for external and internal libraries.
 #
 ###############################################################################
-
-# After we have toolchain, we can compile fixpath. It's needed by the lib checks.
-BASIC_COMPILE_FIXPATH
 
 LIB_DETERMINE_DEPENDENCIES
 LIB_SETUP_LIBRARIES
@@ -247,7 +248,6 @@ JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST
 JDKOPT_EXCLUDE_TRANSLATIONS
 JDKOPT_ENABLE_DISABLE_MANPAGES
 JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE
-JDKOPT_SETUP_REPRODUCIBLE_BUILD
 
 ###############################################################################
 #
@@ -294,6 +294,7 @@ BASIC_CHECK_LEFTOVER_OVERRIDDEN
 CONFIG_STATUS="$CONFIGURESUPPORT_OUTPUTDIR/config.status"
 
 # Create the actual output files. Now the main work of configure is done.
+BASIC_WINDOWS_FINALIZE
 AC_OUTPUT
 
 # After AC_OUTPUT, we need to do final work

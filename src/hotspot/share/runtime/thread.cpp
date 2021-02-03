@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
@@ -38,8 +39,10 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -57,8 +60,10 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
@@ -291,7 +296,6 @@ Thread::Thread() {
   // The stack would act as a cache to avoid calls to ParkEvent::Allocate()
   // and ::Release()
   _ParkEvent   = ParkEvent::Allocate(this);
-  _MuxEvent    = ParkEvent::Allocate(this);
 
 #ifdef CHECK_UNHANDLED_OOPS
   if (CheckUnhandledOops) {
@@ -320,6 +324,12 @@ Thread::Thread() {
     // can attach as the VM is not created yet, so they can't execute this code.
     // If the main thread creates other threads before the barrier set that is an error.
     assert(Thread::current_or_null() == NULL, "creating thread before barrier set");
+  }
+}
+
+void Thread::initialize_tlab() {
+  if (UseTLAB) {
+    tlab().initialize();
   }
 }
 
@@ -439,7 +449,6 @@ Thread::~Thread() {
   // It's possible we can encounter a null _ParkEvent, etc., in stillborn threads.
   // We NULL out the fields for good hygiene.
   ParkEvent::Release(_ParkEvent); _ParkEvent   = NULL;
-  ParkEvent::Release(_MuxEvent); _MuxEvent    = NULL;
 
   delete handle_area();
   delete metadata_handles();
@@ -493,17 +502,15 @@ void Thread::set_priority(Thread* thread, ThreadPriority priority) {
 void Thread::start(Thread* thread) {
   // Start is different from resume in that its safety is guaranteed by context or
   // being called from a Java method synchronized on the Thread object.
-  if (!DisableStartThread) {
-    if (thread->is_Java_thread()) {
-      // Initialize the thread state to RUNNABLE before starting this thread.
-      // Can not set it after the thread started because we do not know the
-      // exact thread state at that time. It could be in MONITOR_WAIT or
-      // in SLEEPING or some other state.
-      java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
-                                          JavaThreadStatus::RUNNABLE);
-    }
-    os::start_thread(thread);
+  if (thread->is_Java_thread()) {
+    // Initialize the thread state to RUNNABLE before starting this thread.
+    // Can not set it after the thread started because we do not know the
+    // exact thread state at that time. It could be in MONITOR_WAIT or
+    // in SLEEPING or some other state.
+    java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
+                                        JavaThreadStatus::RUNNABLE);
   }
+  os::start_thread(thread);
 }
 
 class InstallAsyncExceptionClosure : public HandshakeClosure {
@@ -845,14 +852,14 @@ static void initialize_class(Symbol* class_name, TRAPS) {
 // Creates the initial ThreadGroup
 static Handle create_initial_thread_group(TRAPS) {
   Handle system_instance = JavaCalls::construct_new_instance(
-                            SystemDictionary::ThreadGroup_klass(),
+                            vmClasses::ThreadGroup_klass(),
                             vmSymbols::void_method_signature(),
                             CHECK_NH);
   Universe::set_system_thread_group(system_instance());
 
   Handle string = java_lang_String::create_from_str("main", CHECK_NH);
   Handle main_instance = JavaCalls::construct_new_instance(
-                            SystemDictionary::ThreadGroup_klass(),
+                            vmClasses::ThreadGroup_klass(),
                             vmSymbols::threadgroup_string_void_signature(),
                             system_instance,
                             string,
@@ -863,7 +870,7 @@ static Handle create_initial_thread_group(TRAPS) {
 // Creates the initial Thread, and sets it to running.
 static void create_initial_thread(Handle thread_group, JavaThread* thread,
                                  TRAPS) {
-  InstanceKlass* ik = SystemDictionary::Thread_klass();
+  InstanceKlass* ik = vmClasses::Thread_klass();
   assert(ik->is_initialized(), "must be");
   instanceHandle thread_oop = ik->allocate_instance_handle(CHECK);
 
@@ -1041,7 +1048,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
   assert(thread_group.not_null(), "thread group should be specified");
   assert(threadObj() == NULL, "should only create Java thread object once");
 
-  InstanceKlass* ik = SystemDictionary::Thread_klass();
+  InstanceKlass* ik = vmClasses::Thread_klass();
   assert(ik->is_initialized(), "must be");
   instanceHandle thread_oop = ik->allocate_instance_handle(CHECK);
 
@@ -1086,7 +1093,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
     return;
   }
 
-  Klass* group = SystemDictionary::ThreadGroup_klass();
+  Klass* group = vmClasses::ThreadGroup_klass();
   Handle threadObj(THREAD, this->threadObj());
 
   JavaCalls::call_special(&result,
@@ -1228,9 +1235,7 @@ WatcherThread::WatcherThread() : NonJavaThread() {
     // If the VMThread's priority is not lower than the WatcherThread profiling
     // will be inaccurate.
     os::set_priority(this, MaxPriority);
-    if (!DisableStartThread) {
-      os::start_thread(this);
-    }
+    os::start_thread(this);
   }
 }
 
@@ -1561,7 +1566,7 @@ JavaThread::JavaThread() :
   _should_post_on_exceptions_flag(JNI_FALSE),
   _thread_stat(new ThreadStatistics()),
 
-  _parker(Parker::Allocate(this)),
+  _parker(),
   _cached_monitor_info(nullptr),
 
   _class_to_be_initialized(nullptr),
@@ -1582,6 +1587,9 @@ JavaThread::JavaThread() :
   ThreadSafepointState::create(this);
 
   SafepointMechanism::initialize_header(this);
+
+  set_requires_cross_modify_fence(false);
+
   pd_initialize();
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
@@ -1596,6 +1604,9 @@ JavaThread::JavaThread(bool is_attaching_via_jni) : JavaThread() {
 // interrupt support
 
 void JavaThread::interrupt() {
+  // All callers should have 'this' thread protected by a
+  // ThreadsListHandle so that it cannot terminate and deallocate
+  // itself.
   debug_only(check_for_dangling_thread_pointer(this);)
 
   // For Windows _interrupt_event
@@ -1692,10 +1703,6 @@ JavaThread::~JavaThread() {
 
   // Ask ServiceThread to release the threadObj OopHandle
   ServiceThread::add_oop_handle_release(_threadObj);
-
-  // JSR166 -- return the parker to the free list
-  Parker::Release(_parker);
-  _parker = NULL;
 
   // Return the sleep event to the free list
   ParkEvent::Release(_SleepEvent);
@@ -1852,17 +1859,11 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   Handle threadObj(this, this->threadObj());
   assert(threadObj.not_null(), "Java thread object should be created");
 
-  // FIXIT: This code should be moved into else part, when reliable 1.2/1.3 check is in place
-  {
-    EXCEPTION_MARK;
-
-    CLEAR_PENDING_EXCEPTION;
-  }
   if (!destroy_vm) {
     if (uncaught_exception.not_null()) {
       EXCEPTION_MARK;
       // Call method Thread.dispatchUncaughtException().
-      Klass* thread_klass = SystemDictionary::Thread_klass();
+      Klass* thread_klass = vmClasses::Thread_klass();
       JavaValue result(T_VOID);
       JavaCalls::call_virtual(&result,
                               threadObj, thread_klass,
@@ -1889,7 +1890,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
       while (java_lang_Thread::threadGroup(threadObj()) != NULL && (count-- > 0)) {
         EXCEPTION_MARK;
         JavaValue result(T_VOID);
-        Klass* thread_klass = SystemDictionary::Thread_klass();
+        Klass* thread_klass = vmClasses::Thread_klass();
         JavaCalls::call_virtual(&result,
                                 threadObj, thread_klass,
                                 vmSymbols::exit_method_name(),
@@ -2147,7 +2148,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
   // Check for pending async. exception
   if (_pending_async_exception != NULL) {
     // Only overwrite an already pending exception, if it is not a threadDeath.
-    if (!has_pending_exception() || !pending_exception()->is_a(SystemDictionary::ThreadDeath_klass())) {
+    if (!has_pending_exception() || !pending_exception()->is_a(vmClasses::ThreadDeath_klass())) {
 
       // We cannot call Exceptions::_throw(...) here because we cannot block
       set_pending_exception(_pending_async_exception, __FILE__, __LINE__);
@@ -2235,7 +2236,7 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
   {
     // Actually throw the Throwable against the target Thread - however
     // only if there is no thread death exception installed already.
-    if (_pending_async_exception == NULL || !_pending_async_exception->is_a(SystemDictionary::ThreadDeath_klass())) {
+    if (_pending_async_exception == NULL || !_pending_async_exception->is_a(vmClasses::ThreadDeath_klass())) {
       // If the topmost frame is a runtime stub, then we are calling into
       // OptoRuntime from compiled code. Some runtime stubs (new, monitor_exit..)
       // must deoptimize the caller before continuing, as the compiled  exception handler table
@@ -3016,7 +3017,7 @@ class PrintAndVerifyOopClosure: public OopClosure {
 // Print or validate the layout of stack frames
 void JavaThread::print_frame_layout(int depth, bool validate_only) {
   ResourceMark rm;
-  PRESERVE_EXCEPTION_MARK;
+  PreserveExceptionMark pm(this);
   FrameValues values;
   int frame_no = 0;
   for (StackFrameStream fst(this, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
@@ -3128,7 +3129,7 @@ bool JavaThread::sleep(jlong millis) {
     if (newtime - prevtime < 0) {
       // time moving backwards, should only happen if no monotonic clock
       // not a guarantee() because JVM should not abort on kernel/glibc bugs
-      assert(!os::supports_monotonic_clock(),
+      assert(false,
              "unexpected time moving backwards detected in JavaThread::sleep()");
     } else {
       millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
@@ -3302,7 +3303,7 @@ void Threads::possibly_parallel_threads_do(bool is_par, ThreadClosure* tc) {
 //     fields in, out, and err. Set up java signal handlers, OS-specific
 //     system settings, and thread group of the main thread.
 static void call_initPhase1(TRAPS) {
-  Klass* klass = SystemDictionary::System_klass();
+  Klass* klass = vmClasses::System_klass();
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, klass, vmSymbols::initPhase1_name(),
                                          vmSymbols::void_method_signature(), CHECK);
@@ -3322,7 +3323,7 @@ static void call_initPhase1(TRAPS) {
 static void call_initPhase2(TRAPS) {
   TraceTime timer("Initialize module system", TRACETIME_LOG(Info, startuptime));
 
-  Klass* klass = SystemDictionary::System_klass();
+  Klass* klass = vmClasses::System_klass();
 
   JavaValue result(T_INT);
   JavaCallArguments args;
@@ -3344,7 +3345,7 @@ static void call_initPhase2(TRAPS) {
 //     and system class loader may be a custom class loaded from -Xbootclasspath/a,
 //     other modules or the application's classpath.
 static void call_initPhase3(TRAPS) {
-  Klass* klass = SystemDictionary::System_klass();
+  Klass* klass = vmClasses::System_klass();
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, klass, vmSymbols::initPhase3_name(),
                                          vmSymbols::void_method_signature(), CHECK);
@@ -3376,7 +3377,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_Module(), CHECK);
 
 #ifdef ASSERT
-  InstanceKlass *k = SystemDictionary::UnsafeConstants_klass();
+  InstanceKlass *k = vmClasses::UnsafeConstants_klass();
   assert(k->is_not_initialized(), "UnsafeConstants should not already be initialized");
 #endif
 
@@ -3560,6 +3561,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
+  ObjectSynchronizer::initialize();
 
   // Initialize global modules
   jint status = init_globals();
@@ -3668,9 +3670,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     create_vm_init_libraries();
   }
 
-  if (CleanChunkPoolAsync) {
-    Chunk::start_chunk_pool_cleaner_task();
-  }
+  Chunk::start_chunk_pool_cleaner_task();
 
   // Start the service thread
   // The service thread enqueues JVMTI deferred events and does various hashtable
@@ -4582,22 +4582,11 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, b
 }
 
 
-// Internal SpinLock and Mutex
-// Based on ParkEvent
-
-// Ad-hoc mutual exclusion primitives: SpinLock and Mux
+// Ad-hoc mutual exclusion primitives: SpinLock
 //
 // We employ SpinLocks _only for low-contention, fixed-length
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
-// The mux construct provides a spin-then-block mutual exclusion
-// mechanism.
-//
-// Testing has shown that contention on the ListLock guarding gFreeList
-// is common.  If we implement ListLock as a simple SpinLock it's common
-// for the JVM to devolve to yielding with little progress.  This is true
-// despite the fact that the critical sections protected by ListLock are
-// extremely short.
 //
 // TODO-FIXME: ListLock should be of type SpinLock.
 // We should make this a 1st-class type, integrated into the lock
@@ -4650,150 +4639,6 @@ void Thread::SpinRelease(volatile int * adr) {
   *adr = 0;
 }
 
-// muxAcquire and muxRelease:
-//
-// *  muxAcquire and muxRelease support a single-word lock-word construct.
-//    The LSB of the word is set IFF the lock is held.
-//    The remainder of the word points to the head of a singly-linked list
-//    of threads blocked on the lock.
-//
-// *  The current implementation of muxAcquire-muxRelease uses its own
-//    dedicated Thread._MuxEvent instance.  If we're interested in
-//    minimizing the peak number of extant ParkEvent instances then
-//    we could eliminate _MuxEvent and "borrow" _ParkEvent as long
-//    as certain invariants were satisfied.  Specifically, care would need
-//    to be taken with regards to consuming unpark() "permits".
-//    A safe rule of thumb is that a thread would never call muxAcquire()
-//    if it's enqueued (cxq, EntryList, WaitList, etc) and will subsequently
-//    park().  Otherwise the _ParkEvent park() operation in muxAcquire() could
-//    consume an unpark() permit intended for monitorenter, for instance.
-//    One way around this would be to widen the restricted-range semaphore
-//    implemented in park().  Another alternative would be to provide
-//    multiple instances of the PlatformEvent() for each thread.  One
-//    instance would be dedicated to muxAcquire-muxRelease, for instance.
-//
-// *  Usage:
-//    -- Only as leaf locks
-//    -- for short-term locking only as muxAcquire does not perform
-//       thread state transitions.
-//
-// Alternatives:
-// *  We could implement muxAcquire and muxRelease with MCS or CLH locks
-//    but with parking or spin-then-park instead of pure spinning.
-// *  Use Taura-Oyama-Yonenzawa locks.
-// *  It's possible to construct a 1-0 lock if we encode the lockword as
-//    (List,LockByte).  Acquire will CAS the full lockword while Release
-//    will STB 0 into the LockByte.  The 1-0 scheme admits stranding, so
-//    acquiring threads use timers (ParkTimed) to detect and recover from
-//    the stranding window.  Thread/Node structures must be aligned on 256-byte
-//    boundaries by using placement-new.
-// *  Augment MCS with advisory back-link fields maintained with CAS().
-//    Pictorially:  LockWord -> T1 <-> T2 <-> T3 <-> ... <-> Tn <-> Owner.
-//    The validity of the backlinks must be ratified before we trust the value.
-//    If the backlinks are invalid the exiting thread must back-track through the
-//    the forward links, which are always trustworthy.
-// *  Add a successor indication.  The LockWord is currently encoded as
-//    (List, LOCKBIT:1).  We could also add a SUCCBIT or an explicit _succ variable
-//    to provide the usual futile-wakeup optimization.
-//    See RTStt for details.
-//
-
-
-const intptr_t LOCKBIT = 1;
-
-void Thread::muxAcquire(volatile intptr_t * Lock, const char * LockName) {
-  intptr_t w = Atomic::cmpxchg(Lock, (intptr_t)0, LOCKBIT);
-  if (w == 0) return;
-  if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(Lock, w, w|LOCKBIT) == w) {
-    return;
-  }
-
-  ParkEvent * const Self = Thread::current()->_MuxEvent;
-  assert((intptr_t(Self) & LOCKBIT) == 0, "invariant");
-  for (;;) {
-    int its = (os::is_MP() ? 100 : 0) + 1;
-
-    // Optional spin phase: spin-then-park strategy
-    while (--its >= 0) {
-      w = *Lock;
-      if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(Lock, w, w|LOCKBIT) == w) {
-        return;
-      }
-    }
-
-    Self->reset();
-    Self->OnList = intptr_t(Lock);
-    // The following fence() isn't _strictly necessary as the subsequent
-    // CAS() both serializes execution and ratifies the fetched *Lock value.
-    OrderAccess::fence();
-    for (;;) {
-      w = *Lock;
-      if ((w & LOCKBIT) == 0) {
-        if (Atomic::cmpxchg(Lock, w, w|LOCKBIT) == w) {
-          Self->OnList = 0;   // hygiene - allows stronger asserts
-          return;
-        }
-        continue;      // Interference -- *Lock changed -- Just retry
-      }
-      assert(w & LOCKBIT, "invariant");
-      Self->ListNext = (ParkEvent *) (w & ~LOCKBIT);
-      if (Atomic::cmpxchg(Lock, w, intptr_t(Self)|LOCKBIT) == w) break;
-    }
-
-    while (Self->OnList != 0) {
-      Self->park();
-    }
-  }
-}
-
-// Release() must extract a successor from the list and then wake that thread.
-// It can "pop" the front of the list or use a detach-modify-reattach (DMR) scheme
-// similar to that used by ParkEvent::Allocate() and ::Release().  DMR-based
-// Release() would :
-// (A) CAS() or swap() null to *Lock, releasing the lock and detaching the list.
-// (B) Extract a successor from the private list "in-hand"
-// (C) attempt to CAS() the residual back into *Lock over null.
-//     If there were any newly arrived threads and the CAS() would fail.
-//     In that case Release() would detach the RATs, re-merge the list in-hand
-//     with the RATs and repeat as needed.  Alternately, Release() might
-//     detach and extract a successor, but then pass the residual list to the wakee.
-//     The wakee would be responsible for reattaching and remerging before it
-//     competed for the lock.
-//
-// Both "pop" and DMR are immune from ABA corruption -- there can be
-// multiple concurrent pushers, but only one popper or detacher.
-// This implementation pops from the head of the list.  This is unfair,
-// but tends to provide excellent throughput as hot threads remain hot.
-// (We wake recently run threads first).
-//
-// All paths through muxRelease() will execute a CAS.
-// Release consistency -- We depend on the CAS in muxRelease() to provide full
-// bidirectional fence/MEMBAR semantics, ensuring that all prior memory operations
-// executed within the critical section are complete and globally visible before the
-// store (CAS) to the lock-word that releases the lock becomes globally visible.
-void Thread::muxRelease(volatile intptr_t * Lock)  {
-  for (;;) {
-    const intptr_t w = Atomic::cmpxchg(Lock, LOCKBIT, (intptr_t)0);
-    assert(w & LOCKBIT, "invariant");
-    if (w == LOCKBIT) return;
-    ParkEvent * const List = (ParkEvent *) (w & ~LOCKBIT);
-    assert(List != NULL, "invariant");
-    assert(List->OnList == intptr_t(Lock), "invariant");
-    ParkEvent * const nxt = List->ListNext;
-    guarantee((intptr_t(nxt) & LOCKBIT) == 0, "invariant");
-
-    // The following CAS() releases the lock and pops the head element.
-    // The CAS() also ratifies the previously fetched lock-word value.
-    if (Atomic::cmpxchg(Lock, w, intptr_t(nxt)) != w) {
-      continue;
-    }
-    List->OnList = 0;
-    OrderAccess::fence();
-    List->unpark();
-    return;
-  }
-}
-
 
 void Threads::verify() {
   ALL_JAVA_THREADS(p) {
@@ -4802,3 +4647,9 @@ void Threads::verify() {
   VMThread* thread = VMThread::vm_thread();
   if (thread != NULL) thread->verify();
 }
+
+#ifndef PRODUCT
+void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
+   report_vm_error(__FILE__, __LINE__, "Cross modify fence failure", "%p", thread);
+}
+#endif

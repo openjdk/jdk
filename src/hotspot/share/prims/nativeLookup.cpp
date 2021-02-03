@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -216,6 +218,11 @@ char* NativeLookup::long_jni_name(const methodHandle& method) {
 
 extern "C" {
   void JNICALL JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass unsafecls);
+  void JNICALL JVM_RegisterReferencesMethods(JNIEnv *env, jclass unsafecls);
+  void JNICALL JVM_RegisterUpcallHandlerMethods(JNIEnv *env, jclass unsafecls);
+  void JNICALL JVM_RegisterProgrammableUpcallHandlerMethods(JNIEnv *env, jclass unsafecls);
+  void JNICALL JVM_RegisterProgrammableInvokerMethods(JNIEnv *env, jclass unsafecls);
+  void JNICALL JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterPerfMethods(JNIEnv *env, jclass perfclass);
   void JNICALL JVM_RegisterWhiteBoxMethods(JNIEnv *env, jclass wbclass);
   void JNICALL JVM_RegisterVectorSupportMethods(JNIEnv *env, jclass vsclass);
@@ -231,6 +238,10 @@ extern "C" {
 static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_jdk_internal_misc_Unsafe_registerNatives",             NULL, FN_PTR(JVM_RegisterJDKInternalMiscUnsafeMethods) },
   { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },
+  { CC"Java_jdk_internal_foreign_abi_UpcallStubs_registerNatives",      NULL, FN_PTR(JVM_RegisterUpcallHandlerMethods) },
+  { CC"Java_jdk_internal_foreign_abi_ProgrammableUpcallHandler_registerNatives",      NULL, FN_PTR(JVM_RegisterProgrammableUpcallHandlerMethods) },
+  { CC"Java_jdk_internal_foreign_abi_ProgrammableInvoker_registerNatives",      NULL, FN_PTR(JVM_RegisterProgrammableInvokerMethods) },
+  { CC"Java_jdk_internal_invoke_NativeEntryPoint_registerNatives",      NULL, FN_PTR(JVM_RegisterNativeEntryPointMethods) },
   { CC"Java_jdk_internal_perf_Perf_registerNatives",               NULL, FN_PTR(JVM_RegisterPerfMethods)         },
   { CC"Java_sun_hotspot_WhiteBox_registerNatives",                 NULL, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
   { CC"Java_jdk_internal_vm_vector_VectorSupport_registerNatives", NULL, FN_PTR(JVM_RegisterVectorSupportMethods)},
@@ -278,7 +289,7 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   }
 
   // Otherwise call static method findNative in ClassLoader
-  Klass*   klass = SystemDictionary::ClassLoader_klass();
+  Klass*   klass = vmClasses::ClassLoader_klass();
   Handle name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
 
   JavaValue result(T_LONG);
@@ -424,8 +435,10 @@ void* NativeLookup::dll_load(const methodHandle& method) {
     address current_entry = method->native_function();
 
     char dll_name[JVM_MAXPATHLEN];
+    dll_name[0] = '\0';
     int offset;
-    if (os::dll_address_to_library_name(current_entry, dll_name, sizeof(dll_name), &offset)) {
+    bool ret = os::dll_address_to_library_name(current_entry, dll_name, sizeof(dll_name), &offset);
+    if (ret && dll_name[0] != '\0') {
       char ebuf[32];
       return os::dll_load(dll_name, ebuf, sizeof(ebuf));
     }

@@ -1236,9 +1236,10 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // Copy data from the Ideal SafePoint to the machine version
     mcall = m->as_MachCall();
 
-    mcall->set_tf(         call->tf());
-    mcall->set_entry_point(call->entry_point());
-    mcall->set_cnt(        call->cnt());
+    mcall->set_tf(                  call->tf());
+    mcall->set_entry_point(         call->entry_point());
+    mcall->set_cnt(                 call->cnt());
+    mcall->set_guaranteed_safepoint(call->guaranteed_safepoint());
 
     if( mcall->is_MachCallJava() ) {
       MachCallJavaNode *mcall_java  = mcall->as_MachCallJava();
@@ -1246,7 +1247,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       assert(call_java->validate_symbolic_info(), "inconsistent info");
       method = call_java->method();
       mcall_java->_method = method;
-      mcall_java->_bci = call_java->_bci;
       mcall_java->_optimized_virtual = call_java->is_optimized_virtual();
       is_method_handle_invoke = call_java->is_method_handle_invoke();
       mcall_java->_method_handle_invoke = is_method_handle_invoke;
@@ -1263,7 +1263,16 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
          call_java->as_CallDynamicJava()->_vtable_index;
     }
     else if( mcall->is_MachCallRuntime() ) {
-      mcall->as_MachCallRuntime()->_name = call->as_CallRuntime()->_name;
+      MachCallRuntimeNode* mach_call_rt = mcall->as_MachCallRuntime();
+      mach_call_rt->_name = call->as_CallRuntime()->_name;
+      mach_call_rt->_leaf_no_fp = call->is_CallLeafNoFP();
+    }
+    else if( mcall->is_MachCallNative() ) {
+      MachCallNativeNode* mach_call_native = mcall->as_MachCallNative();
+      CallNativeNode* call_native = call->as_CallNative();
+      mach_call_native->_name = call_native->_name;
+      mach_call_native->_arg_regs = call_native->_arg_regs;
+      mach_call_native->_ret_regs = call_native->_ret_regs;
     }
     msfpt = mcall;
   }
@@ -1299,6 +1308,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // These are usually backing store for register arguments for varargs.
   if( call != NULL && call->is_CallRuntime() )
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
+  if( call != NULL && call->is_CallNative() )
+    out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call, call->as_CallNative()->_shadow_space_bytes);
 
 
   // Do the normal argument list (parameters) register masks
@@ -2203,6 +2214,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaVD:
     case Op_FmaVF:
     case Op_MacroLogicV:
+    case Op_LoadVectorMasked:
       set_shared(n); // Force result into register (it will be anyways)
       break;
     case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2305,6 +2317,12 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_StoreVectorMasked: {
+      Node* pair = new BinaryNode(n->in(3), n->in(4));
+      n->set_req(3, pair);
+      n->del_req(4);
+      break;
+    }
     case Op_LoopLimit: {
       Node* pair1 = new BinaryNode(n->in(1), n->in(2));
       n->set_req(1, pair1);
@@ -2386,9 +2404,9 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(2, n->in(3));
       n->del_req(3);
       break;
+    }
     default:
       break;
-    }
   }
 }
 

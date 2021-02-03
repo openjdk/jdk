@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "jfr/utilities/jfrBigEndian.hpp"
 #include "jfr/utilities/jfrIterator.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
+#include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
@@ -57,22 +58,7 @@
 
 typedef JfrCheckpointManager::BufferPtr BufferPtr;
 
-static volatile bool constant_pending = false;
-
-static bool is_constant_pending() {
-  if (Atomic::load_acquire(&constant_pending)) {
-    Atomic::release_store(&constant_pending, false); // reset
-    return true;
-  }
-  return false;
-}
-
-static void set_constant_pending() {
-  if (!Atomic::load_acquire(&constant_pending)) {
-    Atomic::release_store(&constant_pending, true);
-  }
-}
-
+static JfrSignal _new_checkpoint;
 static JfrCheckpointManager* _instance = NULL;
 
 JfrCheckpointManager& JfrCheckpointManager::instance() {
@@ -231,7 +217,7 @@ BufferPtr JfrCheckpointManager::flush(BufferPtr old, size_t used, size_t request
     // indicates a lease is being returned
     release(old);
     // signal completion of a new checkpoint
-    set_constant_pending();
+    _new_checkpoint.signal();
     return NULL;
   }
   BufferPtr new_buffer = lease(old, thread, used + requested);
@@ -388,7 +374,6 @@ size_t JfrCheckpointManager::write_threads(Thread* thread) {
   assert(thread != NULL, "invariant");
   // can safepoint here
   ThreadInVMfromNative transition(thread->as_Java_thread());
-  ResetNoHandleMark rnhm;
   ResourceMark rm(thread);
   HandleMark hm(thread);
   JfrCheckpointWriter writer(true, thread, THREADS);
@@ -416,7 +401,6 @@ void JfrCheckpointManager::clear_type_set() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(t));
   // can safepoint here
   ThreadInVMfromNative transition(t);
-  ResetNoHandleMark rnhm;
   MutexLocker cld_lock(ClassLoaderDataGraph_lock);
   MutexLocker module_lock(Module_lock);
   JfrTypeSet::clear();
@@ -428,7 +412,6 @@ void JfrCheckpointManager::write_type_set() {
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
     // can safepoint here
     ThreadInVMfromNative transition(thread);
-    ResetNoHandleMark rnhm;
     MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
     MutexLocker module_lock(thread, Module_lock);
     if (LeakProfiler::is_running()) {
@@ -468,13 +451,12 @@ size_t JfrCheckpointManager::flush_type_set() {
     if (thread->is_Java_thread()) {
       // can safepoint here
       ThreadInVMfromNative transition(thread->as_Java_thread());
-      ResetNoHandleMark rnhm;
       elements = ::flush_type_set(thread);
     } else {
       elements = ::flush_type_set(thread);
     }
   }
-  if (is_constant_pending()) {
+  if (_new_checkpoint.is_signaled()) {
     WriteOperation wo(_chunkwriter);
     MutexedWriteOperation mwo(wo);
     _thread_local_mspace->iterate(mwo); // current epoch list

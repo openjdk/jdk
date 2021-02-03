@@ -102,6 +102,9 @@ public class EmptyHtmlTest extends TestRunner {
             case "LiteralTree" ->
                     test(d, type, "{@literal abc}");
 
+            case "ReturnTree" ->
+                    test(d, type, "{@return abc}");
+
             case "SpecTree" ->
                     test(d, type, "{@spec url label}");
 

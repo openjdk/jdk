@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
 
 // no precompiled headers
 #include "ci/ciUtilities.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
@@ -34,6 +37,7 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
 
 
@@ -161,7 +165,8 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 }
 
 JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
-  JVMCIObjectArray vmIntrinsics = JVMCIENV->new_VMIntrinsicMethod_array(vmIntrinsics::ID_LIMIT - 1, JVMCI_CHECK_NULL);
+  int len = vmIntrinsics::number_of_intrinsics() - 1; // Exclude vmIntrinsics::_none, which is 0
+  JVMCIObjectArray vmIntrinsics = JVMCIENV->new_VMIntrinsicMethod_array(len, JVMCI_CHECK_NULL);
   int index = 0;
   vmSymbolID kls_sid = vmSymbolID::NO_SID;
   JVMCIObject kls_str;
@@ -179,11 +184,12 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
     JVMCIENV->put_object_at(vmIntrinsics, index++, vmIntrinsicMethod);   \
   }
 
+  // VM_INTRINSICS_DO does *not* iterate over vmIntrinsics::_none
   VM_INTRINSICS_DO(VM_INTRINSIC_INFO, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE)
 #undef VM_SYMBOL_TO_STRING
 #undef VM_INTRINSIC_INFO
-  assert(index == vmIntrinsics::ID_LIMIT - 1, "must be");
 
+  assert(index == len, "must be");
   return vmIntrinsics;
 }
 
@@ -243,7 +249,6 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(UseSHA512Intrinsics)                                        \
   X86_ONLY(do_intx_flag(UseSSE))                                           \
   COMPILER2_PRESENT(do_bool_flag(UseSquareToLenIntrinsic))                 \
-  do_bool_flag(UseStackBanging)                                            \
   do_bool_flag(UseTLAB)                                                    \
   do_bool_flag(VerifyOops)                                                 \
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,10 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -220,12 +223,8 @@
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
   nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_invocation_limit,                 int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_backward_branch_limit,            int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_profile_limit,                    int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(MethodCounters,              _interpreter_throwout_count,                   u2)                                    \
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
@@ -237,10 +236,10 @@
   nonstatic_field(MethodData,                  _data_size,                                    int)                                   \
   nonstatic_field(MethodData,                  _data[0],                                      intptr_t)                              \
   nonstatic_field(MethodData,                  _parameters_type_data_di,                      int)                                   \
-  nonstatic_field(MethodData,                  _nof_decompiles,                               uint)                                  \
-  nonstatic_field(MethodData,                  _nof_overflow_recompiles,                      uint)                                  \
-  nonstatic_field(MethodData,                  _nof_overflow_traps,                           uint)                                  \
-  nonstatic_field(MethodData,                  _trap_hist._array[0],                          u1)                                    \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_decompiles,            uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_recompiles,   uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_traps,        uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._trap_hist._array[0],       u1)                                    \
   nonstatic_field(MethodData,                  _eflags,                                       intx)                                  \
   nonstatic_field(MethodData,                  _arg_local,                                    intx)                                  \
   nonstatic_field(MethodData,                  _arg_stack,                                    intx)                                  \
@@ -481,6 +480,14 @@
   declare_constant(CodeInstaller::VERIFY_OOP_BITS)                        \
   declare_constant(CodeInstaller::VERIFY_OOP_MASK)                        \
   declare_constant(CodeInstaller::INVOKE_INVALID)                         \
+                                                                          \
+  declare_constant(CollectedHeap::None)                                   \
+  declare_constant(CollectedHeap::Serial)                                 \
+  declare_constant(CollectedHeap::Parallel)                               \
+  declare_constant(CollectedHeap::G1)                                     \
+  declare_constant(CollectedHeap::Epsilon)                                \
+  declare_constant(CollectedHeap::Z)                                      \
+  declare_constant(CollectedHeap::Shenandoah)                             \
                                                                           \
   declare_constant(vmIntrinsics::FIRST_MH_SIG_POLY)                       \
   declare_constant(vmIntrinsics::LAST_MH_SIG_POLY)                        \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -59,6 +60,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
@@ -457,7 +459,7 @@ CompileTask* CompileQueue::get() {
   CompileTask* task;
   {
     NoSafepointVerifier nsv;
-    task = CompilationPolicy::policy()->select_task(this);
+    task = CompilationPolicy::select_task(this);
     if (task != NULL) {
       task = task->select_for_compilation();
     }
@@ -630,8 +632,8 @@ void CompileBroker::compilation_init_phase1(Thread* THREAD) {
     return;
   }
   // Set the interface to the current compiler(s).
-  _c1_count = CompilationPolicy::policy()->compiler_count(CompLevel_simple);
-  _c2_count = CompilationPolicy::policy()->compiler_count(CompLevel_full_optimization);
+  _c1_count = CompilationPolicy::c1_count();
+  _c2_count = CompilationPolicy::c2_count();
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
@@ -793,7 +795,7 @@ Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
   Handle string = java_lang_String::create_from_str(name, CHECK_NH);
   Handle thread_group(THREAD, Universe::system_thread_group());
   return JavaCalls::construct_new_instance(
-                       SystemDictionary::Thread_klass(),
+                       vmClasses::Thread_klass(),
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
@@ -1223,11 +1225,9 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     return;
   }
 
-  if (TieredCompilation) {
-    // Tiered policy requires MethodCounters to exist before adding a method to
-    // the queue. Create if we don't have them yet.
-    method->get_method_counters(thread);
-  }
+  // Tiered policy requires MethodCounters to exist before adding a method to
+  // the queue. Create if we don't have them yet.
+  method->get_method_counters(thread);
 
   // Outputs from the following MutexLocker block:
   CompileTask* task     = NULL;
@@ -1272,7 +1272,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
         vframeStream vfst(thread->as_Java_thread());
         for (; !vfst.at_end(); vfst.next()) {
           if (vfst.method()->is_static_initializer() ||
-              (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
+              (vfst.method()->method_holder()->is_subclass_of(vmClasses::ClassLoader_klass()) &&
                   vfst.method()->name() == vmSymbols::loadClass_name())) {
             blocking = false;
             break;
@@ -1377,16 +1377,12 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
   assert(!method->is_abstract() && (osr_bci == InvocationEntryBci || !method->is_native()), "cannot compile abstract/native methods");
   assert(!method->method_holder()->is_not_initialized(), "method holder must be initialized");
-  assert(!TieredCompilation || comp_level <= TieredStopAtLevel, "Invalid compilation level");
-  // allow any levels for WhiteBox
-  assert(WhiteBoxAPI || TieredCompilation || comp_level == CompLevel_highest_tier, "only CompLevel_highest_tier must be used in non-tiered");
   // return quickly if possible
 
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
-  if (comp == NULL || !comp->can_compile_method(method) ||
-      compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
+  if (comp == NULL || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return NULL;
   }
 
@@ -1409,11 +1405,6 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     }
   } else {
     // osr compilation
-#ifndef TIERED
-    // seems like an assert of dubious value
-    assert(comp_level == CompLevel_highest_tier,
-           "all OSR compiles are assumed to be at a single compilation level");
-#endif // TIERED
     // We accept a higher level osr method
     nmethod* nm = method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
     if (nm != NULL) return nm;
@@ -1499,7 +1490,6 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     // If the compiler is shut off due to code cache getting full
     // fail out now so blocking compiles dont hang the java thread
     if (!should_compile_new_jobs()) {
-      CompilationPolicy::policy()->delay_compilation(method());
       return NULL;
     }
     bool is_blocking = !directive->BackgroundCompilationOption || ReplayCompiles;
@@ -1569,24 +1559,22 @@ bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int os
   bool is_native = method->is_native();
   // Some compilers may not support the compilation of natives.
   AbstractCompiler *comp = compiler(comp_level);
-  if (is_native &&
-      (!CICompileNatives || comp == NULL || !comp->supports_native())) {
+  if (is_native && (!CICompileNatives || comp == NULL)) {
     method->set_not_compilable_quietly("native methods not supported", comp_level);
     return true;
   }
 
   bool is_osr = (osr_bci != standard_entry_bci);
   // Some compilers may not support on stack replacement.
-  if (is_osr &&
-      (!CICompileOSR || comp == NULL || !comp->supports_osr())) {
+  if (is_osr && (!CICompileOSR || comp == NULL)) {
     method->set_not_osr_compilable("OSR not supported", comp_level);
     return true;
   }
 
   // The method may be explicitly excluded by the user.
   double scale;
-  if (excluded || (CompilerOracle::has_option_value(method, "CompileThresholdScaling", scale) && scale == 0)) {
-    bool quietly = CompilerOracle::should_exclude_quietly();
+  if (excluded || (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, scale) && scale == 0)) {
+    bool quietly = CompilerOracle::be_quiet();
     if (PrintCompilation && !quietly) {
       // This does not happen quietly...
       ResourceMark rm;
@@ -1802,7 +1790,6 @@ bool CompileBroker::init_compiler_runtime() {
 
     // Switch back to VM state to do compiler initialization
     ThreadInVMfromNative tv(thread);
-    ResetNoHandleMark rnhm;
 
     // Perform per-thread and global initializations
     comp->initialize();
@@ -2223,7 +2210,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, compiler_name(task_level));
   }
 
-  should_break = directive->BreakAtExecuteOption || task->check_break_at_flags();
+  should_break = directive->BreakAtCompileOption || task->check_break_at_flags();
   if (should_log && !directive->LogOption) {
     should_log = false;
   }
@@ -2308,7 +2295,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     EventCompilation event;
 
     if (comp == NULL) {
-      ci_env.record_method_not_compilable("no compiler", !TieredCompilation);
+      ci_env.record_method_not_compilable("no compiler");
     } else if (!ci_env.failing()) {
       if (WhiteBoxAPI && WhiteBox::compilation_locked) {
         MonitorLocker locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
@@ -2331,7 +2318,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       //assert(false, "compiler should always document failure");
       // The compiler elected, without comment, not to register a result.
       // Do not attempt further compilations of this method.
-      ci_env.record_method_not_compilable("compile failed", !TieredCompilation);
+      ci_env.record_method_not_compilable("compile failed");
     }
 
     // Copy this bit to the enclosing block:
@@ -2684,6 +2671,10 @@ const char* CompileBroker::compiler_name(int comp_level) {
   }
 }
 
+jlong CompileBroker::total_compilation_ticks() {
+  return _perf_total_compilation != NULL ? _perf_total_compilation->get_value() : 0;
+}
+
 void CompileBroker::print_times(const char* name, CompilerStatistics* stats) {
   tty->print_cr("  %s {speed: %6.3f bytes/s; standard: %6.3f s, %d bytes, %d methods; osr: %6.3f s, %d bytes, %d methods; nmethods_size: %d bytes; nmethods_code_size: %d bytes}",
                 name, stats->bytes_per_second(),
@@ -2713,19 +2704,12 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
       tty->cr();
     }
     char tier_name[256];
-    for (int tier = CompLevel_simple; tier <= CompLevel_highest_tier; tier++) {
+    for (int tier = CompLevel_simple; tier <= CompilationPolicy::highest_compile_level(); tier++) {
       CompilerStatistics* stats = &_stats_per_level[tier-1];
       sprintf(tier_name, "Tier%d", tier);
       print_times(tier_name, stats);
     }
   }
-
-#if INCLUDE_JVMCI
-  // In hosted mode, print the JVMCI compiler specific counters manually.
-  if (EnableJVMCI && !UseJVMCICompiler) {
-    JVMCICompiler::print_compilation_timers();
-  }
-#endif
 
   if (!aggregate) {
     return;
@@ -2776,6 +2760,13 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
     tty->cr();
     comp->print_timers();
   }
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    tty->cr();
+    JVMCICompiler::print_hosted_timers();
+  }
+#endif
+
   tty->cr();
   tty->print_cr("  Total compiled methods    : %8d methods", total_compile_count);
   tty->print_cr("    Standard compilation    : %8d methods", standard_compile_count);

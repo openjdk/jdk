@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,8 +27,8 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
@@ -91,9 +91,9 @@ void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hd
   // Save object being locked into the BasicObjectLock...
   z_stg(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Z_R1_scratch, obj);
-    testbit(Address(Z_R1_scratch, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_BOX_CLASS));
+    testbit(Address(Z_R1_scratch, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     z_btrue(slow_case);
   }
 

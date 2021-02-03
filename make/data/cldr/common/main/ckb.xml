@@ -754,11 +754,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</keys>
 		<types>
 			<type key="calendar" type="chinese" draft="unconfirmed">ڕۆژژمێری چینی</type>
-			<type key="calendar" type="gregorian" draft="unconfirmed">ڕۆژژمێری گورجی</type>
+			<type key="calendar" type="gregorian" draft="unconfirmed">ڕۆژژمێری زاینیی</type>
 			<type key="calendar" type="hebrew" draft="unconfirmed">ڕۆژژمێری عیبری</type>
 			<type key="calendar" type="indian" draft="unconfirmed">ڕۆژژمێری نەتەوەیی ھیندی</type>
 			<type key="calendar" type="islamic" draft="unconfirmed">ڕۆژژمێری کۆچیی مانگی</type>
+			<type key="calendar" type="iso8601" draft="unconfirmed">ISO-8601 ڕۆژژمێری</type>
 			<type key="calendar" type="persian" draft="unconfirmed">ڕۆژژمێری کۆچیی ھەتاوی</type>
+			<type key="collation" type="standard" draft="unconfirmed">ڕیزکردنی داواکری ستاندارد</type>
 			<type key="numbers" type="arab" draft="unconfirmed">ژمارە عەربی-ھیندییەکان</type>
 			<type key="numbers" type="gujr" draft="unconfirmed">ژمارە گوجەراتییەکان</type>
 			<type key="numbers" type="khmr" draft="unconfirmed">ژمارە خمێرییەکان</type>
@@ -767,12 +769,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric" draft="unconfirmed">مەتریک</measurementSystemName>
-			<measurementSystemName type="UK" draft="unconfirmed">بریتانی</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">بەڕیتانی</measurementSystemName>
 			<measurementSystemName type="US" draft="unconfirmed">ئەمەریکی</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language" draft="unconfirmed">زمان: {0}</codePattern>
-			<codePattern type="script" draft="unconfirmed">خەت: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">نووسە:{0}</codePattern>
 			<codePattern type="territory" draft="unconfirmed">ناوچە: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
@@ -786,6 +788,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[\u200E\u200F \u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 ء آ أ ؤ إ ة ث ذ ص ض ط ظ ك ه ى ي]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[ئ ا ب پ ت ج چ ح خ د ر ز ڕ ژ س ش ع غ ف ڤ ق ک گ ل ڵ م ن ھ ە و ۆ ی ێ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E\u200F \- ‑ , ٫ ٬ . % ٪ ‰ ؉ + 0٠ 1١ 2٢ 3٣ 4٤ 5٥ 6٦ 7٧ 8٨ 9٩]</exemplarCharacters>
+		<moreInformation draft="unconfirmed">؟</moreInformation>
 	</characters>
 	<dates>
 		<calendars>
@@ -1404,23 +1407,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 		</calendars>
 		<fields>
+			<field type="era">
+				<displayName draft="unconfirmed">دەم</displayName>
+			</field>
 			<field type="year">
 				<displayName draft="unconfirmed">ساڵ</displayName>
+				<relative type="-1" draft="unconfirmed">ساڵێ پێسوو</relative>
+				<relative type="0" draft="unconfirmed">ئەم ساڵ</relative>
+				<relative type="1" draft="unconfirmed">ساڵی داهاتوو</relative>
+			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">چارەگ</displayName>
 			</field>
 			<field type="month">
 				<displayName draft="unconfirmed">مانگ</displayName>
+				<relative type="-1" draft="unconfirmed">مانگی پێشوو</relative>
+				<relative type="0" draft="unconfirmed">ئەم مانگە</relative>
+				<relative type="1" draft="unconfirmed">مانگی داهاتوو</relative>
+			</field>
+			<field type="month-short">
+				<relative type="-1" draft="unconfirmed">مانگی پێشوو</relative>
+				<relative type="0" draft="unconfirmed">ئەم مانگە</relative>
+				<relative type="1" draft="unconfirmed">مانگی داهاتوو</relative>
 			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">ھەفتە</displayName>
+				<relative type="-1" draft="unconfirmed">هەفتەی پێشوو</relative>
+				<relative type="0" draft="unconfirmed">ئەم هەفتەیە</relative>
+				<relative type="1" draft="unconfirmed">هەفتەی داهاتوو</relative>
+				<relativePeriod draft="unconfirmed">هەفتەی {0}</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName draft="unconfirmed">ڕۆژ</displayName>
-				<relative type="-1" draft="unconfirmed">yesterday</relative>
+				<relative type="-1" draft="unconfirmed">دوێنێ</relative>
 				<relative type="0" draft="unconfirmed">ئەمڕۆ</relative>
 				<relative type="1" draft="unconfirmed">سبەی</relative>
 			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">ڕۆژی ھەفتە</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="unconfirmed">پ.ن/د.ن</displayName>
 			</field>
 			<field type="hour">
 				<displayName draft="unconfirmed">کاتژمێر</displayName>
@@ -1430,6 +1457,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second">
 				<displayName draft="unconfirmed">چرکە</displayName>
+			</field>
+			<field type="zone">
+				<displayName draft="unconfirmed">کاتی هەرێمی</displayName>
 			</field>
 		</fields>
 	</dates>
@@ -1534,6 +1564,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BZD">
 				<displayName draft="unconfirmed">دۆلاری بەلیزی</displayName>
 			</currency>
+			<currency type="CAD">
+				<displayName draft="unconfirmed">دۆلاری کەنەدی</displayName>
+				<displayName count="one" draft="unconfirmed">دۆلاری کەنەدی</displayName>
+				<displayName count="other" draft="unconfirmed">دۆلاری کەنەدی</displayName>
+			</currency>
 			<currency type="DZD">
 				<displayName draft="unconfirmed">دیناری جەزائیری</displayName>
 			</currency>
@@ -1580,4 +1615,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 	</numbers>
+	<posix>
+		<messages>
+			<yesstr draft="unconfirmed">بەڵێ:ب</yesstr>
+			<nostr draft="unconfirmed">نەخێر:ن</nostr>
+		</messages>
+	</posix>
 </ldml>

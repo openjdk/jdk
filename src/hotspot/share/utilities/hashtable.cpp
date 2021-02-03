@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,14 @@
 #include "classfile/placeholders.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/nmethod.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
+#include "prims/jvmtiTagMapTable.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/hashtable.hpp"
@@ -63,8 +65,7 @@ template <MEMFLAGS F> BasicHashtableEntry<F>* BasicHashtable<F>::new_entry(unsig
     if (_first_free_entry + _entry_size >= _end_block) {
       int block_size = MAX2((int)_table_size / 2, (int)_number_of_entries); // pick a reasonable value
       block_size = clamp(block_size, 2, 512); // but never go out of this range
-      int len = _entry_size * block_size;
-      len = 1 << log2_int(len); // round down to power of 2
+      int len = round_down_power_of_2(_entry_size * block_size);
       assert(len >= _entry_size, "");
       _first_free_entry = NEW_C_HEAP_ARRAY2(char, len, F, CURRENT_PC);
       _entry_blocks.append(_first_free_entry);
@@ -110,22 +111,18 @@ template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
   _buckets = NULL;
 }
 
-// For oops and Strings the size of the literal is interesting. For other types, nobody cares.
-static int literal_size(ConstantPool*) { return 0; }
-static int literal_size(Klass*)        { return 0; }
-static int literal_size(nmethod*)      { return 0; }
+// Default overload, for types that are uninteresting.
+template<typename T> static int literal_size(T) { return 0; }
 
 static int literal_size(Symbol *symbol) {
   return symbol->size() * HeapWordSize;
 }
 
 static int literal_size(oop obj) {
-  // NOTE: this would over-count if (pre-JDK8) java_lang_Class::has_offset_field() is true,
-  // and the String.value array is shared by several Strings. However, starting from JDK8,
-  // the String.value array is not shared anymore.
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == SystemDictionary::String_klass()) {
+  } else if (obj->klass() == vmClasses::String_klass()) {
+    // This may overcount if String.value arrays are shared.
     return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
   } else {
     return obj->size();
@@ -136,8 +133,32 @@ static int literal_size(WeakHandle v) {
   return literal_size(v.peek());
 }
 
+const double _resize_factor    = 2.0;     // by how much we will resize using current number of entries
+const int _small_table_sizes[] = { 107, 1009, 2017, 4049, 5051, 10103, 20201, 40423 } ;
+const int _small_array_size = sizeof(_small_table_sizes)/sizeof(int);
+
+// possible hashmap sizes - odd primes that roughly double in size.
+// To avoid excessive resizing the odd primes from 4801-76831 and
+// 76831-307261 have been removed.
+const int _large_table_sizes[] =  { 4801, 76831, 307261, 614563, 1228891,
+    2457733, 4915219, 9830479, 19660831, 39321619, 78643219 };
+const int _large_array_size = sizeof(_large_table_sizes)/sizeof(int);
+
+// Calculate next "good" hashtable size based on requested count
+template <MEMFLAGS F> int BasicHashtable<F>::calculate_resize(bool use_large_table_sizes) const {
+  int requested = (int)(_resize_factor*number_of_entries());
+  const int* primelist = use_large_table_sizes ? _large_table_sizes : _small_table_sizes;
+  int arraysize =  use_large_table_sizes ? _large_array_size  : _small_array_size;
+  int newsize;
+  for (int i = 0; i < arraysize; i++) {
+    newsize = primelist[i];
+    if (newsize >= requested)
+      break;
+  }
+  return newsize;
+}
+
 template <MEMFLAGS F> bool BasicHashtable<F>::resize(int new_size) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
   // Allocate new buckets
   HashtableBucket<F>* buckets_new = NEW_C_HEAP_ARRAY2_RETURN_NULL(HashtableBucket<F>, new_size, F, CURRENT_PC);
@@ -211,10 +232,6 @@ template <class T, MEMFLAGS F> TableStatistics Hashtable<T, F>::statistics_calcu
 }
 
 // Dump footprint and bucket length statistics
-//
-// Note: if you create a new subclass of Hashtable<MyNewType, F>, you will need to
-// add a new function static int literal_size(MyNewType lit)
-// because I can't get template <class T> int literal_size(T) to pick the specializations for Symbol and oop.
 template <class T, MEMFLAGS F> void Hashtable<T, F>::print_table_statistics(outputStream* st,
                                                                             const char *table_name,
                                                                             T (*literal_load_barrier)(HashtableEntry<T, F>*)) {
@@ -292,12 +309,11 @@ template class Hashtable<Symbol*, mtSymbol>;
 template class Hashtable<Klass*, mtClass>;
 template class Hashtable<InstanceKlass*, mtClass>;
 template class Hashtable<WeakHandle, mtClass>;
+template class Hashtable<WeakHandle, mtServiceability>;
 template class Hashtable<Symbol*, mtModule>;
-template class Hashtable<oop, mtSymbol>;
 template class Hashtable<Symbol*, mtClass>;
 template class HashtableEntry<Symbol*, mtSymbol>;
 template class HashtableEntry<Symbol*, mtClass>;
-template class HashtableEntry<oop, mtSymbol>;
 template class HashtableBucket<mtClass>;
 template class BasicHashtableEntry<mtSymbol>;
 template class BasicHashtableEntry<mtCode>;
@@ -309,6 +325,7 @@ template class BasicHashtable<mtInternal>;
 template class BasicHashtable<mtModule>;
 template class BasicHashtable<mtCompiler>;
 template class BasicHashtable<mtTracing>;
+template class BasicHashtable<mtServiceability>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
 template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);

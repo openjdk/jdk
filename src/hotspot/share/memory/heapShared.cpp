@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,10 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
@@ -503,10 +505,10 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass* relocate
   if (relocated_k->is_instance_klass()) {
     assert(InstanceKlass::cast(relocated_k)->is_shared_boot_class(),
           "must be boot class");
-    // SystemDictionary::xxx_klass() are not updated, need to check
+    // vmClasses::xxx_klass() are not updated, need to check
     // the original Klass*
-    if (orig_k == SystemDictionary::String_klass() ||
-        orig_k == SystemDictionary::Object_klass()) {
+    if (orig_k == vmClasses::String_klass() ||
+        orig_k == vmClasses::Object_klass()) {
       // Initialized early during VM initialization. No need to be added
       // to the sub-graph object class list.
       return;
@@ -655,8 +657,10 @@ static void verify_the_heap(Klass* k, const char* which) {
     ResourceMark rm;
     log_info(cds, heap)("Verify heap %s initializing static field(s) in %s",
                         which, k->external_name());
+
     VM_Verify verify_op;
     VMThread::execute(&verify_op);
+
     if (!FLAG_IS_DEFAULT(VerifyArchivedFields)) {
       // If VerifyArchivedFields has a non-default value (e.g., specified on the command-line), do
       // more expensive checks.

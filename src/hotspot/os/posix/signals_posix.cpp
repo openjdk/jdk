@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled/precompiled.hpp"
+#include "precompiled.hpp"
 
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -32,11 +32,18 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+
+#ifdef ZERO
+// See stubGenerator_zero.cpp
+#include <setjmp.h>
+extern sigjmp_buf* get_jmp_buf_for_continuation();
+#endif
 
 #include <signal.h>
 
@@ -46,6 +53,14 @@
 // signal chaining
 // signal handling (except suspend/resume)
 // suspend/resume
+
+// Glibc on Linux uses the SA_RESTORER flag to indicate
+// the use of a "signal trampoline". We have no interest
+// in this flag and need to ignore it when checking our
+// own flag settings.
+// Note: SA_RESTORER is not exposed through signal.h so we
+// have to hardwire its 0x04000000 value in the mask.
+LINUX_ONLY(const int SA_RESTORER_FLAG_MASK = ~0x04000000;)
 
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
 // may have been configured, can be read more accurately from proc fs etc.
@@ -538,13 +553,36 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Handle assertion poison page accesses.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
+  if (!signal_was_handled &&
+      ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison)) {
     signal_was_handled = handle_assert_poison_fault(ucVoid, info->si_addr);
   }
 #endif
 
+  if (!signal_was_handled) {
+    // Handle SafeFetch access.
+#ifndef ZERO
+    if (uc != NULL) {
+      address pc = os::Posix::ucontext_get_pc(uc);
+      if (StubRoutines::is_safefetch_fault(pc)) {
+        os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+        signal_was_handled = true;
+      }
+    }
+#else
+    // See JDK-8076185
+    if (sig == SIGSEGV || sig == SIGBUS) {
+      sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
+      if (pjb) {
+        siglongjmp(*pjb, 1);
+      }
+    }
+#endif // ZERO
+  }
+
   // Ignore SIGPIPE and SIGXFSZ (4229104, 6499219).
-  if (sig == SIGPIPE || sig == SIGXFSZ) {
+  if (!signal_was_handled &&
+      (sig == SIGPIPE || sig == SIGXFSZ)) {
     PosixSignals::chained_handler(sig, info, ucVoid);
     signal_was_handled = true; // unconditionally.
   }
@@ -570,26 +608,22 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       // prepare fault pc address for error reporting.
       if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
         pc = (address)info->si_addr;
+      } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
+        // Non-arch-specific Zero code does not really know the pc.
+        // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
+        // available for Zero for known architectures. But for generic Zero
+        // code, it would still remain unknown.
+        pc = NULL;
       } else {
         pc = os::Posix::ucontext_get_pc(uc);
       }
     }
-#if defined(ZERO) && !defined(PRODUCT)
-    char buf[64];
-    VMError::report_and_die(t, sig, pc, info, ucVoid,
-          "\n#"
-          "\n#    /--------------------\\"
-          "\n#    |      %-7s       |"
-          "\n#    \\---\\ /--------------/"
-          "\n#        /"
-          "\n#    [-]        |\\_/|    "
-          "\n#    (+)=C      |o o|__  "
-          "\n#    | |        =-*-=__\\ "
-          "\n#    OOO        c_c_(___)",
-          get_signal_name(sig, buf, sizeof(buf)));
-#else
-    VMError::report_and_die(t, sig, pc, info, ucVoid);
-#endif
+    // For Zero, we ignore the crash context, because:
+    //  a) The crash would be in C++ interpreter code, so context is not really relevant;
+    //  b) Generic Zero code would not be able to parse it, so when generic error
+    //     reporting code asks e.g. about frames on stack, Zero would experience
+    //     a secondary ShouldNotCallThis() crash.
+    VMError::report_and_die(t, sig, pc, info, NOT_ZERO(ucVoid) ZERO_ONLY(NULL));
     // VMError should not return.
     ShouldNotReachHere();
   }
@@ -616,29 +650,13 @@ static void UserHandler(int sig, void *siginfo, void *context) {
   os::signal_notify(sig);
 }
 
-static const char* get_signal_handler_name(address handler,
-                                           char* buf, int buflen) {
-  int offset = 0;
-  bool found = os::dll_address_to_library_name(handler, buf, buflen, &offset);
-  if (found) {
-    // skip directory names
-    const char *p1, *p2;
-    p1 = buf;
-    size_t len = strlen(os::file_separator());
-    while ((p2 = strstr(p1, os::file_separator())) != NULL) p1 = p2 + len;
-#if !defined(AIX)
-    jio_snprintf(buf, buflen, "%s+0x%x", p1, offset);
-#else
-    // The way os::dll_address_to_library_name is implemented on Aix
-    // right now, it always returns -1 for the offset which is not
-    // terribly informative.
-    // Will fix that. For now, omit the offset.
-    jio_snprintf(buf, buflen, "%s", p1);
-#endif
-  } else {
-    jio_snprintf(buf, buflen, PTR_FORMAT, handler);
-  }
-  return buf;
+static void print_signal_handler_name(outputStream* os, address handler, char* buf, size_t buflen) {
+  // We demangle, but omit arguments - signal handlers should have always the same prototype.
+  os::print_function_and_library_name(os, handler, buf, buflen,
+                                       true, // shorten_path
+                                       true, // demangle
+                                       true  // omit arguments
+                                       );
 }
 
 // Writes one-line description of a combination of sigaction.sa_flags into a user
@@ -657,9 +675,19 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
 
   strncpy(buffer, "none", size);
 
+  const unsigned int unknown_flag = ~(SA_NOCLDSTOP |
+                                      SA_ONSTACK   |
+                                      SA_NOCLDSTOP |
+                                      SA_RESTART   |
+                                      SA_SIGINFO   |
+                                      SA_NOCLDWAIT |
+                                      SA_NODEFER
+                                      AIX_ONLY(| SA_OLDSTYLE)
+                                      );
+
   const struct {
     // NB: i is an unsigned int here because SA_RESETHAND is on some
-    // systems 0x80000000, which is implicitly unsigned.  Assignining
+    // systems 0x80000000, which is implicitly unsigned.  Assigning
     // it to an int field would be an overflow in unsigned-to-signed
     // conversion.
     unsigned int i;
@@ -675,10 +703,10 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
 #if defined(AIX)
     { SA_OLDSTYLE,  "SA_OLDSTYLE"  },
 #endif
-    { 0, NULL }
+    { unknown_flag, "NOT USED"     }
   };
 
-  for (idx = 0; flaginfo[idx].s && remaining > 1; idx++) {
+  for (idx = 0; flaginfo[idx].i != unknown_flag && remaining > 1; idx++) {
     if (flags & flaginfo[idx].i) {
       if (first) {
         jio_snprintf(p, remaining, "%s", flaginfo[idx].s);
@@ -690,6 +718,10 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
       p += len;
       remaining -= len;
     }
+  }
+  unsigned int unknowns = flags & unknown_flag;
+  if (unknowns != 0) {
+    jio_snprintf(p, remaining, "|Unknown_flags:%x", unknowns);
   }
 
   buffer[size - 1] = '\0';
@@ -716,6 +748,17 @@ static void set_our_sigflags(int sig, int flags) {
   }
 }
 
+// Implementation may use the same storage for both the sa_sigaction field and the sa_handler field,
+// so check for "sigAct.sa_flags == SA_SIGINFO"
+static address get_signal_handler(const struct sigaction* action) {
+  bool siginfo_flag_set = (action->sa_flags & SA_SIGINFO) != 0;
+  if (siginfo_flag_set) {
+    return CAST_FROM_FN_PTR(address, action->sa_sigaction);
+  } else {
+    return CAST_FROM_FN_PTR(address, action->sa_handler);
+  }
+}
+
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
 
 static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
@@ -734,10 +777,10 @@ static void check_signal_handler(int sig) {
 
   os_sigaction(sig, (struct sigaction*)NULL, &act);
 
-  address thisHandler = (act.sa_flags & SA_SIGINFO)
-    ? CAST_FROM_FN_PTR(address, act.sa_sigaction)
-    : CAST_FROM_FN_PTR(address, act.sa_handler);
+  // See comment for SA_RESTORER_FLAG_MASK
+  LINUX_ONLY(act.sa_flags &= SA_RESTORER_FLAG_MASK;)
 
+  address thisHandler = get_signal_handler(&act);
 
   switch (sig) {
   case SIGSEGV:
@@ -767,8 +810,10 @@ static void check_signal_handler(int sig) {
 
   if (thisHandler != jvmHandler) {
     tty->print("Warning: %s handler ", os::exception_name(sig, buf, O_BUFLEN));
-    tty->print("expected:%s", get_signal_handler_name(jvmHandler, buf, O_BUFLEN));
-    tty->print_cr("  found:%s", get_signal_handler_name(thisHandler, buf, O_BUFLEN));
+    tty->print_raw("expected:");
+    print_signal_handler_name(tty, jvmHandler, buf, O_BUFLEN);
+    tty->print_raw("  found:");
+    print_signal_handler_name(tty, thisHandler, buf, O_BUFLEN);
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
     // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
@@ -1158,9 +1203,7 @@ void set_signal_handler(int sig) {
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
 
-  void* oldhand = oldAct.sa_sigaction
-                ? CAST_FROM_FN_PTR(void*,  oldAct.sa_sigaction)
-                : CAST_FROM_FN_PTR(void*,  oldAct.sa_handler);
+  void* oldhand = get_signal_handler(&oldAct);
   if (oldhand != CAST_FROM_FN_PTR(void*, SIG_DFL) &&
       oldhand != CAST_FROM_FN_PTR(void*, SIG_IGN) &&
       oldhand != CAST_FROM_FN_PTR(void*, (sa_sigaction_t)javaSignalHandler)) {
@@ -1203,9 +1246,7 @@ void set_signal_handler(int sig) {
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
 
-  void* oldhand2  = oldAct.sa_sigaction
-                  ? CAST_FROM_FN_PTR(void*, oldAct.sa_sigaction)
-                  : CAST_FROM_FN_PTR(void*, oldAct.sa_handler);
+  void* oldhand2  = get_signal_handler(&oldAct);
   assert(oldhand2 == oldhand, "no concurrent signal handler installation");
 }
 
@@ -1310,18 +1351,19 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   struct sigaction sa;
   sigaction(sig, NULL, &sa);
 
-  st->print("%s: ", os::exception_name(sig, buf, buflen));
+  // See comment for SA_RESTORER_FLAG_MASK
+  LINUX_ONLY(sa.sa_flags &= SA_RESTORER_FLAG_MASK;)
 
-  address handler = (sa.sa_flags & SA_SIGINFO)
-    ? CAST_FROM_FN_PTR(address, sa.sa_sigaction)
-    : CAST_FROM_FN_PTR(address, sa.sa_handler);
+  st->print("%10s: ", os::exception_name(sig, buf, buflen));
+
+  address handler = get_signal_handler(&sa);
 
   if (handler == CAST_FROM_FN_PTR(address, SIG_DFL)) {
     st->print("SIG_DFL");
   } else if (handler == CAST_FROM_FN_PTR(address, SIG_IGN)) {
     st->print("SIG_IGN");
   } else {
-    st->print("[%s]", get_signal_handler_name(handler, buf, buflen));
+    print_signal_handler_name(st, handler, buf, O_BUFLEN);
   }
 
   st->print(", sa_mask[0]=");
@@ -1331,7 +1373,8 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   // May be, handler was resetted by VMError?
   if (rh != NULL) {
     handler = rh;
-    sa.sa_flags = VMError::get_resetted_sigflags(sig);
+    // See comment for SA_RESTORER_FLAG_MASK
+    sa.sa_flags = VMError::get_resetted_sigflags(sig) LINUX_ONLY(& SA_RESTORER_FLAG_MASK);
   }
 
   // Print textual representation of sa_flags.
@@ -1378,8 +1421,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 bool PosixSignals::is_sig_ignored(int sig) {
   struct sigaction oact;
   sigaction(sig, (struct sigaction*)NULL, &oact);
-  void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oact.sa_sigaction)
-                                 : CAST_FROM_FN_PTR(void*,  oact.sa_handler);
+  void* ohlr = get_signal_handler(&oact);
   if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN)) {
     return true;
   } else {

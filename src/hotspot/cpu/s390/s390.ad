@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2017, 2020 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -639,6 +639,11 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return 12 + MacroAssembler::call_far_patchable_ret_addr_offset();
 }
 
+int MachCallNativeNode::ret_addr_offset() {
+  Unimplemented();
+  return -1;
+}
+
 // Compute padding required for nodes which need alignment
 //
 // The addresses of the call instructions needs to be 4-byte aligned to
@@ -857,7 +862,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   // careful, because some VM calls (such as call site linkage) can
   // use several kilobytes of stack. But the stack safety zone should
   // account for that. See bugs 4446381, 4468289, 4497237.
-  if (C->output()->need_stack_bang(bangsize) && UseStackBanging) {
+  if (C->output()->need_stack_bang(bangsize)) {
     st->print_cr("# stack bang"); st->print("\t");
   }
   st->print_cr("push_frame %d", (int)-framesize);
@@ -898,7 +903,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // careful, because some VM calls (such as call site linkage) can
   // use several kilobytes of stack. But the stack safety zone should
   // account for that. See bugs 4446381, 4468289, 4497237.
-  if (C->output()->need_stack_bang(bangsize) && UseStackBanging) {
+  if (C->output()->need_stack_bang(bangsize)) {
     __ generate_stack_overflow_check(bangsize);
   }
 
@@ -1320,6 +1325,8 @@ source_hpp %{
 // To keep related declarations/definitions/uses close together,
 // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
+#include "oops/klass.inline.hpp"
+
 //--------------------------------------------------------------
 // Used for optimization in Compile::Shorten_branches
 //--------------------------------------------------------------
@@ -1540,6 +1547,10 @@ const bool Matcher::has_predicated_vectors(void) {
 }
 
 bool Matcher::supports_vector_variable_shifts(void) {
+  return false; // not supported
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
   return false; // not supported
 }
 

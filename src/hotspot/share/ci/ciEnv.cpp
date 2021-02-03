@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,16 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciReplay.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
@@ -83,9 +87,9 @@
 
 ciObject*              ciEnv::_null_object_instance;
 
-#define WK_KLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
-WK_KLASSES_DO(WK_KLASS_DEFN)
-#undef WK_KLASS_DEFN
+#define VM_CLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
+VM_CLASSES_DO(VM_CLASS_DEFN)
+#undef VM_CLASS_DEFN
 
 ciSymbol*        ciEnv::_unloaded_cisymbol = NULL;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = NULL;
@@ -286,11 +290,9 @@ void ciEnv::cache_dtrace_flags() {
   // Need lock?
   _dtrace_extended_probes = ExtendedDTraceProbes;
   if (_dtrace_extended_probes) {
-    _dtrace_monitor_probes  = true;
     _dtrace_method_probes   = true;
     _dtrace_alloc_probes    = true;
   } else {
-    _dtrace_monitor_probes  = DTraceMonitorProbes;
     _dtrace_method_probes   = DTraceMethodProbes;
     _dtrace_alloc_probes    = DTraceAllocProbes;
   }
@@ -366,21 +368,6 @@ ciMethod* ciEnv::get_method_from_handle(Method* method) {
   VM_ENTRY_MARK;
   return get_metadata(method)->as_method();
 }
-
-// ------------------------------------------------------------------
-// ciEnv::array_element_offset_in_bytes
-int ciEnv::array_element_offset_in_bytes(ciArray* a_h, ciObject* o_h) {
-  VM_ENTRY_MARK;
-  objArrayOop a = (objArrayOop)a_h->get_oop();
-  assert(a->is_objArray(), "");
-  int length = a->length();
-  oop o = o_h->get_oop();
-  for (int i = 0; i < length; i++) {
-    if (a->obj_at(i) == o)  return i;
-  }
-  return -1;
-}
-
 
 // ------------------------------------------------------------------
 // ciEnv::check_klass_accessiblity
@@ -813,8 +800,8 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     }
 
     // Fake a method that is equivalent to a declared method.
-    ciInstanceKlass* holder    = get_instance_klass(SystemDictionary::MethodHandle_klass());
-    ciSymbol*        name      = ciSymbol::invokeBasic_name();
+    ciInstanceKlass* holder    = get_instance_klass(vmClasses::MethodHandle_klass());
+    ciSymbol*        name      = ciSymbols::invokeBasic_name();
     ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
     return get_unloaded_method(holder, name, signature, accessor);
   } else {
@@ -969,7 +956,8 @@ void ciEnv::register_method(ciMethod* target,
                             AbstractCompiler* compiler,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
-                            RTMState  rtm_state) {
+                            RTMState  rtm_state,
+                            const GrowableArrayView<BufferBlob*>& native_invokers) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
@@ -1058,7 +1046,8 @@ void ciEnv::register_method(ciMethod* target,
                                debug_info(), dependencies(), code_buffer,
                                frame_words, oop_map_set,
                                handler_table, inc_table,
-                               compiler, task()->comp_level());
+                               compiler, task()->comp_level(),
+                               native_invokers);
 
     // Free codeBlobs
     code_buffer->free_blob();
@@ -1127,18 +1116,10 @@ void ciEnv::register_method(ciMethod* target,
   }
 }
 
-
-// ------------------------------------------------------------------
-// ciEnv::find_system_klass
-ciKlass* ciEnv::find_system_klass(ciSymbol* klass_name) {
-  VM_ENTRY_MARK;
-  return get_klass_by_name_impl(NULL, constantPoolHandle(), klass_name, false);
-}
-
 // ------------------------------------------------------------------
 // ciEnv::comp_level
 int ciEnv::comp_level() {
-  if (task() == NULL)  return CompLevel_highest_tier;
+  if (task() == NULL)  return CompilationPolicy::highest_compile_level();
   return task()->comp_level();
 }
 

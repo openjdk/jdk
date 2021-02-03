@@ -28,42 +28,66 @@
 #include "runtime/os.hpp"
 
 ZSyscall::CreateFileMappingWFn ZSyscall::CreateFileMappingW;
+ZSyscall::CreateFileMapping2Fn ZSyscall::CreateFileMapping2;
 ZSyscall::VirtualAlloc2Fn ZSyscall::VirtualAlloc2;
 ZSyscall::VirtualFreeExFn ZSyscall::VirtualFreeEx;
 ZSyscall::MapViewOfFile3Fn ZSyscall::MapViewOfFile3;
 ZSyscall::UnmapViewOfFile2Fn ZSyscall::UnmapViewOfFile2;
 
-template <typename Fn>
-static void lookup_symbol(Fn*& fn, const char* library, const char* symbol) {
+static void* lookup_kernelbase_library() {
+  const char* const name = "KernelBase";
   char ebuf[1024];
-  void* const handle = os::dll_load(library, ebuf, sizeof(ebuf));
+  void* const handle = os::dll_load(name, ebuf, sizeof(ebuf));
   if (handle == NULL) {
-    log_error_p(gc)("Failed to load library: %s", library);
-    vm_exit_during_initialization("ZGC requires Windows version 1803 or later");
+    log_error_p(gc)("Failed to load library: %s", name);
   }
+  return handle;
+}
 
-  fn = reinterpret_cast<Fn*>(os::dll_lookup(handle, symbol));
+static void* lookup_kernelbase_symbol(const char* name) {
+  static void* const handle = lookup_kernelbase_library();
+  if (handle == NULL) {
+    return NULL;
+  }
+  return os::dll_lookup(handle, name);
+}
+
+static bool has_kernelbase_symbol(const char* name) {
+  return lookup_kernelbase_symbol(name) != NULL;
+}
+
+template <typename Fn>
+static void install_kernelbase_symbol(Fn*& fn, const char* name) {
+  fn = reinterpret_cast<Fn*>(lookup_kernelbase_symbol(name));
+}
+
+template <typename Fn>
+static void install_kernelbase_1803_symbol_or_exit(Fn*& fn, const char* name) {
+  install_kernelbase_symbol(fn, name);
   if (fn == NULL) {
-    log_error_p(gc)("Failed to lookup symbol: %s", symbol);
+    log_error_p(gc)("Failed to lookup symbol: %s", name);
     vm_exit_during_initialization("ZGC requires Windows version 1803 or later");
   }
 }
 
 void ZSyscall::initialize() {
-  lookup_symbol(CreateFileMappingW, "KernelBase", "CreateFileMappingW");
-  lookup_symbol(VirtualAlloc2,      "KernelBase", "VirtualAlloc2");
-  lookup_symbol(VirtualFreeEx,      "KernelBase", "VirtualFreeEx");
-  lookup_symbol(MapViewOfFile3,     "KernelBase", "MapViewOfFile3");
-  lookup_symbol(UnmapViewOfFile2,   "KernelBase", "UnmapViewOfFile2");
+  // Required
+  install_kernelbase_1803_symbol_or_exit(CreateFileMappingW, "CreateFileMappingW");
+  install_kernelbase_1803_symbol_or_exit(VirtualAlloc2,      "VirtualAlloc2");
+  install_kernelbase_1803_symbol_or_exit(VirtualFreeEx,      "VirtualFreeEx");
+  install_kernelbase_1803_symbol_or_exit(MapViewOfFile3,     "MapViewOfFile3");
+  install_kernelbase_1803_symbol_or_exit(UnmapViewOfFile2,   "UnmapViewOfFile2");
+
+  // Optional - for large pages support
+  install_kernelbase_symbol(CreateFileMapping2, "CreateFileMapping2");
 }
 
 bool ZSyscall::is_supported() {
-  char ebuf[1024];
-  void* const handle = os::dll_load("KernelBase", ebuf, sizeof(ebuf));
-  if (handle == NULL) {
-    assert(false, "Failed to load library: KernelBase");
-    return false;
-  }
+  // Available in Windows version 1803 and later
+  return has_kernelbase_symbol("VirtualAlloc2");
+}
 
-  return os::dll_lookup(handle, "VirtualAlloc2") != NULL;
+bool ZSyscall::is_large_pages_supported() {
+  // Available in Windows version 1809 and later
+  return has_kernelbase_symbol("CreateFileMapping2");
 }

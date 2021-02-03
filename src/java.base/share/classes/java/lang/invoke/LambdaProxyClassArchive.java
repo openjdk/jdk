@@ -50,8 +50,7 @@ final class LambdaProxyClassArchive {
                                                    MethodType invokedType,
                                                    MethodType samMethodType,
                                                    MemberName implMethod,
-                                                   MethodType instantiatedMethodType,
-                                                   boolean initialize);
+                                                   MethodType instantiatedMethodType);
 
     /**
      * Registers the lambdaProxyClass into CDS archive.
@@ -101,16 +100,15 @@ final class LambdaProxyClassArchive {
                          MethodType instantiatedMethodType,
                          boolean isSerializable,
                          Class<?>[] markerInterfaces,
-                         MethodType[] additionalBridges,
-                         boolean initialize) {
+                         MethodType[] additionalBridges) {
         if (CDS.isDumpingArchive())
             throw new IllegalStateException("cannot load class from CDS archive at dump time");
 
-        if (!loadedByBuiltinLoader(caller) || !initialize ||
+        if (!loadedByBuiltinLoader(caller) ||
             !CDS.isSharingEnabled() || isSerializable || markerInterfaces.length > 0 || additionalBridges.length > 0)
             return null;
 
         return findFromArchive(caller, invokedName, invokedType, samMethodType,
-                               implMethod.internalMemberName(), instantiatedMethodType, initialize);
+                               implMethod.internalMemberName(), instantiatedMethodType);
     }
 }

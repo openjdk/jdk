@@ -30,7 +30,7 @@
  *          jdk.compiler
  *          jdk.httpserver
  * @build CreateMultiReleaseTestJars
- *        SimpleHttpServer
+ *        jdk.test.lib.net.SimpleHttpServer
  *        jdk.test.lib.compiler.Compiler
  *        jdk.test.lib.util.JarBuilder
  * @run testng MultiReleaseJarHttpProperties
@@ -48,22 +48,24 @@
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import jdk.test.lib.net.SimpleHttpServer;
 import jdk.test.lib.net.URIBuilder;
-
-import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
     private SimpleHttpServer server;
+    static final String TESTCONTEXT = "/multi-release.jar";  //mapped to local file path
 
     @BeforeClass
     public void initialize() throws Exception {
-        server = new SimpleHttpServer(InetAddress.getLoopbackAddress());
+        server = new SimpleHttpServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), TESTCONTEXT,
+                System.getProperty("user.dir", "."));
         server.start();
         super.initialize();
     }
@@ -72,7 +74,7 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
     protected void initializeClassLoader() throws Exception {
         URL[] urls = new URL[]{
                 URIBuilder.newBuilder().scheme("http").port(server.getPort()).loopback()
-                        .path("/multi-release.jar").toURL(),
+                        .path(TESTCONTEXT).toURL(),
         };
         cldr = new URLClassLoader(urls);
         // load any class, Main is convenient and in the root entries

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,8 @@
 
 
 import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
 
 public class ClassFileLoadHookTest {
     public static String sharedClasses[] = {
@@ -55,14 +54,17 @@ public class ClassFileLoadHookTest {
         String useWb = "-Xbootclasspath/a:" + wbJar;
 
         // First, run the test class directly, w/o sharing, as a baseline reference
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI",
-                useWb,
-                "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
-                "ClassFileLoadHook",
-                "" + ClassFileLoadHook.TestCaseId.SHARING_OFF_CFLH_ON);
-        TestCommon.executeAndLog(pb, "no-sharing").shouldHaveExitValue(0);
+        CDSOptions opts = (new CDSOptions())
+            .setUseVersion(false)
+            .setXShareMode("off")
+            .addSuffix("-XX:+UnlockDiagnosticVMOptions",
+                       "-XX:+WhiteBoxAPI",
+                       useWb,
+                       "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
+                       "ClassFileLoadHook",
+                       "" + ClassFileLoadHook.TestCaseId.SHARING_OFF_CFLH_ON);
+        CDSTestUtils.run(opts)
+                    .assertNormalExit();
 
         // Run with AppCDS, but w/o CFLH - second baseline
         TestCommon.testDump(appJar, sharedClasses, useWb);
@@ -83,7 +85,7 @@ public class ClassFileLoadHookTest {
                 "ClassFileLoadHook",
                 "" + ClassFileLoadHook.TestCaseId.SHARING_AUTO_CFLH_ON);
 
-        CDSOptions opts = (new CDSOptions()).setXShareMode("auto");
+        opts = (new CDSOptions()).setXShareMode("auto");
         TestCommon.checkExec(out, opts);
 
         // Now, run with AppCDS -Xshare:on and CFLH

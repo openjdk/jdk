@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,15 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
-#include "classfile/altHashing.hpp"
+#include "classfile/vmClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logMessage.hpp"
@@ -278,7 +280,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_HEX, _cloned_vtables_offset);
   st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_HEX, _serialized_data_offset);
   st->print_cr("- i2i_entry_code_buffers_offset:  " SIZE_FORMAT_HEX, _i2i_entry_code_buffers_offset);
-  st->print_cr("- i2i_entry_code_buffers_size:    " SIZE_FORMAT, _i2i_entry_code_buffers_size);
   st->print_cr("- heap_end:                       " INTPTR_FORMAT, p2i(_heap_end));
   st->print_cr("- base_archive_is_default:        %d", _base_archive_is_default);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
@@ -1666,7 +1667,7 @@ char* FileMapInfo::map_bitmap_region() {
   char* bitmap_base = os::map_memory(_fd, _full_path, si->file_offset(),
                                      requested_addr, si->used_aligned(), read_only, allow_exec, mtClassShared);
   if (bitmap_base == NULL) {
-    log_error(cds)("failed to map relocation bitmap");
+    log_info(cds)("failed to map relocation bitmap");
     return NULL;
   }
 
@@ -1680,6 +1681,10 @@ char* FileMapInfo::map_bitmap_region() {
 
   si->set_mapped_base(bitmap_base);
   si->set_mapped_from_file(true);
+  log_info(cds)("Mapped %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
+                is_static() ? "static " : "dynamic",
+                MetaspaceShared::bm, p2i(si->mapped_base()), p2i(si->mapped_end()),
+                shared_region_name[MetaspaceShared::bm]);
   return bitmap_base;
 }
 
@@ -2031,9 +2036,10 @@ void FileMapInfo::patch_archived_heap_embedded_pointers(MemRegion* ranges, int n
   }
 }
 
-// This internally allocates objects using SystemDictionary::Object_klass(), so it
-// must be called after the well-known classes are resolved.
+// This internally allocates objects using vmClasses::Object_klass(), so it
+// must be called after the Object_klass is loaded
 void FileMapInfo::fixup_mapped_heap_regions() {
+  assert(vmClasses::Object_klass_loaded(), "must be");
   // If any closed regions were found, call the fill routine to make them parseable.
   // Note that closed_archive_heap_ranges may be non-NULL even if no ranges were found.
   if (num_closed_archive_heap_ranges != 0) {
@@ -2145,7 +2151,7 @@ bool FileMapInfo::initialize() {
   assert(UseSharedSpaces, "UseSharedSpaces expected.");
 
   if (JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()) {
-    // CDS assumes that no classes resolved in SystemDictionary::resolve_well_known_classes
+    // CDS assumes that no classes resolved in vmClasses::resolve_all()
     // are replaced at runtime by JVMTI ClassFileLoadHook. All of those classes are resolved
     // during the JVMTI "early" stage, so we can still use CDS if
     // JvmtiExport::has_early_class_hook_env() is false.

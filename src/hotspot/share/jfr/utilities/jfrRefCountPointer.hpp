@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
 
 template <typename T>
 class RefCountHandle {
-  template <typename, typename>
-  friend class RefCountPointer;
  private:
   const T* _ptr;
 
@@ -51,9 +49,8 @@ class RefCountHandle {
 
   ~RefCountHandle() {
     if (_ptr != NULL) {
-      const T* temp = _ptr;
+      _ptr->remove_ref();
       _ptr = NULL;
-      temp->remove_ref();
     }
   }
 
@@ -76,18 +73,41 @@ class RefCountHandle {
     return _ptr != NULL;
   }
 
-  const T & operator->() const {
+  const T& operator->() const {
     return *_ptr;
   }
 
   T& operator->() {
     return *const_cast<T*>(_ptr);
   }
+
+  static RefCountHandle<T> make(const T* ptr) {
+    return ptr;
+  }
+};
+
+class SingleThreadedRefCounter {
+ private:
+  mutable intptr_t _refs;
+ public:
+  SingleThreadedRefCounter() : _refs(0) {}
+
+  void inc() const {
+    ++_refs;
+  }
+
+  bool dec() const {
+    return --_refs == 0;
+  }
+
+  intptr_t current() const {
+    return _refs;
+  }
 };
 
 class MultiThreadedRefCounter {
  private:
-  mutable volatile int _refs;
+  mutable volatile intptr_t _refs;
  public:
   MultiThreadedRefCounter() : _refs(0) {}
 
@@ -99,7 +119,7 @@ class MultiThreadedRefCounter {
     return 0 == Atomic::add(&_refs, (-1));
   }
 
-  int current() const {
+  intptr_t current() const {
    return _refs;
   }
 };
@@ -146,8 +166,7 @@ class RefCountPointer : public JfrCHeapObj {
   }
 
   static RefHandle make(const T* ptr) {
-    assert(ptr != NULL, "invariant");
-    return RefHandle(new RefCountPointer<T, RefCountImpl>(ptr));
+    return RefHandle::make(new RefCountPointer<T, RefCountImpl>(ptr));
   }
 };
 

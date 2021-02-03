@@ -465,7 +465,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * consists of an optional minus or plus sign followed by a
      * sequence of one or more digits in the specified radix.  The
      * character-to-digit mapping is provided by {@link
-     * Character#digit(char, char) Character.digit}.  The String may
+     * Character#digit(char, int) Character.digit}.  The String may
      * not contain any extraneous characters (whitespace, for
      * example).
      *
@@ -662,7 +662,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * into a BigInteger.  The String representation consists of an
      * optional minus or plus sign followed by a sequence of one or
      * more decimal digits.  The character-to-digit mapping is
-     * provided by {@link Character#digit(char, char)
+     * provided by {@link Character#digit(char, int)
      * Character.digit}.  The String may not contain any extraneous
      * characters (whitespace, for example).
      *
@@ -3950,35 +3950,66 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX)
             radix = 10;
 
-        // If it's small enough, use smallToString.
-        if (mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD)
-           return smallToString(radix);
+        BigInteger abs = this.abs();
 
-        // Otherwise use recursive toString, which requires positive arguments.
-        // The results will be concatenated into this StringBuilder
-        StringBuilder sb = new StringBuilder();
+        // Ensure buffer capacity sufficient to contain string representation
+        //     floor(bitLength*log(2)/log(radix)) + 1
+        // plus an additional character for the sign if negative.
+        int b = abs.bitLength();
+        int numChars = (int)(Math.floor(b*LOG_TWO/logCache[radix]) + 1) +
+            (signum < 0 ? 1 : 0);
+        StringBuilder sb = new StringBuilder(numChars);
+
         if (signum < 0) {
-            toString(this.negate(), sb, radix, 0);
-            sb.insert(0, '-');
+            sb.append('-');
         }
-        else
-            toString(this, sb, radix, 0);
+
+        // Use recursive toString.
+        toString(abs, sb, radix, 0);
 
         return sb.toString();
     }
 
-    /** This method is used to perform toString when arguments are small. */
-    private String smallToString(int radix) {
+    /**
+     * If {@code numZeros > 0}, appends that many zeros to the
+     * specified StringBuilder; otherwise, does nothing.
+     *
+     * @param buf       The StringBuilder that will be appended to.
+     * @param numZeros  The number of zeros to append.
+     */
+    private static void padWithZeros(StringBuilder buf, int numZeros) {
+        while (numZeros >= NUM_ZEROS) {
+            buf.append(ZEROS);
+            numZeros -= NUM_ZEROS;
+        }
+        if (numZeros > 0) {
+            buf.append(ZEROS, 0, numZeros);
+        }
+    }
+
+    /**
+     * This method is used to perform toString when arguments are small.
+     * The value must be non-negative. If {@code digits <= 0} no padding
+     * (pre-pending with zeros) will be effected.
+     *
+     * @param radix  The base to convert to.
+     * @param buf    The StringBuilder that will be appended to in place.
+     * @param digits The minimum number of digits to pad to.
+     */
+    private void smallToString(int radix, StringBuilder buf, int digits) {
+        assert signum >= 0;
+
         if (signum == 0) {
-            return "0";
+            padWithZeros(buf, digits);
+            return;
         }
 
         // Compute upper bound on number of digit groups and allocate space
         int maxNumDigitGroups = (4*mag.length + 6)/7;
-        String digitGroup[] = new String[maxNumDigitGroups];
+        long[] digitGroups = new long[maxNumDigitGroups];
 
         // Translate number to string, a digit group at a time
-        BigInteger tmp = this.abs();
+        BigInteger tmp = this;
         int numGroups = 0;
         while (tmp.signum != 0) {
             BigInteger d = longRadix[radix];
@@ -3990,33 +4021,37 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             BigInteger q2 = q.toBigInteger(tmp.signum * d.signum);
             BigInteger r2 = r.toBigInteger(tmp.signum * d.signum);
 
-            digitGroup[numGroups++] = Long.toString(r2.longValue(), radix);
+            digitGroups[numGroups++] = r2.longValue();
             tmp = q2;
         }
 
-        // Put sign (if any) and first digit group into result buffer
-        StringBuilder buf = new StringBuilder(numGroups*digitsPerLong[radix]+1);
-        if (signum < 0) {
-            buf.append('-');
-        }
-        buf.append(digitGroup[numGroups-1]);
+        // Get string version of first digit group
+        String s = Long.toString(digitGroups[numGroups-1], radix);
 
-        // Append remaining digit groups padded with leading zeros
+        // Pad with internal zeros if necessary.
+        padWithZeros(buf, digits - (s.length() +
+            (numGroups - 1)*digitsPerLong[radix]));
+
+        // Put first digit group into result buffer
+        buf.append(s);
+
+        // Append remaining digit groups each padded with leading zeros
         for (int i=numGroups-2; i >= 0; i--) {
             // Prepend (any) leading zeros for this digit group
-            int numLeadingZeros = digitsPerLong[radix]-digitGroup[i].length();
+            s = Long.toString(digitGroups[i], radix);
+            int numLeadingZeros = digitsPerLong[radix] - s.length();
             if (numLeadingZeros != 0) {
-                buf.append(zeros[numLeadingZeros]);
+                buf.append(ZEROS, 0, numLeadingZeros);
             }
-            buf.append(digitGroup[i]);
+            buf.append(s);
         }
-        return buf.toString();
     }
 
     /**
      * Converts the specified BigInteger to a string and appends to
      * {@code sb}.  This implements the recursive Schoenhage algorithm
-     * for base conversions.
+     * for base conversions. This method can only be called for non-negative
+     * numbers.
      * <p>
      * See Knuth, Donald,  _The Art of Computer Programming_, Vol. 2,
      * Answers to Exercises (4.4) Question 14.
@@ -4026,32 +4061,26 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param radix  The base to convert to.
      * @param digits The minimum number of digits to pad to.
      */
-    private static void toString(BigInteger u, StringBuilder sb, int radix,
-                                 int digits) {
+    private static void toString(BigInteger u, StringBuilder sb,
+                                 int radix, int digits) {
+        assert u.signum() >= 0;
+
         // If we're smaller than a certain threshold, use the smallToString
-        // method, padding with leading zeroes when necessary.
+        // method, padding with leading zeroes when necessary unless we're
+        // at the beginning of the string or digits <= 0. As u.signum() >= 0,
+        // smallToString() will not prepend a negative sign.
         if (u.mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD) {
-            String s = u.smallToString(radix);
-
-            // Pad with internal zeros if necessary.
-            // Don't pad if we're at the beginning of the string.
-            if ((s.length() < digits) && (sb.length() > 0)) {
-                for (int i=s.length(); i < digits; i++) {
-                    sb.append('0');
-                }
-            }
-
-            sb.append(s);
+            u.smallToString(radix, sb, digits);
             return;
         }
-
-        int b, n;
-        b = u.bitLength();
 
         // Calculate a value for n in the equation radix^(2^n) = u
         // and subtract 1 from that value.  This is used to find the
         // cache index that contains the best value to divide u.
-        n = (int) Math.round(Math.log(b * LOG_TWO / logCache[radix]) / LOG_TWO - 1.0);
+        int b = u.bitLength();
+        int n = (int) Math.round(Math.log(b * LOG_TWO / logCache[radix]) /
+                                 LOG_TWO - 1.0);
+
         BigInteger v = getRadixConversionCache(radix, n);
         BigInteger[] results;
         results = u.divideAndRemainder(v);
@@ -4059,7 +4088,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int expectedDigits = 1 << n;
 
         // Now recursively build the two halves of each number.
-        toString(results[0], sb, radix, digits-expectedDigits);
+        toString(results[0], sb, radix, digits - expectedDigits);
         toString(results[1], sb, radix, expectedDigits);
     }
 
@@ -4091,14 +4120,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         return cacheLine[exponent];
     }
 
-    /* zero[i] is a string of i consecutive zeros. */
-    private static String zeros[] = new String[64];
-    static {
-        zeros[63] =
-            "000000000000000000000000000000000000000000000000000000000000000";
-        for (int i=0; i < 63; i++)
-            zeros[i] = zeros[63].substring(0, i);
-    }
+    /* Size of ZEROS string. */
+    private static int NUM_ZEROS = 63;
+
+    /* ZEROS is a string of NUM_ZEROS consecutive zeros. */
+    private static final String ZEROS = "0".repeat(NUM_ZEROS);
 
     /**
      * Returns the decimal String representation of this BigInteger.
@@ -4600,7 +4626,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * least significant). If the magnitude is zero, return value is undefined.
      *
      * <p>Note: never used for a BigInteger with a magnitude of zero.
-     * @see #getInt.
+     * @see #getInt
      */
     private int firstNonzeroIntNum() {
         int fn = firstNonzeroIntNumPlusTwo - 2;

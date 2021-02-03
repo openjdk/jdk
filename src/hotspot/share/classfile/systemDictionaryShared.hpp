@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
-#include "oops/klass.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/filemap.hpp"
+#include "oops/klass.hpp"
+#include "oops/oopHandle.hpp"
 
 
 /*===============================================================================
@@ -134,7 +135,7 @@ private:
                                                TRAPS);
   static Handle get_package_name(Symbol*  class_name, TRAPS);
 
-  static PackageEntry* get_package_entry_from_class_name(Handle class_loader, Symbol* class_name);
+  static PackageEntry* get_package_entry_from_class(InstanceKlass* ik, Handle class_loader);
 
 
   // Package handling:
@@ -181,13 +182,7 @@ private:
   static Handle get_shared_protection_domain(Handle class_loader,
                                              ModuleEntry* mod, TRAPS);
 
-  static void atomic_set_array_index(OopHandle array, int index, oop o) {
-    // Benign race condition:  array.obj_at(index) may already be filled in.
-    // The important thing here is that all threads pick up the same result.
-    // It doesn't matter which racing thread wins, as long as only one
-    // result is used by all threads, and all future queries.
-    ((objArrayOop)array.resolve())->atomic_compare_exchange_oop(index, o, NULL);
-  }
+  static void atomic_set_array_index(OopHandle array, int index, oop o);
 
   static oop shared_protection_domain(int index);
   static void atomic_set_shared_protection_domain(int index, oop pd) {
@@ -251,8 +246,8 @@ public:
   static bool is_sharing_possible(ClassLoaderData* loader_data);
 
   static bool add_unregistered_class(InstanceKlass* k, TRAPS);
-  static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* child_name,
-                                                Symbol* class_name,
+  static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* class_name,
+                                                Symbol* super_name,
                                                 Handle class_loader,
                                                 Handle protection_domain,
                                                 bool is_superclass,
@@ -304,8 +299,7 @@ public:
                                                       Symbol* instantiated_method_type) NOT_CDS_RETURN_(NULL);
   static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(NULL);
   static InstanceKlass* prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                          InstanceKlass* caller_ik,
-                                                          bool initialize, TRAPS) NOT_CDS_RETURN_(NULL);
+                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(NULL);
   static bool check_linking_constraints(InstanceKlass* klass, TRAPS) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2, TRAPS) NOT_CDS_RETURN;
@@ -322,7 +316,7 @@ public:
   static void adjust_lambda_proxy_class_dictionary();
   static void serialize_dictionary_headers(class SerializeClosure* soc,
                                            bool is_static_archive = true);
-  static void serialize_well_known_klasses(class SerializeClosure* soc);
+  static void serialize_vm_classes(class SerializeClosure* soc);
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;

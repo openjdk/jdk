@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allStatic.hpp"
@@ -281,8 +282,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // DynamicArchiveBuilder::sort_methods()).
     sort_symbols_and_fix_hash();
     sort_klasses();
-    allocate_method_trampoline_info();
-    allocate_method_trampolines();
   }
 }
 
@@ -582,14 +581,14 @@ void ArchiveBuilder::relocate_pointers() {
   log_info(cds)("done");
 }
 
-// We must relocate the System::_well_known_klasses only after we have copied the
+// We must relocate vmClasses::_klasses[] only after we have copied the
 // java objects in during dump_java_heap_objects(): during the object copy, we operate on
 // old objects which assert that their klass is the original klass.
-void ArchiveBuilder::relocate_well_known_klasses() {
-  log_info(cds)("Relocating SystemDictionary::_well_known_klasses[] ... ");
+void ArchiveBuilder::relocate_vm_classes() {
+  log_info(cds)("Relocating vmClasses::_klasses[] ... ");
   ResourceMark rm;
   RefRelocator doit(this);
-  SystemDictionary::well_known_klasses_do(&doit);
+  vmClasses::metaspace_pointers_do(&doit);
 }
 
 void ArchiveBuilder::make_klasses_shareable() {

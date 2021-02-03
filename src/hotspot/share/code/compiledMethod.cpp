@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,6 +359,7 @@ void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *
   if (method() != NULL && !method()->is_native()) {
     address pc = fr.pc();
     SimpleScopeDesc ssd(this, pc);
+    if (ssd.is_optimized_linkToNative()) return; // call was replaced
     Bytecode_invoke call(methodHandle(Thread::current(), ssd.method()), ssd.bci());
     bool has_receiver = call.has_receiver();
     bool has_appendix = call.has_appendix();
@@ -702,8 +703,6 @@ address CompiledMethod::continuation_for_implicit_exception(address pc, bool for
 #ifdef ASSERT
   if (cont_offset == 0) {
     Thread* thread = Thread::current();
-    ResetNoHandleMark rnm; // Might be called from LEAF/QUICK ENTRY
-    HandleMark hm(thread);
     ResourceMark rm(thread);
     CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb != NULL && cb == this, "");

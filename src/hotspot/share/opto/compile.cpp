@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
@@ -169,24 +170,28 @@ CallGenerator* Compile::find_intrinsic(ciMethod* m, bool is_virtual) {
 #ifndef PRODUCT
 // statistics gathering...
 
-juint  Compile::_intrinsic_hist_count[vmIntrinsics::ID_LIMIT] = {0};
-jubyte Compile::_intrinsic_hist_flags[vmIntrinsics::ID_LIMIT] = {0};
+juint  Compile::_intrinsic_hist_count[vmIntrinsics::number_of_intrinsics()] = {0};
+jubyte Compile::_intrinsic_hist_flags[vmIntrinsics::number_of_intrinsics()] = {0};
+
+inline int as_int(vmIntrinsics::ID id) {
+  return vmIntrinsics::as_int(id);
+}
 
 bool Compile::gather_intrinsic_statistics(vmIntrinsics::ID id, bool is_virtual, int flags) {
   assert(id > vmIntrinsics::_none && id < vmIntrinsics::ID_LIMIT, "oob");
-  int oflags = _intrinsic_hist_flags[id];
+  int oflags = _intrinsic_hist_flags[as_int(id)];
   assert(flags != 0, "what happened?");
   if (is_virtual) {
     flags |= _intrinsic_virtual;
   }
   bool changed = (flags != oflags);
   if ((flags & _intrinsic_worked) != 0) {
-    juint count = (_intrinsic_hist_count[id] += 1);
+    juint count = (_intrinsic_hist_count[as_int(id)] += 1);
     if (count == 1) {
       changed = true;           // first time
     }
     // increment the overall count also:
-    _intrinsic_hist_count[vmIntrinsics::_none] += 1;
+    _intrinsic_hist_count[as_int(vmIntrinsics::_none)] += 1;
   }
   if (changed) {
     if (((oflags ^ flags) & _intrinsic_virtual) != 0) {
@@ -202,10 +207,10 @@ bool Compile::gather_intrinsic_statistics(vmIntrinsics::ID id, bool is_virtual, 
         flags |= _intrinsic_both;
       }
     }
-    _intrinsic_hist_flags[id] = (jubyte) (oflags | flags);
+    _intrinsic_hist_flags[as_int(id)] = (jubyte) (oflags | flags);
   }
   // update the overall flags also:
-  _intrinsic_hist_flags[vmIntrinsics::_none] |= (jubyte) flags;
+  _intrinsic_hist_flags[as_int(vmIntrinsics::_none)] |= (jubyte) flags;
   return changed;
 }
 
@@ -226,19 +231,18 @@ void Compile::print_intrinsic_statistics() {
   ttyLocker ttyl;
   if (xtty != NULL)  xtty->head("statistics type='intrinsic'");
   tty->print_cr("Compiler intrinsic usage:");
-  juint total = _intrinsic_hist_count[vmIntrinsics::_none];
+  juint total = _intrinsic_hist_count[as_int(vmIntrinsics::_none)];
   if (total == 0)  total = 1;  // avoid div0 in case of no successes
   #define PRINT_STAT_LINE(name, c, f) \
     tty->print_cr("  %4d (%4.1f%%) %s (%s)", (int)(c), ((c) * 100.0) / total, name, f);
-  for (int index = 1 + (int)vmIntrinsics::_none; index < (int)vmIntrinsics::ID_LIMIT; index++) {
-    vmIntrinsics::ID id = (vmIntrinsics::ID) index;
-    int   flags = _intrinsic_hist_flags[id];
-    juint count = _intrinsic_hist_count[id];
+  for (auto id : EnumRange<vmIntrinsicID>{}) {
+    int   flags = _intrinsic_hist_flags[as_int(id)];
+    juint count = _intrinsic_hist_count[as_int(id)];
     if ((flags | count) != 0) {
       PRINT_STAT_LINE(vmIntrinsics::name_at(id), count, format_flags(flags, flagsbuf));
     }
   }
-  PRINT_STAT_LINE("total", total, format_flags(_intrinsic_hist_flags[vmIntrinsics::_none], flagsbuf));
+  PRINT_STAT_LINE("total", total, format_flags(_intrinsic_hist_flags[as_int(vmIntrinsics::_none)], flagsbuf));
   if (xtty != NULL)  xtty->tail("statistics");
 }
 
@@ -253,7 +257,7 @@ void Compile::print_statistics() {
     PhaseIdealLoop::print_statistics();
     if (xtty != NULL)  xtty->tail("statistics");
   }
-  if (_intrinsic_hist_flags[vmIntrinsics::_none] != 0) {
+  if (_intrinsic_hist_flags[as_int(vmIntrinsics::_none)] != 0) {
     // put this under its own <statistics> element.
     print_intrinsic_statistics();
   }
@@ -335,24 +339,72 @@ void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines
   int shift = 0;
   for (int i = 0; i < inlines->length(); i++) {
     CallGenerator* cg = inlines->at(i);
-    CallNode* call = cg->call_node();
-    if (shift > 0) {
-      inlines->at_put(i-shift, cg);
-    }
-    if (!useful.member(call)) {
-      shift++;
+    if (useful.member(cg->call_node())) {
+      if (shift > 0) {
+        inlines->at_put(i - shift, cg);
+      }
+    } else {
+      shift++; // skip over the dead element
     }
   }
-  inlines->trunc_to(inlines->length()-shift);
+  if (shift > 0) {
+    inlines->trunc_to(inlines->length() - shift); // remove last elements from compacted array
+  }
+}
+
+void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead) {
+  assert(dead != NULL && dead->is_Call(), "sanity");
+  int found = 0;
+  for (int i = 0; i < inlines->length(); i++) {
+    if (inlines->at(i)->call_node() == dead) {
+      inlines->remove_at(i);
+      found++;
+      NOT_DEBUG( break; ) // elements are unique, so exit early
+    }
+  }
+  assert(found <= 1, "not unique");
 }
 
 void Compile::remove_useless_nodes(GrowableArray<Node*>& node_list, Unique_Node_List& useful) {
   for (int i = node_list.length() - 1; i >= 0; i--) {
     Node* n = node_list.at(i);
     if (!useful.member(n)) {
-      node_list.remove_if_existing(n);
+      node_list.delete_at(i); // replaces i-th with last element which is known to be useful (already processed)
     }
   }
+}
+
+void Compile::remove_useless_node(Node* dead) {
+  remove_modified_node(dead);
+
+  // Constant node that has no out-edges and has only one in-edge from
+  // root is usually dead. However, sometimes reshaping walk makes
+  // it reachable by adding use edges. So, we will NOT count Con nodes
+  // as dead to be conservative about the dead node count at any
+  // given time.
+  if (!dead->is_Con()) {
+    record_dead_node(dead->_idx);
+  }
+  if (dead->is_macro()) {
+    remove_macro_node(dead);
+  }
+  if (dead->is_expensive()) {
+    remove_expensive_node(dead);
+  }
+  if (dead->Opcode() == Op_Opaque4) {
+    remove_skeleton_predicate_opaq(dead);
+  }
+  if (dead->for_post_loop_opts_igvn()) {
+    remove_from_post_loop_opts_igvn(dead);
+  }
+  if (dead->is_Call()) {
+    remove_useless_late_inlines(                &_late_inlines, dead);
+    remove_useless_late_inlines(         &_string_late_inlines, dead);
+    remove_useless_late_inlines(         &_boxing_late_inlines, dead);
+    remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
+  }
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->unregister_potential_barrier_node(dead);
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
@@ -390,9 +442,9 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_useless_gc_barriers(useful, this);
   // clean up the late inline lists
-  remove_useless_late_inlines(&_string_late_inlines, useful);
-  remove_useless_late_inlines(&_boxing_late_inlines, useful);
-  remove_useless_late_inlines(&_late_inlines, useful);
+  remove_useless_late_inlines(                &_late_inlines, useful);
+  remove_useless_late_inlines(         &_string_late_inlines, useful);
+  remove_useless_late_inlines(         &_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
   debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
 }
@@ -455,7 +507,7 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without boxing elimination       **");
     tty->print_cr("*********************************************************");
   }
-  if (C->directive()->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     // Open the debugger when compiling this method.
     tty->print("### Breaking when compiling: ");
     method()->print_short_name();
@@ -517,6 +569,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _intrinsics        (comp_arena(), 0, 0, NULL),
                   _macro_nodes       (comp_arena(), 8, 0, NULL),
                   _predicate_opaqs   (comp_arena(), 8, 0, NULL),
+                  _skeleton_predicate_opaqs (comp_arena(), 8, 0, NULL),
                   _expensive_nodes   (comp_arena(), 8, 0, NULL),
                   _for_post_loop_igvn(comp_arena(), 8, 0, NULL),
                   _congraph(NULL),
@@ -536,6 +589,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
+                  _native_invokers(comp_arena(), 1, 0, NULL),
                   _print_inlining_stream(NULL),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
@@ -718,15 +772,13 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // If LCM, GCM, or IGVN are randomized for stress testing, seed
-  // random number generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN) {
+  // If any phase is randomized for stress testing, seed random number
+  // generation and log the seed for repeatability.
+  if (StressLCM || StressGCM || StressIGVN || StressCCP) {
     _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
       static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {
       _log->elem("stress_test seed='%u'", _stress_seed);
-    } else if (FLAG_IS_DEFAULT(StressSeed)) {
-      tty->print_cr("Warning:  set +LogCompilation to log the seed.");
     }
   }
 
@@ -832,6 +884,7 @@ Compile::Compile( ciEnv* ci_env,
     _for_igvn(NULL),
     _warm_calls(NULL),
     _number_of_mh_late_inlines(0),
+    _native_invokers(),
     _print_inlining_stream(NULL),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
@@ -951,10 +1004,10 @@ void Compile::Init(int aliaslevel) {
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking && has_method() && (method()->method_data_or_null() != NULL)) {
     int rtm_state = method()->method_data()->rtm_state();
-    if (method_has_option("NoRTMLockEliding") || ((rtm_state & NoRTM) != 0)) {
+    if (method_has_option(CompileCommand::NoRTMLockEliding) || ((rtm_state & NoRTM) != 0)) {
       // Don't generate RTM lock eliding code.
       set_rtm_state(NoRTM);
-    } else if (method_has_option("UseRTMLockEliding") || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
+    } else if (method_has_option(CompileCommand::UseRTMLockEliding) || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
       // Generate RTM lock eliding code without abort ratio calculation code.
       set_rtm_state(UseRTM);
     } else if (UseRTMDeopt) {
@@ -1783,16 +1836,28 @@ void Compile::remove_from_post_loop_opts_igvn(Node* n) {
 }
 
 void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
-  if (_for_post_loop_igvn.length() == 0) {
-    return; // no work to do
+  // Verify that all previous optimizations produced a valid graph
+  // at least to this point, even if no loop optimizations were done.
+  PhaseIdealLoop::verify(igvn);
+
+  C->set_post_loop_opts_phase(); // no more loop opts allowed
+
+  assert(!C->major_progress(), "not cleared");
+
+  if (_for_post_loop_igvn.length() > 0) {
+    while (_for_post_loop_igvn.length() > 0) {
+      Node* n = _for_post_loop_igvn.pop();
+      n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+      igvn._worklist.push(n);
+    }
+    igvn.optimize();
+    assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
+
+    // Sometimes IGVN sets major progress (e.g., when processing loop nodes).
+    if (C->major_progress()) {
+      C->clear_major_progress(); // ensure that major progress is now clear
+    }
   }
-  while (_for_post_loop_igvn.length() > 0) {
-    Node* n = _for_post_loop_igvn.pop();
-    n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
-    igvn._worklist.push(n);
-  }
-  igvn.optimize();
-  assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
 }
 
 // StringOpts and late inlining of string methods
@@ -1854,27 +1919,42 @@ bool Compile::inline_incrementally_one() {
   assert(IncrementalInline, "incremental inlining should be on");
 
   TracePhase tp("incrementalInline_inline", &timers[_t_incrInline_inline]);
+
   set_inlining_progress(false);
   set_do_cleanup(false);
-  int i = 0;
-  for (; i <_late_inlines.length() && !inlining_progress(); i++) {
-    CallGenerator* cg = _late_inlines.at(i);
+
+  for (int i = 0; i < _late_inlines.length(); i++) {
     _late_inlines_pos = i+1;
-    cg->do_late_inline();
-    if (failing())  return false;
+    CallGenerator* cg = _late_inlines.at(i);
+    bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
+    if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
+      cg->do_late_inline();
+      assert(_late_inlines.at(i) == cg, "no insertions before current position allowed");
+      if (failing()) {
+        return false;
+      } else if (inlining_progress()) {
+        _late_inlines_pos = i+1; // restore the position in case new elements were inserted
+        print_method(PHASE_INCREMENTAL_INLINE_STEP, cg->call_node(), 3);
+        break; // process one call site at a time
+      }
+    } else {
+      // Ignore late inline direct calls when inlining is not allowed.
+      // They are left in the late inline list when node budget is exhausted until the list is fully drained.
+    }
   }
-  int j = 0;
-  for (; i < _late_inlines.length(); i++, j++) {
-    _late_inlines.at_put(j, _late_inlines.at(i));
-  }
-  _late_inlines.trunc_to(j);
-  assert(inlining_progress() || _late_inlines.length() == 0, "");
+  // Remove processed elements.
+  _late_inlines.remove_till(_late_inlines_pos);
+  _late_inlines_pos = 0;
+
+  assert(inlining_progress() || _late_inlines.length() == 0, "no progress");
 
   bool needs_cleanup = do_cleanup() || over_inlining_cutoff();
 
   set_inlining_progress(false);
   set_do_cleanup(false);
-  return (_late_inlines.length() > 0) && !needs_cleanup;
+
+  bool force_cleanup = directive()->IncrementalInlineForceCleanupOption;
+  return (_late_inlines.length() > 0) && !needs_cleanup && !force_cleanup;
 }
 
 void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
@@ -1888,6 +1968,7 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
   }
+  print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
 }
 
 // Perform incremental inlining until bound on number of live nodes is reached
@@ -1911,6 +1992,18 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
       }
 
       if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
+        bool do_print_inlining = print_inlining() || print_intrinsics();
+        if (do_print_inlining || log() != NULL) {
+          // Print inlining message for candidates that we couldn't inline for lack of space.
+          for (int i = 0; i < _late_inlines.length(); i++) {
+            CallGenerator* cg = _late_inlines.at(i);
+            const char* msg = "live nodes > LiveNodeCountInliningCutoff";
+            if (do_print_inlining) {
+              cg->print_inlining_late(msg);
+            }
+            log_late_inline_failure(cg, msg);
+          }
+        }
         break; // finish
       }
     }
@@ -1921,7 +2014,6 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     while (inline_incrementally_one()) {
       assert(!failing(), "inconsistent");
     }
-
     if (failing())  return;
 
     inline_incrementally_cleanup(igvn);
@@ -1929,6 +2021,10 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     print_method(PHASE_INCREMENTAL_INLINE_STEP, 3);
 
     if (failing())  return;
+
+    if (_late_inlines.length() == 0) {
+      break; // no more progress
+    }
   }
   assert( igvn._worklist.size() == 0, "should be done with igvn" );
 
@@ -1947,6 +2043,27 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   set_inlining_incrementally(false);
 }
 
+void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
+  // "inlining_incrementally() == false" is used to signal that no inlining is allowed
+  // (see LateInlineVirtualCallGenerator::do_late_inline_check() for details).
+  // Tracking and verification of modified nodes is disabled by setting "_modified_nodes == NULL"
+  // as if "inlining_incrementally() == true" were set.
+  assert(inlining_incrementally() == false, "not allowed");
+  assert(_modified_nodes == NULL, "not allowed");
+  assert(_late_inlines.length() > 0, "sanity");
+
+  while (_late_inlines.length() > 0) {
+    for_igvn()->clear();
+    initial_gvn()->replace_with(&igvn);
+
+    while (inline_incrementally_one()) {
+      assert(!failing(), "inconsistent");
+    }
+    if (failing())  return;
+
+    inline_incrementally_cleanup(igvn);
+  }
+}
 
 bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
   if (_loop_opts_cnt > 0) {
@@ -1994,7 +2111,7 @@ void Compile::Optimize() {
   TracePhase tp("optimizer", &timers[_t_optimizer]);
 
 #ifndef PRODUCT
-  if (_directive->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     BREAKPOINT;
   }
 
@@ -2149,7 +2266,6 @@ void Compile::Optimize() {
     }
     if (!failing()) {
       // Verify that last round of loop opts produced a valid graph
-      TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
       PhaseIdealLoop::verify(igvn);
     }
   }
@@ -2184,15 +2300,9 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  // Ensure that major progress is now clear
-  C->clear_major_progress();
+  C->clear_major_progress(); // ensure that major progress is now clear
 
-  {
-    // Verify that all previous optimizations produced a valid graph
-    // at least to this point, even if no loop optimizations were done.
-    TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
-    PhaseIdealLoop::verify(igvn);
-  }
+  process_for_post_loop_opts_igvn(igvn);
 
 #ifdef ASSERT
   bs->verify_gc_barriers(this, BarrierSetC2::BeforeMacroExpand);
@@ -2217,20 +2327,26 @@ void Compile::Optimize() {
     print_method(PHASE_BARRIER_EXPANSION, 2);
   }
 
-  C->set_post_loop_opts_phase(); // no more loop opts allowed
-
-  process_for_post_loop_opts_igvn(igvn);
-
   if (C->max_vector_size() > 0) {
     C->optimize_logic_cones(igvn);
     igvn.optimize();
   }
 
   DEBUG_ONLY( _modified_nodes = NULL; )
+
   assert(igvn._worklist.size() == 0, "not empty");
+
+  assert(_late_inlines.length() == 0 || IncrementalInlineMH || IncrementalInlineVirtual, "not empty");
+
+  if (_late_inlines.length() > 0) {
+    // More opportunities to optimize virtual and MH calls.
+    // Though it's maybe too late to perform inlining, strength-reducing them to direct calls is still an option.
+    process_late_inline_calls_no_inline(igvn);
+  }
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
  process_print_inlining();
+
  // A method with only infinite loops has no edges entering loops from root
  {
    TracePhase tp("graphReshape", &timers[_t_graphReshaping]);
@@ -2246,8 +2362,6 @@ void Compile::Optimize() {
 
 void Compile::inline_vector_reboxing_calls() {
   if (C->_vector_reboxing_late_inlines.length() > 0) {
-    PhaseGVN* gvn = C->initial_gvn();
-
     _late_inlines_pos = C->_late_inlines.length();
     while (_vector_reboxing_late_inlines.length() > 0) {
       CallGenerator* cg = _vector_reboxing_late_inlines.pop();
@@ -2645,7 +2759,7 @@ void Compile::Code_Gen() {
 
     print_method(PHASE_GLOBAL_CODE_MOTION, 2);
     NOT_PRODUCT( verify_graph_edges(); )
-    debug_only( cfg.verify(); )
+    cfg.verify();
   }
 
   PhaseChaitin regalloc(unique(), cfg, matcher, false);
@@ -2901,6 +3015,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     frc.inc_java_call_count(); // Count java call site;
   case Op_CallRuntime:
   case Op_CallLeaf:
+  case Op_CallNative:
   case Op_CallLeafNoFP: {
     assert (n->is_Call(), "");
     CallNode *call = n->as_Call();
@@ -3252,25 +3367,17 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
 
   case Op_Proj: {
-    if (OptimizeStringConcat) {
-      ProjNode* p = n->as_Proj();
-      if (p->_is_io_use) {
+    if (OptimizeStringConcat || IncrementalInline) {
+      ProjNode* proj = n->as_Proj();
+      if (proj->_is_io_use) {
+        assert(proj->_con == TypeFunc::I_O || proj->_con == TypeFunc::Memory, "");
         // Separate projections were used for the exception path which
         // are normally removed by a late inline.  If it wasn't inlined
         // then they will hang around and should just be replaced with
-        // the original one.
-        Node* proj = NULL;
-        // Replace with just one
-        for (SimpleDUIterator i(p->in(0)); i.has_next(); i.next()) {
-          Node *use = i.get();
-          if (use->is_Proj() && p != use && use->as_Proj()->_con == p->_con) {
-            proj = use;
-            break;
-          }
-        }
-        assert(proj != NULL || p->_con == TypeFunc::I_O, "io may be dropped at an infinite loop");
-        if (proj != NULL) {
-          p->subsume_by(proj, this);
+        // the original one. Merge them.
+        Node* non_io_proj = proj->in(0)->as_Multi()->proj_out_or_null(proj->_con, false /*is_io_use*/);
+        if (non_io_proj  != NULL) {
+          proj->subsume_by(non_io_proj , this);
         }
       }
     }
@@ -3352,6 +3459,9 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_StoreVector:
   case Op_LoadVectorGather:
   case Op_StoreVectorScatter:
+  case Op_VectorMaskGen:
+  case Op_LoadVectorMasked:
+  case Op_StoreVectorMasked:
     break;
 
   case Op_AddReductionVI:
@@ -3385,6 +3495,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_Loop:
     assert(!n->as_Loop()->is_transformed_long_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
   case Op_CountedLoop:
+  case Op_LongCountedLoop:
   case Op_OuterStripMinedLoop:
     if (n->as_Loop()->is_inner_loop()) {
       frc.inc_inner_loop_count();
@@ -3703,7 +3814,7 @@ bool Compile::final_graph_reshaping() {
 
     // Here so verification code in final_graph_reshaping_walk()
     // always see an OuterStripMinedLoopEnd
-    if (n->is_OuterStripMinedLoopEnd()) {
+    if (n->is_OuterStripMinedLoopEnd() || n->is_LongCountedLoopEnd()) {
       IfNode* init_iff = n->as_If();
       Node* iff = new IfNode(init_iff->in(0), init_iff->in(1), init_iff->_prob, init_iff->_fcnt);
       n->subsume_by(iff, this);
@@ -4085,12 +4196,7 @@ void Compile::print_inlining_init() {
     // print_inlining_init is actually called several times.
     print_inlining_stream_free();
     _print_inlining_stream = new stringStream();
-    // Watch out: The memory initialized by the constructor call PrintInliningBuffer()
-    // will be copied into the only initial element. The default destructor of
-    // PrintInliningBuffer will be called when leaving the scope here. If it
-    // would destuct the  enclosed stringStream _print_inlining_list[0]->_ss
-    // would be destructed, too!
-    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
+    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer*>(comp_arena(), 1, 1, new PrintInliningBuffer());
   }
 }
 
@@ -4110,35 +4216,35 @@ void Compile::print_inlining_commit() {
   assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
   // Transfer the message from _print_inlining_stream to the current
   // _print_inlining_list buffer and clear _print_inlining_stream.
-  _print_inlining_list->at(_print_inlining_idx).ss()->write(_print_inlining_stream->base(), _print_inlining_stream->size());
+  _print_inlining_list->at(_print_inlining_idx)->ss()->write(_print_inlining_stream->base(), _print_inlining_stream->size());
   print_inlining_reset();
 }
 
 void Compile::print_inlining_push() {
   // Add new buffer to the _print_inlining_list at current position
   _print_inlining_idx++;
-  _print_inlining_list->insert_before(_print_inlining_idx, PrintInliningBuffer());
+  _print_inlining_list->insert_before(_print_inlining_idx, new PrintInliningBuffer());
 }
 
-Compile::PrintInliningBuffer& Compile::print_inlining_current() {
+Compile::PrintInliningBuffer* Compile::print_inlining_current() {
   return _print_inlining_list->at(_print_inlining_idx);
 }
 
 void Compile::print_inlining_update(CallGenerator* cg) {
   if (print_inlining() || print_intrinsics()) {
-    if (!cg->is_late_inline()) {
-      if (print_inlining_current().cg() != NULL) {
+    if (cg->is_late_inline()) {
+      if (print_inlining_current()->cg() != cg &&
+          (print_inlining_current()->cg() != NULL ||
+           print_inlining_current()->ss()->size() != 0)) {
         print_inlining_push();
       }
       print_inlining_commit();
+      print_inlining_current()->set_cg(cg);
     } else {
-      if (print_inlining_current().cg() != cg &&
-          (print_inlining_current().cg() != NULL ||
-           print_inlining_current().ss()->size() != 0)) {
+      if (print_inlining_current()->cg() != NULL) {
         print_inlining_push();
       }
       print_inlining_commit();
-      print_inlining_current().set_cg(cg);
     }
   }
 }
@@ -4146,9 +4252,9 @@ void Compile::print_inlining_update(CallGenerator* cg) {
 void Compile::print_inlining_move_to(CallGenerator* cg) {
   // We resume inlining at a late inlining call site. Locate the
   // corresponding inlining buffer so that we can update it.
-  if (print_inlining()) {
+  if (print_inlining() || print_intrinsics()) {
     for (int i = 0; i < _print_inlining_list->length(); i++) {
-      if (_print_inlining_list->adr_at(i)->cg() == cg) {
+      if (_print_inlining_list->at(i)->cg() == cg) {
         _print_inlining_idx = i;
         return;
       }
@@ -4158,13 +4264,13 @@ void Compile::print_inlining_move_to(CallGenerator* cg) {
 }
 
 void Compile::print_inlining_update_delayed(CallGenerator* cg) {
-  if (print_inlining()) {
+  if (print_inlining() || print_intrinsics()) {
     assert(_print_inlining_stream->size() > 0, "missing inlining msg");
-    assert(print_inlining_current().cg() == cg, "wrong entry");
+    assert(print_inlining_current()->cg() == cg, "wrong entry");
     // replace message with new message
-    _print_inlining_list->at_put(_print_inlining_idx, PrintInliningBuffer());
+    _print_inlining_list->at_put(_print_inlining_idx, new PrintInliningBuffer());
     print_inlining_commit();
-    print_inlining_current().set_cg(cg);
+    print_inlining_current()->set_cg(cg);
   }
 }
 
@@ -4173,28 +4279,16 @@ void Compile::print_inlining_assert_ready() {
 }
 
 void Compile::process_print_inlining() {
-  bool do_print_inlining = print_inlining() || print_intrinsics();
-  if (do_print_inlining || log() != NULL) {
-    // Print inlining message for candidates that we couldn't inline
-    // for lack of space
-    for (int i = 0; i < _late_inlines.length(); i++) {
-      CallGenerator* cg = _late_inlines.at(i);
-      if (!cg->is_mh_late_inline()) {
-        const char* msg = "live nodes > LiveNodeCountInliningCutoff";
-        if (do_print_inlining) {
-          cg->print_inlining_late(msg);
-        }
-        log_late_inline_failure(cg, msg);
-      }
-    }
-  }
-  if (do_print_inlining) {
+  assert(_late_inlines.length() == 0, "not drained yet");
+  if (print_inlining() || print_intrinsics()) {
     ResourceMark rm;
     stringStream ss;
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");
     for (int i = 0; i < _print_inlining_list->length(); i++) {
-      ss.print("%s", _print_inlining_list->adr_at(i)->ss()->as_string());
-      _print_inlining_list->at(i).freeStream();
+      PrintInliningBuffer* pib = _print_inlining_list->at(i);
+      ss.print("%s", pib->ss()->as_string());
+      delete pib;
+      DEBUG_ONLY(_print_inlining_list->at_put(i, NULL));
     }
     // Reset _print_inlining_list, it only contains destructed objects.
     // It is on the arena, so it will be freed when the arena is reset.
@@ -4696,3 +4790,6 @@ void Compile::igv_print_method_to_network(const char* phase_name) {
 }
 #endif
 
+void Compile::add_native_invoker(BufferBlob* stub) {
+  _native_invokers.append(stub);
+}

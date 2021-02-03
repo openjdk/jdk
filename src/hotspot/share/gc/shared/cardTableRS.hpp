@@ -88,7 +88,7 @@ public:
   CardTableRS(MemRegion whole_heap, bool scanned_concurrently);
   ~CardTableRS();
 
-  void younger_refs_in_space_iterate(Space* sp, HeapWord* gen_boundary, OopIterateClosure* cl, uint n_threads);
+  void younger_refs_in_space_iterate(Space* sp, HeapWord* gen_boundary, OopIterateClosure* cl);
 
   virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 
@@ -147,15 +147,11 @@ public:
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions
   // of mr. Clears the dirty cards as they are processed.
-  void non_clean_card_iterate_possibly_parallel(Space* sp, HeapWord* gen_boundary,
-                                                MemRegion mr, OopIterateClosure* cl,
-                                                CardTableRS* ct, uint n_threads);
-
-  // Work method used to implement non_clean_card_iterate_possibly_parallel()
-  // above in the parallel case.
-  virtual void non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
-                                                    OopIterateClosure* cl, CardTableRS* ct,
-                                                    uint n_threads);
+  void non_clean_card_iterate(Space* sp,
+                              HeapWord* gen_boundary,
+                              MemRegion mr,
+                              OopIterateClosure* cl,
+                              CardTableRS* ct);
 
   // This is an array, one element per covered region of the card table.
   // Each entry is itself an array, with one element per chunk in the
@@ -175,7 +171,6 @@ public:
 class ClearNoncleanCardWrapper: public MemRegionClosure {
   DirtyCardToOopClosure* _dirty_card_closure;
   CardTableRS* _ct;
-  bool _is_par;
 
 public:
 
@@ -191,7 +186,7 @@ private:
   bool is_word_aligned(CardValue* entry);
 
 public:
-  ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct, bool is_par);
+  ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct);
   void do_MemRegion(MemRegion mr);
 };
 
