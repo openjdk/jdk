@@ -71,7 +71,7 @@ public class TestNestedReturnTag extends JavadocTester {
                 """
                     package p;
                     /** Comment. */
-                    public class C { 
+                    public class C {
                         /** {@return abc ABC {@return def DEF} GHI} */
                         public int m() { return 0; }
                     }
@@ -95,7 +95,7 @@ public class TestNestedReturnTag extends JavadocTester {
                 """
                     package p;
                     /** Comment. */
-                    public class C { 
+                    public class C {
                         /** {@return abc ABC {@value Short#MAX_VALUE} DEF} */
                         public int m() { return 0; }
                     }

@@ -84,10 +84,10 @@ public class TestNestedLinkTag extends JavadocTester {
                 """
                     package p;
                     /** First sentence. {@#OUTER# #m1() ABC {@#INNER# #m2() DEF} GHI} */
-                    public class C { 
-                        /** Comment m1. */ 
+                    public class C {
+                        /** Comment m1. */
                         public void m1() { }
-                        /** Comment m2. */ 
+                        /** Comment m2. */
                         public void m2() { }
                     }
                     """
@@ -112,8 +112,8 @@ public class TestNestedLinkTag extends JavadocTester {
                 """
                     package p;
                     /** First sentence. {@link #m1() ABC {@value Short#MAX_VALUE} DEF} */
-                    public class C { 
-                        /** Comment. */ 
+                    public class C {
+                        /** Comment. */
                         public void m1() { }
                     }
                     """);
