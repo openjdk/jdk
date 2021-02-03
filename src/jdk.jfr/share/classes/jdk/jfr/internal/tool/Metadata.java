@@ -205,23 +205,8 @@ final class Metadata extends Command {
                 filter = addCache(filter, eventType -> eventType.getId());
             }
 
-            // determine whether reading from recording file or reading from the JDK where
-            // the jfr tool is located will be used
-            List<EventType> types = null;
-            if (file != null) {
-                try (RecordingFile rf = new RecordingFile(file)) {
-                    types = rf.readEventTypes();
-                } catch (IOException ioe) {
-                     couldNotReadError(file, ioe);
-                }
-            } else {
-                // FlightRecorder.getEventTypes returns unmodifiable list thus disallowing sorting
-                // so copy its elements to a new list and sort it
-                types = new ArrayList<>(FlightRecorder.getFlightRecorder().getEventTypes());
-            }
-            if (types != null) {
-                Collections.sort(types, new TypeComparator());
-            }
+            List<EventType> types = getAllTypes(file);
+            Collections.sort(types, new TypeComparator());
             for (EventType type : types) {
                 if (filter != null && !filter.test(type)) {
                     continue;
@@ -232,6 +217,23 @@ final class Metadata extends Command {
             prettyWriter.flush(true);
             pw.flush();
         }
+    }
+
+    private List<EventType> getAllTypes(Path file) throws UserDataException {
+        // determine whether reading from recording file or reading from the JDK where
+        // the jfr tool is located will be used
+        if (file == null) {
+            // FlightRecorder.getEventTypes returns unmodifiable list thus disallowing
+            // sorting so copy its elements to a new list and sort it
+            return new ArrayList<>(FlightRecorder.getFlightRecorder().getEventTypes());
+        }
+        List<EventType> types = null;
+        try (RecordingFile rf = new RecordingFile(file)) {
+            types = rf.readEventTypes();
+        } catch (IOException ioe) {
+            couldNotReadError(file, ioe);
+        }
+        return types;
     }
 
     private Path getOptionalJFRInputFile(Deque<String> options) throws UserDataException {
