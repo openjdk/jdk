@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "libadt/vectset.hpp"
@@ -34,6 +35,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
@@ -1053,6 +1055,170 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
   }
 }
 
+bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
+  if (!EliminateAllocations || !OptimizeTempArray || C->congraph() == nullptr)
+    return false;
+
+  if (!ac->is_string_copy(&_igvn))
+    return false;
+
+  const ConnectionGraph& cg = *C->congraph();
+  CheckCastPPNode* dst = ac->in(ArrayCopyNode::Dest)->as_CheckCastPP();
+  AllocateArrayNode* aa = dst->in(1)->in(0)->as_AllocateArray();
+  PointsToNode* pt = cg.ptnode_adr(aa->_idx);
+
+  // if AllocateArray is non-ecape, stop discovering its object.
+  // users may directly use a array of byte to store the temporary string.
+  // byte[] buf = new byte[length] and System.arraycopy(str.value, 0, buf, 0, str.length())
+  // if (pt == nullptr || pt->escape_state() != PointsToNode::NoEscape) {
+  // xliu: too aggressive. must see an j.l.lString
+  {
+    Node* obj = aa->in(TypeFunc::I_O);
+    if (obj->is_Proj() && obj->in(0)->is_Allocate()) {
+      AllocateNode* alloc = obj->in(0)->as_Allocate();
+      const TypeKlassPtr* type = _igvn.type(alloc->in(AllocateNode::KlassNode))->isa_klassptr();
+
+      if (type != nullptr && type->name() == ciSymbols::java_lang_String()) {
+        pt = cg.ptnode_adr(alloc->_idx);
+      }
+    } else {
+      pt = nullptr;
+    }
+  }
+
+  if (pt != nullptr && pt->escape_state() == PointsToNode::NoEscape) {
+  #ifndef PRODUCT
+    if (PrintEliminateAllocations) {
+      tty->print_cr("[ArrayCopyNode] is eliminated");
+      ac->dump();
+    }
+  #endif
+
+    aa->_is_non_escaping = true; // this AllocateArray must be eliminated
+    aa->_is_scalar_replaceable = true; // not really, we don't do SR for it.
+    aa->set_str_alloc_obsolete(true);
+    C->remove_macro_node(ac);
+    return true;
+  }
+
+  return false;
+}
+
+//
+// BEFORE
+//                   -------------------
+//                   |  AllocateArray  |
+//                   -------------------
+//                         |
+//                   -------------------
+//                   |   Project #5    |
+//                   -------------------
+//                         |
+// ----------           -------------------
+// | CastPP  |          |   CheckCastPP   |
+// ----------           -------------------
+//            \Src      |Dest        |  | \_____________
+//             --------------------- |  -----------     \
+//             |   ArrayCopy       | |  | EncodeP |      --------------
+//             --------------------- |  -----------      |   CastP2X  |
+//                                   |     ---------     --------------
+//                                   |     |ConL#16|
+//                                   |     ---------
+//                                    \      /
+//                                   ------------
+//                                   |  AddP    |
+//                                   ------------
+//                                   /          \
+//                              ----------       ----------
+//                             | LoadUB  |       |LoadRange|
+//                              ----------       ----------
+//
+//
+//
+// AFTER
+//                       ----------
+//                       | SrcPos |   -----------
+//                       ----------  | ContL#16 |
+//                         |        / -----------
+//           ----------   --------
+//           | CastPP  |  | ADDL |
+//           ----------   --------
+//                 |S       |
+//                 |R       |
+//                 |C       |
+//                 |        |
+//                 |        /
+//                -----------
+//                |  AddP   |
+//                -----------
+//                /          \
+//               ----------   ----------
+//               | LoadUB  |  |LoadRange|
+//               ----------   ----------
+//
+//
+//  EncodeP:  delele because we don't need storeN
+//  CastP2X:  delete because we don't need StoreCM
+//  AllocateArray: don't need to allocate byte[] (still need allocation in deoptimization)
+//  ArrayCopy: delete because we don't need to copy contents
+//  LoadRange: be replaced with ArrayCopy's Length
+//
+void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* alloc, ArrayCopyNode* ac) {
+  Node* res = alloc->result_cast();
+  Node* length = ac->in(ArrayCopyNode::Length);
+  Node* src = ac->in(ArrayCopyNode::Src);
+  assert(src->Opcode() == Op_CastPP || src->Opcode() == Op_CheckCastPP || src->Opcode() == Op_ConP,
+        "must be CastPP, CheckedCastPP or ConP");
+  Node* src_adr = nullptr;
+
+  if (res == nullptr) return;
+  tty->print_cr("[process_users_of_string_allocation] alloc = %d, ac = %d", alloc->_idx, ac->_idx);
+  for (DUIterator_Fast imax, i = res->fast_outs(imax); i < imax; i++) {
+    Node* use = res->fast_out(i);
+    uint oc1 = res->outcnt();
+
+    if (use->is_AddP()) {
+      Node* offset = use->in(AddPNode::Offset);
+      jlong offset_const = offset->is_Con() ? offset->get_long() : -1;
+
+      //xliu: Do I need to boundary check here?
+      for (DUIterator_Last jmin, j = use->last_outs(jmin); j >= jmin; ) {
+        Node* n = use->last_out(j);
+        uint oc2 = use->outcnt();
+
+        if (offset_const == 12) {
+          assert(n->Opcode() == Op_LoadRange, "res+12 must be the input of a LoadRange");
+          _igvn.replace_node(n, length);
+        } else {
+          assert(n->Opcode() == Op_LoadUB || n->Opcode() == Op_LoadB, "unknow code shape");
+
+          if (src_adr == nullptr) {
+            src_adr = ConvI2L(ac->in(ArrayCopyNode::SrcPos));
+            src_adr = basic_plus_adr(src->in(1), src, src_adr);
+          }
+          Node* dst_adr = basic_plus_adr(src_adr->in(1), src_adr, offset);
+          _igvn.replace_node(n, dst_adr);
+        }
+        j -= (oc2 - use->outcnt());
+      }
+
+      _igvn.remove_dead_node(use);
+    } else if (use->is_EncodeP()) {
+      _igvn.replace_node(use, top());
+      _igvn.remove_dead_node(use);
+    } else {
+      // don't touch other nodes
+      // remaining nodes should be SafePoint nodes. we should generate ad-hoc
+      // nodes for debuginfo here
+    }
+
+    if (oc1 > res->outcnt()) {
+      --i;
+      imax -= oc1 - res->outcnt();
+    }
+  }
+}
+
 bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   // If reallocation fails during deoptimization we'll pop all
   // interpreter frames for this compiled frame and that won't play
@@ -1066,22 +1232,39 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
   Node* res = alloc->result_cast();
 
-  bool purgeable = false;
+  // if j.l.String::value has been obsolete, AllocateArray can be eliminated
+  bool str_alloc = alloc->is_AllocateArray() &&
+                   alloc->as_AllocateArray()->is_str_alloc_obsolete();
+
   // Eliminate boxing allocations which are not used
   // regardless scalar replacable status.
-  if (C->eliminate_boxing() && tklass->klass()->is_instance_klass()) {
-    purgeable |= tklass->klass()->as_instance_klass()->is_box_klass();
-  }
-  // if j.l.String::value has been obsolete, purge AllocateArray
-  if (alloc->is_AllocateArray()) {
-    purgeable |= alloc->as_AllocateArray()->is_str_alloc_obsolete();
+  bool boxing_alloc = C->eliminate_boxing() &&
+                      tklass->klass()->is_instance_klass()  &&
+                      tklass->klass()->as_instance_klass()->is_box_klass();
+  if (!alloc->_is_scalar_replaceable && (!boxing_alloc || (res != NULL))) {
+    return false;
   }
 
-  purgeable &= res == nullptr;
-  // if alloc is NOT scalar_replaceable and it's NOT purgeable,
-  // we give up.
-  if (!alloc->_is_scalar_replaceable && !purgeable) {
-    return false;
+  if (alloc->is_AllocateArray()) {
+    AllocateArrayNode* aa = alloc->as_AllocateArray();
+
+    // aa has deprecated, now we need to handle its uses
+    if (aa->is_str_alloc_obsolete() && res != nullptr) {
+      ArrayCopyNode* ac = nullptr;
+
+      // we need to find the arraynode which use res as Dest
+      for (DUIterator_Fast imax, i = res->fast_outs(imax); i < imax; i++) {
+        Node* use = res->fast_out(i);
+        if (use->is_ArrayCopy()) {
+          if (res == use->as_ArrayCopy()->in(ArrayCopyNode::Dest)) {
+            ac = use->as_ArrayCopy();
+            break;
+          }
+        }
+      }
+      assert(ac != nullptr, "can't find ArrayCopyNode which use AllocateArray");
+      process_users_of_string_allocation(aa, ac);
+    }
   }
 
   extract_call_projections(alloc);
@@ -1101,7 +1284,9 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     }
   }
 
-  if (!scalar_replacement(alloc, safepoints)) {
+  if (str_alloc) {
+    // gennerate debug information
+  } else if (!scalar_replacement(alloc, safepoints)) {
     return false;
   }
 
@@ -2556,6 +2741,25 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
+// sort macro nodes for strcpy elimination
+// the order is others < Allocate < AllocateArray < ArrayCopy
+void PhaseMacroExpand::sort_macro_for_strcpy_opt() {
+  int order[] = {Op_ArrayCopy, Op_AllocateArray, Op_Allocate};
+
+  int p = C->macro_count() - 1;
+  for (int i = 0; i < 3; ++i) {
+    for (int j = p; j >= 0 ; --j) {
+      if (C->macro_node(j)->Opcode() == order[i]) {
+        C->macro_node_swap(p--, j);
+      }
+   }
+  }
+
+  //for (int i = C->macro_count() - 1; i > p; --i) {
+  //  C->macro_node(i)->dump();
+  //}
+}
+
 //---------------------------eliminate_macro_nodes----------------------
 // Eliminate scalar replaced allocations and associated locks.
 void PhaseMacroExpand::eliminate_macro_nodes() {
@@ -2589,6 +2793,9 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       progress = progress || success;
     }
   }
+
+  sort_macro_for_strcpy_opt();
+
   // Next, attempt to eliminate allocations
   _has_locks = false;
   progress = true;
@@ -2615,6 +2822,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         _has_locks = true;
         break;
       case Node::Class_ArrayCopy:
+        // don't delete arraycopy
+        success = eliminate_strcpy_node(n->as_ArrayCopy());
         break;
       case Node::Class_OuterStripMinedLoop:
         break;
@@ -2629,7 +2838,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
                "unknown node type in macro list");
       }
-      assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
+      //assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
     }
   }

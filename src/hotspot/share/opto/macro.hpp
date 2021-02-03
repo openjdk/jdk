@@ -106,10 +106,12 @@ private:
   Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level);
 
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
+  bool eliminate_strcpy_node(ArrayCopyNode* ac);
   bool eliminate_allocate_node(AllocateNode *alloc);
   bool can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
   bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
   void process_users_of_allocation(CallNode *alloc);
+  void process_users_of_string_allocation(AllocateArrayNode* alloc, ArrayCopyNode* ac);
 
   void eliminate_gc_barrier(Node *p2x);
   void mark_eliminated_box(Node* box, Node* obj);
@@ -207,7 +209,7 @@ private:
                           Node* size_in_bytes);
 
   Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
-
+  void sort_macro_for_strcpy_opt();
 public:
   PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {
     _igvn.set_delay_transform(true);

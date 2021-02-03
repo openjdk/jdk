@@ -319,7 +319,7 @@ public:
 
 class ConnectionGraph: public ResourceObj {
   friend class PointsToNode;
-  friend class ArrayCopyNode;
+  friend class PhaseMacroExpand;
 private:
   GrowableArray<PointsToNode*>  _nodes; // Map from ideal nodes to
                                         // ConnectionGraph nodes.

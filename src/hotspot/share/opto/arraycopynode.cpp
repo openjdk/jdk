@@ -23,20 +23,17 @@
  */
 
 #include "precompiled.hpp"
-#include "ci/ciSymbols.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-class PointsToNode;
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), NULL, TypePtr::BOTTOM),
@@ -502,8 +499,8 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
   }
   return true;
 }
-// return true if the current ArrayCopy is for string::value:byte[]
-bool ArrayCopyNode::is_copy_for_string(PhaseGVN* phase) const {
+// return true if the current ArrayCopy copy from byte[] to byte[]
+bool ArrayCopyNode::is_string_copy(PhaseGVN* phase) const {
   if (_kind == ArrayCopy && _alloc_tightly_coupled && _arguments_validated) {
       const TypeAryPtr* src_type = nullptr;
       const TypeAryPtr* dst_type = nullptr;
@@ -526,126 +523,6 @@ bool ArrayCopyNode::is_copy_for_string(PhaseGVN* phase) const {
   }
 
   return false;
-}
-
-//
-// BEFORE
-//                   -------------------
-//                   |  AllocateArray  |
-//                   -------------------
-//                         |
-//                   -------------------
-//                   |   Project #5    |
-//                   -------------------
-//                         |
-// ----------           -------------------
-// | CastPP  |          |   CheckCastPP   |
-// ----------           -------------------
-//            \Src      |Dest        |  | \_____________
-//             --------------------- |  -----------     \
-//             |   ArrayCopy       | |  | EncodeP |      --------------
-//             --------------------- |  -----------      |   CastP2X  |
-//                                   |     ---------     --------------
-//                                   |     |ConL#16|
-//                                   |     ---------
-//                                    \      /
-//                                   ------------
-//                                   |  AddP    |
-//                                   ------------
-//                                   /          \
-//                              ----------       ----------
-//                             | LoadUB  |       |LoadRange|
-//                              ----------       ----------
-//
-//
-//
-// AFTER
-//                       ----------
-//                       | SrcPos |   -----------
-//                       ----------  | ContL#16 |
-//                         |        / -----------
-//           ----------   --------
-//           | CastPP  |  | ADDL |
-//           ----------   --------
-//                 |S       |
-//                 |R       |
-//                 |C       |
-//                 |        |
-//                 |        /
-//                -----------
-//                |  AddP   |
-//                -----------
-//                /          \
-//               ----------   ----------
-//               | LoadUB  |  |LoadRange|
-//               ----------   ----------
-//
-//
-//  EncodeP:  delele because we don't need storeN
-//  CastP2X:  delete because we don't need StoreCM
-//  AllocateArray: don't need to allocate byte[] (still need allocation in deoptimization)
-//  ArrayCopy: delete because we don't need to copy contents
-//  LoadRange: be replaced with ArrayCopy's Length
-//
-void ArrayCopyNode::process_users_of_allocation(AllocateArrayNode* alloc, PhaseIterGVN* igvn) {
-  Node* res = alloc->result_cast();
-  Node* length = this->in(ArrayCopyNode::Length);
-  Node* src = this->in(ArrayCopyNode::Src);
-  assert(src->Opcode() == Op_CastPP || src->Opcode() == Op_CheckCastPP || src->Opcode() == Op_ConP,
-        "must be CastPP, CheckedCastPP or ConP");
-  Node* src_adr = nullptr;
-
-  if (res == nullptr) return;
-  for (DUIterator_Fast imax, i = res->fast_outs(imax); i < imax; i++) {
-    Node* use = res->fast_out(i);
-    uint oc1 = res->outcnt();
-
-    if (use->is_AddP()) {
-      Node* offset = use->in(AddPNode::Offset);
-      jlong offset_const = offset->is_Con() ? offset->get_long() : -1;
-
-      //xliu: Do I need to boundary check here?
-      for (DUIterator_Last jmin, j = use->last_outs(jmin); j >= jmin; ) {
-        Node* n = use->last_out(j);
-        uint oc2 = use->outcnt();
-
-        if (offset_const == 12) {
-          assert(n->Opcode() == Op_LoadRange, "res+12 must be the input of a LoadRange");
-          igvn->replace_node(n, length);
-        } else {
-          assert(n->Opcode() == Op_LoadUB, "unknow code shape");
-
-          if (src_adr == nullptr) {
-            src_adr = this->in(ArrayCopyNode::SrcPos);
-            src_adr = igvn->transform(new ConvI2LNode(src_adr));
-            src_adr = igvn->transform(new AddPNode(src->in(1), src, src_adr));
-          }
-          Node* dst_adr = igvn->transform(new AddPNode(src_adr->in(1), src_adr, offset));
-          igvn->replace_node(n, dst_adr);
-        }
-        j -= (oc2 - use->outcnt());
-      }
-
-      igvn->remove_dead_node(use);
-    } else if (use->is_EncodeP()) {
-      igvn->replace_node(use, igvn->C->top());
-      igvn->remove_dead_node(use);
-    } else if (use->Opcode() == Op_CastP2X) {
-      //BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
-      //bs->eliminate_gc_barrier(this, use)
-      igvn->replace_node(use, igvn->C->top());
-      igvn->remove_dead_node(use);
-    } else {
-      // don't touch other nodes
-      // remaining nodes should be SafePoint nodes. we should generate ad-hoc
-      // nodes for debuginfo here
-    }
-
-    if (oc1 > res->outcnt()) {        
-      --i;
-      imax -= oc1 - res->outcnt();
-    }
-  }
 }
 
 Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -688,107 +565,6 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int count = get_count(phase);
 
   if (count < 0 || count > ArrayCopyLoadStoreMaxElem) {
-    if (count < 0 && can_reshape ) { // only in iterGVN
-      // we rely on Eliminate_Allocations to remove AllocateArray.
-      if (EliminateAllocations && OptimizeTempArray && phase->C->congraph() != nullptr &&
-          is_copy_for_string(phase)) {
-        const ConnectionGraph& cg = *phase->C->congraph();
-        CheckCastPPNode* dst = in(ArrayCopyNode::Dest)->as_CheckCastPP();
-        AllocateNode* alloc = dst->in(1)->in(0)->as_AllocateArray();
-        PointsToNode* pt = cg.ptnode_adr(alloc->_idx);
-
-        // if AllocateArray is non-ecape, stop discovering its object.
-        // users may directly use a array of byte to store the temporary string.
-        // byte[] buf = new byte[length] and System.arraycopy(str.value, 0, buf, 0, str.length())
-        if (pt == nullptr || pt->escape_state() != PointsToNode::NoEscape) {
-          Node* obj = alloc->in(TypeFunc::I_O);
-          if (obj->is_Proj() && obj->in(0)->is_Allocate()) {
-            alloc = obj->in(0)->as_Allocate();
-            const TypeKlassPtr* type = phase->type(alloc->in(AllocateNode::KlassNode))->isa_klassptr();
-
-            if (type != nullptr && type->name() == ciSymbols::java_lang_String()) {
-              pt = cg.ptnode_adr(alloc->_idx);
-            }
-          }
-        }
-
-        if (pt != nullptr && pt->escape_state() == PointsToNode::NoEscape) {
-#ifndef PRODUCT
-          if (Verbose) dump(0);
-          tty->print_cr("[ArrayCopyNode] is optimized");
-          pt->dump(true);
-#endif
-          PhaseIterGVN* igvn = phase->is_IterGVN();
-          AllocateArrayNode* aa = dst->in(1)->in(0)->as_AllocateArray();
-
-          if (!aa->is_str_alloc_obsolete()) {
-            aa->_is_non_escaping = true; // this AllocateArray must be eliminated
-            aa->set_str_alloc_obsolete(true);
-            process_users_of_allocation(aa, igvn);
-
-            { // short-circuit memory and control edges
-              CallProjections cp;
-              extract_projections(&cp, false, false);
-
-              if (cp.fallthrough_memproj != nullptr) {
-                Node* mem = in(TypeFunc::Memory);
-                Node* memproj = cp.fallthrough_memproj;
-
-                for (DUIterator_Fast imax, i = memproj->fast_outs(imax); i < imax; i++) {
-                  Node* res = memproj->fast_out(i);
-
-                  if (res->is_MergeMem()) {
-                    uint num_edges = 0;
-
-                    for (MergeMemStream mms(res->as_MergeMem()); mms.next_non_empty(); ) {
-                      if (memproj == mms.memory()) {
-                        mms.set_memory(mem);
-                        num_edges++;
-                      }
-                    }
-
-                    assert(num_edges > 0, "invalid mergeMemNoe");
-                    igvn->rehash_node_delayed(res);
-                    --i;
-                    imax -= num_edges;
-                    continue;
-                  } else if (res->is_Phi()) {
-                    for (uint j = 0; j < res->req(); ++j) {
-                      if (res->in(j) == memproj) {
-                        igvn->replace_input_of(res, j, mem);
-                        break;
-                      }
-                    }
-                  } else if (res->is_SafePoint() || res->Opcode() == Op_Return) {
-                    igvn->replace_input_of(res, TypeFunc::Memory, mem);
-                  } else {
-                    assert(res->is_Mem(), "not be a MemNode");
-                    igvn->replace_input_of(res, MemNode::Memory, mem);
-                  }
-
-                  --i; --imax;
-                }
-              }
-
-              if (cp.fallthrough_catchproj != nullptr) {
-                Node* catchproj = cp.fallthrough_catchproj;
-
-                for (DUIterator_Fast imax, i = catchproj->fast_outs(imax); i < imax; i++) {
-                  Node* next = catchproj->fast_out(i);
-                  assert(next->in(0) == catchproj, "must be a control");
-
-                  igvn->replace_input_of(next, 0, in(TypeFunc::Control));
-                  --i; --imax;
-                }
-              }
-            }
-
-            return phase->C->top();
-          }
-        }
-      }
-    }
-
     return nullptr;
   }
 
