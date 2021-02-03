@@ -51,8 +51,7 @@ public final class InnocuousThread extends Thread {
 
     /**
      * Returns a new InnocuousThread with an auto-generated thread name,
-     * inheriting the current thread priority, and its context class loader
-     * is set to the system class loader.
+     * and its context class loader is set to the system class loader.
      */
     public static Thread newThread(Runnable target) {
         return newThread(newName(), target);
@@ -60,15 +59,15 @@ public final class InnocuousThread extends Thread {
 
     /**
      * Returns a new InnocuousThread with its context class loader
-     * set to the system class loader, inheriting the current thread priority
+     * set to the system class loader.
      */
     public static Thread newThread(String name, Runnable target) {
         return newThread(name, target, -1);
     }
     /**
      * Returns a new InnocuousThread with its context class loader
-     * set to the system class loader, with the thread priority set to
-     * the given priority.
+     * set to the system class loader. The thread priority will be
+     * set to the given priority.
      */
     public static Thread newThread(String name, Runnable target, int priority) {
         if (System.getSecurityManager() == null) {
@@ -84,8 +83,7 @@ public final class InnocuousThread extends Thread {
     }
 
     /**
-     * Returns a new InnocuousThread with an auto-generated thread name,
-     * inheriting the current thread priority.
+     * Returns a new InnocuousThread with an auto-generated thread name.
      * Its context class loader is set to null.
      */
     public static Thread newSystemThread(Runnable target) {
@@ -93,16 +91,15 @@ public final class InnocuousThread extends Thread {
     }
 
     /**
-     * Returns a new InnocuousThread with null context class loader,
-     * inheriting the current thread priority.
+     * Returns a new InnocuousThread with null context class loader.
      */
     public static Thread newSystemThread(String name, Runnable target) {
         return newSystemThread(name, target, -1);
     }
 
     /**
-     * Returns a new InnocuousThread with null context class loader,
-     * with priority set to the given priority.
+     * Returns a new InnocuousThread with null context class loader.
+     * Thread priority is set to the given priority.
      */
     public static Thread newSystemThread(String name, Runnable target, int priority) {
         if (System.getSecurityManager() == null) {
