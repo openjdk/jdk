@@ -3235,11 +3235,6 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 // ((OopHandle)result).resolve();
 void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2, MacroAssembler::PreservationLevel preservation_level) {
   access_load_at(T_OBJECT, IN_NATIVE, result, noreg, result, tmp1, tmp2, preservation_level);
-  if (preservation_level < MacroAssembler::PRESERVATION_FRAME_LR) clobber_carg_stack_slots(tmp1);
-  if (preservation_level < MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS) clobber_volatile_gprs(result);
-  if (preservation_level < MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS) fsub(F1_ARG1, F1_ARG1, F1_ARG1);
-  if (tmp1 != result && tmp1->is_volatile()) li(tmp1, 0x44);
-  if (tmp2 != result && tmp2->is_volatile()) li(tmp2, 0x45);
 }
 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
