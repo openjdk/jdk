@@ -88,65 +88,65 @@
 
         .globl aarch64_atomic_fetch_add_8_default_impl
 aarch64_atomic_fetch_add_8_default_impl:
-0:      ldaxr	x2, [x0]
-	add	x8, x2, x1
-	stlxr	w9, x8, [x0]
-	cbnz	w9, 0b
-	mov	x0, x2
-	ret
+0:      ldaxr   x2, [x0]
+        add     x8, x2, x1
+        stlxr   w9, x8, [x0]
+        cbnz    w9, 0b
+        mov     x0, x2
+        ret
 
         .globl aarch64_atomic_fetch_add_4_default_impl
 aarch64_atomic_fetch_add_4_default_impl:
-0:      ldaxr	w2, [x0]
-	add	w8, w2, w1
-	stlxr	w9, w8, [x0]
-	cbnz	w9, 0b
-	mov	w0, w2
-	ret
+0:      ldaxr   w2, [x0]
+        add     w8, w2, w1
+        stlxr   w9, w8, [x0]
+        cbnz    w9, 0b
+        mov     w0, w2
+        ret
 
         .globl aarch64_atomic_xchg_4_default_impl
 aarch64_atomic_xchg_4_default_impl:
-0:      ldaxr	w2, [x0]
-	stlxr	w8, w1, [x0]
-	cbnz	w8, 0b
-	mov	w0, w2
-	ret
+0:      ldaxr   w2, [x0]
+        stlxr   w8, w1, [x0]
+        cbnz    w8, 0b
+        mov     w0, w2
+        ret
 
         .globl aarch64_atomic_xchg_8_default_impl
 aarch64_atomic_xchg_8_default_impl:
-0:      ldaxr	x2, [x0]
-	stlxr	w8, x1, [x0]
-	cbnz	w8, 0b
-	mov	x0, x2
-	ret
+0:      ldaxr   x2, [x0]
+        stlxr   w8, x1, [x0]
+        cbnz    w8, 0b
+        mov     x0, x2
+        ret
 
         .globl aarch64_atomic_cmpxchg_1_default_impl
 aarch64_atomic_cmpxchg_1_default_impl:
-0:      ldxrb	w3, [x0]
-	eor	w8, w3, w1
-	tst	x8, #0xff
-	b.ne	1f
-        stxrb	w8, w2, [x0]
-	cbnz	w8, 0b
-1:      mov	w0, w3
-	ret
+0:      ldxrb   w3, [x0]
+        eor     w8, w3, w1
+        tst     x8, #0xff
+        b.ne    1f
+        stxrb   w8, w2, [x0]
+        cbnz    w8, 0b
+1:      mov     w0, w3
+        ret
 
         .globl aarch64_atomic_cmpxchg_4_default_impl
 aarch64_atomic_cmpxchg_4_default_impl:
-0:      ldxr	w3, [x0]
-	cmp	w3, w1
-	b.ne	1f
-	stxr	w8, w2, [x0]
-	cbnz	w8, 0b
-1:      mov	w0, w3
-	ret
+0:      ldxr    w3, [x0]
+        cmp     w3, w1
+        b.ne    1f
+        stxr    w8, w2, [x0]
+        cbnz    w8, 0b
+1:      mov     w0, w3
+        ret
 
         .globl aarch64_atomic_cmpxchg_8_default_impl
 aarch64_atomic_cmpxchg_8_default_impl:
-0:      ldxr	x3, [x0]
-	cmp	x3, x1
-	b.ne	1f
-	stxr	w8, x2, [x0]
-	cbnz	w8, 0b
-1:      mov	x0, x3
-	ret
+0:      ldxr    x3, [x0]
+        cmp     x3, x1
+        b.ne    1f
+        stxr    w8, x2, [x0]
+        cbnz    w8, 0b
+1:      mov     x0, x3
+        ret
