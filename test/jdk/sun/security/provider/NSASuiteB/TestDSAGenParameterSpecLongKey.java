@@ -21,11 +21,6 @@
  * questions.
  */
 
-import java.security.*;
-import java.security.spec.DSAGenParameterSpec;
-import java.security.spec.DSAParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
-
 /*
  * @test
  * @bug 8075286 8163498
