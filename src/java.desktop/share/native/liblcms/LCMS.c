@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -649,9 +649,22 @@ JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
     if (pf == NULL) {
         return NULL;
     }
-    fid = (*env)->GetFieldID (env,
-        (*env)->GetObjectClass(env, pf),
-        "cmmProfile", "Lsun/java2d/cmm/Profile;");
+
+    jclass pcls = (*env)->GetObjectClass(env, pf);
+    if (pcls == NULL) {
+        return NULL;
+    }
+    jmethodID mid = (*env)->GetMethodID(env, pcls, "activate", "()V");
+    if (mid == NULL) {
+        return NULL;
+    }
+    (*env)->CallVoidMethod(env, pf, mid);
+    if ((*env)->ExceptionOccurred(env)) {
+        return NULL;
+    }
+
+    fid = (*env)->GetFieldID(env, pcls, "cmmProfile",
+                             "Lsun/java2d/cmm/Profile;");
     if (fid == NULL) {
         return NULL;
     }
