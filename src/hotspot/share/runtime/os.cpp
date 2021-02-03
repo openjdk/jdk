@@ -1813,10 +1813,10 @@ void os::print_memory_mappings(outputStream* st) {
 
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
   for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
-    // This must be a store due to OS optimizations like e.g. the Linux zero page
-    // optimization where only writes trigger actual backing of memory. Reads
-    // access a single shared zero page at first and so will not achieve the
-    // desired effect.
+    // Note: this must be a store, not a load. On many OSes loads from fresh
+    // memory would be satisfied from a single mapped page containing all zeros.
+    // We need to store something to each page to get them backed by their own
+    // memory, which is the effect we want here.
     *p = 0;
   }
 }
