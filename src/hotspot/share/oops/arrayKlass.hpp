@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ class ArrayKlass: public Klass {
   // type of elements (T_OBJECT for both oop arrays and array-arrays)
   BasicType element_type() const        { return layout_helper_element_type(layout_helper()); }
 
-  virtual InstanceKlass* java_super() const;//{ return SystemDictionary::Object_klass(); }
+  virtual InstanceKlass* java_super() const;
 
   // Allocation
   // Sizes points to the first dimension of the array, subsequent dimensions

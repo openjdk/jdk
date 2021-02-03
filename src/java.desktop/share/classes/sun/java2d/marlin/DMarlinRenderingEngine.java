@@ -65,7 +65,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
     private enum NormMode {
         ON_WITH_AA {
             @Override
-            PathIterator getNormalizingPathIterator(final DRendererContext rdrCtx,
+            PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
                                                     final PathIterator src)
             {
                 // NormalizingPathIterator NearestPixelCenter:
@@ -74,7 +74,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         },
         ON_NO_AA{
             @Override
-            PathIterator getNormalizingPathIterator(final DRendererContext rdrCtx,
+            PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
                                                     final PathIterator src)
             {
                 // NearestPixel NormalizingPathIterator:
@@ -83,7 +83,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         },
         OFF{
             @Override
-            PathIterator getNormalizingPathIterator(final DRendererContext rdrCtx,
+            PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
                                                     final PathIterator src)
             {
                 // return original path iterator if normalization is disabled:
@@ -91,7 +91,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
             }
         };
 
-        abstract PathIterator getNormalizingPathIterator(DRendererContext rdrCtx,
+        abstract PathIterator getNormalizingPathIterator(RendererContext rdrCtx,
                                                          PathIterator src);
     }
 
@@ -129,7 +129,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                                     float[] dashes,
                                     float dashphase)
     {
-        final DRendererContext rdrCtx = getRendererContext();
+        final RendererContext rdrCtx = getRendererContext();
         try {
             // initialize a large copyable Path2D to avoid a lot of array growing:
             final Path2D.Double p2d = rdrCtx.getPath2D();
@@ -151,7 +151,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
             return new Path2D.Double(p2d);
 
         } finally {
-            // recycle the DRendererContext instance
+            // recycle the RendererContext instance
             returnRendererContext(rdrCtx);
         }
     }
@@ -249,7 +249,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                 ((antialias) ? NormMode.ON_WITH_AA : NormMode.ON_NO_AA)
                 : NormMode.OFF;
 
-        final DRendererContext rdrCtx = getRendererContext();
+        final RendererContext rdrCtx = getRendererContext();
         try {
             if ((clip != null) &&
                     (DO_CLIP || (DO_CLIP_RUNTIME_ENABLE && MarlinProperties.isDoClipAtRuntime()))) {
@@ -284,12 +284,12 @@ public final class DMarlinRenderingEngine extends RenderingEngine
             strokeTo(rdrCtx, src, _at, bs, thin, norm, antialias,
                      rdrCtx.p2dAdapter.init(consumer));
         } finally {
-            // recycle the DRendererContext instance
+            // recycle the RendererContext instance
             returnRendererContext(rdrCtx);
         }
     }
 
-    void strokeTo(final DRendererContext rdrCtx,
+    void strokeTo(final RendererContext rdrCtx,
                   Shape src,
                   AffineTransform at,
                   BasicStroke bs,
@@ -390,7 +390,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         return (lw / widthScale);
     }
 
-    void strokeTo(final DRendererContext rdrCtx,
+    void strokeTo(final RendererContext rdrCtx,
                   Shape src,
                   AffineTransform at,
                   double width,
@@ -494,7 +494,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
             at = null;
         }
 
-        final DTransformingPathConsumer2D transformerPC2D = rdrCtx.transformerPC2D;
+        final TransformingPathConsumer2D transformerPC2D = rdrCtx.transformerPC2D;
 
         if (DO_TRACE_PATH) {
             // trace Stroker:
@@ -529,7 +529,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                 rdrCtx.stroker.disableClipping();
             }
 
-        } else if (rdrCtx.doClip && (caps != Stroker.CAP_BUTT)) {
+        } else if (rdrCtx.doClip && (caps != CAP_BUTT)) {
             if (DO_TRACE_PATH) {
                 pc2d = transformerPC2D.traceClosedPathDetector(pc2d);
             }
@@ -724,7 +724,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         }
     }
 
-    private static void pathTo(final DRendererContext rdrCtx, final PathIterator pi,
+    private static void pathTo(final RendererContext rdrCtx, final PathIterator pi,
                                DPathConsumer2D pc2d)
     {
         if (USE_PATH_SIMPLIFIER) {
@@ -910,17 +910,17 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                                               int[] bbox)
     {
         MarlinTileGenerator ptg = null;
-        DRenderer r = null;
+        Renderer r = null;
 
-        final DRendererContext rdrCtx = getRendererContext();
+        final RendererContext rdrCtx = getRendererContext();
         try {
             if (DO_CLIP || (DO_CLIP_RUNTIME_ENABLE && MarlinProperties.isDoClipAtRuntime())) {
                 // Define the initial clip bounds:
                 final double[] clipRect = rdrCtx.clipRect;
 
                 // Adjust the clipping rectangle with the renderer offsets
-                final double rdrOffX = DRenderer.RDR_OFFSET_X;
-                final double rdrOffY = DRenderer.RDR_OFFSET_Y;
+                final double rdrOffX = Renderer.RDR_OFFSET_X;
+                final double rdrOffY = Renderer.RDR_OFFSET_Y;
 
                 // add a small rounding error:
                 final double margin = 1e-3d;
@@ -1033,9 +1033,9 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         }
 
         MarlinTileGenerator ptg = null;
-        DRenderer r = null;
+        Renderer r = null;
 
-        final DRendererContext rdrCtx = getRendererContext();
+        final RendererContext rdrCtx = getRendererContext();
         try {
             r = rdrCtx.renderer.init(clip.getLoX(), clip.getLoY(),
                                      clip.getWidth(), clip.getHeight(),
@@ -1104,15 +1104,15 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         }
     }
 
-    // --- DRendererContext handling ---
-    // use ThreadLocal or ConcurrentLinkedQueue to get one DRendererContext
+    // --- RendererContext handling ---
+    // use ThreadLocal or ConcurrentLinkedQueue to get one RendererContext
     private static final boolean USE_THREAD_LOCAL;
 
     // reference type stored in either TL or CLQ
     static final int REF_TYPE;
 
-    // Per-thread DRendererContext
-    private static final ReentrantContextProvider<DRendererContext> RDR_CTX_PROVIDER;
+    // Per-thread RendererContext
+    private static final ReentrantContextProvider<RendererContext> RDR_CTX_PROVIDER;
 
     // Static initializer to use TL or CLQ mode
     static {
@@ -1136,19 +1136,19 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         }
 
         if (USE_THREAD_LOCAL) {
-            RDR_CTX_PROVIDER = new ReentrantContextProviderTL<DRendererContext>(REF_TYPE)
+            RDR_CTX_PROVIDER = new ReentrantContextProviderTL<RendererContext>(REF_TYPE)
                 {
                     @Override
-                    protected DRendererContext newContext() {
-                        return DRendererContext.createContext();
+                    protected RendererContext newContext() {
+                        return RendererContext.createContext();
                     }
                 };
         } else {
-            RDR_CTX_PROVIDER = new ReentrantContextProviderCLQ<DRendererContext>(REF_TYPE)
+            RDR_CTX_PROVIDER = new ReentrantContextProviderCLQ<RendererContext>(REF_TYPE)
                 {
                     @Override
-                    protected DRendererContext newContext() {
-                        return DRendererContext.createContext();
+                    protected RendererContext newContext() {
+                        return RendererContext.createContext();
                     }
                 };
         }
@@ -1267,26 +1267,26 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                 + MarlinProperties.getQuadDecD2());
 
         logInfo("Renderer settings:");
-        logInfo("CUB_DEC_BND  = " + DRenderer.CUB_DEC_BND);
-        logInfo("CUB_INC_BND  = " + DRenderer.CUB_INC_BND);
-        logInfo("QUAD_DEC_BND = " + DRenderer.QUAD_DEC_BND);
+        logInfo("CUB_DEC_BND  = " + Renderer.CUB_DEC_BND);
+        logInfo("CUB_INC_BND  = " + Renderer.CUB_INC_BND);
+        logInfo("QUAD_DEC_BND = " + Renderer.QUAD_DEC_BND);
 
         logInfo("INITIAL_EDGES_CAPACITY               = "
                 + MarlinConst.INITIAL_EDGES_CAPACITY);
         logInfo("INITIAL_CROSSING_COUNT               = "
-                + DRenderer.INITIAL_CROSSING_COUNT);
+                + Renderer.INITIAL_CROSSING_COUNT);
 
         logInfo("=========================================================="
                 + "=====================");
     }
 
     /**
-     * Get the DRendererContext instance dedicated to the current thread
-     * @return DRendererContext instance
+     * Get the RendererContext instance dedicated to the current thread
+     * @return RendererContext instance
      */
     @SuppressWarnings({"unchecked"})
-    static DRendererContext getRendererContext() {
-        final DRendererContext rdrCtx = RDR_CTX_PROVIDER.acquire();
+    static RendererContext getRendererContext() {
+        final RendererContext rdrCtx = RDR_CTX_PROVIDER.acquire();
         if (DO_MONITORS) {
             rdrCtx.stats.mon_pre_getAATileGenerator.start();
         }
@@ -1294,10 +1294,10 @@ public final class DMarlinRenderingEngine extends RenderingEngine
     }
 
     /**
-     * Reset and return the given DRendererContext instance for reuse
-     * @param rdrCtx DRendererContext instance
+     * Reset and return the given RendererContext instance for reuse
+     * @param rdrCtx RendererContext instance
      */
-    static void returnRendererContext(final DRendererContext rdrCtx) {
+    static void returnRendererContext(final RendererContext rdrCtx) {
         rdrCtx.dispose();
 
         if (DO_MONITORS) {

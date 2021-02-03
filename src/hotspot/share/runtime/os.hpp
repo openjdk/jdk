@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_OS_HPP
 #define SHARE_RUNTIME_OS_HPP
 
-#include "jvm.h"
+#include "jvm_md.h"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -190,7 +190,6 @@ class os: AllStatic {
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
   static void   run_periodic_checks();
-  static bool   supports_monotonic_clock();
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();

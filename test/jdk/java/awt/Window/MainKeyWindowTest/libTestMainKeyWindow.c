@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ JNIEXPORT void JNICALL Java_TestMainKeyWindow_setup(JNIEnv *env, jclass cl)
     JNF_COCOA_ENTER(env);
 
     void (^block)() = ^(){
-        NSScreen *mainScreen = [NSScreen mainScreen];
+        NSScreen *mainScreen = [[NSScreen screens] objectAtIndex:0];
         NSRect screenFrame = [mainScreen frame];
         NSRect frame = NSMakeRect(130, screenFrame.size.height - 280, 200, 100);
 
@@ -60,7 +60,7 @@ JNIEXPORT void JNICALL Java_TestMainKeyWindow_setup(JNIEnv *env, jclass cl)
         colorPanel = [[NSColorPanel sharedColorPanel] retain];
         [colorPanel setReleasedWhenClosed: YES];
         colorPanel.restorable = NO;
-        [colorPanel setFrameTopLeftPoint: NSMakePoint(130, screenFrame.size.height - 300)];
+        [colorPanel setFrame:NSMakeRect(130, screenFrame.size.height - 500, 200, 200) display:NO];
         // Java coordinates are 100, 400
         [colorPanel makeKeyAndOrderFront: nil];
     };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class TestMemberSummary extends JavadocTester {
                 // Check return type in member summary.
                 """
                     <code><a href="PublicChild.html" title="class in pkg">PublicChild</a></code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#return\
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#return\
                     TypeTest()">returnTypeTest</a></span>()</code></div>""",
                 // Check return type in member detail.
                 """
