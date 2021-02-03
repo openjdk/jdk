@@ -515,7 +515,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
       } else {
         obj = *(oop*)res_addr;
       }
-      assert(obj == NULL || Universe::is_in_heap(obj), "sanity check");
+      assert(Universe::is_in_heap_or_null(obj), "sanity check");
       *oop_result = obj;
       break;
     }

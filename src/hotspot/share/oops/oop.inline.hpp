@@ -32,10 +32,14 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/oop.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references

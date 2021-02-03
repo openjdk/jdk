@@ -29,6 +29,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 // These fascilities are used for allocating, and initializing newly allocated objects.

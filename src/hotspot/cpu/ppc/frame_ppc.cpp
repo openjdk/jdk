@@ -305,7 +305,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
       case T_OBJECT:
       case T_ARRAY: {
         oop obj = *(oop*)tos_addr;
-        assert(obj == NULL || Universe::is_in_heap(obj), "sanity check");
+        assert(Universe::is_in_heap_or_null(obj), "sanity check");
         *oop_result = obj;
       }
       case T_BOOLEAN : value_result->z = (jboolean) *(jint*)tos_addr; break;

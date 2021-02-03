@@ -29,6 +29,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Functions for encoding and decoding compressed oops.
 // If the oops are compressed, the type passed to these overloaded functions
