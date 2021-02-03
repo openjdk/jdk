@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,6 @@ public final class MD4 extends DigestBase {
 
     // state of this object
     private int[] state;
-    // temporary buffer, used by implCompress()
-    private int[] x;
 
     // rotation constants
     private static final int S11 = 3;
@@ -93,7 +91,6 @@ public final class MD4 extends DigestBase {
     public MD4() {
         super("MD4", 16, 64);
         state = new int[4];
-        x = new int[16];
         resetHashes();
     }
 
@@ -101,7 +98,6 @@ public final class MD4 extends DigestBase {
     public Object clone() throws CloneNotSupportedException {
         MD4 copy = (MD4) super.clone();
         copy.state = copy.state.clone();
-        copy.x = new int[16];
         return copy;
     }
 
@@ -111,8 +107,6 @@ public final class MD4 extends DigestBase {
     void implReset() {
         // Load magic initialization constants.
         resetHashes();
-        // clear out old data
-        Arrays.fill(x, 0);
     }
 
     private void resetHashes() {
@@ -162,7 +156,22 @@ public final class MD4 extends DigestBase {
      * bytes from the buffer, beginning at the specified offset.
      */
     void implCompress(byte[] buf, int ofs) {
-        b2iLittle64(buf, ofs, x);
+        int x0 = (int) LE.INT_ARRAY.get(buf, ofs);
+        int x1 = (int) LE.INT_ARRAY.get(buf, ofs + 4);
+        int x2 = (int) LE.INT_ARRAY.get(buf, ofs + 8);
+        int x3 = (int) LE.INT_ARRAY.get(buf, ofs + 12);
+        int x4 = (int) LE.INT_ARRAY.get(buf, ofs + 16);
+        int x5 = (int) LE.INT_ARRAY.get(buf, ofs + 20);
+        int x6 = (int) LE.INT_ARRAY.get(buf, ofs + 24);
+        int x7 = (int) LE.INT_ARRAY.get(buf, ofs + 28);
+        int x8 = (int) LE.INT_ARRAY.get(buf, ofs + 32);
+        int x9 = (int) LE.INT_ARRAY.get(buf, ofs + 36);
+        int x10 = (int) LE.INT_ARRAY.get(buf, ofs + 40);
+        int x11 = (int) LE.INT_ARRAY.get(buf, ofs + 44);
+        int x12 = (int) LE.INT_ARRAY.get(buf, ofs + 48);
+        int x13 = (int) LE.INT_ARRAY.get(buf, ofs + 52);
+        int x14 = (int) LE.INT_ARRAY.get(buf, ofs + 56);
+        int x15 = (int) LE.INT_ARRAY.get(buf, ofs + 60);
 
         int a = state[0];
         int b = state[1];
@@ -170,58 +179,58 @@ public final class MD4 extends DigestBase {
         int d = state[3];
 
         /* Round 1 */
-        a = FF (a, b, c, d, x[ 0], S11); /* 1 */
-        d = FF (d, a, b, c, x[ 1], S12); /* 2 */
-        c = FF (c, d, a, b, x[ 2], S13); /* 3 */
-        b = FF (b, c, d, a, x[ 3], S14); /* 4 */
-        a = FF (a, b, c, d, x[ 4], S11); /* 5 */
-        d = FF (d, a, b, c, x[ 5], S12); /* 6 */
-        c = FF (c, d, a, b, x[ 6], S13); /* 7 */
-        b = FF (b, c, d, a, x[ 7], S14); /* 8 */
-        a = FF (a, b, c, d, x[ 8], S11); /* 9 */
-        d = FF (d, a, b, c, x[ 9], S12); /* 10 */
-        c = FF (c, d, a, b, x[10], S13); /* 11 */
-        b = FF (b, c, d, a, x[11], S14); /* 12 */
-        a = FF (a, b, c, d, x[12], S11); /* 13 */
-        d = FF (d, a, b, c, x[13], S12); /* 14 */
-        c = FF (c, d, a, b, x[14], S13); /* 15 */
-        b = FF (b, c, d, a, x[15], S14); /* 16 */
+        a = FF (a, b, c, d, x0,  S11); /* 1 */
+        d = FF (d, a, b, c, x1,  S12); /* 2 */
+        c = FF (c, d, a, b, x2,  S13); /* 3 */
+        b = FF (b, c, d, a, x3,  S14); /* 4 */
+        a = FF (a, b, c, d, x4,  S11); /* 5 */
+        d = FF (d, a, b, c, x5,  S12); /* 6 */
+        c = FF (c, d, a, b, x6,  S13); /* 7 */
+        b = FF (b, c, d, a, x7,  S14); /* 8 */
+        a = FF (a, b, c, d, x8,  S11); /* 9 */
+        d = FF (d, a, b, c, x9,  S12); /* 10 */
+        c = FF (c, d, a, b, x10, S13); /* 11 */
+        b = FF (b, c, d, a, x11, S14); /* 12 */
+        a = FF (a, b, c, d, x12, S11); /* 13 */
+        d = FF (d, a, b, c, x13, S12); /* 14 */
+        c = FF (c, d, a, b, x14, S13); /* 15 */
+        b = FF (b, c, d, a, x15, S14); /* 16 */
 
         /* Round 2 */
-        a = GG (a, b, c, d, x[ 0], S21); /* 17 */
-        d = GG (d, a, b, c, x[ 4], S22); /* 18 */
-        c = GG (c, d, a, b, x[ 8], S23); /* 19 */
-        b = GG (b, c, d, a, x[12], S24); /* 20 */
-        a = GG (a, b, c, d, x[ 1], S21); /* 21 */
-        d = GG (d, a, b, c, x[ 5], S22); /* 22 */
-        c = GG (c, d, a, b, x[ 9], S23); /* 23 */
-        b = GG (b, c, d, a, x[13], S24); /* 24 */
-        a = GG (a, b, c, d, x[ 2], S21); /* 25 */
-        d = GG (d, a, b, c, x[ 6], S22); /* 26 */
-        c = GG (c, d, a, b, x[10], S23); /* 27 */
-        b = GG (b, c, d, a, x[14], S24); /* 28 */
-        a = GG (a, b, c, d, x[ 3], S21); /* 29 */
-        d = GG (d, a, b, c, x[ 7], S22); /* 30 */
-        c = GG (c, d, a, b, x[11], S23); /* 31 */
-        b = GG (b, c, d, a, x[15], S24); /* 32 */
+        a = GG (a, b, c, d, x0,  S21); /* 17 */
+        d = GG (d, a, b, c, x4,  S22); /* 18 */
+        c = GG (c, d, a, b, x8,  S23); /* 19 */
+        b = GG (b, c, d, a, x12, S24); /* 20 */
+        a = GG (a, b, c, d, x1,  S21); /* 21 */
+        d = GG (d, a, b, c, x5,  S22); /* 22 */
+        c = GG (c, d, a, b, x9,  S23); /* 23 */
+        b = GG (b, c, d, a, x13, S24); /* 24 */
+        a = GG (a, b, c, d, x2,  S21); /* 25 */
+        d = GG (d, a, b, c, x6,  S22); /* 26 */
+        c = GG (c, d, a, b, x10, S23); /* 27 */
+        b = GG (b, c, d, a, x14, S24); /* 28 */
+        a = GG (a, b, c, d, x3,  S21); /* 29 */
+        d = GG (d, a, b, c, x7,  S22); /* 30 */
+        c = GG (c, d, a, b, x11, S23); /* 31 */
+        b = GG (b, c, d, a, x15, S24); /* 32 */
 
         /* Round 3 */
-        a = HH (a, b, c, d, x[ 0], S31); /* 33 */
-        d = HH (d, a, b, c, x[ 8], S32); /* 34 */
-        c = HH (c, d, a, b, x[ 4], S33); /* 35 */
-        b = HH (b, c, d, a, x[12], S34); /* 36 */
-        a = HH (a, b, c, d, x[ 2], S31); /* 37 */
-        d = HH (d, a, b, c, x[10], S32); /* 38 */
-        c = HH (c, d, a, b, x[ 6], S33); /* 39 */
-        b = HH (b, c, d, a, x[14], S34); /* 40 */
-        a = HH (a, b, c, d, x[ 1], S31); /* 41 */
-        d = HH (d, a, b, c, x[ 9], S32); /* 42 */
-        c = HH (c, d, a, b, x[ 5], S33); /* 43 */
-        b = HH (b, c, d, a, x[13], S34); /* 44 */
-        a = HH (a, b, c, d, x[ 3], S31); /* 45 */
-        d = HH (d, a, b, c, x[11], S32); /* 46 */
-        c = HH (c, d, a, b, x[ 7], S33); /* 47 */
-        b = HH (b, c, d, a, x[15], S34); /* 48 */
+        a = HH (a, b, c, d, x0,  S31); /* 33 */
+        d = HH (d, a, b, c, x8,  S32); /* 34 */
+        c = HH (c, d, a, b, x4,  S33); /* 35 */
+        b = HH (b, c, d, a, x12, S34); /* 36 */
+        a = HH (a, b, c, d, x2,  S31); /* 37 */
+        d = HH (d, a, b, c, x10, S32); /* 38 */
+        c = HH (c, d, a, b, x6,  S33); /* 39 */
+        b = HH (b, c, d, a, x14, S34); /* 40 */
+        a = HH (a, b, c, d, x1,  S31); /* 41 */
+        d = HH (d, a, b, c, x9,  S32); /* 42 */
+        c = HH (c, d, a, b, x5,  S33); /* 43 */
+        b = HH (b, c, d, a, x13, S34); /* 44 */
+        a = HH (a, b, c, d, x3,  S31); /* 45 */
+        d = HH (d, a, b, c, x11, S32); /* 46 */
+        c = HH (c, d, a, b, x7,  S33); /* 47 */
+        b = HH (b, c, d, a, x15, S34); /* 48 */
 
         state[0] += a;
         state[1] += b;

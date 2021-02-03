@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1138,6 +1138,7 @@ public class Modules extends JCTree.Visitor {
         public void visitRequires(JCRequires tree) {
             if (tree.directive != null && allModules().contains(tree.directive.module)) {
                 chk.checkDeprecated(tree.moduleName.pos(), msym, tree.directive.module);
+                chk.checkPreview(tree.moduleName.pos(), msym, tree.directive.module);
                 chk.checkModuleRequires(tree.moduleName.pos(), tree.directive);
                 msym.directives = msym.directives.prepend(tree.directive);
             }

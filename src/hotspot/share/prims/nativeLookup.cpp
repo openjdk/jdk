@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -288,7 +289,7 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   }
 
   // Otherwise call static method findNative in ClassLoader
-  Klass*   klass = SystemDictionary::ClassLoader_klass();
+  Klass*   klass = vmClasses::ClassLoader_klass();
   Handle name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
 
   JavaValue result(T_LONG);
@@ -434,8 +435,10 @@ void* NativeLookup::dll_load(const methodHandle& method) {
     address current_entry = method->native_function();
 
     char dll_name[JVM_MAXPATHLEN];
+    dll_name[0] = '\0';
     int offset;
-    if (os::dll_address_to_library_name(current_entry, dll_name, sizeof(dll_name), &offset)) {
+    bool ret = os::dll_address_to_library_name(current_entry, dll_name, sizeof(dll_name), &offset);
+    if (ret && dll_name[0] != '\0') {
       char ebuf[32];
       return os::dll_load(dll_name, ebuf, sizeof(ebuf));
     }

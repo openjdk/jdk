@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -311,7 +311,7 @@ void SensorInfo::trigger(int count, TRAPS) {
     // Sensor::trigger(int) instead.  The pending request will be processed
     // but no notification will be sent.
     if (HAS_PENDING_EXCEPTION) {
-       assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOME here");
+       assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOME here");
        CLEAR_PENDING_EXCEPTION;
        trigger_method_signature = vmSymbols::int_void_signature();
     } else {
@@ -330,7 +330,7 @@ void SensorInfo::trigger(int count, TRAPS) {
        // We just clear the OOM pending exception that we might have encountered
        // in Java's tiggerAction(), and continue with updating the counters since
        // the Java counters have been updated too.
-       assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOME here");
+       assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOME here");
        CLEAR_PENDING_EXCEPTION;
      }
   }

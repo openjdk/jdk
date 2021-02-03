@@ -31,20 +31,20 @@ $(eval $(call IncludeCustomExtension, hotspot/lib/JvmMapfile.gmk))
 ifeq ($(call And, $(call isTargetOs, windows) $(call isTargetCpu, x86_64)), false)
   # On Windows x86_64, we should not have any symbols at all, since that
   # results in duplicate warnings from the linker (JDK-8043491).
-  SYMBOLS_SRC += $(TOPDIR)/make/hotspot/symbols/symbols-shared
+  SYMBOLS_SRC += $(TOPDIR)/make/data/hotspot-symbols/symbols-shared
 endif
 
 ifeq ($(call isTargetOsType, unix), true)
-  SYMBOLS_SRC += $(TOPDIR)/make/hotspot/symbols/symbols-unix
+  SYMBOLS_SRC += $(TOPDIR)/make/data/hotspot-symbols/symbols-unix
 endif
 
-ifneq ($(wildcard $(TOPDIR)/make/hotspot/symbols/symbols-$(OPENJDK_TARGET_OS)), )
-  SYMBOLS_SRC += $(TOPDIR)/make/hotspot/symbols/symbols-$(OPENJDK_TARGET_OS)
+ifneq ($(wildcard $(TOPDIR)/make/data/hotspot-symbols/symbols-$(OPENJDK_TARGET_OS)), )
+  SYMBOLS_SRC += $(TOPDIR)/make/data/hotspot-symbols/symbols-$(OPENJDK_TARGET_OS)
 endif
 
 ifneq ($(findstring debug, $(DEBUG_LEVEL)), )
-  ifneq ($(wildcard $(TOPDIR)/make/hotspot/symbols/symbols-$(OPENJDK_TARGET_OS)-debug), )
-    SYMBOLS_SRC += $(TOPDIR)/make/hotspot/symbols/symbols-$(OPENJDK_TARGET_OS)-debug
+  ifneq ($(wildcard $(TOPDIR)/make/data/hotspot-symbols/symbols-$(OPENJDK_TARGET_OS)-debug), )
+    SYMBOLS_SRC += $(TOPDIR)/make/data/hotspot-symbols/symbols-$(OPENJDK_TARGET_OS)-debug
   endif
 endif
 

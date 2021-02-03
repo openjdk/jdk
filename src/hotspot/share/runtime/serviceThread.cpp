@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/universe.hpp"
@@ -95,7 +96,7 @@ void ServiceThread::initialize() {
   // Initialize thread_oop to put it into the system threadGroup
   Handle thread_group (THREAD, Universe::system_thread_group());
   Handle thread_oop = JavaCalls::construct_new_instance(
-                          SystemDictionary::Thread_klass(),
+                          vmClasses::Thread_klass(),
                           vmSymbols::threadgroup_string_void_signature(),
                           thread_group,
                           string,
@@ -126,9 +127,8 @@ void ServiceThread::initialize() {
 }
 
 static void cleanup_oopstorages() {
-  OopStorageSet::Iterator it = OopStorageSet::all_iterator();
-  for ( ; !it.is_end(); ++it) {
-    it->delete_empty_blocks();
+  for (OopStorage* storage : OopStorageSet::Range<OopStorageSet::Id>()) {
+    storage->delete_empty_blocks();
   }
 }
 
