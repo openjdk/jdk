@@ -878,7 +878,7 @@ class WindowsPath implements Path {
                 return INVALID_HANDLE_VALUE;
             }
             return handle;
-        } catch (WindowsException ignore) {
+        } catch (WindowsException e) {
             CloseHandle(handle);
             return INVALID_HANDLE_VALUE;
         }
