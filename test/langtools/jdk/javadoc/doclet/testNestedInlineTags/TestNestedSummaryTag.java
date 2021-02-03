@@ -26,7 +26,7 @@
  * @bug      8257925
  * @summary  enable more support for nested inline tags
  * @library  /tools/lib ../../lib
- * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ * @modules  jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*
  * @run main TestNestedSummaryTag
  */
