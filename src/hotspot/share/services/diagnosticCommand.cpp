@@ -554,13 +554,17 @@ int HeapDumpDCmd::num_arguments() {
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _all("-all", "Inspect all objects, including unreachable objects",
-       "BOOLEAN", false, "false") {
+       "BOOLEAN", false, "false"),
+  _parallel_thread_num("-parallel", "parallel threads number for heap iteration",
+       "INT", false, "0")     {
   _dcmdparser.add_dcmd_option(&_all);
+  _dcmdparser.add_dcmd_option(&_parallel_thread_num);
 }
 
 void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
   VM_GC_HeapInspection heapop(output(),
-                              !_all.value() /* request full gc if false */);
+                              !_all.value(), /* request full gc if false */
+                              (uint)_parallel_thread_num.value());
   VMThread::execute(&heapop);
 }
 
