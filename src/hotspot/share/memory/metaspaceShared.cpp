@@ -726,8 +726,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   // shared classes at runtime, where constraints were previously created.
   guarantee(SystemDictionary::constraints()->number_of_entries() == 0,
             "loader constraints are not saved");
-  guarantee(SystemDictionary::placeholders()->number_of_entries() == 0,
-          "placeholders are not saved");
 
   // At this point, many classes have been loaded.
   // Gather systemDictionary classes in a global array and do everything to
@@ -1725,8 +1723,8 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
   mapinfo->set_is_mapped(false);
 
   if (mapinfo->alignment() != (size_t)os::vm_allocation_granularity()) {
-    log_error(cds)("Unable to map CDS archive -- os::vm_allocation_granularity() expected: " SIZE_FORMAT
-                   " actual: %d", mapinfo->alignment(), os::vm_allocation_granularity());
+    log_info(cds)("Unable to map CDS archive -- os::vm_allocation_granularity() expected: " SIZE_FORMAT
+                  " actual: %d", mapinfo->alignment(), os::vm_allocation_granularity());
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
