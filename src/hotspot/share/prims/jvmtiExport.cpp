@@ -1506,7 +1506,7 @@ void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const c
 
   JavaThread *thread  = JavaThread::current();
 
-  log_error(os)("Resource Exhausted (%s)", description != nullptr ? description : "no info");
+  log_error(jvmti)("Resource Exhausted (%s)", description != nullptr ? description : "unknown");
 
   // JDK-8213834: handlers of ResourceExhausted may attempt some analysis
   // which often requires running java.
