@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 4416068 4478803 4479736
+ * @bug 4416068 4478803 4479736 8241372
  * @summary 4273544 JSSE request for function forceV3ClientHello()
  *          4479736 setEnabledProtocols API does not work correctly
  *          4478803 Need APIs to determine the protocol versions used in an SSL
@@ -139,6 +139,10 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
                 e.printStackTrace(System.out);
                 System.out.println("** Success **");
             }
+        } catch (SSLException ssle) {
+            // The server side may have closed the socket.
+            System.out.println("Server SSLException:");
+            ssle.printStackTrace(System.out);
         } catch (Exception e) {
             System.out.println("Client got UNEXPECTED Exception:");
             e.printStackTrace(System.out);
