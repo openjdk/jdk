@@ -144,6 +144,7 @@ public class SignatureTest {
                         "Both RSAPublicKeySpec should be equal");
 
                 return new Key[]{
+                        key,
                         kf.generatePublic(pubKeySpec1),
                         kf.generatePublic(new X509EncodedKeySpec(key.getEncoded()))
                 };
@@ -163,6 +164,7 @@ public class SignatureTest {
                         "Both RSAPrivateKeySpec should be equal");
 
                 return new Key[]{
+                        key,
                         kf.generatePrivate(privKeySpec1),
                         kf.generatePrivate(new PKCS8EncodedKeySpec(
                                 key.getEncoded()))
