@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_INSTANCEMIRRORKLASS_HPP
 #define SHARE_OOPS_INSTANCEMIRRORKLASS_HPP
 
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "oops/instanceKlass.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"
@@ -76,7 +76,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   static void init_offset_of_static_fields() {
     // Cache the offset of the static fields in the Class instance
     assert(_offset_of_static_fields == 0, "once");
-    _offset_of_static_fields = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->size_helper() << LogHeapWordSize;
+    _offset_of_static_fields = InstanceMirrorKlass::cast(vmClasses::Class_klass())->size_helper() << LogHeapWordSize;
   }
 
   static int offset_of_static_fields() {

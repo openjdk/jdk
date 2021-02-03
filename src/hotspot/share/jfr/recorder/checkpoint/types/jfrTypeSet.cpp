@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmClasses.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeSet.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeSetUtils.hpp"
@@ -214,7 +215,7 @@ int write__klass__leakp(JfrCheckpointWriter* writer, const void* k) {
 
 static bool is_implied(const Klass* klass) {
   assert(klass != NULL, "invariant");
-  return klass->is_subclass_of(SystemDictionary::ClassLoader_klass()) || klass == SystemDictionary::Object_klass();
+  return klass->is_subclass_of(vmClasses::ClassLoader_klass()) || klass == vmClasses::Object_klass();
 }
 
 static void do_klass(Klass* klass) {
@@ -270,7 +271,7 @@ static bool is_classloader_klass_allowed(const Klass* k) {
 
 static void do_classloaders() {
   Stack<const Klass*, mtTracing> mark_stack;
-  mark_stack.push(SystemDictionary::ClassLoader_klass()->subklass());
+  mark_stack.push(vmClasses::ClassLoader_klass()->subklass());
 
   while (!mark_stack.is_empty()) {
     const Klass* const current = mark_stack.pop();
@@ -295,8 +296,8 @@ static void do_classloaders() {
 }
 
 static void do_object() {
-  SET_TRANSIENT(SystemDictionary::Object_klass());
-  do_klass(SystemDictionary::Object_klass());
+  SET_TRANSIENT(vmClasses::Object_klass());
+  do_klass(vmClasses::Object_klass());
 }
 
 static void do_klasses() {
