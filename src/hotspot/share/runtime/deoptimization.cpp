@@ -2463,7 +2463,7 @@ Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, j
     // This enters VM and may safepoint
     uncommon_trap_inner(thread, trap_request);
   }
-  ThreadWXEnable wx_write(WXWrite, thread);
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx_write(WXWrite, thread));
   return fetch_unroll_info_helper(thread, exec_mode);
 }
 

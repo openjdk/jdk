@@ -970,7 +970,7 @@ JRT_END
 
 
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, address branch_bcp) {
-  ThreadWXEnable wx_write(WXWrite, thread);
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx_write(WXWrite, thread));
 
   // frequency_counter_overflow_inner can throw async exception.
   nmethod* nm = frequency_counter_overflow_inner(thread, branch_bcp);

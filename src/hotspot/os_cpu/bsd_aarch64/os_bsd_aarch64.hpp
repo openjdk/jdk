@@ -34,12 +34,6 @@
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
 
-private:
-
-  static void current_thread_enable_wx_impl(WXMode mode);
-
-public:
-
   // Atomically copy 64 bits of data
   static void atomic_copy64(const volatile void *src, volatile void *dst) {
     *(jlong *) dst = *(const jlong *) src;

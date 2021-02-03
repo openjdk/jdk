@@ -286,7 +286,7 @@ void StubRoutines::initialize2() {
 
 #ifdef ASSERT
 
-  os::current_thread_enable_wx(WXExec);
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
 
 #define TEST_ARRAYCOPY(type)                                                    \
   test_arraycopy_func(          type##_arraycopy(),          sizeof(type));     \
@@ -361,7 +361,7 @@ void StubRoutines::initialize2() {
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
 
-  os::current_thread_enable_wx(WXWrite);
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
 #endif
 }

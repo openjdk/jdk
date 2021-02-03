@@ -840,31 +840,13 @@ protected:
   static void SpinRelease(volatile int * Lock);
 
 #if defined(__APPLE__) && defined(AARCH64)
-private:
+ private:
   DEBUG_ONLY(bool _wx_init);
   WXMode _wx_state;
-public:
-  void init_wx() {
-    assert(this == Thread::current(), "should only be called for current thread");
-    assert(!_wx_init, "second init");
-    _wx_state = WXWrite;
-    os::current_thread_enable_wx(_wx_state);
-    DEBUG_ONLY(_wx_init = true);
-  }
-  WXMode enable_wx(WXMode new_state) {
-    assert(this == Thread::current(), "should only be called for current thread");
-    assert(_wx_init, "should be inited");
-    WXMode old = _wx_state;
-    if (_wx_state != new_state) {
-      _wx_state = new_state;
-      os::current_thread_enable_wx(new_state);
-    }
-    return old;
-  }
-#else
-  void init_wx() { }
-  void enable_wx(WXMode new_state) { }
-#endif
+ public:
+  void init_wx();
+  WXMode enable_wx(WXMode new_state);
+#endif // __APPLE__ && AARCH64
 };
 
 // Inline implementation of Thread::current()

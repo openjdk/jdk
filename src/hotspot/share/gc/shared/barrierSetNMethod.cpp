@@ -49,7 +49,7 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 }
 
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
-  ThreadWXEnable wx_write(WXWrite);
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx_write(WXWrite));
 
   address return_address = *return_address_ptr;
   CodeBlob* cb = CodeCache::find_blob(return_address);

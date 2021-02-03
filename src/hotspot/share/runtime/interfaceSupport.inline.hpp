@@ -336,7 +336,7 @@ class VMNativeEntryWrapper {
 
 #define VM_LEAF_BASE(result_type, header)                            \
   debug_only(NoHandleMark __hm;)                                     \
-  ThreadWXEnable __wx_write(WXWrite);                                \
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx_write(WXWrite));            \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
@@ -359,7 +359,7 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
-    ThreadWXEnable __wx_write(WXWrite, thread);                      \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx_write(WXWrite, thread));  \
     ThreadInVMfromJava __tiv(thread);                                \
     VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
@@ -386,7 +386,7 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
-    ThreadWXEnable __wx_write(WXWrite, thread);                      \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx_write(WXWrite, thread));  \
     ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
     VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
@@ -395,7 +395,7 @@ class VMNativeEntryWrapper {
 // to get back into Java from the VM
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
-    ThreadWXEnable __wx_write(WXWrite, thread);                      \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx_write(WXWrite, thread));  \
     HandleMarkCleaner __hm(thread);
 
 #define JRT_BLOCK                                                    \
@@ -425,7 +425,7 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
-    ThreadWXEnable __wx_write(WXWrite, thread);                      \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx_write(WXWrite, thread));  \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -450,7 +450,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    ThreadWXEnable __wx_write(WXWrite, thread);                      \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx_write(WXWrite, thread));  \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -460,7 +460,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread = JavaThread::current();                      \
-    ThreadWXEnable __wx_write(WXWrite, thread);                      \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx_write(WXWrite, thread));  \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)

@@ -176,7 +176,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     // other than the current thread is required we need to transition
     // from native so as to resolve the jthread.
 
-    ThreadWXEnable __wx_write(WXWrite, current_thread);
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx_write(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)

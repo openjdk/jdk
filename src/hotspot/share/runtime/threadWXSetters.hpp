@@ -25,22 +25,22 @@
 #ifndef SHARE_RUNTIME_THREADWXSETTERS_HPP
 #define SHARE_RUNTIME_THREADWXSETTERS_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 
+#if defined(__APPLE__) && defined(AARCH64)
 class ThreadWXEnable  {
   Thread* _thread;
   WXMode _old_mode;
-
 public:
   ThreadWXEnable(WXMode new_mode, Thread* thread = NULL) :
     _thread(thread ? thread : Thread::current()),
     _old_mode(_thread->enable_wx(new_mode))
   { }
-
   ~ThreadWXEnable() {
     _thread->enable_wx(_old_mode);
   }
 };
+#endif // __APPLE__ && AARCH64
 
 #endif // SHARE_RUNTIME_THREADWXSETTERS_HPP
 

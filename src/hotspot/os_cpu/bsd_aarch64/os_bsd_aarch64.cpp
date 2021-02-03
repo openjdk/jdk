@@ -661,7 +661,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-void os::current_thread_enable_wx_impl(WXMode mode) {
+void os::current_thread_enable_wx(WXMode mode) {
   pthread_jit_write_protect_np(mode == WXExec);
 }
 

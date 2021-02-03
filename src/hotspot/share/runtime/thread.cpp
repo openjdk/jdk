@@ -326,7 +326,7 @@ Thread::Thread() {
     assert(Thread::current_or_null() == NULL, "creating thread before barrier set");
   }
 
-  DEBUG_ONLY(_wx_init = false);
+  MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
 
 void Thread::initialize_tlab() {
@@ -390,7 +390,7 @@ void Thread::call_run() {
 
   register_thread_stack_with_NMT();
 
-  this->init_wx();
+  MACOS_AARCH64_ONLY(this->init_wx());
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
@@ -2512,7 +2512,7 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
 // Note only the native==>VM/Java barriers can call this function and when
 // thread state is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  ThreadWXEnable wx_write(WXWrite, thread);
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx_write(WXWrite, thread));
 
   check_safepoint_and_suspend_for_native_trans(thread);
 
@@ -3450,7 +3450,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module
   os::init();
 
-  os::current_thread_enable_wx(WXWrite);
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -3555,7 +3555,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
-  main_thread->init_wx();
+  MACOS_AARCH64_ONLY(main_thread->init_wx());
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(

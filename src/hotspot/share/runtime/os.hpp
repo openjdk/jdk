@@ -932,11 +932,10 @@ class os: AllStatic {
     bool _done;
   };
 
-  // If the JVM is running in W^X mode, enable write or execute access to
-  // writeable and executable pages. No-op otherwise.
-  static inline void current_thread_enable_wx(WXMode mode) {
-    current_thread_enable_wx_impl(mode);
-  }
+#if defined(__APPLE__) && defined(AARCH64)
+  // Enables write or execute access to writeable and executable pages.
+  static void current_thread_enable_wx(WXMode mode);
+#endif // __APPLE__ && AARCH64
 
 #ifndef _WINDOWS
   // Suspend/resume support

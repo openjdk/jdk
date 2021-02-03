@@ -1427,7 +1427,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   }
 #endif
 
-  ThreadWXEnable wx_write(WXWrite, thread);
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx_write(WXWrite, thread));
 
   thread->set_vm_result(exception);
   // Frame not compiled (handles deoptimization blob)
