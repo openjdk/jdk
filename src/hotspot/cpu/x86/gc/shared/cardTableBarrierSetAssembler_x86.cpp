@@ -90,6 +90,9 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   // register obj is destroyed afterwards.
   BarrierSet* bs = BarrierSet::barrier_set();
 
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+
   __ shrptr(obj, CardTable::card_shift);
 
   Address card_addr;
