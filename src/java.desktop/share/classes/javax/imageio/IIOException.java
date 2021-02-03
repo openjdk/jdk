@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.imageio;
 
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * An exception class used for signaling run-time failure of reading
@@ -40,6 +41,11 @@ import java.io.IOException;
  *
  */
 public class IIOException extends IOException {
+
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -3216210718638985251L;
 
     /**

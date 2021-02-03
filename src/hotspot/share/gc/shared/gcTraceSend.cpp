@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,3 +344,48 @@ void GCTracer::send_phase_events(TimePartitions* time_partitions) const {
     phase->accept(&phase_reporter);
   }
 }
+
+#if INCLUDE_JFR
+Ticks GCLockerTracer::_needs_gc_start_timestamp;
+volatile jint GCLockerTracer::_jni_lock_count = 0;
+volatile jint GCLockerTracer::_stall_count = 0;
+
+bool GCLockerTracer::is_started() {
+  return _needs_gc_start_timestamp != Ticks();
+}
+
+void GCLockerTracer::start_gc_locker(const jint jni_lock_count) {
+  assert(SafepointSynchronize::is_at_safepoint(), "sanity");
+  assert(!is_started(), "sanity");
+  assert(_jni_lock_count == 0, "sanity");
+  assert(_stall_count == 0, "sanity");
+  if (EventGCLocker::is_enabled()) {
+    _needs_gc_start_timestamp.stamp();
+    _jni_lock_count = jni_lock_count;
+  }
+}
+
+void GCLockerTracer::inc_stall_count() {
+  if (is_started()) {
+    _stall_count++;
+  }
+}
+
+void GCLockerTracer::report_gc_locker() {
+  if (is_started()) {
+    EventGCLocker event(UNTIMED);
+    if (event.should_commit()) {
+      event.set_starttime(_needs_gc_start_timestamp);
+      event.set_lockCount(_jni_lock_count);
+      event.set_stallCount(_stall_count);
+      event.commit();
+    }
+    // reset
+    _needs_gc_start_timestamp = Ticks();
+    _jni_lock_count = 0;
+    _stall_count = 0;
+
+    assert(!is_started(), "sanity");
+  }
+}
+#endif

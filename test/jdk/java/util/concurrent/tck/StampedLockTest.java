@@ -370,7 +370,7 @@ public class StampedLockTest extends JSR166TestCase {
      */
     public void testInterruptibleOperationsThrowInterruptedExceptionWriteLockedInterrupted() {
         final StampedLock lock = new StampedLock();
-        long s = lock.writeLock();
+        long stamp = lock.writeLock();
 
         Action[] interruptibleLockBlockingActions = {
             () -> lock.writeLockInterruptibly(),
@@ -385,6 +385,8 @@ public class StampedLockTest extends JSR166TestCase {
         shuffle(interruptibleLockBlockingActions);
 
         assertThrowInterruptedExceptionWhenInterrupted(interruptibleLockBlockingActions);
+
+        releaseWriteLock(lock, stamp);
     }
 
     /**
@@ -392,7 +394,7 @@ public class StampedLockTest extends JSR166TestCase {
      */
     public void testInterruptibleOperationsThrowInterruptedExceptionReadLockedInterrupted() {
         final StampedLock lock = new StampedLock();
-        long s = lock.readLock();
+        long stamp = lock.readLock();
 
         Action[] interruptibleLockBlockingActions = {
             () -> lock.writeLockInterruptibly(),
@@ -403,6 +405,8 @@ public class StampedLockTest extends JSR166TestCase {
         shuffle(interruptibleLockBlockingActions);
 
         assertThrowInterruptedExceptionWhenInterrupted(interruptibleLockBlockingActions);
+
+        releaseReadLock(lock, stamp);
     }
 
     /**
@@ -726,6 +730,7 @@ public class StampedLockTest extends JSR166TestCase {
         lock.unlockWrite(s);
         s = lock.readLock();
         assertTrue(lock.toString().contains("Read-locks"));
+        releaseReadLock(lock, s);
     }
 
     /**
@@ -1423,7 +1428,7 @@ public class StampedLockTest extends JSR166TestCase {
         final long testDurationMillis = expensiveTests ? 1000 : 2;
         final int nTasks = ThreadLocalRandom.current().nextInt(1, 10);
         final AtomicBoolean done = new AtomicBoolean(false);
-        final List<CompletableFuture> futures = new ArrayList<>();
+        final List<CompletableFuture<?>> futures = new ArrayList<>();
         final List<Callable<Long>> stampedWriteLockers = List.of(
             () -> sl.writeLock(),
             () -> writeLockInterruptiblyUninterrupted(sl),

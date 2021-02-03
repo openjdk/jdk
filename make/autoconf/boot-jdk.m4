@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -605,4 +605,29 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
   AC_SUBST(CREATE_BUILDJDK)
   AC_SUBST(BUILD_JDK)
   AC_SUBST(EXTERNAL_BUILDJDK)
+])
+
+# The docs-reference JDK is used to run javadoc for the docs-reference targets.
+# If not set, the reference docs will be built using the interim javadoc.
+AC_DEFUN([BOOTJDK_SETUP_DOCS_REFERENCE_JDK],
+[
+  AC_ARG_WITH(docs-reference-jdk, [AS_HELP_STRING([--with-docs-reference-jdk],
+      [path to JDK to use for building the reference documentation])])
+
+  AC_MSG_CHECKING([for docs-reference JDK])
+  if test "x$with_docs_reference_jdk" != "x"; then
+    DOCS_REFERENCE_JDK="$with_docs_reference_jdk"
+    AC_MSG_RESULT([$DOCS_REFERENCE_JDK])
+    DOCS_REFERENCE_JAVADOC="$DOCS_REFERENCE_JDK/bin/javadoc"
+    if test ! -x "$DOCS_REFERENCE_JAVADOC"; then
+      AC_MSG_ERROR([docs-reference JDK found at $DOCS_REFERENCE_JDK did not contain bin/javadoc])
+    fi
+    UTIL_FIXUP_EXECUTABLE(DOCS_REFERENCE_JAVADOC)
+  else
+    AC_MSG_RESULT([no, using interim javadoc for the docs-reference targets])
+    # By leaving this empty, Docs.gmk will revert to the default interim javadoc
+    DOCS_REFERENCE_JAVADOC=
+  fi
+
+  AC_SUBST(DOCS_REFERENCE_JAVADOC)
 ])

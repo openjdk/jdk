@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,6 +42,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -83,17 +84,6 @@ void*             VMError::_context;
 const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
-
-// returns an address which is guaranteed to generate a SIGSEGV on read,
-// for test purposes, which is not NULL and contains bits in every word
-void* VMError::get_segfault_address() {
-  return (void*)
-#ifdef _LP64
-    0xABC0000000000ABCULL;
-#else
-    0x00000ABC;
-#endif
-}
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
@@ -352,7 +342,7 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                 buf, jdk_debug_level, runtime_version);
 
    // This is the long version with some default settings added
-   st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s%s, %s, %s)",
+   st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s%s%s, %s, %s)",
                  VM_Version::vm_name(),
                 (*vendor_version != '\0') ? " " : "", vendor_version,
                  jdk_debug_level,
@@ -366,6 +356,7 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
+                 UseCompressedClassPointers ? ", compressed class ptrs" : "",
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
@@ -504,7 +495,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     if (_verbose && TestSafeFetchInErrorHandler) {
       st->print_cr("Will test SafeFetch...");
       if (CanUseSafeFetch32()) {
-        int* const invalid_pointer = (int*) get_segfault_address();
+        int* const invalid_pointer = (int*)segfault_address;
         const int x = 0x76543210;
         int i1 = SafeFetch32(invalid_pointer, x);
         int i2 = SafeFetch32(invalid_pointer, x);
@@ -931,11 +922,15 @@ void VMError::report(outputStream* st, bool _verbose) {
 
      if (_verbose && UseCompressedOops) {
        CompressedOops::print_mode(st);
-       if (UseCompressedClassPointers) {
-         CDS_ONLY(MetaspaceShared::print_on(st);)
-         Metaspace::print_compressed_class_space(st);
-         CompressedKlassPointers::print_mode(st);
-       }
+       st->cr();
+     }
+
+  STEP("printing compressed klass pointers mode")
+
+     if (_verbose && UseCompressedClassPointers) {
+       CDS_ONLY(MetaspaceShared::print_on(st);)
+       Metaspace::print_compressed_class_space(st);
+       CompressedKlassPointers::print_mode(st);
        st->cr();
      }
 #endif
@@ -1142,11 +1137,14 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("printing compressed oops mode")
   if (UseCompressedOops) {
     CompressedOops::print_mode(st);
-    if (UseCompressedClassPointers) {
-      CDS_ONLY(MetaspaceShared::print_on(st);)
-      Metaspace::print_compressed_class_space(st);
-      CompressedKlassPointers::print_mode(st);
-    }
+    st->cr();
+  }
+
+  // STEP("printing compressed class ptrs mode")
+  if (UseCompressedClassPointers) {
+    CDS_ONLY(MetaspaceShared::print_on(st);)
+    Metaspace::print_compressed_class_space(st);
+    CompressedKlassPointers::print_mode(st);
     st->cr();
   }
 #endif
@@ -1756,7 +1754,7 @@ static void crash_with_sigfpe() {
 // crash with sigsegv at non-null address.
 static void crash_with_segfault() {
 
-  char* const crash_addr = (char*) VMError::get_segfault_address();
+  char* const crash_addr = (char*)VMError::segfault_address;
   *crash_addr = 'X';
 
 } // end: crash_with_segfault

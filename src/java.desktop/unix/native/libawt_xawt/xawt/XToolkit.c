@@ -120,9 +120,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_X11_XToolkit_getTrayIconDisplayTimeout
 JNIEXPORT jlong JNICALL Java_sun_awt_X11_XToolkit_getDefaultXColormap
   (JNIEnv *env, jclass clazz)
 {
+    AWT_LOCK();
     AwtGraphicsConfigDataPtr defaultConfig =
         getDefaultConfig(DefaultScreen(awt_display));
-
+    AWT_UNLOCK();
     return (jlong) defaultConfig->awt_cmap;
 }
 
@@ -145,9 +146,11 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 JNIEXPORT void JNICALL Java_sun_awt_X11_XToolkit_nativeLoadSystemColors
   (JNIEnv *env, jobject this, jintArray systemColors)
 {
+    AWT_LOCK();
     AwtGraphicsConfigDataPtr defaultConfig =
         getDefaultConfig(DefaultScreen(awt_display));
     awtJNI_CreateColorData(env, defaultConfig, 1);
+    AWT_UNLOCK();
 }
 
 JNIEXPORT void JNICALL

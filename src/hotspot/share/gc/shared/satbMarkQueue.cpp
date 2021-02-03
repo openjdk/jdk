@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,30 +38,14 @@
 #include "utilities/globalCounter.inline.hpp"
 
 SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset) :
-  // SATB queues are only active during marking cycles. We create
-  // them with their active field set to false. If a thread is
-  // created during a cycle and its SATB queue needs to be activated
-  // before the thread starts running, we'll need to set its active
-  // field to true. This must be done in the collector-specific
+  PtrQueue(qset),
+  // SATB queues are only active during marking cycles. We create them
+  // with their active field set to false. If a thread is created
+  // during a cycle, it's SATB queue needs to be activated before the
+  // thread starts running.  This is handled by the collector-specific
   // BarrierSet thread attachment protocol.
-  PtrQueue(qset, false /* active */)
+  _active(false)
 { }
-
-void SATBMarkQueue::flush() {
-  // Filter now to possibly save work later.  If filtering empties the
-  // buffer then flush_impl can deallocate the buffer.
-  filter();
-  flush_impl();
-}
-
-void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
-  assert(SafepointSynchronize::is_at_safepoint(),
-         "SATB queues must only be processed at safepoints");
-  if (_buf != NULL) {
-    cl->do_buffer(&_buf[index()], size());
-    reset();
-  }
-}
 
 #ifndef PRODUCT
 // Helpful for debugging
@@ -86,7 +70,8 @@ SATBMarkQueueSet::SATBMarkQueueSet(BufferNode::Allocator* allocator) :
   _list(),
   _count_and_process_flag(0),
   _process_completed_buffers_threshold(SIZE_MAX),
-  _buffer_enqueue_threshold(0)
+  _buffer_enqueue_threshold(0),
+  _all_active(false)
 {}
 
 SATBMarkQueueSet::~SATBMarkQueueSet() {
@@ -207,7 +192,13 @@ void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active)
     SetThreadActiveClosure(SATBMarkQueueSet* qset, bool active) :
       _qset(qset), _active(active) {}
     virtual void do_thread(Thread* t) {
-      _qset->satb_queue_for_thread(t).set_active(_active);
+      SATBMarkQueue& queue = _qset->satb_queue_for_thread(t);
+      if (queue.buffer() != nullptr) {
+        assert(!_active || queue.index() == _qset->buffer_size(),
+               "queues should be empty when activated");
+        queue.set_index(_qset->buffer_size());
+      }
+      queue.set_active(_active);
     }
   } closure(this, active);
   Threads::threads_do(&closure);
@@ -226,6 +217,13 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
   } else {
     return false;
   }
+}
+
+void SATBMarkQueueSet::flush_queue(SATBMarkQueue& queue) {
+  // Filter now to possibly save work later.  If filtering empties the
+  // buffer then flush_queue can deallocate the buffer.
+  filter(queue);
+  PtrQueueSet::flush_queue(queue);
 }
 
 void SATBMarkQueueSet::enqueue_known_active(SATBMarkQueue& queue, oop obj) {
@@ -352,12 +350,12 @@ void SATBMarkQueueSet::abandon_partial_marking() {
   abandon_completed_buffers();
 
   class AbandonThreadQueueClosure : public ThreadClosure {
-    SATBMarkQueueSet* _qset;
+    SATBMarkQueueSet& _qset;
   public:
-    AbandonThreadQueueClosure(SATBMarkQueueSet* qset) : _qset(qset) {}
+    AbandonThreadQueueClosure(SATBMarkQueueSet& qset) : _qset(qset) {}
     virtual void do_thread(Thread* t) {
-      _qset->satb_queue_for_thread(t).reset();
+      _qset.reset_queue(_qset.satb_queue_for_thread(t));
     }
-  } closure(this);
+  } closure(*this);
   Threads::threads_do(&closure);
 }

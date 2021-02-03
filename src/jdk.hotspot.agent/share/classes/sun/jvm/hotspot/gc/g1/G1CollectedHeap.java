@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ public class G1CollectedHeap extends CollectedHeap {
         tty.println(" region size " + (HeapRegion.grainBytes() / 1024) + "K");
 
         HeapSummary sum = new HeapSummary();
-        sum.printG1HeapSummary(this);
+        sum.printG1HeapSummary(tty, this);
     }
 
     public void printRegionDetails(PrintStream tty) {
