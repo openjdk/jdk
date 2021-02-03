@@ -116,7 +116,6 @@ public class MethodHandles {
     @ForceInline // to ensure Reflection.getCallerClass optimization
     public static Lookup lookup() {
         Class<?> caller = Reflection.getCallerClass();
-        assert !MethodHandleImpl.isInjectedInvoker(caller);
         return new Lookup(caller);
     }
 
@@ -139,7 +138,6 @@ public class MethodHandles {
      * non-caller-sensitive.
      */
     private static Lookup reflected$lookup(Class<?> caller) {
-        assert !MethodHandleImpl.isInjectedInvoker(caller);
         return new Lookup(caller);
     }
 

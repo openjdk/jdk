@@ -1129,19 +1129,6 @@ abstract class MethodHandleImpl {
         return BindCaller.bindCaller(mh, hostClass);
     }
 
-    /*
-     * If the given invoker class is a hidden InjectedInvoker class,
-     * this method returns the class that is stored as the class data of
-     * the injected invoker class which is the lookup class bound to
-     * the method handle for a caller-sensitive method at lookup time.
-     * This injected invoker class is a nestmate of the lookup class that
-     * looks up the caller-sensitive method.  It has the same defining
-     * class loader, runtime package, and protection domain as the lookup class.
-     */
-    static boolean isInjectedInvoker(Class<?> invoker) {
-        return invoker != null && BindCaller.isInjectedInvoker(invoker);
-    }
-
     // Put the whole mess into its own nested class.
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
@@ -1189,27 +1176,6 @@ abstract class MethodHandleImpl {
             }
         }
 
-        static boolean isInjectedInvoker(Class<?> c) {
-            if (c.isHidden() && c.getName().contains(INVOKER_SUFFIX)) {
-                Lookup lookup = new Lookup(c);
-                try {
-                    Object cd = MethodHandles.classData(lookup, ConstantDescs.DEFAULT_NAME, Object.class);
-                    if (cd instanceof Class<?> caller) {
-                        // An alternate approach could be:
-                        //    return c.isNestmateOf(caller) && BindCaller.CV_makeInjectedInvoker.get(caller) == c;
-                        // This will incur the overhead to cause an unused injected invoker
-                        // class be defined but unused for application-defined hidden class
-                        // whose name contains the injected invoker name suffix.  This approach
-                        // can be considered in the future if this is needed at runtime.
-                        return c.isNestmateOf(caller);
-                    }
-                } catch (IllegalAccessException e) {
-                    throw new InternalError(e);
-                }
-            }
-            return false;
-        }
-
         private static MethodHandle bindCallerWithInjectedInvoker(MethodHandle mh, Class<?> hostClass)
                 throws ReflectiveOperationException
         {
@@ -1239,6 +1205,37 @@ abstract class MethodHandleImpl {
                     .defineClass(true, targetClass);
             assert checkInjectedInvoker(targetClass, invokerClass);
             return invokerClass;
+        }
+
+        /*
+         * If the given invoker class is a hidden InjectedInvoker class,
+         * this method returns the class that is stored as the class data of
+         * the injected invoker class which is the lookup class bound to
+         * the method handle for a caller-sensitive method at lookup time.
+         * Otherwise, this method returns null.
+         *
+         * An injected invoker class has the same defining class loader,
+         * runtime package, and protection domain as the lookup class that
+         * looks up the caller-sensitive method.
+         */
+        private static Class<?> callerForInvoker(Class<?> invoker) {
+            if (invoker.isHidden() && invoker.getName().contains(INVOKER_SUFFIX)) {
+                Lookup lookup = new Lookup(invoker);
+                try {
+                    Object cd = MethodHandles.classData(lookup, ConstantDescs.DEFAULT_NAME, Object.class);
+                    if (cd instanceof Class c) {
+                        // If a hidden class matching the injected invoker name but not injected
+                        // by BindCaller calls MethodHandles.lookup(), then an invoker class
+                        // will be defined but unused. This should be rare case.
+                        if (invoker.isNestmateOf(c) && BindCaller.CV_makeInjectedInvoker.get(c) == invoker) {
+                            return c;
+                        }
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new InternalError(e);
+                }
+            }
+            return null;
         }
 
         private static ClassValue<Class<?>> CV_makeInjectedInvoker = new ClassValue<Class<?>>() {
