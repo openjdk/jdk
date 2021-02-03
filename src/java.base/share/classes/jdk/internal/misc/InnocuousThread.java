@@ -50,8 +50,9 @@ public final class InnocuousThread extends Thread {
     }
 
     /**
-     * Returns a new InnocuousThread with an auto-generated thread name
-     * and its context class loader is set to the system class loader.
+     * Returns a new InnocuousThread with an auto-generated thread name,
+     * inheriting the current thread priority, and its context class loader
+     * is set to the system class loader.
      */
     public static Thread newThread(Runnable target) {
         return newThread(newName(), target);
@@ -59,17 +60,25 @@ public final class InnocuousThread extends Thread {
 
     /**
      * Returns a new InnocuousThread with its context class loader
-     * set to the system class loader.
+     * set to the system class loader, inheriting the current thread priority
      */
     public static Thread newThread(String name, Runnable target) {
+        return newThread(name, target, currentThread().getPriority());
+    }
+    /**
+     * Returns a new InnocuousThread with its context class loader
+     * set to the system class loader, with the thread priority set to
+     * the given priority.
+     */
+    public static Thread newThread(String name, Runnable target, int priority) {
+        if (System.getSecurityManager() == null) {
+            return createThread(name, target, ClassLoader.getSystemClassLoader(), priority);
+        }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
-                        return new InnocuousThread(INNOCUOUSTHREADGROUP,
-                                                   target,
-                                                   name,
-                                                   ClassLoader.getSystemClassLoader());
+                        return createThread(name, target, ClassLoader.getSystemClassLoader(), priority);
                     }
                 });
     }
@@ -97,20 +106,20 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newSystemThread(String name, Runnable target, int priority) {
         if (System.getSecurityManager() == null) {
-            return createSystemThread(name, target, priority);
+            return createThread(name, target, null, priority);
         }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
-                        return createSystemThread(name, target, priority);
+                        return createThread(name, target, null, priority);
                     }
                 });
     }
 
-    private static Thread createSystemThread(String name, Runnable target, int priority) {
+    private static Thread createThread(String name, Runnable target, ClassLoader loader, int priority) {
         Thread t = new InnocuousThread(INNOCUOUSTHREADGROUP,
-                target, name, null);
+                target, name, loader);
         if (t.getPriority() != priority) {
             t.setPriority(priority);
         }
