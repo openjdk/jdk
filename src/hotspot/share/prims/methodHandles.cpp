@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
@@ -83,7 +84,7 @@ MethodHandlesAdapterBlob* MethodHandles::_adapter_code = NULL;
  * failed and true otherwise.
  */
 void MethodHandles::generate_adapters() {
-  assert(SystemDictionary::MethodHandle_klass() != NULL, "should be present");
+  assert(vmClasses::MethodHandle_klass() != NULL, "should be present");
   assert(_adapter_code == NULL, "generate only once");
 
   ResourceMark rm;
@@ -188,7 +189,7 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target, TRAPS) {
   // It fills in the new MemberName from a java.lang.reflect.Member.
   oop target_oop = target();
   Klass* target_klass = target_oop->klass();
-  if (target_klass == SystemDictionary::reflect_Field_klass()) {
+  if (target_klass == vmClasses::reflect_Field_klass()) {
     oop clazz = java_lang_reflect_Field::clazz(target_oop); // fd.field_holder()
     int slot  = java_lang_reflect_Field::slot(target_oop);  // fd.index()
     Klass* k = java_lang_Class::as_Klass(clazz);
@@ -204,7 +205,7 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target, TRAPS) {
       }
       return mname2;
     }
-  } else if (target_klass == SystemDictionary::reflect_Method_klass()) {
+  } else if (target_klass == vmClasses::reflect_Method_klass()) {
     oop clazz  = java_lang_reflect_Method::clazz(target_oop);
     int slot   = java_lang_reflect_Method::slot(target_oop);
     Klass* k = java_lang_Class::as_Klass(clazz);
@@ -215,7 +216,7 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target, TRAPS) {
       CallInfo info(m, k, CHECK_NULL);
       return init_method_MemberName(mname, info, THREAD);
     }
-  } else if (target_klass == SystemDictionary::reflect_Constructor_klass()) {
+  } else if (target_klass == vmClasses::reflect_Constructor_klass()) {
     oop clazz  = java_lang_reflect_Constructor::clazz(target_oop);
     int slot   = java_lang_reflect_Constructor::slot(target_oop);
     Klass* k = java_lang_Class::as_Klass(clazz);
@@ -275,7 +276,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info, TRAPS) {
       assert(info.resolved_klass()->is_instance_klass(), "subtype of interface must be an instance klass");
       InstanceKlass* m_klass_non_interface = InstanceKlass::cast(info.resolved_klass());
       if (m_klass_non_interface->is_interface()) {
-        m_klass_non_interface = SystemDictionary::Object_klass();
+        m_klass_non_interface = vmClasses::Object_klass();
 #ifdef ASSERT
         { ResourceMark rm;
           Method* m2 = m_klass_non_interface->vtable().method_at(vmindex);
@@ -386,7 +387,7 @@ bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
   if (klass == NULL)
     return false;
   // The following test will fail spuriously during bootstrap of MethodHandle itself:
-  //    if (klass != SystemDictionary::MethodHandle_klass())
+  //    if (klass != vmClasses::MethodHandle_klass())
   // Test the name instead:
   if (klass->name() != vmSymbols::java_lang_invoke_MethodHandle() &&
       klass->name() != vmSymbols::java_lang_invoke_VarHandle()) {
@@ -650,7 +651,7 @@ void MethodHandles::print_as_basic_type_signature_on(outputStream* st,
 
 
 static oop object_java_mirror() {
-  return SystemDictionary::Object_klass()->java_mirror();
+  return vmClasses::Object_klass()->java_mirror();
 }
 
 oop MethodHandles::field_name_or_null(Symbol* s) {
@@ -671,9 +672,9 @@ oop MethodHandles::field_signature_type_or_null(Symbol* s) {
     if (s == vmSymbols::object_signature()) {
       return object_java_mirror();
     } else if (s == vmSymbols::class_signature()) {
-      return SystemDictionary::Class_klass()->java_mirror();
+      return vmClasses::Class_klass()->java_mirror();
     } else if (s == vmSymbols::string_signature()) {
-      return SystemDictionary::String_klass()->java_mirror();
+      return vmClasses::String_klass()->java_mirror();
     }
   }
   return NULL;
@@ -716,7 +717,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
     if (defc_klass == NULL)  return empty;  // a primitive; no resolution possible
     if (!defc_klass->is_instance_klass()) {
       if (!defc_klass->is_array_klass())  return empty;
-      defc_klass = SystemDictionary::Object_klass();
+      defc_klass = vmClasses::Object_klass();
     }
     defc = InstanceKlass::cast(defc_klass);
   }
@@ -733,7 +734,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
 
   vmIntrinsics::ID mh_invoke_id = vmIntrinsics::_none;
   if ((flags & ALL_KINDS) == IS_METHOD &&
-      (defc == SystemDictionary::MethodHandle_klass() || defc == SystemDictionary::VarHandle_klass()) &&
+      (defc == vmClasses::MethodHandle_klass() || defc == vmClasses::VarHandle_klass()) &&
       (ref_kind == JVM_REF_invokeVirtual ||
        ref_kind == JVM_REF_invokeSpecial ||
        // static invocation mode is required for _linkToVirtual, etc.:
@@ -1311,7 +1312,7 @@ JVM_ENTRY(jobject, MHN_getMemberVMInfo(JNIEnv *env, jobject igcls, jobject mname
   if (mname_jh == NULL)  return NULL;
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   intptr_t vmindex  = java_lang_invoke_MemberName::vmindex(mname());
-  objArrayHandle result = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), 2, CHECK_NULL);
+  objArrayHandle result = oopFactory::new_objArray_handle(vmClasses::Object_klass(), 2, CHECK_NULL);
   jvalue vmindex_value; vmindex_value.j = (long)vmindex;
   oop x = java_lang_boxing_object::create(T_LONG, &vmindex_value, CHECK_NULL);
   result->obj_at_put(0, x);
@@ -1570,9 +1571,9 @@ static JNINativeMethod MH_methods[] = {
  */
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
   assert(!MethodHandles::enabled(), "must not be enabled");
-  assert(SystemDictionary::MethodHandle_klass() != NULL, "should be present");
+  assert(vmClasses::MethodHandle_klass() != NULL, "should be present");
 
-  oop mirror = SystemDictionary::MethodHandle_klass()->java_mirror();
+  oop mirror = vmClasses::MethodHandle_klass()->java_mirror();
   jclass MH_class = (jclass) JNIHandles::make_local(THREAD, mirror);
 
   {

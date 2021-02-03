@@ -63,6 +63,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"

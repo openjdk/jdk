@@ -34,7 +34,6 @@
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
