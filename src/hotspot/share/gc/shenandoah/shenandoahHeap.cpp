@@ -1126,6 +1126,12 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
   }
 }
 
+void ShenandoahHeap::mark_complete_marking_context() {
+  _marking_context->mark_complete();
+  ShenandoahIsAliveClosure is_alive;
+  tracer()->report_object_count_after_gc(&is_alive);
+}
+
 // Returns size in bytes
 size_t ShenandoahHeap::unsafe_max_tlab_alloc(Thread *thread) const {
   if (ShenandoahElasticTLAB) {

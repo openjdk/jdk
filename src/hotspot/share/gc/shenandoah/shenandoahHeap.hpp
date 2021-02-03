@@ -564,7 +564,7 @@ private:
 public:
   inline ShenandoahMarkingContext* complete_marking_context() const;
   inline ShenandoahMarkingContext* marking_context() const;
-  inline void mark_complete_marking_context();
+  void mark_complete_marking_context();
   inline void mark_incomplete_marking_context();
 
   template<class T>
