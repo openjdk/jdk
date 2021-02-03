@@ -162,6 +162,7 @@ public:
   bool is_copyofrange_validated() const  { assert(_kind != None, "should bet set"); return _kind == CopyOfRange && _arguments_validated; }
 
   bool is_copy_for_string(PhaseGVN* phase) const;
+  void process_users_of_allocation(AllocateArrayNode* alloc, PhaseIterGVN* igvn);
   void set_arraycopy(bool validated)   { assert(_kind == None, "shouldn't bet set yet"); _kind = ArrayCopy; _arguments_validated = validated; }
   void set_clone_inst()                { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneInst; }
   void set_clone_array()               { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneArray; }
