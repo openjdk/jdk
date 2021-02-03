@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
@@ -45,10 +43,7 @@ import java.util.Collections;
  * between two machines.
  * <p>
  * The actual work of the socket is performed by an instance of the
- * {@code SocketImpl} class. An application, by changing
- * the socket factory that creates the socket implementation,
- * can configure itself to create sockets appropriate to the local
- * firewall.
+ * {@code SocketImpl} class.
  *
  * <p> The {@code Socket} class defines convenience
  * methods to set and get several socket options. This class also
@@ -96,7 +91,6 @@ import java.util.Collections;
  * </blockquote>
  * Additional (implementation specific) options may also be supported.
  *
- * @see     java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
  * @see     java.net.SocketImpl
  * @see     java.nio.channels.SocketChannel
  * @since   1.0
@@ -208,6 +202,7 @@ public class Socket implements java.io.Closeable {
         } else {
             if (p == Proxy.NO_PROXY) {
                 // create a platform or custom SocketImpl for the DIRECT case
+                @SuppressWarnings("deprecation")
                 SocketImplFactory factory = Socket.factory;
                 if (factory == null) {
                     impl = SocketImpl.createPlatformSocketImpl(false);
@@ -282,9 +277,7 @@ public class Socket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkConnect
      */
     public Socket(String host, int port)
@@ -318,9 +311,7 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code address} is null.
-     * @see        java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkConnect
      */
     public Socket(InetAddress address, int port) throws IOException {
@@ -448,9 +439,7 @@ public class Socket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkConnect
      * @deprecated Use DatagramSocket instead for UDP transport.
      */
@@ -492,9 +481,7 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code host} is null.
-     * @see        java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkConnect
      * @deprecated Use DatagramSocket instead for UDP transport.
      */
@@ -554,6 +541,7 @@ public class Socket implements java.io.Closeable {
      * Sets impl to the system-default type of SocketImpl.
      * @since 1.4
      */
+    @SuppressWarnings("deprecation")
     void setImpl() {
         SocketImplFactory factory = Socket.factory;
         if (factory != null) {
@@ -1732,8 +1720,10 @@ public class Socket implements java.io.Closeable {
     /**
      * The factory for all client sockets.
      */
+    @Deprecated(since = "17")
     private static volatile SocketImplFactory factory;
 
+    @Deprecated(since = "17")
     static SocketImplFactory socketImplFactory() {
         return factory;
     }
@@ -1761,7 +1751,10 @@ public class Socket implements java.io.Closeable {
      *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkSetFactory
+     * @deprecated Use a {@link javax.net.SocketFactory} and subclass
+     *             {@code Socket} directly.
      */
+    @Deprecated(since = "17")
     public static synchronized void setSocketImplFactory(SocketImplFactory fac)
         throws IOException
     {
