@@ -41,6 +41,6 @@ public class TestNullShape {
             System.out.println("result (npe): true");
             return;
         }
-	throw new RuntimeException("NPE is expected");
+        throw new RuntimeException("NPE is expected");
     }
 }
