@@ -734,7 +734,6 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java 80134
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 8024627 macosx-all
 # The next test below is an intermittent failure
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
-javax/swing/JColorChooser/Test6827032.java 8197825 windows-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
