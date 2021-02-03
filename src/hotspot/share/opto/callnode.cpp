@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -630,6 +630,12 @@ void JVMState::set_map_deep(SafePointNode* map) {
   for (JVMState* p = this; p != NULL; p = p->_caller) {
     p->set_map(map);
   }
+}
+
+// unlike set_map(), this is two-way setting.
+void JVMState::bind_map(SafePointNode* map) {
+  set_map(map);
+  _map->set_jvms(this);
 }
 
 // Adapt offsets in in-array after adding or removing an edge.

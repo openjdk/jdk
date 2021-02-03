@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "jvmtifiles/jvmti.h"
@@ -55,7 +55,7 @@ InstanceKlass* ArrayKlass::java_super() const {
   if (super() == NULL)  return NULL;  // bootstrap case
   // Array klasses have primary supertypes which are not reported to Java.
   // Example super chain:  String[][] -> Object[][] -> Object[] -> Object
-  return SystemDictionary::Object_klass();
+  return vmClasses::Object_klass();
 }
 
 
@@ -92,7 +92,7 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassID id) :
     // the vtable of klass Object.
     set_vtable_length(Universe::base_vtable_size());
     set_name(name);
-    set_super(Universe::is_bootstrapping() ? NULL : SystemDictionary::Object_klass());
+    set_super(Universe::is_bootstrapping() ? NULL : vmClasses::Object_klass());
     set_layout_helper(Klass::_lh_neutral_value);
     set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
     JFR_ONLY(INIT_ID(this);)

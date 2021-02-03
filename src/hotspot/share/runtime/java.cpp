@@ -73,6 +73,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -327,6 +328,10 @@ void print_statistics() {
     MemTracker::final_report(tty);
   }
 
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
+  }
+
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -367,6 +372,10 @@ void print_statistics() {
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
+  }
+
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {

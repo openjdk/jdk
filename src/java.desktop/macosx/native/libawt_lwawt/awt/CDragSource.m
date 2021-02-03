@@ -169,32 +169,32 @@ static BOOL                sNeedsEnter;
 
     // Clean up JNI refs
     if (fComponent != NULL) {
-        JNFDeleteGlobalRef(env, fComponent);
+        (*env)->DeleteGlobalRef(env, fComponent);
         fComponent = NULL;
     }
 
     if (fDragSourceContextPeer != NULL) {
-        JNFDeleteGlobalRef(env, fDragSourceContextPeer);
+        (*env)->DeleteGlobalRef(env, fDragSourceContextPeer);
         fDragSourceContextPeer = NULL;
     }
 
     if (fTransferable != NULL) {
-        JNFDeleteGlobalRef(env, fTransferable);
+        (*env)->DeleteGlobalRef(env, fTransferable);
         fTransferable = NULL;
     }
 
     if (fTriggerEvent != NULL) {
-        JNFDeleteGlobalRef(env, fTriggerEvent);
+        (*env)->DeleteGlobalRef(env, fTriggerEvent);
         fTriggerEvent = NULL;
     }
 
     if (fFormats != NULL) {
-        JNFDeleteGlobalRef(env, fFormats);
+        (*env)->DeleteGlobalRef(env, fFormats);
         fFormats = NULL;
     }
 
     if (fFormatMap != NULL) {
-        JNFDeleteGlobalRef(env, fFormatMap);
+        (*env)->DeleteGlobalRef(env, fFormatMap);
         fFormatMap = NULL;
     }
 

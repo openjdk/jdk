@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,37 +318,58 @@ public class TestOverrideMethods  extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>java.lang.String</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#m2()">\
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.String</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m2()">\
                     m2</a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4">
                     <div class="block">This is Base::m2.</div>
                     </div>
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code>void</code></div>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m4()">m4</a></span>()</code></div>
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4"><code>void</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m4\
+                    ()">m4</a></span>()</code></div>
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab4">
                     <div class="block">This is Base::m4.</div>
                     </div>
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code>java.lang.Object</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m5()">m5</a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m\
+                    5()">m5</a></span>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4">
                     <div class="block">This is Base::m5.</div>
                     </div>
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code>java.lang.Object</code></div>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m6()">m6</a></span>()</code></div>
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m6\
+                    ()">m6</a></span>()</code></div>
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab4">
                     <div class="block">This is Base::m6.</div>
                     </div>
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code>java.lang.Object</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m7()">m7</a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m\
+                    7()">m7</a></span>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4">
                     <div class="block">This is Base::m7.</div>
                     </div>
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table method-summary-table-tab3"><code>abstract java.lang.Object</code></div>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table method-summary-table-tab3"><code><span class="member-name-link"><a href="#m8()">m8</a></span>()</code></div>
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table method-summary-table-tab3">
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab3"><code>abstract java.lang.Object</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab3"><code><span class="member-name-link"><a href="#m8\
+                    ()">m8</a></span>()</code></div>
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab3">
                     <div class="block">This is Base::m8.</div>
                     </div>
                     """,

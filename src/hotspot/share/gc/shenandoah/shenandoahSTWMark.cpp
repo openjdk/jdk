@@ -29,6 +29,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
@@ -78,6 +79,8 @@ void ShenandoahSTWMark::mark() {
 
   uint nworkers = heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
+
+  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
 
   {
     // Mark
