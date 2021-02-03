@@ -62,11 +62,6 @@ class MethodHandleStatics {
     static final int MAX_ARITY;
     static final boolean VAR_HANDLE_IDENTITY_ADAPT;
 
-    // Markers used by LambdaForm and Species resolution code to communicate
-    // classes that have been or could have be pre-generated
-    static final String LF_RESOLVE = "[LF_RESOLVE]";
-    static final String SPECIES_RESOLVE = "[SPECIES_RESOLVE]";
-
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
         DEBUG_METHOD_HANDLE_NAMES = Boolean.parseBoolean(
@@ -117,25 +112,33 @@ class MethodHandleStatics {
                 LOG_LF_COMPILATION_FAILURE);
     }
 
+    /**
+     * If requested, logs the result of resolving the LambdaForm to stdout
+     * and informs the CDS subsystem about it.
+     */
     /*non-public*/
     static void traceLambdaForm(String name, MethodType type, Class<?> holder, MemberName resolvedMember) {
         if (TRACE_RESOLVE) {
-            System.out.println(LF_RESOLVE + " " + holder.getName() + " " + name + " " +
+            System.out.println("[LF_RESOLVE] " + holder.getName() + " " + name + " " +
                     shortenSignature(basicTypeSignature(type)) +
                     (resolvedMember != null ? " (success)" : " (fail)"));
         }
         if (CDS.isDumpingClassList()) {
-            CDS.traceLambdaFormInvoker(LF_RESOLVE, holder.getName(), name, shortenSignature(basicTypeSignature(type)));
+            CDS.traceLambdaFormInvoker("[LF_RESOLVE]", holder.getName(), name, shortenSignature(basicTypeSignature(type)));
         }
     }
 
+    /**
+     * If requested, logs the result of resolving the species type to stdout
+     * and the CDS subsystem.
+     */
     /*non-public*/
     static void traceSpeciesType(String cn, Class<?> salvage) {
         if (TRACE_RESOLVE) {
-            System.out.println(SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
+            System.out.println("[SPECIES_RESOLVE] " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
         }
         if (CDS.isDumpingClassList()) {
-            CDS.traceSpeciesType(SPECIES_RESOLVE, cn);
+            CDS.traceSpeciesType("[SPECIES_RESOLVE]", cn);
         }
     }
     // handy shared exception makers (they simplify the common case code)

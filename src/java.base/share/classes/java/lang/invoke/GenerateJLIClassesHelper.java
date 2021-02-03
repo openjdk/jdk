@@ -39,8 +39,6 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.LF_RESOLVE;
-import static java.lang.invoke.MethodHandleStatics.SPECIES_RESOLVE;
 import static java.lang.invoke.MethodTypeForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
 
@@ -298,7 +296,7 @@ class GenerateJLIClassesHelper {
         traces.map(line -> line.split(" "))
                 .forEach(parts -> {
                     switch (parts[0]) {
-                        case SPECIES_RESOLVE:
+                        case "[SPECIES_RESOLVE]":
                             // Allow for new types of species data classes being resolved here
                             assert parts.length >= 2;
                             if (parts[1].startsWith(BMH_SPECIES_PREFIX)) {
@@ -308,7 +306,7 @@ class GenerateJLIClassesHelper {
                                 }
                             }
                             break;
-                        case LF_RESOLVE:
+                        case "[LF_RESOLVE]":
                             assert parts.length > 3;
                             String methodType = parts[3];
                             if (parts[1].equals(INVOKERS_HOLDER_CLASS_NAME)) {
