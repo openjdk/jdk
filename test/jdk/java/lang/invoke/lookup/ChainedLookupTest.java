@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8013527 
+ * @bug 8013527
  * @run testng/othervm ChainedLookupTest
  * @summary Test MethodHandles.lookup method to produce the Lookup object with
  *          proper lookup class if invoked through reflection and method handle.
