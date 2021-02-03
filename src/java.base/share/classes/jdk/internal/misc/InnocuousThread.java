@@ -63,7 +63,7 @@ public final class InnocuousThread extends Thread {
      * set to the system class loader, inheriting the current thread priority
      */
     public static Thread newThread(String name, Runnable target) {
-        return newThread(name, target, currentThread().getPriority());
+        return newThread(name, target, -1);
     }
     /**
      * Returns a new InnocuousThread with its context class loader
@@ -97,7 +97,7 @@ public final class InnocuousThread extends Thread {
      * inheriting the current thread priority.
      */
     public static Thread newSystemThread(String name, Runnable target) {
-        return newSystemThread(name, target, currentThread().getPriority());
+        return newSystemThread(name, target, -1);
     }
 
     /**
@@ -120,7 +120,7 @@ public final class InnocuousThread extends Thread {
     private static Thread createThread(String name, Runnable target, ClassLoader loader, int priority) {
         Thread t = new InnocuousThread(INNOCUOUSTHREADGROUP,
                 target, name, loader);
-        if (t.getPriority() != priority) {
+        if (priority >= 0) {
             t.setPriority(priority);
         }
         return t;
