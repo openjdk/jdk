@@ -3233,8 +3233,22 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 }
 
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2, MacroAssembler::PreservationLevel preservation_level) {
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2,
+                                        MacroAssembler::PreservationLevel preservation_level) {
   access_load_at(T_OBJECT, IN_NATIVE, result, noreg, result, tmp1, tmp2, preservation_level);
+}
+
+void MacroAssembler::resolve_weak_handle(Register result, Register tmp1, Register tmp2,
+                                         MacroAssembler::PreservationLevel preservation_level) {
+  Label resolved;
+
+  // A null weak handle resolves to null.
+  cmpdi(CCR0, result, 0);
+  beq(CCR0, resolved);
+
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, result, noreg, result, tmp1, tmp2,
+                 preservation_level);
+  bind(resolved);
 }
 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
