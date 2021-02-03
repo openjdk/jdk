@@ -588,10 +588,6 @@ public abstract class FileChannel
      * operating systems can transfer bytes directly from the filesystem cache
      * to the target channel without actually copying them.  </p>
      *
-     * @apiNote
-     * This method only returns the number of bytes that were actually
-     * transferred, it will not return -1.
-     *
      * @param  position
      *         The position within the file at which the transfer is to begin;
      *         must be non-negative
@@ -646,7 +642,8 @@ public abstract class FileChannel
      * number of bytes will be transferred if the source channel has fewer than
      * {@code count} bytes remaining, or if the source channel is non-blocking
      * and has fewer than {@code count} bytes immediately available in its
-     * input buffer.
+     * input buffer. No bytes are transferred if the source channel has reached
+     * end-of-stream.
      *
      * <p> This method does not modify this channel's position.  If the given
      * position is greater than the file's current size then no bytes are
@@ -661,7 +658,7 @@ public abstract class FileChannel
      *
      * @apiNote
      * This method only returns the number of bytes that were actually
-     * transferred, it will not return -1, e.g. in case of EOF of the
+     * transferred, it will not return -1, e.g. in case of end-of-stream of the
      * {@code src} parameter.
      *
      * @param  src
