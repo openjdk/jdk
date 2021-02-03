@@ -129,7 +129,11 @@ public class MethodHandles {
         if (caller.getClassLoader() == null) {
             throw newIllegalArgumentException("illegal lookupClass: "+caller);
         }
-        return new Lookup(caller);
+        // find the original caller if the caller is an injected invoker
+        // i.e. MethodHandles::lookup is called via Method::invoke which is
+        // invoked via MethodHandle
+        Class<?> originalCaller = MethodHandleImpl.originalCallerBoundToInvoker(caller);
+        return originalCaller != null ? new Lookup(originalCaller) : new Lookup(caller);
     }
 
     /**

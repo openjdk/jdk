@@ -1129,6 +1129,36 @@ abstract class MethodHandleImpl {
         return BindCaller.bindCaller(mh, hostClass);
     }
 
+
+    /*
+     * Returns the original caller class bound to a caller-sensitive
+     * method if the given class is an injected invoker; otherwise
+     * this method returns null.
+     *
+     * An injected invoker class is a hidden class which has the same
+     * defining class loader, runtime package, and protection domain
+     * as the lookup class that looks up the caller-sensitive method.
+     */
+    static Class<?> originalCallerBoundToInvoker(Class<?> invoker) {
+        if (invoker.isHidden() && invoker.getName().contains(BindCaller.INVOKER_SUFFIX)) {
+            Lookup lookup = new Lookup(invoker);
+            try {
+                Object cd = MethodHandles.classData(lookup, ConstantDescs.DEFAULT_NAME, Object.class);
+                if (cd instanceof Class c) {
+                    // If a hidden class matching the injected invoker name but not injected
+                    // by BindCaller calls MethodHandles.lookup(), then an invoker class
+                    // will be defined but unused. This should be rare case.
+                    if (invoker.isNestmateOf(c) && BindCaller.CV_makeInjectedInvoker.get(c) == invoker) {
+                        return c;
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                throw new InternalError(e);
+            }
+        }
+        return null;
+    }
+
     // Put the whole mess into its own nested class.
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
@@ -1205,37 +1235,6 @@ abstract class MethodHandleImpl {
                     .defineClass(true, targetClass);
             assert checkInjectedInvoker(targetClass, invokerClass);
             return invokerClass;
-        }
-
-        /*
-         * If the given invoker class is a hidden InjectedInvoker class,
-         * this method returns the class that is stored as the class data of
-         * the injected invoker class which is the lookup class bound to
-         * the method handle for a caller-sensitive method at lookup time.
-         * Otherwise, this method returns null.
-         *
-         * An injected invoker class has the same defining class loader,
-         * runtime package, and protection domain as the lookup class that
-         * looks up the caller-sensitive method.
-         */
-        private static Class<?> callerForInvoker(Class<?> invoker) {
-            if (invoker.isHidden() && invoker.getName().contains(INVOKER_SUFFIX)) {
-                Lookup lookup = new Lookup(invoker);
-                try {
-                    Object cd = MethodHandles.classData(lookup, ConstantDescs.DEFAULT_NAME, Object.class);
-                    if (cd instanceof Class c) {
-                        // If a hidden class matching the injected invoker name but not injected
-                        // by BindCaller calls MethodHandles.lookup(), then an invoker class
-                        // will be defined but unused. This should be rare case.
-                        if (invoker.isNestmateOf(c) && BindCaller.CV_makeInjectedInvoker.get(c) == invoker) {
-                            return c;
-                        }
-                    }
-                } catch (IllegalAccessException e) {
-                    throw new InternalError(e);
-                }
-            }
-            return null;
         }
 
         private static ClassValue<Class<?>> CV_makeInjectedInvoker = new ClassValue<Class<?>>() {

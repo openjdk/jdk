@@ -63,7 +63,21 @@ public class ChainedLookupTest {
     }
 
     /**
-     * MethodHandle::invokeExaxt on MethodHandles::lookup
+     * Invoke Method::invoke on MethodHandles::lookup via MethodHandle
+     */
+    @Test()
+    void methodInvokeViaMethodHandle() throws Throwable {
+        Method m =  MethodHandles.class.getMethod("lookup");
+
+        MethodHandle mh = MethodHandles.lookup().findVirtual(Method.class, "invoke",
+                methodType(Object.class, Object.class, Object[].class));
+
+        Lookup lookup = (Lookup) mh.invokeExact(m, null);
+        test(lookup, "Lookup produced via Method::invoke via MethodHandle");
+    }
+
+    /**
+     * MethodHandle::invokeExact on MethodHandles::lookup
      */
     @Test()
     void methodHandle() throws Throwable {
