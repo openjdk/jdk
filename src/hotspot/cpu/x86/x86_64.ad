@@ -5030,8 +5030,9 @@ instruct loadRange(rRegI dst, memory mem)
 
   ins_cost(125); // XXX
   format %{ "movl    $dst, $mem\t# range" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ movl($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -5043,8 +5044,9 @@ instruct loadP(rRegP dst, memory mem)
 
   ins_cost(125); // XXX
   format %{ "movq    $dst, $mem\t# ptr" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ movq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
@@ -5069,8 +5071,9 @@ instruct loadKlass(rRegP dst, memory mem)
 
   ins_cost(125); // XXX
   format %{ "movq    $dst, $mem\t# class" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ movq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
@@ -5365,8 +5368,9 @@ instruct leaP8(rRegP dst, indOffset8 mem)
 
   ins_cost(110); // XXX
   format %{ "leaq    $dst, $mem\t# ptr 8" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5376,8 +5380,9 @@ instruct leaP32(rRegP dst, indOffset32 mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr 32" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5398,8 +5403,9 @@ instruct leaPIdxOff(rRegP dst, indIndexOffset mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr idxoff" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5409,8 +5415,9 @@ instruct leaPIdxScale(rRegP dst, indIndexScale mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr idxscale" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5420,8 +5427,9 @@ instruct leaPPosIdxScale(rRegP dst, indPosIndexScale mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr idxscale" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5431,8 +5439,9 @@ instruct leaPIdxScaleOff(rRegP dst, indIndexScaleOffset mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr idxscaleoff" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5442,8 +5451,9 @@ instruct leaPPosIdxOff(rRegP dst, indPosIndexOffset mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr posidxoff" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5453,8 +5463,9 @@ instruct leaPPosIdxScaleOff(rRegP dst, indPosIndexScaleOffset mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr posidxscaleoff" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5478,8 +5489,9 @@ instruct leaP8Narrow(rRegP dst, indOffset8Narrow mem)
 
   ins_cost(110); // XXX
   format %{ "leaq    $dst, $mem\t# ptr off8narrow" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5490,8 +5502,9 @@ instruct leaP32Narrow(rRegP dst, indOffset32Narrow mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr off32narrow" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5502,8 +5515,9 @@ instruct leaPIdxOffNarrow(rRegP dst, indIndexOffsetNarrow mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr idxoffnarrow" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5514,8 +5528,9 @@ instruct leaPIdxScaleNarrow(rRegP dst, indIndexScaleNarrow mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr idxscalenarrow" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5526,8 +5541,9 @@ instruct leaPIdxScaleOffNarrow(rRegP dst, indIndexScaleOffsetNarrow mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr idxscaleoffnarrow" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5538,8 +5554,9 @@ instruct leaPPosIdxOffNarrow(rRegP dst, indPosIndexOffsetNarrow mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr posidxoffnarrow" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -5550,8 +5567,9 @@ instruct leaPPosIdxScaleOffNarrow(rRegP dst, indPosIndexScaleOffsetNarrow mem)
 
   ins_cost(110);
   format %{ "leaq    $dst, $mem\t# ptr posidxscaleoffnarrow" %}
-  opcode(0x8D);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_encode %{
+    __ leaq($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_reg_fat);
 %}
 
@@ -7182,8 +7200,9 @@ instruct addI_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
 
   ins_cost(150); // XXX
   format %{ "addl    $dst, $src\t# int" %}
-  opcode(0x01); /* Opcode 01 /r */
-  ins_encode(REX_reg_mem(src, dst), OpcP, reg_mem(src, dst));
+  ins_encode %{
+    __ addl($dst$$Address, $src$$Register);
+  %}
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -7257,8 +7276,9 @@ instruct leaI_rReg_immI(rRegI dst, rRegI src0, immI src1)
 
   ins_cost(110);
   format %{ "addr32 leal $dst, [$src0 + $src1]\t# int" %}
-  opcode(0x8D); /* 0x8D /r */
-  ins_encode(Opcode(0x67), REX_reg_reg(dst, src0), OpcP, reg_lea(dst, src0, src1)); // XXX
+  ins_encode %{
+    __ leal($dst$$Register, Address($src0$$Register, $src1$$constant));
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -7303,8 +7323,9 @@ instruct addL_mem_rReg(memory dst, rRegL src, rFlagsReg cr)
 
   ins_cost(150); // XXX
   format %{ "addq    $dst, $src\t# long" %}
-  opcode(0x01); /* Opcode 01 /r */
-  ins_encode(REX_reg_mem_wide(src, dst), OpcP, reg_mem(src, dst));
+  ins_encode %{
+    __ addq($dst$$Address, $src$$Register);
+  %}
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -7379,8 +7400,9 @@ instruct leaL_rReg_immL(rRegL dst, rRegL src0, immL32 src1)
 
   ins_cost(110);
   format %{ "leaq    $dst, [$src0 + $src1]\t# long" %}
-  opcode(0x8D); /* 0x8D /r */
-  ins_encode(REX_reg_reg_wide(dst, src0), OpcP, reg_lea(dst, src0, src1)); // XXX
+  ins_encode %{
+    __ leaq($dst$$Register, Address($src0$$Register, $src1$$constant));
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -7414,8 +7436,9 @@ instruct leaP_rReg_imm(rRegP dst, rRegP src0, immL32 src1)
 
   ins_cost(110);
   format %{ "leaq    $dst, [$src0 + $src1]\t# ptr" %}
-  opcode(0x8D); /* 0x8D /r */
-  ins_encode(REX_reg_reg_wide(dst, src0), OpcP, reg_lea(dst, src0, src1));// XXX
+  ins_encode %{
+    __ leaq($dst$$Register, Address($src0$$Register, $src1$$constant));
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -7486,11 +7509,9 @@ instruct storePConditional(memory heap_top_ptr,
 
   format %{ "cmpxchgq $heap_top_ptr, $newval\t# (ptr) "
             "If rax == $heap_top_ptr then store $newval into $heap_top_ptr" %}
-  opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
-             REX_reg_mem_wide(newval, heap_top_ptr),
-             OpcP, OpcS,
-             reg_mem(newval, heap_top_ptr));
+  ins_encode %{
+    __ cmpxchgq($newval$$Register, $heap_top_ptr$$Address);
+  %}
   ins_pipe(pipe_cmpxchg);
 %}
 
@@ -7502,11 +7523,9 @@ instruct storeIConditional(memory mem, rax_RegI oldval, rRegI newval, rFlagsReg 
   effect(KILL oldval);
 
   format %{ "cmpxchgl $mem, $newval\t# If rax == $mem then store $newval into $mem" %}
-  opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
-             REX_reg_mem(newval, mem),
-             OpcP, OpcS,
-             reg_mem(newval, mem));
+  ins_encode %{
+    __ cmpxchgl($newval$$Register, $mem$$Address);
+  %}
   ins_pipe(pipe_cmpxchg);
 %}
 
@@ -7518,11 +7537,9 @@ instruct storeLConditional(memory mem, rax_RegL oldval, rRegL newval, rFlagsReg 
   effect(KILL oldval);
 
   format %{ "cmpxchgq $mem, $newval\t# If rax == $mem then store $newval into $mem" %}
-  opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
-             REX_reg_mem_wide(newval, mem),
-             OpcP, OpcS,
-             reg_mem(newval, mem));
+  ins_encode %{
+    __ cmpxchgq($newval$$Register, $mem$$Address);
+  %}
   ins_pipe(pipe_cmpxchg);
 %}
 
@@ -7684,12 +7701,9 @@ instruct compareAndExchangeB(
 
   format %{ "cmpxchgb $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"  %}
-  opcode(0x0F, 0xB0);
-  ins_encode(lock_prefix,
-             REX_breg_mem(newval, mem_ptr),
-             OpcP, OpcS,
-             reg_mem(newval, mem_ptr) // lock cmpxchg
-             );
+  ins_encode %{
+    __ cmpxchgb($newval$$Register, $mem_ptr$$Address);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 
@@ -7723,12 +7737,9 @@ instruct compareAndExchangeI(
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"  %}
-  opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
-             REX_reg_mem(newval, mem_ptr),
-             OpcP, OpcS,
-             reg_mem(newval, mem_ptr) // lock cmpxchg
-             );
+  ins_encode %{
+    __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 
@@ -7743,12 +7754,9 @@ instruct compareAndExchangeL(
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"  %}
-  opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
-             REX_reg_mem_wide(newval, mem_ptr),
-             OpcP, OpcS,
-             reg_mem(newval, mem_ptr)  // lock cmpxchg
-            );
+  ins_encode %{
+    __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 
@@ -7761,12 +7769,9 @@ instruct compareAndExchangeN(
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t" %}
-  opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
-             REX_reg_mem(newval, mem_ptr),
-             OpcP, OpcS,
-             reg_mem(newval, mem_ptr)  // lock cmpxchg
-          );
+  ins_encode %{
+    __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 
@@ -7781,12 +7786,9 @@ instruct compareAndExchangeP(
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t" %}
-  opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
-             REX_reg_mem_wide(newval, mem_ptr),
-             OpcP, OpcS,
-             reg_mem(newval, mem_ptr)  // lock cmpxchg
-          );
+  ins_encode %{
+    __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 
@@ -9104,8 +9106,9 @@ instruct andI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "andl    $dst, $src\t# int" %}
-  opcode(0x23);
-  ins_encode(REX_reg_reg(dst, src), OpcP, reg_reg(dst, src));
+  ins_encode %{
+    __ andl($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -9173,8 +9176,9 @@ instruct andI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 
   ins_cost(125);
   format %{ "andl    $dst, $src\t# int" %}
-  opcode(0x23);
-  ins_encode(REX_reg_mem(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode %{
+    __ andl($dst$$Register, $src$$Address);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -9509,8 +9513,9 @@ instruct andL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "andq    $dst, $src\t# long" %}
-  opcode(0x23);
-  ins_encode(REX_reg_reg_wide(dst, src), OpcP, reg_reg(dst, src));
+  ins_encode %{
+    __ andq($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -9556,8 +9561,9 @@ instruct andL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 
   ins_cost(125);
   format %{ "andq    $dst, $src\t# long" %}
-  opcode(0x23);
-  ins_encode(REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode %{
+    __ andq($dst$$Register, $src$$Address);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -11383,8 +11389,9 @@ instruct compI_rReg(rFlagsReg cr, rRegI op1, rRegI op2)
   effect(DEF cr, USE op1, USE op2);
 
   format %{ "cmpl    $op1, $op2" %}
-  opcode(0x3B);  /* Opcode 3B /r */
-  ins_encode(REX_reg_reg(op1, op2), OpcP, reg_reg(op1, op2));
+  ins_encode %{
+    __ cmpl($op1$$Register, $op2$$Register);
+  %}
   ins_pipe(ialu_cr_reg_reg);
 %}
 
@@ -11404,8 +11411,9 @@ instruct compI_rReg_mem(rFlagsReg cr, rRegI op1, memory op2)
 
   ins_cost(500); // XXX
   format %{ "cmpl    $op1, $op2" %}
-  opcode(0x3B); /* Opcode 3B /r */
-  ins_encode(REX_reg_mem(op1, op2), OpcP, reg_mem(op1, op2));
+  ins_encode %{
+    __ cmpl($op1$$Register, $op2$$Address);
+  %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
@@ -11414,8 +11422,9 @@ instruct testI_reg(rFlagsReg cr, rRegI src, immI_0 zero)
   match(Set cr (CmpI src zero));
 
   format %{ "testl   $src, $src" %}
-  opcode(0x85);
-  ins_encode(REX_reg_reg(src, src), OpcP, reg_reg(src, src));
+  ins_encode %{
+    __ testl($src$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_cr_reg_imm);
 %}
 
@@ -11434,8 +11443,9 @@ instruct testI_reg_mem(rFlagsReg cr, rRegI src, memory mem, immI_0 zero)
   match(Set cr (CmpI (AndI src (LoadI mem)) zero));
 
   format %{ "testl   $src, $mem" %}
-  opcode(0x85);
-  ins_encode(REX_reg_mem(src, mem), OpcP, reg_mem(src, mem));
+  ins_encode %{
+    __ testl($src$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
@@ -11446,8 +11456,9 @@ instruct compU_rReg(rFlagsRegU cr, rRegI op1, rRegI op2)
   match(Set cr (CmpU op1 op2));
 
   format %{ "cmpl    $op1, $op2\t# unsigned" %}
-  opcode(0x3B); /* Opcode 3B /r */
-  ins_encode(REX_reg_reg(op1, op2), OpcP, reg_reg(op1, op2));
+  ins_encode %{
+    __ cmpl($op1$$Register, $op2$$Register);
+  %}
   ins_pipe(ialu_cr_reg_reg);
 %}
 
@@ -11467,8 +11478,9 @@ instruct compU_rReg_mem(rFlagsRegU cr, rRegI op1, memory op2)
 
   ins_cost(500); // XXX
   format %{ "cmpl    $op1, $op2\t# unsigned" %}
-  opcode(0x3B); /* Opcode 3B /r */
-  ins_encode(REX_reg_mem(op1, op2), OpcP, reg_mem(op1, op2));
+  ins_encode %{
+    __ cmpl($op1$$Register, $op2$$Address);
+  %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
@@ -11488,8 +11500,9 @@ instruct testU_reg(rFlagsRegU cr, rRegI src, immI_0 zero)
   match(Set cr (CmpU src zero));
 
   format %{ "testl   $src, $src\t# unsigned" %}
-  opcode(0x85);
-  ins_encode(REX_reg_reg(src, src), OpcP, reg_reg(src, src));
+  ins_encode %{
+    __ testl($src$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_cr_reg_imm);
 %}
 
@@ -11498,8 +11511,9 @@ instruct compP_rReg(rFlagsRegU cr, rRegP op1, rRegP op2)
   match(Set cr (CmpP op1 op2));
 
   format %{ "cmpq    $op1, $op2\t# ptr" %}
-  opcode(0x3B); /* Opcode 3B /r */
-  ins_encode(REX_reg_reg_wide(op1, op2), OpcP, reg_reg(op1, op2));
+  ins_encode %{
+    __ cmpq($op1$$Register, $op2$$Register);
+  %}
   ins_pipe(ialu_cr_reg_reg);
 %}
 
@@ -11510,8 +11524,9 @@ instruct compP_rReg_mem(rFlagsRegU cr, rRegP op1, memory op2)
 
   ins_cost(500); // XXX
   format %{ "cmpq    $op1, $op2\t# ptr" %}
-  opcode(0x3B); /* Opcode 3B /r */
-  ins_encode(REX_reg_mem_wide(op1, op2), OpcP, reg_mem(op1, op2));
+  ins_encode %{
+    __ cmpq($op1$$Register, $op2$$Address);
+  %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
@@ -11537,8 +11552,9 @@ instruct compP_mem_rReg(rFlagsRegU cr, rRegP op1, memory op2)
   match(Set cr (CmpP op1 (LoadP op2)));
 
   format %{ "cmpq    $op1, $op2\t# raw ptr" %}
-  opcode(0x3B); /* Opcode 3B /r */
-  ins_encode(REX_reg_mem_wide(op1, op2), OpcP, reg_mem(op1, op2));
+  ins_encode %{
+    __ cmpq($op1$$Register, $op2$$Address);
+  %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
@@ -11550,7 +11566,9 @@ instruct testP_reg(rFlagsReg cr, rRegP src, immP0 zero)
 
   format %{ "testq   $src, $src\t# ptr" %}
   opcode(0x85);
-  ins_encode(REX_reg_reg_wide(src, src), OpcP, reg_reg(src, src));
+  ins_encode %{
+    __ testq($src$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_cr_reg_imm);
 %}
 
@@ -11686,8 +11704,9 @@ instruct compL_rReg(rFlagsReg cr, rRegL op1, rRegL op2)
   match(Set cr (CmpL op1 op2));
 
   format %{ "cmpq    $op1, $op2" %}
-  opcode(0x3B);  /* Opcode 3B /r */
-  ins_encode(REX_reg_reg_wide(op1, op2), OpcP, reg_reg(op1, op2));
+  ins_encode %{
+    __ cmpq($op1$$Register, $op2$$Register);
+  %}
   ins_pipe(ialu_cr_reg_reg);
 %}
 
@@ -11706,8 +11725,9 @@ instruct compL_rReg_mem(rFlagsReg cr, rRegL op1, memory op2)
   match(Set cr (CmpL op1 (LoadL op2)));
 
   format %{ "cmpq    $op1, $op2" %}
-  opcode(0x3B); /* Opcode 3B /r */
-  ins_encode(REX_reg_mem_wide(op1, op2), OpcP, reg_mem(op1, op2));
+  ins_encode %{
+    __ cmpq($op1$$Register, $op2$$Address);
+  %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
@@ -11716,8 +11736,9 @@ instruct testL_reg(rFlagsReg cr, rRegL src, immL0 zero)
   match(Set cr (CmpL src zero));
 
   format %{ "testq   $src, $src" %}
-  opcode(0x85);
-  ins_encode(REX_reg_reg_wide(src, src), OpcP, reg_reg(src, src));
+  ins_encode %{
+    __ testq($src$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_cr_reg_imm);
 %}
 
@@ -11776,8 +11797,9 @@ instruct compUL_rReg(rFlagsRegU cr, rRegL op1, rRegL op2)
   match(Set cr (CmpUL op1 op2));
 
   format %{ "cmpq    $op1, $op2\t# unsigned" %}
-  opcode(0x3B);  /* Opcode 3B /r */
-  ins_encode(REX_reg_reg_wide(op1, op2), OpcP, reg_reg(op1, op2));
+  ins_encode %{
+    __ cmpq($op1$$Register, $op2$$Register);
+  %}
   ins_pipe(ialu_cr_reg_reg);
 %}
 
@@ -11796,8 +11818,9 @@ instruct compUL_rReg_mem(rFlagsRegU cr, rRegL op1, memory op2)
   match(Set cr (CmpUL op1 (LoadL op2)));
 
   format %{ "cmpq    $op1, $op2\t# unsigned" %}
-  opcode(0x3B); /* Opcode 3B /r */
-  ins_encode(REX_reg_mem_wide(op1, op2), OpcP, reg_mem(op1, op2));
+  ins_encode %{
+    __ cmpq($op1$$Register, $op2$$Address);
+  %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
