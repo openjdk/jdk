@@ -41,38 +41,88 @@ import java.util.stream.IntStream;
 import sun.security.util.Cache;
 
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
-@State(Scope.Thread)
-@Fork(jvmArgsAppend = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Fork(jvmArgsAppend = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED", "-Xmx1g"})
 public class CacheBench {
-    private Integer[] arrayToAdd;
-    private Cache<Integer, Integer> cache;
-    private int index;
 
-    @Param({"20480", "204800"})
-    private int size;
+    @State(Scope.Benchmark)
+    public static class SharedState {
+        Cache<Integer, Integer> cache;
 
-    @Param({"86400", "0"})
-    private int timeout;
+        @Param({"20480", "204800", "5120000"})
+        int size;
 
-    @Setup
-    public void setup() {
-        cache = Cache.newSoftMemoryCache(size, timeout);
-        arrayToAdd = IntStream.range(0, size + 1).boxed().toArray(Integer[]::new);
-        index = 0;
+        @Param({"86400", "0"})
+        int timeout;
+
+        @Setup
+        public void setup() {
+            cache = Cache.newSoftMemoryCache(size, timeout);
+            IntStream.range(0, size).boxed().forEach(i -> cache.put(i, i));
+        }
     }
 
-    @TearDown(Level.Invocation)
-    public void tearDown() {
-        index++;
-        if (index >= arrayToAdd.length) {
+    @State(Scope.Thread)
+    public static class GetPutState {
+        Integer[] intArray;
+        int index;
+
+        @Setup
+        public void setup(SharedState benchState) {
+            intArray = IntStream.range(0, benchState.size + 1).boxed().toArray(Integer[]::new);
             index = 0;
+        }
+
+        @TearDown(Level.Invocation)
+        public void tearDown() {
+            index++;
+            if (index >= intArray.length) {
+                index = 0;
+            }
         }
     }
 
     @Benchmark
-    public void put() {
-        Integer i = arrayToAdd[index];
-        cache.put(i, i);
+    public void put(SharedState benchState, GetPutState state) {
+        Integer i = state.intArray[state.index];
+        benchState.cache.put(i, i);
+    }
+
+    @Benchmark
+    public Integer get(SharedState benchState, GetPutState state) {
+        Integer i = state.intArray[state.index];
+        return benchState.cache.get(i);
+    }
+
+    @State(Scope.Thread)
+    public static class RemoveState {
+        Integer[] intArray;
+        int index;
+        SharedState benchState;
+
+        @Setup
+        public void setup(SharedState benchState) {
+            this.benchState = benchState;
+            intArray = IntStream.range(0, benchState.size).boxed().toArray(Integer[]::new);
+            index = 0;
+        }
+
+        @TearDown(Level.Invocation)
+        public void tearDown() {
+            // add back removed item
+            Integer i = intArray[index];
+            benchState.cache.put(i, i);
+
+            index++;
+            if (index >= intArray.length) {
+                index = 0;
+            }
+        }
+    }
+
+    @Benchmark
+    public void remove(SharedState benchState, RemoveState state) {
+        Integer i = state.intArray[state.index];
+        benchState.cache.remove(i);
     }
 }
