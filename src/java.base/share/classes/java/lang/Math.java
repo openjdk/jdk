@@ -235,8 +235,6 @@ public final class Math {
      * <ul><li>If the argument is NaN or its absolute value is greater
      * than 1, then the result is NaN.
      * <li>If the argument is {@code 1.0}, the result is {@code +0.0}.
-     * <li>If the argument is {@linkplain Double#isInfinite infinite},
-     * the result is the value closest to <i>pi</i>/2.
      * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
@@ -256,8 +254,8 @@ public final class Math {
      * <li>If the argument is zero, then the result is a zero with the
      * same sign as the argument.
      * <li>If the argument is {@linkplain Double#isInfinite infinite},
-     * then the result is <i>pi</i>/2, rounded, with the same sign as
-     * the input.
+     * then the result is the closest value to <i>pi</i>/2 with the
+     * same sign as the input.
      * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.

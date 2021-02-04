@@ -26,8 +26,8 @@
  * @bug 8240632
  * @summary Test special cases of IEEE 754 recommended ops not otherwise tested
  * @build Tests
- * @build WorstCaseTests
- * @run main WorstCaseTests
+ * @build Ieee754SpecialCaseTests
+ * @run main Ieee754SpecialCaseTests
  */
 
 public class Ieee754SpecialCaseTests {
@@ -70,10 +70,7 @@ public class Ieee754SpecialCaseTests {
     private static int testSpecialAcos() {
         int failures = 0;
         double [][] testCases = {
-            {+0.0,                        1.0},
-            {-0.0,                        1.0},
-            {Double.POSITIVE_INFINITY,    Math.PI/2.0},
-            {Double.NEGATIVE_INFINITY,    Math.PI/2.0},
+            {1.0,    0.0},
         };
 
         for(double[] testCase: testCases) {
@@ -124,7 +121,7 @@ public class Ieee754SpecialCaseTests {
         return failures;
     }
 
-    private static int testLog(double input, double expected) {
+    private static int testLogCase(double input, double expected) {
         int failures = 0;
         failures += Tests.test("Math.log",       input, Math.log(input),       expected);
         failures += Tests.test("StrictMath.log", input, StrictMath.log(input), expected);
