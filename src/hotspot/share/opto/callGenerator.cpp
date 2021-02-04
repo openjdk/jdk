@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -601,6 +601,51 @@ void CallGenerator::do_late_inline_helper() {
   // Remove inlined methods from Compiler's lists.
   if (call->is_macro()) {
     C->remove_macro_node(call);
+  }
+
+  if (callprojs.resproj != NULL && call->is_CallStaticJava() &&
+      call->as_CallStaticJava()->is_boxing_method()) {
+    GraphKit kit(call->jvms());
+    PhaseGVN& gvn = kit.gvn();
+
+    Node_List delay_boxes;
+    bool no_use = true;
+    for (DUIterator_Fast imax, i = callprojs.resproj->fast_outs(imax); i < imax; i++) {
+      Node* m = callprojs.resproj->fast_out(i);
+      if (m->is_CallStaticJava() &&
+          m->as_CallStaticJava()->uncommon_trap_request() != 0) {
+        delay_boxes.push(m);
+      } else {
+        no_use = false;
+        break;
+      }
+    }
+
+    if (no_use) {
+      // delay box node in uncommon_trap runtime, treat box as a scalarized object
+      while (delay_boxes.size() > 0) {
+        ProjNode* res = callprojs.resproj->as_Proj();
+        Node* uncommon_trap_node = delay_boxes.pop();
+        int in_edge = uncommon_trap_node->find_edge(res);
+        assert(in_edge > 0, "sanity");
+
+        ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
+        int n_fields = klass->nof_nonstatic_fields();
+        assert(n_fields == 1, "sanity");
+
+        uint first_ind = (uncommon_trap_node->req() - uncommon_trap_node->jvms()->scloff());
+        Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
+#ifdef ASSERT
+                                                  NULL,
+#endif // ASSERT
+                                                  first_ind, n_fields);
+        sobj->init_req(0, C->root());
+        uncommon_trap_node->add_req(call->in(res->_con));
+        sobj = gvn.transform(sobj);
+        uncommon_trap_node->jvms()->set_endoff(uncommon_trap_node->req());
+        uncommon_trap_node->set_req(in_edge, sobj);
+      }
+    }
   }
 
   bool result_not_used = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
