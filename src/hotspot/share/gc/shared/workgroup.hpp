@@ -305,38 +305,11 @@ class SubTasksDone: public CHeapObj<mtInternal> {
   volatile bool* _tasks;
   uint _n_tasks;
 
-  // make sure verification logic is run only once
 #ifdef ASSERT
+  // make sure verification logic is run exactly once
   volatile bool _verification_done = false;
+  void all_tasks_completed_impl(uint skipped[], size_t skipped_size);
 #endif
-
-  void all_tasks_completed_impl(uint skipped[], size_t skipped_size) {
-#ifdef ASSERT
-    if (Atomic::cmpxchg(&_verification_done, false, true)) {
-      // another thread has done the verification
-      return;
-    }
-    // all non-skipped tasks are claimed
-    for (uint i = 0; i < _n_tasks; ++i) {
-      if (!_tasks[i]) {
-        auto is_skipped = false;
-        for (size_t j = 0; j < skipped_size; ++j) {
-          if (i == skipped[j]) {
-            is_skipped = true;
-            break;
-          }
-        }
-        assert(is_skipped, "%d not claimed.", i);
-      }
-    }
-    // all skipped tasks are *not* claimed
-    for (size_t i = 0; i < skipped_size; ++i) {
-      auto task_index = skipped[i];
-      assert(task_index < _n_tasks, "Array in range.");
-      assert(!_tasks[task_index], "%d is both claimed and skipped.", task_index);
-    }
-#endif
-  }
 
   NONCOPYABLE(SubTasksDone);
 
@@ -359,7 +332,7 @@ public:
   // explicitly passed as extra arguments. Every thread in the parallel task
   // must execute this.
   void all_tasks_completed() {
-    all_tasks_completed_impl(nullptr, 0);
+    DEBUG_ONLY(all_tasks_completed_impl(nullptr, 0);)
   }
 
   // Augmented by variadic args, each for a skipped task.
@@ -368,7 +341,7 @@ public:
   void all_tasks_completed(T0 first_skipped, Ts... more_skipped) {
     static_assert(std::is_convertible<T0, uint>::value, "not convertible");
     uint skipped[] = { static_cast<uint>(first_skipped), static_cast<uint>(more_skipped)... };
-    all_tasks_completed_impl(skipped, ARRAY_SIZE(skipped));
+    DEBUG_ONLY(all_tasks_completed_impl(skipped, ARRAY_SIZE(skipped));)
   }
 
   // Destructor.

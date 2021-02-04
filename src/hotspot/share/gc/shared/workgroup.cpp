@@ -359,6 +359,34 @@ SubTasksDone::SubTasksDone(uint n) :
   }
 }
 
+#ifdef ASSERT
+void SubTasksDone::all_tasks_completed_impl(uint skipped[], size_t skipped_size) {
+  if (Atomic::cmpxchg(&_verification_done, false, true)) {
+    // another thread has done the verification
+    return;
+  }
+  // all non-skipped tasks are claimed
+  for (uint i = 0; i < _n_tasks; ++i) {
+    if (!_tasks[i]) {
+      auto is_skipped = false;
+      for (size_t j = 0; j < skipped_size; ++j) {
+        if (i == skipped[j]) {
+          is_skipped = true;
+          break;
+        }
+      }
+      assert(is_skipped, "%d not claimed.", i);
+    }
+  }
+  // all skipped tasks are *not* claimed
+  for (size_t i = 0; i < skipped_size; ++i) {
+    auto task_index = skipped[i];
+    assert(task_index < _n_tasks, "Array in range.");
+    assert(!_tasks[task_index], "%d is both claimed and skipped.", task_index);
+  }
+}
+#endif
+
 bool SubTasksDone::valid() {
   return _tasks != NULL;
 }
