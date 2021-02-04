@@ -897,6 +897,47 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   return true;
 }
 
+void PhaseMacroExpand::frozen_array_replacement(AllocateArrayNode* alloc, ArrayCopyNode* ac, GrowableArray <SafePointNode* >& safepoints) {
+  const int nfields = 3;
+  Node* res = alloc->result_cast();
+  if (res == nullptr) return ;
+
+  assert(res->is_CheckCastPP(), "unexpected AllocateNode result");
+  const TypeOopPtr* res_type = _igvn.type(res)->isa_oopptr();
+
+  //
+  // Process the safepoint uses
+  //
+  while (safepoints.length() > 0) {
+    SafePointNode* sfpt = safepoints.pop();
+    // Fields of scalar objs are referenced only at the end
+    // of regular debuginfo at the last (youngest) JVMS.
+    // Record relative start index.
+    uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
+    SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type,
+                                                 DEBUG_ONLY(alloc COMMA)
+                                                 first_ind, nfields);
+    sobj->init_req(0, C->root());
+    transform_later(sobj);
+
+    // 1. src oop
+    sfpt->add_req(ac->in(ArrayCopyNode::Src));
+    // 2. src Position
+    sfpt->add_req(ac->in(ArrayCopyNode::SrcPos));
+    // 3. length
+    sfpt->add_req(ac->in(ArrayCopyNode::Length));
+
+    JVMState *jvms = sfpt->jvms();
+    jvms->set_endoff(sfpt->req());
+    // Now make a pass over the debug information replacing any references
+    // to the allocated object with "sobj"
+    int start = jvms->debug_start();
+    int end   = jvms->debug_end();
+    sfpt->replace_edges_in_range(res, sobj, start, end);
+    _igvn._worklist.push(sfpt);
+  }
+}
+
 static void disconnect_projections(MultiNode* n, PhaseIterGVN& igvn) {
   Node* ctl_proj = n->proj_out_or_null(TypeFunc::Control);
   Node* mem_proj = n->proj_out_or_null(TypeFunc::Memory);
@@ -1231,6 +1272,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   Node* klass = alloc->in(AllocateNode::KlassNode);
   const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
   Node* res = alloc->result_cast();
+  ArrayCopyNode* ac = nullptr; // only valid if str_alloc is true
 
   // if j.l.String::value has been obsolete, AllocateArray can be eliminated
   bool str_alloc = alloc->is_AllocateArray() &&
@@ -1250,8 +1292,6 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
 
     // aa has deprecated, now we need to handle its uses
     if (aa->is_str_alloc_obsolete() && res != nullptr) {
-      ArrayCopyNode* ac = nullptr;
-
       // we need to find the arraynode which use res as Dest
       for (DUIterator_Fast imax, i = res->fast_outs(imax); i < imax; i++) {
         Node* use = res->fast_out(i);
@@ -1262,7 +1302,8 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
           }
         }
       }
-      assert(ac != nullptr, "can't find ArrayCopyNode which use AllocateArray");
+
+      assert(ac != nullptr, "[Warn]: Can't find the ArrayCopyNode which uses AllocateArray");
       process_users_of_string_allocation(aa, ac);
     }
   }
@@ -1283,9 +1324,8 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
       return false;
     }
   }
-
-  if (str_alloc) {
-    // gennerate debug information
+  if (str_alloc && ac != nullptr) {
+    frozen_array_replacement(alloc->as_AllocateArray(), ac, safepoints);
   } else if (!scalar_replacement(alloc, safepoints)) {
     return false;
   }
