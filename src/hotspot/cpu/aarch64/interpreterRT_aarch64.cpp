@@ -204,7 +204,7 @@ class SlowSignatureHandler
   }
 
   virtual void pass_int() {
-    intptr_t value = *single_slot_addr();
+    jint value = *(jint*)single_slot_addr();
     if (pass_gpr(value) < 0) {
       pass_stack(value);
     }
@@ -226,7 +226,7 @@ class SlowSignatureHandler
   }
 
   virtual void pass_float() {
-    intptr_t value = *single_slot_addr();
+    jint value = *(jint*)single_slot_addr();
     if (pass_fpr(value) < 0) {
       pass_stack(value);
     }
