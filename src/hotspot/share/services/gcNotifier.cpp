@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -133,13 +133,13 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
 
   // Current implementation only has 1 attribute (number of GC threads)
   // The type is 'I'
-  objArrayOop extra_args_array = oopFactory::new_objArray(SystemDictionary::Integer_klass(), 1, CHECK_NH);
+  objArrayOop extra_args_array = oopFactory::new_objArray(vmClasses::Integer_klass(), 1, CHECK_NH);
   objArrayHandle extra_array (THREAD, extra_args_array);
 
   JavaCallArguments argsInt;
   argsInt.push_int(gcManager->num_gc_threads());
   Handle extra_arg_val = JavaCalls::construct_new_instance(
-                            SystemDictionary::Integer_klass(),
+                            vmClasses::Integer_klass(),
                             vmSymbols::int_void_signature(),
                             &argsInt,
                             CHECK_NH);
