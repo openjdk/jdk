@@ -43,81 +43,94 @@ Register InterpreterRuntime::SignatureHandlerGenerator::from() { return rlocals;
 Register InterpreterRuntime::SignatureHandlerGenerator::to()   { return sp; }
 Register InterpreterRuntime::SignatureHandlerGenerator::temp() { return rscratch1; }
 
+Register InterpreterRuntime::SignatureHandlerGenerator::next_gpr() {
+  if (_num_reg_int_args < Argument::n_int_register_parameters_c-1) {
+    return as_Register(_num_reg_int_args++ + c_rarg1->encoding());
+  }
+  return noreg;
+}
+
+FloatRegister InterpreterRuntime::SignatureHandlerGenerator::next_fpr() {
+  if (_num_reg_fp_args < Argument::n_float_register_parameters_c) {
+    return as_FloatRegister(_num_reg_fp_args++);
+  }
+  return fnoreg;
+}
+
+int InterpreterRuntime::SignatureHandlerGenerator::next_stack_offset() {
+  int ret = _stack_offset;
+  _stack_offset += wordSize;
+  return ret;
+}
+
 InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
       const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
   _masm = new MacroAssembler(buffer);
-  _num_int_args = (method->is_static() ? 1 : 0);
-  _num_fp_args = 0;
+  _num_reg_int_args = (method->is_static() ? 1 : 0);
+  _num_reg_fp_args = 0;
   _stack_offset = 0;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
-  if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-    __ ldr(as_Register(_num_int_args + c_rarg1->encoding()), src);
+  Register reg = next_gpr();
+  if (reg != noreg) {
+    __ ldr(reg, src);
   } else {
     __ ldrw(r0, src);
-    __ strw(r0, Address(to(), _stack_offset));
-    _stack_offset += wordSize;
+    __ strw(r0, Address(to(), next_stack_offset()));
   }
-
-  _num_int_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset() + 1));
 
-  if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-    __ ldr(as_Register(_num_int_args + c_rarg1->encoding()), src);
+  Register reg = next_gpr();
+  if (reg != noreg) {
+    __ ldr(reg, src);
   } else {
     __ ldr(r0, src);
-    __ str(r0, Address(to(), _stack_offset));
-    _stack_offset += wordSize;
+    __ str(r0, Address(to(), next_stack_offset()));
   }
-
-  _num_int_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_float() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
-  if (_num_fp_args < Argument::n_float_register_parameters_c) {
-    __ ldrs(as_FloatRegister(_num_fp_args), src);
+  FloatRegister reg = next_fpr();
+  if (reg != fnoreg) {
+    __ ldrs(reg, src);
   } else {
     __ ldrw(r0, src);
-    __ strw(r0, Address(to(), _stack_offset));
-    _stack_offset += wordSize;
+    __ strw(r0, Address(to(), next_stack_offset()));
   }
-  _num_fp_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset() + 1));
 
-  if (_num_fp_args < Argument::n_float_register_parameters_c) {
-    __ ldrd(as_FloatRegister(_num_fp_args), src);
+  FloatRegister reg = next_fpr();
+  if (reg != fnoreg) {
+    __ ldrd(reg, src);
   } else {
     __ ldr(r0, src);
-    __ str(r0, Address(to(), _stack_offset));
-    _stack_offset += wordSize;
+    __ str(r0, Address(to(), next_stack_offset()));
   }
-  _num_fp_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
-
-  if (_num_int_args == 0) {
+  Register reg = next_gpr();
+  if (reg == c_rarg1) {
     assert(offset() == 0, "argument register 1 can only be (non-null) receiver");
     __ add(c_rarg1, from(), Interpreter::local_offset_in_bytes(offset()));
-  } else if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-    Register target = as_Register(_num_int_args + c_rarg1->encoding());
+  } else if (reg != noreg) {
     __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
-    __ mov(target, 0);
+    __ mov(reg, 0);
     __ ldr(temp(), r0);
     Label L;
     __ cbz(temp(), L);
-    __ mov(target, r0);
+    __ mov(reg, r0);
     __ bind(L);
   } else {
     __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
@@ -126,11 +139,8 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
     __ cbnz(temp(), L);
     __ mov(r0, zr);
     __ bind(L);
-    __ str(r0, Address(to(), _stack_offset));
-    _stack_offset += wordSize;
+    __ str(r0, Address(to(), next_stack_offset()));
   }
-
-  _num_int_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprint) {
