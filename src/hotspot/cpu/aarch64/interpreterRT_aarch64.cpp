@@ -161,7 +161,18 @@ class SlowSignatureHandler
   unsigned int _num_int_args;
   unsigned int _num_fp_args;
 
-  void pass(BasicType type) {
+  void store_stack(BasicType type, intptr_t value) {
+    *_to++ = value;
+  }
+
+  intptr_t* load_addr(BasicType type) {
+    intptr_t* from_addr = (intptr_t*)(_from+
+        Interpreter::local_offset_in_bytes(is_double_word_type(type)));
+    _from -= (1+is_double_word_type(type))*Interpreter::stackElementSize;
+    return from_addr;
+  }
+
+  void pass_gp(BasicType type) {
     intptr_t* from_addr = (intptr_t*)(_from+
         Interpreter::local_offset_in_bytes(is_double_word_type(type)));
     _from -= (1+is_double_word_type(type))*Interpreter::stackElementSize;
@@ -169,29 +180,36 @@ class SlowSignatureHandler
     intptr_t from_val = type != T_OBJECT ? (*from_addr) :
       (*from_addr == 0 ? NULL : (intptr_t)from_addr);
 
-    if (is_integral_type(type) && _num_int_args < Argument::n_int_register_parameters_c-1) {
+    if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = from_val;
-    } else if (is_floating_point_type(type) && _num_fp_args < Argument::n_float_register_parameters_c) {
+    } else {
+      store_stack(type, from_val);
+    }
+    ++_num_int_args;
+  }
+
+  void pass_fp(BasicType type) {
+    intptr_t* from_addr = (intptr_t*)(_from+
+        Interpreter::local_offset_in_bytes(is_double_word_type(type)));
+    _from -= (1+is_double_word_type(type))*Interpreter::stackElementSize;
+    intptr_t from_val = *from_addr;
+
+    if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = from_val;
       if (type == T_DOUBLE) {
         *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
       }
     } else {
-      *_to++ = from_val;
+      store_stack(type, from_val);
     }
-
-    if (is_integral_type(type)) {
-      ++_num_int_args;
-    } else if (is_floating_point_type(type)) {
-      ++_num_fp_args;
-    }
+    ++_num_fp_args;
   }
 
-  virtual void pass_int()    { pass(T_INT);    }
-  virtual void pass_long()   { pass(T_LONG);   }
-  virtual void pass_object() { pass(T_OBJECT); }
-  virtual void pass_float()  { pass(T_FLOAT);  }
-  virtual void pass_double() { pass(T_DOUBLE); }
+  virtual void pass_int()    { pass_gp(T_INT);    }
+  virtual void pass_long()   { pass_gp(T_LONG);   }
+  virtual void pass_object() { pass_gp(T_OBJECT); }
+  virtual void pass_float()  { pass_fp(T_FLOAT);  }
+  virtual void pass_double() { pass_fp(T_DOUBLE); }
 
 #if 0
   virtual void pass_int()
