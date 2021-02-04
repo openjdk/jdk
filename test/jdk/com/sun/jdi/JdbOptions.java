@@ -83,33 +83,36 @@ public class JdbOptions {
     private static final String outFilename = UUID.randomUUID().toString() + ".out";
     private static final Path outPath = Paths.get(outFilename);
     private static final String targ = JbdOptionsTarg.class.getName();
-    private static final String outFileArg = " " + outFilename;
 
     public static void main(String[] args) throws Exception {
         // the simplest case
         test("-connect",
-                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-client -XX:+PrintVMOptions,main=" + targ + outFileArg)
+                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-client -XX:+PrintVMOptions"
+                + ",main=" + targ + " " + outFilename)
             .expectedArg("-XX:+PrintVMOptions");
 
         // pass property through 'options'
         test("-connect",
-                "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-Dboo=foo',main=" + targ + outFileArg + " boo")
+                "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-Dboo=foo'"
+                + ",main=" + targ + " " + outFilename + " boo")
             .expectedProp("boo", "foo");
 
         // property with spaces
         test("-connect",
-                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=\"-Dboo=foo 2\",main=" + targ + outFileArg + " boo")
+                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=\"-Dboo=foo 2\""
+                + ",main=" + targ + " " + outFilename + " boo")
             .expectedProp("boo", "foo 2");
 
         // property with spaces (with single quotes)
         test("-connect",
-                "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-Dboo=foo 2',main=" + targ + outFileArg + " boo")
+                "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-Dboo=foo 2'"
+                + ",main=" + targ + " " + outFilename + " boo")
                 .expectedProp("boo", "foo 2");
 
         // properties with spaces (with single quotes)
         test("-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-Dboo=foo '-Dboo2=foo 2'"
-                + ",main=" + targ + outFileArg + " boo boo2")
+                + ",main=" + targ + " " + outFilename + " boo boo2")
                 .expectedProp("boo", "foo")
                 .expectedProp("boo2", "foo 2");
 
@@ -117,7 +120,7 @@ public class JdbOptions {
         test("-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options=\"-client\" \"-XX:+PrintVMOptions\""
                 + " \"-XX:StartFlightRecording=dumponexit=true,maxsize=500M\" \"-XX:FlightRecorderOptions=repository=jfrrep\""
-                + ",main=" + targ + outFileArg)
+                + ",main=" + targ + " " + outFilename)
             .expectedArg("-XX:StartFlightRecording=dumponexit=true,maxsize=500M")
             .expectedArg("-XX:FlightRecorderOptions=repository=jfrrep");
 
@@ -125,7 +128,7 @@ public class JdbOptions {
         test("-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-client' '-XX:+PrintVMOptions'"
                         + " '-XX:StartFlightRecording=dumponexit=true,maxsize=500M' '-XX:FlightRecorderOptions=repository=jfrrep'"
-                        + ",main=" + targ + outFileArg)
+                        + ",main=" + targ + " " + outFilename)
             .expectedArg("-XX:StartFlightRecording=dumponexit=true,maxsize=500M")
             .expectedArg("-XX:FlightRecorderOptions=repository=jfrrep");
 
@@ -137,7 +140,7 @@ public class JdbOptions {
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-Dprop3=val3 '-Dprop4=val 4'"
                         + " \"-XX:StartFlightRecording=dumponexit=true,maxsize=500M\""
                         + " '-XX:FlightRecorderOptions=repository=jfrrep'"
-                        + ",main=" + targ + outFileArg + " prop1 prop2 prop3 prop4")
+                        + ",main=" + targ + " " + outFilename + " prop1 prop2 prop3 prop4")
                 .expectedProp("prop1", "val1")
                 .expectedProp("prop2", "val 2")
                 .expectedProp("prop3", "val3")
