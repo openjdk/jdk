@@ -26,7 +26,6 @@
 #include "sun_lwawt_macosx_CCursorManager.h"
 
 #include <Cocoa/Cocoa.h>
-#include <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #include "GeomUtilities.h"
 #include "ThreadUtilities.h"
@@ -75,7 +74,7 @@ Java_sun_lwawt_macosx_CCursorManager_nativeSetBuiltInCursor
 {
 JNI_COCOA_ENTER(env);
 
-    NSString *cursorName = JNFJavaToNSString(env, name);
+    NSString *cursorName = JavaStringToNSString(env, name);
     SEL cursorSelector = (type == sun_lwawt_macosx_CCursorManager_NAMED_CURSOR) ? lookupCursorSelectorForName(cursorName) : lookupCursorSelectorForType(type);
     if (cursorSelector == nil) {
         NSString *reason = [NSString stringWithFormat:@"unimplemented built-in cursor type: %d / %@", type, cursorName];
