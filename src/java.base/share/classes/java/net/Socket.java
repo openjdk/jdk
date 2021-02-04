@@ -541,8 +541,8 @@ public class Socket implements java.io.Closeable {
      * Sets impl to the system-default type of SocketImpl.
      * @since 1.4
      */
-    @SuppressWarnings("deprecation")
     void setImpl() {
+        @SuppressWarnings("deprecation")
         SocketImplFactory factory = Socket.factory;
         if (factory != null) {
             impl = factory.createSocketImpl();
@@ -1751,8 +1751,15 @@ public class Socket implements java.io.Closeable {
      *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkSetFactory
-     * @deprecated Use a {@link javax.net.SocketFactory} and subclass
-     *             {@code Socket} directly.
+     * @deprecated Use {@link SocketChannel}, or subclass {@code Socket}
+     *    directly.
+     *    <br> This method provided a way in early JDK releases to replace the
+     *    system wide implementation of {@code Socket}. It has been mostly
+     *    obsolete since Java 1.4. If required, a {@code Socket} can be
+     *    created to use a custom implementation by extending {@code Socket}
+     *    and using the {@linkplain #Socket(SocketImpl) protected
+     *    constructor} that takes an {@linkplain SocketImpl implementation}
+     *    as a parameter.
      */
     @Deprecated(since = "17")
     public static synchronized void setSocketImplFactory(SocketImplFactory fac)
