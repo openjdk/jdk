@@ -2269,7 +2269,7 @@ void TemplateTable::load_field_cp_cache_entry(Register Robj,
   if (is_static) {
     __ ld(Robj, in_bytes(cp_base_offset) + in_bytes(ConstantPoolCacheEntry::f1_offset()), Rcache);
     __ ld(Robj, in_bytes(Klass::java_mirror_offset()), Robj);
-    __ resolve_oop_handle(Robj, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS);
+    __ resolve_oop_handle(Robj, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_NONE);
     // Acquire not needed here. Following access has an address dependency on this value.
   }
 }
@@ -2761,7 +2761,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register Rcache        = R5_ARG3,  // Do not use ARG1/2 (causes trouble in jvmti_post_field_mod).
                  Rclass_or_obj = R31,      // Needs to survive C call.
                  Roffset       = R22_tmp2, // Needs to survive C call.
-                 Rflags        = R3_ARG1,
+                 Rflags        = R30,
                  Rbtable       = R4_ARG2,
                  Rscratch      = R11_scratch1, // used by load_field_cp_cache_entry
                  Rscratch2     = R12_scratch2, // used by load_field_cp_cache_entry
