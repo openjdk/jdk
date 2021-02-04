@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.regex.Pattern;
@@ -42,7 +43,6 @@ import jdk.test.lib.dcmd.JMXExecutor;
 public class ClassHistogramTest {
     public static class TestClass {}
     public static TestClass[] instances = new TestClass[1024];
-    protected String classHistogramArgs = "";
 
     static {
         for (int i = 0; i < instances.length; ++i) {
@@ -50,7 +50,7 @@ public class ClassHistogramTest {
         }
     }
 
-    public void run(CommandExecutor executor) {
+    public void run(CommandExecutor executor, String classHistogramArgs) {
         OutputAnalyzer output = executor.execute("GC.class_histogram " + classHistogramArgs);
 
         /*
@@ -87,8 +87,26 @@ public class ClassHistogramTest {
             Pattern.quote(TestClass.class.getName()) + "\\s*$");
     }
 
-    @Test
-    public void jmx() {
-        run(new JMXExecutor());
+    @DataProvider(name="ArgsProvider")
+    private Object[][] getArgs() {
+        return new Object[][] {
+                {""},
+                {"-parallel=0"},
+                {"-parallel=1"},
+                {"-parallel=2"},
+                {"-all=false -parallel=0"},
+                {"-all=false -parallel=1"},
+                {"-all=false -parallel=2"},
+                {"-all=true"},
+                {"-all=true -parallel=0"},
+                {"-all=true -parallel=1"},
+                {"-all=true -parallel=2"},
+                {"-parallel=2 -all=true"}
+        };
+    }
+
+    @Test(dataProvider="ArgsProvider")
+    public void jmx(String args) {
+        run(new JMXExecutor(), args);
     }
 }
