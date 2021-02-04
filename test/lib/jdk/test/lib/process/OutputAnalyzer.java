@@ -567,6 +567,15 @@ public final class OutputAnalyzer {
     }
 
     /**
+     * Get the process' pid
+     *
+     * @return pid
+     */
+    public long pid() {
+        return buffer.pid();
+    }
+
+    /**
      * Get the contents of the output buffer (stdout and stderr) as list of strings.
      * Output will be split by newlines.
      *

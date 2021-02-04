@@ -86,22 +86,19 @@ public class ClhsdbCDSCore {
             };
 
             OutputAnalyzer crashOutput;
-            long pid = -1;
             try {
                List<String> options = new ArrayList<>();
                options.addAll(Arrays.asList(jArgs));
                ProcessBuilder pb = ProcessTools.createTestJvm(options);
                // Add "ulimit -c unlimited" if we can since we are generating a core file.
                pb = CoreUtils.addCoreUlimitCommand(pb);
-               var outAndPID = ProcessTools.executeProcessPreservePID(pb);
-               crashOutput = outAndPID.output();
-               pid = outAndPID.pid();
+               crashOutput = ProcessTools.executeProcess(pb);
             } catch (Throwable t) {
                throw new Error("Can't execute the java cds process.", t);
             }
 
             try {
-                coreFileName = CoreUtils.getCoreFileLocation(crashOutput.getStdout(), pid);
+                coreFileName = CoreUtils.getCoreFileLocation(crashOutput.getStdout(), crashOutput.pid());
             } catch (Exception e) {
                 cleanup();
                 throw e;

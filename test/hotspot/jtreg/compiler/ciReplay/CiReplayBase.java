@@ -149,7 +149,6 @@ public abstract class CiReplayBase {
     public boolean generateReplay(boolean needCoreDump, String... vmopts) {
         OutputAnalyzer crashOut;
         String crashOutputString;
-        long pid = -1;
         try {
             List<String> options = new ArrayList<>();
             options.addAll(Arrays.asList(REPLAY_GENERATION_OPTIONS));
@@ -159,11 +158,9 @@ public abstract class CiReplayBase {
                 // CiReplayBase$TestMain needs to be quoted because of shell eval
                 options.add("-XX:CompileOnly='" + TestMain.class.getName() + "::test'");
                 options.add("'" + TestMain.class.getName() + "'");
-                var outAndPID = ProcessTools.executeProcessPreservePID(
+                crashOut = ProcessTools.executeProcess(
                         CoreUtils.addCoreUlimitCommand(
                                 ProcessTools.createTestJvm(options.toArray(new String[0]))));
-                crashOut = outAndPID.output();
-                pid = outAndPID.pid();
             } else {
                 options.add("-XX:CompileOnly=" + TestMain.class.getName() + "::test");
                 options.add(TestMain.class.getName());
@@ -179,7 +176,7 @@ public abstract class CiReplayBase {
         }
         if (needCoreDump) {
             try {
-                String coreFileLocation = CoreUtils.getCoreFileLocation(crashOutputString, pid);
+                String coreFileLocation = CoreUtils.getCoreFileLocation(crashOutputString, crashOut.pid());
                 Files.move(Paths.get(coreFileLocation), Paths.get(TEST_CORE_FILE_NAME));
             } catch (IOException ioe) {
                 throw new Error("Can't move core file: " + ioe, ioe);

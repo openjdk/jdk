@@ -163,7 +163,7 @@ public class CoreUtils {
                             try {
                                 for (int i = 0; i < 10; i++) {
                                     Thread.sleep(5000);
-                                    OutputAnalyzer out = ProcessTools.executeProcess("coredumpctl", "dump",  "-1",  "-o", core, Long.valueOf(pid).toString());
+                                    OutputAnalyzer out = ProcessTools.executeProcess("coredumpctl", "dump",  "-1",  "-o", core, String.valueOf(pid));
                                     if (!out.getOutput().contains("output may be incomplete")) {
                                         break;
                                     }
