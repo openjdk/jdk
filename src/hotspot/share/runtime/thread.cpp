@@ -37,6 +37,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"

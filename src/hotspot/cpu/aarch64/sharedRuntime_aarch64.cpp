@@ -45,6 +45,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "vmreg_aarch64.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
