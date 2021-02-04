@@ -131,12 +131,14 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
     }
     result = JVM_DefineClassWithSource(env, utfName, loader, body, length, pd, utfSource);
 
-    if (utfSource && utfSource != sourceBuf)
+    if (utfSource != NULL && utfSource != sourceBuf) {
         free(utfSource);
+    }
 
  free_utfName:
-    if (utfName && utfName != buf)
+    if (utfName != NULL && utfName != buf) {
         free(utfName);
+    }
 
  free_body:
     free(body);
@@ -197,12 +199,14 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
     }
     result = JVM_DefineClassWithSource(env, utfName, loader, body, length, pd, utfSource);
 
-    if (utfSource && utfSource != sourceBuf)
+    if (utfSource != NULL && utfSource != sourceBuf) {
         free(utfSource);
+    }
 
  free_utfName:
-    if (utfName && utfName != buf)
+    if (utfName != NULL && utfName != buf) {
         free(utfName);
+    }
 
     return result;
 }
@@ -261,6 +265,10 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
     }
 
     result = JVM_LookupDefineClass(env, lookup, utfName, body, length, pd, initialize, flags, classData);
+
+    if (utfName != NULL && utfName != buf) {
+        free(utfName);
+    }
 
  free_body:
     free(body);
