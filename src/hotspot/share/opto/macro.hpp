@@ -108,7 +108,7 @@ private:
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
   bool eliminate_strcpy_node(ArrayCopyNode* ac);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  bool can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
+  bool can_eliminate_allocation(AllocateNode *alloc, bool str_alloc, GrowableArray <SafePointNode *>& safepoints);
   bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
   void process_users_of_allocation(CallNode *alloc);
   void process_users_of_string_allocation(AllocateArrayNode* alloc, ArrayCopyNode* ac);

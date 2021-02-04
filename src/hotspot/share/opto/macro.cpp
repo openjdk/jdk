@@ -595,7 +595,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
 }
 
 // Check the possibility of scalar replacement.
-bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints) {
+bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, bool str_alloc, GrowableArray <SafePointNode *>& safepoints) {
   //  Scan the uses of the allocation to check for anything that would
   //  prevent us from eliminating it.
   NOT_PRODUCT( const char* fail_eliminate = NULL; )
@@ -616,7 +616,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
       can_eliminate = false;
     } else if (res_type->isa_aryptr()) {
       int length = alloc->in(AllocateNode::ALength)->find_int_con(-1);
-      if (length < 0) {
+      if (length < 0 && !str_alloc) {
         NOT_PRODUCT(fail_eliminate = "Array's size is not constant";)
         can_eliminate = false;
       }
@@ -1270,7 +1270,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   extract_call_projections(alloc);
 
   GrowableArray <SafePointNode *> safepoints;
-  if (!can_eliminate_allocation(alloc, safepoints)) {
+  if (!can_eliminate_allocation(alloc, str_alloc, safepoints)) {
     return false;
   }
 
