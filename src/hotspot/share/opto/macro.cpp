@@ -878,6 +878,8 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         // to be able scalar replace the allocation.
         if (field_val->is_EncodeP()) {
           field_val = field_val->in(1);
+        } else if (field_val == C->top()) { // associated ArrayAllocate has been eliminated.
+          field_val = transform_later(new ConNNode(TypeNarrowOop::NULL_PTR));
         } else {
           field_val = transform_later(new DecodeNNode(field_val, field_val->get_ptr_type()));
         }
@@ -1112,18 +1114,19 @@ bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
   // users may directly use a array of byte to store the temporary string.
   // byte[] buf = new byte[length] and System.arraycopy(str.value, 0, buf, 0, str.length())
   // if (pt == nullptr || pt->escape_state() != PointsToNode::NoEscape) {
-  // xliu: too aggressive. must see an j.l.lString
   {
+    // be conservative. check alloc is j.l.lString and it is scalar replaceable
     Node* obj = aa->in(TypeFunc::I_O);
+    pt = nullptr;
     if (obj->is_Proj() && obj->in(0)->is_Allocate()) {
       AllocateNode* alloc = obj->in(0)->as_Allocate();
       const TypeKlassPtr* type = _igvn.type(alloc->in(AllocateNode::KlassNode))->isa_klassptr();
 
-      if (type != nullptr && type->name() == ciSymbols::java_lang_String()) {
+      // others may load fiends from alloc->result_cast() directly
+      if (alloc->_is_scalar_replaceable &&
+          type != nullptr && type->name() == ciSymbols::java_lang_String()) {
         pt = cg.ptnode_adr(alloc->_idx);
       }
-    } else {
-      pt = nullptr;
     }
   }
 
@@ -1222,12 +1225,11 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
       Node* offset = use->in(AddPNode::Offset);
       jlong offset_const = offset->is_Con() ? offset->get_long() : -1;
 
-      //xliu: Do I need to boundary check here?
       for (DUIterator_Last jmin, j = use->last_outs(jmin); j >= jmin; ) {
         Node* n = use->last_out(j);
         uint oc2 = use->outcnt();
 
-        if (offset_const == 12) {
+        if (offset_const == arrayOopDesc::length_offset_in_bytes()) {
           assert(n->Opcode() == Op_LoadRange, "res+12 must be the input of a LoadRange");
           _igvn.replace_node(n, length);
         } else {
@@ -1238,7 +1240,9 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
             src_adr = basic_plus_adr(src->in(1), src, src_adr);
           }
           Node* dst_adr = basic_plus_adr(src_adr->in(1), src_adr, offset);
-          _igvn.replace_node(n, dst_adr);
+          _igvn.replace_input_of(n, MemNode::Control, ac->in(TypeFunc::Control));
+          _igvn.replace_input_of(n, MemNode::Memory,  ac->in(TypeFunc::Memory));
+          _igvn.replace_input_of(n, MemNode::Address, dst_adr);
         }
         j -= (oc2 - use->outcnt());
       }
