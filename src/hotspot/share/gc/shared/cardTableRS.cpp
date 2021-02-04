@@ -39,9 +39,7 @@
 #include "utilities/macros.hpp"
 
 inline bool ClearNoncleanCardWrapper::clear_card(CardValue* entry) {
-  CardValue entry_val = *entry;
-  assert(entry_val == CardTableRS::dirty_card_val(),
-         "Only look at dirty cards.");
+  assert(*entry == CardTableRS::dirty_card_val(), "Only look at dirty cards.");
   *entry = CardTableRS::clean_card_val();
   return true;
 }
@@ -438,8 +436,6 @@ void CardTableRS::verify() {
 
 CardTableRS::CardTableRS(MemRegion whole_heap, bool scanned_concurrently) :
   CardTable(whole_heap, scanned_concurrently) { }
-
-CardTableRS::~CardTableRS() { }
 
 void CardTableRS::initialize() {
   CardTable::initialize();

@@ -46,13 +46,12 @@ class CardTableRS : public CardTable {
 
 public:
   CardTableRS(MemRegion whole_heap, bool scanned_concurrently);
-  ~CardTableRS();
 
   void younger_refs_in_space_iterate(Space* sp, HeapWord* gen_boundary, OopIterateClosure* cl);
 
   virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 
-  void inline_write_ref_field_gc(void* field, oop new_val) {
+  void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
     *byte = dirty_card_val();
   }
