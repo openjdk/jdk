@@ -692,6 +692,10 @@ void G1BarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) c
     assert(cmpx->is_Cmp() && cmpx->unique_out()->is_Bool() &&
     cmpx->unique_out()->as_Bool()->_test._test == BoolTest::ne,
     "missing region check in G1 post barrier");
+    Node* sibling = xorx->in(1);
+    if (sibling == node) {
+      sibling = xorx->in(2);
+    }
     macro->replace_node(cmpx, macro->makecon(TypeInt::CC_EQ));
 
     // Remove G1 pre barrier.
@@ -721,6 +725,12 @@ void G1BarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) c
           }
         }
       }
+    }
+
+    // handle XorL's the other input
+    // it may invoke eliminate_gc_barrier() if it's a CastP2X too
+    if (sibling->Opcode() == Op_CastP2X) {
+       macro->replace_node(sibling, macro->top());
     }
   } else {
     assert(!use_ReduceInitialCardMarks(), "can only happen with card marking");
