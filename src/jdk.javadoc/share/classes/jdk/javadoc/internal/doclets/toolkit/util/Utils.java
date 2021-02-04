@@ -1185,7 +1185,7 @@ public class Utils {
             return isLinkable((TypeElement) elem); // defer to existing behavior
         }
 
-        if (isIncluded(elem)) {
+        if (isIncluded(elem) && !hasHiddenTag(elem)) {
             return true;
         }
 
@@ -2794,7 +2794,7 @@ public class Utils {
     }
 
     // Returns true if we should run doclint for an element, which is the case for
-    // included elements as well aas non-included members of included types.
+    // included elements as well as non-included members of included types.
     private boolean shouldRunDocLint(Element e) {
         // isIncluded is not able to handle overview elements
         if (isOverviewElement(e) || isIncluded(e)) {

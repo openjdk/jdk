@@ -149,7 +149,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                     utils.isLinkable(holder))) {
                 writer.addInlineComment(method, methodDocTree);
             } else {
-                if (!utils.hasHiddenTag(holder)) {
+                if (!utils.hasHiddenTag(holder) && !utils.hasHiddenTag(method)) {
                     Content link =
                             writer.getDocLink(LinkInfoImpl.Kind.EXECUTABLE_ELEMENT_COPY,
                                     holder, method,
@@ -268,7 +268,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             //is not visible so don't document this.
             return;
         }
-        if (utils.hasHiddenTag(holder)) {
+        if (utils.hasHiddenTag(holder) || utils.hasHiddenTag(method)) {
             return;
         }
 

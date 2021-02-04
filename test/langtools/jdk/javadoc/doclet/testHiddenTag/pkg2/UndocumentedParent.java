@@ -23,59 +23,34 @@
 
 package pkg2;
 
+import pkg1.InvisibleParent;
+
 /**
  * @hidden
  * @param <T>
  */
-public class Parent<T extends Parent> {
+public class UndocumentedParent<T extends InvisibleParent> extends InvisibleParent<T> {
+
     /**
      * A visible field.
      */
-    public Parent visibleField;
+    public InvisibleParent visibleField;
 
     /**
      * An invisible field.
      * @hidden
      */
-    public Parent invisibleField;
+    public InvisibleParent invisibleField;
 
     /**
-     * A visible method.
+     * A visible method with an invisible parameter type.
      */
-    public void visibleMethod(Parent<? extends Parent> p)  {}
+    public void visibleMethod(InvisibleParent<? extends InvisibleParent> p)  {}
 
     /**
      * An invisible method.
      * @hidden
      */
     public void invisibleMethod() {}
-
-    /**
-     * A visible inner class.
-     */
-    public static class VisibleInner {
-        /**
-         * An invisible constructor
-         * @hidden invisible
-         */
-        public VisibleInner() {}
-    }
-
-    /**
-     * An invisible inner class.
-     * @hidden
-     */
-    public static class InvisibleInner {}
-
-    /**
-     * A visible inner class, extending an invisible class.
-     */
-    public static class VisibleInnerExtendsInvisibleInner extends InvisibleInner {}
-
-    /**
-     * An invisible inner class extending a visible class.
-     * @hidden
-     */
-    public static class InvisibleInnerExtendsVisibleInner extends InvisibleInner {}
 
 }

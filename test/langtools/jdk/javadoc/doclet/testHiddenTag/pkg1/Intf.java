@@ -23,11 +23,31 @@
 
 package pkg1;
 
-import pkg2.UndocumentedParent;
-
 /**
- * A visible class, extending invisible classes.
+ * An visible interface
  */
-public class Child extends UndocumentedParent<Child> {
+public interface Intf {
+
+    /**
+     * A visible interface method.
+     */
+    void visibleInterfaceMethod();
+
+    /**
+     * An invisible interface method.
+     * @hidden
+     */
+    void invisibleInterfaceMethod();
+
+    /**
+     * A visible default method.
+     */
+    default void visibleDefaultMethod() {}
+
+    /**
+     * An invisible default method.
+     * @hidden
+     */
+    default void invisibleDefaultMethod() {}
 
 }

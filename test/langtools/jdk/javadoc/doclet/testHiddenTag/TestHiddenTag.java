@@ -63,9 +63,8 @@ public class TestHiddenTag extends JavadocTester {
                     n pkg1">A.VisibleInnerExtendsInvisibleInner</a></code></dd>""");
 
         checkOutput("pkg1/A.html", false,
-                "<h3 id=\"inVisibleField\">",
-                """
-                    <h3><span id="inVisibleMethod()">""");
+                "invisibleField",
+                "invisibleMethod()");
 
         checkOutput("pkg1/A.VisibleInner.html", true,
                 """
@@ -82,8 +81,8 @@ public class TestHiddenTag extends JavadocTester {
 
         checkOutput("pkg1/A.VisibleInner.html", false,
                 "../pkg1/A.VisibleInner.html#VisibleInner()",
-                "<a id=\"inVisibleField\">",
-                "<a id=\"inVisibleMethod()\">");
+                "invisibleField",
+                "invisibleMethod()");
 
         checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", true,
                 """
@@ -100,12 +99,62 @@ public class TestHiddenTag extends JavadocTester {
                 "invisibleMethod",
                 "A.InvisibleInner");
 
+        checkOutput("pkg1/Intf.html", true,
+                """
+                    <section class="detail" id="visibleDefaultMethod()">""",
+                """
+                    <section class="detail" id="visibleInterfaceMethod()">""",
+                """
+                    <dt>All Known Implementing Classes:</dt>
+                    <dd><code><a href="Child.html" title="class in pkg1">Child</a></code></dd>
+                    </dl>""");
+
+        checkOutput("pkg1/Intf.html", false,
+                "InvisibleParent",
+                "invisibleDefaultMethod",
+                "invisibleInterfaceMethod");
+
+        checkOutput("pkg1/Child.html", true,
+                """
+                    <a href="InvisibleParent.VisibleInner.html" title="class in pkg1">InvisibleParent.VisibleInner</a>""",
+                """
+                    <a href="#visibleField">visibleField</a>""",
+                """
+                    <a href="#invisibleInterfaceMethod()">invisibleInterfaceMethod</a>""",
+                """
+                    <a href="#visibleInterfaceMethod()">visibleInterfaceMethod</a>""",
+                """
+                    <a href="#visibleMethod(pkg1.InvisibleParent)">visibleMethod</a></span>""",
+                """
+                    <a href="Intf.html#visibleDefaultMethod()">visibleDefaultMethod</a>""",
+                // Invisible return or parameter types must not be linked
+                """
+                    <span class="return-type">pkg1.InvisibleParent</span>""",
+                """
+                    <span class="parameters">(pkg1.InvisibleParent&lt;? extends pkg1.InvisibleParent&gt;&nbsp;p)</span>""");
+
+        checkOutput("pkg1/Child.html", false,
+                "InvisibleParent.InvisibleInner",
+                "invisibleField",
+                "invisibleMethod",
+                "invisibleDefaultMethod");
+
+        checkOutput("pkg1/InvisibleParent.VisibleInner.html", true,
+                """
+                    <dt>Enclosing class:</dt>
+                    <dd>pkg1.InvisibleParent&lt;T extends pkg1.InvisibleParent&gt;</dd>
+                    </dl>""");
+
         checkOutput("pkg1/package-summary.html", false, "A.InvisibleInner");
 
         checkOutput("pkg1/package-tree.html", false, "A.InvisibleInner");
 
+        checkOutput("pkg1/package-tree.html", false, "InvisibleParent.html");
+
         checkFiles(false,
                 "pkg1/A.InvisibleInner.html",
-                "pkg1/A.InvisibleInnerExtendsVisibleInner.html");
+                "pkg1/A.InvisibleInnerExtendsVisibleInner.html",
+                "pkg1/InvisibleParent.html",
+                "pkg1/InvisibleParent.InvisibleInner.html");
     }
 }

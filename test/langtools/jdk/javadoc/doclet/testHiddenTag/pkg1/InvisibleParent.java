@@ -27,28 +27,16 @@ package pkg1;
  * @hidden
  * @param <T>
  */
-public class Parent<T extends Parent> {
-    /**
-     * A visible field.
-     */
-    public Parent visibleField;
+public abstract class InvisibleParent<T extends InvisibleParent> implements Intf {
+
+    @Override
+    public void visibleInterfaceMethod() {}
 
     /**
-     * An invisible field.
-     * @hidden
+     * An invisible method made visible in an implementing class.
      */
-    public Parent invisibleField;
-
-    /**
-     * A visible method.
-     */
-    public void visibleMethod(Parent<? extends Parent> p)  {}
-
-    /**
-     * An invisible method.
-     * @hidden
-     */
-    public void invisibleMethod() {}
+    @Override
+    public void invisibleInterfaceMethod() {}
 
     /**
      * A visible inner class.
@@ -66,16 +54,5 @@ public class Parent<T extends Parent> {
      * @hidden
      */
     public static class InvisibleInner {}
-
-    /**
-     * A visible inner class, extending an invisible class.
-     */
-    public static class VisibleInnerExtendsInvisibleInner extends InvisibleInner {}
-
-    /**
-     * An invisible inner class extending a visible class.
-     * @hidden
-     */
-    public static class InvisibleInnerExtendsVisibleInner extends InvisibleInner {}
 
 }
