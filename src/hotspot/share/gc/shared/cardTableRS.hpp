@@ -45,7 +45,7 @@ class CardTableRS : public CardTable {
   void verify_space(Space* s, HeapWord* gen_start);
 
 public:
-  CardTableRS(MemRegion whole_heap, bool scanned_concurrently);
+  CardTableRS(MemRegion whole_heap);
 
   void younger_refs_in_space_iterate(Space* sp, HeapWord* gen_boundary, OopIterateClosure* cl);
 
