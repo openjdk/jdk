@@ -25,8 +25,6 @@
 
 #import "sun_lwawt_macosx_CDropTargetContextPeer.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "CDataTransferer.h"
 #import "CDropTarget.h"
 #import "DnDUtilities.h"

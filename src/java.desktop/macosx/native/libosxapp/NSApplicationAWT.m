@@ -160,9 +160,6 @@ AWT_ASSERT_APPKIT_THREAD;
     [super finishLaunching];
 
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
-
-    // inform any interested parties that the AWT has arrived and is pumping
-    [[NSNotificationCenter defaultCenter] postNotificationName:JNFRunLoopDidStartNotification object:self];
 }
 
 - (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
@@ -271,7 +268,7 @@ AWT_ASSERT_APPKIT_THREAD;
 // HACK BEGIN
     // The following is necessary to make the java process behave like a
     // proper foreground application...
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         ProcessSerialNumber psn;
         GetCurrentProcess(&psn);
         TransformProcessType(&psn, kProcessTransformToForegroundApplication);
@@ -326,8 +323,8 @@ AWT_ASSERT_APPKIT_THREAD;
 + (void) runAWTLoopWithApp:(NSApplication*)app {
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
 
-    // Make sure that when we run in AWTRunLoopMode we don't exit randomly
-    [[NSRunLoop currentRunLoop] addPort:[NSPort port] forMode:[JNFRunLoop javaRunLoopMode]];
+    // Make sure that when we run in javaRunLoopMode we don't exit randomly
+    [[NSRunLoop currentRunLoop] addPort:[NSPort port] forMode:[ThreadUtilities javaRunLoopMode]];
 
     do {
         @try {

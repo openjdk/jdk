@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"

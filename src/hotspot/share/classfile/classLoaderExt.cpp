@@ -34,6 +34,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
