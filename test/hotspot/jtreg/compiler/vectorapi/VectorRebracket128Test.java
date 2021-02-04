@@ -20,12 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import jdk.incubator.vector.*;
-import jdk.internal.vm.annotation.ForceInline;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
@@ -33,9 +27,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
-import jdk.incubator.vector.VectorShape;
-import jdk.incubator.vector.VectorSpecies;
+import jdk.incubator.vector.*;
 import jdk.internal.vm.annotation.ForceInline;
+
+import org.testng.Assert;
+import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
 
 /*
  * @test
@@ -44,7 +41,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:CompileCommand=compileonly,jdk/incubator/vector/ByteVector.fromByteBuffer
- *      -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+UseZGC -Xbatch -Xmx256m VectorRebracket128Test
+ *      -XX:-TieredCompilation -XX:+UseZGC -Xmx128m VectorRebracket128Test
  */
 
 @Test
@@ -58,6 +55,19 @@ public class VectorRebracket128Test {
     static final VectorSpecies<Double> dspec128 = DoubleVector.SPECIES_128;
     static final VectorSpecies<Byte> bspec128 = ByteVector.SPECIES_128;
     static final VectorSpecies<Short> sspec128 = ShortVector.SPECIES_128;
+
+    static {
+        Thread t = new Thread(() -> {
+            while (true) {
+                try {
+                    System.gc();
+                    Thread.sleep(10);
+                } catch (Exception e) {}
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+    }
 
     static <T> IntFunction<T> withToString(String s, IntFunction<T> f) {
         return new IntFunction<T>() {
