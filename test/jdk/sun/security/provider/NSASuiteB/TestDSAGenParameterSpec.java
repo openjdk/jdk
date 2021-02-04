@@ -39,6 +39,9 @@ import java.security.spec.InvalidParameterSpecException;
  *          DSA within some certain range of key sizes as described in the class
  *          specification (L, N) as (1024, 160), (2048, 224), (2048, 256) and
  *          (3072, 256) should be OK for DSAGenParameterSpec.
+ *          This test has been split based on lower/higher key sizes in order to
+ *          reduce individual execution times and run in parallel
+ *          (see TestDSAGenParameterSpecLongKey.java)
  * @run main TestDSAGenParameterSpec 512 160
  * @run main TestDSAGenParameterSpec 1024 160 true
  * @run main TestDSAGenParameterSpec 1024 224

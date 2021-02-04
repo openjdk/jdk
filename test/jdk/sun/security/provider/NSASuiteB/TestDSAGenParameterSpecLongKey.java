@@ -28,6 +28,9 @@
  *          DSA within some certain range of key sizes as described in the class
  *          specification (L, N) as (1024, 160), (2048, 224), (2048, 256) and
  *          (3072, 256) should be OK for DSAGenParameterSpec.
+ *          This test has been split based on lower/higher key sizes in order to
+ *          reduce individual execution times and run in parallel
+ *          (see TestDSAGenParameterSpec.java)
  * @run main/timeout=700 TestDSAGenParameterSpec 3072 256 true
  * @run main TestDSAGenParameterSpec 4096 256
  */
