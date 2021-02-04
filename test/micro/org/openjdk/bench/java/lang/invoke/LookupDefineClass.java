@@ -37,6 +37,9 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 
 public class LookupDefineClass {
+    /**
+     * foo.Foo
+     */
     private static final byte[] X_BYTECODE = new byte[]{
             (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE, 0x00, 0x00, 0x00, 0x38, 0x00, 0x10, 0x0A, 0x00,
             0x03, 0x00, 0x0C, 0x07, 0x00, 0x0D, 0x07, 0x00, 0x0E, 0x07, 0x00, 0x0F,
@@ -62,6 +65,23 @@ public class LookupDefineClass {
             0x02, 0x00, 0x0B
     };
 
+    /**
+     * A variant of X_BYTECODE, with the class name rewritten to trigger malloc in ClassLoader.c
+     *
+     *   ClassReader reader = new ClassReader(X_BYTECODE);
+     *   ClassWriter writer = new ClassWriter(reader, 0);
+     *   reader.accept(new ClassVisitor(Opcodes.ASM5, writer) {
+     *       @Override
+     *       public void visit(int version, int access, String name,
+     *                         String signature, String superName, String[] interfaces) {
+     *           super.visit(version, access,
+     *               "foo/AReallyReallyLongClassNameThatWillSurelyNotFitInACharBufferOfLength128ToTestThatWeDontLeakMemoryWhenTheClassNameIsTooLongForTheStackAllocatedBuffer",
+     *              signature, superName, interfaces);
+     *       }
+     *   }, 0);
+     *   byte[] code = writer.toByteArray();
+     *   System.out.println(HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(code));
+     */
     private static final byte[] X_LONG_NAME_BYTECODE = new byte[]{
             (byte)0xca, (byte)0xfe, (byte)0xba, (byte)0xbe, 0x00, 0x00, 0x00, 0x38, 0x00, 0x12, 0x0a, 0x00,
             0x03, 0x00, 0x0c, 0x07, 0x00, 0x0d, 0x07, 0x00, 0x0e, 0x07, 0x00, 0x0f,
