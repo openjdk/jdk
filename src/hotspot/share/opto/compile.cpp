@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
@@ -390,6 +391,9 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->is_expensive()) {
     remove_expensive_node(dead);
   }
+  if (dead->Opcode() == Op_Opaque4) {
+    remove_skeleton_predicate_opaq(dead);
+  }
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
   }
@@ -565,6 +569,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _intrinsics        (comp_arena(), 0, 0, NULL),
                   _macro_nodes       (comp_arena(), 8, 0, NULL),
                   _predicate_opaqs   (comp_arena(), 8, 0, NULL),
+                  _skeleton_predicate_opaqs (comp_arena(), 8, 0, NULL),
                   _expensive_nodes   (comp_arena(), 8, 0, NULL),
                   _for_post_loop_igvn(comp_arena(), 8, 0, NULL),
                   _congraph(NULL),
@@ -1837,6 +1842,8 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
 
   C->set_post_loop_opts_phase(); // no more loop opts allowed
 
+  assert(!C->major_progress(), "not cleared");
+
   if (_for_post_loop_igvn.length() > 0) {
     while (_for_post_loop_igvn.length() > 0) {
       Node* n = _for_post_loop_igvn.pop();
@@ -1845,6 +1852,11 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
     }
     igvn.optimize();
     assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
+
+    // Sometimes IGVN sets major progress (e.g., when processing loop nodes).
+    if (C->major_progress()) {
+      C->clear_major_progress(); // ensure that major progress is now clear
+    }
   }
 }
 
@@ -2747,7 +2759,7 @@ void Compile::Code_Gen() {
 
     print_method(PHASE_GLOBAL_CODE_MOTION, 2);
     NOT_PRODUCT( verify_graph_edges(); )
-    debug_only( cfg.verify(); )
+    cfg.verify();
   }
 
   PhaseChaitin regalloc(unique(), cfg, matcher, false);

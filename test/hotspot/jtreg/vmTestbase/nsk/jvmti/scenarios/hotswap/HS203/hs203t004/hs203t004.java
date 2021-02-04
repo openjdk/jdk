@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * Description ::
  *     The test would redefine a class during method compilation, pops currently executing frame.
  *     The Test starts a Thread (MyThread). On preparing of MyThread compiled_method_load event is enabled.
- *     While running the thread, it calls a method (doTask2() ) for number of times (1000).
+ *     While running the thread, it calls a method (doTask2() ) for number of times (10000).
  *     That would cause this method to be compiled, which causes a jvmti callback for compiled method load.
  *     (Hint : to force method compilation -XX:CompileThreshold=900 is used).
  *     The class which holds this method is redefined with ./newclass/MyThread.java, Once the redefine

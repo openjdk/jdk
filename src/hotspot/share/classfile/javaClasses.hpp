@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_CLASSFILE_JAVACLASSES_HPP
 #define SHARE_CLASSFILE_JAVACLASSES_HPP
 
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "oops/oop.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
@@ -945,7 +945,7 @@ class java_lang_invoke_MethodHandle: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::MethodHandle_klass());
+    return klass->is_subclass_of(vmClasses::MethodHandle_klass());
   }
   static bool is_instance(oop obj);
 
@@ -972,7 +972,7 @@ class java_lang_invoke_DirectMethodHandle: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::DirectMethodHandle_klass());
+    return klass->is_subclass_of(vmClasses::DirectMethodHandle_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1000,8 +1000,8 @@ class java_lang_invoke_LambdaForm: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return SystemDictionary::LambdaForm_klass() != NULL &&
-      klass->is_subclass_of(SystemDictionary::LambdaForm_klass());
+    return vmClasses::LambdaForm_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::LambdaForm_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1040,8 +1040,8 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return SystemDictionary::NativeEntryPoint_klass() != NULL &&
-      klass->is_subclass_of(SystemDictionary::NativeEntryPoint_klass());
+    return vmClasses::NativeEntryPoint_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::NativeEntryPoint_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1134,7 +1134,7 @@ class java_lang_invoke_MemberName: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::MemberName_klass());
+    return klass->is_subclass_of(vmClasses::MemberName_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1230,7 +1230,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::CallSite_klass());
+    return klass->is_subclass_of(vmClasses::CallSite_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1256,7 +1256,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::ConstantCallSite_klass());
+    return klass->is_subclass_of(vmClasses::ConstantCallSite_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1285,7 +1285,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::Context_klass());
+    return klass->is_subclass_of(vmClasses::Context_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1353,7 +1353,7 @@ class java_lang_ClassLoader : AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::ClassLoader_klass());
+    return klass->is_subclass_of(vmClasses::ClassLoader_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1597,7 +1597,7 @@ class vector_VectorPayload : AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::vector_VectorPayload_klass());
+    return klass->is_subclass_of(vmClasses::vector_VectorPayload_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1717,13 +1717,13 @@ class java_lang_InternalError : AllStatic {
 
 class InjectedField {
  public:
-  const SystemDictionary::WKID klass_id;
+  const vmClassID klass_id;
   const vmSymbolID name_index;
   const vmSymbolID signature_index;
   const bool           may_be_java;
 
 
-  Klass* klass() const    { return SystemDictionary::well_known_klass(klass_id); }
+  Klass* klass() const      { return vmClasses::klass_at(klass_id); }
   Symbol* name() const      { return lookup_symbol(name_index); }
   Symbol* signature() const { return lookup_symbol(signature_index); }
 

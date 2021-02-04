@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,21 @@
 
 /**
  * @test
- * @bug 6289149
- * @summary test config (0,1,0,1): inherited 1-arg and declared 1-arg in agent class
+ * @bug 6289149 8165276
+ * @summary test config (0,1,0,1): 1-arg in superclass and declared 1-arg in agent class
  * @author Daniel D. Daugherty, Sun Microsystems
  *
  * @key intermittent
- * @run shell ../MakeJAR3.sh InheritAgent0101
+ * @library /test/lib
+ * @build jdk.java.lang.instrument.PremainClass.InheritAgent0101
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             InheritAgent0101 InheritAgent0101.jar
  * @run main/othervm -javaagent:InheritAgent0101.jar DummyMain
  */
 
 import java.lang.instrument.*;
 
-class InheritAgent0101 extends InheritAgent0101Super {
+public class InheritAgent0101 extends InheritAgent0101Super {
 
     //
     // This agent has a single argument premain() method which

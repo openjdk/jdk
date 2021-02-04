@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,13 +81,7 @@ public abstract class CompilerWhiteBoxTest {
     protected static final long BACKEDGE_THRESHOLD;
 
     static {
-        if (TIERED_COMPILATION) {
-            BACKEDGE_THRESHOLD = THRESHOLD = 150000;
-        } else {
-            THRESHOLD = COMPILE_THRESHOLD;
-            BACKEDGE_THRESHOLD = Math.max(10000, COMPILE_THRESHOLD *
-                    Long.parseLong(getVMOption("OnStackReplacePercentage")));
-        }
+        BACKEDGE_THRESHOLD = THRESHOLD = 150000;
     }
 
     /**

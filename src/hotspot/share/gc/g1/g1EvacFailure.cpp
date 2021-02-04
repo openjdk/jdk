@@ -41,7 +41,6 @@ class UpdateLogBuffersDeferred : public BasicOopIterateClosure {
 private:
   G1CollectedHeap* _g1h;
   G1RedirtyCardsLocalQueueSet* _rdc_local_qset;
-  G1RedirtyCardsQueue* _rdcq;
   G1CardTable*    _ct;
 
   // Remember the last enqueued card to avoid enqueuing the same card over and over;
@@ -49,11 +48,9 @@ private:
   size_t _last_enqueued_card;
 
 public:
-  UpdateLogBuffersDeferred(G1RedirtyCardsLocalQueueSet* rdc_local_qset,
-                           G1RedirtyCardsQueue* rdcq) :
+  UpdateLogBuffersDeferred(G1RedirtyCardsLocalQueueSet* rdc_local_qset) :
     _g1h(G1CollectedHeap::heap()),
     _rdc_local_qset(rdc_local_qset),
-    _rdcq(rdcq),
     _ct(_g1h->card_table()),
     _last_enqueued_card(SIZE_MAX) {}
 
@@ -73,7 +70,7 @@ public:
     }
     size_t card_index = _ct->index_for(p);
     if (card_index != _last_enqueued_card) {
-      _rdc_local_qset->enqueue(*_rdcq, _ct->byte_for_index(card_index));
+      _rdc_local_qset->enqueue(_ct->byte_for_index(card_index));
       _last_enqueued_card = card_index;
     }
   }
@@ -206,7 +203,6 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   uint _worker_id;
 
   G1RedirtyCardsLocalQueueSet _rdc_local_qset;
-  G1RedirtyCardsQueue _rdcq;
   UpdateLogBuffersDeferred _log_buffer_cl;
 
 public:
@@ -214,12 +210,10 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
     _rdc_local_qset(rdcqs),
-    _rdcq(&_rdc_local_qset),
-    _log_buffer_cl(&_rdc_local_qset, &_rdcq) {
+    _log_buffer_cl(&_rdc_local_qset) {
   }
 
   ~RemoveSelfForwardPtrHRClosure() {
-    _rdc_local_qset.flush_queue(_rdcq);
     _rdc_local_qset.flush();
   }
 
