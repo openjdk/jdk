@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,10 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -69,6 +72,7 @@ import static com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE;
 abstract class GaloisCounterMode extends CipherSpi {
 
     SymmetricCipher blockCipher;
+    private boolean encryption = true;
     static int DEFAULT_IV_LEN = 12; // in bytes
 
     // In NIST SP 800-38D, GCM input size is limited to be no longer
@@ -84,35 +88,367 @@ abstract class GaloisCounterMode extends CipherSpi {
     // data size when buffer is divided up to aid in intrinsics
     private static final int TRIGGERLEN = 65536;  // 64k
 
-    // buffer for AAD data; if null, meaning update has been called
-    private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
-    private int sizeOfAAD = 0;
-
-    // buffer data for crypto operation
-    private ByteArrayOutputStream ibuffer = null;
-
-    // Original dst buffer if there was an overlap situation
-    private ByteBuffer originalDst = null;
-
+    private GCMEngine engine;
+    private boolean initialized = false;
     // Default value is 128bits, this in stores bytes.
-    private int tagLenBytes = 16;
+    int tagLenBytes = 16;
+    // Key size if the value is passed
+    int keySize;
+    // Prevent reuse of iv or key
+    boolean reInit = false;
+    final static byte[] emptyBuf = new byte[0];
+    byte[] lastKey = emptyBuf;
+    byte[] lastIv = emptyBuf;
+    byte[] iv = null;
 
-    // these following 2 fields can only be initialized after init() is
-    // called, e.g. after cipher key k is set, and STAY UNCHANGED
-    private byte[] subkeyH = null;
-    private byte[] preCounterBlock = null;
 
-    private GCTR gctrPAndC = null;
-    private GHASH ghashAllToS = null;
+    /**
+     * Initializes the cipher in the specified mode with the given key
+     * and iv.
+     * @exception InvalidKeyException if the given key is inappropriate for
+     * initializing this cipher
+     */
+    void init(int optmode, Key key, GCMParameterSpec spec)
+        throws InvalidKeyException, InvalidAlgorithmParameterException {
+        encryption = (optmode == Cipher.ENCRYPT_MODE) ||
+            (optmode == Cipher.WRAP_MODE);
 
-    // length of total data, i.e. len(C)
-    private int processed = 0;
+        // Check the Key object is valid and the right size
+        if (key == null) {
+            throw new InvalidKeyException("The key must not be null");
+        }
+        byte[] keyValue = key.getEncoded();
+        if (keyValue == null) {
+            throw new InvalidKeyException("Key encoding must not be null");
+        } else if (keySize != -1 && keyValue.length != keySize) {
+            throw new InvalidKeyException("The key must be " +
+                keySize + " bytes");
+        }
 
-    // additional variables for save/restore calls
-    private byte[] aadBufferSave = null;
-    private int sizeOfAADSave = 0;
-    private byte[] ibufferSave = null;
-    private int processedSave = 0;
+        // Check for reuse
+        if (encryption) {
+            if (Arrays.compare(keyValue, lastKey) == 0 && Arrays.compare(iv,
+                lastIv) == 0) {
+                throw new InvalidAlgorithmParameterException(
+                    "Cannot reuse iv for GCM encryption");
+            }
+            lastKey = keyValue;
+            lastIv = iv;
+        } else {
+            if (spec == null) {
+                throw new InvalidKeyException("No GCMParameterSpec specified");
+            }
+        }
+
+        reInit = false;
+
+        int tagLen = spec.getTLen();
+        if (tagLen < 96 || tagLen > 128 || ((tagLen & 0x07) != 0)) {
+            throw new InvalidAlgorithmParameterException
+                ("Unsupported TLen value.  Must be one of " +
+                    "{128, 120, 112, 104, 96}");
+        }
+        tagLenBytes = tagLen >> 3;
+
+        // always encrypt mode for embedded cipher
+        blockCipher.init(false, key.getAlgorithm(), keyValue);
+    }
+
+    // return tag length in bytes
+    int getTagLen() {
+        return this.tagLenBytes;
+    }
+
+    @Override
+    protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
+        if (mode.equalsIgnoreCase("GCM") == false) {
+            throw new NoSuchAlgorithmException("Mode must be GCM");
+        }
+    }
+
+    @Override
+    protected void engineSetPadding(String padding)
+        throws NoSuchPaddingException {
+        if (padding.equalsIgnoreCase("NoPadding") == false) {
+            throw new NoSuchPaddingException("Padding must be NoPadding");
+        }
+    }
+
+    @Override
+    protected int engineGetBlockSize() {
+        return blockCipher.getBlockSize();
+    }
+
+    @Override
+    protected int engineGetOutputSize(int inputLen) {
+        checkInit();
+        return engine.getOutputSize(inputLen, true);
+    }
+
+    @Override
+    protected int engineGetKeySize(Key key) throws InvalidKeyException {
+        return super.engineGetKeySize(key);
+    }
+
+    @Override
+    protected byte[] engineGetIV() {
+        return iv.clone();
+    }
+
+    /**
+     * Create a random 16-byte iv.
+     *
+     * @param random a {@code SecureRandom} object.  If {@code null} is
+     * provided a new {@code SecureRandom} object will be instantiated.
+     *
+     * @return a 16-byte array containing the random nonce.
+     */
+    private static byte[] createIv(SecureRandom random) {
+        byte[] iv = new byte[DEFAULT_IV_LEN];
+        SecureRandom rand = (random != null) ? random : new SecureRandom();
+        rand.nextBytes(iv);
+        return iv;
+    }
+
+    SecureRandom random = null;
+    @Override
+    protected AlgorithmParameters engineGetParameters() {
+        GCMParameterSpec spec;
+        spec = new GCMParameterSpec(getTagLen() * 8,
+            iv == null ? createIv(random) : iv.clone());
+        try {
+            AlgorithmParameters params =
+                AlgorithmParameters.getInstance("GCM",
+                    SunJCE.getInstance());
+            params.init(spec);
+            return params;
+        } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    protected void engineInit(int opmode, Key key, SecureRandom random) throws InvalidKeyException {
+        if (opmode == Cipher.DECRYPT_MODE || opmode == Cipher.UNWRAP_MODE) {
+            throw new InvalidKeyException("No GCMParameterSpec specified");
+        }
+        try {
+            engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
+        } catch (InvalidAlgorithmParameterException e) {
+            // never happen
+        }
+    }
+
+    @Override
+    protected void engineInit(int opmode, Key key,
+        AlgorithmParameterSpec params, SecureRandom random)
+        throws InvalidKeyException, InvalidAlgorithmParameterException {
+
+        GCMParameterSpec spec;
+        if (params == null) {
+            iv = createIv(random);
+            spec = new GCMParameterSpec(getTagLen() * 8, iv);
+        } else {
+            if (!(params instanceof GCMParameterSpec)) {
+                throw new InvalidAlgorithmParameterException(
+                    "AlgorithmParameterSpec not of GCMParameterSpec");
+            }
+            spec = (GCMParameterSpec)params;
+            iv = spec.getIV();
+            if (iv == null) {
+                throw new InvalidAlgorithmParameterException("IV is null");
+            }
+            if (iv.length == 0) {
+                throw new InvalidAlgorithmParameterException("IV is empty");
+            }
+        }
+        init(opmode, key, spec);
+        initialized = true;
+    }
+
+    @Override
+    protected void engineInit(int opmode, Key key, AlgorithmParameters params,
+        SecureRandom random) throws InvalidKeyException,
+        InvalidAlgorithmParameterException {
+        GCMParameterSpec spec = null;
+        if (params != null) {
+            try {
+                spec = params.getParameterSpec(GCMParameterSpec.class);
+            } catch (InvalidParameterSpecException e) {
+                throw new InvalidAlgorithmParameterException(e);
+            }
+        }
+        engineInit(opmode, key, spec, random);
+    }
+
+    void checkInit() {
+        if (!initialized) {
+            throw new IllegalStateException("Operation not initialized.");
+        }
+        if (reInit) {
+            throw new IllegalStateException("Must use either different key or" +
+                " iv for GCM encryption");
+        }
+        if (engine == null) {
+            if (encryption) {
+                engine = new GCMEncrypt(blockCipher);
+            } else {
+                engine = new GCMDecrypt(blockCipher);
+            }
+        }
+    }
+
+    void exitOp() {
+        engine = null;
+        if (encryption) {
+            reInit = true;
+        }
+    }
+
+
+    @Override
+    protected byte[] engineUpdate(byte[] input, int inputOffset, int inputLen) {
+        checkInit();
+        return engine.doUpdate(input, inputOffset, inputLen);
+    }
+
+    @Override
+    protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
+        byte[] output, int outputOffset) throws ShortBufferException {
+        checkInit();
+        int len = engine.getOutputSize(inputLen, false);
+        if (len > output.length - outputOffset) {
+            throw new ShortBufferException("Output buffer too small, must be " +
+                "at least " + len + " bytes long");
+        }
+        return engine.doUpdate(input, inputOffset, inputLen, output,
+            outputOffset);
+    }
+
+    @Override
+    protected int engineUpdate(ByteBuffer src, ByteBuffer dst)
+        throws ShortBufferException {
+        checkInit();
+        int len = engine.getOutputSize(src.remaining(), false);
+        if (len > dst.remaining()) {
+            throw new ShortBufferException(
+                "Output buffer must be at least " + len + " bytes long");
+        }
+        return engine.doUpdate(src, dst);
+    }
+
+    @Override
+    protected void engineUpdateAAD(byte[] src, int offset, int len) {
+        checkInit();
+        engine.updateAAD(src, offset, len);
+    }
+
+    @Override
+    protected void engineUpdateAAD(ByteBuffer src) {
+        checkInit();
+        if (src.hasArray()) {
+            int pos = src.position();
+            int len = src.remaining();
+            engine.updateAAD(src.array(), src.arrayOffset() + pos, len);
+            src.position(pos + len);
+        } else {
+            byte[] aad = new byte[src.remaining()];
+            src.get(aad);
+            engine.updateAAD(aad, 0, aad.length);
+        }
+    }
+
+    @Override
+    protected byte[] engineDoFinal(byte[] input, int inputOffset,
+        int inputLen) throws IllegalBlockSizeException, BadPaddingException {
+        checkInit();
+
+        byte[] output = new byte[engine.getOutputSize(inputLen, true)];
+        if (input == null) {
+            input = emptyBuf;
+        }
+        try {
+            engine.doFinal(input, inputOffset, inputLen, output, 0);
+        } catch (ShortBufferException e) {
+            throw new ProviderException(e);
+        } finally {
+            exitOp();
+        }
+        return output;
+    }
+
+    @Override
+    protected int engineDoFinal(byte[] input, int inputOffset, int inputLen,
+        byte[] output, int outputOffset) throws ShortBufferException,
+        IllegalBlockSizeException, BadPaddingException {
+        checkInit();
+
+        if (input == null) {
+            input = emptyBuf;
+        }
+        try {
+            ArrayUtil.nullAndBoundsCheck(input, inputOffset, inputLen);
+        } catch (Exception e) {
+            exitOp();
+            throw new IllegalBlockSizeException("input array invalid");
+        }
+        int len = engine.doFinal(input, inputOffset, inputLen, output,
+            outputOffset);
+        exitOp();
+        return len;
+
+//        return engineDoFinal(ByteBuffer.wrap(input), ByteBuffer.wrap(output));
+    }
+
+    @Override
+    protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
+        throws ShortBufferException, IllegalBlockSizeException,
+        BadPaddingException {
+        checkInit();
+        int len = engine.doFinal(input, output);
+        exitOp();
+        return len;
+    }
+
+    @Override
+    protected byte[] engineWrap(Key key) throws IllegalBlockSizeException,
+        InvalidKeyException {
+        checkInit();
+        try {
+            byte[] encodedKey = key.getEncoded();
+            if ((encodedKey == null) || (encodedKey.length == 0)) {
+                throw new InvalidKeyException(
+                    "Cannot get an encoding of " + "the key to be wrapped");
+            }
+            return engineDoFinal(encodedKey, 0, encodedKey.length);
+        } catch (BadPaddingException e) {
+            // should never happen
+        } finally {
+            exitOp();
+        }
+        return null;
+    }
+
+    @Override
+    protected Key engineUnwrap(byte[] wrappedKey, String wrappedKeyAlgorithm,
+        int wrappedKeyType) throws InvalidKeyException, NoSuchAlgorithmException {
+        checkInit();
+
+        byte[] encodedKey;
+        try {
+            encodedKey = engineDoFinal(wrappedKey, 0, wrappedKey.length);
+        } catch (BadPaddingException ePadding) {
+            throw new InvalidKeyException("The wrapped key is not padded " +
+                                          "correctly");
+        } catch (IllegalBlockSizeException eBlockSize) {
+            throw new InvalidKeyException("The wrapped key does not have " +
+                                          "the correct length");
+        }
+        return ConstructKeys.constructKey(encodedKey, wrappedKeyAlgorithm,
+                                          wrappedKeyType);
+    }
+
+
 
     // value must be 16-byte long; used by GCTR and GHASH as well
     static void increment32(byte[] value) {
@@ -127,40 +463,20 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
     }
 
+    private static final VarHandle wrapToByteArray =
+        MethodHandles.byteArrayViewVarHandle(long[].class,
+            ByteOrder.BIG_ENDIAN);
+
     private static byte[] getLengthBlock(int ivLenInBytes) {
-        long ivLen = ((long)ivLenInBytes) << 3;
         byte[] out = new byte[AES_BLOCK_SIZE];
-        out[8] = (byte)(ivLen >>> 56);
-        out[9] = (byte)(ivLen >>> 48);
-        out[10] = (byte)(ivLen >>> 40);
-        out[11] = (byte)(ivLen >>> 32);
-        out[12] = (byte)(ivLen >>> 24);
-        out[13] = (byte)(ivLen >>> 16);
-        out[14] = (byte)(ivLen >>> 8);
-        out[15] = (byte)ivLen;
+        wrapToByteArray.set(out, 8, ((long)ivLenInBytes  & 0xFFFFFFFFL) << 3);
         return out;
     }
 
     private static byte[] getLengthBlock(int aLenInBytes, int cLenInBytes) {
-        long aLen = ((long)aLenInBytes) << 3;
-        long cLen = ((long)cLenInBytes) << 3;
         byte[] out = new byte[AES_BLOCK_SIZE];
-        out[0] = (byte)(aLen >>> 56);
-        out[1] = (byte)(aLen >>> 48);
-        out[2] = (byte)(aLen >>> 40);
-        out[3] = (byte)(aLen >>> 32);
-        out[4] = (byte)(aLen >>> 24);
-        out[5] = (byte)(aLen >>> 16);
-        out[6] = (byte)(aLen >>> 8);
-        out[7] = (byte)aLen;
-        out[8] = (byte)(cLen >>> 56);
-        out[9] = (byte)(cLen >>> 48);
-        out[10] = (byte)(cLen >>> 40);
-        out[11] = (byte)(cLen >>> 32);
-        out[12] = (byte)(cLen >>> 24);
-        out[13] = (byte)(cLen >>> 16);
-        out[14] = (byte)(cLen >>> 8);
-        out[15] = (byte)cLen;
+        wrapToByteArray.set(out, 0, ((long)aLenInBytes & 0xFFFFFFFFL) << 3);
+        wrapToByteArray.set(out, 8, ((long)cLenInBytes & 0xFFFFFFFFL) << 3);
         return out;
     }
 
@@ -193,8 +509,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             } else {
                 g.update(iv);
             }
-            byte[] lengthBlock = getLengthBlock(iv.length);
-            g.update(lengthBlock);
+            g.update(getLengthBlock(iv.length));
             j0 = g.digest();
         }
         return j0;
@@ -210,18 +525,15 @@ abstract class GaloisCounterMode extends CipherSpi {
         for (int len : lengths) {
             max = Math.subtractExact(max, len);
         }
-        if (processed > max) {
+        if (engine.processed > max) {
             throw new ProviderException("SunJCE provider only supports " +
                 "input size up to " + MAX_BUF_SIZE + " bytes");
         }
     }
 
-    int keySize;
-
     GaloisCounterMode(int keySize, SymmetricCipher embeddedCipher) {
         blockCipher = embeddedCipher;
         this.keySize = keySize;
-        aadBuffer = new ByteArrayOutputStream();
     }
 
     /**
@@ -239,633 +551,78 @@ abstract class GaloisCounterMode extends CipherSpi {
      * cipher can be reused (with its original key and iv).
      */
     void reset() {
-        if (aadBuffer == null) {
-            aadBuffer = new ByteArrayOutputStream();
+        if (encryption) {
+            engine = new GCMEncrypt(blockCipher);
         } else {
-            aadBuffer.reset();
+            engine = new GCMDecrypt(blockCipher);
         }
-        if (gctrPAndC != null) gctrPAndC.reset();
-        if (ghashAllToS != null) ghashAllToS.reset();
-        processed = 0;
-        sizeOfAAD = 0;
-        if (ibuffer != null) {
-            ibuffer.reset();
-        }
+        reInit = true;
     }
 
-    /**
-     * Save the current content of this cipher.
-     */
-    void save() {
-        processedSave = processed;
-        sizeOfAADSave = sizeOfAAD;
-        aadBufferSave =
-            ((aadBuffer == null || aadBuffer.size() == 0)?
-             null : aadBuffer.toByteArray());
-        if (gctrPAndC != null) gctrPAndC.save();
-        if (ghashAllToS != null) ghashAllToS.save();
-        if (ibuffer != null) {
-            ibufferSave = ibuffer.toByteArray();
-        }
+    class GCMState {
+        // length of total data, i.e. len(C)
+        int processed = 0;
+
+        // additional variables for save/restore calls
+        private byte[] aadBufferSave = null;
+        private int sizeOfAADSave = 0;
+        private byte[] ibufferSave = null;
+        private int processedSave = 0;
+        // buffer for AAD data; if null, meaning update has been called
+        ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
+        int sizeOfAAD = 0;
+
+        // buffer data for crypto operation
+        ByteArrayOutputStream ibuffer = null;
+        // Original dst buffer if there was an overlap situation
+        ByteBuffer originalDst = null;
+        byte[] originalOut = null;
+        int originalOutOfs = 0;
+
+
     }
-
-    /**
-     * Restores the content of this cipher to the previous saved one.
-     */
-    void restore() {
-        processed = processedSave;
-        sizeOfAAD = sizeOfAADSave;
-        if (aadBuffer != null) {
-            aadBuffer.reset();
-            if (aadBufferSave != null) {
-                aadBuffer.write(aadBufferSave, 0, aadBufferSave.length);
-            }
-        }
-        if (gctrPAndC != null) gctrPAndC.restore();
-        if (ghashAllToS != null) ghashAllToS.restore();
-        if (ibuffer != null) {
-            ibuffer.reset();
-            ibuffer.write(ibufferSave, 0, ibufferSave.length);
-        }
-    }
-
-    /**
-     * Initializes the cipher in the specified mode with the given key
-     * and iv.
-     *
-     * @param decrypting flag indicating encryption or decryption
-     * @param algorithm the algorithm name
-     * @param key the key
-     * @param iv the iv
-     * @exception InvalidKeyException if the given key is inappropriate for
-     * initializing this cipher
-     */
-    void init(boolean decrypting, String algorithm, byte[] key, byte[] iv)
-            throws InvalidKeyException, InvalidAlgorithmParameterException {
-        //init(decrypting, algorithm, key, iv, DEFAULT_TAG_LEN);
-    }
-
-    /**
-     * Initializes the cipher in the specified mode with the given key
-     * and iv.
-     *
-     * @param decrypting flag indicating encryption or decryption
-     * @param algorithm the algorithm name
-     * @param keyValue the key
-     * @param ivValue the iv
-     * @param tagLenBytes the length of tag in bytes
-     *
-     * @exception InvalidKeyException if the given key is inappropriate for
-     * initializing this cipher
-     */
-    int blockSize;
-    private GCMEngine engine;
-
-    void init(int optmode, Key key, GCMParameterSpec spec)
-        throws InvalidKeyException, InvalidAlgorithmParameterException {
-
-        // Check the Key object is valid and the right size
-        if (key == null) {
-            throw new InvalidKeyException("The key must not be null");
-        }
-        byte[] keyValue = key.getEncoded();
-        if (keyValue == null) {
-            throw new InvalidKeyException("Key encoding must not be null");
-        } else if (keySize != -1 && keyValue.length != keySize) {
-            throw new InvalidKeyException("The key must be " +
-                keySize + " bytes");
-        }
-        int tagLen = spec.getTLen();
-        if (tagLen < 96 || tagLen > 128 || ((tagLen & 0x07) != 0)) {
-            throw new InvalidAlgorithmParameterException
-                ("Unsupported TLen value.  Must be one of " +
-                    "{128, 120, 112, 104, 96}");
-        }
-        tagLenBytes = tagLen >> 3;
-
-        // always encrypt mode for embedded cipher
-        blockCipher.init(false, key.getAlgorithm(), keyValue);
-        blockSize = blockCipher.getBlockSize();
-        iv = spec.getIV();
-
-        // This can be in-place because subkeyH is zeroed data
-        subkeyH = new byte[blockSize];
-        blockCipher.encryptBlock(subkeyH, 0, subkeyH,0);
-
-        preCounterBlock = getJ0(iv, subkeyH);
-        byte[] j0Plus1 = preCounterBlock.clone();
-        increment32(j0Plus1);
-        gctrPAndC = new GCTR(blockCipher, j0Plus1);
-        ghashAllToS = new GHASH(subkeyH);
-
-        if (aadBuffer == null) {
-            aadBuffer = new ByteArrayOutputStream();
-        } else {
-            aadBuffer.reset();
-        }
-        processed = 0;
-        sizeOfAAD = 0;
-        if (optmode == Cipher.DECRYPT_MODE) {
-            engine = new GCMDecrypt();
-        } else {
-            engine = new GCMEncrypt();
-        }
-    }
-
-    /**
-     * Continues a multi-part update of the Additional Authentication
-     * Data (AAD), using a subset of the provided buffer. If this
-     * cipher is operating in either GCM or CCM mode, all AAD must be
-     * supplied before beginning operations on the ciphertext (via the
-     * {@code update} and {@code doFinal} methods).
-     * <p>
-     * NOTE: Given most modes do not accept AAD, default impl for this
-     * method throws IllegalStateException.
-     *
-     * @param src the buffer containing the AAD
-     * @param offset the offset in {@code src} where the AAD input starts
-     * @param len the number of AAD bytes
-     *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
-     * encryption/decryption operation
-     * @throws UnsupportedOperationException if this method
-     * has not been overridden by an implementation
-     *
-     * @since 1.8
-     */
-    void updateAAD(byte[] src, int offset, int len) {
-        if (aadBuffer != null) {
-            aadBuffer.write(src, offset, len);
-        } else {
-            // update has already been called
-            throw new IllegalStateException
-                ("Update has been called; no more AAD data");
-        }
-    }
-
-    // Feed the AAD data to GHASH, pad if necessary
-    void processAAD() {
-        if (aadBuffer != null) {
-            if (aadBuffer.size() > 0) {
-                byte[] aad = aadBuffer.toByteArray();
-                sizeOfAAD = aad.length;
-
-                int lastLen = aad.length % AES_BLOCK_SIZE;
-                if (lastLen != 0) {
-                    ghashAllToS.update(aad, 0, aad.length - lastLen);
-                    byte[] padded = expandToOneBlock(aad, aad.length - lastLen,
-                                                     lastLen);
-                    ghashAllToS.update(padded);
-                } else {
-                    ghashAllToS.update(aad);
-                }
-            }
-            aadBuffer = null;
-        }
-    }
-
-    // Utility to process the last block; used by encryptFinal and decryptFinal
-    void doLastBlock(byte[] in, int inOfs, int len, byte[] out, int outOfs,
-                     boolean isEncrypt) throws IllegalBlockSizeException {
-        byte[] ct;
-        int ctOfs;
-        int ilen = len;  // internal length
-
-        if (isEncrypt) {
-            ct = out;
-            ctOfs = outOfs;
-        } else {
-            ct = in;
-            ctOfs = inOfs;
-        }
-
-        // Divide up larger data sizes to trigger CTR & GHASH intrinsic quicker
-        if (len > TRIGGERLEN) {
-            int i = 0;
-            int tlen;  // incremental lengths
-            final int plen = AES_BLOCK_SIZE * 6;
-            // arbitrary formula to aid intrinsic without reaching buffer end
-            final int count = len / 1024;
-
-            while (count > i) {
-                tlen = gctrPAndC.update(in, inOfs, plen, out, outOfs);
-                ghashAllToS.update(ct, ctOfs, tlen);
-                inOfs += tlen;
-                outOfs += tlen;
-                ctOfs += tlen;
-                i++;
-            }
-            ilen -= count * plen;
-            processed += count * plen;
-        }
-/*
-        int bufLen = getBufferedLength();
-        byte[] block;
-        if (bufLen > 0) {
-            block = new byte[blockSize];
-            System.arraycopy(ibuffer.toByteArray(), 0, block,
-                0, bufLen);
-            System.arraycopy(in, inOfs, block, bufLen, len);
-            ilen += bufLen;
-            in = block;
-        }
-
- */
-
-        gctrPAndC.doFinal(in, inOfs, ilen, out, outOfs);
-        processed += ilen;
-
-        int lastLen = ilen % AES_BLOCK_SIZE;
-        if (lastLen != 0) {
-            ghashAllToS.update(ct, ctOfs, ilen - lastLen);
-            ghashAllToS.update(
-                    expandToOneBlock(ct, (ctOfs + ilen - lastLen), lastLen));
-        } else {
-            ghashAllToS.update(ct, ctOfs, ilen);
-        }
-    }
-
-    // Process en/decryption all the way to the last block.  It takes both
-    // For input it takes the ibuffer which is wrapped in 'buffer' and 'src'
-    // from doFinal.
-    void doLastBlock(ByteBuffer buffer, ByteBuffer src, ByteBuffer dst)
-        throws IllegalBlockSizeException {
-
-        if (buffer != null && buffer.remaining() > 0) {
-            // en/decrypt on how much buffer there is in AES_BLOCK_SIZE
-            processed += gctrPAndC.update(buffer, dst);
-
-            // Process the remainder in the buffer
-            if (buffer.remaining() > 0) {
-                // Copy the remainder of the buffer into the extra block
-                byte[] block = new byte[AES_BLOCK_SIZE];
-                int over = buffer.remaining();
-                int len = over;  // how much is processed by in the extra block
-                buffer.get(block, 0, over);
-
-                // if src is empty, update the final block and wait for later
-                // to finalize operation
-                if (src.remaining() > 0) {
-                    // Fill out block with what is in data
-                    if (src.remaining() > AES_BLOCK_SIZE - over) {
-                        src.get(block, over, AES_BLOCK_SIZE - over);
-                        len += AES_BLOCK_SIZE - over;
-                    } else {
-                        // If the remaining in buffer + data does not fill a
-                        // block, complete the ghash operation
-                        int l = src.remaining();
-                        src.get(block, over, l);
-                        len += l;
-                    }
-                }
-                //gctrPAndC.update(block, 0, AES_BLOCK_SIZE, dst); // this code writes past the limit
-                gctrPAndC.update(block, 0, AES_BLOCK_SIZE, block, 0);
-                dst.put(block, 0, Math.min(block.length, dst.remaining()));
-                processed += len;
-            }
-        }
-
-        // en/decrypt whatever remains in src.
-        // If src has been consumed, this will be a no-op
-        processed += gctrPAndC.doFinal(src, dst);
-    }
-
-
-
-    // return tag length in bytes
-    int getTagLen() {
-        return this.tagLenBytes;
-    }
-
-    int getBufferedLength() {
-        if (ibuffer == null) {
-            return 0;
-        } else {
-            return ibuffer.size();
-        }
-    }
-
-    /**
-     * Check for overlap. If the src and dst buffers are using shared data and
-     * if dst will overwrite src data before src can be processed.  If so, make
-     * a copy to put the dst data in.
-     */
-    ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
-        if (src.isDirect() && dst.isDirect()) {
-            DirectBuffer dsrc = (DirectBuffer) src;
-            DirectBuffer ddst = (DirectBuffer) dst;
-
-            // Get the current memory address for the given ByteBuffers
-            long srcaddr = dsrc.address();
-            long dstaddr = ddst.address();
-
-            // Find the lowest attachment that is the base memory address of the
-            // shared memory for the src object
-            while (dsrc.attachment() != null) {
-                srcaddr = ((DirectBuffer) dsrc.attachment()).address();
-                dsrc = (DirectBuffer) dsrc.attachment();
-            }
-
-            // Find the lowest attachment that is the base memory address of the
-            // shared memory for the dst object
-            while (ddst.attachment() != null) {
-                dstaddr = ((DirectBuffer) ddst.attachment()).address();
-                ddst = (DirectBuffer) ddst.attachment();
-            }
-
-            // If the base addresses are not the same, there is no overlap
-            if (srcaddr != dstaddr) {
-                return dst;
-            }
-            // At this point we know these objects share the same memory.
-            // This checks the starting position of the src and dst address for
-            // overlap.
-            // It uses the base address minus the passed object's address to get
-            // the offset from the base address, then add the position() from
-            // the passed object.  That gives up the true offset from the base
-            // address.  As long as the src side is >= the dst side, we are not
-            // in overlap.
-            if (((DirectBuffer) src).address() - srcaddr + src.position() >=
-                ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
-                return dst;
-            }
-
-        } else if (!src.isDirect() && !dst.isDirect()) {
-            if (!src.isReadOnly()) {
-                // If using the heap, check underlying byte[] address.
-                if (!src.array().equals(dst.array()) ) {
-                    return dst;
-                }
-
-                // Position plus arrayOffset() will give us the true offset from
-                // the underlying byte[] address.
-                if (src.position() + src.arrayOffset() >=
-                    dst.position() + dst.arrayOffset()) {
-                    return dst;
-                }
-            }
-        } else {
-            // buffer types aren't the same
-            return dst;
-        }
-
-        // Create a copy
-        ByteBuffer tmp = dst.duplicate();
-        // We can use a heap buffer for internal use, save on alloc cost
-        ByteBuffer bb = ByteBuffer.allocate(dst.remaining());
-        tmp.limit(dst.limit());
-        tmp.position(dst.position());
-        bb.put(tmp);
-        bb.flip();
-        originalDst = dst;
-        return bb;
-    }
-
-    /**
-     * If originalDst exists, dst is an internal dst buffer, then copy the data
-     * into the original dst buffer
-     */
-    void restoreDst(ByteBuffer dst) {
-        if (originalDst == null) {
-            return;
-        }
-
-        dst.flip();
-        originalDst.put(dst);
-        originalDst = null;
-    }
-
-    @Override
-    protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
-        if (mode.equalsIgnoreCase("GCM") == false) {
-            throw new NoSuchAlgorithmException("Mode must be GCM");
-        }
-    }
-
-    @Override
-    protected void engineSetPadding(String padding)
-        throws NoSuchPaddingException {
-        if (padding.equalsIgnoreCase("NoPadding") == false) {
-            throw new NoSuchPaddingException("Padding must be NoPadding");
-        }
-    }
-
-    @Override
-    protected int engineGetBlockSize() {
-        return blockCipher.getBlockSize();
-    }
-
-    @Override
-    protected int engineGetOutputSize(int inputLen) {
-        return engine.getOutputSize(inputLen, true);
-    }
-
-    @Override
-    protected int engineGetKeySize(Key key) throws InvalidKeyException {
-        return super.engineGetKeySize(key);
-    }
-
-    byte[] iv = null;
-    @Override
-    protected byte[] engineGetIV() {
-        return iv.clone();
-    }
-
-    /**
-     * Create a random 16-byte iv.
-     *
-     * @param random a {@code SecureRandom} object.  If {@code null} is
-     * provided a new {@code SecureRandom} object will be instantiated.
-     *
-     * @return a 16-byte array containing the random nonce.
-     */
-    private static byte[] createIv(SecureRandom random) {
-        byte[] iv = new byte[DEFAULT_IV_LEN];
-        SecureRandom rand = (random != null) ? random : new SecureRandom();
-        rand.nextBytes(iv);
-        return iv;
-    }
-
-    private GCMParameterSpec getParameterSpec() {
-        return new GCMParameterSpec(getTagLen() * 8,
-            createIv(random));
-    }
-
-    //AlgorithmParameters params = null;
-    SecureRandom random = null;
-    @Override
-    protected AlgorithmParameters engineGetParameters() {
-        GCMParameterSpec spec = null;
-        if (iv != null) {
-            spec = getParameterSpec();
-        } else {
-            spec = new GCMParameterSpec(tagLenBytes, iv.clone());
-        }
-        try {
-            AlgorithmParameters params =
-                AlgorithmParameters.getInstance("GCM",
-                    SunJCE.getInstance());
-            params.init(spec);
-            return params;
-        } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    void init(int opmode, Key key, SecureRandom random)
-        throws InvalidKeyException {
-        this.random = random;
-        try {
-            init(opmode, key, getParameterSpec());
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    protected void engineInit(int opmode, Key key, SecureRandom random) throws InvalidKeyException {
-        init(opmode, key, random);
-    }
-
-    @Override
-    protected void engineInit(int opmode, Key key,
-        AlgorithmParameterSpec params, SecureRandom random)
-        throws InvalidKeyException, InvalidAlgorithmParameterException {
-
-        GCMParameterSpec spec;
-        if (params == null) {
-            spec = new GCMParameterSpec(getTagLen() * 8, createIv(random));
-        } else {
-            if (!(params instanceof GCMParameterSpec)) {
-                throw new InvalidAlgorithmParameterException(
-                    "AlgorithmParameterSpec not of GCMParameterSpec");
-            }
-            spec = (GCMParameterSpec)params;
-            if (spec.getIV() == null) {
-                throw new InvalidAlgorithmParameterException("IV is null");
-            }
-            if (spec.getIV().length == 0) {
-                throw new InvalidAlgorithmParameterException("IV is empty");
-            }
-        }
-        init(opmode, key, spec);
-    }
-
-    @Override
-    protected void engineInit(int opmode, Key key, AlgorithmParameters params,
-        SecureRandom random) throws InvalidKeyException,
-        InvalidAlgorithmParameterException {
-        GCMParameterSpec spec = null;
-        if (params != null) {
-            try {
-                spec = params.getParameterSpec(GCMParameterSpec.class);
-            } catch (InvalidParameterSpecException e) {
-                throw new InvalidAlgorithmParameterException(e);
-            }
-        }
-        init(opmode, key, spec);
-    }
-
-    @Override
-    protected byte[] engineUpdate(byte[] input, int inputOffset, int inputLen) {
-        return engine.doUpdate(input, inputOffset, inputLen);
-    }
-
-    @Override
-    protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
-        byte[] output, int outputOffset) throws ShortBufferException {
-        int len = engine.getOutputSize(inputLen, false);
-        if (len > output.length - outputOffset) {
-            throw new ShortBufferException("Output buffer must be (at least) " +
-                len + " bytes long");
-        }
-        return engine.doUpdate(input, inputOffset, inputLen, output,
-            outputOffset);
-    }
-
-    @Override
-    protected int engineUpdate(ByteBuffer src, ByteBuffer dst)
-        throws ShortBufferException {
-        int len = engine.getOutputSize(src.remaining(), false);
-        if (len > dst.remaining()) {
-            throw new ShortBufferException(
-                "Output buffer must be (at least) " + len + " bytes long");
-        }
-        return engine.doUpdate(src, dst);
-    }
-
-    @Override
-    protected void engineUpdateAAD(byte[] src, int offset, int len) {
-        if (aadBuffer != null) {
-            aadBuffer.write(src, offset, len);
-        } else {
-            // update has already been called
-            throw new IllegalStateException
-                ("Update has been called; no more AAD data");
-        }
-    }
-
-    @Override
-    protected void engineUpdateAAD(ByteBuffer src) {
-        if (src.hasArray()) {
-            engineUpdateAAD(src.array(), src.arrayOffset(), src.remaining());
-        } else {
-            byte[] aad = new byte[src.remaining()];
-            src.get(aad);
-            engineUpdateAAD(aad, 0, aad.length);
-        }
-    }
-
-    @Override
-    protected byte[] engineDoFinal(byte[] input, int inputOffset,
-        int inputLen) throws IllegalBlockSizeException, BadPaddingException {
-        byte[] output = new byte[engine.getOutputSize(inputLen, true)];
-        if (input == null) {
-            input = emptyBuf;
-        }
-        try {
-            engine.doFinal(input, inputOffset, inputLen, output, 0);
-        } catch (ShortBufferException e) {
-            throw new RuntimeException(e);
-        }
-        return output;
-    }
-
-    @Override
-    protected int engineDoFinal(byte[] input, int inputOffset, int inputLen,
-        byte[] output, int outputOffset) throws ShortBufferException,
-        IllegalBlockSizeException, BadPaddingException {
-        ArrayUtil.nullAndBoundsCheck(input, inputOffset, inputLen);
-        return engine.doFinal(input, inputOffset, inputLen, output, outputOffset);
-    }
-
-    @Override
-    protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
-        throws ShortBufferException, IllegalBlockSizeException,
-        BadPaddingException {
-        return engine.doFinal(input, output);
-    }
-
-    @Override
-    protected byte[] engineWrap(Key key) throws IllegalBlockSizeException,
-        InvalidKeyException {
-        return super.engineWrap(key);
-    }
-
-    @Override
-    protected Key engineUnwrap(byte[] wrappedKey, String wrappedKeyAlgorithm,
-        int wrappedKeyType) throws InvalidKeyException, NoSuchAlgorithmException {
-        return super.engineUnwrap(wrappedKey, wrappedKeyAlgorithm,
-            wrappedKeyType);
-    }
-
-    final static byte[] emptyBuf = new byte[0];
 
     abstract class GCMEngine {
+        byte[] subkeyH;
+        byte[] preCounterBlock;
 
+        GCTR gctrPAndC;
+        GHASH ghashAllToS;
+
+        // length of total data, i.e. len(C)
+        int processed = 0;
+
+        // additional variables for save/restore calls
+        private byte[] aadBufferSave = null;
+        private int sizeOfAADSave = 0;
+        private byte[] ibufferSave = null;
+        private int processedSave = 0;
+        // buffer for AAD data; if null, meaning update has been called
+        ByteArrayOutputStream aadBuffer = null;
+        int sizeOfAAD = 0;
+
+        // buffer data for crypto operation
+        ByteArrayOutputStream ibuffer = null;
+
+        // Original dst buffer if there was an overlap situation
+        ByteBuffer originalDst = null;
+        byte[] originalOut = null;
+        int originalOutOfs = 0;
+
+        int blockSize;
+
+        GCMEngine(SymmetricCipher blockCipher) {
+            // This can be in-place because subkeyH is zeroed data
+            blockSize = blockCipher.getBlockSize();
+
+            subkeyH = new byte[blockSize];
+            blockCipher.encryptBlock(subkeyH, 0, subkeyH,0);
+            preCounterBlock = getJ0(iv, subkeyH);
+            byte[] j0Plus1 = preCounterBlock.clone();
+            increment32(j0Plus1);
+            gctrPAndC = new GCTR(blockCipher, j0Plus1);
+            ghashAllToS = new GHASH(subkeyH);
+        }
 
         /**
          *
@@ -889,6 +646,56 @@ abstract class GaloisCounterMode extends CipherSpi {
             int outOfs);
         abstract int cryptBlocks(byte[] in, int inOfs, int inLen, ByteBuffer dst);
         abstract int cryptBlocks(ByteBuffer src, ByteBuffer dst);
+
+        /**
+         * Save the current content of this cipher.
+         */
+        void save() {
+            processedSave = processed;
+            sizeOfAADSave = sizeOfAAD;
+            aadBufferSave =
+                ((aadBuffer == null || aadBuffer.size() == 0)?
+                    null : aadBuffer.toByteArray());
+            if (gctrPAndC != null) gctrPAndC.save();
+            if (ghashAllToS != null) ghashAllToS.save();
+            if (ibuffer != null) {
+                ibufferSave = ibuffer.toByteArray();
+            }
+        }
+
+        /**
+         * Restores the content of this cipher to the previous saved one.
+         */
+        void restore() {
+            processed = processedSave;
+            sizeOfAAD = sizeOfAADSave;
+            if (aadBuffer != null) {
+                aadBuffer.reset();
+                if (aadBufferSave != null) {
+                    aadBuffer.write(aadBufferSave, 0, aadBufferSave.length);
+                }
+            }
+            if (gctrPAndC != null) gctrPAndC.restore();
+            if (ghashAllToS != null) ghashAllToS.restore();
+            if (ibuffer != null) {
+                ibuffer.reset();
+                ibuffer.write(ibufferSave, 0, ibufferSave.length);
+            }
+        }
+
+        void initBuffer(int len) {
+            if (ibuffer == null) {
+                ibuffer = new ByteArrayOutputStream(len);
+            }
+        }
+
+        int getBufferedLength() {
+            if (ibuffer == null) {
+                return 0;
+            } else {
+                return ibuffer.size();
+            }
+        }
 
         int processBlocks(byte[] in, int inOfs, int inLen, byte[] out,
             int outOfs) {
@@ -947,9 +754,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             // Write any remaining bytes outside the blockSize into ibuffer.
             int remainder = inLen % blockSize;
             if (remainder > 0) {
-                if (ibuffer == null) {
-                    ibuffer = new ByteArrayOutputStream(inLen % blockSize);
-                }
+                initBuffer(inLen % blockSize);
                 len -= remainder;
                 inLen -= remainder;
                 // remainder offset is based on original buffer length
@@ -1019,9 +824,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             // Encrypt the remaining blocks inside of 'in'
 
             if (src.remaining() > 0) {
-                if (ibuffer == null) {
-                    ibuffer = new ByteArrayOutputStream(src.remaining());
-                }
+                initBuffer(src.remaining());
                 byte[] b = new byte[src.remaining()];
                 src.get(b);
                 // remainder offset is based on original buffer length
@@ -1056,10 +859,233 @@ abstract class GaloisCounterMode extends CipherSpi {
             System.arraycopy(in, inOfs, block, bufLen, inUsed);
             return inUsed;
         }
+
+        /**
+         * Continues a multi-part update of the Additional Authentication
+         * Data (AAD), using a subset of the provided buffer. If this
+         * cipher is operating in either GCM or CCM mode, all AAD must be
+         * supplied before beginning operations on the ciphertext (via the
+         * {@code update} and {@code doFinal} methods).
+         * <p>
+         * NOTE: Given most modes do not accept AAD, default impl for this
+         * method throws IllegalStateException.
+         *
+         * @param src the buffer containing the AAD
+         * @param offset the offset in {@code src} where the AAD input starts
+         * @param len the number of AAD bytes
+         *
+         * @throws IllegalStateException if this cipher is in a wrong state
+         * (e.g., has not been initialized), does not accept AAD, or if
+         * operating in either GCM or CCM mode and one of the {@code update}
+         * methods has already been called for the active
+         * encryption/decryption operation
+         * @throws UnsupportedOperationException if this method
+         * has not been overridden by an implementation
+         *
+         * @since 1.8
+         */
+        void updateAAD(byte[] src, int offset, int len) {
+            if (aadBuffer == null) {
+                if (sizeOfAAD == 0) {
+                    aadBuffer = new ByteArrayOutputStream(len);
+                } else {
+                    // update has already been called
+                    throw new IllegalStateException
+                        ("Update has been called; no more AAD data");
+                }
+            }
+            aadBuffer.write(src, offset, len);
+        }
+
+        // Feed the AAD data to GHASH, pad if necessary
+        void processAAD() {
+            if (aadBuffer != null) {
+                if (aadBuffer.size() > 0) {
+                    byte[] aad = aadBuffer.toByteArray();
+                    sizeOfAAD = aad.length;
+
+                    int lastLen = aad.length % AES_BLOCK_SIZE;
+                    if (lastLen != 0) {
+                        ghashAllToS.update(aad, 0, aad.length - lastLen);
+                        byte[] padded = expandToOneBlock(aad, aad.length - lastLen,
+                            lastLen);
+                        ghashAllToS.update(padded);
+                    } else {
+                        ghashAllToS.update(aad);
+                    }
+                }
+                aadBuffer = null;
+            }
+        }
+
+        // Process en/decryption all the way to the last block.  It takes both
+        // For input it takes the ibuffer which is wrapped in 'buffer' and 'src'
+        // from doFinal.
+        void doLastBlock(ByteBuffer buffer, ByteBuffer src, ByteBuffer dst)
+            throws IllegalBlockSizeException {
+
+            if (buffer != null && buffer.remaining() > 0) {
+                // en/decrypt on how much buffer there is in AES_BLOCK_SIZE
+                processed += gctrPAndC.update(buffer, dst);
+
+                // Process the remainder in the buffer
+                if (buffer.remaining() > 0) {
+                    // Copy the remainder of the buffer into the extra block
+                    byte[] block = new byte[AES_BLOCK_SIZE];
+                    int over = buffer.remaining();
+                    int len = over;  // how much is processed by in the extra block
+                    buffer.get(block, 0, over);
+
+                    // if src is empty, update the final block and wait for later
+                    // to finalize operation
+                    if (src.remaining() > 0) {
+                        // Fill out block with what is in data
+                        if (src.remaining() > AES_BLOCK_SIZE - over) {
+                            src.get(block, over, AES_BLOCK_SIZE - over);
+                            len += AES_BLOCK_SIZE - over;
+                        } else {
+                            // If the remaining in buffer + data does not fill a
+                            // block, complete the ghash operation
+                            int l = src.remaining();
+                            src.get(block, over, l);
+                            len += l;
+                        }
+                    }
+                    //gctrPAndC.update(block, 0, AES_BLOCK_SIZE, dst); // this code writes past the limit
+                    gctrPAndC.update(block, 0, AES_BLOCK_SIZE, block, 0);
+                    dst.put(block, 0, Math.min(block.length, dst.remaining()));
+                    processed += len;
+                }
+            }
+
+            // en/decrypt whatever remains in src.
+            // If src has been consumed, this will be a no-op
+            processed += gctrPAndC.doFinal(src, dst);
+        }
+
+
+        /**
+         * Check for overlap. If the src and dst buffers are using shared data and
+         * if dst will overwrite src data before src can be processed.  If so, make
+         * a copy to put the dst data in.
+         */
+        ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
+            if (src.isDirect() && dst.isDirect()) {
+                DirectBuffer dsrc = (DirectBuffer) src;
+                DirectBuffer ddst = (DirectBuffer) dst;
+
+                // Get the current memory address for the given ByteBuffers
+                long srcaddr = dsrc.address();
+                long dstaddr = ddst.address();
+
+                // Find the lowest attachment that is the base memory address of the
+                // shared memory for the src object
+                while (dsrc.attachment() != null) {
+                    srcaddr = ((DirectBuffer) dsrc.attachment()).address();
+                    dsrc = (DirectBuffer) dsrc.attachment();
+                }
+
+                // Find the lowest attachment that is the base memory address of the
+                // shared memory for the dst object
+                while (ddst.attachment() != null) {
+                    dstaddr = ((DirectBuffer) ddst.attachment()).address();
+                    ddst = (DirectBuffer) ddst.attachment();
+                }
+
+                // If the base addresses are not the same, there is no overlap
+                if (srcaddr != dstaddr) {
+                    return dst;
+                }
+                // At this point we know these objects share the same memory.
+                // This checks the starting position of the src and dst address for
+                // overlap.
+                // It uses the base address minus the passed object's address to get
+                // the offset from the base address, then add the position() from
+                // the passed object.  That gives up the true offset from the base
+                // address.  As long as the src side is >= the dst side, we are not
+                // in overlap.
+                if (((DirectBuffer) src).address() - srcaddr + src.position() >=
+                    ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
+                    return dst;
+                }
+
+            } else if (!src.isDirect() && !dst.isDirect()) {
+                if (!src.isReadOnly()) {
+                    // If using the heap, check underlying byte[] address.
+                    if (!src.array().equals(dst.array()) ) {
+                        return dst;
+                    }
+
+                    // Position plus arrayOffset() will give us the true offset from
+                    // the underlying byte[] address.
+                    if (src.position() + src.arrayOffset() >=
+                        dst.position() + dst.arrayOffset()) {
+                        return dst;
+                    }
+                }
+            } else {
+                // buffer types aren't the same
+                return dst;
+            }
+
+            // Create a copy
+            ByteBuffer tmp = dst.duplicate();
+            // We can use a heap buffer for internal use, save on alloc cost
+            ByteBuffer bb = ByteBuffer.allocate(dst.remaining());
+            tmp.limit(dst.limit());
+            tmp.position(dst.position());
+            bb.put(tmp);
+            bb.flip();
+            originalDst = dst;
+            return bb;
+        }
+
+        /**
+         * Overlap detection for data using byte array.
+         * If an intermediate array is needed, the whole original out array length
+         * is allocated because it's simpler than keep the same offset and hope
+         * the expected output is
+         */
+        byte[] overlapDetection(byte[] in, int inOfs, byte[] out, int outOfs) {
+            if (in == out && inOfs < outOfs) {
+                originalOut = out;
+                originalOutOfs = outOfs;
+                return new byte[out.length];
+            }
+            return out;
+        }
+
+        /**
+         * If originalDst exists, dst is an internal dst buffer, then copy the data
+         * into the original dst buffer
+         */
+        void restoreDst(ByteBuffer dst) {
+            if (originalDst == null) {
+                return;
+            }
+
+            dst.flip();
+            originalDst.put(dst);
+        }
+
+        void restoreOut(byte[] out, int len) {
+            if (originalOut == null) {
+                return;
+            }
+
+            System.arraycopy(out, originalOutOfs, originalOut, originalOutOfs, len);
+
+        }
+
     }
 
     class GCMEncrypt extends GCMEngine {
 
+        GCMEncrypt(SymmetricCipher blockCipher) {
+            super(blockCipher);
+        }
+
+        @Override
         public int getOutputSize(int inLen, boolean isFinal) {
             int len = getBufferedLength();
             if (isFinal) {
@@ -1072,7 +1098,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
         @Override
         byte[] doUpdate(byte[] in, int inOff, int inLen) {
-            byte[] output = new byte[engine.getOutputSize(inLen, false)];
+            byte[] output = new byte[getOutputSize(inLen, false)];
             try {
                 doUpdate(in, inOff, inLen, output, 0);
             } catch (ShortBufferException e) {
@@ -1101,9 +1127,10 @@ abstract class GaloisCounterMode extends CipherSpi {
             int outOfs) throws ShortBufferException {
             checkDataLength(inLen, getBufferedLength());
             ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
+            ArrayUtil.nullAndBoundsCheck(out, outOfs, out.length - outOfs);
             processAAD();
 
-            ArrayUtil.nullAndBoundsCheck(out, outOfs, inLen);
+            //ArrayUtil.nullAndBoundsCheck(out, outOfs, inLen);
             return processBlocks(in, inOfs, inLen, out, outOfs);
         }
 
@@ -1168,22 +1195,20 @@ abstract class GaloisCounterMode extends CipherSpi {
         @Override
         public int doFinal(byte[] in, int inOfs, int inLen, byte[] out,
             int outOfs) throws IllegalBlockSizeException, ShortBufferException {
-            checkDataLength(inLen, getBufferedLength(), tagLenBytes);
-
-//            ByteBuffer src = ByteBuffer.wrap(in, inOfs, len);
-//            ByteBuffer dst = ByteBuffer.wrap(out, outOfs, out.length - outOfs);
-//            return doFinal(src, dst);
-
             try {
-                ArrayUtil.nullAndBoundsCheck(out, outOfs,
-                    (inLen + tagLenBytes));
+                ArrayUtil.nullAndBoundsCheck(out, outOfs, getOutputSize(inLen, true));
             } catch (ArrayIndexOutOfBoundsException aiobe) {
-                throw new ShortBufferException("Output buffer too small");
+                throw new ShortBufferException("Output buffer invalid");
             }
+
+            int bufLen = getBufferedLength();
+            checkDataLength(inLen, bufLen, tagLenBytes);
+            processAAD();
+            out = overlapDetection(in, inOfs, out, outOfs);
+
             int resultLen = inLen;
             byte[] block;
-            if (ibuffer != null) {
-                int bufLen = ibuffer.size();
+            if (bufLen > 0) {
                 int r, bufOfs = 0;
                 byte[] buffer = ibuffer.toByteArray();
 
@@ -1199,7 +1224,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                     bufOfs += r;
                 }
                 // Make a block if the remaining ibuffer and 'in' can make one.
-                if (bufLen > 0 && bufLen + inLen >= blockSize) {
+                if (bufLen > 0 && inLen > 0 && bufLen + inLen >= blockSize) {
                     block = new byte[blockSize];
                     r = mergeBlock(buffer, bufOfs, in, inOfs, inLen, block);
                     inOfs += r;
@@ -1220,10 +1245,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 }
             }
 
-            processAAD();
             if (inLen > 0) {
-                ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
-
                 doLastBlock(in, inOfs, inLen, out, outOfs, true);
             }
 
@@ -1235,8 +1257,8 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             // copy the tag to the end of the buffer
             System.arraycopy(block, 0, out, (outOfs + inLen), tagLenBytes);
+            restoreOut(out, resultLen + tagLenBytes);
             return (resultLen + tagLenBytes);
-
         }
 
         @Override
@@ -1249,7 +1271,8 @@ abstract class GaloisCounterMode extends CipherSpi {
             checkDataLength(len, tagLenBytes);
             dst.mark();
             if (dst.remaining() < len + tagLenBytes) {
-                throw new ShortBufferException("Output buffer too small");
+                throw new ShortBufferException("Output buffer too small, must" +
+                    "be at least " + (len + tagLenBytes) + " bytes long");
             }
 
             processAAD();
@@ -1266,49 +1289,78 @@ abstract class GaloisCounterMode extends CipherSpi {
             new GCTR(blockCipher, preCounterBlock).doFinal(block, 0, tagLenBytes, block, 0);
             dst.put(block, 0, tagLenBytes);
             restoreDst(dst);
-
             return (len + tagLenBytes);
         }
-    }
 
-    interface cryptoOp {
-        int cryptoCall(byte[] in, int inOfs, int inLen, byte[] out, int outOfs);
-    }
+        // Utility to process the last block; used by encryptFinal and decryptFinal
+        void doLastBlock(byte[] in, int inOfs, int len, byte[] out, int outOfs,
+            boolean isEncrypt) throws IllegalBlockSizeException {
+            byte[] ct;
+            int ctOfs;
+            int ilen = len;  // internal length
 
-    class GCTROp implements cryptoOp {
+            if (isEncrypt) {
+                ct = out;
+                ctOfs = outOfs;
+            } else {
+                ct = in;
+                ctOfs = inOfs;
+            }
 
-        @Override
-        public int cryptoCall(byte[] in, int inOfs, int inLen, byte[] out,
-            int outOfs) {
-            return gctrPAndC.update(in, inOfs, inLen, out, outOfs);
+            // Divide up larger data sizes to trigger CTR & GHASH intrinsic quicker
+            if (len > TRIGGERLEN) {
+                int i = 0;
+                int tlen;  // incremental lengths
+                final int plen = AES_BLOCK_SIZE * 6;
+                // arbitrary formula to aid intrinsic without reaching buffer end
+                final int count = len / 1024;
+
+                while (count > i) {
+                    tlen = gctrPAndC.update(in, inOfs, plen, out, outOfs);
+                    ghashAllToS.update(ct, ctOfs, tlen);
+                    inOfs += tlen;
+                    outOfs += tlen;
+                    ctOfs += tlen;
+                    i++;
+                }
+                ilen -= count * plen;
+                processed += count * plen;
+            }
+/*
+        int bufLen = getBufferedLength();
+        byte[] block;
+        if (bufLen > 0) {
+            block = new byte[blockSize];
+            System.arraycopy(ibuffer.toByteArray(), 0, block,
+                0, bufLen);
+            System.arraycopy(in, inOfs, block, bufLen, len);
+            ilen += bufLen;
+            in = block;
         }
-    }
 
-    class GHASHOp implements cryptoOp {
+ */
 
-        @Override
-        public int cryptoCall(byte[] in, int inOfs, int inLen, byte[] out,
-            int outOfs) {
-            ghashAllToS.update(in, inOfs, inLen);
-            return 0;
+            gctrPAndC.doFinal(in, inOfs, ilen, out, outOfs);
+            processed += ilen;
+
+            int lastLen = ilen % AES_BLOCK_SIZE;
+            if (lastLen != 0) {
+                ghashAllToS.update(ct, ctOfs, ilen - lastLen);
+                ghashAllToS.update(
+                    expandToOneBlock(ct, (ctOfs + ilen - lastLen), lastLen));
+            } else {
+                ghashAllToS.update(ct, ctOfs, ilen);
+            }
         }
     }
 
     class GCMDecrypt extends GCMEngine {
 
-        class GCTRDecrypt extends GCMDecrypt {
-
-            @Override
-            int cryptBlocks(byte[] in, int inOfs, int inLen, byte[] out,
-                int outLen) {
-                return super.cryptBlocks(in, inOfs, inLen, out, outLen);
-            }
+        GCMDecrypt(SymmetricCipher blockCipher) {
+            super(blockCipher);
         }
 
-        GCMDecrypt() {
-            ibuffer = new ByteArrayOutputStream();
-        }
-
+        @Override
         public int getOutputSize(int inLen, boolean isFinal) {
             if (!isFinal) {
                 return 0;
@@ -1355,6 +1407,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // spec mentioned that only return recovered data after tag
                 // is successfully verified
                 ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
+                initBuffer(inLen);
                 ibuffer.write(in, inOfs, inLen);
             }
             return 0;
@@ -1375,6 +1428,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 } else {
                     byte[] b = new byte[src.remaining()];
                     src.get(b);
+                    initBuffer(b.length);
                     try {
                         ibuffer.write(b);
                     } catch (IOException e) {
@@ -1423,7 +1477,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // tagOfs will be negative
                 tag = new byte[tagLenBytes];
                 byte[] buffer = ibuffer.toByteArray();
-                tagOfs = mergeBlock(buffer, buffer.length - (blockSize - inLen), in, inOfs, inLen,
+                tagOfs = mergeBlock(buffer, buffer.length - (tagLenBytes - inLen), in, inOfs, inLen,
                     tag) - tagLenBytes;
             }
         }
@@ -1483,9 +1537,9 @@ abstract class GaloisCounterMode extends CipherSpi {
                 len += resultLen;
                 // Preserve resultLen, as it becomes the ibuffer offset, if
                 // needed, in the next op
+                bufRemainder -= resultLen;
             }
 
-            bufRemainder -= resultLen;
             // merge the remaining ibuffer with the 'in'
             if (bufRemainder > 0) {
                 block = new byte[blockSize];
@@ -1588,20 +1642,16 @@ abstract class GaloisCounterMode extends CipherSpi {
                 throw new AEADBadTagException("Input too short - need tag");
             }
 
-            // do this check here can also catch the potential integer overflow
-            // scenario for the subsequent output buffer capacity check.
-            checkDataLength(len - tagLenBytes);
-
             try {
                 ArrayUtil.nullAndBoundsCheck(out, outOfs, len - tagLenBytes);
             } catch (ArrayIndexOutOfBoundsException aiobe) {
-                throw new ShortBufferException("Output buffer too small");
+                throw new ShortBufferException("Output buffer invalid");
             }
-
-            ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
+            checkDataLength(len - tagLenBytes);
+            processAAD();
+            out = overlapDetection(in, inOfs, out, outOfs);
 
             findTag(in, inOfs, inLen);
-            processAAD();
             byte[] block = getLengthBlock(sizeOfAAD,
                 processGHASH(in, inOfs, inLen));
             ghashAllToS.update(block);
@@ -1618,7 +1668,9 @@ abstract class GaloisCounterMode extends CipherSpi {
                 throw new AEADBadTagException("Tag mismatch!");
             }
 
-            return processGCTR(in, inOfs, inLen, out, outOfs);
+            len = processGCTR(in, inOfs, inLen, out, outOfs);
+            restoreOut(out, len);
+            return len;
         }
 
         @Override
@@ -1668,7 +1720,8 @@ abstract class GaloisCounterMode extends CipherSpi {
             checkDataLength(len);
 
             if (len > dst.remaining()) {
-                throw new ShortBufferException("Output buffer too small");
+                throw new ShortBufferException("Output buffer too small, must" +
+                    "be at least " + len + " bytes long");
             }
 
             processAAD();
@@ -1735,6 +1788,8 @@ abstract class GaloisCounterMode extends CipherSpi {
             // Decrypt the all the input data and put it into dst
             doLastBlock(buffer, ct, dst);
             restoreDst(dst);
+            src.position(src.limit());
+            engine = null;
             // 'processed' from the gctr decryption operation, not ghash
             return processed;
         }

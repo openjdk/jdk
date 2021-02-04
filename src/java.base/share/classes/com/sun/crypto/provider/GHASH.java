@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015 Red Hat, Inc.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +24,15 @@
  */
 /*
  * (C) Copyright IBM Corp. 2013
+ * Copyright (c) 2015 Red Hat, Inc.
  */
 
 package com.sun.crypto.provider;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.security.ProviderException;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -45,25 +48,15 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @since 1.8
  */
 final class GHASH {
-
-    private static long getLong(byte[] buffer, int offset) {
-        long result = 0;
-        int end = offset + 8;
-        for (int i = offset; i < end; ++i) {
-            result = (result << 8) + (buffer[i] & 0xFF);
-        }
-        return result;
-    }
-
-    private static void putLong(byte[] buffer, int offset, long value) {
-        int end = offset + 8;
-        for (int i = end - 1; i >= offset; --i) {
-            buffer[i] = (byte) value;
-            value >>= 8;
-        }
-    }
-
     private static final int AES_BLOCK_SIZE = 16;
+    // Handle for converting byte[] <-> long
+    private static final VarHandle asLongView =
+        MethodHandles.byteArrayViewVarHandle(long[].class,
+            ByteOrder.BIG_ENDIAN);
+
+    // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
+    private static final int MAX_LEN = 1024;
+
 
     // Multiplies state[0], state[1] by subkeyH[0], subkeyH[1].
     private static void blockMult(long[] st, long[] subH) {
@@ -151,8 +144,8 @@ final class GHASH {
         }
         state = new long[2];
         subkeyHtbl = new long[2*9];
-        subkeyHtbl[0] = getLong(subkeyH, 0);
-        subkeyHtbl[1] = getLong(subkeyH, 8);
+        subkeyHtbl[0] = (long)asLongView.get(subkeyH, 0);
+        subkeyHtbl[1] = (long)asLongView.get(subkeyH, 8);
     }
 
     /**
@@ -182,8 +175,8 @@ final class GHASH {
     }
 
     private static void processBlock(byte[] data, int ofs, long[] st, long[] subH) {
-        st[0] ^= getLong(data, ofs);
-        st[1] ^= getLong(data, ofs + 8);
+        st[0] ^= (long)asLongView.get(data, ofs);
+        st[1] ^= (long)asLongView.get(data, ofs + 8);
         blockMult(st, subH);
     }
 
@@ -201,11 +194,17 @@ final class GHASH {
         return len;
     }
 
-    // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
-    private static final int MAX_LEN = 1024;
-
     // Will process as many blocks it can and will leave the remaining.
     int update(ByteBuffer src, int inLen) {
+        // If the bytebuffer is backed by arrays, use that instead of
+        // allocating and copying for direct bytebuffers
+        if (!src.isDirect()) {
+            int len = update(src.array(), src.arrayOffset() + src.position(),
+                inLen);
+            src.position(src.position() + len);
+            return len;
+        }
+
         inLen -= (inLen % AES_BLOCK_SIZE);
         if (inLen == 0) {
             return 0;
@@ -224,6 +223,15 @@ final class GHASH {
     }
 
     void doLastBlock(ByteBuffer src, int inLen) {
+        // If the bytebuffer is backed by arrays, use that instead of
+        // allocating and copying for direct bytebuffers
+        if (!src.isDirect()) {
+            doLastBlock(src.array(), src.arrayOffset() + src.position(),
+                inLen);
+            src.position(src.position() + inLen);
+            return;
+        }
+
         int processed = update(src, inLen);
         if (inLen == processed) {
             return;
@@ -288,8 +296,8 @@ final class GHASH {
 
     byte[] digest() {
         byte[] result = new byte[AES_BLOCK_SIZE];
-        putLong(result, 0, state[0]);
-        putLong(result, 8, state[1]);
+        asLongView.set(result, 0, state[0]);
+        asLongView.set(result, 8, state[1]);
         reset();
         return result;
     }

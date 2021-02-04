@@ -31,7 +31,8 @@ package com.sun.crypto.provider;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import javax.crypto.IllegalBlockSizeException;
+import java.util.Arrays;
+
 import static com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE;
 
 /**
@@ -56,6 +57,7 @@ final class GCTR extends CounterMode {
 
     // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
     private static final int MAX_LEN = 1024;
+    byte[] block;
 
     GCTR(SymmetricCipher cipher, byte[] initialCounterBlk) {
         super(cipher);
@@ -83,6 +85,14 @@ final class GCTR extends CounterMode {
         return blocksLeft;
     }
 
+    void checkBlock() {
+        if (block == null) {
+            block = new byte[blockSize];
+        } else {
+            Arrays.fill(block, (byte)0);
+        }
+    }
+
     // input must be multiples of 128-bit blocks when calling update
     int update(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
         if (inLen == 0) {
@@ -104,13 +114,13 @@ final class GCTR extends CounterMode {
         if (numOfCompleteBlocks >= blocksLeft) {
             // Counter Mode encryption cannot be used because counter will
             // roll over incorrectly. Use GCM-specific code instead.
-            byte[] encryptedCntr = new byte[AES_BLOCK_SIZE];
+            checkBlock();
             for (int i = 0; i < numOfCompleteBlocks; i++) {
-                embeddedCipher.encryptBlock(counter, 0, encryptedCntr, 0);
+                embeddedCipher.encryptBlock(counter, 0, block, 0);
                 for (int n = 0; n < AES_BLOCK_SIZE; n++) {
                     int index = (i * AES_BLOCK_SIZE + n);
                     out[outOfs + index] =
-                        (byte) ((in[inOfs + index] ^ encryptedCntr[n]));
+                        (byte) ((in[inOfs + index] ^ block[n]));
                 }
                 GaloisCounterMode.increment32(counter);
             }
@@ -146,12 +156,12 @@ final class GCTR extends CounterMode {
         if (numOfCompleteBlocks >= blocksLeft) {
             // Counter Mode encryption cannot be used because counter will
             // roll over incorrectly. Use GCM-specific code instead.
-            byte[] encryptedCntr = new byte[AES_BLOCK_SIZE];
+            checkBlock();
             for (int i = 0; i < numOfCompleteBlocks; i++) {
-                embeddedCipher.encryptBlock(counter, 0, encryptedCntr, 0);
+                embeddedCipher.encryptBlock(counter, 0, block, 0);
                 for (int n = 0; n < AES_BLOCK_SIZE; n++) {
                     int index = (i * AES_BLOCK_SIZE + n);
-                    dst.put((byte) ((in[inOfs + index] ^ encryptedCntr[n])));
+                    dst.put((byte) ((in[inOfs + index] ^ block[n])));
                 }
                 GaloisCounterMode.increment32(counter);
             }
@@ -183,7 +193,8 @@ final class GCTR extends CounterMode {
 
         // If the bytebuffer is backed by arrays, use that instead of
         // allocating and copying for direct bytebuffers
-        if (!src.isDirect() && !dst.isDirect()) {
+        if (!src.isDirect() && !dst.isDirect() &&
+            !src.isReadOnly() && !dst.isReadOnly()) {
             len = update(src.array(), src.arrayOffset() + src.position(),
                 src.remaining() - (src.remaining() % blockSize),
                 dst.array(), dst.arrayOffset() + dst.position());
@@ -198,11 +209,11 @@ final class GCTR extends CounterMode {
         if (numOfCompleteBlocks >= blocksLeft) {
             // Counter Mode encryption cannot be used because counter will
             // roll over incorrectly. Use GCM-specific code instead.
-            byte[] encryptedCntr = new byte[AES_BLOCK_SIZE];
             for (int i = 0; i < numOfCompleteBlocks; i++) {
-                embeddedCipher.encryptBlock(counter, 0, encryptedCntr, 0);
+                checkBlock();
+                embeddedCipher.encryptBlock(counter, 0, block, 0);
                 for (int n = 0; n < AES_BLOCK_SIZE; n++) {
-                    dst.put((byte) (src.get() ^ encryptedCntr[n]));
+                    dst.put((byte) (src.get() ^ block[n]));
                 }
                 GaloisCounterMode.increment32(counter);
             }
@@ -236,12 +247,11 @@ final class GCTR extends CounterMode {
         update(in, inOfs, completeBlkLen, out, outOfs);
         if (lastBlockSize != 0) {
             // do the last partial block
-            byte[] encryptedCntr = new byte[AES_BLOCK_SIZE];
-            embeddedCipher.encryptBlock(counter, 0, encryptedCntr, 0);
+            checkBlock();
+            embeddedCipher.encryptBlock(counter, 0, block, 0);
             for (int n = 0; n < lastBlockSize; n++) {
                 out[outOfs + completeBlkLen + n] =
-                    (byte) ((in[inOfs + completeBlkLen + n] ^
-                        encryptedCntr[n]));
+                    (byte) ((in[inOfs + completeBlkLen + n] ^ block[n]));
             }
         }
         return inLen;
@@ -249,16 +259,28 @@ final class GCTR extends CounterMode {
 
     // src can be arbitrary size when calling doFinal
     int doFinal(ByteBuffer src, ByteBuffer dst) {
+        // If the bytebuffer is backed by arrays, use that instead of
+        // allocating and copying for direct bytebuffers
+        if (!src.isDirect() && !dst.isDirect() &&
+            !src.isReadOnly() && !dst.isReadOnly()) {
+            int len = doFinal(src.array(), src.arrayOffset() + src.position(),
+                src.remaining(), dst.array(),
+                dst.arrayOffset() + dst.position());
+            src.position(src.position() + len);
+            dst.position(dst.position() + len);
+            return len;
+        }
+
         int len = src.remaining();
         int lastBlockSize = len % AES_BLOCK_SIZE;
         try {
             update(src, dst);
             if (lastBlockSize != 0) {
+                checkBlock();
                 // do the last partial block
-                byte[] encryptedCntr = new byte[AES_BLOCK_SIZE];
-                embeddedCipher.encryptBlock(counter, 0, encryptedCntr, 0);
+                embeddedCipher.encryptBlock(counter, 0, block, 0);
                 for (int n = 0; n < lastBlockSize; n++) {
-                    dst.put((byte) (src.get() ^ encryptedCntr[n]));
+                    dst.put((byte) (src.get() ^ block[n]));
                 }
             }
         } finally {

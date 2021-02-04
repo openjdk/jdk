@@ -41,6 +41,7 @@ import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 
 public class GCMBufferTest implements Cloneable {
@@ -65,6 +66,7 @@ public class GCMBufferTest implements Cloneable {
     boolean theoreticalCheck;
     List<Data> dataSet;
     int inOfs = 0, outOfs = 0;
+    static HexFormat hex = HexFormat.of();
 
     static class Data {
         int id;
@@ -114,6 +116,13 @@ public class GCMBufferTest implements Cloneable {
             ct = new byte[ptlen];
             System.arraycopy(tct, 0, ct, 0, ct.length);
             System.arraycopy(tct, ct.length, tag, 0, tag.length);
+        }
+
+        private static final byte[] HexToBytes(String hexVal) {
+            if (hexVal == null) {
+                return new byte[0];
+            }
+            return hex.parseHex(hexVal);
         }
 
     }
@@ -176,7 +185,7 @@ public class GCMBufferTest implements Cloneable {
                 return this;
             }
         }
-        throw new Exception("Unaeble to find dataSet id = " + id);
+        throw new Exception("Unable to find dataSet id = " + id);
     }
 
     /**
@@ -484,12 +493,10 @@ public class GCMBufferTest implements Cloneable {
                 if (ctresult.length != expectedOut.length ||
                     Arrays.compare(ctresult, expectedOut) != 0) {
                     String s = "Ciphertext mismatch (" + v.name() +
-                        "):\nresult   (len=" + ctresult.length + "):" +
-                        String.format("%0" + (ctresult.length << 1) + "x",
-                            new BigInteger(1, ctresult)) +
-                        "\nexpected (len=" + output.length + "):" +
-                    String.format("%0" + (output.length << 1) + "x",
-                        new BigInteger(1, output));
+                        "):\nresult   (len=" + ctresult.length + "): " +
+                        hex.formatHex(ctresult) +
+                        "\nexpected (len=" + output.length + "): " +
+                        hex.formatHex(output);
                     System.err.println(s);
                     throw new Exception(s);
 
@@ -605,10 +612,9 @@ public class GCMBufferTest implements Cloneable {
                         output.length) != 0) {
                     String s = "Ciphertext mismatch (" + v.name() +
                         "):\nresult (len=" + len + "):\n" +
-                        byteToHex(out) +
+                        hex.formatHex(out) +
                         "\nexpected (len=" + output.length + "):\n" +
-                        String.format("%0" + (output.length << 1) + "x",
-                            new BigInteger(1, output));
+                        hex.formatHex(output);
                     System.err.println(s);
                     throw new Exception(s);
                 }
@@ -627,7 +633,6 @@ public class GCMBufferTest implements Cloneable {
 
         initTest();
 
-/*
         // Test single byte array
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
         offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)));
@@ -704,7 +709,6 @@ public class GCMBufferTest implements Cloneable {
             dataSegments(new int[] { 5000, 1000, GCMBufferTest.REMAINDER });
         t.clone().test();
         offsetTests(t.clone());
-*/
 
         // Test update-update-doFinal with byte arrays, incrementing through
         // every data size combination for the Data set 0
@@ -717,26 +721,6 @@ public class GCMBufferTest implements Cloneable {
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
             incrementalSegments().dataSet(0).test();
 
-    }
-
-    private static byte[] HexToBytes(String hexVal) {
-        if (hexVal == null) {
-            return new byte[0];
-        }
-        byte[] result = new byte[hexVal.length()/2];
-        for (int i = 0; i < result.length; i++) {
-            String byteVal = hexVal.substring(2*i, 2*i +2);
-            result[i] = Integer.valueOf(byteVal, 16).byteValue();
-        }
-        return result;
-    }
-
-    private static String byteToHex(byte[] barray) {
-        StringBuilder s = new StringBuilder();
-        for (byte b : barray) {
-            s.append(String.format("%02x", b));
-        }
-        return s.toString();
     }
 
     // Test data

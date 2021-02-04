@@ -164,7 +164,7 @@ public final class SunJCE extends Provider {
             "|CFB8|CFB16|CFB24|CFB32|CFB40|CFB48|CFB56|CFB64" +
             "|OFB8|OFB16|OFB24|OFB32|OFB40|OFB48|OFB56|OFB64";
         final String BLOCK_MODES128 = BLOCK_MODES +
-            "|GCM|CFB72|CFB80|CFB88|CFB96|CFB104|CFB112|CFB120|CFB128" +
+            "|CFB72|CFB80|CFB88|CFB96|CFB104|CFB112|CFB120|CFB128" +
             "|OFB72|OFB80|OFB88|OFB96|OFB104|OFB112|OFB120|OFB128";
         final String BLOCK_PADS = "NOPADDING|PKCS5PADDING|ISO10126PADDING";
 
@@ -234,7 +234,9 @@ public final class SunJCE extends Provider {
         attrs.put("SupportedModes", "GCM");
         attrs.put("SupportedKeyFormats", "RAW");
 
-        ps("Cipher", "AES/GCM",
+//        ps("Cipher", "GCM",
+//            "com.sun.crypto.provider.GaloisCounterMode$AESGCM", null, attrs);
+        ps("Cipher", "AES/GCM/NoPadding",
             "com.sun.crypto.provider.GaloisCounterMode$AESGCM", null, attrs);
         psA("Cipher", "AES_128/GCM/NoPadding",
             "com.sun.crypto.provider.GaloisCounterMode$AES128",
@@ -246,23 +248,6 @@ public final class SunJCE extends Provider {
             "com.sun.crypto.provider.GaloisCounterMode$AES256",
             attrs);
 
-        /*
-        attrs.clear();
-        attrs.put("SupportedModes", "GCM");
-        attrs.put("SupportedPaddings", "NOPADDING");
-        attrs.put("SupportedKeyFormats", "RAW");
-        ps("Cipher", "GCM", "com.sun.crypto.provider.GaloisCounterMode",
-            null, attrs);
-        psA("Cipher", "AES_128/GCM/NoPadding",
-            "com.sun.crypto.provider.GaloisCounterMode$AES128",
-            attrs);
-        psA("Cipher", "AES_192/GCM/NoPadding",
-            "com.sun.crypto.provider.GaloisCounterMode$AES192",
-            attrs);
-        psA("Cipher", "AES_256/GCM/NoPadding",
-            "com.sun.crypto.provider.GaloisCounterMode$AES256",
-            attrs);
-*/
         attrs.clear();
         attrs.put("SupportedModes", "CBC");
         attrs.put("SupportedPaddings", "NOPADDING");
