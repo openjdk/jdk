@@ -438,10 +438,10 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.DHParameters", null);
 
         ps("AlgorithmParameters", "DES",
-                "com.sun.crypto.provider.IvParameters$Eight");
+                "com.sun.crypto.provider.DESParameters");
 
         psA("AlgorithmParameters", "DESede",
-                "com.sun.crypto.provider.IvParameters$Eight", null);
+                "com.sun.crypto.provider.DESedeParameters", null);
 
         psA("AlgorithmParameters", "PBEWithMD5AndDES",
                 "com.sun.crypto.provider.PBEParameters",
@@ -505,10 +505,10 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.PBES2Parameters$HmacSHA512AndAES_256");
 
         ps("AlgorithmParameters", "Blowfish",
-                "com.sun.crypto.provider.IvParameters$Eight");
+                "com.sun.crypto.provider.BlowfishParameters");
 
         psA("AlgorithmParameters", "AES",
-                "com.sun.crypto.provider.IvParameters$Sixteen", null);
+                "com.sun.crypto.provider.AESParameters", null);
 
         ps("AlgorithmParameters", "GCM",
                 "com.sun.crypto.provider.GCMParameters");
@@ -523,10 +523,10 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.ChaCha20Poly1305Parameters", null);
 
         ps("AlgorithmParameters", "KW",
-                "com.sun.crypto.provider.IvParameters$Eight");
+                "com.sun.crypto.provider.KWParameters");
 
         ps("AlgorithmParameters", "KWP",
-                "com.sun.crypto.provider.IvParameters$Four");
+                "com.sun.crypto.provider.KWPParameters");
 
         /*
          * Key factories
