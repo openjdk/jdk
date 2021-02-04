@@ -859,7 +859,7 @@ static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
           if (DumpSharedSpaces && HeapShared::is_archived_object(mirror())) {
             // Archive the String field and update the pointer.
             oop s = mirror()->obj_field(fd->offset());
-            oop archived_s = StringTable::create_archived_string(s, CHECK);
+            oop archived_s = StringTable::create_archived_string(s);
             mirror()->obj_field_put(fd->offset(), archived_s);
           } else {
             oop string = fd->string_initial_value(CHECK);
@@ -1121,7 +1121,7 @@ class ResetMirrorField: public FieldClosure {
   }
 };
 
-void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
+void java_lang_Class::archive_basic_type_mirrors() {
   assert(HeapShared::is_heap_object_archiving_allowed(),
          "HeapShared::is_heap_object_archiving_allowed() must be true");
 
@@ -1130,7 +1130,7 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
     oop m = Universe::_mirrors[t].resolve();
     if (m != NULL) {
       // Update the field at _array_klass_offset to point to the relocated array klass.
-      oop archived_m = HeapShared::archive_heap_object(m, THREAD);
+      oop archived_m = HeapShared::archive_heap_object(m);
       assert(archived_m != NULL, "sanity");
       Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
       assert(ak != NULL || t == T_VOID, "should not be NULL");
@@ -1141,7 +1141,7 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
 
       // Clear the fields. Just to be safe
       Klass *k = m->klass();
-      Handle archived_mirror_h(THREAD, archived_m);
+      Handle archived_mirror_h(Thread::current(), archived_m);
       ResetMirrorField reset(archived_mirror_h);
       InstanceKlass::cast(k)->do_nonstatic_fields(&reset);
 
@@ -1161,7 +1161,7 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
 // archived mirror is restored. If archived java heap data cannot
 // be used at runtime, new mirror object is created for the shared
 // class. The _has_archived_raw_mirror is cleared also during the process.
-oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
+oop java_lang_Class::archive_mirror(Klass* k) {
   assert(HeapShared::is_heap_object_archiving_allowed(),
          "HeapShared::is_heap_object_archiving_allowed() must be true");
 
@@ -1190,12 +1190,12 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
   }
 
   // Now start archiving the mirror object
-  oop archived_mirror = HeapShared::archive_heap_object(mirror, THREAD);
+  oop archived_mirror = HeapShared::archive_heap_object(mirror);
   if (archived_mirror == NULL) {
     return NULL;
   }
 
-  archived_mirror = process_archived_mirror(k, mirror, archived_mirror, THREAD);
+  archived_mirror = process_archived_mirror(k, mirror, archived_mirror);
   if (archived_mirror == NULL) {
     return NULL;
   }
@@ -1212,12 +1212,11 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
 
 // The process is based on create_mirror().
 oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
-                                             oop archived_mirror,
-                                             Thread *THREAD) {
+                                             oop archived_mirror) {
   // Clear nonstatic fields in archived mirror. Some of the fields will be set
   // to archived metadata and objects below.
   Klass *c = archived_mirror->klass();
-  Handle archived_mirror_h(THREAD, archived_mirror);
+  Handle archived_mirror_h(Thread::current(), archived_mirror);
   ResetMirrorField reset(archived_mirror_h);
   InstanceKlass::cast(c)->do_nonstatic_fields(&reset);
 
@@ -1232,7 +1231,7 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
       assert(k->is_objArray_klass(), "Must be");
       Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
       assert(element_klass != NULL, "Must have an element klass");
-      archived_comp_mirror = archive_mirror(element_klass, THREAD);
+      archived_comp_mirror = archive_mirror(element_klass);
       if (archived_comp_mirror == NULL) {
         return NULL;
       }
