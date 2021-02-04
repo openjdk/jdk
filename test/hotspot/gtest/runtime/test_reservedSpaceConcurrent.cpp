@@ -26,20 +26,32 @@
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
+#define TEST_THREAD_COUNT 10 // TODO: update to original value of 30
+#define TEST_DURATION 15000 // milliSeconds
+
 
 class UnitTestThread : public JavaTestThread {
   public:
   UnitTestThread(Semaphore* post) : JavaTestThread(post) {}
   virtual ~UnitTestThread() {}
+
+  void run_unit_test() {
+    os::naked_short_sleep(100);
+  }
+
   void main_run() {
-    for (int i = 0; i < 10; i++) {
-      // TODO: invoke the actual unit test code here
-      // os::snprintf(variable_name, LENGTH, "some_variable %d", i);
+    long stopTime = os::javaTimeMillis() + TEST_DURATION;
+
+    int iteration = 0;
+    tty->print_cr("Start: TestIteration: %d ", iteration);
+    while (os::javaTimeMillis() < stopTime) {
+      tty->print_cr("TestIteration: %d ", iteration);
+      run_unit_test();
+      iteration++;
     }
   }
 };
 
-#define TEST_THREAD_COUNT 5
 
 class DriverThread : public JavaTestThread {
 public:
@@ -54,6 +66,9 @@ public:
     UnitTestThread* st[TEST_THREAD_COUNT];
     for (int i = 0; i < TEST_THREAD_COUNT; i++) {
       st[i] = new UnitTestThread(&done);
+    }
+
+    for (int i = 0; i < TEST_THREAD_COUNT; i++) {
       st[i]->doit();
     }
 
