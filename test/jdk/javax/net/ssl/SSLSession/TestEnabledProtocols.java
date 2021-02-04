@@ -141,7 +141,7 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             }
         } catch (SSLException ssle) {
             // The server side may have closed the socket.
-            System.out.println("Server SSLException:");
+            System.out.println("Client SSLException:");
             ssle.printStackTrace(System.out);
         } catch (Exception e) {
             System.out.println("Client got UNEXPECTED Exception:");
