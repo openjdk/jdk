@@ -45,6 +45,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"

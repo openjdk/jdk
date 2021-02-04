@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/threadSMR.hpp"
 
 /*
  * In normal concurrent cycle, we have to pace the application to let GC finish.

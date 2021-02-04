@@ -39,6 +39,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/attachListener.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/heapDumper.hpp"

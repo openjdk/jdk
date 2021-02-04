@@ -59,6 +59,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
