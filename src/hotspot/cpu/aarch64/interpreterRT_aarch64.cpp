@@ -54,205 +54,83 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
 void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
-  switch (_num_int_args) {
-  case 0:
-    __ ldr(c_rarg1, src);
-    _num_int_args++;
-    break;
-  case 1:
-    __ ldr(c_rarg2, src);
-    _num_int_args++;
-    break;
-  case 2:
-    __ ldr(c_rarg3, src);
-    _num_int_args++;
-    break;
-  case 3:
-    __ ldr(c_rarg4, src);
-    _num_int_args++;
-    break;
-  case 4:
-    __ ldr(c_rarg5, src);
-    _num_int_args++;
-    break;
-  case 5:
-    __ ldr(c_rarg6, src);
-    _num_int_args++;
-    break;
-  case 6:
-    __ ldr(c_rarg7, src);
-    _num_int_args++;
-    break;
-  default:
-    __ ldr(r0, src);
-    __ str(r0, Address(to(), _stack_offset));
+  if (_num_int_args < Argument::n_int_register_parameters_c-1) {
+    __ ldr(as_Register(_num_int_args + c_rarg1->encoding()), src);
+  } else {
+    __ ldrw(r0, src);
+    __ strw(r0, Address(to(), _stack_offset));
     _stack_offset += wordSize;
-    _num_int_args++;
-    break;
   }
+
+  _num_int_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset() + 1));
 
-  switch (_num_int_args) {
-  case 0:
-    __ ldr(c_rarg1, src);
-    _num_int_args++;
-    break;
-  case 1:
-    __ ldr(c_rarg2, src);
-    _num_int_args++;
-    break;
-  case 2:
-    __ ldr(c_rarg3, src);
-    _num_int_args++;
-    break;
-  case 3:
-    __ ldr(c_rarg4, src);
-    _num_int_args++;
-    break;
-  case 4:
-    __ ldr(c_rarg5, src);
-    _num_int_args++;
-    break;
-  case 5:
-    __ ldr(c_rarg6, src);
-    _num_int_args++;
-    break;
-  case 6:
-    __ ldr(c_rarg7, src);
-    _num_int_args++;
-    break;
-  default:
+  if (_num_int_args < Argument::n_int_register_parameters_c-1) {
+    __ ldr(as_Register(_num_int_args + c_rarg1->encoding()), src);
+  } else {
     __ ldr(r0, src);
     __ str(r0, Address(to(), _stack_offset));
     _stack_offset += wordSize;
-    _num_int_args++;
-    break;
   }
+
+  _num_int_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_float() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
   if (_num_fp_args < Argument::n_float_register_parameters_c) {
-    __ ldrs(as_FloatRegister(_num_fp_args++), src);
+    __ ldrs(as_FloatRegister(_num_fp_args), src);
   } else {
     __ ldrw(r0, src);
     __ strw(r0, Address(to(), _stack_offset));
     _stack_offset += wordSize;
-    _num_fp_args++;
   }
+  _num_fp_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset() + 1));
 
   if (_num_fp_args < Argument::n_float_register_parameters_c) {
-    __ ldrd(as_FloatRegister(_num_fp_args++), src);
+    __ ldrd(as_FloatRegister(_num_fp_args), src);
   } else {
     __ ldr(r0, src);
     __ str(r0, Address(to(), _stack_offset));
     _stack_offset += wordSize;
-    _num_fp_args++;
   }
+  _num_fp_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
 
-  switch (_num_int_args) {
-  case 0:
+  if (_num_int_args == 0) {
     assert(offset() == 0, "argument register 1 can only be (non-null) receiver");
     __ add(c_rarg1, from(), Interpreter::local_offset_in_bytes(offset()));
-    _num_int_args++;
-    break;
-  case 1:
-    {
-      __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
-      __ mov(c_rarg2, 0);
-      __ ldr(temp(), r0);
-      Label L;
-      __ cbz(temp(), L);
-      __ mov(c_rarg2, r0);
-      __ bind(L);
-      _num_int_args++;
-      break;
-    }
-  case 2:
-    {
-      __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
-      __ mov(c_rarg3, 0);
-      __ ldr(temp(), r0);
-      Label L;
-      __ cbz(temp(), L);
-      __ mov(c_rarg3, r0);
-      __ bind(L);
-      _num_int_args++;
-      break;
-    }
-  case 3:
-    {
-      __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
-      __ mov(c_rarg4, 0);
-      __ ldr(temp(), r0);
-      Label L;
-      __ cbz(temp(), L);
-      __ mov(c_rarg4, r0);
-      __ bind(L);
-      _num_int_args++;
-      break;
-    }
-  case 4:
-    {
-      __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
-      __ mov(c_rarg5, 0);
-      __ ldr(temp(), r0);
-      Label L;
-      __ cbz(temp(), L);
-      __ mov(c_rarg5, r0);
-      __ bind(L);
-      _num_int_args++;
-      break;
-    }
-  case 5:
-    {
-      __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
-      __ mov(c_rarg6, 0);
-      __ ldr(temp(), r0);
-      Label L;
-      __ cbz(temp(), L);
-      __ mov(c_rarg6, r0);
-      __ bind(L);
-      _num_int_args++;
-      break;
-    }
-  case 6:
-    {
-      __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
-      __ mov(c_rarg7, 0);
-      __ ldr(temp(), r0);
-      Label L;
-      __ cbz(temp(), L);
-      __ mov(c_rarg7, r0);
-      __ bind(L);
-      _num_int_args++;
-      break;
-    }
- default:
-   {
-      __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
-      __ ldr(temp(), r0);
-      Label L;
-      __ cbnz(temp(), L);
-      __ mov(r0, zr);
-      __ bind(L);
-      __ str(r0, Address(to(), _stack_offset));
-      _stack_offset += wordSize;
-      _num_int_args++;
-      break;
-   }
+  } else if (_num_int_args < Argument::n_int_register_parameters_c-1) {
+    Register target = as_Register(_num_int_args + c_rarg1->encoding());
+    __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
+    __ mov(target, 0);
+    __ ldr(temp(), r0);
+    Label L;
+    __ cbz(temp(), L);
+    __ mov(target, r0);
+    __ bind(L);
+  } else {
+    __ add(r0, from(), Interpreter::local_offset_in_bytes(offset()));
+    __ ldr(temp(), r0);
+    Label L;
+    __ cbnz(temp(), L);
+    __ mov(r0, zr);
+    __ bind(L);
+    __ str(r0, Address(to(), _stack_offset));
+    _stack_offset += wordSize;
   }
+
+  _num_int_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprint) {
@@ -283,6 +161,39 @@ class SlowSignatureHandler
   unsigned int _num_int_args;
   unsigned int _num_fp_args;
 
+  void pass(BasicType type) {
+    intptr_t* from_addr = (intptr_t*)(_from+
+        Interpreter::local_offset_in_bytes(is_double_word_type(type)));
+    _from -= (1+is_double_word_type(type))*Interpreter::stackElementSize;
+
+    intptr_t from_val = type != T_OBJECT ? (*from_addr) :
+      (*from_addr == 0 ? NULL : (intptr_t)from_addr);
+
+    if (is_integral_type(type) && _num_int_args < Argument::n_int_register_parameters_c-1) {
+      *_int_args++ = from_val;
+    } else if (is_floating_point_type(type) && _num_fp_args < Argument::n_float_register_parameters_c) {
+      *_fp_args++ = from_val;
+      if (type == T_DOUBLE) {
+        *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
+      }
+    } else {
+      *_to++ = from_val;
+    }
+
+    if (is_integral_type(type)) {
+      ++_num_int_args;
+    } else if (is_floating_point_type(type)) {
+      ++_num_fp_args;
+    }
+  }
+
+  virtual void pass_int()    { pass(T_INT);    }
+  virtual void pass_long()   { pass(T_LONG);   }
+  virtual void pass_object() { pass(T_OBJECT); }
+  virtual void pass_float()  { pass(T_FLOAT);  }
+  virtual void pass_double() { pass(T_DOUBLE); }
+
+#if 0
   virtual void pass_int()
   {
     jint from_obj = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
@@ -304,11 +215,10 @@ class SlowSignatureHandler
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = from_obj;
-      _num_int_args++;
     } else {
       *_to++ = from_obj;
-      _num_int_args++;
     }
+    _num_int_args++;
   }
 
   virtual void pass_object()
@@ -318,11 +228,10 @@ class SlowSignatureHandler
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = (*from_addr == 0) ? NULL : (intptr_t)from_addr;
-      _num_int_args++;
     } else {
       *_to++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
-      _num_int_args++;
     }
+    _num_int_args++;
   }
 
   virtual void pass_float()
@@ -332,11 +241,10 @@ class SlowSignatureHandler
 
     if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = from_obj;
-      _num_fp_args++;
     } else {
       *_to++ = from_obj;
-      _num_fp_args++;
     }
+    _num_fp_args++;
   }
 
   virtual void pass_double()
@@ -347,12 +255,12 @@ class SlowSignatureHandler
     if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = from_obj;
       *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
-      _num_fp_args++;
     } else {
       *_to++ = from_obj;
-      _num_fp_args++;
     }
+    _num_fp_args++;
   }
+#endif
 
  public:
   SlowSignatureHandler(const methodHandle& method, address from, intptr_t* to)
