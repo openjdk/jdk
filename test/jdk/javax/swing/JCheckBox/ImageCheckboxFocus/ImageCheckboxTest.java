@@ -21,26 +21,15 @@
  * questions.
  */
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Insets;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
-import javax.swing.BoxLayout;
 import javax.swing.Icon;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
-
-import static java.awt.event.KeyEvent.VK_TAB;
 
 /*
  * @test
@@ -48,84 +37,35 @@ import static java.awt.event.KeyEvent.VK_TAB;
  * @bug 8216358
  * @summary [macos] The focus is invisible when tab to "Image Radio Buttons" and "Image CheckBoxes"
  * @library ../../regtesthelpers/
- * @library /lib/client/
  * @build Util
- * @build ExtendedRobot
  * @run main ImageCheckboxTest
  */
 
 public class ImageCheckboxTest {
-    private static JFrame frame;
-    private static JButton testButton;
-    private static int locx, locy, frw, frh;
-
     public static void main(String[] args) throws Exception {
         new ImageCheckboxTest().performTest();
     }
 
     public void performTest() throws Exception {
         try {
-            BufferedImage imageFocus1 = null;
-            BufferedImage imageFocus2 = null;
-            ExtendedRobot robot = new ExtendedRobot();
+            BufferedImage imageNoFocus = new BufferedImage(100, 50,
+                    BufferedImage.TYPE_INT_ARGB);
+            BufferedImage imageFocus = new BufferedImage(100, 50,
+                    BufferedImage.TYPE_INT_ARGB);
 
-            SwingUtilities.invokeAndWait(() -> {
-                frame = new JFrame("Test frame");
-                JPanel panel = new JPanel();
-                panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-                testButton = new JButton("Start");
-                panel.add(testButton);
-                for (int i = 1; i < 6; i++) {
-                    JCheckBox cb = new JCheckBox(" Box No. " + i, new MyIcon(Color.GREEN));
-                    panel.add(cb);
-                }
+            CustomCheckBox checkbox = new CustomCheckBox("Test", new MyIcon(Color.GREEN));
+            checkbox.setSize(100, 50);
+            checkbox.setFocused(false);
+            checkbox.paint(imageNoFocus.createGraphics());
+            checkbox.setFocused(true);
+            checkbox.paint(imageFocus.createGraphics());
 
-                frame.setLayout(new BorderLayout());
-                frame.add(panel, BorderLayout.CENTER);
-                frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-                frame.setLocationRelativeTo(null);
-                frame.pack();
-                frame.setVisible(true);
-
-            });
-            robot.setAutoDelay(200);
-            robot.delay(1000);
-            robot.waitForIdle(1000);
-
-            Rectangle bounds = frame.getBounds();
-            Insets insets = frame.getInsets();
-            locx = bounds.x + insets.left;
-            locy = bounds.y + insets.top;
-            frw = bounds.width - insets.left - insets.right;
-            frh = bounds.height - insets.top - insets.bottom;
-
-            Point btnLoc = testButton.getLocationOnScreen();
-            robot.mouseMove(btnLoc.x + 10, btnLoc.y + 10);
-            robot.click();
-
-            robot.keyPress(VK_TAB);
-            robot.keyRelease(VK_TAB);
-
-            robot.delay(1000);
-
-            imageFocus1 = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
-
-            robot.keyPress(VK_TAB);
-            robot.keyRelease(VK_TAB);
-
-            robot.delay(1000);
-
-            imageFocus2 = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
-
-            if (Util.compareBufferedImages(imageFocus1, imageFocus2)) {
-                ImageIO.write(imageFocus1, "png", new File("imageFocus1.png"));
-                ImageIO.write(imageFocus2, "png", new File("imageFocus2.png"));
+            if (Util.compareBufferedImages(imageFocus, imageNoFocus)) {
+                ImageIO.write(imageFocus, "png", new File("imageFocus.png"));
+                ImageIO.write(imageNoFocus, "png", new File("imageNoFocus.png"));
                 throw new Exception("Changing focus is not visualized");
             }
         } finally {
-            if (frame != null) {
-                frame.dispose();
-            }
         }
     }
 
@@ -151,6 +91,27 @@ public class ImageCheckboxTest {
         @Override
         public int getIconHeight() {
             return 18;
+        }
+    }
+
+    class CustomCheckBox extends JCheckBox {
+        public CustomCheckBox(String label, Icon icon) {
+            super(label, icon);
+        }
+
+        private boolean focused = false;
+        public void setFocused(boolean focused) {
+            this.focused = focused;
+        }
+
+        @Override
+        public boolean hasFocus() {
+            return focused;
+        }
+
+        @Override
+        public Dimension getMaximumSize() {
+            return new Dimension(4, 4);
         }
     }
 }
