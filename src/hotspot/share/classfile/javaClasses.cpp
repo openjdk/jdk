@@ -4382,16 +4382,32 @@ int java_lang_System::_static_in_offset;
 int java_lang_System::_static_out_offset;
 int java_lang_System::_static_err_offset;
 int java_lang_System::_static_security_offset;
+int java_lang_System::_static_allow_security_offset;
 
 #define SYSTEM_FIELDS_DO(macro) \
   macro(_static_in_offset,  k, "in",  input_stream_signature, true); \
   macro(_static_out_offset, k, "out", print_stream_signature, true); \
   macro(_static_err_offset, k, "err", print_stream_signature, true); \
-  macro(_static_security_offset, k, "security", security_manager_signature, true)
+  macro(_static_security_offset, k, "security", security_manager_signature, true); \
+  macro(_static_allow_security_offset, k, "allowSecurityManager", int_signature, true)
 
 void java_lang_System::compute_offsets() {
   InstanceKlass* k = vmClasses::System_klass();
   SYSTEM_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+// This field means that a security manager can be installed so still have to
+// populate the ProtectionDomainCacheTable
+bool java_lang_System::has_security_manager() {
+  oop base = vmClasses::System_klass()->static_field_base_raw();
+  return base->obj_field(_static_security_offset) != NULL;
+}
+
+// This field means that a security manager is never installed so we can completely
+// skip populating the ProtectionDomainCacheTable
+bool java_lang_System::allow_security_manager() {
+  oop base = vmClasses::System_klass()->static_field_base_raw();
+  return base->int_field(_static_allow_security_offset) != 1; // NEVER
 }
 
 #if INCLUDE_CDS

@@ -1372,11 +1372,14 @@ class java_lang_System : AllStatic {
   static int _static_out_offset;
   static int _static_err_offset;
   static int _static_security_offset;
+  static int _static_allow_security_offset;
 
  public:
   static int  in_offset() { CHECK_INIT(_static_in_offset); }
   static int out_offset() { CHECK_INIT(_static_out_offset); }
   static int err_offset() { CHECK_INIT(_static_err_offset); }
+  static bool allow_security_manager();
+  static bool has_security_manager();
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
