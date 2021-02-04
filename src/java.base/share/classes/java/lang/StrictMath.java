@@ -74,6 +74,15 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * occurs only with a specific minimum or maximum value and
  * should be checked against the minimum or maximum as appropriate.
  *
+ * <h2><a id=Ieee754RecommendedOps>IEEE 754 Recommended
+ * Operations</a></h2>
+ *
+ * The {@code Math} class discusses how the shared quality of
+ * implementation criteria for selected {@code Math} and {@code
+ * StrictMath} methods <a
+ * href="Math.html#Ieee754RecommendedOps">relate to the IEEE 754
+ * recommended operations</a>.
+ *
  * @author  Joseph D. Darcy
  * @since   1.3
  */
