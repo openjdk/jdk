@@ -177,50 +177,63 @@ class SlowSignatureHandler
     *_to++ = value;
   }
 
-  void pass_gp(BasicType type, intptr_t value) {
-    if (_num_int_args++ < Argument::n_int_register_parameters_c-1) {
+  bool pass_gp(intptr_t value) {
+    if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = value;
-    } else {
-      store_stack(type, value);
+      return true;
     }
+    return false;
   }
 
-  bool pass_fp(BasicType type, intptr_t value) {
-    if (_num_fp_args++ < Argument::n_float_register_parameters_c) {
+  bool pass_fp(intptr_t value) {
+    if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = value;
       return true;
-    } else {
-      store_stack(type, value);
     }
     return false;
   }
 
   virtual void pass_int() {
     intptr_t value = *addr_1_slot();
-    pass_gp(T_INT, value);
+    if (!pass_gp(value)) {
+      store_stack(T_INT, value);
+    }
+    ++_num_int_args;
   }
 
   virtual void pass_long() {
     intptr_t value = *addr_2_slot();
-    pass_gp(T_LONG, value);
+    if (!pass_gp(value)) {
+      store_stack(T_LONG, value);
+    }
+    ++_num_int_args;
   }
 
   virtual void pass_object() {
     intptr_t* addr = addr_1_slot();
     intptr_t value = *addr == 0 ? NULL : (intptr_t)addr;
-    pass_gp(T_OBJECT, value);
+    if (!pass_gp(value)) {
+      store_stack(T_OBJECT, value);
+    }
+    ++_num_int_args;
   }
 
   virtual void pass_float() {
     intptr_t value = *addr_1_slot();
-    pass_fp(T_FLOAT, value);
+    if (!pass_fp(value)) {
+      store_stack(T_FLOAT, value);
+    }
+    ++_num_fp_args;
   }
 
   virtual void pass_double() {
     intptr_t value = *addr_2_slot();
-    if (pass_fp(T_FLOAT, value)) {
+    if (pass_fp(value)) {
       *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
+    } else {
+      store_stack(T_DOUBLE, value);
     }
+    ++_num_fp_args;
   }
 
 #if 0
