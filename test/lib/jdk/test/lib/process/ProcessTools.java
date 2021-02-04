@@ -405,18 +405,6 @@ public final class ProcessTools {
     }
 
     /**
-     * Executes a process, waits for it to finish and returns the
-     * process output and pid.  The process will have exited before
-     * this method returns.
-     *
-     * @param pb The ProcessBuilder to execute.
-     * @return The {@linkplain OutputAnalyzerAndPID} instance wrapping the process.
-     */
-    public static OutputAnalyzerAndPID executeProcessPreservePID(ProcessBuilder pb) throws Exception {
-        return executeProcessPreservePID(pb, null);
-    }
-
-    /**
      * Executes a process, pipe some text into its STDIN, waits for it
      * to finish and returns the process output. The process will have exited
      * before this method returns.
@@ -427,19 +415,6 @@ public final class ProcessTools {
      */
     public static OutputAnalyzer executeProcess(ProcessBuilder pb, String input) throws Exception {
         return executeProcess(pb, input, null);
-    }
-
-    /**
-     * Executes a process, pipe some text into its STDIN, waits for it
-     * to finish and returns the process output and pid. The process
-     * will have exited before this method returns.
-     *
-     * @param pb    The ProcessBuilder to execute.
-     * @param input The text to pipe into STDIN. Can be null.
-     * @return The {@linkplain OutputAnalyzerAndPID} instance wrapping the process.
-     */
-    public static OutputAnalyzerAndPID executeProcessPreservePID(ProcessBuilder pb, String input) throws Exception {
-        return executeProcessPreservePID(pb, input, null);
     }
 
     /**
@@ -455,41 +430,6 @@ public final class ProcessTools {
      */
     public static OutputAnalyzer executeProcess(ProcessBuilder pb, String input,
                                                 Charset cs) throws Exception {
-        return executeProcessPreservePID(pb, input, cs).output();
-    }
-
-    static public class OutputAnalyzerAndPID {
-        private OutputAnalyzer output;
-        private long pid;
-
-        OutputAnalyzerAndPID(OutputAnalyzer output, long pid) {
-            this.output = output;
-            this.pid = pid;
-        }
-
-        public OutputAnalyzer output() {
-            return output;
-        }
-
-        public long pid() {
-            return pid;
-        }
-
-    }
-
-    /**
-     * Executes a process, pipe some text into its STDIN, waits for it
-     * to finish and returns the process output and pid. The process
-     * will have exited before this method returns.
-     *
-     * @param pb    The ProcessBuilder to execute.
-     * @param input The text to pipe into STDIN. Can be null.
-     * @param cs    The charset used to convert from bytes to chars or null for
-     *              the default charset.
-     * @return The {@linkplain OutputAnalyzerAndPID} instance wrapping the process.
-     */
-    public static OutputAnalyzerAndPID executeProcessPreservePID(ProcessBuilder pb, String input,
-                                                                 Charset cs) throws Exception {
         OutputAnalyzer output = null;
         Process p = null;
         boolean failed = false;
@@ -516,7 +456,7 @@ public final class ProcessTools {
                                 "was saved into '%s'%n", p.pid(), fileName);
             }
 
-            return new OutputAnalyzerAndPID(output, p.pid());
+            return output;
         } catch (Throwable t) {
             if (p != null) {
                 p.destroyForcibly().waitFor();
@@ -542,19 +482,6 @@ public final class ProcessTools {
      */
     public static OutputAnalyzer executeProcess(String... cmds) throws Throwable {
         return executeProcess(new ProcessBuilder(cmds));
-    }
-
-    /**
-     * Executes a process, waits for it to finish and returns the
-     * process outputa and pid.
-     * <p>
-     * The process will have exited before this method returns.
-     *
-     * @param cmds The command line to execute.
-     * @return The output from the process.
-     */
-    public static OutputAnalyzerAndPID executeProcessPreservePID(String... cmds) throws Throwable {
-        return executeProcessPreservePID(new ProcessBuilder(cmds));
     }
 
     /**
