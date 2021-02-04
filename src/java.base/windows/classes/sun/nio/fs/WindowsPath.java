@@ -832,7 +832,7 @@ class WindowsPath implements Path {
         if (!followLinks)
             flags |= FILE_FLAG_OPEN_REPARSE_POINT;
         try {
-            return openPathForReadAttributeAccess(flags);
+            return openFileForReadAttributeAccess(flags);
         } catch (WindowsException e) {
             if (!followLinks || e.lastError() != ERROR_CANT_ACCESS_FILE)
                 throw e;
@@ -844,7 +844,7 @@ class WindowsPath implements Path {
         }
     }
 
-    private long openPathForReadAttributeAccess(int flags)
+    private long openFileForReadAttributeAccess(int flags)
         throws WindowsException
     {
         return CreateFile(getPathForWin32Calls(),
@@ -866,7 +866,7 @@ class WindowsPath implements Path {
             // needs one additional flag to open a Unix domain socket
             int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
 
-            handle = openPathForReadAttributeAccess(flags);
+            handle = openFileForReadAttributeAccess(flags);
         } catch (WindowsException ignore) {
             return INVALID_HANDLE_VALUE;
         }
