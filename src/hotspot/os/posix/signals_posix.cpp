@@ -1420,7 +1420,9 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
       if (current_handler != expected_handler) {
         st->print_cr("  *** Handler changed! Expected hotspot signal handler. Consider using jsig library.");
       }
-      if (current_act.sa_flags LINUX_ONLY(& SA_RESTORER_FLAG_MASK) != expected_act->sa_flags) {
+      int this_flag = current_act.sa_flags;
+      LINUX_ONLY(this_flag &= SA_RESTORER_FLAG_MASK;)
+      if (this_flag != expected_act->sa_flags) {
         st->print_cr("  *** Flags changed! Consider using jsig library.");
       }
     }
