@@ -642,8 +642,8 @@ public abstract class FileChannel
      * number of bytes will be transferred if the source channel has fewer than
      * {@code count} bytes remaining, or if the source channel is non-blocking
      * and has fewer than {@code count} bytes immediately available in its
-     * input buffer. No bytes are transferred if the source channel has reached
-     * the end-of-stream in which case zero will be returned.
+     * input buffer. No bytes are transferred, and zero is returned, if the
+     * source has reached end-of-stream.
      *
      * <p> This method does not modify this channel's position.  If the given
      * position is greater than the file's current size then no bytes are
