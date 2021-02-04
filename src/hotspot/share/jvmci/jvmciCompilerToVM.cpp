@@ -26,6 +26,8 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -353,11 +355,11 @@ C2V_VMENTRY_NULL(jobject, asResolvedJavaMethod, (JNIEnv* env, jobject, jobject e
   oop mirror = NULL;
   int slot = 0;
 
-  if (executable->klass() == SystemDictionary::reflect_Constructor_klass()) {
+  if (executable->klass() == vmClasses::reflect_Constructor_klass()) {
     mirror = java_lang_reflect_Constructor::clazz(executable);
     slot = java_lang_reflect_Constructor::slot(executable);
   } else {
-    assert(executable->klass() == SystemDictionary::reflect_Method_klass(), "wrong type");
+    assert(executable->klass() == vmClasses::reflect_Method_klass(), "wrong type");
     mirror = java_lang_reflect_Method::clazz(executable);
     slot = java_lang_reflect_Method::slot(executable);
   }
@@ -374,7 +376,7 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaMethod, (JNIEnv* env, jobject, jobject 
     method = *((Method**)(offset));
   } else if (JVMCIENV->isa_HotSpotObjectConstantImpl(base_object)) {
     Handle obj = JVMCIENV->asConstant(base_object, JVMCI_CHECK_NULL);
-    if (obj->is_a(SystemDictionary::ResolvedMethodName_klass())) {
+    if (obj->is_a(vmClasses::ResolvedMethodName_klass())) {
       method = (Method*) (intptr_t) obj->long_field(offset);
     } else {
       JVMCI_THROW_MSG_NULL(IllegalArgumentException, err_msg("Unexpected type: %s", obj->klass()->external_name()));
@@ -432,7 +434,7 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
         base_address = (intptr_t) JVMCIENV->asKlass(base_object);
       } else if (JVMCIENV->isa_HotSpotObjectConstantImpl(base_object)) {
         Handle base_oop = JVMCIENV->asConstant(base_object, JVMCI_CHECK_NULL);
-        if (base_oop->is_a(SystemDictionary::Class_klass())) {
+        if (base_oop->is_a(vmClasses::Class_klass())) {
           base_address = cast_from_oop<jlong>(base_oop());
         }
       }
@@ -753,7 +755,7 @@ C2V_VMENTRY_NULL(jobject, resolveMethod, (JNIEnv* env, jobject, jobject receiver
   }
 
   if (method->name() == vmSymbols::clone_name() &&
-      resolved == SystemDictionary::Object_klass() &&
+      resolved == vmClasses::Object_klass() &&
       recv_klass->is_array_klass()) {
     // Resolution of the clone method on arrays always returns Object.clone even though that method
     // has protected access.  There's some trickery in the access checking to make this all work out
@@ -1817,10 +1819,10 @@ C2V_END
 
 C2V_VMENTRY(void, compileToBytecode, (JNIEnv* env, jobject, jobject lambda_form_handle))
   Handle lambda_form = JVMCIENV->asConstant(JVMCIENV->wrap(lambda_form_handle), JVMCI_CHECK);
-  if (lambda_form->is_a(SystemDictionary::LambdaForm_klass())) {
+  if (lambda_form->is_a(vmClasses::LambdaForm_klass())) {
     TempNewSymbol compileToBytecode = SymbolTable::new_symbol("compileToBytecode");
     JavaValue result(T_VOID);
-    JavaCalls::call_special(&result, lambda_form, SystemDictionary::LambdaForm_klass(), compileToBytecode, vmSymbols::void_method_signature(), CHECK);
+    JavaCalls::call_special(&result, lambda_form, vmClasses::LambdaForm_klass(), compileToBytecode, vmSymbols::void_method_signature(), CHECK);
   } else {
     JVMCI_THROW_MSG(IllegalArgumentException,
                     err_msg("Unexpected type: %s", lambda_form->klass()->external_name()))
@@ -1874,7 +1876,7 @@ C2V_VMENTRY_NULL(jobject, boxPrimitive, (JNIEnv* env, jobject, jobject object))
 #define BOX_CASE(bt, v, argtype, name)           \
   case bt: \
     jargs.push_##argtype(value.v); \
-    box_klass = SystemDictionary::name##_klass(); \
+    box_klass = vmClasses::name##_klass(); \
     box_signature = vmSymbols::name##_valueOf_signature(); \
     break
 
@@ -2659,7 +2661,7 @@ C2V_VMENTRY(void, callSystemExit, (JNIEnv* env, jobject, jint status))
   JavaCallArguments jargs(1);
   jargs.push_int(status);
   JavaCalls::call_static(&result,
-                       SystemDictionary::System_klass(),
+                       vmClasses::System_klass(),
                        vmSymbols::exit_method_name(),
                        vmSymbols::int_void_signature(),
                        &jargs,

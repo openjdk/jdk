@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "classfile/classListParser.hpp"
 #include "classfile/classListWriter.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
@@ -322,7 +323,7 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
 
 void ArchiveUtils::check_for_oom(oop exception) {
   assert(exception != nullptr, "Sanity check");
-  if (exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+  if (exception->is_a(vmClasses::OutOfMemoryError_klass())) {
     vm_direct_exit(-1,
       err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
               SIZE_FORMAT "M", MaxHeapSize/M));

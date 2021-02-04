@@ -39,6 +39,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"

@@ -4397,7 +4397,7 @@ public final class String
      */
     void getBytes(byte[] dst, int srcPos, int dstBegin, byte coder, int length) {
         if (coder() == coder) {
-            System.arraycopy(value, srcPos, dst, dstBegin << coder, length << coder());
+            System.arraycopy(value, srcPos << coder, dst, dstBegin << coder, length << coder);
         } else {    // this.coder == LATIN && coder == UTF16
             StringLatin1.inflate(value, srcPos, dst, dstBegin, length);
         }
