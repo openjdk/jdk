@@ -24,10 +24,44 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import <jni_util.h>
 
 static NSWindow *testWindow;
 static NSColorPanel *colorPanel;
+
+#define JNI_COCOA_ENTER(env) \
+ NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+ @try {
+
+#define JNI_COCOA_EXIT(env) \
+ } \
+ @catch (NSException *e) { \
+     NSLog(@"%@", [e callStackSymbols]); \
+ } \
+ @finally { \
+    [pool drain]; \
+  };
+
+/*
+ * Pass the block to a selector of a class that extends NSObject
+ * There is no need to copy the block since this class always waits.
+ */
+@interface BlockRunner : NSObject { }
+
++ (void)invokeBlock:(void (^)())block;
+@end
+
+@implementation BlockRunner
+
++ (void)invokeBlock:(void (^)())block{
+  block();
+}
+
++ (void)performBlock:(void (^)())block {
+  [self performSelectorOnMainThread:@selector(invokeBlock:) withObject:block waitUntilDone:YES];
+}
+
+@end
 
 /*
  * Class:     TestMainKeyWindow
@@ -36,7 +70,7 @@ static NSColorPanel *colorPanel;
  */
 JNIEXPORT void JNICALL Java_TestMainKeyWindow_setup(JNIEnv *env, jclass cl)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     void (^block)() = ^(){
         NSScreen *mainScreen = [[NSScreen screens] objectAtIndex:0];
@@ -68,10 +102,10 @@ JNIEXPORT void JNICALL Java_TestMainKeyWindow_setup(JNIEnv *env, jclass cl)
     if ([NSThread isMainThread]) {
         block();
     } else {
-        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+        [BlockRunner performBlock:block];
     }
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -81,7 +115,7 @@ JNIEXPORT void JNICALL Java_TestMainKeyWindow_setup(JNIEnv *env, jclass cl)
  */
 JNIEXPORT void JNICALL Java_TestMainKeyWindow_takedown(JNIEnv *env, jclass cl)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     void (^block)() = ^(){
         if (testWindow != nil) {
@@ -97,10 +131,10 @@ JNIEXPORT void JNICALL Java_TestMainKeyWindow_takedown(JNIEnv *env, jclass cl)
     if ([NSThread isMainThread]) {
         block();
     } else {
-        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+        [BlockRunner performBlock:block];
     }
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -111,13 +145,13 @@ JNIEXPORT void JNICALL Java_TestMainKeyWindow_takedown(JNIEnv *env, jclass cl)
 JNIEXPORT void JNICALL Java_TestMainKeyWindow_activateApplication
   (JNIEnv *env, jclass cl)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     void (^block)() = ^(){
         [NSApp activateIgnoringOtherApps:YES];
     };
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+    [BlockRunner performBlock:block];
 
-  JNF_COCOA_EXIT(env);
+  JNI_COCOA_EXIT(env);
 }
