@@ -555,7 +555,11 @@ ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _all("-all", "Inspect all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
-  _parallel_thread_num("-parallel", "parallel threads number for heap iteration",
+  _parallel_thread_num("-parallel",
+       "parallel threads number for heap iteration. "
+       "0 use system determined number of threads, "
+       "1 use one thread, i.e., disable parallelism, "
+       "n use n threads, n must be positive.",
        "INT", false, "0") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_option(&_parallel_thread_num);
