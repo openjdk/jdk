@@ -161,55 +161,67 @@ class SlowSignatureHandler
   unsigned int _num_int_args;
   unsigned int _num_fp_args;
 
+  intptr_t* addr_1_slot() {
+    intptr_t* from_addr = (intptr_t*)(_from+Interpreter::local_offset_in_bytes(0));
+    _from -= Interpreter::stackElementSize;
+    return from_addr;
+  }
+
+  intptr_t* addr_2_slot() {
+    intptr_t* from_addr = (intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
+    _from -= 2*Interpreter::stackElementSize;
+    return from_addr;
+  }
+
   void store_stack(BasicType type, intptr_t value) {
     *_to++ = value;
   }
 
-  intptr_t* load_addr(BasicType type) {
-    intptr_t* from_addr = (intptr_t*)(_from+
-        Interpreter::local_offset_in_bytes(is_double_word_type(type)));
-    _from -= (1+is_double_word_type(type))*Interpreter::stackElementSize;
-    return from_addr;
-  }
-
-  void pass_gp(BasicType type) {
-    intptr_t* from_addr = (intptr_t*)(_from+
-        Interpreter::local_offset_in_bytes(is_double_word_type(type)));
-    _from -= (1+is_double_word_type(type))*Interpreter::stackElementSize;
-
-    intptr_t from_val = type != T_OBJECT ? (*from_addr) :
-      (*from_addr == 0 ? NULL : (intptr_t)from_addr);
-
-    if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-      *_int_args++ = from_val;
+  void pass_gp(BasicType type, intptr_t value) {
+    if (_num_int_args++ < Argument::n_int_register_parameters_c-1) {
+      *_int_args++ = value;
     } else {
-      store_stack(type, from_val);
+      store_stack(type, value);
     }
-    ++_num_int_args;
   }
 
-  void pass_fp(BasicType type) {
-    intptr_t* from_addr = (intptr_t*)(_from+
-        Interpreter::local_offset_in_bytes(is_double_word_type(type)));
-    _from -= (1+is_double_word_type(type))*Interpreter::stackElementSize;
-    intptr_t from_val = *from_addr;
-
-    if (_num_fp_args < Argument::n_float_register_parameters_c) {
-      *_fp_args++ = from_val;
-      if (type == T_DOUBLE) {
-        *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
-      }
+  bool pass_fp(BasicType type, intptr_t value) {
+    if (_num_fp_args++ < Argument::n_float_register_parameters_c) {
+      *_fp_args++ = value;
+      return true;
     } else {
-      store_stack(type, from_val);
+      store_stack(type, value);
     }
-    ++_num_fp_args;
+    return false;
   }
 
-  virtual void pass_int()    { pass_gp(T_INT);    }
-  virtual void pass_long()   { pass_gp(T_LONG);   }
-  virtual void pass_object() { pass_gp(T_OBJECT); }
-  virtual void pass_float()  { pass_fp(T_FLOAT);  }
-  virtual void pass_double() { pass_fp(T_DOUBLE); }
+  virtual void pass_int() {
+    intptr_t value = *addr_1_slot();
+    pass_gp(T_INT, value);
+  }
+
+  virtual void pass_long() {
+    intptr_t value = *addr_2_slot();
+    pass_gp(T_LONG, value);
+  }
+
+  virtual void pass_object() {
+    intptr_t* addr = addr_1_slot();
+    intptr_t value = *addr == 0 ? NULL : (intptr_t)addr;
+    pass_gp(T_OBJECT, value);
+  }
+
+  virtual void pass_float() {
+    intptr_t value = *addr_1_slot();
+    pass_fp(T_FLOAT, value);
+  }
+
+  virtual void pass_double() {
+    intptr_t value = *addr_2_slot();
+    if (pass_fp(T_FLOAT, value)) {
+      *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
+    }
+  }
 
 #if 0
   virtual void pass_int()
