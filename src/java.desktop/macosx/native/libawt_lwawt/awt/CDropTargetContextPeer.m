@@ -25,8 +25,6 @@
 
 #import "sun_lwawt_macosx_CDropTargetContextPeer.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "CDataTransferer.h"
 #import "CDropTarget.h"
 #import "DnDUtilities.h"
@@ -106,7 +104,7 @@ JNI_COCOA_ENTER(env);
         (*env)->CallVoidMethod(env, jthis, newDataMethod, jformat, jdropdata); // AWT_THREADING Safe (!appKit)
     } @catch (NSException *ex) {
         DLog2(@"[CDropTargetContextPeer startTransfer]: exception in newData() for %d.\n", (NSInteger) jdroptarget);
-        JNFDeleteGlobalRef(env, jdropdata);
+        (*env)->DeleteGlobalRef(env, jdropdata);
         TransferFailed(env, jthis, jdroptarget, (jlong) 0L, jformat);
         return result;
     }

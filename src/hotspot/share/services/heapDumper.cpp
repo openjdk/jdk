@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -1423,7 +1423,7 @@ class HeapObjectDumper : public ObjectClosure {
 
 void HeapObjectDumper::do_object(oop o) {
   // skip classes as these emitted as HPROF_GC_CLASS_DUMP records
-  if (o->klass() == SystemDictionary::Class_klass()) {
+  if (o->klass() == vmClasses::Class_klass()) {
     if (!java_lang_Class::is_primitive(o)) {
       return;
     }
@@ -1513,7 +1513,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
     if (oome) {
       assert(!Thread::current()->is_VM_thread(), "Dump from OutOfMemoryError cannot be called by the VMThread");
       // get OutOfMemoryError zero-parameter constructor
-      InstanceKlass* oome_ik = SystemDictionary::OutOfMemoryError_klass();
+      InstanceKlass* oome_ik = vmClasses::OutOfMemoryError_klass();
       _oome_constructor = oome_ik->find_method(vmSymbols::object_initializer_name(),
                                                           vmSymbols::void_method_signature());
       // get thread throwing OOME when generating the heap dump at OOME
@@ -2029,7 +2029,7 @@ void HeapDumper::dump_heap(bool oome) {
   const int max_digit_chars = 20;
 
   const char* dump_file_name = "java_pid";
-  const char* dump_file_ext  = ".hprof";
+  const char* dump_file_ext  = HeapDumpGzipLevel > 0 ? ".hprof.gz" : ".hprof";
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
@@ -2096,6 +2096,6 @@ void HeapDumper::dump_heap(bool oome) {
 
   HeapDumper dumper(false /* no GC before heap dump */,
                     oome  /* pass along out-of-memory-error flag */);
-  dumper.dump(my_path, tty);
+  dumper.dump(my_path, tty, HeapDumpGzipLevel);
   os::free(my_path);
 }

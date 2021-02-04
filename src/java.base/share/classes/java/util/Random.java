@@ -45,7 +45,7 @@ import jdk.internal.misc.Unsafe;
  * pseudorandom numbers; its period is only 2<sup>48</sup>.
  * The class uses a 48-bit seed, which is
  * modified using a linear congruential formula. (See Donald Knuth,
- * <i>The Art of Computer Programming, Volume 2</i>, Section 3.2.1.)
+ * <cite>The Art of Computer Programming, Volume 2</cite>, Section 3.2.1.)
  * <p>
  * If two instances of {@code Random} are created with the same
  * seed, and the same sequence of method calls is made for each, they
@@ -199,8 +199,8 @@ public class Random extends AbstractSpliteratorGenerator
      *
      * This is a linear congruential pseudorandom number generator, as
      * defined by D. H. Lehmer and described by Donald E. Knuth in
-     * <i>The Art of Computer Programming,</i> Volume 2:
-     * <i>Seminumerical Algorithms</i>, section 3.2.1.
+     * <cite>The Art of Computer Programming, Volume 2, Third edition:
+     * Seminumerical Algorithms</cite>, section 3.2.1.
      *
      * @param  bits random bits
      * @return the next pseudorandom value from this random number
@@ -510,8 +510,8 @@ public class Random extends AbstractSpliteratorGenerator
      *   }
      * }}</pre>
      * This uses the <i>polar method</i> of G. E. P. Box, M. E. Muller, and
-     * G. Marsaglia, as described by Donald E. Knuth in <i>The Art of
-     * Computer Programming</i>, Volume 2: <i>Seminumerical Algorithms</i>,
+     * G. Marsaglia, as described by Donald E. Knuth in <cite>The Art of
+     * Computer Programming, Volume 2, third edition: Seminumerical Algorithms</cite>,
      * section 3.4.1, subsection C, algorithm P. Note that it generates two
      * independent values at the cost of only one call to {@code StrictMath.log}
      * and one call to {@code StrictMath.sqrt}.
@@ -523,7 +523,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public synchronized double nextGaussian() {
-        // See Knuth, ACP, Section 3.4.1 Algorithm C.
+        // See Knuth, TAOCP, Vol. 2, 3rd edition, Section 3.4.1 Algorithm C.
         if (haveNextNextGaussian) {
             haveNextNextGaussian = false;
             return nextNextGaussian;

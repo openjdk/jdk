@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "jvm.h"
 #include "jvmci/jvmci_globals.hpp"
+#include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/globals_extension.hpp"
