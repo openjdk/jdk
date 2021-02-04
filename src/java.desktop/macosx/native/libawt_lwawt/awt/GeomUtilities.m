@@ -24,7 +24,6 @@
  */
 
 #import "GeomUtilities.h"
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 static jobject NewJavaRect(JNIEnv *env, jdouble x, jdouble y, jdouble w, jdouble h) {
     DECLARE_CLASS_RETURN(sjc_Rectangle2DDouble, "java/awt/geom/Rectangle2D$Double", NULL);
@@ -100,7 +99,10 @@ NSSize JavaToNSSize(JNIEnv *env, jobject dimension) {
 static NSScreen *primaryScreen(JNIEnv *env) {
     NSScreen *primaryScreen = [[NSScreen screens] objectAtIndex:0];
     if (primaryScreen != nil) return primaryScreen;
-    if (env != NULL) [JNFException raise:env as:kRuntimeException reason:"Failed to convert, no screen."];
+    if ((env != NULL) && ([NSThread isMainThread] == NO)) {
+        JNU_ThrowByName(env, "java/lang/RuntimeException", "Failed to convert, no screen.");
+    }
+    [NSException raise:NSGenericException format:@"Failed to convert, no screen."];
     return nil;
 }
 

@@ -27,6 +27,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"

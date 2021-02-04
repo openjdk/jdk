@@ -89,6 +89,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/notificationThread.hpp"
 #include "runtime/os.hpp"
