@@ -89,4 +89,3 @@ public class MTLVolatileSurfaceManager extends VolatileSurfaceManager {
         }
     }
 }
-

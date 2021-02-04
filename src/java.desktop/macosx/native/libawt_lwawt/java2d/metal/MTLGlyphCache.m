@@ -362,4 +362,3 @@ MTLGlyphCache_GetCellInfoForCache(GlyphInfo *glyph, MTLGlyphCacheInfo *cache)
                 glyph, cache);
     return NULL;
 }
-
