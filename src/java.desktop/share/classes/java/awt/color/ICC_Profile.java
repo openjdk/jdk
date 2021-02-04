@@ -975,10 +975,10 @@ public class ICC_Profile implements Serializable {
     static byte[] getProfileDataFromStream(InputStream s) throws IOException {
 
         BufferedInputStream bis = new BufferedInputStream(s);
-        bis.mark(128);
+        bis.mark(128); // 128 is the length of the ICC profile header
 
         byte[] header = bis.readNBytes(128);
-        if (header[36] != 0x61 || header[37] != 0x63 ||
+        if (header.length < 128 || header[36] != 0x61 || header[37] != 0x63 ||
             header[38] != 0x73 || header[39] != 0x70) {
             return null;   /* not a valid profile */
         }
