@@ -161,7 +161,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
         -framework Cocoa \
         -framework OpenGL \
         -framework Metal \
-        -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport \
         -framework ApplicationServices \
         -framework AudioToolbox, \
@@ -769,8 +768,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
         -framework Foundation \
         -framework Security \
         -framework Cocoa \
-        -framework Metal \
-        -framework JavaNativeFoundation
+        -framework Metal
   else ifeq ($(call isTargetOs, windows), true)
     LIBSPLASHSCREEN_LIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib $(WIN_JAVA_LIB) jvm.lib
   else
@@ -870,7 +868,6 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework Metal \
           -framework Security \
           -framework ExceptionHandling \
-          -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -framework OpenGL \
           -framework QuartzCore -ljava, \
@@ -931,7 +928,6 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework Metal \
           -framework Carbon \
           -framework ApplicationServices \
-          -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -ljava -ljvm, \
   ))

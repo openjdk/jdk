@@ -81,7 +81,7 @@ define SetupTestFilesCompilationBody
 
   # Locate all files with the matching prefix
   $1_FILE_LIST := \
-      $$(call FindFiles, $$($1_SOURCE_DIRS), $$($1_PREFIX)*.c $$($1_PREFIX)*.cpp)
+      $$(call FindFiles, $$($1_SOURCE_DIRS), $$($1_PREFIX)*.c $$($1_PREFIX)*.cpp $$($1_PREFIX)*.m)
 
   $1_EXCLUDE_PATTERN := $$(addprefix %/, $$($1_EXCLUDE))
   $1_FILTERED_FILE_LIST := $$(filter-out $$($1_EXCLUDE_PATTERN), $$($1_FILE_LIST))

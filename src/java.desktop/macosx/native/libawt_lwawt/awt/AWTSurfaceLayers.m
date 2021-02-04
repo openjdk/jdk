@@ -28,7 +28,6 @@
 #import "LWCToolkit.h"
 #import "JNIUtilities.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <QuartzCore/CATransaction.h>
 #import <QuartzCore/CAMetalLayer.h>
 

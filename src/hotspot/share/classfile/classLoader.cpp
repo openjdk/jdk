@@ -38,6 +38,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -1076,7 +1077,7 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
 
 
   // Allocate objArray and fill with java.lang.String
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
+  objArrayOop r = oopFactory::new_objArray(vmClasses::String_klass(),
                                            loaded_class_pkgs->length(), CHECK_NULL);
   objArrayHandle result(THREAD, r);
   for (int x = 0; x < loaded_class_pkgs->length(); x++) {

@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 
 #include "gc/shared/weakProcessor.inline.hpp"

@@ -26,7 +26,7 @@
 #include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleDescription.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
@@ -126,17 +126,17 @@ void ObjectSampleDescription::write_object_details() {
   Symbol* class_name = klass->name();
   jint size;
 
-  if (_object->is_a(SystemDictionary::Class_klass())) {
+  if (_object->is_a(vmClasses::Class_klass())) {
     write_class_name();
     return;
   }
 
-  if (_object->is_a(SystemDictionary::Thread_klass())) {
+  if (_object->is_a(vmClasses::Thread_klass())) {
     write_thread_name();
     return;
   }
 
-  if (_object->is_a(SystemDictionary::ThreadGroup_klass())) {
+  if (_object->is_a(vmClasses::ThreadGroup_klass())) {
     write_thread_group_name();
     return;
   }
@@ -148,7 +148,7 @@ void ObjectSampleDescription::write_object_details() {
 }
 
 void ObjectSampleDescription::write_class_name() {
-  assert(_object->is_a(SystemDictionary::Class_klass()), "invariant");
+  assert(_object->is_a(vmClasses::Class_klass()), "invariant");
   const Klass* const k = java_lang_Class::as_Klass(_object);
   if (k == NULL) {
     // might represent a primitive
@@ -176,7 +176,7 @@ void ObjectSampleDescription::write_class_name() {
 }
 
 void ObjectSampleDescription::write_thread_group_name() {
-  assert(_object->is_a(SystemDictionary::ThreadGroup_klass()), "invariant");
+  assert(_object->is_a(vmClasses::ThreadGroup_klass()), "invariant");
   const char* tg_name = java_lang_ThreadGroup::name(_object);
   if (tg_name != NULL) {
     write_text("Thread Group: ");
@@ -185,7 +185,7 @@ void ObjectSampleDescription::write_thread_group_name() {
 }
 
 void ObjectSampleDescription::write_thread_name() {
-  assert(_object->is_a(SystemDictionary::Thread_klass()), "invariant");
+  assert(_object->is_a(vmClasses::Thread_klass()), "invariant");
   oop name = java_lang_Thread::name(_object);
   if (name != NULL) {
     char* p = java_lang_String::as_utf8_string(name);

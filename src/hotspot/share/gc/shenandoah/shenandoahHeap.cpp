@@ -71,6 +71,7 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
+#include "classfile/systemDictionary.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"

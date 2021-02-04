@@ -611,7 +611,7 @@ public:
 
   Node_List _body;              // Loop body for inner loops
 
-  uint8_t _nest;                // Nesting depth
+  uint16_t _nest;               // Nesting depth
   uint8_t _irreducible:1,       // True if irreducible
           _has_call:1,          // True if has call safepoint
           _has_sfpt:1,          // True if has non-call safepoint

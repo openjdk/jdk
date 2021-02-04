@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,7 +405,7 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
      break;
   case T_OBJECT:
     // JNIHandles::resolve result.
-    __ resolve_jobject(R3_RET, R11_scratch1, R31, /* needs_frame */ true); // kills R31
+    __ resolve_jobject(R3_RET, R11_scratch1, R31, MacroAssembler::PRESERVATION_FRAME_LR); // kills R31
     break;
   case T_FLOAT:
      break;
@@ -526,7 +526,9 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ beq(CCR0, slow_path);
 
   __ load_heap_oop(R3_RET, referent_offset, R3_RET,
-                   /* non-volatile temp */ R31, R11_scratch1, true, ON_WEAK_OOP_REF);
+                   /* non-volatile temp */ R31, R11_scratch1,
+                   MacroAssembler::PRESERVATION_FRAME_LR,
+                   ON_WEAK_OOP_REF);
 
   // Generate the G1 pre-barrier code to log the value of
   // the referent field in an SATB buffer. Note with
