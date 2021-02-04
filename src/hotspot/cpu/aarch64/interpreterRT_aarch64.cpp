@@ -158,152 +158,79 @@ class SlowSignatureHandler
   intptr_t* _int_args;
   intptr_t* _fp_args;
   intptr_t* _fp_identifiers;
-  unsigned int _num_int_args;
-  unsigned int _num_fp_args;
+  unsigned int _num_reg_int_args;
+  unsigned int _num_reg_fp_args;
 
-  intptr_t* addr_1_slot() {
+  intptr_t* single_slot_addr() {
     intptr_t* from_addr = (intptr_t*)(_from+Interpreter::local_offset_in_bytes(0));
     _from -= Interpreter::stackElementSize;
     return from_addr;
   }
 
-  intptr_t* addr_2_slot() {
+  intptr_t* double_slot_addr() {
     intptr_t* from_addr = (intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
     _from -= 2*Interpreter::stackElementSize;
     return from_addr;
   }
 
-  void store_stack(BasicType type, intptr_t value) {
+  int pass_gpr(intptr_t value) {
+    if (_num_reg_int_args < Argument::n_int_register_parameters_c-1) {
+      *_int_args++ = value;
+      return _num_reg_int_args++;
+    }
+    return -1;
+  }
+
+  int pass_fpr(intptr_t value) {
+    if (_num_reg_fp_args < Argument::n_float_register_parameters_c) {
+      *_fp_args++ = value;
+      return _num_reg_fp_args++;
+    }
+    return -1;
+  }
+
+  void pass_stack(intptr_t value) {
     *_to++ = value;
   }
 
-  bool pass_gp(intptr_t value) {
-    if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-      *_int_args++ = value;
-      return true;
-    }
-    return false;
-  }
-
-  bool pass_fp(intptr_t value) {
-    if (_num_fp_args < Argument::n_float_register_parameters_c) {
-      *_fp_args++ = value;
-      return true;
-    }
-    return false;
-  }
-
   virtual void pass_int() {
-    intptr_t value = *addr_1_slot();
-    if (!pass_gp(value)) {
-      store_stack(T_INT, value);
+    intptr_t value = *single_slot_addr();
+    if (pass_gpr(value) < 0) {
+      pass_stack(value);
     }
-    ++_num_int_args;
   }
 
   virtual void pass_long() {
-    intptr_t value = *addr_2_slot();
-    if (!pass_gp(value)) {
-      store_stack(T_LONG, value);
+    intptr_t value = *double_slot_addr();
+    if (pass_gpr(value) < 0) {
+      pass_stack(value);
     }
-    ++_num_int_args;
   }
 
   virtual void pass_object() {
-    intptr_t* addr = addr_1_slot();
+    intptr_t* addr = single_slot_addr();
     intptr_t value = *addr == 0 ? NULL : (intptr_t)addr;
-    if (!pass_gp(value)) {
-      store_stack(T_OBJECT, value);
+    if (pass_gpr(value) < 0) {
+      pass_stack(value);
     }
-    ++_num_int_args;
   }
 
   virtual void pass_float() {
-    intptr_t value = *addr_1_slot();
-    if (!pass_fp(value)) {
-      store_stack(T_FLOAT, value);
+    intptr_t value = *single_slot_addr();
+    if (pass_fpr(value) < 0) {
+      pass_stack(value);
     }
-    ++_num_fp_args;
   }
 
   virtual void pass_double() {
-    intptr_t value = *addr_2_slot();
-    if (pass_fp(value)) {
-      *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
+    intptr_t value = *double_slot_addr();
+    int arg = pass_fpr(value);
+    if (0 <= arg) {
+      *_fp_identifiers |= (1ull << arg); // mark as double
     } else {
-      store_stack(T_DOUBLE, value);
-    }
-    ++_num_fp_args;
-  }
-
-#if 0
-  virtual void pass_int()
-  {
-    jint from_obj = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
-    _from -= Interpreter::stackElementSize;
-
-    if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-      *_int_args++ = from_obj;
-      _num_int_args++;
-    } else {
-      *_to++ = from_obj;
-      _num_int_args++;
+      pass_stack(value);
     }
   }
-
-  virtual void pass_long()
-  {
-    intptr_t from_obj = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    _from -= 2*Interpreter::stackElementSize;
-
-    if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-      *_int_args++ = from_obj;
-    } else {
-      *_to++ = from_obj;
-    }
-    _num_int_args++;
-  }
-
-  virtual void pass_object()
-  {
-    intptr_t *from_addr = (intptr_t*)(_from + Interpreter::local_offset_in_bytes(0));
-    _from -= Interpreter::stackElementSize;
-
-    if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-      *_int_args++ = (*from_addr == 0) ? NULL : (intptr_t)from_addr;
-    } else {
-      *_to++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
-    }
-    _num_int_args++;
-  }
-
-  virtual void pass_float()
-  {
-    jint from_obj = *(jint*)(_from+Interpreter::local_offset_in_bytes(0));
-    _from -= Interpreter::stackElementSize;
-
-    if (_num_fp_args < Argument::n_float_register_parameters_c) {
-      *_fp_args++ = from_obj;
-    } else {
-      *_to++ = from_obj;
-    }
-    _num_fp_args++;
-  }
-
-  virtual void pass_double()
-  {
-    intptr_t from_obj = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    _from -= 2*Interpreter::stackElementSize;
-
-    if (_num_fp_args < Argument::n_float_register_parameters_c) {
-      *_fp_args++ = from_obj;
-      *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
-    } else {
-      *_to++ = from_obj;
-    }
-    _num_fp_args++;
-  }
-#endif
 
  public:
   SlowSignatureHandler(const methodHandle& method, address from, intptr_t* to)
@@ -316,8 +243,8 @@ class SlowSignatureHandler
     _fp_args =  to - 8;
     _fp_identifiers = to - 9;
     *(int*) _fp_identifiers = 0;
-    _num_int_args = (method->is_static() ? 1 : 0);
-    _num_fp_args = 0;
+    _num_reg_int_args = (method->is_static() ? 1 : 0);
+    _num_reg_fp_args = 0;
   }
 
 };
