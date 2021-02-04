@@ -52,11 +52,10 @@ public class FileAttributes {
     public static void test() throws Exception {
         checkSupported();
         Path path = null;
-        try {
+        try (var chan = SocketChannel.open(UNIX)) {
             path = Path.of("foo.sock");
             var addr = UnixDomainSocketAddress.of(path);
 
-            var chan = SocketChannel.open(UNIX);
             chan.bind(addr);
 
             // Check file exists
