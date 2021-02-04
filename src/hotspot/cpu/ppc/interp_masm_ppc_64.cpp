@@ -504,7 +504,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   add(result, index, result);
   load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result,
                 tmp1, tmp2,
-                MacroAssembler::MacroAssembler::PRESERVATION_NONE,
+                MacroAssembler::PRESERVATION_NONE,
                 0, L_handle_null);
 }
 
