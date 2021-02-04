@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,28 @@
  * questions.
  */
 
-package pkg1;
+package pkg2;
 
-public class A {
+/**
+ * @hidden
+ * @param <T>
+ */
+public class Parent<T extends Parent> {
     /**
      * A visible field.
      */
-    public A visibleField;
+    public Parent visibleField;
 
     /**
      * An invisible field.
      * @hidden
      */
-    public A invisibleField;
+    public Parent invisibleField;
 
     /**
      * A visible method.
      */
-    public void visibleMethod() {}
+    public void visibleMethod(Parent<? extends Parent> p)  {}
 
     /**
      * An invisible method.
@@ -49,7 +53,7 @@ public class A {
     /**
      * A visible inner class.
      */
-    public static class VisibleInner extends A {
+    public static class VisibleInner {
         /**
          * An invisible constructor
          * @hidden invisible
@@ -61,7 +65,7 @@ public class A {
      * An invisible inner class.
      * @hidden
      */
-    public static class InvisibleInner extends A {}
+    public static class InvisibleInner {}
 
     /**
      * A visible inner class, extending an invisible class.

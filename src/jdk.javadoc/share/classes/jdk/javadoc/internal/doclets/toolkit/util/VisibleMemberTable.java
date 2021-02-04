@@ -243,7 +243,7 @@ public class VisibleMemberTable {
         OverridingMethodInfo found = overriddenMethodTable.get(e);
         if (found != null
                 && (found.simpleOverride || utils.isUndocumentedEnclosure(utils.getEnclosingTypeElement(e)))) {
-            return found.overrider;
+            return found.overridden;
         }
         return null;
     }
@@ -258,7 +258,7 @@ public class VisibleMemberTable {
 
         OverridingMethodInfo found = overriddenMethodTable.get(e);
         if (found != null && found.simpleOverride) {
-            return found.overrider;
+            return found.overridden;
         }
         return null;
     }
@@ -477,7 +477,7 @@ public class VisibleMemberTable {
             pvmt.overriddenMethodTable.entrySet().forEach(e -> {
                 OverridingMethodInfo p = e.getValue();
                 if (!p.simpleOverride) { // consider only real overrides
-                    List<ExecutableElement> list = overriddenByTable.computeIfAbsent(p.overrider,
+                    List<ExecutableElement> list = overriddenByTable.computeIfAbsent(p.overridden,
                             k -> new ArrayList<>());
                     list.add(e.getKey());
                 }
@@ -486,12 +486,12 @@ public class VisibleMemberTable {
         }
 
         // Filter out inherited methods that:
-        // a. cannot override (private instance members)
+        // a. cannot be overridden (private instance members)
         // b. are overridden and should not be visible in this type
         // c. are hidden in the type being considered
-        // see allowInheritedMethods, which performs the above actions
+        // see allowInheritedMethod, which performs the above actions
         List<Element> list = inheritedMethods.stream()
-                .filter(e -> allowInheritedMethods((ExecutableElement) e, overriddenByTable, lmt))
+                .filter(e -> allowInheritedMethod((ExecutableElement) e, overriddenByTable, lmt))
                 .collect(Collectors.toList());
 
         // Filter out the local methods, that do not override or simply
@@ -529,9 +529,9 @@ public class VisibleMemberTable {
         return utils.isInterface(enclosing);
     }
 
-    boolean allowInheritedMethods(ExecutableElement inheritedMethod,
-                                  Map<ExecutableElement, List<ExecutableElement>> inheritedOverriddenTable,
-                                  LocalMemberTable lmt) {
+    boolean allowInheritedMethod(ExecutableElement inheritedMethod,
+                                 Map<ExecutableElement, List<ExecutableElement>> overriddenByTable,
+                                 LocalMemberTable lmt) {
         if (!isInherited(inheritedMethod))
             return false;
 
@@ -552,7 +552,7 @@ public class VisibleMemberTable {
         // in favor of concrete overriding methods, for instance those that have
         // API documentation and are not abstract OR default methods.
         if (inInterface) {
-            List<ExecutableElement> list = inheritedOverriddenTable.get(inheritedMethod);
+            List<ExecutableElement> list = overriddenByTable.get(inheritedMethod);
             if (list != null) {
                 boolean found = list.stream()
                         .anyMatch(this::isEnclosureInterface);
@@ -591,9 +591,12 @@ public class VisibleMemberTable {
                 }
 
                 // Even with --override-methods=summary we want to include details of
-                // overriding method if something noteworthy has been added or changed.
+                // overriding method if something noteworthy has been added or changed
+                // either in the local overriding method or an in-between overriding method
+                // (as evidenced by an entry in overriddenByTable).
                 boolean simpleOverride = utils.isSimpleOverride(lMethod)
-                        && !overridingSignatureChanged(lMethod, inheritedMethod);
+                        && !overridingSignatureChanged(lMethod, inheritedMethod)
+                        && !overriddenByTable.containsKey(inheritedMethod);
                 overriddenMethodTable.computeIfAbsent(lMethod,
                         l -> new OverridingMethodInfo(inheritedMethod, simpleOverride));
                 return simpleOverride;
@@ -1035,17 +1038,17 @@ public class VisibleMemberTable {
      * and the type of override.
      */
     static class OverridingMethodInfo {
-        final ExecutableElement overrider;
+        final ExecutableElement overridden;
         final boolean simpleOverride;
 
-        public OverridingMethodInfo(ExecutableElement overrider, boolean simpleOverride) {
-            this.overrider = overrider;
+        public OverridingMethodInfo(ExecutableElement overridden, boolean simpleOverride) {
+            this.overridden = overridden;
             this.simpleOverride = simpleOverride;
         }
 
         @Override
         public String toString() {
-            return "OverridingMethodInfo[" + overrider + ",simple:" + simpleOverride + "]";
+            return "OverridingMethodInfo[" + overridden + ",simple:" + simpleOverride + "]";
         }
     }
 }
