@@ -227,7 +227,7 @@ public class JMap {
                 // ignore format (not needed at this time)
             } else if (subopt.startsWith("gz=")) {
                compress_level = subopt.substring("gz=".length());
-               if (compress_level == null || compress_level.length() == 0) {
+               if (compress_level == null) {
                     System.err.println("Fail: no number provided in option: '" + subopt + "'");
                     usage(1);
                }

@@ -118,7 +118,6 @@ public class BasicJMapTest {
         testDumpLive();
         testDumpAll();
         testDumpCompressed();
-        testDumpIllegalCompressedArgs();
     }
 
     private static void testHisto() throws Exception {
@@ -231,23 +230,7 @@ public class BasicJMapTest {
         dump(true, false, true);
     }
 
-    private static void testDumpIllegalCompressedArgs() throws Exception{
-        dump(true, false, true, "0", 1, "Compression level out of range");
-        dump(true, false, true, "100", 1, "Compression level out of range");
-        dump(true, false, true, "abc", 1, "Invalid compress level");
-        dump(true, false, true, "", 1, "Fail: no number provided in option:");
-    }
-
     private static void dump(boolean live, boolean explicitAll, boolean compressed) throws Exception {
-        dump(live, explicitAll, compressed, "1", 0, "Heap dump file created");
-    }
-
-    private static void dump(boolean live,
-                             boolean explicitAll,
-                             boolean compressed,
-                             String compressLevel,
-                             int expExitValue,
-                             String expOutput) throws Exception {
         String liveArg = "";
         String fileArg = "";
         String compressArg = "";
@@ -265,7 +248,7 @@ public class BasicJMapTest {
 
         String filePath = "jmap.dump" + System.currentTimeMillis() + ".hprof";
         if (compressed) {
-            compressArg = "gz=" + compressLevel;
+            compressArg = "gz=1,";
             filePath = filePath + ".gz";
         }
 
@@ -273,16 +256,14 @@ public class BasicJMapTest {
         if (file.exists()) {
             file.delete();
         }
-        fileArg = "file=" + file.getName() + ",";
+        fileArg = "file=" + file.getName();
 
         OutputAnalyzer output;
-        allArgs = allArgs + liveArg + "format=b," + fileArg + compressArg;
+        allArgs = allArgs + liveArg + compressArg + "format=b," + fileArg;
         output = jmap(allArgs);
-        output.shouldHaveExitValue(expExitValue);
-        output.shouldContain(expOutput);
-        if (expExitValue == 0) {
-            verifyDumpFile(file);
-        }
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Heap dump file created");
+        verifyDumpFile(file);
         file.delete();
     }
 
