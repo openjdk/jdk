@@ -57,8 +57,8 @@ public class JMap extends Tool {
         System.out.println("    <no option>\tTo print same info as Solaris pmap.");
         System.out.println("    -heap\tTo print java heap summary.");
         System.out.println("    -heap:format=b[,gz=<1-9>][,file=<dumpfile>]  \tTo dump java heap in hprof binary format.");
-        System.out.println("                                                 \tIf gz specified, the heap dump is written");
-        System.out.println("                                                 \tin gzipped format using the given compression level.");
+        System.out.println("                                                 \tIf gz specified, the heap dump is written in gzipped format");
+        System.out.println("                                                 \tusing the given compression level.");
         System.err.println("                                                 \t1 (recommended) is the fastest, 9 the strongest compression.");
         System.out.println("    -heap:format=x[,file=<dumpfile>]             \tTo dump java heap in GXL format.");
         System.out.println("                                                 \tPlease be aware that \"gz\" option is not valid for heap dump in GXL format.");

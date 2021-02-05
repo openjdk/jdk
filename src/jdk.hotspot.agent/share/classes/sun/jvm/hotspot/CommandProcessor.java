@@ -1781,43 +1781,36 @@ public class CommandProcessor {
                     JMap jmap = new JMap();
                     String filename = "heap.bin";
                     int gzlevel = 0;
-                    // When cntTokens is zero, use default filename.
-                    // Handle with cntTokens = 1 or 2.
-                    String option = cntTokens > 0 ? t.nextToken() : null;
                     /*
                      * Possible command:
                      *     dumpheap gz=1 file;
                      *     dumpheap gz=1;
                      *     dumpheap file;
                      *     dumpheap
+                     *
+                     * Use default filename if cntTokens == 0.
+                     * Handle cases with cntTokens == 1 or 2.
                      */
-                    if (cntTokens == 2) {
-                        /* First argument is compression level, second is filename */
-                        /* Parse "gz=" option. */
+                    if (cntTokens > 2) {
+                        err.println("Too big number of options: " + cntTokens);
+                        usage();
+                        return;
+                    }
+                    if (cntTokens >= 1) { // parse first argument which is "gz=" option
+                        String option  = t.nextToken();
                         gzlevel = parseHeapDumpCompressionLevel(option);
-                        if (gzlevel == 0) {
+                        if (gzlevel <= 0 || gzlevel > 9) {
                             usage();
                             return;
                         }
-                        /* Parse filename. */
+                        filename = "heap.bin.gz";
+                    }
+                    if (cntTokens == 2) { // parse second argument which is filename
                         filename = t.nextToken();
-                        // Don't accept filename that start with "gz=" to avoid case like
-                        // "dumpheap gz=1 gz=2"
                         if (filename.startsWith("gz=")) {
-                            err.println("Illegal filename \" + filename + \" should not start with \"gz=\".");
+                            err.println("Filename should not start with \"gz=\": " + filename);
                             usage();
                             return;
-                        }
-                    } else if (cntTokens == 1) {
-                        filename = option;
-                        // Try to parse "gz=" option.
-                        if (option.startsWith("gz=")) {
-                            gzlevel = parseHeapDumpCompressionLevel(option);
-                            if (gzlevel == 0) {
-                                usage();
-                                return;
-                            }
-                            filename = "heap.bin.gz";
                         }
                     }
                     try {
@@ -2098,26 +2091,26 @@ public class CommandProcessor {
      *           0      compression level is illegal
      */
     private int parseHeapDumpCompressionLevel(String option) {
-        int gzl = 0;
+
         String[] keyValue = option.split("=");
-        if (keyValue[0].equals("gz")) {
-            if (keyValue.length == 1) {
-                err.println("Argument is expected for \"gz\"");
-                return 0;
-            }
-            String level = keyValue[1];
-            try {
-                gzl = Integer.parseInt(level);
-            } catch (NumberFormatException e) {
-                err.println("gz option value not an integer ("+level+")");
-                return 0;
-            }
-            if (gzl < 1 || gzl > 9) {
-                err.println("Compression level out of range (1-9): " + level);
-                return 0;
-            }
-        } else {
-            err.println("Unknown option \"" + option + "\"");
+        if (!keyValue[0].equals("gz")) {
+            err.println("Expected option is \"gz=\"");
+            return 0;
+        }
+        if (keyValue.length != 2) {
+            err.println("Exactly one argument is expected for option \"gz\"");
+            return 0;
+        }
+        int gzl = 0;
+        String level = keyValue[1];
+        try {
+            gzl = Integer.parseInt(level);
+        } catch (NumberFormatException e) {
+            err.println("gz option value not an integer ("+level+")");
+            return 0;
+        }
+        if (gzl < 1 || gzl > 9) {
+            err.println("Compression level out of range (1-9): " + level);
             return 0;
         }
         return gzl;
