@@ -2823,7 +2823,7 @@ public class StyleSheet extends StyleContext {
         }
 
         Object doGetAttribute(Object key) {
-            if (key == CSS.Attribute.FONT_SIZE && !isDefined(key) && !isW3CLengthUnits()) {
+            if (key == CSS.Attribute.FONT_SIZE && !isDefined(key)) {
                 // CSS.FontSize represents a specified value and we need
                 // to inherit a computed value so don't resolve percentage
                 // value from parent.
