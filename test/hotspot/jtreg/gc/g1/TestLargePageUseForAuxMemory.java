@@ -49,9 +49,25 @@ public class TestLargePageUseForAuxMemory {
     static long smallPageSize;
     static long allocGranularity;
 
-    static void checkSize(OutputAnalyzer output, long expectedSize, String pattern) {
-        String pageSizeStr = output.firstMatch(pattern, 1);
+    static boolean checkLargePagesEnabled(OutputAnalyzer output) {
+        String lp = output.firstMatch("Large Page Support: (\\w*)", 1);
+        return lp != null && lp.equals("Enabled");
+    }
 
+    static void checkSize(OutputAnalyzer output, long expectedSize, String pattern) {
+        // First check if there is a large page failure associated with
+        // the data structure being checked.
+        String failureMatch = output.firstMatch("Reserve regular memory without large pages\\n.*" + pattern, 1);
+        if (failureMatch != null) {
+            // This should only happen when we are expecting large pages
+            if (expectedSize == smallPageSize) {
+                throw new RuntimeException("Expected small page size when large page failure was detected");
+            }
+            expectedSize = smallPageSize;
+        }
+
+        // Now check what page size is traced.
+        String pageSizeStr = output.firstMatch(pattern, 1);
         if (pageSizeStr == null) {
             output.reportDiagnosticSummary();
             throw new RuntimeException("Match from '" + pattern + "' got 'null' expected: " + expectedSize);
@@ -82,15 +98,22 @@ public class TestLargePageUseForAuxMemory {
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                    "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
                                                    "-Xmx" + heapsize,
-                                                   "-Xlog:pagesize",
+                                                   "-Xlog:pagesize,gc+init,gc+heap+coops=debug",
                                                    "-XX:+UseLargePages",
                                                    "-XX:+IgnoreUnrecognizedVMOptions",  // there is no ObjectAlignmentInBytes in 32 bit builds
                                                    "-XX:ObjectAlignmentInBytes=8",
                                                    "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
-        checkBitmaps(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
+        // Only expect large page size if no large page allocation failures
+        // are present in the log.
+        if (checkLargePagesEnabled(output)) {
+            checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
+            checkBitmaps(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
+        } else {
+            checkSmallTables(output, smallPageSize);
+            checkBitmaps(output, smallPageSize);
+        }
         output.shouldHaveExitValue(0);
 
         // Test with large page disabled.
