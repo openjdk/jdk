@@ -1373,6 +1373,7 @@ class java_lang_System : AllStatic {
   static int _static_err_offset;
   static int _static_security_offset;
   static int _static_allow_security_offset;
+  static int _static_never_offset;
 
  public:
   static int  in_offset() { CHECK_INIT(_static_in_offset); }
