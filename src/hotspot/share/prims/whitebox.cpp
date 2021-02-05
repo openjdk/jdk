@@ -32,11 +32,12 @@
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationPolicy.hpp"
-#include "compiler/methodMatcher.hpp"
 #include "compiler/directivesParser.hpp"
+#include "compiler/methodMatcher.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -762,10 +763,6 @@ static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobje
   return env->FromReflectedMethod(method);
 }
 
-static CompLevel highestCompLevel() {
-  return TieredCompilation ? MIN2((CompLevel) TieredStopAtLevel, CompLevel_highest_tier) : CompLevel_highest_tier;
-}
-
 // Deoptimizes all compiled frames and makes nmethods not entrant if it's requested
 class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
  private:
@@ -852,7 +849,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level, jboolean is_osr))
-  if (method == NULL || comp_level > highestCompLevel()) {
+  if (method == NULL || comp_level > CompilationPolicy::highest_compile_level()) {
     return false;
   }
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
@@ -875,7 +872,7 @@ WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobje
 WB_END
 
 WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject method, jobject compilation_context, jint compLevel))
-  if (compLevel < CompLevel_none || compLevel > highestCompLevel()) {
+  if (compLevel < CompLevel_none || compLevel > CompilationPolicy::highest_compile_level()) {
     return false; // Intrinsic is not available on a non-existent compilation level.
   }
   jmethodID method_id, compilation_context_id;
@@ -973,7 +970,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
     tty->print_cr("WB error: request to compile NULL method");
     return false;
   }
-  if (comp_level > highestCompLevel()) {
+  if (comp_level > CompilationPolicy::highest_compile_level()) {
     tty->print_cr("WB error: invalid compilation level %d", comp_level);
     return false;
   }
@@ -993,6 +990,15 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != NULL) {
+    return true;
+  }
+  // Check code again because compilation may be finished before Compile_lock is acquired.
+  if (bci == InvocationEntryBci) {
+    CompiledMethod* code = mh->code();
+    if (code != NULL && code->as_nmethod_or_null() != NULL) {
+      return true;
+    }
+  } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != NULL) {
     return true;
   }
   tty->print("WB error: failed to %s compile at level %d method ", is_blocking ? "blocking" : "", comp_level);
@@ -1099,7 +1105,7 @@ WB_ENTRY(void, WB_MarkMethodProfiled(JNIEnv* env, jobject o, jobject method))
   mdo->init();
   InvocationCounter* icnt = mdo->invocation_counter();
   InvocationCounter* bcnt = mdo->backedge_counter();
-  // set i-counter according to TieredThresholdPolicy::is_method_profiled
+  // set i-counter according to CompilationPolicy::is_method_profiled
   icnt->set(Tier4MinInvocationThreshold);
   bcnt->set(Tier4CompileThreshold);
 WB_END
@@ -1128,16 +1134,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   mh->clear_not_c2_osr_compilable();
   NOT_PRODUCT(mh->set_compiled_invocation_count(0));
   if (mcs != NULL) {
-    mcs->backedge_counter()->init();
-    mcs->invocation_counter()->init();
-    mcs->set_interpreter_invocation_count(0);
-    mcs->set_interpreter_throwout_count(0);
-
-#ifdef TIERED
-    mcs->set_rate(0.0F);
-    mh->set_prev_event_count(0);
-    mh->set_prev_time(0);
-#endif
+    mcs->clear_counters();
   }
 WB_END
 

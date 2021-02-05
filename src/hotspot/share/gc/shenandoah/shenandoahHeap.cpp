@@ -39,7 +39,6 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -47,7 +46,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
-#include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
@@ -73,6 +71,7 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
+#include "classfile/systemDictionary.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
@@ -1711,7 +1710,6 @@ void ShenandoahHeap::set_evacuation_in_progress(bool in_progress) {
 }
 
 void ShenandoahHeap::set_concurrent_strong_root_in_progress(bool in_progress) {
-  assert(ShenandoahConcurrentRoots::can_do_concurrent_roots(), "Why set the flag?");
   if (in_progress) {
     _concurrent_strong_root_in_progress.set();
   } else {
@@ -1720,7 +1718,6 @@ void ShenandoahHeap::set_concurrent_strong_root_in_progress(bool in_progress) {
 }
 
 void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool in_progress) {
-  assert(ShenandoahConcurrentRoots::can_do_concurrent_roots(), "Why set the flag?");
   if (in_progress) {
     _concurrent_weak_root_in_progress.set();
   } else {
@@ -1792,14 +1789,16 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   if (!unload_classes()) return;
   // Unload classes and purge SystemDictionary.
   {
-    ShenandoahGCPhase phase(full_gc ?
-                            ShenandoahPhaseTimings::full_gc_purge_class_unload :
-                            ShenandoahPhaseTimings::degen_gc_purge_class_unload);
+    ShenandoahPhaseTimings::Phase phase = full_gc ?
+                                          ShenandoahPhaseTimings::full_gc_purge_class_unload :
+                                          ShenandoahPhaseTimings::degen_gc_purge_class_unload;
+    ShenandoahGCPhase gc_phase(phase);
+    ShenandoahGCWorkerPhase worker_phase(phase);
     bool purged_class = SystemDictionary::do_unloading(gc_timer());
 
     ShenandoahIsAliveSelector is_alive;
     uint num_workers = _workers->active_workers();
-    ShenandoahClassUnloadingTask unlink_task(is_alive.is_alive_closure(), num_workers, purged_class);
+    ShenandoahClassUnloadingTask unlink_task(phase, is_alive.is_alive_closure(), num_workers, purged_class);
     _workers->run_task(&unlink_task);
   }
 
@@ -1819,16 +1818,12 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
 // However, we do need to "null" dead oops in the roots, if can not be done
 // in concurrent cycles.
 void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
-  ShenandoahGCPhase root_phase(full_gc ?
-                               ShenandoahPhaseTimings::full_gc_purge :
-                               ShenandoahPhaseTimings::degen_gc_purge);
   uint num_workers = _workers->active_workers();
   ShenandoahPhaseTimings::Phase timing_phase = full_gc ?
                                                ShenandoahPhaseTimings::full_gc_purge_weak_par :
                                                ShenandoahPhaseTimings::degen_gc_purge_weak_par;
   ShenandoahGCPhase phase(timing_phase);
   ShenandoahGCWorkerPhase worker_phase(timing_phase);
-
   // Cleanup weak roots
   if (has_forwarded_objects()) {
     ShenandoahForwardedIsAliveClosure is_alive;
@@ -1853,6 +1848,9 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
 void ShenandoahHeap::parallel_cleaning(bool full_gc) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_stw_gc_in_progress(), "Only for Degenerated and Full GC");
+  ShenandoahGCPhase phase(full_gc ?
+                          ShenandoahPhaseTimings::full_gc_purge :
+                          ShenandoahPhaseTimings::degen_gc_purge);
   stw_weak_refs(full_gc);
   stw_process_weak_roots(full_gc);
   stw_unload_classes(full_gc);
@@ -1970,7 +1968,7 @@ void ShenandoahHeap::prepare_concurrent_roots() {
   assert(!is_stw_gc_in_progress(), "Only concurrent GC");
   set_concurrent_strong_root_in_progress(!collection_set()->is_empty());
   set_concurrent_weak_root_in_progress(true);
-  if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+  if (unload_classes()) {
     _unloader.prepare();
   }
 }
@@ -1978,7 +1976,7 @@ void ShenandoahHeap::prepare_concurrent_roots() {
 void ShenandoahHeap::finish_concurrent_roots() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!is_stw_gc_in_progress(), "Only concurrent GC");
-  if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+  if (unload_classes()) {
     _unloader.finish();
   }
 }

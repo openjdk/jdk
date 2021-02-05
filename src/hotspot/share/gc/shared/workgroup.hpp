@@ -29,6 +29,7 @@
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/logical.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
 #include "gc/shared/gcId.hpp"
 #include "logging/log.hpp"

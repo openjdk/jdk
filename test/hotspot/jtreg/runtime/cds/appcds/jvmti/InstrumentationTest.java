@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ import java.io.FileInputStream;
 import java.util.Scanner;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class InstrumentationTest {
     public static String bootClasses[] = {
@@ -109,15 +109,18 @@ public class InstrumentationTest {
         // First, run the test class directly, w/o sharing, as a baseline reference
         flagFile = getFlagFile(attachAgent);
         AgentAttachThread t = doAttach(attachAgent, flagFile, agentJar);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                bootCP,
-                "-cp", appJar,
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI",
-                "-Xshare:off",
-                agentCmdArg,
-                "InstrumentationApp", flagFile, bootJar, appJar, custJar);
-        TestCommon.executeAndLog(pb, "no-sharing").shouldHaveExitValue(0);
+        CDSOptions opts = (new CDSOptions())
+            .setUseVersion(false)
+            .setXShareMode("off")
+            .addSuffix(bootCP,
+                       "-cp", appJar,
+                       "-XX:+UnlockDiagnosticVMOptions",
+                       "-XX:+WhiteBoxAPI",
+                       "-Xshare:off",
+                       agentCmdArg,
+                       "InstrumentationApp", flagFile, bootJar, appJar, custJar);
+        CDSTestUtils.run(opts)
+                    .assertNormalExit();
         checkAttach(t);
 
         // Dump the AppCDS archive. On some platforms AppCDSv2 may not be enabled, so we
@@ -153,7 +156,7 @@ public class InstrumentationTest {
                 agentCmdArg,
                "InstrumentationApp", flagFile, bootJar, appJar, custJar);
 
-        CDSOptions opts = (new CDSOptions()).setXShareMode("auto");
+        opts = (new CDSOptions()).setXShareMode("auto");
         TestCommon.checkExec(out, opts);
         checkAttach(t);
     }

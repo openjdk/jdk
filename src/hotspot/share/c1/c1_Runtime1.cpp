@@ -31,7 +31,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
 #include "code/compiledIC.hpp"
@@ -469,7 +469,7 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, Meth
     }
     bci = branch_bci + offset;
   }
-  osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
+  osr_nm = CompilationPolicy::event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
   return osr_nm;
 }
 
@@ -532,7 +532,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   }
   assert(exception.not_null(), "NULL exceptions should be handled by throw_exception");
   // Check that exception is a subclass of Throwable
-  assert(exception->is_a(SystemDictionary::Throwable_klass()),
+  assert(exception->is_a(vmClasses::Throwable_klass()),
          "Exception not subclass of Throwable");
 
   // debugging support
@@ -1402,8 +1402,6 @@ JRT_END
 JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
   ResourceMark rm;
 
-  assert(!TieredCompilation, "incompatible with tiered compilation");
-
   RegisterMap reg_map(thread, false);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
@@ -1421,7 +1419,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
     Method::build_interpreter_method_data(m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // Only metaspace OOM is expected. No Java code executed.
-      assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+      assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
       CLEAR_PENDING_EXCEPTION;
     }
     mdo = m->method_data();
