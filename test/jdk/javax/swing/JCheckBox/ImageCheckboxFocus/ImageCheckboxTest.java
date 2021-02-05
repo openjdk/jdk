@@ -47,25 +47,22 @@ public class ImageCheckboxTest {
     }
 
     public void performTest() throws Exception {
-        try {
-            BufferedImage imageNoFocus = new BufferedImage(100, 50,
-                    BufferedImage.TYPE_INT_ARGB);
-            BufferedImage imageFocus = new BufferedImage(100, 50,
-                    BufferedImage.TYPE_INT_ARGB);
+        BufferedImage imageNoFocus = new BufferedImage(100, 50,
+                BufferedImage.TYPE_INT_ARGB);
+        BufferedImage imageFocus = new BufferedImage(100, 50,
+                BufferedImage.TYPE_INT_ARGB);
 
-            CustomCheckBox checkbox = new CustomCheckBox("Test", new MyIcon(Color.GREEN));
-            checkbox.setSize(100, 50);
-            checkbox.setFocused(false);
-            checkbox.paint(imageNoFocus.createGraphics());
-            checkbox.setFocused(true);
-            checkbox.paint(imageFocus.createGraphics());
+        CustomCheckBox checkbox = new CustomCheckBox("Test", new MyIcon(Color.GREEN));
+        checkbox.setSize(100, 50);
+        checkbox.setFocused(false);
+        checkbox.paint(imageNoFocus.createGraphics());
+        checkbox.setFocused(true);
+        checkbox.paint(imageFocus.createGraphics());
 
-            if (Util.compareBufferedImages(imageFocus, imageNoFocus)) {
-                ImageIO.write(imageFocus, "png", new File("imageFocus.png"));
-                ImageIO.write(imageNoFocus, "png", new File("imageNoFocus.png"));
-                throw new Exception("Changing focus is not visualized");
-            }
-        } finally {
+        if (Util.compareBufferedImages(imageFocus, imageNoFocus)) {
+            ImageIO.write(imageFocus, "png", new File("imageFocus.png"));
+            ImageIO.write(imageNoFocus, "png", new File("imageNoFocus.png"));
+            throw new Exception("Changing focus is not visualized");
         }
     }
 
