@@ -23,7 +23,6 @@
 /*
  * @test
  * @bug 8231286
- * @key headful
  * @summary  Verifies if HTML font size too large with high-DPI scaling and W3C_LENGTH_UNITS
  * @run main/othervm -Dsun.java2d.uiScale=1.0 HtmlFontSizeTest
  */
