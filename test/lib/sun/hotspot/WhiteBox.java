@@ -370,6 +370,16 @@ public class WhiteBox {
       }
       return allocateCodeBlob( intSize, type);
   }
+
+  public native long getCodeCacheTotalSize(int blobType);
+  public native long getCodeCacheUnallocatedCapacity(int blobType);
+  public boolean isCodeCacheEffectivelyFull(int blobType) {
+      long unallocated = getCodeCacheUnallocatedCapacity(blobType);
+
+      // Number 2M is arbitrary, can be changed if need arises
+      return unallocated == -1 ? true : unallocated < 2000000;
+  }
+
   public native void    freeCodeBlob(long addr);
   public native void    forceNMethodSweep();
   public native Object[] getCodeHeapEntries(int type);
