@@ -102,7 +102,10 @@ public class TestNestedLinkTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/C.html", false,
-                "{@link");
+                "{@link",
+                "ABC <a href=\"#m2()\"");
+        checkOutput("p/C.html", true,
+                "ABC DEF GHI");
     }
 
     @Test

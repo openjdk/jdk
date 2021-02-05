@@ -1606,9 +1606,18 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitLink(LinkTree node, Content c) {
-                    // we need to pass the DocTreeImpl here, so ignore node
-                    Content content = seeTagToContent(element, tag, context);
-                    result.add(content);
+                    var inTags = context.inTags;
+                    if (inTags.contains(LINK) || inTags.contains(LINK_PLAIN) || inTags.contains(SEE)) {
+                        messages.warning(ch.getDocTreePath(node), "doclet.see.nested_link", "{@" + node.getTagName() + "}");
+                        Content label = commentTagsToContent(node, element, node.getLabel(), context);
+                        if (label.isEmpty()) {
+                            label = new StringContent(node.getReference().getSignature());
+                        }
+                        result.add(label);
+                    } else {
+                        Content content = seeTagToContent(element, node, context.within(node));
+                        result.add(content);
+                    }
                     return false;
                 }
 
