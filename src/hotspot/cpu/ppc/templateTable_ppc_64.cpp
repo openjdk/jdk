@@ -3362,7 +3362,7 @@ void TemplateTable::prepare_invoke(int byte_no,
 
   // Load receiver if needed (after appendix is pushed so parameter size is correct).
   if (load_receiver) {
-    const Register Rparam_count = Rscratch1;
+    Register Rparam_count = Rscratch1;
     __ andi(Rparam_count, Rflags, ConstantPoolCacheEntry::parameter_size_mask);
     __ load_receiver(Rparam_count, Rrecv);
     __ verify_oop(Rrecv);
