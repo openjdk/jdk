@@ -68,8 +68,6 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
         $(JPACKAGE_APPLAUNCHER_INCLUDES), \
     CFLAGS := $(call JpackageWithStaticCrt, $(CFLAGS_JDKEXE)) \
         $(JPACKAGE_APPLAUNCHER_INCLUDES), \
-    CFLAGS_linux := -Wno-format-nonliteral, \
-    CFLAGS_macosx := -Wno-format-nonliteral, \
     CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
     CFLAGS_windows := $(JPACKAGE_CFLAGS_windows), \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
