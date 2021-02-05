@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "code/debugInfoRec.hpp"
 #include "code/scopeDesc.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/globals_extension.hpp"
 
 // Private definition.
 // There is one DIR_Chunk for each scope and values array.
@@ -286,7 +287,10 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
                                               bool        reexecute,
                                               bool        rethrow_exception,
                                               bool        is_method_handle_invoke,
+                                              bool        is_optimized_linkToNative,
                                               bool        return_oop,
+                                              bool        has_ea_local_in_scope,
+                                              bool        arg_escape,
                                               DebugToken* locals,
                                               DebugToken* expressions,
                                               DebugToken* monitors) {
@@ -302,7 +306,10 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   last_pd->set_should_reexecute(reexecute);
   last_pd->set_rethrow_exception(rethrow_exception);
   last_pd->set_is_method_handle_invoke(is_method_handle_invoke);
+  last_pd->set_is_optimized_linkToNative(is_optimized_linkToNative);
   last_pd->set_return_oop(return_oop);
+  last_pd->set_has_ea_local_in_scope(has_ea_local_in_scope);
+  last_pd->set_arg_escape(arg_escape);
 
   // serialize sender stream offest
   stream()->write_int(sender_stream_offset);
@@ -390,7 +397,7 @@ void DebugInformationRecorder::end_scopes(int pc_offset, bool is_safepoint) {
 
 #ifdef ASSERT
 bool DebugInformationRecorder::recorders_frozen() {
-  return _oop_recorder->is_complete() || _oop_recorder->is_complete();
+  return _oop_recorder->is_complete();
 }
 
 void DebugInformationRecorder::mark_recorders_frozen() {

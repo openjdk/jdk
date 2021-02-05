@@ -237,6 +237,9 @@ inline size_t heap_word_size(size_t byte_size) {
   return (byte_size + (HeapWordSize-1)) >> LogHeapWordSize;
 }
 
+inline jfloat jfloat_cast(jint x);
+inline jdouble jdouble_cast(jlong x);
+
 //-------------------------------------------
 // Constant for jlong (standardized by C++11)
 
@@ -246,6 +249,13 @@ inline size_t heap_word_size(size_t byte_size) {
 
 const jlong min_jlong = CONST64(0x8000000000000000);
 const jlong max_jlong = CONST64(0x7fffffffffffffff);
+
+//-------------------------------------------
+// Constant for jdouble
+const jlong min_jlongDouble = CONST64(0x0000000000000001);
+const jdouble min_jdouble = jdouble_cast(min_jlongDouble);
+const jlong max_jlongDouble = CONST64(0x7fefffffffffffff);
+const jdouble max_jdouble = jdouble_cast(max_jlongDouble);
 
 const size_t K                  = 1024;
 const size_t M                  = K*K;
@@ -436,6 +446,21 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 #define CAST_TO_FN_PTR(func_type, value) (reinterpret_cast<func_type>(value))
 #define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((address_word)(func_ptr)))
 
+// In many places we've added C-style casts to silence compiler
+// warnings, for example when truncating a size_t to an int when we
+// know the size_t is a small struct. Such casts are risky because
+// they effectively disable useful compiler warnings. We can make our
+// lives safer with this function, which ensures that any cast is
+// reversible without loss of information. It doesn't check
+// everything: it isn't intended to make sure that pointer types are
+// compatible, for example.
+template <typename T2, typename T1>
+T2 checked_cast(T1 thing) {
+  T2 result = static_cast<T2>(thing);
+  assert(static_cast<T1>(result) == thing, "must be");
+  return result;
+}
+
 // Need the correct linkage to call qsort without warnings
 extern "C" {
   typedef int (*_sort_Fn)(const void *, const void *);
@@ -468,6 +493,11 @@ const jshort max_jshort = (1 << 15) - 1; // largest jshort
 
 const jint min_jint = (jint)1 << (sizeof(jint)*BitsPerByte-1); // 0x80000000 == smallest jint
 const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == largest jint
+
+const jint min_jintFloat = (jint)(0x00000001);
+const jfloat min_jfloat = jfloat_cast(min_jintFloat);
+const jint max_jintFloat = (jint)(0x7f7fffff);
+const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
@@ -673,12 +703,36 @@ inline bool is_reference_type(BasicType t) {
   return (t == T_OBJECT || t == T_ARRAY);
 }
 
+inline bool is_integral_type(BasicType t) {
+  return is_subword_type(t) || t == T_INT || t == T_LONG;
+}
+
+inline bool is_floating_point_type(BasicType t) {
+  return (t == T_FLOAT || t == T_DOUBLE);
+}
+
 extern char type2char_tab[T_CONFLICT+1];     // Map a BasicType to a jchar
 inline char type2char(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2char_tab[t] : 0; }
 extern int type2size[T_CONFLICT+1];         // Map BasicType to result stack elements
 extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a jchar
 inline const char* type2name(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2name_tab[t] : NULL; }
 extern BasicType name2type(const char* name);
+
+inline jlong max_signed_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return max_jint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return max_jlong;
+}
+
+inline jlong min_signed_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return min_jint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return min_jlong;
+}
 
 // Auxiliary math routines
 // least common multiple
@@ -986,59 +1040,6 @@ template<typename T>
 inline T clamp(T value, T min, T max) {
   assert(min <= max, "must be");
   return MIN2(MAX2(value, min), max);
-}
-
-// Returns largest i such that 2^i <= x.
-// If x == 0, the function returns -1.
-inline int log2_intptr(uintptr_t x) {
-  int i = -1;
-  uintptr_t p = 1;
-  while (p != 0 && p <= x) {
-    // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
-    i++; p *= 2;
-  }
-  // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
-  // If p = 0, overflow has occurred and i = 31 or i = 63 (depending on the machine word size).
-  return i;
-}
-
-//* largest i such that 2^i <= x
-inline int log2_long(julong x) {
-  int i = -1;
-  julong p =  1;
-  while (p != 0 && p <= x) {
-    // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
-    i++; p *= 2;
-  }
-  // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
-  // (if p = 0 then overflow occurred and i = 63)
-  return i;
-}
-
-// If x < 0, the function returns 31 on a 32-bit machine and 63 on a 64-bit machine.
-inline int log2_intptr(intptr_t x) {
-  return log2_intptr((uintptr_t)x);
-}
-
-inline int log2_int(int x) {
-  STATIC_ASSERT(sizeof(int) <= sizeof(uintptr_t));
-  return log2_intptr((uintptr_t)(unsigned int)x);
-}
-
-inline int log2_jint(jint x) {
-  STATIC_ASSERT(sizeof(jint) <= sizeof(uintptr_t));
-  return log2_intptr((uintptr_t)(juint)x);
-}
-
-inline int log2_uint(uint x) {
-  STATIC_ASSERT(sizeof(uint) <= sizeof(uintptr_t));
-  return log2_intptr((uintptr_t)x);
-}
-
-//  A negative value of 'x' will return '63'
-inline int log2_jlong(jlong x) {
-  STATIC_ASSERT(sizeof(jlong) <= sizeof(julong));
-  return log2_long((julong)x);
 }
 
 inline bool is_odd (intx x) { return x & 1;      }

@@ -34,7 +34,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
@@ -98,7 +97,7 @@ public class Type1Font extends FileFont {
         }
     }
 
-    WeakReference<Object> bufferRef = new WeakReference<>(null);
+    WeakReference<ByteBuffer> bufferRef = new WeakReference<>(null);
 
     private String psName = null;
 
@@ -185,8 +184,8 @@ public class Type1Font extends FileFont {
     }
 
     private synchronized ByteBuffer getBuffer() throws FontFormatException {
-        MappedByteBuffer mapBuf = (MappedByteBuffer)bufferRef.get();
-        if (mapBuf == null) {
+        ByteBuffer bbuf = bufferRef.get();
+        if (bbuf == null) {
           //System.out.println("open T1 " + platName);
             try {
                 RandomAccessFile raf = (RandomAccessFile)
@@ -202,9 +201,10 @@ public class Type1Font extends FileFont {
                 });
                 FileChannel fc = raf.getChannel();
                 fileSize = (int)fc.size();
-                mapBuf = fc.map(FileChannel.MapMode.READ_ONLY, 0, fileSize);
-                mapBuf.position(0);
-                bufferRef = new WeakReference<>(mapBuf);
+                bbuf = ByteBuffer.allocate(fileSize);
+                fc.read(bbuf);
+                bbuf.position(0);
+                bufferRef = new WeakReference<>(bbuf);
                 fc.close();
             } catch (NullPointerException e) {
                 throw new FontFormatException(e.toString());
@@ -218,7 +218,7 @@ public class Type1Font extends FileFont {
                 throw new FontFormatException(e.toString());
             }
         }
-        return mapBuf;
+        return bbuf;
     }
 
     protected void close() {
@@ -268,14 +268,14 @@ public class Type1Font extends FileFont {
     }
 
     public synchronized ByteBuffer readBlock(int offset, int length) {
-        ByteBuffer mappedBuf = null;
+        ByteBuffer bbuf = null;
         try {
-            mappedBuf = getBuffer();
+            bbuf = getBuffer();
             if (offset > fileSize) {
                 offset = fileSize;
             }
-            mappedBuf.position(offset);
-            return mappedBuf.slice();
+            bbuf.position(offset);
+            return bbuf.slice();
         } catch (FontFormatException e) {
             return null;
         }

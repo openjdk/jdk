@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,19 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/universe.hpp"
 #include "oops/cpCache.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -42,13 +46,6 @@
 #include "utilities/powerOfTwo.hpp"
 
 #define __ _masm->
-
-//----------------------------------------------------------------------------------------------------
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No arm specific initialization
-}
 
 //----------------------------------------------------------------------------------------------------
 // Address computation
@@ -2070,7 +2067,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   assert(UseLoopCounter || !UseOnStackReplacement, "on-stack-replacement requires loop counters");
   Label backedge_counter_overflow;
-  Label profile_method;
   Label dispatch;
 
   if (UseLoopCounter) {
@@ -2084,84 +2080,29 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ tst(Rdisp, Rdisp);
     __ b(dispatch, pl);
 
-    if (TieredCompilation) {
-      Label no_mdo;
-      int increment = InvocationCounter::count_increment;
-      if (ProfileInterpreter) {
-        // Are we profiling?
-        __ ldr(Rtemp, Address(Rmethod, Method::method_data_offset()));
-        __ cbz(Rtemp, no_mdo);
-        // Increment the MDO backedge counter
-        const Address mdo_backedge_counter(Rtemp, in_bytes(MethodData::backedge_counter_offset()) +
-                                                  in_bytes(InvocationCounter::counter_offset()));
-        const Address mask(Rtemp, in_bytes(MethodData::backedge_mask_offset()));
-        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
-                                   Rcnt, R4_tmp, eq, &backedge_counter_overflow);
-        __ b(dispatch);
-      }
-      __ bind(no_mdo);
-      // Increment backedge counter in MethodCounters*
-      // Note Rbumped_taken_count is a callee saved registers for ARM32
-      __ get_method_counters(Rmethod, Rcounters, dispatch, true /*saveRegs*/,
-                             Rdisp, R3_bytecode,
-                             noreg);
-      const Address mask(Rcounters, in_bytes(MethodCounters::backedge_mask_offset()));
-      __ increment_mask_and_jump(Address(Rcounters, be_offset), increment, mask,
+    Label no_mdo;
+    int increment = InvocationCounter::count_increment;
+    if (ProfileInterpreter) {
+      // Are we profiling?
+      __ ldr(Rtemp, Address(Rmethod, Method::method_data_offset()));
+      __ cbz(Rtemp, no_mdo);
+      // Increment the MDO backedge counter
+      const Address mdo_backedge_counter(Rtemp, in_bytes(MethodData::backedge_counter_offset()) +
+                                                in_bytes(InvocationCounter::counter_offset()));
+      const Address mask(Rtemp, in_bytes(MethodData::backedge_mask_offset()));
+      __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
                                  Rcnt, R4_tmp, eq, &backedge_counter_overflow);
-    } else {
-      // Increment backedge counter in MethodCounters*
-      __ get_method_counters(Rmethod, Rcounters, dispatch, true /*saveRegs*/,
-                             Rdisp, R3_bytecode,
-                             noreg);
-      __ ldr_u32(Rtemp, Address(Rcounters, be_offset));           // load backedge counter
-      __ add(Rtemp, Rtemp, InvocationCounter::count_increment);   // increment counter
-      __ str_32(Rtemp, Address(Rcounters, be_offset));            // store counter
-
-      __ ldr_u32(Rcnt, Address(Rcounters, inv_offset));           // load invocation counter
-      __ bic(Rcnt, Rcnt, ~InvocationCounter::count_mask_value);  // and the status bits
-      __ add(Rcnt, Rcnt, Rtemp);                                 // add both counters
-
-      if (ProfileInterpreter) {
-        // Test to see if we should create a method data oop
-        const Address profile_limit(Rcounters, in_bytes(MethodCounters::interpreter_profile_limit_offset()));
-        __ ldr_s32(Rtemp, profile_limit);
-        __ cmp_32(Rcnt, Rtemp);
-        __ b(dispatch, lt);
-
-        // if no method data exists, go to profile method
-        __ test_method_data_pointer(R4_tmp, profile_method);
-
-        if (UseOnStackReplacement) {
-          // check for overflow against Rbumped_taken_count, which is the MDO taken count
-          const Address backward_branch_limit(Rcounters, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset()));
-          __ ldr_s32(Rtemp, backward_branch_limit);
-          __ cmp(Rbumped_taken_count, Rtemp);
-          __ b(dispatch, lo);
-
-          // When ProfileInterpreter is on, the backedge_count comes from the
-          // MethodData*, which value does not get reset on the call to
-          // frequency_counter_overflow().  To avoid excessive calls to the overflow
-          // routine while the method is being compiled, add a second test to make
-          // sure the overflow function is called only once every overflow_frequency.
-          const int overflow_frequency = 1024;
-
-          // was '__ andrs(...,overflow_frequency-1)', testing if lowest 10 bits are 0
-          assert(overflow_frequency == (1 << 10),"shift by 22 not correct for expected frequency");
-          __ movs(Rbumped_taken_count, AsmOperand(Rbumped_taken_count, lsl, 22));
-
-          __ b(backedge_counter_overflow, eq);
-        }
-      } else {
-        if (UseOnStackReplacement) {
-          // check for overflow against Rcnt, which is the sum of the counters
-          const Address backward_branch_limit(Rcounters, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset()));
-          __ ldr_s32(Rtemp, backward_branch_limit);
-          __ cmp_32(Rcnt, Rtemp);
-          __ b(backedge_counter_overflow, hs);
-
-        }
-      }
+      __ b(dispatch);
     }
+    __ bind(no_mdo);
+    // Increment backedge counter in MethodCounters*
+    // Note Rbumped_taken_count is a callee saved registers for ARM32
+    __ get_method_counters(Rmethod, Rcounters, dispatch, true /*saveRegs*/,
+                           Rdisp, R3_bytecode,
+                           noreg);
+    const Address mask(Rcounters, in_bytes(MethodCounters::backedge_mask_offset()));
+    __ increment_mask_and_jump(Address(Rcounters, be_offset), increment, mask,
+                               Rcnt, R4_tmp, eq, &backedge_counter_overflow);
     __ bind(dispatch);
   }
 
@@ -2172,55 +2113,42 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   // continue with the bytecode @ target
   __ dispatch_only(vtos, true);
 
-  if (UseLoopCounter) {
-    if (ProfileInterpreter) {
-      // Out-of-line code to allocate method data oop.
-      __ bind(profile_method);
+  if (UseLoopCounter && UseOnStackReplacement) {
+    // invocation counter overflow
+    __ bind(backedge_counter_overflow);
 
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-      __ set_method_data_pointer_for_bcp();
-      // reload next bytecode
-      __ ldrb(R3_bytecode, Address(Rbcp));
-      __ b(dispatch);
-    }
+    __ sub(R1, Rbcp, Rdisp);                   // branch bcp
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R1);
 
-    if (UseOnStackReplacement) {
-      // invocation counter overflow
-      __ bind(backedge_counter_overflow);
+    // R0: osr nmethod (osr ok) or NULL (osr not possible)
+    const Register Rnmethod = R0;
 
-      __ sub(R1, Rbcp, Rdisp);                   // branch bcp
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R1);
+    __ ldrb(R3_bytecode, Address(Rbcp));       // reload next bytecode
 
-      // R0: osr nmethod (osr ok) or NULL (osr not possible)
-      const Register Rnmethod = R0;
+    __ cbz(Rnmethod, dispatch);                // test result, no osr if null
 
-      __ ldrb(R3_bytecode, Address(Rbcp));       // reload next bytecode
+    // nmethod may have been invalidated (VM may block upon call_VM return)
+    __ ldrb(R1_tmp, Address(Rnmethod, nmethod::state_offset()));
+    __ cmp(R1_tmp, nmethod::in_use);
+    __ b(dispatch, ne);
 
-      __ cbz(Rnmethod, dispatch);                // test result, no osr if null
+    // We have the address of an on stack replacement routine in Rnmethod,
+    // We need to prepare to execute the OSR method. First we must
+    // migrate the locals and monitors off of the stack.
 
-      // nmethod may have been invalidated (VM may block upon call_VM return)
-      __ ldrb(R1_tmp, Address(Rnmethod, nmethod::state_offset()));
-      __ cmp(R1_tmp, nmethod::in_use);
-      __ b(dispatch, ne);
+    __ mov(Rtmp_save0, Rnmethod);                      // save the nmethod
 
-      // We have the address of an on stack replacement routine in Rnmethod,
-      // We need to prepare to execute the OSR method. First we must
-      // migrate the locals and monitors off of the stack.
+    call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
-      __ mov(Rtmp_save0, Rnmethod);                      // save the nmethod
+    // R0 is OSR buffer
 
-      call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
+    __ ldr(R1_tmp, Address(Rtmp_save0, nmethod::osr_entry_point_offset()));
+    __ ldr(Rtemp, Address(FP, frame::interpreter_frame_sender_sp_offset * wordSize));
 
-      // R0 is OSR buffer
+    __ ldmia(FP, RegisterSet(FP) | RegisterSet(LR));
+    __ bic(SP, Rtemp, StackAlignmentInBytes - 1);     // Remove frame and align stack
 
-      __ ldr(R1_tmp, Address(Rtmp_save0, nmethod::osr_entry_point_offset()));
-      __ ldr(Rtemp, Address(FP, frame::interpreter_frame_sender_sp_offset * wordSize));
-
-      __ ldmia(FP, RegisterSet(FP) | RegisterSet(LR));
-      __ bic(SP, Rtemp, StackAlignmentInBytes - 1);     // Remove frame and align stack
-
-      __ jump(R1_tmp);
-    }
+    __ jump(R1_tmp);
   }
 }
 
@@ -3607,12 +3535,6 @@ void TemplateTable::fast_xaccess(TosState state) {
 //----------------------------------------------------------------------------------------------------
 // Calls
 
-void TemplateTable::count_calls(Register method, Register temp) {
-  // implemented elsewhere
-  ShouldNotReachHere();
-}
-
-
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method,  // linked method (or i-klass)
                                    Register index,   // itable index, MethodType, etc.
@@ -4435,6 +4357,7 @@ void TemplateTable::monitorexit() {
   const Register Rcur = R1_tmp;
   const Register Rbottom = R2_tmp;
   const Register Rcur_obj = Rtemp;
+  const Register Rmonitor = R0;      // fixed in unlock_object()
 
   // check for NULL object
   __ null_check(Robj, Rtemp);
@@ -4477,7 +4400,8 @@ void TemplateTable::monitorexit() {
   // Rcur: points to monitor entry
   __ bind(found);
   __ push_ptr(Robj);                             // make sure object is on stack (contract with oopMaps)
-  __ unlock_object(Rcur);
+  __ mov(Rmonitor, Rcur);
+  __ unlock_object(Rmonitor);
   __ pop_ptr(Robj);                              // discard object
 }
 

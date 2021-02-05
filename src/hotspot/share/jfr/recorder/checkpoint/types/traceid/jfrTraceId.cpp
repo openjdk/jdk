@@ -52,7 +52,7 @@ static traceid atomic_inc(traceid volatile* const dest) {
 }
 
 static traceid next_class_id() {
-  static volatile traceid class_id_counter = LAST_TYPE_ID + 1;
+  static volatile traceid class_id_counter = LAST_TYPE_ID;
   return atomic_inc(&class_id_counter) << TRACE_ID_SHIFT;
 }
 
@@ -62,17 +62,17 @@ static traceid next_thread_id() {
 }
 
 static traceid next_module_id() {
-  static volatile traceid module_id_counter = 1;
+  static volatile traceid module_id_counter = 0;
   return atomic_inc(&module_id_counter) << TRACE_ID_SHIFT;
 }
 
 static traceid next_package_id() {
-  static volatile traceid package_id_counter = 1;
+  static volatile traceid package_id_counter = 0;
   return atomic_inc(&package_id_counter) << TRACE_ID_SHIFT;
 }
 
 static traceid next_class_loader_data_id() {
-  static volatile traceid cld_id_counter = 1;
+  static volatile traceid cld_id_counter = 0;
   return atomic_inc(&cld_id_counter) << TRACE_ID_SHIFT;
 }
 

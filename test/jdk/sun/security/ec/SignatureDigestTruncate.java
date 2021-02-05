@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-import jdk.test.lib.Convert;
-
 import java.security.*;
 import java.security.spec.*;
 import java.math.*;
@@ -36,7 +34,7 @@ import java.util.*;
  *     group order.
  * @library /test/lib
  * @build jdk.test.lib.Convert
- * @run main/othervm -Djdk.sunec.disableNative=false SignatureDigestTruncate
+ * @run main/othervm SignatureDigestTruncate
  */
 public class SignatureDigestTruncate {
 
@@ -79,10 +77,8 @@ public class SignatureDigestTruncate {
     private static void assertEquals(byte[] expected, byte[] actual,
             String name) {
         if (!Arrays.equals(actual, expected)) {
-            System.out.println("expect: "
-                    + Convert.byteArrayToHexString(expected));
-            System.out.println("actual: "
-                    + Convert.byteArrayToHexString(actual));
+            System.out.println("expect: " + HexFormat.of().withUpperCase().formatHex(expected));
+            System.out.println("actual: " + HexFormat.of().withUpperCase().formatHex(actual));
             throw new RuntimeException("Incorrect " + name + " value");
         }
     }
@@ -93,10 +89,11 @@ public class SignatureDigestTruncate {
 
         System.out.println("Testing " + alg + " with " + curveName);
 
-        byte[] privateKey = Convert.hexStringToByteArray(privateKeyStr);
-        byte[] msg = Convert.hexStringToByteArray(msgStr);
-        byte[] k = Convert.hexStringToByteArray(kStr);
-        byte[] expectedSig = Convert.hexStringToByteArray(sigStr);
+        HexFormat hex = HexFormat.of();
+        byte[] privateKey = hex.parseHex(privateKeyStr);
+        byte[] msg = hex.parseHex(msgStr);
+        byte[] k = hex.parseHex(kStr);
+        byte[] expectedSig = hex.parseHex(sigStr);
 
         AlgorithmParameters params =
             AlgorithmParameters.getInstance("EC", "SunEC");
@@ -117,12 +114,12 @@ public class SignatureDigestTruncate {
     }
 
     public static void main(String[] args) throws Exception {
-        runTest("SHA384withECDSAinP1363Format", "sect283r1",
+        runTest("SHA384withECDSAinP1363Format", "secp256r1",
             "abcdef10234567", "010203040506070809",
             "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d" +
-            "1e1f20212223",
-            "01d7544b5d3935216bd45e2f8042537e1e0296a11e0eb96666199281b409" +
-            "42abccd5358a035de8a314d3e6c2a97614daebf5fb1313540eec3f9a3272" +
-            "068aa10922ccae87d255c84c");
+                "1e1f20212223",
+            "d83534beccde787f9a4c6b0408337d9b9ca2e0a0259228526c15cc17a1d6" +
+                "4da6b34bf21b3bc4488c591d8ac9c33d93c7c6137e2ab4c503a42da7" +
+                "2fe0b6dda4c4");
     }
 }

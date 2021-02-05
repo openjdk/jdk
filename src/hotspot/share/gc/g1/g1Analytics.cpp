@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1Predictions.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
@@ -151,7 +152,8 @@ void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
 
 void G1Analytics::compute_pause_time_ratios(double end_time_sec, double pause_time_ms) {
   double long_interval_ms = (end_time_sec - oldest_known_gc_end_time_sec()) * 1000.0;
-  _long_term_pause_time_ratio = _recent_gc_times_ms->sum() / long_interval_ms;
+  double gc_pause_time_ms = _recent_gc_times_ms->sum() - _recent_gc_times_ms->oldest() + pause_time_ms;
+  _long_term_pause_time_ratio = gc_pause_time_ms / long_interval_ms;
   _long_term_pause_time_ratio = clamp(_long_term_pause_time_ratio, 0.0, 1.0);
 
   double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
@@ -319,7 +321,6 @@ void G1Analytics::update_recent_gc_times(double end_time_sec,
                                          double pause_time_ms) {
   _recent_gc_times_ms->add(pause_time_ms);
   _recent_prev_end_times_for_all_gcs_sec->add(end_time_sec);
-  _prev_collection_pause_end_ms = end_time_sec * 1000.0;
 }
 
 void G1Analytics::report_concurrent_mark_cleanup_times_ms(double ms) {

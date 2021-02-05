@@ -28,24 +28,26 @@
 //
 // Declare Windows specific flags. They are not available on other platforms.
 //
-#define RUNTIME_OS_FLAGS(develop,     \
-                         develop_pd,  \
-                         product,     \
-                         product_pd,  \
-                         notproduct,  \
-                         range,       \
-                         constraint)
+#define RUNTIME_OS_FLAGS(develop,                                         \
+                         develop_pd,                                      \
+                         product,                                         \
+                         product_pd,                                      \
+                         notproduct,                                      \
+                         range,                                           \
+                         constraint)                                      \
+                                                                          \
+product(bool, UseOSErrorReporting, false,                                 \
+        "Let VM fatal error propagate to the OS (ie. WER on Windows)")
 
 // end of RUNTIME_OS_FLAGS
-
 
 //
 // Defines Windows-specific default values. The flags are available on all
 // platforms, but they may have different default values on other platforms.
 //
+define_pd_global(size_t, PreTouchParallelChunkSize, 1 * G);
 define_pd_global(bool, UseLargePages, false);
 define_pd_global(bool, UseLargePagesIndividualAllocation, true);
-define_pd_global(bool, UseOSErrorReporting, false);  // for now.
 define_pd_global(bool, UseThreadPriorities, true) ;
 
 #endif // OS_WINDOWS_GLOBALS_WINDOWS_HPP

@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,14 @@
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "runtime/handles.inline.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
+
+bool ClassLoaderDataShared::_full_module_graph_loaded = false;
 
 class ArchivedClassLoaderData {
   Array<PackageEntry*>* _packages;
@@ -59,6 +62,7 @@ public:
   }
 
   void restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops);
+  void clear_archived_oops();
 };
 
 static ArchivedClassLoaderData _archived_boot_loader_data;
@@ -123,6 +127,15 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
   }
 }
 
+void ArchivedClassLoaderData::clear_archived_oops() {
+  assert(UseSharedSpaces, "must be");
+  if (_modules != NULL) {
+    for (int i = 0; i < _modules->length(); i++) {
+      _modules->at(i)->clear_archived_oops();
+    }
+  }
+}
+
 // ------------------------------
 
 static ClassLoaderData* null_class_loader_data() {
@@ -183,6 +196,13 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
   }
 }
 
+void ClassLoaderDataShared::clear_archived_oops() {
+  assert(UseSharedSpaces && !MetaspaceShared::use_full_module_graph(), "must be");
+  _archived_boot_loader_data.clear_archived_oops();
+  _archived_platform_loader_data.clear_archived_oops();
+  _archived_system_loader_data.clear_archived_oops();
+}
+
 oop ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data() {
   assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
   _archived_boot_loader_data.restore(null_class_loader_data(), false, true);
@@ -197,6 +217,7 @@ void ClassLoaderDataShared::restore_java_platform_loader_from_archive(ClassLoade
 void ClassLoaderDataShared::restore_java_system_loader_from_archive(ClassLoaderData* loader_data) {
   assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
   _archived_system_loader_data.restore(loader_data, true, true);
+  _full_module_graph_loaded = true;
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

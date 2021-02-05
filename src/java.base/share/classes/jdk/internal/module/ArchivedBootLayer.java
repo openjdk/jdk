@@ -24,41 +24,33 @@
  */
 package jdk.internal.module;
 
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 
 /**
- * Used by ModuleBootstrap for archiving the boot layer and the builder needed to
- * set the IllegalAccessLogger.
+ * Used by ModuleBootstrap for archiving the boot layer.
  */
 class ArchivedBootLayer {
     private static ArchivedBootLayer archivedBootLayer;
 
     private final ModuleLayer bootLayer;
-    private final IllegalAccessLogger.Builder builder;
 
-    private ArchivedBootLayer(ModuleLayer bootLayer,
-                              IllegalAccessLogger.Builder builder) {
+    private ArchivedBootLayer(ModuleLayer bootLayer) {
         this.bootLayer = bootLayer;
-        this.builder = builder;
     }
 
     ModuleLayer bootLayer() {
         return bootLayer;
     }
 
-    IllegalAccessLogger.Builder illegalAccessLoggerBuilder() {
-        return builder;
-    }
-
     static ArchivedBootLayer get() {
         return archivedBootLayer;
     }
 
-    static void archive(ModuleLayer layer, IllegalAccessLogger.Builder builder) {
-        archivedBootLayer = new ArchivedBootLayer(layer, builder);
+    static void archive(ModuleLayer layer) {
+        archivedBootLayer = new ArchivedBootLayer(layer);
     }
 
     static {
-        VM.initializeFromArchive(ArchivedBootLayer.class);
+        CDS.initializeFromArchive(ArchivedBootLayer.class);
     }
 }

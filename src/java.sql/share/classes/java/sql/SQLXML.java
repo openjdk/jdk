@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ import javax.xml.transform.Source;
  * Implementations may also change the state to not readable when this occurs.
  *
  * <p>
- * All methods on the <code>SQLXML</code> interface must be fully implemented if the
+ * All methods on the {@code SQLXML} interface must be fully implemented if the
  * JDBC driver supports the data type.
  *
  * @see javax.xml.parsers
@@ -195,12 +195,12 @@ public interface SQLXML
    * The SQL XML object becomes invalid and neither readable or writable
    * when this method is called.
    *
-   * After <code>free</code> has been called, any attempt to invoke a
-   * method other than <code>free</code> will result in a <code>SQLException</code>
-   * being thrown.  If <code>free</code> is called multiple times, the subsequent
-   * calls to <code>free</code> are treated as a no-op.
+   * After {@code free} has been called, any attempt to invoke a
+   * method other than {@code free} will result in a {@code SQLException}
+   * being thrown.  If {@code free} is called multiple times, the subsequent
+   * calls to {@code free} are treated as a no-op.
    * @throws SQLException if there is an error freeing the XML value.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -218,7 +218,7 @@ public interface SQLXML
    * @return a stream containing the XML data.
    * @throws SQLException if there is an error processing the XML value.
    *   An exception is thrown if the state is not readable.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -237,7 +237,7 @@ public interface SQLXML
    * @return a stream to which data can be written.
    * @throws SQLException if there is an error processing the XML value.
    *   An exception is thrown if the state is not writable.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -261,7 +261,7 @@ public interface SQLXML
    *   The getCause() method of the exception may provide a more detailed exception, for example,
    *   if the stream does not contain valid characters.
    *   An exception is thrown if the state is not readable.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -285,7 +285,7 @@ public interface SQLXML
    *   The getCause() method of the exception may provide a more detailed exception, for example,
    *   if the stream does not contain valid characters.
    *   An exception is thrown if the state is not writable.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -309,7 +309,7 @@ public interface SQLXML
    *   The getCause() method of the exception may provide a more detailed exception, for example,
    *   if the stream does not contain valid characters.
    *   An exception is thrown if the state is not readable.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -333,7 +333,7 @@ public interface SQLXML
    *   The getCause() method of the exception may provide a more detailed exception, for example,
    *   if the stream does not contain valid characters.
    *   An exception is thrown if the state is not writable.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -376,7 +376,7 @@ public interface SQLXML
    *   The getCause() method of the exception may provide a more detailed exception, for example,
    *   if an XML parser exception occurs.
    *   An exception is thrown if the state is not readable.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -418,7 +418,7 @@ public interface SQLXML
    *   The getCause() method of the exception may provide a more detailed exception, for example,
    *   if an XML parser exception occurs.
    *   An exception is thrown if the state is not writable.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */

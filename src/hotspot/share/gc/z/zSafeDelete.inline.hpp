@@ -69,7 +69,7 @@ void ZSafeDeleteImpl<T>::disable_deferred_delete() {
     ZLocker<ZLock> locker(_lock);
     assert(_enabled > 0, "Invalid state");
     if (--_enabled == 0) {
-      deferred.transfer(&_deferred);
+      deferred.swap(&_deferred);
     }
   }
 

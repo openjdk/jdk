@@ -150,7 +150,7 @@ public class AMD64StringLatin1Substitutions {
      * Intrinsic for {@code java.lang.StringLatin1.inflate([BI[CII)V}.
      *
      * <pre>
-     * &#64;HotSpotIntrinsicCandidate
+     * &#64;IntrinsicCandidate
      * public static void inflate(byte[] src, int src_indx, char[] dst, int dst_indx, int len)
      * </pre>
      */
@@ -174,7 +174,7 @@ public class AMD64StringLatin1Substitutions {
      * Intrinsic for {@code }java.lang.StringLatin1.inflate([BI[BII)V}.
      *
      * <pre>
-     * &#64;HotSpotIntrinsicCandidate
+     * &#64;IntrinsicCandidate
      * public static void inflate(byte[] src, int src_indx, byte[] dst, int dst_indx, int len)
      * </pre>
      *

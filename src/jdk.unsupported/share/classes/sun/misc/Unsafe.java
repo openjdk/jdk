@@ -636,7 +636,6 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      */
     @ForceInline
-    @SuppressWarnings("preview")
     public long objectFieldOffset(Field f) {
         if (f == null) {
             throw new NullPointerException();
@@ -646,7 +645,7 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
         }
         if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get field offset on a record (preview): " + f);
+            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
         return theInternalUnsafe.objectFieldOffset(f);
     }
@@ -669,7 +668,6 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      */
     @ForceInline
-    @SuppressWarnings("preview")
     public long staticFieldOffset(Field f) {
         if (f == null) {
             throw new NullPointerException();
@@ -679,7 +677,7 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
         }
         if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get field offset on a record (preview): " + f);
+            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
         return theInternalUnsafe.staticFieldOffset(f);
     }
@@ -695,7 +693,6 @@ public final class Unsafe {
      * this class.
      */
     @ForceInline
-    @SuppressWarnings("preview")
     public Object staticFieldBase(Field f) {
         if (f == null) {
             throw new NullPointerException();
@@ -705,7 +702,7 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get base address on a hidden class: " + f);
         }
         if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get base address on a record (preview): " + f);
+            throw new UnsupportedOperationException("can't get base address on a record class: " + f);
         }
         return theInternalUnsafe.staticFieldBase(f);
     }
@@ -870,15 +867,17 @@ public final class Unsafe {
      * <li>InterfaceMethodRef: (NYI) a method handle to invoke on that call site's arguments
      * </ul>
      *
-     * @deprecated Use the {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)}
-     * method.
+     * @deprecated Use {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)}
+     * or {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, MethodHandles.Lookup.ClassOption...)}
+     * instead.
      *
      * @param hostClass context for linkage, access control, protection domain, and class loader
      * @param data      bytes of a class file
      * @param cpPatches where non-null entries exist, they replace corresponding CP entries in data
      */
     @ForceInline
-    @Deprecated(since = "15", forRemoval = false)
+    @Deprecated(since = "15", forRemoval = true)
+    @SuppressWarnings("removal")
     public Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches) {
         return theInternalUnsafe.defineAnonymousClass(hostClass, data, cpPatches);
     }

@@ -114,12 +114,12 @@ import java.util.concurrent.ConcurrentMap;
  * Instances of {@code ZoneOffset} must be compared using {@link #equals}.
  * Implementations may choose to cache certain common offsets, however
  * applications must not rely on such caching.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code ZoneOffset} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -127,6 +127,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class ZoneOffset
         extends ZoneId
         implements TemporalAccessor, TemporalAdjuster, Comparable<ZoneOffset>, Serializable {

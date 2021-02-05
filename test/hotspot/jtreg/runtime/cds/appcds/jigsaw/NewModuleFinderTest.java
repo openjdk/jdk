@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,12 @@ import java.lang.module.ModuleFinder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 
 public class NewModuleFinderTest {
 
-    private static final Path USER_DIR = Paths.get(System.getProperty("user.dir"));
+    private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
     private static final String TEST_SRC = System.getProperty("test.src");
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "modulepath/src");
     private static final Path MODS_DIR = Paths.get("mods");
@@ -67,13 +66,17 @@ public class NewModuleFinderTest {
         // compile the modules and create the modular jar files
         buildTestModule();
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:cds",
-            "-Xlog:module=debug",
-            "NewModuleFinderTest$Helper");
-        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "exec");
-        out.shouldHaveExitValue(0);
-        out.shouldContain("define_module(): creation of module: com.simple,");
+        CDSOptions opts = (new CDSOptions())
+            .setUseVersion(false)
+            .setXShareMode("auto")
+            .addSuffix("-Xlog:cds",
+                       "-Xlog:module=debug",
+                       "-Dtest.src=" + TEST_SRC,
+                       "NewModuleFinderTest$Helper");
+        CDSTestUtils.run(opts)
+            .assertNormalExit(output -> {
+                output.shouldContain("define_module(): creation of module: com.simple,");
+            });
     }
 
     static class Helper {

@@ -25,8 +25,8 @@
  * @test
  * @bug 8231827
  * @summary Basic tests for bindings from instanceof
- * @compile --enable-preview -source ${jdk.version} BindingsTest1.java
- * @run main/othervm --enable-preview BindingsTest1
+ * @compile BindingsTest1.java
+ * @run main BindingsTest1
  */
 
 public class BindingsTest1 {
@@ -171,6 +171,21 @@ public class BindingsTest1 {
         }
 
         if (o1 instanceof String s) {
+            Runnable r1 = new Runnable() {
+                @Override
+                public void run() {
+                    s.length();
+                }
+            };
+            r1.run();
+            Runnable r2 = () -> {
+                s.length();
+            };
+            r2.run();
+            String s2 = s;
+        }
+
+        if (o1 instanceof final String s) {
             Runnable r1 = new Runnable() {
                 @Override
                 public void run() {

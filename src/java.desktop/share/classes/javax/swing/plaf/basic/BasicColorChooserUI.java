@@ -78,6 +78,11 @@ public class BasicColorChooserUI extends ColorChooserUI
     private Handler handler;
 
     /**
+     * Constructs a {@code BasicColorChooserUI}.
+     */
+    public BasicColorChooserUI() {}
+
+    /**
      * Returns a new instance of {@code BasicColorChooserUI}.
      *
      * @param c a component
@@ -383,6 +388,11 @@ public class BasicColorChooserUI extends ColorChooserUI
      * Instantiate it only within subclasses of {@code BasicColorChooserUI}.
      */
     public class PropertyHandler implements PropertyChangeListener {
+        /**
+         * Constructs a {@code PropertyHandler}.
+         */
+        public PropertyHandler() {}
+
         public void propertyChange(PropertyChangeEvent e) {
             getHandler().propertyChange(e);
         }

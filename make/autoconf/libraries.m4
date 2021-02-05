@@ -43,9 +43,11 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
     # No X11 support on windows or macosx
     NEEDS_LIB_X11=false
+  elif test "x$ENABLE_HEADLESS_ONLY" = xtrue; then
+    # No X11 support needed when building headless only
+    NEEDS_LIB_X11=false
   else
-    # All other instances need X11, even if building headless only, libawt still
-    # needs X11 headers.
+    # All other instances need X11
     NEEDS_LIB_X11=true
   fi
 
@@ -120,6 +122,20 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   # Threading library
   if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix; then
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpthread"
+  fi
+
+  # Atomic library
+  # 32-bit platforms needs fallback library for 8-byte atomic ops on Zero
+  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+    if test "x$OPENJDK_TARGET_OS" = xlinux &&
+        (test "x$OPENJDK_TARGET_CPU" = xarm ||
+         test "x$OPENJDK_TARGET_CPU" = xm68k ||
+         test "x$OPENJDK_TARGET_CPU" = xmips ||
+         test "x$OPENJDK_TARGET_CPU" = xmipsel ||
+         test "x$OPENJDK_TARGET_CPU" = xppc ||
+         test "x$OPENJDK_TARGET_CPU" = xsh); then
+      BASIC_JVM_LIBS="$BASIC_JVM_LIBS -latomic"
+    fi
   fi
 
   # perfstat lib

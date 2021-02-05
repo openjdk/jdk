@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package jdk.javadoc.internal.doclets.formats.html;
-
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
 import java.util.*;
 
@@ -90,13 +87,11 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
         if (!groupModuleMap.keySet().isEmpty()) {
             TableHeader tableHeader = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
-            Table table =  new Table(HtmlStyle.overviewSummary, HtmlStyle.summaryTable)
+            Table table =  new Table(HtmlStyle.summaryTable)
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                    .setId("all-modules-table")
-                    .setDefaultTab(resources.getText("doclet.All_Modules"))
-                    .setTabScript(i -> "show(" + i + ");")
-                    .setTabId(i -> (i == 0) ? "t0" : ("t" + (1 << (i - 1))));
+                    .setId(HtmlIds.ALL_MODULES_TABLE)
+                    .setDefaultTab(resources.getText("doclet.All_Modules"));
 
             // add the tabs in command-line order
             for (String groupName : configuration.group.getGroupList()) {
@@ -111,6 +106,7 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
                     if (!(options.noDeprecated() && utils.isDeprecated(mdle))) {
                         Content moduleLinkContent = getModuleLink(mdle, new StringContent(mdle.getQualifiedName().toString()));
                         Content summaryContent = new ContentBuilder();
+                        addPreviewSummary(mdle, summaryContent);
                         addSummaryComment(mdle, summaryContent);
                         table.addRow(mdle, moduleLinkContent, summaryContent);
                     }

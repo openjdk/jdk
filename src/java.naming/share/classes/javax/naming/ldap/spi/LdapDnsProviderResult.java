@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.List;
  *
  * <p> This class is used by an {@link LdapDnsProvider} to return the result
  * of a DNS lookup for a given LDAP URL. The result consists of a domain name
- * and its associated ldap server endpoints.
+ * and its associated LDAP server endpoints.
  *
  * <p> A {@code null} {@code domainName} is equivalent to and represented
  * by an empty string.
@@ -46,10 +46,10 @@ public final class LdapDnsProviderResult {
 
     /**
      * Construct an LdapDnsProviderResult consisting of a resolved domain name
-     * and the ldap server endpoints that serve the domain.
+     * and the LDAP server endpoints that serve the domain.
      *
      * @param domainName    the resolved domain name; can be null.
-     * @param endpoints     the possibly empty list of resolved ldap server
+     * @param endpoints     the possibly empty list of resolved LDAP server
      *                      endpoints
      *
      * @throws NullPointerException   if {@code endpoints} contains {@code null}
@@ -63,7 +63,7 @@ public final class LdapDnsProviderResult {
     }
 
     /**
-     * Returns the domain name resolved from the ldap URL. This method returns
+     * Returns the domain name resolved from the LDAP URL. This method returns
      * the empty string if the {@code LdapDnsProviderResult} is created with a
      * null domain name.
      *
@@ -75,13 +75,12 @@ public final class LdapDnsProviderResult {
 
     /**
      * Returns the possibly empty list of individual server endpoints resolved
-     * from the ldap URL.
+     * from the LDAP URL.
      *
      * @return  a possibly empty unmodifiable {@link List} containing the
-     *          resolved ldap server endpoints
+     *          resolved LDAP server endpoints
      */
     public List<String> getEndpoints() {
         return endpoints;
     }
-
 }

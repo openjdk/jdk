@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1645,18 +1645,19 @@ public final class Locale implements Cloneable, Serializable {
      * </pre></ul>
      *
      * <p>This implements the 'Language-Tag' production of BCP47, and
-     * so supports grandfathered (regular and irregular) as well as
+     * so supports legacy (regular and irregular, referred to as
+     * "Type: grandfathered" in BCP47) as well as
      * private use language tags.  Stand alone private use tags are
      * represented as empty language and extension 'x-whatever',
-     * and grandfathered tags are converted to their canonical replacements
+     * and legacy tags are converted to their canonical replacements
      * where they exist.
      *
-     * <p>Grandfathered tags with canonical replacements are as follows:
+     * <p>Legacy tags with canonical replacements are as follows:
      *
      * <table class="striped">
-     * <caption style="display:none">Grandfathered tags with canonical replacements</caption>
+     * <caption style="display:none">Legacy tags with canonical replacements</caption>
      * <thead style="text-align:center">
-     * <tr><th scope="col" style="padding: 0 2px">grandfathered tag</th><th scope="col" style="padding: 0 2px">modern replacement</th></tr>
+     * <tr><th scope="col" style="padding: 0 2px">legacy tag</th><th scope="col" style="padding: 0 2px">modern replacement</th></tr>
      * </thead>
      * <tbody style="text-align:center">
      * <tr><th scope="row">art-lojban</th><td>jbo</td></tr>
@@ -1682,13 +1683,13 @@ public final class Locale implements Cloneable, Serializable {
      * </tbody>
      * </table>
      *
-     * <p>Grandfathered tags with no modern replacement will be
+     * <p>Legacy tags with no modern replacement will be
      * converted as follows:
      *
      * <table class="striped">
-     * <caption style="display:none">Grandfathered tags with no modern replacement</caption>
+     * <caption style="display:none">Legacy tags with no modern replacement</caption>
      * <thead style="text-align:center">
-     * <tr><th scope="col" style="padding: 0 2px">grandfathered tag</th><th scope="col" style="padding: 0 2px">converts to</th></tr>
+     * <tr><th scope="col" style="padding: 0 2px">legacy tag</th><th scope="col" style="padding: 0 2px">converts to</th></tr>
      * </thead>
      * <tbody style="text-align:center">
      * <tr><th scope="row">cel-gaulish</th><td>xtg-x-cel-gaulish</td></tr>
@@ -1700,7 +1701,7 @@ public final class Locale implements Cloneable, Serializable {
      * </tbody>
      * </table>
      *
-     * <p>For a list of all grandfathered tags, see the
+     * <p>For a list of all legacy tags, see the
      * IANA Language Subtag Registry (search for "Type: grandfathered").
      *
      * <p><b>Note</b>: there is no guarantee that {@code toLanguageTag}
@@ -2187,7 +2188,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * Return an array of the display names of the variant.
-     * @param bundle the ResourceBundle to use to get the display names
+     * @param inLocale The locale for which to retrieve the display variant.
      * @return an array of display names, possible of zero length.
      */
     private String[] getDisplayVariantArray(Locale inLocale) {
@@ -2586,7 +2587,7 @@ public final class Locale implements Cloneable, Serializable {
          * Resets the Builder to match the provided IETF BCP 47
          * language tag.  Discards the existing state.  Null and the
          * empty string cause the builder to be reset, like {@link
-         * #clear}.  Grandfathered tags (see {@link
+         * #clear}.  Legacy tags (see {@link
          * Locale#forLanguageTag}) are converted to their canonical
          * form before being processed.  Otherwise, the language tag
          * must be well-formed (see {@link Locale}) or an exception is
@@ -2838,7 +2839,7 @@ public final class Locale implements Cloneable, Serializable {
          * on this builder.
          *
          * <p>This applies the conversions listed in {@link Locale#forLanguageTag}
-         * when constructing a Locale. (Grandfathered tags are handled in
+         * when constructing a Locale. (Legacy tags are handled in
          * {@link #setLanguageTag}.)
          *
          * @return A Locale.
@@ -3335,8 +3336,7 @@ public final class Locale implements Cloneable, Serializable {
                 return false;
             }
             LanguageRange other = (LanguageRange)obj;
-            return hash == other.hash
-                   && range.equals(other.range)
+            return range.equals(other.range)
                    && weight == other.weight;
         }
 

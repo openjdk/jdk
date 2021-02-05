@@ -47,9 +47,12 @@
   f(intx,  OptoLoopAlignmentConstraintFunc)             \
   f(uintx, ArraycopyDstPrefetchDistanceConstraintFunc)  \
   f(uintx, ArraycopySrcPrefetchDistanceConstraintFunc)  \
+  f(int,   AVX3ThresholdConstraintFunc)                 \
   f(uintx, TypeProfileLevelConstraintFunc)              \
   f(intx,  InitArrayShortSizeConstraintFunc)            \
   f(int ,  RTMTotalCountIncrRateConstraintFunc)         \
+  f(ccstrlist, DisableIntrinsicConstraintFunc)          \
+  f(ccstrlist, ControlIntrinsicConstraintFunc)          \
 COMPILER2_PRESENT(                                      \
   f(intx,  InteriorEntryAlignmentConstraintFunc)        \
   f(intx,  NodeLimitFudgeFactorConstraintFunc)          \

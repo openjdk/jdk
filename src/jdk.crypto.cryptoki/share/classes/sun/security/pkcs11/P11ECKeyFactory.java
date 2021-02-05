@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,7 +294,13 @@ final class P11ECKeyFactory extends P11KeyFactory {
             try {
                 token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
                 ECParameterSpec params = decodeParameters(attributes[1].getByteArray());
-                ECPoint point = decodePoint(attributes[0].getByteArray(), params.getCurve());
+                ECPoint point;
+
+                if (!token.config.getUseEcX963Encoding()) {
+                    point = decodePoint(new DerValue(attributes[0].getByteArray()).getOctetString(), params.getCurve());
+                } else {
+                    point = decodePoint(attributes[0].getByteArray(), params.getCurve());
+                }
                 return keySpec.cast(new ECPublicKeySpec(point, params));
             } catch (IOException e) {
                 throw new InvalidKeySpecException("Could not parse key", e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 
 package java.awt.color;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.annotation.Native;
 
@@ -97,10 +98,18 @@ public abstract class ColorSpace implements Serializable {
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -409452704308689724L;
 
-    private int type;
-    private int numComponents;
+    /**
+     * One of the {@code ColorSpace} type constants.
+     */
+    private final int type;
+
+    /**
+     * The number of components in the color space.
+     */
+    private final int numComponents;
     private transient String [] compName = null;
 
     // Cache of singletons for the predefined color spaces.
@@ -235,26 +244,27 @@ public abstract class ColorSpace implements Serializable {
      */
     @Native public static final int TYPE_FCLR = 25;
 
+
     /**
-     * The sRGB color space defined at
+     * The built-in sRGB color space defined at
      * <a href="http://www.w3.org/pub/WWW/Graphics/Color/sRGB.html">
      * http://www.w3.org/pub/WWW/Graphics/Color/sRGB.html</a>.
      */
     @Native public static final int CS_sRGB = 1000;
 
     /**
-     * A built-in linear RGB color space. This space is based on the same RGB
+     * The built-in linear RGB color space. This space is based on the same RGB
      * primaries as {@code CS_sRGB}, but has a linear tone reproduction curve.
      */
     @Native public static final int CS_LINEAR_RGB = 1004;
 
     /**
-     * The CIEXYZ conversion color space defined above.
+     * The built-in CIEXYZ conversion color space defined above.
      */
     @Native public static final int CS_CIEXYZ = 1001;
 
     /**
-     * The Photo YCC conversion color space.
+     * The built-in Photo YCC conversion color space.
      */
     @Native public static final int CS_PYCC = 1002;
 
@@ -268,11 +278,11 @@ public abstract class ColorSpace implements Serializable {
      * number of components.
      *
      * @param  type one of the {@code ColorSpace} type constants
-     * @param  numcomponents the number of components in the color space
+     * @param  numComponents the number of components in the color space
      */
-    protected ColorSpace(int type, int numcomponents) {
+    protected ColorSpace(int type, int numComponents) {
         this.type = type;
-        this.numComponents = numcomponents;
+        this.numComponents = numComponents;
     }
 
     /**
@@ -434,8 +444,8 @@ public abstract class ColorSpace implements Serializable {
      * {@link ICC_ColorSpace#toCIEXYZ(float[]) toCIEXYZ} method of
      * {@code ICC_ColorSpace} for further information.
      *
-     * @param colorvalue a float array with length of at least the number of
-     *        components in this {@code ColorSpace}
+     * @param  colorvalue a float array with length of at least the number of
+     *         components in this {@code ColorSpace}
      * @return a float array of length 3
      * @throws ArrayIndexOutOfBoundsException if array length is not at least
      *         the number of components in this {@code ColorSpace}.
@@ -501,11 +511,7 @@ public abstract class ColorSpace implements Serializable {
      */
     public String getName (int idx) {
         /* REMIND - handle common cases here */
-        if ((idx < 0) || (idx > numComponents - 1)) {
-            throw new IllegalArgumentException(
-                "Component index out of range: " + idx);
-        }
-
+        rangeCheck(idx);
         if (compName == null) {
             switch (type) {
                 case ColorSpace.TYPE_XYZ:
@@ -566,10 +572,7 @@ public abstract class ColorSpace implements Serializable {
      * @since 1.4
      */
     public float getMinValue(int component) {
-        if ((component < 0) || (component > numComponents - 1)) {
-            throw new IllegalArgumentException(
-                "Component index out of range: " + component);
-        }
+        rangeCheck(component);
         return 0.0f;
     }
 
@@ -585,17 +588,21 @@ public abstract class ColorSpace implements Serializable {
      * @since 1.4
      */
     public float getMaxValue(int component) {
-        if ((component < 0) || (component > numComponents - 1)) {
-            throw new IllegalArgumentException(
-                "Component index out of range: " + component);
-        }
+        rangeCheck(component);
         return 1.0f;
     }
 
-    /*
-     * Returns {@code true} if {@code cspace} is the XYZspace.
+    /**
+     * Checks that {@code component} is in range of the number of components.
+     *
+     * @param  component the component index
+     * @throws IllegalArgumentException if component is less than 0 or greater
+     *         than {@code numComponents - 1}
      */
-    static boolean isCS_CIEXYZ(ColorSpace cspace) {
-        return (cspace == XYZspace);
+    final void rangeCheck(int component) {
+        if (component < 0 || component > getNumComponents() - 1) {
+            throw new IllegalArgumentException(
+                    "Component index out of range: " + component);
+        }
     }
 }

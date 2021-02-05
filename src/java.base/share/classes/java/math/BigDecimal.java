@@ -4208,7 +4208,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Reconstitute the {@code BigDecimal} instance from a stream (that is,
      * deserialize it).
      *
-     * @param s the stream being read.
+     * @param  s the stream being read.
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
@@ -4227,7 +4229,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
    /**
     * Serialize this {@code BigDecimal} to the stream in question
     *
-    * @param s the stream to serialize to.
+    * @param  s the stream to serialize to.
+    * @throws IOException if an I/O error occurs
     */
     @java.io.Serial
    private void writeObject(java.io.ObjectOutputStream s)

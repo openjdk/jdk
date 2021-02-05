@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
  */
 package java.util.zip;
 
+import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.ch.DirectBuffer;
 
 /**
@@ -170,9 +171,13 @@ public final class CRC32C implements Checksum {
             return;
         }
 
-        if (buffer instanceof DirectBuffer) {
-            crc = updateDirectByteBuffer(crc, ((DirectBuffer) buffer).address(),
-                                         pos, limit);
+        if (buffer.isDirect()) {
+            try {
+                crc = updateDirectByteBuffer(crc, ((DirectBuffer) buffer).address(),
+                        pos, limit);
+            } finally {
+                Reference.reachabilityFence(buffer);
+            }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(),
                               limit + buffer.arrayOffset());
@@ -206,7 +211,7 @@ public final class CRC32C implements Checksum {
     /**
      * Updates the CRC-32C checksum with the specified array of bytes.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static int updateBytes(int crc, byte[] b, int off, int end) {
 
         // Do only byte reads for arrays so short they can't be aligned
@@ -281,7 +286,7 @@ public final class CRC32C implements Checksum {
     /**
      * Updates the CRC-32C checksum reading from the specified address.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static int updateDirectByteBuffer(int crc, long address,
                                               int off, int end) {
 

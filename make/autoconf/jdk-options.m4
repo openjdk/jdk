@@ -228,23 +228,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 ])
 
 ###############################################################################
-#
-# Enable or disable the elliptic curve crypto implementation
-#
-AC_DEFUN_ONCE([JDKOPT_DETECT_INTREE_EC],
-[
-  AC_MSG_CHECKING([if elliptic curve crypto implementation is present])
-
-  if test -d "${TOPDIR}/src/jdk.crypto.ec/share/native/libsunec/impl"; then
-    ENABLE_INTREE_EC=true
-    AC_MSG_RESULT([yes])
-  else
-    ENABLE_INTREE_EC=false
-    AC_MSG_RESULT([no])
-  fi
-
-  AC_SUBST(ENABLE_INTREE_EC)
-])
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 [
@@ -405,9 +388,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
     UTIL_FIXUP_PATH(JCOV_HOME)
     if test "x$with_jcov_input_jdk" != "x" ; then
       JCOV_INPUT_JDK="$with_jcov_input_jdk"
-      if test ! -f "$JCOV_INPUT_JDK/bin/java$EXE_SUFFIX"; then
+      if test ! -f "$JCOV_INPUT_JDK/bin/java" && test ! -f "$JCOV_INPUT_JDK/bin/java.exe"; then
         AC_MSG_RESULT([fail])
-        AC_MSG_ERROR([Invalid JDK bundle: "$JCOV_INPUT_JDK/bin/java$EXE_SUFFIX" does not exist])
+        AC_MSG_ERROR([Invalid JDK bundle: "$JCOV_INPUT_JDK/bin/java" does not exist])
       fi
       UTIL_FIXUP_PATH(JCOV_INPUT_JDK)
     fi
@@ -440,7 +423,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         fi
       ],
       IF_ENABLED: [
-        ASAN_CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
+        # ASan is simply incompatible with gcc -Wstringop-truncation. See
+        # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
+        # It's harmless to be suppressed in clang as well.
+        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer"
         ASAN_LDFLAGS="-fsanitize=address"
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
@@ -654,7 +640,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     SOURCE_DATE=$($DATE +"%s")
     AC_MSG_RESULT([$SOURCE_DATE, from 'current'])
   elif test "x$with_source_date" = xversion; then
-    # Use the date from version-numbers
+    # Use the date from version-numbers.conf
     UTIL_GET_EPOCH_TIMESTAMP(SOURCE_DATE, $DEFAULT_VERSION_DATE)
     if test "x$SOURCE_DATE" = x; then
       AC_MSG_RESULT([unavailable])
@@ -678,10 +664,27 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     fi
   fi
 
-  UTIL_ARG_ENABLE(NAME: reproducible-build, DEFAULT: $with_source_date_present,
+  REPRODUCIBLE_BUILD_DEFAULT=$with_source_date_present
+
+  if test "x$OPENJDK_BUILD_OS" = xwindows && \
+      test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse; then
+    # To support banning absolute paths on Windows, we must use the -pathmap
+    # method, which requires reproducible builds.
+    REPRODUCIBLE_BUILD_DEFAULT=true
+  fi
+
+  UTIL_ARG_ENABLE(NAME: reproducible-build, DEFAULT: $REPRODUCIBLE_BUILD_DEFAULT,
       RESULT: ENABLE_REPRODUCIBLE_BUILD,
       DESC: [enable reproducible builds (not yet fully functional)],
-      DEFAULT_DESC: [enabled if --with-source-date is given])
+      DEFAULT_DESC: [enabled if --with-source-date is given or on Windows without absolute paths])
+
+  if test "x$OPENJDK_BUILD_OS" = xwindows && \
+      test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse && \
+      test "x$ENABLE_REPRODUCIBLE_BUILD" = xfalse; then
+    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-builds])
+    AC_MSG_NOTICE([with --disable-absolute-paths-in-output.])
+    AC_MSG_ERROR([Cannot continue])
+  fi
 
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)

@@ -25,8 +25,8 @@
 
 package java.lang;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
@@ -122,6 +122,12 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * encoding. For more information on Unicode terminology, refer to the
  * <a href="http://www.unicode.org/glossary/">Unicode Glossary</a>.
  *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ *
  * @author  Lee Boynton
  * @author  Guy Steele
  * @author  Akira Tanaka
@@ -129,6 +135,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @author  Ulf Zibis
  * @since   1.0
  */
+@jdk.internal.ValueBased
 public final
 class Character implements java.io.Serializable, Comparable<Character>, Constable {
     /**
@@ -8501,7 +8508,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * {@link #valueOf(char)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Character(char value) {
         this.value = value;
     }
@@ -8516,7 +8523,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             int size = 127 + 1;
 
             // Load and use the archived cache if it exists
-            VM.initializeFromArchive(CharacterCache.class);
+            CDS.initializeFromArchive(CharacterCache.class);
             if (archivedCache == null || archivedCache.length != size) {
                 Character[] c = new Character[size];
                 for (int i = 0; i < size; i++) {
@@ -8545,7 +8552,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @return a {@code Character} instance representing {@code c}.
      * @since  1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static Character valueOf(char c) {
         if (c <= 127) { // must cache
             return CharacterCache.cache[(int)c];
@@ -8558,7 +8565,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @return  the primitive {@code char} value represented by
      *          this object.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public char charValue() {
         return value;
     }
@@ -11252,7 +11259,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      *     the bytes in the specified {@code char} value.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static char reverseBytes(char ch) {
         return (char) (((ch & 0xFF00) >> 8) | (ch << 8));
     }

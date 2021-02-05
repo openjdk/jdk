@@ -46,6 +46,7 @@ public class TestHtmlVersion extends JavadocTester {
         javadoc("-d", "out-1",
                 "-private",
                 "-linksource",
+                "-bottom", "bottom text",
                 "-sourcepath", testSrc,
                 "-use",
                 "pkg", "pkg1", "pkg2", "pkg3");
@@ -60,6 +61,7 @@ public class TestHtmlVersion extends JavadocTester {
         javadoc("-d", "out-4",
                 "-private",
                 "-linksource",
+                "-bottom", "bottom text",
                 "-sourcepath", testSrc,
                 "-use",
                 "pkg3");
@@ -75,17 +77,17 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="overview-summary" id="all-packages-table">
-                    <table class="summary-table">
-                    <caption>""",
+                    <div id="all-packages-table">
+                    <div class="caption"><span>Packages</span></div>
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for package-summary page
         checkOutput("pkg/package-summary.html", true,
@@ -95,8 +97,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="type-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -108,18 +109,17 @@ public class TestHtmlVersion extends JavadocTester {
                     <section class="package-description" id="package.description">
                     <div class="block">Test package.</div>""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
         // No package description
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <section class="summary">
-                    <ul class="summary-list">
-                    <li>
-                    <div class="type-summary">
-                    <table class="summary-table">
-                    <caption><span>Class Summary</span></caption>""");
+                        <section class="summary">
+                        <ul class="summary-list">
+                        <li>
+                        <div class="caption"><span>Class Summary</span></div>
+                        <div class="summary-table two-column-summary">""");
 
         // Test for package-tree page
         checkOutput("pkg/package-tree.html", true,
@@ -144,14 +144,14 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2 title="Interface Hierarchy">Interface Hierarchy</h2>""",
                 """
                     <section class="hierarchy">
-                    <h2 title="Annotation Type Hierarchy">Annotation Type Hierarchy</h2>""",
+                    <h2 title="Annotation Interface Hierarchy">Annotation Interface Hierarchy</h2>""",
                 """
                     <section class="hierarchy">
-                    <h2 title="Enum Hierarchy">Enum Hierarchy</h2>""",
+                    <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""" );
 
         // Test for package-use page
         checkOutput("pkg1/package-use.html", true,
@@ -161,8 +161,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -171,9 +170,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <main role="main">
                     <div class="header">""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for constant-values page
         checkOutput("constant-values.html", true,
@@ -183,8 +182,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="constants-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table three-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -201,9 +199,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2 title="pkg">pkg.*</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for deprecated-list page
         checkOutput("deprecated-list.html", true,
@@ -213,8 +211,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="deprecated-summary" id="class">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -223,9 +220,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <main role="main">
                     <div class="header">""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for serialized-form page
         checkOutput("serialized-form.html", true,
@@ -246,9 +243,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2 title="Package">Package&nbsp;pkg</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for overview-tree page
         checkOutput("overview-tree.html", true,
@@ -275,16 +272,16 @@ public class TestHtmlVersion extends JavadocTester {
                     """,
                 """
                     <section class="hierarchy">
-                    <h2 title="Annotation Type Hierarchy">Annotation Type Hierarchy</h2>
+                    <h2 title="Annotation Interface Hierarchy">Annotation Interface Hierarchy</h2>
                     """,
                 """
                     <section class="hierarchy">
-                    <h2 title="Enum Hierarchy">Enum Hierarchy</h2>
+                    <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for index-all page
         checkOutput("index-all.html", true,
@@ -302,9 +299,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <div class="flex-content">
                     <main role="main">""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for src-html page
         checkOutput("src-html/pkg/AnotherClass.html", true,
@@ -340,9 +337,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Class or Interface</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for a regular class page and members (nested class, field, constructore and method)
         checkOutput("pkg/AnotherClass.html", true,
@@ -362,18 +359,18 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <section class="nested-class-summary" id="nested.class.summary">
                     <h2>Nested Class Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Nested Classes</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
                     <section class="field-summary" id="field.summary">
                     <h2>Field Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Fields</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
                     <section class="constructor-summary" id="constructor.summary">
                     <h2>Constructor Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Constructors</span></div>
+                    <div class="summary-table two-column-summary">""",
                 """
                     <section class="method-summary" id="method.summary">
                     <h2>Method Summary</h2>""",
@@ -390,9 +387,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Method Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for enum page
         checkOutput("pkg/AnotherClass.ModalExclusionType.html", true,
@@ -412,18 +409,16 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <section class="constants-summary" id="enum.constant.summary">
                     <h2>Enum Constant Summary</h2>
-                    <div class="member-summary">
+                    <div class="caption"><span>Enum Constants</span></div>
                     """,
                 """
-                    <table class="summary-table" aria-labelledby="t0">
+                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
                     """,
                 """
                     <section class="method-summary" id="method.summary">
                     <h2>Method Summary</h2>
-                    <div class="member-summary" id="method-summary-table">
+                    <div id="method-summary-table">
                     """,
-                """
-                    <table class="summary-table" aria-labelledby="t0">""",
                 """
                     <section class="constant-details" id="enum.constant.detail">
                     <h2>Enum Constant Details</h2>
@@ -433,9 +428,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Method Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for interface page
         checkOutput("pkg2/Interface.html", true,
@@ -455,19 +450,19 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <section class="method-summary" id="method.summary">
                     <h2>Method Summary</h2>
-                    <div class="member-summary" id="method-summary-table">
+                    <div id="method-summary-table">
                     """,
                 """
-                    <table class="summary-table" aria-labelledby="t0">
+                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
                     """,
                 """
                     <section class="method-details" id="method.detail">
                     <h2>Method Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for error page
         checkOutput("pkg/TestError.html", true,
@@ -492,9 +487,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Constructor Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for exception page
         checkOutput("pkg/TestException.html", true,
@@ -519,9 +514,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Constructor Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for annotation page
         checkOutput("pkg2/TestAnnotationType.html", true,
@@ -539,27 +534,27 @@ public class TestHtmlVersion extends JavadocTester {
                     <!-- ======== START OF CLASS DATA ======== -->
                     <div class="header">""",
                 """
-                    <section class="member-summary" id="annotation.type.required.element.summary">
+                    <section class="member-summary" id="annotation.interface.required.element.summary">
                     <h2>Required Element Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Required Elements</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
-                    <section class="member-summary" id="annotation.type.optional.element.summary">
+                    <section class="member-summary" id="annotation.interface.optional.element.summary">
                     <h2>Optional Element Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Optional Elements</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
-                    <section class="details" id="annotation.type.element.detail">
+                    <section class="details" id="annotation.interface.element.detail">
                     <ul class="details-list">
-                    <!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->
+                    <!-- ============ ANNOTATION INTERFACE MEMBER DETAIL =========== -->
                     <li>
                     <section class="member-details">
                     <h2>Element Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
 
         // Test for class use page
         checkOutput("pkg1/class-use/RegClass.html", true,
@@ -576,18 +571,19 @@ public class TestHtmlVersion extends JavadocTester {
                     <main role="main">
                     <div class="header">""",
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <section class="detail" id="pkg">
                     <h2>Uses of <a href="../RegClass.html" title="class in pkg1">RegClass</a> in <a \
                     href="../../pkg/package-summary.html">pkg</a></h2>
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Fields in <a href="../../pkg/package-summary.html">pk\
+                    g</a> declared as <a href="../RegClass.html" title="class in pkg1">RegClass</a><\
+                    /span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">
-                    <!-- ======= START OF BOTTOM NAVBAR ====== -->""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
     }
 
     void html5NegatedOutput() {
@@ -763,7 +759,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2 title="Interface Hierarchy">Interface Hierarchy</h2>""",
                 """
                     </ul>
-                    <h2 title="Enum Hierarchy">Enum Hierarchy</h2>""");
+                    <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>""");
 
         // Negated test for index-all page
         checkOutput("index-all.html", false,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import java.util.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.peer.ChoicePeer;
-import java.awt.event.*;
-import java.util.EventListener;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.util.EventListener;
+import java.util.Vector;
 
-import javax.accessibility.*;
-
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 
 /**
  * The {@code Choice} class presents a pop-up menu of choices.
@@ -98,9 +103,10 @@ public class Choice extends Component implements ItemSelectable, Accessible {
     private static final String base = "choice";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -4075310674757313071L;
 
     static {
@@ -654,8 +660,8 @@ public class Choice extends Component implements ItemSelectable, Accessible {
     /* Serialization support.
      */
 
-    /*
-     * Choice Serial Data Version.
+    /**
+     * Serialized data version.
      * @serial
      */
     private int choiceSerializedDataVersion = 1;
@@ -667,7 +673,8 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * {@code ItemListeners} are detected and
      * no attempt is made to serialize them.
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData {@code null} terminated sequence of 0
      *   or more pairs; the pair consists of a {@code String}
      *   and an {@code Object}; the {@code String} indicates
@@ -679,6 +686,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * @see java.awt.Component#itemListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws java.io.IOException
     {
@@ -694,16 +702,19 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * item events fired by the {@code Choice} item.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the {@code ObjectInputStream} to read
-     * @exception HeadlessException if
-     *   {@code GraphicsEnvironment.isHeadless} returns
-     *   {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @serial
      * @see #removeItemListener(ItemListener)
      * @see #addItemListener(ItemListener)
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -759,9 +770,10 @@ public class Choice extends Component implements ItemSelectable, Accessible {
     protected class AccessibleAWTChoice extends AccessibleAWTComponent
         implements AccessibleAction
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 7175603582428509322L;
 
         /**

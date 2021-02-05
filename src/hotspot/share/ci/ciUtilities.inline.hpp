@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 #define VM_ENTRY_MARK                       \
   CompilerThread* thread=CompilerThread::current(); \
   ThreadInVMfromNative __tiv(thread);       \
-  ResetNoHandleMark rnhm;                   \
   HandleMarkCleaner __hm(thread);           \
   Thread* THREAD = thread;                  \
   debug_only(VMNativeEntryWrapper __vew;)
@@ -65,28 +64,5 @@
 
 #define GUARDED_VM_QUICK_ENTRY(action)      \
   {if (IS_IN_VM) { action } else { VM_QUICK_ENTRY_MARK; { action }}}
-
-// Redefine this later.
-#define KILL_COMPILE_ON_FATAL_(result)           \
-  THREAD);                                       \
-  if (HAS_PENDING_EXCEPTION) {                   \
-    if (PENDING_EXCEPTION->klass() ==            \
-        SystemDictionary::ThreadDeath_klass()) { \
-      /* Kill the compilation. */                \
-      fatal("unhandled ci exception");           \
-      return (result);                           \
-    }                                            \
-    CLEAR_PENDING_EXCEPTION;                     \
-    return (result);                             \
-  }                                              \
-  (void)(0
-
-#define KILL_COMPILE_ON_ANY                      \
-  THREAD);                                       \
-  if (HAS_PENDING_EXCEPTION) {                   \
-    fatal("unhandled ci exception");             \
-    CLEAR_PENDING_EXCEPTION;                     \
-  }                                              \
-(void)(0
 
 #endif // SHARE_CI_CIUTILITIES_INLINE_HPP

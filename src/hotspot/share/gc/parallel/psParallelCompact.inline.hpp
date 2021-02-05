@@ -134,8 +134,6 @@ public:
   virtual void do_oop(oop* p)                { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)          { do_oop_nv(p); }
 
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops() { return false; })
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 private:
   ParCompactionManager* _cm;

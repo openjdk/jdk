@@ -30,9 +30,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /** Common utility routines used by both java.lang and
     java.lang.reflect */
@@ -67,7 +67,7 @@ public class Reflection {
         ignoring frames associated with java.lang.reflect.Method.invoke()
         and its implementation. */
     @CallerSensitive
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native Class<?> getCallerClass();
 
     /** Retrieves the access flags written to the class file. For
@@ -78,7 +78,7 @@ public class Reflection {
         to compatibility reasons; see 4471811. Only the values of the
         low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
         valid. */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native int getClassAccessFlags(Class<?> c);
 
 

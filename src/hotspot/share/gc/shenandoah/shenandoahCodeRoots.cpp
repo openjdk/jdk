@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
@@ -112,50 +111,18 @@ void ShenandoahCodeRoots::initialize() {
 }
 
 void ShenandoahCodeRoots::register_nmethod(nmethod* nm) {
-  switch (ShenandoahCodeRootsStyle) {
-    case 0:
-    case 1:
-      break;
-    case 2: {
-      assert_locked_or_safepoint(CodeCache_lock);
-      _nmethod_table->register_nmethod(nm);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
-  }
+  assert_locked_or_safepoint(CodeCache_lock);
+  _nmethod_table->register_nmethod(nm);
 }
 
 void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
-  switch (ShenandoahCodeRootsStyle) {
-    case 0:
-    case 1: {
-      break;
-    }
-    case 2: {
-      assert_locked_or_safepoint(CodeCache_lock);
-      _nmethod_table->unregister_nmethod(nm);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
-  }
+  assert_locked_or_safepoint(CodeCache_lock);
+  _nmethod_table->unregister_nmethod(nm);
 }
 
 void ShenandoahCodeRoots::flush_nmethod(nmethod* nm) {
-  switch (ShenandoahCodeRootsStyle) {
-    case 0:
-    case 1: {
-      break;
-    }
-    case 2: {
-      assert_locked_or_safepoint(CodeCache_lock);
-      _nmethod_table->flush_nmethod(nm);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
-  }
+  assert_locked_or_safepoint(CodeCache_lock);
+  _nmethod_table->flush_nmethod(nm);
 }
 
 void ShenandoahCodeRoots::arm_nmethods() {
@@ -321,8 +288,7 @@ public:
 };
 
 void ShenandoahCodeRoots::unlink(WorkGang* workers, bool unloading_occurred) {
-  assert(ShenandoahConcurrentRoots::should_do_concurrent_class_unloading(),
-         "Only when running concurrent class unloading");
+  assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
   for (;;) {
     ICRefillVerifier verifier;
@@ -377,8 +343,7 @@ public:
 };
 
 void ShenandoahCodeRoots::purge(WorkGang* workers) {
-  assert(ShenandoahConcurrentRoots::should_do_concurrent_class_unloading(),
-         "Only when running concurrent class unloading");
+  assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
   ShenandoahNMethodPurgeTask task;
   workers->run_task(&task);
@@ -389,64 +354,18 @@ ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :
         _table_snapshot(NULL) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
   assert(!Thread::current()->is_Worker_thread(), "Should not be acquired by workers");
-  switch (ShenandoahCodeRootsStyle) {
-    case 0:
-    case 1: {
-      // No need to do anything here
-      break;
-    }
-    case 2: {
-      CodeCache_lock->lock_without_safepoint_check();
-      _table_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
-      break;
-    }
-    default:
-      ShouldNotReachHere();
-  }
+  CodeCache_lock->lock_without_safepoint_check();
+  _table_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
 }
 
 ShenandoahCodeRootsIterator::~ShenandoahCodeRootsIterator() {
-  switch (ShenandoahCodeRootsStyle) {
-    case 0:
-    case 1: {
-      // No need to do anything here
-      break;
-    }
-    case 2: {
-      ShenandoahCodeRoots::table()->finish_iteration(_table_snapshot);
-      _table_snapshot = NULL;
-      CodeCache_lock->unlock();
-      break;
-    }
-    default:
-      ShouldNotReachHere();
-  }
+  ShenandoahCodeRoots::table()->finish_iteration(_table_snapshot);
+  _table_snapshot = NULL;
+  CodeCache_lock->unlock();
 }
 
 void ShenandoahCodeRootsIterator::possibly_parallel_blobs_do(CodeBlobClosure *f) {
-  switch (ShenandoahCodeRootsStyle) {
-    case 0: {
-      if (_seq_claimed.try_set()) {
-        CodeCache::blobs_do(f);
-      }
-      break;
-    }
-    case 1: {
-      _par_iterator.parallel_blobs_do(f);
-      break;
-    }
-    case 2: {
-      ShenandoahCodeRootsIterator::fast_parallel_blobs_do(f);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
-  }
-}
-
-void ShenandoahCodeRootsIterator::fast_parallel_blobs_do(CodeBlobClosure *f) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
   assert(_table_snapshot != NULL, "Sanity");
   _table_snapshot->parallel_blobs_do(f);
 }
-

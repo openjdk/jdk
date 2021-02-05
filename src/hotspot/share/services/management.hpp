@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "jmm.h"
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/timer.hpp"
 
 class OopClosure;
@@ -65,8 +66,6 @@ public:
 
   static void* get_jmm_interface(int version);
   static void  get_optional_support(jmmOptionalSupport* support);
-
-  static void get_loaded_classes(JavaThread* cur_thread, GrowableArray<Klass*>* klass_array);
 
   static void  record_vm_startup_time(jlong begin, jlong duration)
       NOT_MANAGEMENT_RETURN;

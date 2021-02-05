@@ -38,4 +38,25 @@ inline double G1ConcurrentMarkThread::vtime_mark_accum() {
   return _cm->all_task_accum_vtime();
 }
 
+inline void G1ConcurrentMarkThread::set_idle() {
+  assert(_state == FullMark || _state == UndoMark, "must not be starting a new cycle");
+  _state = Idle;
+}
+
+inline void G1ConcurrentMarkThread::start_full_mark() {
+  assert(_state == Idle, "cycle in progress");
+  _state = FullMark;
+}
+
+inline void G1ConcurrentMarkThread::start_undo_mark() {
+  assert(_state == Idle, "cycle in progress");
+  _state = UndoMark;
+}
+
+inline bool G1ConcurrentMarkThread::idle() const { return _state == Idle; }
+
+inline bool G1ConcurrentMarkThread::in_progress() const {
+  return !idle();
+}
+
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP

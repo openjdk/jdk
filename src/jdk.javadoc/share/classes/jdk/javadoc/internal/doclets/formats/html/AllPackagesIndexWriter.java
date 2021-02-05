@@ -32,8 +32,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -74,27 +72,18 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      */
     protected void buildAllPackagesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Packages");
-        Content headerContent = new ContentBuilder();
-        Navigation navBar = new Navigation(null, configuration, PageMode.ALL_PACKAGES, path);
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
         addPackages(mainContent);
         Content titleContent = contents.allPackagesLabel;
         Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        Content footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
         HtmlTree bodyTree = getBody(getWindowTitle(label));
         bodyTree.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(getHeader(PageMode.ALL_PACKAGES))
                 .addMainContent(headerDiv)
                 .addMainContent(mainContent)
-                .setFooter(footer));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "package index", bodyTree);
     }
 
@@ -104,8 +93,8 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addPackages(Content content) {
-        Table table = new Table(HtmlStyle.packagesSummary, HtmlStyle.summaryTable)
-                .setCaption(new StringContent(resources.packageSummary))
+        Table table = new Table(HtmlStyle.summaryTable)
+                .setCaption(new StringContent(contents.packageSummary))
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (PackageElement pkg : configuration.packages) {

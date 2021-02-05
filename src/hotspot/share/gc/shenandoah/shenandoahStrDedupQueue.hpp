@@ -99,9 +99,11 @@ public:
   void verify_impl();
 
 protected:
-  size_t num_queues() const { return (_num_producer_queue + 2); }
+  size_t num_queues() const { return num_queues_nv(); }
 
 private:
+  inline size_t num_queues_nv() const { return (_num_producer_queue + 2); }
+
   ShenandoahQueueBuffer* new_buffer();
 
   void release_buffers(ShenandoahQueueBuffer* list);
@@ -111,8 +113,6 @@ private:
   bool pop_candidate(oop& obj);
 
   void set_producer_buffer(ShenandoahQueueBuffer* buf, size_t queue_id);
-
-  void verify(ShenandoahQueueBuffer* head);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRDEDUPQUEUE_HPP

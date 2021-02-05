@@ -23,6 +23,10 @@
  * questions.
  */
 
+#ifdef HEADLESS
+    #error This file should not be included in headless library
+#endif
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
@@ -70,12 +74,9 @@ struct ComponentIDs componentIDs;
 
 struct MenuComponentIDs menuComponentIDs;
 
-#ifndef HEADLESS
-
 extern Display* awt_init_Display(JNIEnv *env, jobject this);
 extern void freeNativeStringArray(char **array, jsize length);
 extern char** stringArrayToNative(JNIEnv *env, jobjectArray array, jsize * ret_length);
-#endif /* !HEADLESS */
 
 /* This function gets called from the static initializer for FileDialog.java
    to initialize the fieldIDs for fields that may be accessed from C */
@@ -119,9 +120,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_X11_XToolkit_getTrayIconDisplayTimeout
 JNIEXPORT jlong JNICALL Java_sun_awt_X11_XToolkit_getDefaultXColormap
   (JNIEnv *env, jclass clazz)
 {
+    AWT_LOCK();
     AwtGraphicsConfigDataPtr defaultConfig =
         getDefaultConfig(DefaultScreen(awt_display));
-
+    AWT_UNLOCK();
     return (jlong) defaultConfig->awt_cmap;
 }
 
@@ -144,9 +146,11 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 JNIEXPORT void JNICALL Java_sun_awt_X11_XToolkit_nativeLoadSystemColors
   (JNIEnv *env, jobject this, jintArray systemColors)
 {
+    AWT_LOCK();
     AwtGraphicsConfigDataPtr defaultConfig =
         getDefaultConfig(DefaultScreen(awt_display));
     awtJNI_CreateColorData(env, defaultConfig, 1);
+    AWT_UNLOCK();
 }
 
 JNIEXPORT void JNICALL
@@ -299,13 +303,12 @@ Java_java_awt_TextField_initIDs
 {
 }
 
+#ifndef STATIC_BUILD
+// The same function exists in libawt.a::awt_LoadLibrary.c
 JNIEXPORT jboolean JNICALL AWTIsHeadless() {
-#ifdef HEADLESS
-    return JNI_TRUE;
-#else
     return JNI_FALSE;
-#endif
 }
+#endif
 
 JNIEXPORT void JNICALL Java_java_awt_Dialog_initIDs (JNIEnv *env, jclass cls)
 {
@@ -814,8 +817,13 @@ Window get_xawt_root_shell(JNIEnv *env) {
  */
 
 JNIEXPORT void JNICALL
-Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
+#ifdef STATIC_BUILD
+Java_sun_xawt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
     jobject frame, jstring jcommand)
+#else
+Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
+        jobject frame, jstring jcommand)
+#endif
 {
     const char *command;
     XTextProperty text_prop;
@@ -859,7 +867,11 @@ Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
  * name.  It's not!  It's just a plain function.
  */
 JNIEXPORT void JNICALL
+#ifdef STATIC_BUILD
+Java_sun_xawt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jarray)
+#else
 Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jarray)
+#endif
 {
     jsize length;
     char ** array;

@@ -39,11 +39,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.internal.misc.TerminatingThreadLocal;
-import sun.nio.ch.Interruptible;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.nio.ch.Interruptible;
 import sun.security.util.SecurityConstants;
-import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * A <i>thread</i> is a thread of execution in a program. The Java
@@ -133,7 +133,6 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
- * @author  unascribed
  * @see     Runnable
  * @see     Runtime#exit(int)
  * @see     #run()
@@ -257,7 +256,7 @@ public class Thread implements Runnable {
      *
      * @return  the currently executing thread.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native Thread currentThread();
 
     /**
@@ -373,7 +372,7 @@ public class Thread implements Runnable {
      *
      * @since 9
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static void onSpinWait() {}
 
     /**
@@ -981,7 +980,6 @@ public class Thread implements Runnable {
      *          if the current thread cannot modify this thread
      *
      * @revised 6.0, 14
-     * @spec JSR-51
      */
     public void interrupt() {
         if (this != Thread.currentThread()) {
@@ -2046,9 +2044,9 @@ public class Thread implements Runnable {
                 return true;
 
             if (obj instanceof WeakClassKey) {
-                Object referent = get();
+                Class<?> referent = get();
                 return (referent != null) &&
-                       (referent == ((WeakClassKey) obj).get());
+                        (((WeakClassKey) obj).refersTo(referent));
             } else {
                 return false;
             }

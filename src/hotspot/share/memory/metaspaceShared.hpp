@@ -35,6 +35,10 @@
 
 #define MAX_SHARED_DELTA                (0x7FFFFFFF)
 
+// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
+// We enforce the same alignment rule in blocks allocated from the shared space.
+const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
+
 class outputStream;
 class CHeapBitMap;
 class FileMapInfo;
@@ -72,7 +76,6 @@ class MetaspaceShared : AllStatic {
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
   static address _i2i_entry_code_buffers;
-  static size_t  _i2i_entry_code_buffers_size;
   static size_t  _core_spaces_size;
   static void* _shared_metaspace_static_top;
   static intx _relocation_delta;
@@ -230,19 +233,13 @@ class MetaspaceShared : AllStatic {
   template <typename T>
   static size_t ro_array_bytesize(int length) {
     size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
-    return align_up(byte_size, BytesPerWord);
+    return align_up(byte_size, SharedSpaceObjectAlignment);
   }
 
-  static address i2i_entry_code_buffers(size_t total_size);
+  static void init_misc_code_space();
+  static address i2i_entry_code_buffers();
 
-  static address i2i_entry_code_buffers() {
-    return _i2i_entry_code_buffers;
-  }
-  static size_t i2i_entry_code_buffers_size() {
-    return _i2i_entry_code_buffers_size;
-  }
   static void relocate_klass_ptr(oop o);
-
   static Klass* get_relocated_klass(Klass *k, bool is_final=false);
 
   static void initialize_ptr_marker(CHeapBitMap* ptrmap);
@@ -262,9 +259,12 @@ class MetaspaceShared : AllStatic {
     return is_windows;
   }
 
-  static void write_core_archive_regions(FileMapInfo* mapinfo,
-                                         GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                         GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps);
+  // Returns the bitmap region which is allocated from C heap.
+  // Caller must free it with FREE_C_HEAP_ARRAY()
+  static char* write_core_archive_regions(FileMapInfo* mapinfo,
+                                          GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                          GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                                          size_t& bitmap_size_in_bytes);
 
   // Can we skip some expensive operations related to modules?
   static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
@@ -288,10 +288,12 @@ private:
   static char* reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
                                                   FileMapInfo* dynamic_mapinfo,
                                                   bool use_archive_base_addr,
+                                                  ReservedSpace& total_space_rs,
                                                   ReservedSpace& archive_space_rs,
                                                   ReservedSpace& class_space_rs);
-  static void release_reserved_spaces(ReservedSpace& archive_space_rs,
-                                      ReservedSpace& class_space_rs);
+ static void release_reserved_spaces(ReservedSpace& total_space_rs,
+                                     ReservedSpace& archive_space_rs,
+                                     ReservedSpace& class_space_rs);
   static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs);
   static void unmap_archive(FileMapInfo* mapinfo);
 };

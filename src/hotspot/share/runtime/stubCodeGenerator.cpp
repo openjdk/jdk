@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 
 
@@ -73,13 +74,13 @@ StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
 }
 
 StubCodeGenerator::~StubCodeGenerator() {
-  if (PRODUCT_ONLY(_print_code) NOT_PRODUCT(true)) {
-    CodeBuffer* cbuf = _masm->code();
-    CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
-    if (blob != NULL) {
-      blob->set_strings(cbuf->strings());
-    }
+#ifndef PRODUCT
+  CodeBuffer* cbuf = _masm->code();
+  CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
+  if (blob != NULL) {
+    blob->set_strings(cbuf->strings());
   }
+#endif
 }
 
 void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
@@ -88,21 +89,16 @@ void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
 
 void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
   if (_print_code) {
-    CodeStrings cs;
-    ptrdiff_t offset = 0;
 #ifndef PRODUCT
     // Find the code strings in the outer CodeBuffer.
     CodeBuffer *outer_cbuf = _masm->code_section()->outer();
-    cs = outer_cbuf->strings();
-    // The offset from the start of the outer CodeBuffer to the start
-    // of this stub.
-    offset = cdesc->begin() - outer_cbuf->insts()->start();
+    CodeStrings* cs = &outer_cbuf->strings();
 #endif
     ttyLocker ttyl;
     tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
     cdesc->print_on(tty);
     tty->cr();
-    Disassembler::decode(cdesc->begin(), cdesc->end(), tty, cs /*, offset */);
+    Disassembler::decode(cdesc->begin(), cdesc->end(), tty NOT_PRODUCT(COMMA cs));
     tty->print_cr("- - - [END] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
     tty->cr();
   }

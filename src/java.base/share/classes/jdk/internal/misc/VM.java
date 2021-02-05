@@ -458,31 +458,6 @@ public class VM {
     private static native void initialize();
 
     /**
-     * Initialize archived static fields in the given Class using archived
-     * values from CDS dump time. Also initialize the classes of objects in
-     * the archived graph referenced by those fields.
-     *
-     * Those static fields remain as uninitialized if there is no mapped CDS
-     * java heap data or there is any error during initialization of the
-     * object class in the archived graph.
-     */
-    public static native void initializeFromArchive(Class<?> c);
-
-    public static native void defineArchivedModules(ClassLoader platformLoader, ClassLoader systemLoader);
-
-    public static native long getRandomSeedForCDSDump();
-
-    /**
-     * Check if CDS dynamic dumping is enabled via the DynamicDumpSharedSpaces flag.
-     */
-    public static native boolean isCDSDumpingEnabled();
-
-    /**
-     * Check if CDS sharing is enabled by via the UseSharedSpaces flag.
-     */
-    public static native boolean isCDSSharingEnabled();
-
-    /**
      * Provides access to information on buffer usage.
      */
     public interface BufferPool {

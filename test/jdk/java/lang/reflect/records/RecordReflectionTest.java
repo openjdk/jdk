@@ -25,9 +25,9 @@
  * @test
  * @bug 8235369 8235550 8247444
  * @summary reflection test for records
- * @compile --enable-preview -source ${jdk.version} RecordReflectionTest.java
- * @run testng/othervm --enable-preview RecordReflectionTest
- * @run testng/othervm/java.security.policy=allPermissions.policy --enable-preview RecordReflectionTest
+ * @compile RecordReflectionTest.java
+ * @run testng/othervm RecordReflectionTest
+ * @run testng/othervm/java.security.policy=allPermissions.policy RecordReflectionTest
  */
 
 import java.lang.annotation.*;

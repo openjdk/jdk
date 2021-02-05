@@ -32,6 +32,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/monitorChunk.hpp"

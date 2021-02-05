@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahNMethod.hpp"
 
 nmethod* ShenandoahNMethod::nm() const {
@@ -73,15 +72,11 @@ void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
 }
 
 void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
-  ShenandoahEvacuateUpdateRootsClosure<> cl;
+  ShenandoahEvacuateUpdateMetadataClosure<> cl;
   nmethod_data->oops_do(&cl, true /*fix relocation*/);
 }
 
 void ShenandoahNMethod::disarm_nmethod(nmethod* nm) {
-  if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
-    return;
-  }
-
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
   assert(bs != NULL, "Sanity");
   if (bs->is_armed(nm)) {

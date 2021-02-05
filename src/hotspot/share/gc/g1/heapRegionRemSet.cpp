@@ -33,11 +33,13 @@
 #include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 const char* HeapRegionRemSet::_state_strings[] =  {"Untracked", "Updating", "Complete"};
 const char* HeapRegionRemSet::_short_state_strings[] =  {"UNTRA", "UPDAT", "CMPLT"};
@@ -82,7 +84,7 @@ OtherRegionsTable::OtherRegionsTable(Mutex* m) :
 
   if (_max_fine_entries == 0) {
     assert(_mod_max_fine_entries_mask == 0, "Both or none.");
-    size_t max_entries_log = (size_t)log2_long((jlong)G1RSetRegionEntries);
+    size_t max_entries_log = (size_t)log2i(G1RSetRegionEntries);
     _max_fine_entries = (size_t)1 << max_entries_log;
     _mod_max_fine_entries_mask = _max_fine_entries - 1;
 
@@ -267,7 +269,7 @@ PerRegionTable* OtherRegionsTable::delete_region_table(size_t& added_by_deleted)
     _coarse_map.at_put(max_hrm_index, true);
   } else {
     // This will lazily initialize an uninitialized bitmap
-    _coarse_map.reinitialize(G1CollectedHeap::heap()->max_regions());
+    _coarse_map.reinitialize(G1CollectedHeap::heap()->max_reserved_regions());
     assert(!_coarse_map.at(max_hrm_index), "No coarse entries");
     _coarse_map.at_put(max_hrm_index, true);
     // Release store guarantees that the bitmap has initialized before any

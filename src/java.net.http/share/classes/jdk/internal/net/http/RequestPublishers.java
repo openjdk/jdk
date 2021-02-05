@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.net.http.HttpRequest.BodyPublisher;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -47,12 +48,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.net.http.HttpRequest.BodyPublisher;
+
+import jdk.internal.net.http.common.Demand;
+import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 
 public final class RequestPublishers {
@@ -393,7 +398,7 @@ public final class RequestPublishers {
 //            return error;
 //        }
 
-        private int read() {
+        private int read() throws IOException {
             if (eof)
                 return -1;
             nextBuffer = bufSupplier.get();
@@ -401,30 +406,46 @@ public final class RequestPublishers {
             byte[] buf = nextBuffer.array();
             int offset = nextBuffer.arrayOffset();
             int cap = nextBuffer.capacity();
-            try {
-                int n = is.read(buf, offset, cap);
-                if (n == -1) {
-                    eof = true;
-                    is.close();
-                    return -1;
-                }
-                //flip
-                nextBuffer.limit(n);
-                nextBuffer.position(0);
-                return n;
-            } catch (IOException ex) {
+            int n = is.read(buf, offset, cap);
+            if (n == -1) {
+                eof = true;
                 return -1;
+            }
+            //flip
+            nextBuffer.limit(n);
+            nextBuffer.position(0);
+            return n;
+        }
+
+        /**
+         * Close stream in this instance.
+         * UncheckedIOException may be thrown if IOE happens at InputStream::close.
+         */
+        private void closeStream() {
+            try {
+                is.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         }
 
         @Override
         public synchronized boolean hasNext() {
             if (need2Read) {
-                haveNext = read() != -1;
-                if (haveNext) {
+                try {
+                    haveNext = read() != -1;
+                    if (haveNext) {
+                        need2Read = false;
+                    }
+                } catch (IOException e) {
+                    haveNext = false;
                     need2Read = false;
+                    throw new UncheckedIOException(e);
+                } finally {
+                    if (!haveNext) {
+                        closeStream();
+                    }
                 }
-                return haveNext;
             }
             return haveNext;
         }
@@ -489,6 +510,196 @@ public final class RequestPublishers {
         @Override
         public final void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
             publisher.subscribe(subscriber);
+        }
+    }
+
+
+    public static BodyPublisher concat(BodyPublisher... publishers) {
+        if (publishers.length == 0) {
+            return new EmptyPublisher();
+        } else if (publishers.length == 1) {
+            return Objects.requireNonNull(publishers[0]);
+        } else {
+            return new AggregatePublisher(List.of(publishers));
+        }
+    }
+
+    /**
+     * An aggregate publisher acts as a proxy between a subscriber
+     * and a list of publishers. It lazily subscribes to each publisher
+     * in sequence in order to publish a request body that is
+     * composed from all the bytes obtained from each publisher.
+     * For instance, the following two publishers are equivalent, even
+     * though they may result in a different count of {@code onNext}
+     * invocations.
+     * <pre>{@code
+     *   var bp1 = BodyPublishers.ofString("ab");
+     *   var bp2 = BodyPublishers.concat(BodyPublishers.ofString("a"),
+     *                                   BodyPublisher.ofByteArray(new byte[] {(byte)'b'}));
+     * }</pre>
+     *
+     */
+    private static final class AggregatePublisher implements BodyPublisher {
+        final List<BodyPublisher> bodies;
+        AggregatePublisher(List<BodyPublisher> bodies) {
+            this.bodies = bodies;
+        }
+
+        // -1 must be returned if any publisher returns -1
+        // Otherwise, we can just sum the contents.
+        @Override
+        public long contentLength() {
+            long length =  bodies.stream()
+                    .mapToLong(BodyPublisher::contentLength)
+                    .reduce((a,b) -> a < 0 || b < 0 ? -1 : a + b)
+                    .orElse(0);
+            // In case of overflow in any operation but the last, length
+            // will be -1.
+            // In case of overflow in the last reduce operation, length
+            // will be negative, but not necessarily -1: in that case,
+            // return -1
+            if (length < 0) return -1;
+            return length;
+        }
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+            subscriber.onSubscribe(new AggregateSubscription(bodies, subscriber));
+        }
+    }
+
+    private static final class AggregateSubscription
+            implements Flow.Subscription, Flow.Subscriber<ByteBuffer> {
+        final Flow.Subscriber<? super ByteBuffer> subscriber; // upstream
+        final Queue<BodyPublisher> bodies;
+        final SequentialScheduler scheduler;
+        final Demand demand = new Demand(); // from upstream
+        final Demand demanded = new Demand(); // requested downstream
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        volatile Throwable illegalRequest;
+        volatile BodyPublisher publisher; // downstream
+        volatile Flow.Subscription subscription; // downstream
+        volatile boolean cancelled;
+        AggregateSubscription(List<BodyPublisher> bodies, Flow.Subscriber<? super ByteBuffer> subscriber) {
+            this.bodies = new ConcurrentLinkedQueue<>(bodies);
+            this.subscriber = subscriber;
+            this.scheduler = SequentialScheduler.synchronizedScheduler(this::run);
+        }
+
+        @Override
+        public void request(long n) {
+            if (cancelled || publisher == null && bodies.isEmpty()) {
+                return;
+            }
+            try {
+                demand.increase(n);
+            } catch (IllegalArgumentException x) {
+                illegalRequest = x;
+            }
+            scheduler.runOrSchedule();
+        }
+
+        @Override
+        public void cancel() {
+            cancelled = true;
+            scheduler.runOrSchedule();
+        }
+
+        private boolean cancelSubscription() {
+            Flow.Subscription subscription = this.subscription;
+            if (subscription != null) {
+                this.subscription = null;
+                this.publisher = null;
+                subscription.cancel();
+            }
+            scheduler.stop();
+            return subscription != null;
+        }
+
+        public void run() {
+            try {
+                while (error.get() == null
+                        && (!demand.isFulfilled()
+                        || (publisher == null && !bodies.isEmpty()))) {
+                    boolean cancelled = this.cancelled;
+                    BodyPublisher publisher = this.publisher;
+                    Flow.Subscription subscription = this.subscription;
+                    Throwable illegalRequest = this.illegalRequest;
+                    if (cancelled) {
+                        bodies.clear();
+                        cancelSubscription();
+                        return;
+                    }
+                    if (publisher == null && !bodies.isEmpty()) {
+                        this.publisher = publisher = bodies.poll();
+                        publisher.subscribe(this);
+                        subscription = this.subscription;
+                    } else if (publisher == null) {
+                        return;
+                    }
+                    if (illegalRequest != null) {
+                        onError(illegalRequest);
+                        return;
+                    }
+                    if (subscription == null) return;
+                    if (!demand.isFulfilled()) {
+                        long n = demand.decreaseAndGet(demand.get());
+                        demanded.increase(n);
+                        subscription.request(n);
+                    }
+                }
+            } catch (Throwable t) {
+                onError(t);
+            }
+        }
+
+
+        @Override
+        public void onSubscribe(Flow.Subscription subscription) {
+            this.subscription = subscription;
+            scheduler.runOrSchedule();
+        }
+
+        @Override
+        public void onNext(ByteBuffer item) {
+            // make sure to cancel the subscription if we receive
+            // an item after the subscription was cancelled or
+            // an error was reported.
+            if (cancelled || error.get() != null) {
+                cancelSubscription();
+                return;
+            }
+            demanded.tryDecrement();
+            subscriber.onNext(item);
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            if (error.compareAndSet(null, throwable)) {
+                publisher = null;
+                subscription = null;
+                subscriber.onError(throwable);
+                scheduler.stop();
+            }
+        }
+
+        @Override
+        public void onComplete() {
+            if (publisher != null && !bodies.isEmpty()) {
+                while (!demanded.isFulfilled()) {
+                    demand.increase(demanded.decreaseAndGet(demanded.get()));
+                }
+                publisher = null;
+                subscription = null;
+                scheduler.runOrSchedule();
+            } else {
+                publisher = null;
+                subscription = null;
+                if (!cancelled) {
+                    subscriber.onComplete();
+                }
+                scheduler.stop();
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/oopFactory.hpp"
@@ -32,6 +34,7 @@
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -100,13 +103,13 @@ void JVMCIEnv::copy_saved_properties() {
 
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_services_Services(), Handle(), Handle(), true, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::exit_on_pending_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
+    JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
   }
   InstanceKlass* ik = InstanceKlass::cast(k);
   if (ik->should_be_initialized()) {
     ik->initialize(THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      JVMCIRuntime::exit_on_pending_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
+      JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
     }
   }
 
@@ -116,7 +119,7 @@ void JVMCIEnv::copy_saved_properties() {
   JavaCallArguments args;
   JavaCalls::call_static(&result, ik, serializeSavedProperties, vmSymbols::serializePropertiesToByteArray_signature(), &args, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::exit_on_pending_exception(NULL, "Error calling jdk.vm.ci.services.Services.serializeSavedProperties");
+    JVMCIRuntime::fatal_exception(NULL, "Error calling jdk.vm.ci.services.Services.serializeSavedProperties");
   }
   oop res = (oop) result.get_jobject();
   assert(res->is_typeArray(), "must be");
@@ -218,7 +221,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
   if (result != JNI_OK) {
     char message[256];
     jio_snprintf(message, 256, "Uncaught exception pushing local frame for JVMCIEnv scope entered at %s:%d", _file, _line);
-    JVMCIRuntime::exit_on_pending_exception(this, message);
+    JVMCIRuntime::fatal_exception(this, message);
   }
   _pop_frame_on_close = true;
 }
@@ -287,7 +290,7 @@ void JVMCIEnv::translate_hotspot_exception_to_jni_exception(JavaThread* THREAD, 
                           vmSymbols::encodeThrowable_name(),
                           vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::exit_on_pending_exception(this, "HotSpotJVMCIRuntime.encodeThrowable should not throw an exception");
+    JVMCIRuntime::fatal_exception(this, "HotSpotJVMCIRuntime.encodeThrowable should not throw an exception");
   }
 
   oop encoded_throwable_string = (oop) result.get_jobject();
@@ -328,7 +331,7 @@ JVMCIEnv::~JVMCIEnv() {
     if (has_pending_exception()) {
       char message[256];
       jio_snprintf(message, 256, "Uncaught exception exiting JVMCIEnv scope entered at %s:%d", _file, _line);
-      JVMCIRuntime::exit_on_pending_exception(this, message);
+      JVMCIRuntime::fatal_exception(this, message);
     }
 
     if (_detach_on_close) {
@@ -631,6 +634,31 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   } else {
     JNIAccessMark jni(this, THREAD);
     jni()->ThrowNew(JNIJVMCI::JVMCIError::clazz(), msg);
+  }
+}
+
+jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isGCSupported (JVMCIObject runtime, jint gcIdentifier) {
+  JavaThread* THREAD = JavaThread::current();
+  if (is_hotspot()) {
+    JavaCallArguments jargs;
+    jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));
+    jargs.push_int(gcIdentifier);
+    JavaValue result(T_BOOLEAN);
+    JavaCalls::call_special(&result,
+                            HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
+                            vmSymbols::isGCSupported_name(),
+                            vmSymbols::int_bool_signature(), &jargs, CHECK_0);
+    return result.get_jboolean();
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jboolean result = jni()->CallNonvirtualBooleanMethod(runtime.as_jobject(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::isGCSupported_method(),
+                                                     gcIdentifier);
+    if (jni()->ExceptionCheck()) {
+      return false;
+    }
+    return result;
   }
 }
 

@@ -128,8 +128,6 @@ public class UnicastServerRef extends UnicastRef
     private static final Map<Class<?>,?> withoutSkeletons =
         Collections.synchronizedMap(new WeakHashMap<Class<?>,Void>());
 
-    private final AtomicInteger methodCallIDCount = new AtomicInteger(0);
-
     /**
      * Create a new (empty) Unicast server remote reference.
      * The filter is null to defer to the  default ObjectInputStream filter, if any.

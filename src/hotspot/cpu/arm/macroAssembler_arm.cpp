@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -84,20 +85,6 @@ void AddressLiteral::set_rspec(relocInfo::relocType rtype) {
     break;
   }
 }
-
-// Initially added to the Assembler interface as a pure virtual:
-//   RegisterConstant delayed_value(..)
-// for:
-//   6812678 macro assembler needs delayed binding of a few constants (for 6655638)
-// this was subsequently modified to its present name and return type
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp,
-                                                      int offset) {
-  ShouldNotReachHere();
-  return RegisterOrConstant(-1);
-}
-
-
 
 
 // virtual method calling
@@ -991,28 +978,24 @@ void MacroAssembler::zero_memory(Register start, Register end, Register tmp) {
 
 void MacroAssembler::arm_stack_overflow_check(int frame_size_in_bytes, Register tmp) {
   // Version of AbstractAssembler::generate_stack_overflow_check optimized for ARM
-  if (UseStackBanging) {
-    const int page_size = os::vm_page_size();
+  const int page_size = os::vm_page_size();
 
-    sub_slow(tmp, SP, JavaThread::stack_shadow_zone_size());
-    strb(R0, Address(tmp));
-    for (; frame_size_in_bytes >= page_size; frame_size_in_bytes -= 0xff0) {
-      strb(R0, Address(tmp, -0xff0, pre_indexed));
-    }
+  sub_slow(tmp, SP, StackOverflow::stack_shadow_zone_size());
+  strb(R0, Address(tmp));
+  for (; frame_size_in_bytes >= page_size; frame_size_in_bytes -= 0xff0) {
+    strb(R0, Address(tmp, -0xff0, pre_indexed));
   }
 }
 
 void MacroAssembler::arm_stack_overflow_check(Register Rsize, Register tmp) {
-  if (UseStackBanging) {
-    Label loop;
+  Label loop;
 
-    mov(tmp, SP);
-    add_slow(Rsize, Rsize, JavaThread::stack_shadow_zone_size() - os::vm_page_size());
-    bind(loop);
-    subs(Rsize, Rsize, 0xff0);
-    strb(R0, Address(tmp, -0xff0, pre_indexed));
-    b(loop, hi);
-  }
+  mov(tmp, SP);
+  add_slow(Rsize, Rsize, StackOverflow::stack_shadow_zone_size() - os::vm_page_size());
+  bind(loop);
+  subs(Rsize, Rsize, 0xff0);
+  strb(R0, Address(tmp, -0xff0, pre_indexed));
+  b(loop, hi);
 }
 
 void MacroAssembler::stop(const char* msg) {
@@ -1914,7 +1897,7 @@ void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
 }
 
 void MacroAssembler::safepoint_poll(Register tmp1, Label& slow_path) {
-  ldr_u32(tmp1, Address(Rthread, Thread::polling_page_offset()));
+  ldr_u32(tmp1, Address(Rthread, Thread::polling_word_offset()));
   tst(tmp1, exact_log2(SafepointMechanism::poll_bit()));
   b(slow_path, eq);
 }

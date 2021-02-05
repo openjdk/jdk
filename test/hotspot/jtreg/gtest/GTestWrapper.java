@@ -37,6 +37,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -75,9 +76,17 @@ public class GTestWrapper {
         }
 
         Path resultFile = Paths.get("test_result.xml");
-        pb.command(execPath.toAbsolutePath().toString(),
-                "-jdk", Utils.TEST_JDK,
-                "--gtest_output=xml:" + resultFile);
+
+        ArrayList<String> command = new ArrayList<>();
+        command.add(execPath.toAbsolutePath().toString());
+        command.add("-jdk");
+        command.add(Utils.TEST_JDK);
+        command.add("--gtest_output=xml:" + resultFile);
+        command.add("--gtest_catch_exceptions=0" + resultFile);
+        for (String a : args) {
+            command.add(a);
+        }
+        pb.command(command);
         int exitCode = ProcessTools.executeCommand(pb).getExitValue();
         if (exitCode != 0) {
             List<String> failedTests = failedTests(resultFile);
@@ -110,8 +119,10 @@ public class GTestWrapper {
             return "client";
         } else if (Platform.isMinimal()) {
             return "minimal";
+        } else if (Platform.isZero()) {
+            return "zero";
         } else {
-            throw new Error("TESTBUG: unsuppported vm variant");
+            throw new Error("TESTBUG: unsupported vm variant");
         }
     }
 }

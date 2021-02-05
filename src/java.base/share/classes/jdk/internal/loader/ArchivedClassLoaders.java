@@ -25,7 +25,7 @@
 package jdk.internal.loader;
 
 import java.util.Map;
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 import jdk.internal.module.ServicesCatalog;
 
 /**
@@ -91,6 +91,6 @@ class ArchivedClassLoaders {
     }
 
     static {
-        VM.initializeFromArchive(ArchivedClassLoaders.class);
+        CDS.initializeFromArchive(ArchivedClassLoaders.class);
     }
 }

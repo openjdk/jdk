@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/javaThreadStatus.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
@@ -36,10 +37,12 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -80,6 +83,11 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
       frame s = f->sender(&temp_map);
       return new_vframe(&s, &temp_map, thread);
     }
+  }
+
+  // Entry frame
+  if (f->is_entry_frame()) {
+    return new entryVFrame(f, reg_map, thread);
   }
 
   // External frame
@@ -153,7 +161,7 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
 void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state) {
   if (obj.not_null()) {
     st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, p2i(obj()));
-    if (obj->klass() == SystemDictionary::Class_klass()) {
+    if (obj->klass() == vmClasses::Class_klass()) {
       st->print_cr("(a java.lang.Class for %s)", java_lang_Class::as_external_name(obj()));
     } else {
       Klass* k = obj->klass();
@@ -185,7 +193,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
         if (sv->type() == T_OBJECT) {
           Handle o = locs->at(0)->get_obj();
           if (java_lang_Thread::get_thread_status(thread()->threadObj()) ==
-                                java_lang_Thread::BLOCKED_ON_MONITOR_ENTER) {
+                                JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER) {
             wait_state = "waiting to re-lock in wait()";
           }
           print_locked_object_class_name(st, o, wait_state);
@@ -475,7 +483,8 @@ void vframeStreamCommon::found_bad_method_frame() const {
 
 // top-frame will be skipped
 vframeStream::vframeStream(JavaThread* thread, frame top_frame,
-  bool stop_at_java_call_stub) : vframeStreamCommon(thread) {
+                           bool stop_at_java_call_stub) :
+    vframeStreamCommon(thread, true /* process_frames */) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   // skip top frame, as it may not be at safepoint
@@ -556,8 +565,8 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 
 void vframeStreamCommon::skip_reflection_related_frames() {
   while (!at_end() &&
-          (method()->method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
-           method()->method_holder()->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass()))) {
+          (method()->method_holder()->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass()) ||
+           method()->method_holder()->is_subclass_of(vmClasses::reflect_ConstructorAccessorImpl_klass()))) {
     next();
   }
 }
@@ -663,7 +672,7 @@ void javaVFrame::print() {
     }
     tty->cr();
     tty->print("\t  ");
-    monitor->lock()->print_on(tty);
+    monitor->lock()->print_on(tty, monitor->owner());
     tty->cr();
   }
 }

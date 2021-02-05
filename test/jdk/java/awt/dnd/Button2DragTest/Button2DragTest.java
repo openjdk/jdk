@@ -23,10 +23,10 @@
 
 import java.awt.Color;
 import java.awt.Frame;
-import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.datatransfer.StringSelection;
 import java.awt.dnd.DnDConstants;
@@ -47,7 +47,7 @@ import test.java.awt.regtesthelpers.Util;
 /**
  * @test
  * @key headful
- * @bug 4955110 8238575
+ * @bug 4955110 8238575 8211999
  * @summary tests that DragSourceDragEvent.getDropAction() accords to its new
  *          spec (does not depend on the user drop action)
  * @library ../../regtesthelpers
@@ -57,6 +57,7 @@ import test.java.awt.regtesthelpers.Util;
  */
 public final class Button2DragTest {
 
+    private static final int SIZE = 200;
     private volatile boolean dropSuccess;
     private volatile boolean locationValid = true;
 
@@ -79,8 +80,8 @@ public final class Button2DragTest {
         final DragSourceListener dragSourceListener = new DragSourceListener() {
             private void checkLocation(DragSourceEvent dsde) {
                 if (!frame.getBounds().contains(dsde.getLocation())) {
-                    System.err.println("Expected in" + frame.getBounds());
-                    System.err.println("Actual" + dsde.getLocation());
+                    System.err.println("Expected in: " + frame.getBounds());
+                    System.err.println("Actual: " + dsde.getLocation());
                     locationValid = false;
                 }
             }
@@ -130,8 +131,10 @@ public final class Button2DragTest {
 
         frame.setBackground(Color.GREEN);
         frame.setUndecorated(true);
-        frame.setSize(200, 200);
-        frame.setLocationRelativeTo(null);
+        Rectangle screen = frame.getGraphicsConfiguration().getBounds();
+        int x = (int) (screen.getCenterX() - SIZE / 2);
+        int y = (int) (screen.getCenterY() - SIZE / 2);
+        frame.setBounds(x, y, SIZE, SIZE);
         frame.setVisible(true);
 
         Robot robot = Util.createRobot();

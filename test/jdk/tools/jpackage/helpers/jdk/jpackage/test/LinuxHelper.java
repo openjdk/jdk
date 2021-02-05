@@ -38,7 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.incubator.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
@@ -51,7 +51,7 @@ public class LinuxHelper {
     public static String getPackageName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.LINUX);
         return cmd.getArgumentValue("--linux-package-name",
-                () -> cmd.name().toLowerCase());
+                () -> cmd.installerName().toLowerCase());
     }
 
     public static Path getDesktopFile(JPackageCommand cmd) {
@@ -229,11 +229,22 @@ public class LinuxHelper {
         final Path packageFile = cmd.outputBundle();
         switch (cmd.packageType()) {
             case LINUX_DEB:
-                return Long.parseLong(getDebBundleProperty(packageFile,
+                Long estimate = Long.parseLong(getDebBundleProperty(packageFile,
                         "Installed-Size"));
+                if (estimate == 0L) {
+                    // if the estimate in KB is 0, check if it is really empty
+                    // or just < 1KB as with AppImagePackageTest.testEmpty()
+                    if (getPackageFiles(cmd).count() > 01L) {
+                        // there is something there so round up to 1 KB
+                        estimate = 01L;
+                    }
+                }
+                return estimate;
 
             case LINUX_RPM:
-                return Long.parseLong(getRpmBundleProperty(packageFile, "Size")) >> 10;
+                String size = getRpmBundleProperty(packageFile, "Size");
+                return (Long.parseLong(size) + 1023L) >> 10; // in KB rounded up
+
         }
 
         return 0;
@@ -254,10 +265,10 @@ public class LinuxHelper {
 
     static void verifyPackageBundleEssential(JPackageCommand cmd) {
         String packageName = LinuxHelper.getPackageName(cmd);
-        TKit.assertNotEquals(0L, LinuxHelper.getInstalledPackageSizeKB(
-                cmd), String.format(
-                        "Check installed size of [%s] package in KB is not zero",
-                        packageName));
+        Long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
+        TKit.trace("InstalledPackageSize: " + packageSize);
+        TKit.assertNotEquals(0L, packageSize, String.format(
+                "Check installed size of [%s] package in not zero", packageName));
 
         final boolean checkPrerequisites;
         if (cmd.isRuntime()) {
@@ -270,7 +281,9 @@ public class LinuxHelper {
             checkPrerequisites = expectedCriticalRuntimePaths.equals(
                     actualCriticalRuntimePaths);
         } else {
-            checkPrerequisites = true;
+            // AppImagePackageTest.testEmpty() will have no dependencies,
+            // but will have more then 0 and less than 1K content size.
+            checkPrerequisites = packageSize > 1;
         }
 
         List<String> prerequisites = LinuxHelper.getPrerequisitePackages(cmd);

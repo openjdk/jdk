@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "oops/method.hpp"
 #include "runtime/frame.hpp"
 
 // This file specializes the assember with interpreter-specific macros
@@ -139,8 +140,17 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Expression stack
   void pop_ptr(Register r = rax);
   void pop_i(Register r = rax);
+
+  // On x86, pushing a ptr or an int is semantically identical, but we
+  // maintain a distinction for clarity and for making it easier to change
+  // semantics in the future
   void push_ptr(Register r = rax);
   void push_i(Register r = rax);
+
+  // push_i_or_ptr is provided for when explicitly allowing either a ptr or
+  // an int might have some advantage, while still documenting the fact that a
+  // ptr might be pushed to the stack.
+  void push_i_or_ptr(Register r = rax);
 
   void push_f(XMMRegister r);
   void pop_f(XMMRegister r);

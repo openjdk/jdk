@@ -63,7 +63,7 @@ typedef hb_bool_t (*hb_font_get_glyph_func_t) (hb_font_t *font, void *font_data,
                                                hb_codepoint_t *glyph,
                                                void *user_data);
 
-HB_EXTERN HB_DEPRECATED_FOR(hb_font_funcs_set_nominal_glyph_func or hb_font_funcs_set_variation_glyph_func) void
+HB_EXTERN HB_DEPRECATED_FOR(hb_font_funcs_set_nominal_glyph_func and hb_font_funcs_set_variation_glyph_func) void
 hb_font_funcs_set_glyph_func (hb_font_funcs_t *ffuncs,
                               hb_font_get_glyph_func_t func,
                               void *user_data, hb_destroy_func_t destroy);
@@ -165,28 +165,7 @@ hb_unicode_decompose_compatibility (hb_unicode_funcs_t *ufuncs,
                                     hb_codepoint_t     *decomposed);
 
 
-typedef hb_position_t (*hb_font_get_glyph_kerning_func_t) (hb_font_t *font, void *font_data,
-                                                           hb_codepoint_t first_glyph, hb_codepoint_t second_glyph,
-                                                           void *user_data);
-typedef hb_font_get_glyph_kerning_func_t hb_font_get_glyph_h_kerning_func_t;
 typedef hb_font_get_glyph_kerning_func_t hb_font_get_glyph_v_kerning_func_t;
-
-/**
- * hb_font_funcs_set_glyph_h_kerning_func:
- * @ffuncs: font functions.
- * @func: (closure user_data) (destroy destroy) (scope notified):
- * @user_data:
- * @destroy:
- *
- *
- *
- * Since: 0.9.2
- * Deprecated: 2.0.0
- **/
-HB_EXTERN void
-hb_font_funcs_set_glyph_h_kerning_func (hb_font_funcs_t *ffuncs,
-                                        hb_font_get_glyph_h_kerning_func_t func,
-                                        void *user_data, hb_destroy_func_t destroy);
 
 /**
  * hb_font_funcs_set_glyph_v_kerning_func:
@@ -206,18 +185,8 @@ hb_font_funcs_set_glyph_v_kerning_func (hb_font_funcs_t *ffuncs,
                                         void *user_data, hb_destroy_func_t destroy);
 
 HB_EXTERN hb_position_t
-hb_font_get_glyph_h_kerning (hb_font_t *font,
-                             hb_codepoint_t left_glyph, hb_codepoint_t right_glyph);
-HB_EXTERN hb_position_t
 hb_font_get_glyph_v_kerning (hb_font_t *font,
                              hb_codepoint_t top_glyph, hb_codepoint_t bottom_glyph);
-
-HB_EXTERN void
-hb_font_get_glyph_kerning_for_direction (hb_font_t *font,
-                                         hb_codepoint_t first_glyph, hb_codepoint_t second_glyph,
-                                         hb_direction_t direction,
-                                         hb_position_t *x, hb_position_t *y);
-
 
 #endif
 

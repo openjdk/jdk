@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,44 @@
 
 #include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zForwarding.hpp"
-#include "gc/z/zGlobals.hpp"
+#include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zHeap.hpp"
+#include "gc/z/zLock.inline.hpp"
+#include "gc/z/zPage.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/powerOfTwo.hpp"
+
+inline uint32_t ZForwarding::nentries(const ZPage* page) {
+  // The number returned by the function is used to size the hash table of
+  // forwarding entries for this page. This hash table uses linear probing.
+  // The size of the table must be a power of two to allow for quick and
+  // inexpensive indexing/masking. The table is also sized to have a load
+  // factor of 50%, i.e. sized to have double the number of entries actually
+  // inserted, to allow for good lookup/insert performance.
+  return round_up_power_of_2(page->live_objects() * 2);
+}
+
+inline ZForwarding* ZForwarding::alloc(ZForwardingAllocator* allocator, ZPage* page) {
+  const size_t nentries = ZForwarding::nentries(page);
+  void* const addr = AttachedArray::alloc(allocator, nentries);
+  return ::new (addr) ZForwarding(page, nentries);
+}
+
+inline ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
+    _virtual(page->virtual_memory()),
+    _object_alignment_shift(page->object_alignment_shift()),
+    _entries(nentries),
+    _page(page),
+    _ref_lock(),
+    _ref_count(1),
+    _in_place(false) {}
+
+inline uint8_t ZForwarding::type() const {
+  return _page->type();
+}
 
 inline uintptr_t ZForwarding::start() const {
   return _virtual.start();
@@ -45,49 +77,16 @@ inline size_t ZForwarding::object_alignment_shift() const {
   return _object_alignment_shift;
 }
 
-inline ZPage* ZForwarding::page() const {
-  return _page;
+inline void ZForwarding::object_iterate(ObjectClosure *cl) {
+  return _page->object_iterate(cl);
 }
 
-inline bool ZForwarding::is_pinned() const {
-  return Atomic::load(&_pinned);
+inline void ZForwarding::set_in_place() {
+  _in_place = true;
 }
 
-inline void ZForwarding::set_pinned() {
-  Atomic::store(&_pinned, true);
-}
-
-inline bool ZForwarding::inc_refcount() {
-  uint32_t refcount = Atomic::load(&_refcount);
-
-  while (refcount > 0) {
-    const uint32_t old_refcount = refcount;
-    const uint32_t new_refcount = old_refcount + 1;
-    const uint32_t prev_refcount = Atomic::cmpxchg(&_refcount, old_refcount, new_refcount);
-    if (prev_refcount == old_refcount) {
-      return true;
-    }
-
-    refcount = prev_refcount;
-  }
-
-  return false;
-}
-
-inline bool ZForwarding::dec_refcount() {
-  assert(_refcount > 0, "Invalid state");
-  return Atomic::sub(&_refcount, 1u) == 0u;
-}
-
-inline bool ZForwarding::retain_page() {
-  return inc_refcount();
-}
-
-inline void ZForwarding::release_page() {
-  if (dec_refcount()) {
-    ZHeap::heap()->free_page(_page, true /* reclaimed */);
-    _page = NULL;
-  }
+inline bool ZForwarding::in_place() const {
+  return _in_place;
 }
 
 inline ZForwardingEntry* ZForwarding::entries() const {
@@ -95,7 +94,9 @@ inline ZForwardingEntry* ZForwarding::entries() const {
 }
 
 inline ZForwardingEntry ZForwarding::at(ZForwardingCursor* cursor) const {
-  return Atomic::load(entries() + *cursor);
+  // Load acquire for correctness with regards to
+  // accesses to the contents of the forwarded object.
+  return Atomic::load_acquire(entries() + *cursor);
 }
 
 inline ZForwardingEntry ZForwarding::first(uintptr_t from_index, ZForwardingCursor* cursor) const {
@@ -109,11 +110,6 @@ inline ZForwardingEntry ZForwarding::next(ZForwardingCursor* cursor) const {
   const size_t mask = _entries.length() - 1;
   *cursor = (*cursor + 1) & mask;
   return at(cursor);
-}
-
-inline ZForwardingEntry ZForwarding::find(uintptr_t from_index) const {
-  ZForwardingCursor dummy;
-  return find(from_index, &dummy);
 }
 
 inline ZForwardingEntry ZForwarding::find(uintptr_t from_index, ZForwardingCursor* cursor) const {

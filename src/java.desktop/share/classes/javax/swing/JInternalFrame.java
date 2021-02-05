@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,37 @@
 
 package javax.swing;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FocusTraversalPolicy;
+import java.awt.Graphics;
+import java.awt.KeyboardFocusManager;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.beans.BeanProperty;
+import java.beans.JavaBean;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyVetoException;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 
-import java.beans.*;
-
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleValue;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
-import javax.swing.plaf.*;
-
-import javax.accessibility.*;
-
-import java.io.ObjectOutputStream;
-import java.io.IOException;
+import javax.swing.plaf.DesktopIconUI;
+import javax.swing.plaf.InternalFrameUI;
 
 import sun.awt.AppContext;
 import sun.swing.SwingUtilities2;
-
 
 /**
  * A lightweight object that provides many of the features of
@@ -1858,6 +1873,7 @@ public class JInternalFrame extends JComponent implements
      * in <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -2010,6 +2026,11 @@ public class JInternalFrame extends JComponent implements
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJInternalFrame extends AccessibleJComponent
         implements AccessibleValue {
+
+        /**
+         * Constructs an {@code AccessibleJInternalFrame}.
+         */
+        protected AccessibleJInternalFrame() {}
 
         /**
          * Get the accessible name of this object.
@@ -2252,6 +2273,7 @@ public class JInternalFrame extends JComponent implements
         ////////////////
         // Serialization support
         ////////////////
+        @Serial
         private void writeObject(ObjectOutputStream s) throws IOException {
             s.defaultWriteObject();
             if (getUIClassID().equals("DesktopIconUI")) {
@@ -2301,6 +2323,11 @@ public class JInternalFrame extends JComponent implements
         @SuppressWarnings("serial") // Same-version serialization only
         protected class AccessibleJDesktopIcon extends AccessibleJComponent
             implements AccessibleValue {
+
+            /**
+             * Constructs an {@code AccessibleJDesktopIcon}.
+             */
+            protected AccessibleJDesktopIcon() {}
 
             /**
              * Gets the role of this object.

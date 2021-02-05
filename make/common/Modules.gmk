@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,206 +27,57 @@ ifndef _MODULES_GMK
 _MODULES_GMK := 1
 
 ################################################################################
-#
-# BOOT_MODULES are modules defined by the boot loader
-# PLATFORM_MODULES are modules defined by the platform loader
-# JRE_TOOL_MODULES are tools included in JRE and defined by the application loader
-#
-# All other modules not declared below are defined by the application loader
-# and are not included in JRE.
+# Setup module sets for classloaders
 
-BOOT_MODULES :=
-PLATFORM_MODULES :=
-JRE_TOOL_MODULES :=
-UPGRADEABLE_MODULES :=
-AGGREGATOR_MODULES :=
-DOCS_MODULES :=
+include $(TOPDIR)/make/conf/module-loader-map.conf
 
+# Append platform-specific and upgradeable modules
+PLATFORM_MODULES += $(PLATFORM_MODULES_$(OPENJDK_TARGET_OS)) \
+    $(UPGRADEABLE_PLATFORM_MODULES)
+
+################################################################################
+# Setup module sets for docs
+
+include $(TOPDIR)/make/conf/docs-modules.conf
+
+################################################################################
+# Setup module sets needed by the build system
+
+include $(TOPDIR)/make/conf/build-module-sets.conf
+
+################################################################################
 # Hook to include the corresponding custom file, if present.
+# Allowing MODULE list extensions setup above.
 $(eval $(call IncludeCustomExtension, common/Modules.gmk))
 
-BOOT_MODULES += \
-    java.base \
-    java.datatransfer \
-    java.desktop \
-    java.instrument \
-    java.logging \
-    java.management \
-    java.management.rmi \
-    java.naming \
-    java.prefs \
-    java.rmi \
-    java.security.sasl \
-    java.xml \
-    jdk.incubator.foreign \
-    jdk.internal.vm.ci \
-    jdk.jfr \
-    jdk.management \
-    jdk.management.jfr \
-    jdk.management.agent \
-    jdk.net \
-    jdk.nio.mapmode \
-    jdk.sctp \
-    jdk.unsupported \
-    #
-
-# to be deprivileged
-BOOT_MODULES += \
-    jdk.naming.rmi \
-    #
-
-# Modules that directly or indirectly requiring upgradeable modules
-# should carefully be considered if it should be upgradeable or not.
-UPGRADEABLE_MODULES += \
-    java.compiler \
-    jdk.aot \
-    jdk.internal.vm.compiler \
-    jdk.internal.vm.compiler.management \
-    #
-
-
-AGGREGATOR_MODULES += \
-    java.se \
-    #
-
-PLATFORM_MODULES += \
-    $(UPGRADEABLE_MODULES) \
-    $(AGGREGATOR_MODULES)
-    #
-
-PLATFORM_MODULES += \
-    java.net.http \
-    java.scripting \
-    java.security.jgss \
-    java.smartcardio \
-    java.sql \
-    java.sql.rowset \
-    java.transaction.xa \
-    java.xml.crypto \
-    jdk.accessibility \
-    jdk.charsets \
-    jdk.crypto.cryptoki \
-    jdk.crypto.ec \
-    jdk.dynalink \
-    jdk.httpserver \
-    jdk.jsobject \
-    jdk.localedata \
-    jdk.naming.dns \
-    jdk.security.auth \
-    jdk.security.jgss \
-    jdk.xml.dom \
-    jdk.zipfs \
-    #
-
-ifeq ($(call isTargetOs, windows), true)
-  PLATFORM_MODULES += jdk.crypto.mscapi
-endif
-
-JRE_TOOL_MODULES += \
-    jdk.jdwp.agent \
-    jdk.incubator.jpackage \
-    #
-
 ################################################################################
+# Depending on the configuration, we might need to filter out some modules that
+# normally should have been included
 
-# DOCS_MODULES defines the root modules for javadoc generation.
-# All of their `require transitive` modules directly and indirectly will be included.
-DOCS_MODULES += \
-    java.se \
-    java.smartcardio \
-    jdk.accessibility \
-    jdk.attach \
-    jdk.charsets \
-    jdk.compiler \
-    jdk.crypto.cryptoki \
-    jdk.crypto.ec \
-    jdk.dynalink \
-    jdk.editpad \
-    jdk.hotspot.agent \
-    jdk.httpserver \
-    jdk.incubator.jpackage \
-    jdk.jartool \
-    jdk.javadoc \
-    jdk.jcmd \
-    jdk.jconsole \
-    jdk.jdeps \
-    jdk.jdi \
-    jdk.jdwp.agent \
-    jdk.jfr \
-    jdk.jlink \
-    jdk.jsobject \
-    jdk.jshell \
-    jdk.jstatd \
-    jdk.incubator.foreign \
-    jdk.localedata \
-    jdk.management \
-    jdk.management.agent \
-    jdk.management.jfr \
-    jdk.naming.dns \
-    jdk.naming.rmi \
-    jdk.net \
-    jdk.nio.mapmode \
-    jdk.sctp \
-    jdk.security.auth \
-    jdk.security.jgss \
-    jdk.xml.dom \
-    jdk.zipfs \
-    #
-
-# These modules are included in the interim image which is used to run profiling
-# before building the real images.
-INTERIM_IMAGE_MODULES := java.base java.logging
-
-LANGTOOLS_MODULES := \
-    java.compiler \
-    jdk.compiler \
-    jdk.javadoc \
-    jdk.jdeps \
-    jdk.jshell \
-    #
-
-HOTSPOT_MODULES := \
-    jdk.aot \
-    jdk.hotspot.agent \
-    jdk.internal.vm.ci \
-    jdk.internal.vm.compiler \
-    jdk.internal.vm.compiler.management \
-    #
-
-################################################################################
 # Some platforms don't have the serviceability agent
-
 ifeq ($(INCLUDE_SA), false)
   MODULES_FILTER += jdk.hotspot.agent
 endif
 
-################################################################################
 # Filter out jvmci specific modules if jvmci is disabled
-
 ifeq ($(INCLUDE_JVMCI), false)
   MODULES_FILTER += jdk.internal.vm.ci
 endif
 
-################################################################################
 # Filter out Graal specific modules if Graal is disabled
-
 ifeq ($(INCLUDE_GRAAL), false)
   MODULES_FILTER += jdk.internal.vm.compiler
   MODULES_FILTER += jdk.internal.vm.compiler.management
 endif
 
-################################################################################
 # Filter out aot specific modules if aot is disabled
-
 ifeq ($(ENABLE_AOT), false)
   MODULES_FILTER += jdk.aot
 endif
 
-################################################################################
 # jpackage is only on windows, macosx, and linux
-
 ifeq ($(call isTargetOs, windows macosx linux), false)
-  MODULES_FILTER += jdk.incubator.jpackage
+  MODULES_FILTER += jdk.jpackage
 endif
 
 ################################################################################
@@ -336,7 +187,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	$(RM) $@
 	$(foreach m, $(MODULE_INFOS), \
 	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(NAWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires/ { sub(/;/, ""); \
 	                          sub(/requires /, " "); \
@@ -350,7 +201,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m && \
 	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(NAWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires  *transitive/ { \
 	                          sub(/;/, ""); \
@@ -408,8 +259,7 @@ FindTransitiveIndirectDepsForModules = \
 # Upgradeable modules are those that are either defined as upgradeable or that
 # require an upradeable module.
 FindAllUpgradeableModules = \
-    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_MODULES)))
-
+    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_PLATFORM_MODULES)))
 
 ################################################################################
 
@@ -465,7 +315,6 @@ endef
 # * JDK_MODULES
 # * BOOT_MODULES
 # * PLATFORM_MODULES
-# * JRE_TOOL_MODULES
 define ReadImportMetaData
     IMPORTED_MODULES := $$(call FindImportedModules)
     $$(foreach m, $$(IMPORTED_MODULES), \

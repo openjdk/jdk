@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @run main SpecTest 512
  * @run main SpecTest 768
  * @run main SpecTest 1024
- * @run main SpecTest 1024 3
+ * @run main SpecTest 1024 167971
  * @run main SpecTest 2048
  * @run main/timeout=240 SpecTest 4096
  * @run main/timeout=240 SpecTest 5120

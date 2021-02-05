@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -175,7 +176,7 @@ void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) 
   record_stacktrace(thread);
   // try enter critical section
   JfrTryLock tryLock(&_lock);
-  if (!tryLock.has_lock()) {
+  if (!tryLock.acquired()) {
     log_trace(jfr, oldobject, sampling)("Skipping old object sample due to lock contention");
     return;
   }

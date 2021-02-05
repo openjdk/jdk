@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,7 +337,7 @@ public class Flags {
     /**
      * Flag to indicate the API element in question is for a preview API.
      */
-    public static final long PREVIEW_ESSENTIAL_API = 1L<<58; //any Symbol kind
+    public static final long PREVIEW_REFLECTIVE = 1L<<58; //any Symbol kind
 
     /**
      * Flag to indicate the given variable is a match binding variable.
@@ -383,30 +383,31 @@ public class Flags {
     /** Modifier masks.
      */
     public static final int
-        AccessFlags           = PUBLIC | PROTECTED | PRIVATE,
-        LocalClassFlags       = FINAL | ABSTRACT | STRICTFP | ENUM | SYNTHETIC,
-        StaticLocalFlags      = LocalClassFlags | STATIC | INTERFACE,
-        MemberClassFlags      = LocalClassFlags | INTERFACE | AccessFlags,
-        MemberRecordFlags     = MemberClassFlags | STATIC,
-        ClassFlags            = LocalClassFlags | INTERFACE | PUBLIC | ANNOTATION,
-        InterfaceVarFlags     = FINAL | STATIC | PUBLIC,
-        VarFlags              = AccessFlags | FINAL | STATIC |
-                                VOLATILE | TRANSIENT | ENUM,
-        ConstructorFlags      = AccessFlags,
-        InterfaceMethodFlags  = ABSTRACT | PUBLIC,
-        MethodFlags           = AccessFlags | ABSTRACT | STATIC | NATIVE |
-                                SYNCHRONIZED | FINAL | STRICTFP,
-        RecordMethodFlags     = AccessFlags | ABSTRACT | STATIC |
-                                SYNCHRONIZED | FINAL | STRICTFP;
+        AccessFlags                       = PUBLIC | PROTECTED | PRIVATE,
+        LocalClassFlags                   = FINAL | ABSTRACT | STRICTFP | ENUM | SYNTHETIC,
+        StaticLocalFlags                  = LocalClassFlags | STATIC | INTERFACE,
+        MemberClassFlags                  = LocalClassFlags | INTERFACE | AccessFlags,
+        MemberStaticClassFlags            = MemberClassFlags | STATIC,
+        ClassFlags                        = LocalClassFlags | INTERFACE | PUBLIC | ANNOTATION,
+        InterfaceVarFlags                 = FINAL | STATIC | PUBLIC,
+        VarFlags                          = AccessFlags | FINAL | STATIC |
+                                            VOLATILE | TRANSIENT | ENUM,
+        ConstructorFlags                  = AccessFlags,
+        InterfaceMethodFlags              = ABSTRACT | PUBLIC,
+        MethodFlags                       = AccessFlags | ABSTRACT | STATIC | NATIVE |
+                                            SYNCHRONIZED | FINAL | STRICTFP,
+        RecordMethodFlags                 = AccessFlags | ABSTRACT | STATIC |
+                                            SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
-        ExtendedStandardFlags       = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED,
-        ExtendedMemberClassFlags    = (long)MemberClassFlags | SEALED | NON_SEALED,
-        ExtendedClassFlags          = (long)ClassFlags | SEALED | NON_SEALED,
-        ModifierFlags               = ((long)StandardFlags & ~INTERFACE) | DEFAULT | SEALED | NON_SEALED,
-        InterfaceMethodMask         = ABSTRACT | PRIVATE | STATIC | PUBLIC | STRICTFP | DEFAULT,
-        AnnotationTypeElementMask   = ABSTRACT | PUBLIC,
-        LocalVarFlags               = FINAL | PARAMETER,
-        ReceiverParamFlags          = PARAMETER;
+        ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED,
+        ExtendedMemberClassFlags          = (long)MemberClassFlags | SEALED | NON_SEALED,
+        ExtendedMemberStaticClassFlags    = (long) MemberStaticClassFlags | SEALED | NON_SEALED,
+        ExtendedClassFlags                = (long)ClassFlags | SEALED | NON_SEALED,
+        ModifierFlags                     = ((long)StandardFlags & ~INTERFACE) | DEFAULT | SEALED | NON_SEALED,
+        InterfaceMethodMask               = ABSTRACT | PRIVATE | STATIC | PUBLIC | STRICTFP | DEFAULT,
+        AnnotationTypeElementMask         = ABSTRACT | PUBLIC,
+        LocalVarFlags                     = FINAL | PARAMETER,
+        ReceiverParamFlags                = PARAMETER;
 
     @SuppressWarnings("preview")
     public static Set<Modifier> asModifierSet(long flags) {
@@ -508,7 +509,7 @@ public class Flags {
         ANONCONSTR_BASED(Flags.ANONCONSTR_BASED),
         NAME_FILLED(Flags.NAME_FILLED),
         PREVIEW_API(Flags.PREVIEW_API),
-        PREVIEW_ESSENTIAL_API(Flags.PREVIEW_ESSENTIAL_API),
+        PREVIEW_REFLECTIVE(Flags.PREVIEW_REFLECTIVE),
         MATCH_BINDING(Flags.MATCH_BINDING),
         MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER),
         RECORD(Flags.RECORD),

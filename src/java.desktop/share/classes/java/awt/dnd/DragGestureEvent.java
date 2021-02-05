@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,23 @@
  * questions.
  */
 
-
 package java.awt.dnd;
 
 import java.awt.Component;
 import java.awt.Cursor;
-
 import java.awt.Image;
 import java.awt.Point;
-
-import java.awt.event.InputEvent;
-
 import java.awt.datatransfer.Transferable;
-
-import java.io.InvalidObjectException;
-import java.util.EventObject;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Iterator;
-
+import java.awt.event.InputEvent;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-
+import java.io.Serial;
+import java.util.Collections;
+import java.util.EventObject;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * A {@code DragGestureEvent} is passed
@@ -73,6 +66,10 @@ import java.io.ObjectOutputStream;
 
 public class DragGestureEvent extends EventObject {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 9080172649166731306L;
 
     /**
@@ -300,11 +297,14 @@ public class DragGestureEvent extends EventObject {
      * {@code DragGestureEvent} created from the resulting deserialized
      * stream will contain an empty {@code List} of gesture events.
      *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData The default serializable fields, in alphabetical order,
      *             followed by either a {@code List} instance, or
      *             {@code null}.
      * @since 1.4
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
 
@@ -323,8 +323,13 @@ public class DragGestureEvent extends EventObject {
      * {@code null}, this object's {@code List} of gesture events
      * is set to an empty {@code List}.
      *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      * @since 1.4
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {

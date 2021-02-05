@@ -30,7 +30,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -141,10 +140,23 @@ public:
 
 class ShenandoahSafepoint : public AllStatic {
 public:
-  // check if Shenandoah GC safepoint is in progress
+  // Check if Shenandoah GC safepoint is in progress. This is nominally
+  // equivalent to calling SafepointSynchronize::is_at_safepoint(), but
+  // it also checks the Shenandoah specifics, when it can.
   static inline bool is_at_shenandoah_safepoint() {
     if (!SafepointSynchronize::is_at_safepoint()) return false;
 
+    Thread* const thr = Thread::current();
+    // Shenandoah GC specific safepoints are scheduled by control thread.
+    // So if we are enter here from control thread, then we are definitely not
+    // at Shenandoah safepoint, but at something else.
+    if (thr == ShenandoahHeap::heap()->control_thread()) return false;
+
+    // This is not VM thread, cannot see what VM thread is doing,
+    // so pretend this is a proper Shenandoah safepoint
+    if (!thr->is_VM_thread()) return true;
+
+    // Otherwise check we are at proper operation type
     VM_Operation* vm_op = VMThread::vm_operation();
     if (vm_op == NULL) return false;
 

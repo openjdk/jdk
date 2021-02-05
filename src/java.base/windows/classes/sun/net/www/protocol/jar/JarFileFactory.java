@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,10 +133,10 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
         /* if the JAR file is cached, the permission will always be there */
         if (result != null) {
-            Permission perm = getPermission(result);
-            if (perm != null) {
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                Permission perm = getPermission(result);
+                if (perm != null) {
                     try {
                         sm.checkPermission(perm);
                     } catch (SecurityException se) {

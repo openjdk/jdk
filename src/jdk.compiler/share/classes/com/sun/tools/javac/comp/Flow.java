@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -736,7 +736,8 @@ public class Flow {
                 }
                 c.completesNormally = alive != Liveness.DEAD;
             }
-            if ((constants == null || !constants.isEmpty()) && !hasDefault) {
+            if ((constants == null || !constants.isEmpty()) && !hasDefault &&
+                !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 log.error(tree, Errors.NotExhaustive);
             }
             alive = prevAlive;
@@ -1875,7 +1876,8 @@ public class Flow {
         void checkInit(DiagnosticPosition pos, VarSymbol sym, Error errkey) {
             if ((sym.adr >= firstadr || sym.owner.kind != TYP) &&
                 trackable(sym) &&
-                !inits.isMember(sym.adr)) {
+                !inits.isMember(sym.adr) &&
+                (sym.flags_field & CLASH) == 0) {
                     log.error(pos, errkey);
                 inits.incl(sym.adr);
             }
@@ -2758,6 +2760,12 @@ public class Flow {
             }
         }
 
+        @Override
+        public void visitBindingPattern(JCBindingPattern tree) {
+            super.visitBindingPattern(tree);
+            initParam(tree.var);
+        }
+
         void referenced(Symbol sym) {
             unrefdResources.remove(sym);
         }
@@ -2897,7 +2905,7 @@ public class Flow {
         public void visitClassDef(JCClassDecl tree) {
             JCTree prevTree = currentTree;
             try {
-                currentTree = tree.sym.isLocal() ? tree : null;
+                currentTree = tree.sym.isDirectlyOrIndirectlyLocal() ? tree : null;
                 super.visitClassDef(tree);
             } finally {
                 currentTree = prevTree;

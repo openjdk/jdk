@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
@@ -41,11 +42,13 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -150,7 +153,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     // dereference it as in case of ints, floats, etc.
     __ mr(R4_ARG2, arg_java);
     __ addi(arg_java, arg_java, -BytesPerWord);
-    __ std(R4_ARG2, _abi(carg_2), target_sp);
+    __ std(R4_ARG2, _abi0(carg_2), target_sp);
     __ bind(L);
   }
 
@@ -158,7 +161,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // corresponds to 3rd C argument.
   __ li(argcnt, -1);
   // arg_c points to 3rd C argument
-  __ addi(arg_c, target_sp, _abi(carg_3));
+  __ addi(arg_c, target_sp, _abi0(carg_3));
   // no floating-point args parsed so far
   __ li(fpcnt, 0);
 
@@ -403,7 +406,7 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
      break;
   case T_OBJECT:
     // JNIHandles::resolve result.
-    __ resolve_jobject(R3_RET, R11_scratch1, R31, /* needs_frame */ true); // kills R31
+    __ resolve_jobject(R3_RET, R11_scratch1, R31, MacroAssembler::PRESERVATION_FRAME_LR); // kills R31
     break;
   case T_FLOAT:
      break;
@@ -524,7 +527,9 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ beq(CCR0, slow_path);
 
   __ load_heap_oop(R3_RET, referent_offset, R3_RET,
-                   /* non-volatile temp */ R31, R11_scratch1, true, ON_WEAK_OOP_REF);
+                   /* non-volatile temp */ R31, R11_scratch1,
+                   MacroAssembler::PRESERVATION_FRAME_LR,
+                   ON_WEAK_OOP_REF);
 
   // Generate the G1 pre-barrier code to log the value of
   // the referent field in an SATB buffer. Note with
@@ -710,79 +715,44 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
 // Note: checking for negative value instead of overflow
 //       so we have a 'sticky' overflow test.
 //
-void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
+void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   // Note: In tiered we increment either counters in method or in MDO depending if we're profiling or not.
   Register Rscratch1   = R11_scratch1;
   Register Rscratch2   = R12_scratch2;
   Register R3_counters = R3_ARG1;
   Label done;
 
-  if (TieredCompilation) {
-    const int increment = InvocationCounter::count_increment;
-    Label no_mdo;
-    if (ProfileInterpreter) {
-      const Register Rmdo = R3_counters;
-      // If no method data exists, go to profile_continue.
-      __ ld(Rmdo, in_bytes(Method::method_data_offset()), R19_method);
-      __ cmpdi(CCR0, Rmdo, 0);
-      __ beq(CCR0, no_mdo);
+  const int increment = InvocationCounter::count_increment;
+  Label no_mdo;
+  if (ProfileInterpreter) {
+    const Register Rmdo = R3_counters;
+    __ ld(Rmdo, in_bytes(Method::method_data_offset()), R19_method);
+    __ cmpdi(CCR0, Rmdo, 0);
+    __ beq(CCR0, no_mdo);
 
-      // Increment invocation counter in the MDO.
-      const int mdo_ic_offs = in_bytes(MethodData::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
-      __ lwz(Rscratch2, mdo_ic_offs, Rmdo);
-      __ lwz(Rscratch1, in_bytes(MethodData::invoke_mask_offset()), Rmdo);
-      __ addi(Rscratch2, Rscratch2, increment);
-      __ stw(Rscratch2, mdo_ic_offs, Rmdo);
-      __ and_(Rscratch1, Rscratch2, Rscratch1);
-      __ bne(CCR0, done);
-      __ b(*overflow);
-    }
-
-    // Increment counter in MethodCounters*.
-    const int mo_ic_offs = in_bytes(MethodCounters::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
-    __ bind(no_mdo);
-    __ get_method_counters(R19_method, R3_counters, done);
-    __ lwz(Rscratch2, mo_ic_offs, R3_counters);
-    __ lwz(Rscratch1, in_bytes(MethodCounters::invoke_mask_offset()), R3_counters);
+    // Increment invocation counter in the MDO.
+    const int mdo_ic_offs = in_bytes(MethodData::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+    __ lwz(Rscratch2, mdo_ic_offs, Rmdo);
+    __ lwz(Rscratch1, in_bytes(MethodData::invoke_mask_offset()), Rmdo);
     __ addi(Rscratch2, Rscratch2, increment);
-    __ stw(Rscratch2, mo_ic_offs, R3_counters);
+    __ stw(Rscratch2, mdo_ic_offs, Rmdo);
     __ and_(Rscratch1, Rscratch2, Rscratch1);
-    __ beq(CCR0, *overflow);
-
-    __ bind(done);
-
-  } else {
-
-    // Update standard invocation counters.
-    Register Rsum_ivc_bec = R4_ARG2;
-    __ get_method_counters(R19_method, R3_counters, done);
-    __ increment_invocation_counter(R3_counters, Rsum_ivc_bec, R12_scratch2);
-    // Increment interpreter invocation counter.
-    if (ProfileInterpreter) {  // %%% Merge this into methodDataOop.
-      __ lwz(R12_scratch2, in_bytes(MethodCounters::interpreter_invocation_counter_offset()), R3_counters);
-      __ addi(R12_scratch2, R12_scratch2, 1);
-      __ stw(R12_scratch2, in_bytes(MethodCounters::interpreter_invocation_counter_offset()), R3_counters);
-    }
-    // Check if we must create a method data obj.
-    if (ProfileInterpreter && profile_method != NULL) {
-      const Register profile_limit = Rscratch1;
-      __ lwz(profile_limit, in_bytes(MethodCounters::interpreter_profile_limit_offset()), R3_counters);
-      // Test to see if we should create a method data oop.
-      __ cmpw(CCR0, Rsum_ivc_bec, profile_limit);
-      __ blt(CCR0, *profile_method_continue);
-      // If no method data exists, go to profile_method.
-      __ test_method_data_pointer(*profile_method);
-    }
-    // Finally check for counter overflow.
-    if (overflow) {
-      const Register invocation_limit = Rscratch1;
-      __ lwz(invocation_limit, in_bytes(MethodCounters::interpreter_invocation_limit_offset()), R3_counters);
-      __ cmpw(CCR0, Rsum_ivc_bec, invocation_limit);
-      __ bge(CCR0, *overflow);
-    }
-
-    __ bind(done);
+    __ bne(CCR0, done);
+    __ b(*overflow);
   }
+
+  // Increment counter in MethodCounters*.
+  const int mo_ic_offs = in_bytes(MethodCounters::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+  __ bind(no_mdo);
+  __ get_method_counters(R19_method, R3_counters, done);
+  __ lwz(Rscratch2, mo_ic_offs, R3_counters);
+  __ lwz(Rscratch1, in_bytes(MethodCounters::invoke_mask_offset()), R3_counters);
+  __ addi(Rscratch2, Rscratch2, increment);
+  __ stw(Rscratch2, mo_ic_offs, R3_counters);
+  __ and_(Rscratch1, Rscratch2, Rscratch1);
+  __ beq(CCR0, *overflow);
+
+  __ bind(done);
 }
 
 // Generate code to initiate compilation on invocation counter overflow.
@@ -883,7 +853,7 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
 
     __ bind(Lstatic); // Static case: Lock the java mirror
     // Load mirror from interpreter frame.
-    __ ld(Robj_to_lock, _abi(callers_sp), R1_SP);
+    __ ld(Robj_to_lock, _abi0(callers_sp), R1_SP);
     __ ld(Robj_to_lock, _ijava_state_neg(mirror), Robj_to_lock);
 
     __ bind(Ldone);
@@ -1044,7 +1014,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ mflr(R12_scratch2);
   __ neg(parent_frame_resize, parent_frame_resize);
   __ resize_frame(parent_frame_resize, R11_scratch1);
-  __ std(R12_scratch2, _abi(lr), R1_SP);
+  __ std(R12_scratch2, _abi0(lr), R1_SP);
 
   // Get mirror and store it in the frame as GC root for this Method*.
   __ load_mirror_from_const_method(R12_scratch2, Rconst_method);
@@ -1184,14 +1154,12 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
-  if (UseStackBanging) {
-    const int page_size = os::vm_page_size();
-    const int n_shadow_pages = ((int)JavaThread::stack_shadow_zone_size()) / page_size;
-    const int start_page = native_call ? n_shadow_pages : 1;
-    BLOCK_COMMENT("bang_stack_shadow_pages:");
-    for (int pages = start_page; pages <= n_shadow_pages; pages++) {
-      __ bang_stack_with_offset(pages*page_size);
-    }
+  const int page_size = os::vm_page_size();
+  const int n_shadow_pages = ((int)StackOverflow::stack_shadow_zone_size()) / page_size;
+  const int start_page = native_call ? n_shadow_pages : 1;
+  BLOCK_COMMENT("bang_stack_shadow_pages:");
+  for (int pages = start_page; pages <= n_shadow_pages; pages++) {
+    __ bang_stack_with_offset(pages*page_size);
   }
 }
 
@@ -1266,7 +1234,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
       __ li(R0, 1);
       __ stb(R0, in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()), R16_thread);
     }
-    generate_counter_incr(&invocation_counter_overflow, NULL, NULL);
+    generate_counter_incr(&invocation_counter_overflow);
 
     BIND(continue_after_compile);
   }
@@ -1386,7 +1354,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ testbitdi(CCR0, R0, access_flags, JVM_ACC_STATIC_BIT);
     __ bfalse(CCR0, method_is_not_static);
 
-    __ ld(R11_scratch1, _abi(callers_sp), R1_SP);
+    __ ld(R11_scratch1, _abi0(callers_sp), R1_SP);
     // Load mirror from interpreter frame.
     __ ld(R12_scratch2, _ijava_state_neg(mirror), R11_scratch1);
     // R4_ARG2 = &state->_oop_temp;
@@ -1549,9 +1517,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Handle exceptions
 
   if (synchronized) {
-    // Don't check for exceptions since we're still in the i2n frame. Do that
-    // manually afterwards.
-    __ unlock_object(R26_monitor, false); // Can also unlock methods.
+    __ unlock_object(R26_monitor); // Can also unlock methods.
   }
 
   // Reset active handles after returning from native.
@@ -1592,16 +1558,14 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   BIND(exception_return_sync_check);
 
   if (synchronized) {
-    // Don't check for exceptions since we're still in the i2n frame. Do that
-    // manually afterwards.
-    __ unlock_object(R26_monitor, false); // Can also unlock methods.
+    __ unlock_object(R26_monitor); // Can also unlock methods.
   }
   BIND(exception_return_sync_check_already_unlocked);
 
   const Register return_pc = R31;
 
   __ ld(return_pc, 0, R1_SP);
-  __ ld(return_pc, _abi(lr), return_pc);
+  __ ld(return_pc, _abi0(lr), return_pc);
 
   // Get the address of the exception handler.
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address),
@@ -1674,9 +1638,8 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // --------------------------------------------------------------------------
   // Counter increment and overflow check.
-  Label invocation_counter_overflow,
-        profile_method,
-        profile_method_continue;
+  Label invocation_counter_overflow;
+  Label continue_after_compile;
   if (inc_counter || ProfileInterpreter) {
 
     Register Rdo_not_unlock_if_synchronized_addr = R11_scratch1;
@@ -1698,10 +1661,10 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
     // Increment invocation counter and check for overflow.
     if (inc_counter) {
-      generate_counter_incr(&invocation_counter_overflow, &profile_method, &profile_method_continue);
+      generate_counter_incr(&invocation_counter_overflow);
     }
 
-    __ bind(profile_method_continue);
+    __ bind(continue_after_compile);
   }
 
   bang_stack_shadow_pages(false);
@@ -1741,19 +1704,10 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ dispatch_next(vtos);
 
   // --------------------------------------------------------------------------
-  // Out of line counter overflow and MDO creation code.
-  if (ProfileInterpreter) {
-    // We have decided to profile this method in the interpreter.
-    __ bind(profile_method);
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-    __ set_method_data_pointer_for_bcp();
-    __ b(profile_method_continue);
-  }
-
   if (inc_counter) {
     // Handle invocation counter overflow.
     __ bind(invocation_counter_overflow);
-    generate_counter_overflow(profile_method_continue);
+    generate_counter_overflow(continue_after_compile);
   }
   return entry;
 }
@@ -2049,7 +2003,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     Label Lcaller_not_deoptimized;
     Register return_pc = R3_ARG1;
     __ ld(return_pc, 0, R1_SP);
-    __ ld(return_pc, _abi(lr), return_pc);
+    __ ld(return_pc, _abi0(lr), return_pc);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::interpreter_contains), return_pc);
     __ cmpdi(CCR0, R3_RET, 0);
     __ bne(CCR0, Lcaller_not_deoptimized);
@@ -2105,7 +2059,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // Detect such a case in the InterpreterRuntime function and return the member name argument, or NULL.
     __ ld(R4_ARG2, 0, R18_locals);
     __ call_VM(R4_ARG2, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null), R4_ARG2, R19_method, R14_bcp);
-    __ restore_interpreter_state(R11_scratch1, /*bcp_and_mdx_only*/ true);
+
     __ cmpdi(CCR0, R4_ARG2, 0);
     __ beq(CCR0, L_done);
     __ std(R4_ARG2, wordSize, R15_esp);
@@ -2142,7 +2096,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
     Register return_pc = R31; // Needs to survive the runtime call.
     __ ld(return_pc, 0, R1_SP);
-    __ ld(return_pc, _abi(lr), return_pc);
+    __ ld(return_pc, _abi0(lr), return_pc);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), R16_thread, return_pc);
 
     // Remove the current activation.

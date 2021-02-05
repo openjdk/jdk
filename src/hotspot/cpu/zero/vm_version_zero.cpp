@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,8 @@
 #include "precompiled.hpp"
 #include "assembler_zero.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
@@ -42,4 +44,7 @@ void VM_Version::initialize() {
     warning("Prefetching is not available for a Zero VM");
   }
   FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
+
+  // Not implemented
+  UNSUPPORTED_OPTION(CriticalJNINatives);
 }

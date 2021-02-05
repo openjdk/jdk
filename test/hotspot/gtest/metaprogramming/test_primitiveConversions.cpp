@@ -95,6 +95,51 @@ TEST(PrimitiveConversionsTest, round_trip_int) {
   EXPECT_EQ(ufive, PrimitiveConversions::cast<uint>(PrimitiveConversions::cast<UI>(ufive)));
 }
 
+TEST(PrimitiveConversionsTest, round_trip_int_constexpr) {
+  constexpr int  sfive = 5;
+  constexpr int  mfive = -5;
+  constexpr uint ufive = 5u;
+
+  typedef PrimitiveConversionsTestSupport::Signed<int>::type SI;
+  typedef PrimitiveConversionsTestSupport::Unsigned<int>::type UI;
+
+  {
+    constexpr SI i = PrimitiveConversions::cast<SI>(sfive);
+    constexpr int r = PrimitiveConversions::cast<int>(i);
+    EXPECT_EQ(sfive, r);
+  }
+
+  {
+    constexpr UI i = PrimitiveConversions::cast<UI>(sfive);
+    constexpr int r = PrimitiveConversions::cast<int>(i);
+    EXPECT_EQ(sfive, r);
+  }
+
+  {
+    constexpr SI i = PrimitiveConversions::cast<SI>(mfive);
+    constexpr int r = PrimitiveConversions::cast<int>(i);
+    EXPECT_EQ(mfive, r);
+  }
+
+  {
+    constexpr UI i = PrimitiveConversions::cast<UI>(mfive);
+    constexpr int r = PrimitiveConversions::cast<int>(i);
+    EXPECT_EQ(mfive, r);
+  }
+
+  {
+    constexpr SI i = PrimitiveConversions::cast<SI>(ufive);
+    constexpr uint r = PrimitiveConversions::cast<uint>(i);
+    EXPECT_EQ(ufive, r);
+  }
+
+  {
+    constexpr UI i = PrimitiveConversions::cast<UI>(ufive);
+    constexpr uint r = PrimitiveConversions::cast<uint>(i);
+    EXPECT_EQ(ufive, r);
+  }
+}
+
 TEST(PrimitiveConversionsTest, round_trip_float) {
   float  ffive = 5.0f;
   double dfive = 5.0;

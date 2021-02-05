@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/thread.hpp"
 
 class CompileTask;
@@ -309,6 +310,8 @@ public:
   JVMCIObject call_PrimitiveConstant_forTypeChar(jchar kind, jlong value, JVMCI_TRAPS);
   JVMCIObject call_JavaConstant_forFloat(float value, JVMCI_TRAPS);
   JVMCIObject call_JavaConstant_forDouble(double value, JVMCI_TRAPS);
+
+  jboolean call_HotSpotJVMCIRuntime_isGCSupported(JVMCIObject runtime, jint gcIdentifier);
 
   BasicType kindToBasicType(JVMCIObject kind, JVMCI_TRAPS);
 

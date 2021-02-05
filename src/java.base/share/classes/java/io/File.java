@@ -142,7 +142,6 @@ import sun.security.action.GetPropertyAction;
  * additional file operations, file attributes, and I/O exceptions to help
  * diagnose errors when an operation on a file fails.
  *
- * @author  unascribed
  * @since   1.0
  */
 
@@ -2191,8 +2190,8 @@ public class File
      *          {@code false} otherwise
      */
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof File)) {
-            return compareTo((File)obj) == 0;
+        if (obj instanceof File file) {
+            return compareTo(file) == 0;
         }
         return false;
     }

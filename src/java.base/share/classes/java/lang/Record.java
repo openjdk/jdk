@@ -25,14 +25,6 @@
 package java.lang;
 
 /**
- * {@preview Associated with records, a preview feature of the Java language.
- *
- *           This class is associated with <i>records</i>, a preview
- *           feature of the Java language. Programs can only use this
- *           class when preview features are enabled. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java language.}
- *
  * This is the common base class of all Java language record classes.
  *
  * <p>More information about records, including descriptions of the
@@ -82,14 +74,14 @@ package java.lang;
  * deserialization the record's canonical constructor is invoked to construct
  * the record object. Certain serialization-related methods, such as readObject
  * and writeObject, are ignored for serializable records. More information about
- * serializable records can be found in
- * <a href="{@docRoot}/java.base/java/io/ObjectInputStream.html#record-serialization">record serialization</a>.
+ * serializable records can be found in the
+ * <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
+ * <cite>Java Object Serialization Specification,</cite> Section 1.13,
+ * "Serialization of Records"</a>.
  *
  * @jls 8.10 Record Types
- * @since 14
+ * @since 16
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=true)
 public abstract class Record {
     /**
      * Constructor for record classes to call.
@@ -109,7 +101,7 @@ public abstract class Record {
      *
      * @implSpec
      * The implicitly provided implementation returns {@code true} if
-     * and only if the argument is an instance of the same record type
+     * and only if the argument is an instance of the same record class
      * as this record, and each component of this record is equal to
      * the corresponding component of the argument; otherwise, {@code
      * false} is returned. Equality of a component {@code c} is
@@ -119,15 +111,14 @@ public abstract class Record {
      * <li> If the component is of a reference type, the component is
      * considered equal if and only if {@link
      * java.util.Objects#equals(Object,Object)
-     * Objects.equals(this.c(), r.c()} would return {@code true}.
+     * Objects.equals(this.c, r.c} would return {@code true}.
      *
      * <li> If the component is of a primitive type, using the
      * corresponding primitive wrapper class {@code PW} (the
      * corresponding wrapper class for {@code int} is {@code
      * java.lang.Integer}, and so on), the component is considered
      * equal if and only if {@code
-     * PW.valueOf(this.c()).equals(PW.valueOf(r.c()))} would return
-     * {@code true}.
+     * PW.compare(this.c, r.c)} would return {@code 0}.
      *
      * </ul>
      *

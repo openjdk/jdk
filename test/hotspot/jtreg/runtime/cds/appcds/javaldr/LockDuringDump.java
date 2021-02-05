@@ -29,7 +29,7 @@
  *          without the locking bits in the markWord.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @modules java.instrument
  * @run driver LockDuringDump
  */

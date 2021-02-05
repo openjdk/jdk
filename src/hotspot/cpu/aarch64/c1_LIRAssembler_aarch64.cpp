@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,10 +36,12 @@
 #include "ci/ciInstance.hpp"
 #include "code/compiledIC.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
@@ -504,7 +506,7 @@ void LIR_Assembler::add_debug_info_for_branch(address adr, CodeEmitInfo* info) {
   }
 }
 
-void LIR_Assembler::return_op(LIR_Opr result) {
+void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == r0, "word returns are in r0,");
 
   // Pop the stack before the safepoint code
@@ -514,7 +516,9 @@ void LIR_Assembler::return_op(LIR_Opr result) {
     __ reserved_stack_check();
   }
 
-  __ fetch_and_read_polling_page(rscratch1, relocInfo::poll_return_type);
+  code_stub->set_safepoint_offset(__ offset());
+  __ relocate(relocInfo::poll_return_type);
+  __ safepoint_poll(*code_stub->entry(), true /* at_return */, false /* acquire */, true /* in_nmethod */);
   __ ret(lr);
 }
 
@@ -1769,7 +1773,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
             // move lreg_lo to dreg if divisor is 1
             __ mov(dreg, lreg_lo);
           } else {
-            unsigned int shift = exact_log2_long(c);
+            unsigned int shift = log2i_exact(c);
             // use rscratch1 as intermediate result register
             __ asr(rscratch1, lreg_lo, 63);
             __ add(rscratch1, lreg_lo, rscratch1, Assembler::LSR, 64 - shift);
@@ -2920,7 +2924,6 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
   if (info != NULL) {
     add_call_info_here(info);
   }
-  __ maybe_isb();
 }
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {

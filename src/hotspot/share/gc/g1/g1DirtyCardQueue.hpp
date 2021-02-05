@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
@@ -41,9 +42,6 @@ class Thread;
 class G1DirtyCardQueue: public PtrQueue {
   G1ConcurrentRefineStats* _refinement_stats;
 
-protected:
-  virtual void handle_completed_buffer();
-
 public:
   G1DirtyCardQueue(G1DirtyCardQueueSet* qset);
 
@@ -51,18 +49,9 @@ public:
   // doing something else, with auto-flush on completion.
   ~G1DirtyCardQueue();
 
-  // Process queue entries and release resources.
-  void flush();
-
-  inline G1DirtyCardQueueSet* dirty_card_qset() const;
-
   G1ConcurrentRefineStats* refinement_stats() const {
     return _refinement_stats;
   }
-
-  // To be called by the barrier set's on_thread_detach, to notify this
-  // object of the corresponding state change of its owning thread.
-  void on_thread_detach();
 
   // Compiler support.
   static ByteSize byte_offset_of_index() {
@@ -263,6 +252,19 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // if none available.
   BufferNode* get_completed_buffer();
 
+  // Called when queue is full or has no buffer.
+  void handle_zero_index(G1DirtyCardQueue& queue);
+
+  // Enqueue the buffer, and optionally perform refinement by the mutator.
+  // Mutator refinement is only done by Java threads, and only if there
+  // are more than max_cards (possibly padded) cards in the completed
+  // buffers.  Updates stats.
+  //
+  // Mutator refinement, if performed, stops processing a buffer if
+  // SuspendibleThreadSet::should_yield(), recording the incompletely
+  // processed buffer for later processing of the remainder.
+  void handle_completed_buffer(BufferNode* node, G1ConcurrentRefineStats* stats);
+
 public:
   G1DirtyCardQueueSet(BufferNode::Allocator* allocator);
   ~G1DirtyCardQueueSet();
@@ -302,16 +304,10 @@ public:
 
   G1BufferNodeList take_all_completed_buffers();
 
-  // Helper for G1DirtyCardQueue::handle_completed_buffer().
-  // Enqueue the buffer, and optionally perform refinement by the mutator.
-  // Mutator refinement is only done by Java threads, and only if there
-  // are more than max_cards (possibly padded) cards in the completed
-  // buffers.  Updates stats.
-  //
-  // Mutator refinement, if performed, stops processing a buffer if
-  // SuspendibleThreadSet::should_yield(), recording the incompletely
-  // processed buffer for later processing of the remainder.
-  void handle_completed_buffer(BufferNode* node, G1ConcurrentRefineStats* stats);
+  void flush_queue(G1DirtyCardQueue& queue);
+
+  using CardValue = G1CardTable::CardValue;
+  void enqueue(G1DirtyCardQueue& queue, volatile CardValue* card_ptr);
 
   // If there are more than stop_at cards in the completed buffers, pop
   // a buffer, refine its contents, and return true.  Otherwise return
@@ -352,9 +348,5 @@ public:
   // Discard artificial increase of mutator refinement threshold.
   void discard_max_cards_padding();
 };
-
-inline G1DirtyCardQueueSet* G1DirtyCardQueue::dirty_card_qset() const {
-  return static_cast<G1DirtyCardQueueSet*>(qset());
-}
 
 #endif // SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP

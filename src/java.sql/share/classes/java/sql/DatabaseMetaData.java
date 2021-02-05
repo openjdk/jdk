@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,29 +43,29 @@ package java.sql;
  * A user for this interface is commonly a tool that needs to discover how to
  * deal with the underlying DBMS.  This is especially true for applications
  * that are intended to be used with more than one DBMS. For example, a tool might use the method
- * <code>getTypeInfo</code> to find out what data types can be used in a
- * <code>CREATE TABLE</code> statement.  Or a user might call the method
- * <code>supportsCorrelatedSubqueries</code> to see if it is possible to use
- * a correlated subquery or <code>supportsBatchUpdates</code> to see if it is
+ * {@code getTypeInfo} to find out what data types can be used in a
+ * {@code CREATE TABLE} statement.  Or a user might call the method
+ * {@code supportsCorrelatedSubqueries} to see if it is possible to use
+ * a correlated subquery or {@code supportsBatchUpdates} to see if it is
  * possible to use batch updates.
  * <P>
- * Some <code>DatabaseMetaData</code> methods return lists of information
- * in the form of <code>ResultSet</code> objects.
- * Regular <code>ResultSet</code> methods, such as
- * <code>getString</code> and <code>getInt</code>, can be used
- * to retrieve the data from these <code>ResultSet</code> objects.  If
- * a given form of metadata is not available, an empty <code>ResultSet</code>
+ * Some {@code DatabaseMetaData} methods return lists of information
+ * in the form of {@code ResultSet} objects.
+ * Regular {@code ResultSet} methods, such as
+ * {@code getString} and {@code getInt}, can be used
+ * to retrieve the data from these {@code ResultSet} objects.  If
+ * a given form of metadata is not available, an empty {@code ResultSet}
  * will be returned. Additional columns beyond the columns defined to be
- * returned by the <code>ResultSet</code> object for a given method
+ * returned by the {@code ResultSet} object for a given method
  * can be defined by the JDBC driver vendor and must be accessed
  * by their <B>column label</B>.
  * <P>
- * Some <code>DatabaseMetaData</code> methods take arguments that are
+ * Some {@code DatabaseMetaData} methods take arguments that are
  * String patterns.  These arguments all have names such as fooPattern.
  * Within a pattern String, "%" means match any substring of 0 or more
  * characters, and "_" means match any one character. Only metadata
  * entries matching the search pattern are returned. If a search pattern
- * argument is set to <code>null</code>, that argument's criterion will
+ * argument is set to {@code null}, that argument's criterion will
  * be dropped from the search.
  *
  * @since 1.1
@@ -77,29 +77,29 @@ public interface DatabaseMetaData extends Wrapper {
 
     /**
      * Retrieves whether the current user can call all the procedures
-     * returned by the method <code>getProcedures</code>.
+     * returned by the method {@code getProcedures}.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean allProceduresAreCallable() throws SQLException;
 
     /**
      * Retrieves whether the current user can use all the tables returned
-     * by the method <code>getTables</code> in a <code>SELECT</code>
+     * by the method {@code getTables} in a {@code SELECT}
      * statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean allTablesAreSelectable() throws SQLException;
 
     /**
      * Retrieves the URL for this DBMS.
      *
-     * @return the URL for this DBMS or <code>null</code> if it cannot be
+     * @return the URL for this DBMS or {@code null} if it cannot be
      *          generated
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getURL() throws SQLException;
 
@@ -107,61 +107,61 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the user name as known to this database.
      *
      * @return the database user name
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getUserName() throws SQLException;
 
     /**
      * Retrieves whether this database is in read-only mode.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean isReadOnly() throws SQLException;
 
     /**
-     * Retrieves whether <code>NULL</code> values are sorted high.
-     * Sorted high means that <code>NULL</code> values
+     * Retrieves whether {@code NULL} values are sorted high.
+     * Sorted high means that {@code NULL} values
      * sort higher than any other value in a domain.  In an ascending order,
-     * if this method returns <code>true</code>,  <code>NULL</code> values
+     * if this method returns {@code true},  {@code NULL} values
      * will appear at the end. By contrast, the method
-     * <code>nullsAreSortedAtEnd</code> indicates whether <code>NULL</code> values
+     * {@code nullsAreSortedAtEnd} indicates whether {@code NULL} values
      * are sorted at the end regardless of sort order.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean nullsAreSortedHigh() throws SQLException;
 
     /**
-     * Retrieves whether <code>NULL</code> values are sorted low.
-     * Sorted low means that <code>NULL</code> values
+     * Retrieves whether {@code NULL} values are sorted low.
+     * Sorted low means that {@code NULL} values
      * sort lower than any other value in a domain.  In an ascending order,
-     * if this method returns <code>true</code>,  <code>NULL</code> values
+     * if this method returns {@code true},  {@code NULL} values
      * will appear at the beginning. By contrast, the method
-     * <code>nullsAreSortedAtStart</code> indicates whether <code>NULL</code> values
+     * {@code nullsAreSortedAtStart} indicates whether {@code NULL} values
      * are sorted at the beginning regardless of sort order.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean nullsAreSortedLow() throws SQLException;
 
     /**
-     * Retrieves whether <code>NULL</code> values are sorted at the start regardless
+     * Retrieves whether {@code NULL} values are sorted at the start regardless
      * of sort order.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean nullsAreSortedAtStart() throws SQLException;
 
     /**
-     * Retrieves whether <code>NULL</code> values are sorted at the end regardless of
+     * Retrieves whether {@code NULL} values are sorted at the end regardless of
      * sort order.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean nullsAreSortedAtEnd() throws SQLException;
 
@@ -169,7 +169,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the name of this database product.
      *
      * @return database product name
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getDatabaseProductName() throws SQLException;
 
@@ -177,7 +177,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the version number of this database product.
      *
      * @return database version number
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getDatabaseProductVersion() throws SQLException;
 
@@ -185,15 +185,15 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the name of this JDBC driver.
      *
      * @return JDBC driver name
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getDriverName() throws SQLException;
 
     /**
-     * Retrieves the version number of this JDBC driver as a <code>String</code>.
+     * Retrieves the version number of this JDBC driver as a {@code String}.
      *
      * @return JDBC driver version
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getDriverVersion() throws SQLException;
 
@@ -214,17 +214,17 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether this database stores tables in a local file.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean usesLocalFiles() throws SQLException;
 
     /**
      * Retrieves whether this database uses a file for each table.
      *
-     * @return <code>true</code> if this database uses a local file for each table;
-     *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if this database uses a local file for each table;
+     *         {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean usesLocalFilePerTable() throws SQLException;
 
@@ -232,8 +232,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database treats mixed case unquoted SQL identifiers as
      * case sensitive and as a result stores them in mixed case.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMixedCaseIdentifiers() throws SQLException;
 
@@ -241,8 +241,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database treats mixed case unquoted SQL identifiers as
      * case insensitive and stores them in upper case.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean storesUpperCaseIdentifiers() throws SQLException;
 
@@ -250,8 +250,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database treats mixed case unquoted SQL identifiers as
      * case insensitive and stores them in lower case.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean storesLowerCaseIdentifiers() throws SQLException;
 
@@ -259,8 +259,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database treats mixed case unquoted SQL identifiers as
      * case insensitive and stores them in mixed case.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean storesMixedCaseIdentifiers() throws SQLException;
 
@@ -268,8 +268,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database treats mixed case quoted SQL identifiers as
      * case sensitive and as a result stores them in mixed case.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMixedCaseQuotedIdentifiers() throws SQLException;
 
@@ -277,8 +277,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database treats mixed case quoted SQL identifiers as
      * case insensitive and stores them in upper case.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean storesUpperCaseQuotedIdentifiers() throws SQLException;
 
@@ -286,8 +286,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database treats mixed case quoted SQL identifiers as
      * case insensitive and stores them in lower case.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean storesLowerCaseQuotedIdentifiers() throws SQLException;
 
@@ -295,8 +295,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database treats mixed case quoted SQL identifiers as
      * case insensitive and stores them in mixed case.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean storesMixedCaseQuotedIdentifiers() throws SQLException;
 
@@ -305,7 +305,7 @@ public interface DatabaseMetaData extends Wrapper {
      * This method returns a space " " if identifier quoting is not supported.
      *
      * @return the quoting string or a space if quoting is not supported
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getIdentifierQuoteString() throws SQLException;
 
@@ -315,7 +315,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return the list of this database's keywords that are not also
      *         SQL:2003 keywords
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getSQLKeywords() throws SQLException;
 
@@ -325,7 +325,7 @@ public interface DatabaseMetaData extends Wrapper {
      * the JDBC function escape clause.
      *
      * @return the list of math functions supported by this database
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getNumericFunctions() throws SQLException;
 
@@ -335,7 +335,7 @@ public interface DatabaseMetaData extends Wrapper {
      * in the JDBC function escape clause.
      *
      * @return the list of string functions supported by this database
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getStringFunctions() throws SQLException;
 
@@ -345,7 +345,7 @@ public interface DatabaseMetaData extends Wrapper {
      * in the JDBC function escape clause.
      *
      * @return a list of system functions supported by this database
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getSystemFunctions() throws SQLException;
 
@@ -354,7 +354,7 @@ public interface DatabaseMetaData extends Wrapper {
      * with this database.
      *
      * @return the list of time and date functions supported by this database
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getTimeDateFunctions() throws SQLException;
 
@@ -369,7 +369,7 @@ public interface DatabaseMetaData extends Wrapper {
      * more characters.
      *
      * @return the string used to escape wildcard characters
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getSearchStringEscape() throws SQLException;
 
@@ -378,7 +378,7 @@ public interface DatabaseMetaData extends Wrapper {
      * identifier names (those beyond a-z, A-Z, 0-9 and _).
      *
      * @return the string containing the extra characters
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getExtraNameCharacters() throws SQLException;
 
@@ -386,20 +386,20 @@ public interface DatabaseMetaData extends Wrapper {
     // Functions describing which features are supported.
 
     /**
-     * Retrieves whether this database supports <code>ALTER TABLE</code>
+     * Retrieves whether this database supports {@code ALTER TABLE}
      * with add column.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsAlterTableWithAddColumn() throws SQLException;
 
     /**
-     * Retrieves whether this database supports <code>ALTER TABLE</code>
+     * Retrieves whether this database supports {@code ALTER TABLE}
      * with drop column.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsAlterTableWithDropColumn() throws SQLException;
 
@@ -410,44 +410,44 @@ public interface DatabaseMetaData extends Wrapper {
      * computed columns or to provide alias names for columns as
      * required.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsColumnAliasing() throws SQLException;
 
     /**
      * Retrieves whether this database supports concatenations between
-     * <code>NULL</code> and non-<code>NULL</code> values being
-     * <code>NULL</code>.
+     * {@code NULL} and non-{@code NULL} values being
+     * {@code NULL}.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean nullPlusNonNullIsNull() throws SQLException;
 
     /**
      * Retrieves whether this database supports the JDBC scalar function
-     * <code>CONVERT</code> for the conversion of one JDBC type to another.
+     * {@code CONVERT} for the conversion of one JDBC type to another.
      * The JDBC types are the generic SQL data types defined
-     * in <code>java.sql.Types</code>.
+     * in {@code java.sql.Types}.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsConvert() throws SQLException;
 
     /**
      * Retrieves whether this database supports the JDBC scalar function
-     * <code>CONVERT</code> for conversions between the JDBC types <i>fromType</i>
+     * {@code CONVERT} for conversions between the JDBC types <i>fromType</i>
      * and <i>toType</i>.  The JDBC types are the generic SQL data types defined
-     * in <code>java.sql.Types</code>.
+     * in {@code java.sql.Types}.
      *
      * @param fromType the type to convert from; one of the type codes from
-     *        the class <code>java.sql.Types</code>
+     *        the class {@code java.sql.Types}
      * @param toType the type to convert to; one of the type codes from
-     *        the class <code>java.sql.Types</code>
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     *        the class {@code java.sql.Types}
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @see Types
      */
     boolean supportsConvert(int fromType, int toType) throws SQLException;
@@ -455,8 +455,8 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether this database supports table correlation names.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsTableCorrelationNames() throws SQLException;
 
@@ -464,76 +464,76 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether, when table correlation names are supported, they
      * are restricted to being different from the names of the tables.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsDifferentTableCorrelationNames() throws SQLException;
 
     /**
      * Retrieves whether this database supports expressions in
-     * <code>ORDER BY</code> lists.
+     * {@code ORDER BY} lists.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsExpressionsInOrderBy() throws SQLException;
 
     /**
      * Retrieves whether this database supports using a column that is
-     * not in the <code>SELECT</code> statement in an
-     * <code>ORDER BY</code> clause.
+     * not in the {@code SELECT} statement in an
+     * {@code ORDER BY} clause.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOrderByUnrelated() throws SQLException;
 
     /**
      * Retrieves whether this database supports some form of
-     * <code>GROUP BY</code> clause.
+     * {@code GROUP BY} clause.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsGroupBy() throws SQLException;
 
     /**
      * Retrieves whether this database supports using a column that is
-     * not in the <code>SELECT</code> statement in a
-     * <code>GROUP BY</code> clause.
+     * not in the {@code SELECT} statement in a
+     * {@code GROUP BY} clause.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsGroupByUnrelated() throws SQLException;
 
     /**
      * Retrieves whether this database supports using columns not included in
-     * the <code>SELECT</code> statement in a <code>GROUP BY</code> clause
-     * provided that all of the columns in the <code>SELECT</code> statement
-     * are included in the <code>GROUP BY</code> clause.
+     * the {@code SELECT} statement in a {@code GROUP BY} clause
+     * provided that all of the columns in the {@code SELECT} statement
+     * are included in the {@code GROUP BY} clause.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsGroupByBeyondSelect() throws SQLException;
 
     /**
      * Retrieves whether this database supports specifying a
-     * <code>LIKE</code> escape clause.
+     * {@code LIKE} escape clause.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsLikeEscapeClause() throws SQLException;
 
     /**
      * Retrieves whether this database supports getting multiple
-     * <code>ResultSet</code> objects from a single call to the
-     * method <code>execute</code>.
+     * {@code ResultSet} objects from a single call to the
+     * method {@code execute}.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMultipleResultSets() throws SQLException;
 
@@ -541,40 +541,40 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database allows having multiple
      * transactions open at once (on different connections).
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMultipleTransactions() throws SQLException;
 
     /**
      * Retrieves whether columns in this database may be defined as non-nullable.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsNonNullableColumns() throws SQLException;
 
     /**
      * Retrieves whether this database supports the ODBC Minimum SQL grammar.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMinimumSQLGrammar() throws SQLException;
 
     /**
      * Retrieves whether this database supports the ODBC Core SQL grammar.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCoreSQLGrammar() throws SQLException;
 
     /**
      * Retrieves whether this database supports the ODBC Extended SQL grammar.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsExtendedSQLGrammar() throws SQLException;
 
@@ -582,24 +582,24 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the ANSI92 entry level SQL
      * grammar.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsANSI92EntryLevelSQL() throws SQLException;
 
     /**
      * Retrieves whether this database supports the ANSI92 intermediate SQL grammar supported.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsANSI92IntermediateSQL() throws SQLException;
 
     /**
      * Retrieves whether this database supports the ANSI92 full SQL grammar supported.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsANSI92FullSQL() throws SQLException;
 
@@ -607,34 +607,34 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the SQL Integrity
      * Enhancement Facility.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsIntegrityEnhancementFacility() throws SQLException;
 
     /**
      * Retrieves whether this database supports some form of outer join.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOuterJoins() throws SQLException;
 
     /**
      * Retrieves whether this database supports full nested outer joins.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsFullOuterJoins() throws SQLException;
 
     /**
      * Retrieves whether this database provides limited support for outer
-     * joins.  (This will be <code>true</code> if the method
-     * <code>supportsFullOuterJoins</code> returns <code>true</code>).
+     * joins.  (This will be {@code true} if the method
+     * {@code supportsFullOuterJoins} returns {@code true}).
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsLimitedOuterJoins() throws SQLException;
 
@@ -642,7 +642,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the database vendor's preferred term for "schema".
      *
      * @return the vendor term for "schema"
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getSchemaTerm() throws SQLException;
 
@@ -650,7 +650,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the database vendor's preferred term for "procedure".
      *
      * @return the vendor term for "procedure"
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getProcedureTerm() throws SQLException;
 
@@ -658,7 +658,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the database vendor's preferred term for "catalog".
      *
      * @return the vendor term for "catalog"
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getCatalogTerm() throws SQLException;
 
@@ -666,126 +666,126 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a catalog appears at the start of a fully qualified
      * table name.  If not, the catalog appears at the end.
      *
-     * @return <code>true</code> if the catalog name appears at the beginning
-     *         of a fully qualified table name; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if the catalog name appears at the beginning
+     *         of a fully qualified table name; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean isCatalogAtStart() throws SQLException;
 
     /**
-     * Retrieves the <code>String</code> that this database uses as the
+     * Retrieves the {@code String} that this database uses as the
      * separator between a catalog and table name.
      *
      * @return the separator string
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getCatalogSeparator() throws SQLException;
 
     /**
      * Retrieves whether a schema name can be used in a data manipulation statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInDataManipulation() throws SQLException;
 
     /**
      * Retrieves whether a schema name can be used in a procedure call statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInProcedureCalls() throws SQLException;
 
     /**
      * Retrieves whether a schema name can be used in a table definition statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInTableDefinitions() throws SQLException;
 
     /**
      * Retrieves whether a schema name can be used in an index definition statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInIndexDefinitions() throws SQLException;
 
     /**
      * Retrieves whether a schema name can be used in a privilege definition statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInPrivilegeDefinitions() throws SQLException;
 
     /**
      * Retrieves whether a catalog name can be used in a data manipulation statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInDataManipulation() throws SQLException;
 
     /**
      * Retrieves whether a catalog name can be used in a procedure call statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInProcedureCalls() throws SQLException;
 
     /**
      * Retrieves whether a catalog name can be used in a table definition statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInTableDefinitions() throws SQLException;
 
     /**
      * Retrieves whether a catalog name can be used in an index definition statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInIndexDefinitions() throws SQLException;
 
     /**
      * Retrieves whether a catalog name can be used in a privilege definition statement.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException;
 
 
     /**
-     * Retrieves whether this database supports positioned <code>DELETE</code>
+     * Retrieves whether this database supports positioned {@code DELETE}
      * statements.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsPositionedDelete() throws SQLException;
 
     /**
-     * Retrieves whether this database supports positioned <code>UPDATE</code>
+     * Retrieves whether this database supports positioned {@code UPDATE}
      * statements.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsPositionedUpdate() throws SQLException;
 
     /**
-     * Retrieves whether this database supports <code>SELECT FOR UPDATE</code>
+     * Retrieves whether this database supports {@code SELECT FOR UPDATE}
      * statements.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSelectForUpdate() throws SQLException;
 
@@ -793,8 +793,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports stored procedure calls
      * that use the stored procedure escape syntax.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsStoredProcedures() throws SQLException;
 
@@ -802,26 +802,26 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports subqueries in comparison
      * expressions.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSubqueriesInComparisons() throws SQLException;
 
     /**
      * Retrieves whether this database supports subqueries in
-     * <code>EXISTS</code> expressions.
+     * {@code EXISTS} expressions.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSubqueriesInExists() throws SQLException;
 
     /**
      * Retrieves whether this database supports subqueries in
-     * <code>IN</code> expressions.
+     * {@code IN} expressions.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSubqueriesInIns() throws SQLException;
 
@@ -829,32 +829,32 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports subqueries in quantified
      * expressions.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSubqueriesInQuantifieds() throws SQLException;
 
     /**
      * Retrieves whether this database supports correlated subqueries.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCorrelatedSubqueries() throws SQLException;
 
     /**
-     * Retrieves whether this database supports SQL <code>UNION</code>.
+     * Retrieves whether this database supports SQL {@code UNION}.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsUnion() throws SQLException;
 
     /**
-     * Retrieves whether this database supports SQL <code>UNION ALL</code>.
+     * Retrieves whether this database supports SQL {@code UNION ALL}.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsUnionAll() throws SQLException;
 
@@ -862,9 +862,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports keeping cursors open
      * across commits.
      *
-     * @return <code>true</code> if cursors always remain open;
-     *       <code>false</code> if they might not remain open
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if cursors always remain open;
+     *       {@code false} if they might not remain open
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOpenCursorsAcrossCommit() throws SQLException;
 
@@ -872,9 +872,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports keeping cursors open
      * across rollbacks.
      *
-     * @return <code>true</code> if cursors always remain open;
-     *       <code>false</code> if they might not remain open
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if cursors always remain open;
+     *       {@code false} if they might not remain open
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOpenCursorsAcrossRollback() throws SQLException;
 
@@ -882,9 +882,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports keeping statements open
      * across commits.
      *
-     * @return <code>true</code> if statements always remain open;
-     *       <code>false</code> if they might not remain open
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if statements always remain open;
+     *       {@code false} if they might not remain open
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOpenStatementsAcrossCommit() throws SQLException;
 
@@ -892,9 +892,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports keeping statements open
      * across rollbacks.
      *
-     * @return <code>true</code> if statements always remain open;
-     *       <code>false</code> if they might not remain open
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if statements always remain open;
+     *       {@code false} if they might not remain open
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOpenStatementsAcrossRollback() throws SQLException;
 
@@ -913,7 +913,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return max the maximum length (in hex characters) for a binary literal;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxBinaryLiteralLength() throws SQLException;
 
@@ -924,7 +924,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for a character literal;
      *      a result of zero means that there is no limit or the limit is
      *      not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxCharLiteralLength() throws SQLException;
 
@@ -935,18 +935,18 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for a column name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnNameLength() throws SQLException;
 
     /**
      * Retrieves the maximum number of columns this database allows in a
-     * <code>GROUP BY</code> clause.
+     * {@code GROUP BY} clause.
      *
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInGroupBy() throws SQLException;
 
@@ -956,29 +956,29 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInIndex() throws SQLException;
 
     /**
      * Retrieves the maximum number of columns this database allows in an
-     * <code>ORDER BY</code> clause.
+     * {@code ORDER BY} clause.
      *
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInOrderBy() throws SQLException;
 
     /**
      * Retrieves the maximum number of columns this database allows in a
-     * <code>SELECT</code> list.
+     * {@code SELECT} list.
      *
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInSelect() throws SQLException;
 
@@ -988,7 +988,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInTable() throws SQLException;
 
@@ -999,7 +999,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of active connections possible at one time;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxConnections() throws SQLException;
 
@@ -1010,7 +1010,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed in a cursor name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxCursorNameLength() throws SQLException;
 
@@ -1022,7 +1022,7 @@ public interface DatabaseMetaData extends Wrapper {
      *      composite of all the constituent parts of the index;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxIndexLength() throws SQLException;
 
@@ -1033,7 +1033,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed in a schema name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxSchemaNameLength() throws SQLException;
 
@@ -1044,7 +1044,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed in a procedure name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxProcedureNameLength() throws SQLException;
 
@@ -1055,7 +1055,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed in a catalog name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxCatalogNameLength() throws SQLException;
 
@@ -1065,17 +1065,17 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return the maximum number of bytes allowed for a row; a result of
      *         zero means that there is no limit or the limit is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxRowSize() throws SQLException;
 
     /**
      * Retrieves whether the return value for the method
-     * <code>getMaxRowSize</code> includes the SQL data types
-     * <code>LONGVARCHAR</code> and <code>LONGVARBINARY</code>.
+     * {@code getMaxRowSize} includes the SQL data types
+     * {@code LONGVARCHAR} and {@code LONGVARBINARY}.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean doesMaxRowSizeIncludeBlobs() throws SQLException;
 
@@ -1086,7 +1086,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for an SQL statement;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxStatementLength() throws SQLException;
 
@@ -1097,7 +1097,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of statements that can be open at one time;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxStatements() throws SQLException;
 
@@ -1108,18 +1108,18 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for a table name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxTableNameLength() throws SQLException;
 
     /**
      * Retrieves the maximum number of tables this database allows in a
-     * <code>SELECT</code> statement.
+     * {@code SELECT} statement.
      *
-     * @return the maximum number of tables allowed in a <code>SELECT</code>
+     * @return the maximum number of tables allowed in a {@code SELECT}
      *         statement; a result of zero means that there is no limit or
      *         the limit is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxTablesInSelect() throws SQLException;
 
@@ -1130,7 +1130,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for a user name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxUserNameLength() throws SQLException;
 
@@ -1138,22 +1138,22 @@ public interface DatabaseMetaData extends Wrapper {
 
     /**
      * Retrieves this database's default transaction isolation level.  The
-     * possible values are defined in <code>java.sql.Connection</code>.
+     * possible values are defined in {@code java.sql.Connection}.
      *
      * @return the default isolation level
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see Connection
      */
     int getDefaultTransactionIsolation() throws SQLException;
 
     /**
      * Retrieves whether this database supports transactions. If not, invoking the
-     * method <code>commit</code> is a noop, and the isolation level is
-     * <code>TRANSACTION_NONE</code>.
+     * method {@code commit} is a noop, and the isolation level is
+     * {@code TRANSACTION_NONE}.
      *
-     * @return <code>true</code> if transactions are supported;
-     *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if transactions are supported;
+     *         {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsTransactions() throws SQLException;
 
@@ -1161,9 +1161,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the given transaction isolation level.
      *
      * @param level one of the transaction isolation levels defined in
-     *         <code>java.sql.Connection</code>
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     *         {@code java.sql.Connection}
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @see Connection
      */
     boolean supportsTransactionIsolationLevel(int level)
@@ -1173,8 +1173,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports both data definition and
      * data manipulation statements within a transaction.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsDataDefinitionAndDataManipulationTransactions()
         throws SQLException;
@@ -1182,8 +1182,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports only data manipulation
      * statements within a transaction.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsDataManipulationTransactionsOnly()
         throws SQLException;
@@ -1192,8 +1192,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a data definition statement within a transaction forces
      * the transaction to commit.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean dataDefinitionCausesTransactionCommit()
         throws SQLException;
@@ -1202,8 +1202,8 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database ignores a data definition statement
      * within a transaction.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      */
     boolean dataDefinitionIgnoredInTransactions()
         throws SQLException;
@@ -1214,13 +1214,13 @@ public interface DatabaseMetaData extends Wrapper {
      * <P>
      * Only procedure descriptions matching the schema and
      * procedure name criteria are returned.  They are ordered by
-     * <code>PROCEDURE_CAT</code>, <code>PROCEDURE_SCHEM</code>,
-     * <code>PROCEDURE_NAME</code> and <code>SPECIFIC_ NAME</code>.
+     * {@code PROCEDURE_CAT}, {@code PROCEDURE_SCHEM},
+     * {@code PROCEDURE_NAME} and {@code SPECIFIC_ NAME}.
      *
      * <P>Each procedure description has the following columns:
      *  <OL>
-     *  <LI><B>PROCEDURE_CAT</B> String {@code =>} procedure catalog (may be <code>null</code>)
-     *  <LI><B>PROCEDURE_SCHEM</B> String {@code =>} procedure schema (may be <code>null</code>)
+     *  <LI><B>PROCEDURE_CAT</B> String {@code =>} procedure catalog (may be {@code null})
+     *  <LI><B>PROCEDURE_SCHEM</B> String {@code =>} procedure schema (may be {@code null})
      *  <LI><B>PROCEDURE_NAME</B> String {@code =>} procedure name
      *  <LI> reserved for future use
      *  <LI> reserved for future use
@@ -1238,20 +1238,20 @@ public interface DatabaseMetaData extends Wrapper {
      *  </OL>
      * <p>
      * A user may not have permissions to execute any of the procedures that are
-     * returned by <code>getProcedures</code>
+     * returned by {@code getProcedures}
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema name pattern; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param procedureNamePattern a procedure name pattern; must match the
      *        procedure name as it is stored in the database
-     * @return <code>ResultSet</code> - each row is a procedure description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a procedure description
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getProcedures(String catalog, String schemaPattern,
@@ -1261,27 +1261,27 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that it is not known whether the procedure returns
      * a result.
      * <P>
-     * A possible value for column <code>PROCEDURE_TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getProcedures</code>.
+     * A possible value for column {@code PROCEDURE_TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getProcedures}.
      */
     int procedureResultUnknown  = 0;
 
     /**
      * Indicates that the procedure does not return a result.
      * <P>
-     * A possible value for column <code>PROCEDURE_TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getProcedures</code>.
+     * A possible value for column {@code PROCEDURE_TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getProcedures}.
      */
     int procedureNoResult               = 1;
 
     /**
      * Indicates that the procedure returns a result.
      * <P>
-     * A possible value for column <code>PROCEDURE_TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getProcedures</code>.
+     * A possible value for column {@code PROCEDURE_TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getProcedures}.
      */
     int procedureReturnsResult  = 2;
 
@@ -1295,11 +1295,11 @@ public interface DatabaseMetaData extends Wrapper {
      * if any, is first. Next are the parameter descriptions in call
      * order. The column descriptions follow in column number order.
      *
-     * <P>Each row in the <code>ResultSet</code> is a parameter description or
+     * <P>Each row in the {@code ResultSet} is a parameter description or
      * column description with the following fields:
      *  <OL>
-     *  <LI><B>PROCEDURE_CAT</B> String {@code =>} procedure catalog (may be <code>null</code>)
-     *  <LI><B>PROCEDURE_SCHEM</B> String {@code =>} procedure schema (may be <code>null</code>)
+     *  <LI><B>PROCEDURE_CAT</B> String {@code =>} procedure catalog (may be {@code null})
+     *  <LI><B>PROCEDURE_SCHEM</B> String {@code =>} procedure schema (may be {@code null})
      *  <LI><B>PROCEDURE_NAME</B> String {@code =>} procedure name
      *  <LI><B>COLUMN_NAME</B> String {@code =>} column/parameter name
      *  <LI><B>COLUMN_TYPE</B> Short {@code =>} kind of column/parameter:
@@ -1309,7 +1309,7 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> procedureColumnInOut - INOUT parameter
      *      <LI> procedureColumnOut - OUT parameter
      *      <LI> procedureColumnReturn - procedure return value
-     *      <LI> procedureColumnResult - result column in <code>ResultSet</code>
+     *      <LI> procedureColumnResult - result column in {@code ResultSet}
      *      </UL>
      *  <LI><B>DATA_TYPE</B> int {@code =>} SQL type from java.sql.Types
      *  <LI><B>TYPE_NAME</B> String {@code =>} SQL type name, for a UDT type the
@@ -1326,7 +1326,7 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> procedureNullableUnknown - nullability unknown
      *      </UL>
      *  <LI><B>REMARKS</B> String {@code =>} comment describing parameter/column
-     *  <LI><B>COLUMN_DEF</B> String {@code =>} default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be <code>null</code>)
+     *  <LI><B>COLUMN_DEF</B> String {@code =>} default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be {@code null})
      *      <UL>
      *      <LI> The string NULL (not enclosed in quotes) - if NULL was specified as the default value
      *      <LI> TRUNCATE (not enclosed in quotes)        - if the specified default value cannot be represented without truncation
@@ -1362,19 +1362,19 @@ public interface DatabaseMetaData extends Wrapper {
      * column size is not applicable.
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema name pattern; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param procedureNamePattern a procedure name pattern; must match the
      *        procedure name as it is stored in the database
      * @param columnNamePattern a column name pattern; must match the column name
      *        as it is stored in the database
-     * @return <code>ResultSet</code> - each row describes a stored procedure parameter or
+     * @return {@code ResultSet} - each row describes a stored procedure parameter or
      *      column
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getProcedureColumns(String catalog,
@@ -1386,9 +1386,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that type of the column is unknown.
      * <P>
      * A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getProcedureColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getProcedureColumns}.
      */
     int procedureColumnUnknown = 0;
 
@@ -1396,9 +1396,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the column stores IN parameters.
      * <P>
      * A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getProcedureColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getProcedureColumns}.
      */
     int procedureColumnIn = 1;
 
@@ -1406,9 +1406,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the column stores INOUT parameters.
      * <P>
      * A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getProcedureColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getProcedureColumns}.
      */
     int procedureColumnInOut = 2;
 
@@ -1416,18 +1416,18 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the column stores OUT parameters.
      * <P>
      * A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getProcedureColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getProcedureColumns}.
      */
     int procedureColumnOut = 4;
     /**
      * Indicates that the column stores return values.
      * <P>
      * A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getProcedureColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getProcedureColumns}.
      */
     int procedureColumnReturn = 5;
 
@@ -1435,40 +1435,40 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the column stores results.
      * <P>
      * A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getProcedureColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getProcedureColumns}.
      */
     int procedureColumnResult = 3;
 
     /**
-     * Indicates that <code>NULL</code> values are not allowed.
+     * Indicates that {@code NULL} values are not allowed.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getProcedureColumns</code>.
+     * {@code NULLABLE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getProcedureColumns}.
      */
     int procedureNoNulls = 0;
 
     /**
-     * Indicates that <code>NULL</code> values are allowed.
+     * Indicates that {@code NULL} values are allowed.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getProcedureColumns</code>.
+     * {@code NULLABLE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getProcedureColumns}.
      */
     int procedureNullable = 1;
 
     /**
-     * Indicates that whether <code>NULL</code> values are allowed
+     * Indicates that whether {@code NULL} values are allowed
      * is unknown.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getProcedureColumns</code>.
+     * {@code NULLABLE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getProcedureColumns}.
      */
     int procedureNullableUnknown = 2;
 
@@ -1477,26 +1477,26 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves a description of the tables available in the given catalog.
      * Only table descriptions matching the catalog, schema, table
      * name and type criteria are returned.  They are ordered by
-     * <code>TABLE_TYPE</code>, <code>TABLE_CAT</code>,
-     * <code>TABLE_SCHEM</code> and <code>TABLE_NAME</code>.
+     * {@code TABLE_TYPE}, {@code TABLE_CAT},
+     * {@code TABLE_SCHEM} and {@code TABLE_NAME}.
      * <P>
      * Each table description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be {@code null})
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be {@code null})
      *  <LI><B>TABLE_NAME</B> String {@code =>} table name
      *  <LI><B>TABLE_TYPE</B> String {@code =>} table type.  Typical types are "TABLE",
      *                  "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY",
      *                  "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
      *  <LI><B>REMARKS</B> String {@code =>} explanatory comment on the table (may be {@code null})
-     *  <LI><B>TYPE_CAT</B> String {@code =>} the types catalog (may be <code>null</code>)
-     *  <LI><B>TYPE_SCHEM</B> String {@code =>} the types schema (may be <code>null</code>)
-     *  <LI><B>TYPE_NAME</B> String {@code =>} type name (may be <code>null</code>)
+     *  <LI><B>TYPE_CAT</B> String {@code =>} the types catalog (may be {@code null})
+     *  <LI><B>TYPE_SCHEM</B> String {@code =>} the types schema (may be {@code null})
+     *  <LI><B>TYPE_NAME</B> String {@code =>} type name (may be {@code null})
      *  <LI><B>SELF_REFERENCING_COL_NAME</B> String {@code =>} name of the designated
-     *                  "identifier" column of a typed table (may be <code>null</code>)
+     *                  "identifier" column of a typed table (may be {@code null})
      *  <LI><B>REF_GENERATION</B> String {@code =>} specifies how values in
      *                  SELF_REFERENCING_COL_NAME are created. Values are
-     *                  "SYSTEM", "USER", "DERIVED". (may be <code>null</code>)
+     *                  "SYSTEM", "USER", "DERIVED". (may be {@code null})
      *  </OL>
      *
      * <P><B>Note:</B> Some databases may not return information for
@@ -1504,19 +1504,19 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema name pattern; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param tableNamePattern a table name pattern; must match the
      *        table name as it is stored in the database
      * @param types a list of table types, which must be from the list of table types
-     *         returned from {@link #getTableTypes},to include; <code>null</code> returns
+     *         returned from {@link #getTableTypes},to include; {@code null} returns
      * all types
-     * @return <code>ResultSet</code> - each row is a table description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a table description
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getTables(String catalog, String schemaPattern,
@@ -1524,18 +1524,18 @@ public interface DatabaseMetaData extends Wrapper {
 
     /**
      * Retrieves the schema names available in this database.  The results
-     * are ordered by <code>TABLE_CATALOG</code> and
-     * <code>TABLE_SCHEM</code>.
+     * are ordered by {@code TABLE_CATALOG} and
+     * {@code TABLE_SCHEM}.
      *
      * <P>The schema columns are:
      *  <OL>
      *  <LI><B>TABLE_SCHEM</B> String {@code =>} schema name
-     *  <LI><B>TABLE_CATALOG</B> String {@code =>} catalog name (may be <code>null</code>)
+     *  <LI><B>TABLE_CATALOG</B> String {@code =>} catalog name (may be {@code null})
      *  </OL>
      *
-     * @return a <code>ResultSet</code> object in which each row is a
+     * @return a {@code ResultSet} object in which each row is a
      *         schema description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      *
      */
     ResultSet getSchemas() throws SQLException;
@@ -1549,9 +1549,9 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>TABLE_CAT</B> String {@code =>} catalog name
      *  </OL>
      *
-     * @return a <code>ResultSet</code> object in which each row has a
-     *         single <code>String</code> column that is a catalog name
-     * @exception SQLException if a database access error occurs
+     * @return a {@code ResultSet} object in which each row has a
+     *         single {@code String} column that is a catalog name
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getCatalogs() throws SQLException;
 
@@ -1566,9 +1566,9 @@ public interface DatabaseMetaData extends Wrapper {
      *                  "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
      *  </OL>
      *
-     * @return a <code>ResultSet</code> object in which each row has a
-     *         single <code>String</code> column that is a table type
-     * @exception SQLException if a database access error occurs
+     * @return a {@code ResultSet} object in which each row has a
+     *         single {@code String} column that is a table type
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getTableTypes() throws SQLException;
 
@@ -1578,13 +1578,13 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Only column descriptions matching the catalog, schema, table
      * and column name criteria are returned.  They are ordered by
-     * <code>TABLE_CAT</code>,<code>TABLE_SCHEM</code>,
-     * <code>TABLE_NAME</code>, and <code>ORDINAL_POSITION</code>.
+     * {@code TABLE_CAT},{@code TABLE_SCHEM},
+     * {@code TABLE_NAME}, and {@code ORDINAL_POSITION}.
      *
      * <P>Each column description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be {@code null})
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be {@code null})
      *  <LI><B>TABLE_NAME</B> String {@code =>} table name
      *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
      *  <LI><B>DATA_TYPE</B> int {@code =>} SQL type from java.sql.Types
@@ -1597,12 +1597,12 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>NUM_PREC_RADIX</B> int {@code =>} Radix (typically either 10 or 2)
      *  <LI><B>NULLABLE</B> int {@code =>} is NULL allowed.
      *      <UL>
-     *      <LI> columnNoNulls - might not allow <code>NULL</code> values
-     *      <LI> columnNullable - definitely allows <code>NULL</code> values
+     *      <LI> columnNoNulls - might not allow {@code NULL} values
+     *      <LI> columnNullable - definitely allows {@code NULL} values
      *      <LI> columnNullableUnknown - nullability unknown
      *      </UL>
-     *  <LI><B>REMARKS</B> String {@code =>} comment describing column (may be <code>null</code>)
-     *  <LI><B>COLUMN_DEF</B> String {@code =>} default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be <code>null</code>)
+     *  <LI><B>REMARKS</B> String {@code =>} comment describing column (may be {@code null})
+     *  <LI><B>COLUMN_DEF</B> String {@code =>} default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be {@code null})
      *  <LI><B>SQL_DATA_TYPE</B> int {@code =>} unused
      *  <LI><B>SQL_DATETIME_SUB</B> int {@code =>} unused
      *  <LI><B>CHAR_OCTET_LENGTH</B> int {@code =>} for char types the
@@ -1617,13 +1617,13 @@ public interface DatabaseMetaData extends Wrapper {
      * column is unknown
      *       </UL>
      *  <LI><B>SCOPE_CATALOG</B> String {@code =>} catalog of table that is the scope
-     *      of a reference attribute (<code>null</code> if DATA_TYPE isn't REF)
+     *      of a reference attribute ({@code null} if DATA_TYPE isn't REF)
      *  <LI><B>SCOPE_SCHEMA</B> String {@code =>} schema of table that is the scope
-     *      of a reference attribute (<code>null</code> if the DATA_TYPE isn't REF)
+     *      of a reference attribute ({@code null} if the DATA_TYPE isn't REF)
      *  <LI><B>SCOPE_TABLE</B> String {@code =>} table name that this the scope
-     *      of a reference attribute (<code>null</code> if the DATA_TYPE isn't REF)
+     *      of a reference attribute ({@code null} if the DATA_TYPE isn't REF)
      *  <LI><B>SOURCE_DATA_TYPE</B> short {@code =>} source type of a distinct type or user-generated
-     *      Ref type, SQL type from java.sql.Types (<code>null</code> if DATA_TYPE
+     *      Ref type, SQL type from java.sql.Types ({@code null} if DATA_TYPE
      *      isn't DISTINCT or user-generated REF)
      *   <LI><B>IS_AUTOINCREMENT</B> String  {@code =>} Indicates whether this column is auto incremented
      *       <UL>
@@ -1648,18 +1648,18 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema name pattern; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param tableNamePattern a table name pattern; must match the
      *        table name as it is stored in the database
      * @param columnNamePattern a column name pattern; must match the column
      *        name as it is stored in the database
-     * @return <code>ResultSet</code> - each row is a column description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a column description
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getColumns(String catalog, String schemaPattern,
@@ -1667,22 +1667,22 @@ public interface DatabaseMetaData extends Wrapper {
         throws SQLException;
 
     /**
-     * Indicates that the column might not allow <code>NULL</code> values.
+     * Indicates that the column might not allow {@code NULL} values.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code>
-     * in the <code>ResultSet</code> returned by the method
-     * <code>getColumns</code>.
+     * {@code NULLABLE}
+     * in the {@code ResultSet} returned by the method
+     * {@code getColumns}.
      */
     int columnNoNulls = 0;
 
     /**
-     * Indicates that the column definitely allows <code>NULL</code> values.
+     * Indicates that the column definitely allows {@code NULL} values.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code>
-     * in the <code>ResultSet</code> returned by the method
-     * <code>getColumns</code>.
+     * {@code NULLABLE}
+     * in the {@code ResultSet} returned by the method
+     * {@code getColumns}.
      */
     int columnNullable = 1;
 
@@ -1690,9 +1690,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the nullability of columns is unknown.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code>
-     * in the <code>ResultSet</code> returned by the method
-     * <code>getColumns</code>.
+     * {@code NULLABLE}
+     * in the {@code ResultSet} returned by the method
+     * {@code getColumns}.
      */
     int columnNullableUnknown = 2;
 
@@ -1704,32 +1704,32 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each privilege description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be {@code null})
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be {@code null})
      *  <LI><B>TABLE_NAME</B> String {@code =>} table name
      *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
-     *  <LI><B>GRANTOR</B> String {@code =>} grantor of access (may be <code>null</code>)
+     *  <LI><B>GRANTOR</B> String {@code =>} grantor of access (may be {@code null})
      *  <LI><B>GRANTEE</B> String {@code =>} grantee of access
      *  <LI><B>PRIVILEGE</B> String {@code =>} name of access (SELECT,
      *      INSERT, UPDATE, REFERENCES, ...)
      *  <LI><B>IS_GRANTABLE</B> String {@code =>} "YES" if grantee is permitted
-     *      to grant to others; "NO" if not; <code>null</code> if unknown
+     *      to grant to others; "NO" if not; {@code null} if unknown
      *  </OL>
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schema a schema name; must match the schema name as it is
      *        stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param table a table name; must match the table name as it is
      *        stored in the database
      * @param columnNamePattern a column name pattern; must match the column
      *        name as it is stored in the database
-     * @return <code>ResultSet</code> - each row is a column privilege description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a column privilege description
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getColumnPrivileges(String catalog, String schema,
@@ -1744,35 +1744,35 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Only privileges matching the schema and table name
      * criteria are returned.  They are ordered by
-     * <code>TABLE_CAT</code>,
-     * <code>TABLE_SCHEM</code>, <code>TABLE_NAME</code>,
-     * and <code>PRIVILEGE</code>.
+     * {@code TABLE_CAT},
+     * {@code TABLE_SCHEM}, {@code TABLE_NAME},
+     * and {@code PRIVILEGE}.
      *
      * <P>Each privilege description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be {@code null})
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be {@code null})
      *  <LI><B>TABLE_NAME</B> String {@code =>} table name
-     *  <LI><B>GRANTOR</B> String {@code =>} grantor of access (may be <code>null</code>)
+     *  <LI><B>GRANTOR</B> String {@code =>} grantor of access (may be {@code null})
      *  <LI><B>GRANTEE</B> String {@code =>} grantee of access
      *  <LI><B>PRIVILEGE</B> String {@code =>} name of access (SELECT,
      *      INSERT, UPDATE, REFERENCES, ...)
      *  <LI><B>IS_GRANTABLE</B> String {@code =>} "YES" if grantee is permitted
-     *      to grant to others; "NO" if not; <code>null</code> if unknown
+     *      to grant to others; "NO" if not; {@code null} if unknown
      *  </OL>
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema name pattern; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param tableNamePattern a table name pattern; must match the
      *        table name as it is stored in the database
-     * @return <code>ResultSet</code> - each row is a table privilege description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a table privilege description
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getTablePrivileges(String catalog, String schemaPattern,
@@ -1816,18 +1816,18 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schema a schema name; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param table a table name; must match the table name as it is stored
      *        in the database
      * @param scope the scope of interest; use same values as SCOPE
      * @param nullable include columns that are nullable.
-     * @return <code>ResultSet</code> - each row is a column description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a column description
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getBestRowIdentifier(String catalog, String schema,
                                    String table, int scope, boolean nullable) throws SQLException;
@@ -1838,9 +1838,9 @@ public interface DatabaseMetaData extends Wrapper {
      * row is being used.
      * <P>
      * A possible value for the column
-     * <code>SCOPE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getBestRowIdentifier</code>.
+     * {@code SCOPE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getBestRowIdentifier}.
      */
     int bestRowTemporary   = 0;
 
@@ -1849,9 +1849,9 @@ public interface DatabaseMetaData extends Wrapper {
      * the remainder of the current transaction.
      * <P>
      * A possible value for the column
-     * <code>SCOPE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getBestRowIdentifier</code>.
+     * {@code SCOPE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getBestRowIdentifier}.
      */
     int bestRowTransaction = 1;
 
@@ -1860,9 +1860,9 @@ public interface DatabaseMetaData extends Wrapper {
      * the remainder of the current session.
      * <P>
      * A possible value for the column
-     * <code>SCOPE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getBestRowIdentifier</code>.
+     * {@code SCOPE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getBestRowIdentifier}.
      */
     int bestRowSession     = 2;
 
@@ -1870,9 +1870,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the best row identifier may or may not be a pseudo column.
      * <P>
      * A possible value for the column
-     * <code>PSEUDO_COLUMN</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getBestRowIdentifier</code>.
+     * {@code PSEUDO_COLUMN}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getBestRowIdentifier}.
      */
     int bestRowUnknown  = 0;
 
@@ -1880,9 +1880,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the best row identifier is NOT a pseudo column.
      * <P>
      * A possible value for the column
-     * <code>PSEUDO_COLUMN</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getBestRowIdentifier</code>.
+     * {@code PSEUDO_COLUMN}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getBestRowIdentifier}.
      */
     int bestRowNotPseudo        = 1;
 
@@ -1890,9 +1890,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the best row identifier is a pseudo column.
      * <P>
      * A possible value for the column
-     * <code>PSEUDO_COLUMN</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getBestRowIdentifier</code>.
+     * {@code PSEUDO_COLUMN}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getBestRowIdentifier}.
      */
     int bestRowPseudo   = 2;
 
@@ -1905,7 +1905,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <OL>
      *  <LI><B>SCOPE</B> short {@code =>} is not used
      *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
-     *  <LI><B>DATA_TYPE</B> int {@code =>} SQL data type from <code>java.sql.Types</code>
+     *  <LI><B>DATA_TYPE</B> int {@code =>} SQL data type from {@code java.sql.Types}
      *  <LI><B>TYPE_NAME</B> String {@code =>} Data source-dependent type name
      *  <LI><B>COLUMN_SIZE</B> int {@code =>} precision
      *  <LI><B>BUFFER_LENGTH</B> int {@code =>} length of column value in bytes
@@ -1928,17 +1928,17 @@ public interface DatabaseMetaData extends Wrapper {
      * column size is not applicable.
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schema a schema name; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param table a table name; must match the table name as it is stored
      *        in the database
-     * @return a <code>ResultSet</code> object in which each row is a
+     * @return a {@code ResultSet} object in which each row is a
      *         column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getVersionColumns(String catalog, String schema,
                                 String table) throws SQLException;
@@ -1947,9 +1947,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that this version column may or may not be a pseudo column.
      * <P>
      * A possible value for the column
-     * <code>PSEUDO_COLUMN</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getVersionColumns</code>.
+     * {@code PSEUDO_COLUMN}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getVersionColumns}.
      */
     int versionColumnUnknown    = 0;
 
@@ -1957,9 +1957,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that this version column is NOT a pseudo column.
      * <P>
      * A possible value for the column
-     * <code>PSEUDO_COLUMN</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getVersionColumns</code>.
+     * {@code PSEUDO_COLUMN}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getVersionColumns}.
      */
     int versionColumnNotPseudo  = 1;
 
@@ -1967,9 +1967,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that this version column is a pseudo column.
      * <P>
      * A possible value for the column
-     * <code>PSEUDO_COLUMN</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getVersionColumns</code>.
+     * {@code PSEUDO_COLUMN}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getVersionColumns}.
      */
     int versionColumnPseudo     = 2;
 
@@ -1979,28 +1979,28 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each primary key column description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be {@code null})
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be {@code null})
      *  <LI><B>TABLE_NAME</B> String {@code =>} table name
      *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
      *  <LI><B>KEY_SEQ</B> short {@code =>} sequence number within primary key( a value
      *  of 1 represents the first column of the primary key, a value of 2 would
      *  represent the second column within the primary key).
-     *  <LI><B>PK_NAME</B> String {@code =>} primary key name (may be <code>null</code>)
+     *  <LI><B>PK_NAME</B> String {@code =>} primary key name (may be {@code null})
      *  </OL>
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schema a schema name; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param table a table name; must match the table name as it is stored
      *        in the database
-     * @return <code>ResultSet</code> - each row is a primary key column description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a primary key column description
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getPrimaryKeys(String catalog, String schema,
                              String table) throws SQLException;
@@ -2014,15 +2014,15 @@ public interface DatabaseMetaData extends Wrapper {
      * <P>Each primary key column description has the following columns:
      *  <OL>
      *  <LI><B>PKTABLE_CAT</B> String {@code =>} primary key table catalog
-     *      being imported (may be <code>null</code>)
+     *      being imported (may be {@code null})
      *  <LI><B>PKTABLE_SCHEM</B> String {@code =>} primary key table schema
-     *      being imported (may be <code>null</code>)
+     *      being imported (may be {@code null})
      *  <LI><B>PKTABLE_NAME</B> String {@code =>} primary key table name
      *      being imported
      *  <LI><B>PKCOLUMN_NAME</B> String {@code =>} primary key column name
      *      being imported
-     *  <LI><B>FKTABLE_CAT</B> String {@code =>} foreign key table catalog (may be <code>null</code>)
-     *  <LI><B>FKTABLE_SCHEM</B> String {@code =>} foreign key table schema (may be <code>null</code>)
+     *  <LI><B>FKTABLE_CAT</B> String {@code =>} foreign key table catalog (may be {@code null})
+     *  <LI><B>FKTABLE_SCHEM</B> String {@code =>} foreign key table schema (may be {@code null})
      *  <LI><B>FKTABLE_NAME</B> String {@code =>} foreign key table name
      *  <LI><B>FKCOLUMN_NAME</B> String {@code =>} foreign key column name
      *  <LI><B>KEY_SEQ</B> short {@code =>} sequence number within a foreign key( a value
@@ -2035,7 +2035,7 @@ public interface DatabaseMetaData extends Wrapper {
      *               key if it has been imported
      *      <LI> importedKeyCascade - change imported key to agree
      *               with primary key update
-     *      <LI> importedKeySetNull - change imported key to <code>NULL</code>
+     *      <LI> importedKeySetNull - change imported key to {@code NULL}
      *               if its primary key has been updated
      *      <LI> importedKeySetDefault - change imported key to default values
      *               if its primary key has been updated
@@ -2055,8 +2055,8 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> importedKeySetDefault - change imported key to default if
      *               its primary key has been deleted
      *      </UL>
-     *  <LI><B>FK_NAME</B> String {@code =>} foreign key name (may be <code>null</code>)
-     *  <LI><B>PK_NAME</B> String {@code =>} primary key name (may be <code>null</code>)
+     *  <LI><B>FK_NAME</B> String {@code =>} foreign key name (may be {@code null})
+     *  <LI><B>PK_NAME</B> String {@code =>} primary key name (may be {@code null})
      *  <LI><B>DEFERRABILITY</B> short {@code =>} can the evaluation of foreign key
      *      constraints be deferred until commit
      *      <UL>
@@ -2068,123 +2068,123 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schema a schema name; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param table a table name; must match the table name as it is stored
      *        in the database
-     * @return <code>ResultSet</code> - each row is a primary key column description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a primary key column description
+     * @throws SQLException if a database access error occurs
      * @see #getExportedKeys
      */
     ResultSet getImportedKeys(String catalog, String schema,
                               String table) throws SQLException;
 
     /**
-     * For the column <code>UPDATE_RULE</code>,
+     * For the column {@code UPDATE_RULE},
      * indicates that
      * when the primary key is updated, the foreign key (imported key)
      * is changed to agree with it.
-     * For the column <code>DELETE_RULE</code>,
+     * For the column {@code DELETE_RULE},
      * it indicates that
      * when the primary key is deleted, rows that imported that key
      * are deleted.
      * <P>
-     * A possible value for the columns <code>UPDATE_RULE</code>
-     * and <code>DELETE_RULE</code> in the
-     * <code>ResultSet</code> objects returned by the methods
-     * <code>getImportedKeys</code>,  <code>getExportedKeys</code>,
-     * and <code>getCrossReference</code>.
+     * A possible value for the columns {@code UPDATE_RULE}
+     * and {@code DELETE_RULE} in the
+     * {@code ResultSet} objects returned by the methods
+     * {@code getImportedKeys},  {@code getExportedKeys},
+     * and {@code getCrossReference}.
      */
     int importedKeyCascade      = 0;
 
     /**
-     * For the column <code>UPDATE_RULE</code>, indicates that
+     * For the column {@code UPDATE_RULE}, indicates that
      * a primary key may not be updated if it has been imported by
      * another table as a foreign key.
-     * For the column <code>DELETE_RULE</code>, indicates that
+     * For the column {@code DELETE_RULE}, indicates that
      * a primary key may not be deleted if it has been imported by
      * another table as a foreign key.
      * <P>
-     * A possible value for the columns <code>UPDATE_RULE</code>
-     * and <code>DELETE_RULE</code> in the
-     * <code>ResultSet</code> objects returned by the methods
-     * <code>getImportedKeys</code>,  <code>getExportedKeys</code>,
-     * and <code>getCrossReference</code>.
+     * A possible value for the columns {@code UPDATE_RULE}
+     * and {@code DELETE_RULE} in the
+     * {@code ResultSet} objects returned by the methods
+     * {@code getImportedKeys},  {@code getExportedKeys},
+     * and {@code getCrossReference}.
      */
     int importedKeyRestrict = 1;
 
     /**
-     * For the columns <code>UPDATE_RULE</code>
-     * and <code>DELETE_RULE</code>, indicates that
+     * For the columns {@code UPDATE_RULE}
+     * and {@code DELETE_RULE}, indicates that
      * when the primary key is updated or deleted, the foreign key (imported key)
-     * is changed to <code>NULL</code>.
+     * is changed to {@code NULL}.
      * <P>
-     * A possible value for the columns <code>UPDATE_RULE</code>
-     * and <code>DELETE_RULE</code> in the
-     * <code>ResultSet</code> objects returned by the methods
-     * <code>getImportedKeys</code>,  <code>getExportedKeys</code>,
-     * and <code>getCrossReference</code>.
+     * A possible value for the columns {@code UPDATE_RULE}
+     * and {@code DELETE_RULE} in the
+     * {@code ResultSet} objects returned by the methods
+     * {@code getImportedKeys},  {@code getExportedKeys},
+     * and {@code getCrossReference}.
      */
     int importedKeySetNull  = 2;
 
     /**
-     * For the columns <code>UPDATE_RULE</code>
-     * and <code>DELETE_RULE</code>, indicates that
+     * For the columns {@code UPDATE_RULE}
+     * and {@code DELETE_RULE}, indicates that
      * if the primary key has been imported, it cannot be updated or deleted.
      * <P>
-     * A possible value for the columns <code>UPDATE_RULE</code>
-     * and <code>DELETE_RULE</code> in the
-     * <code>ResultSet</code> objects returned by the methods
-     * <code>getImportedKeys</code>,  <code>getExportedKeys</code>,
-     * and <code>getCrossReference</code>.
+     * A possible value for the columns {@code UPDATE_RULE}
+     * and {@code DELETE_RULE} in the
+     * {@code ResultSet} objects returned by the methods
+     * {@code getImportedKeys},  {@code getExportedKeys},
+     * and {@code getCrossReference}.
      */
     int importedKeyNoAction = 3;
 
     /**
-     * For the columns <code>UPDATE_RULE</code>
-     * and <code>DELETE_RULE</code>, indicates that
+     * For the columns {@code UPDATE_RULE}
+     * and {@code DELETE_RULE}, indicates that
      * if the primary key is updated or deleted, the foreign key (imported key)
      * is set to the default value.
      * <P>
-     * A possible value for the columns <code>UPDATE_RULE</code>
-     * and <code>DELETE_RULE</code> in the
-     * <code>ResultSet</code> objects returned by the methods
-     * <code>getImportedKeys</code>,  <code>getExportedKeys</code>,
-     * and <code>getCrossReference</code>.
+     * A possible value for the columns {@code UPDATE_RULE}
+     * and {@code DELETE_RULE} in the
+     * {@code ResultSet} objects returned by the methods
+     * {@code getImportedKeys},  {@code getExportedKeys},
+     * and {@code getCrossReference}.
      */
     int importedKeySetDefault  = 4;
 
     /**
      * Indicates deferrability.  See SQL-92 for a definition.
      * <P>
-     * A possible value for the column <code>DEFERRABILITY</code>
-     * in the <code>ResultSet</code> objects returned by the methods
-     * <code>getImportedKeys</code>,  <code>getExportedKeys</code>,
-     * and <code>getCrossReference</code>.
+     * A possible value for the column {@code DEFERRABILITY}
+     * in the {@code ResultSet} objects returned by the methods
+     * {@code getImportedKeys},  {@code getExportedKeys},
+     * and {@code getCrossReference}.
      */
     int importedKeyInitiallyDeferred  = 5;
 
     /**
      * Indicates deferrability.  See SQL-92 for a definition.
      * <P>
-     * A possible value for the column <code>DEFERRABILITY</code>
-     * in the <code>ResultSet</code> objects returned by the methods
-     * <code>getImportedKeys</code>,  <code>getExportedKeys</code>,
-     * and <code>getCrossReference</code>.
+     * A possible value for the column {@code DEFERRABILITY}
+     * in the {@code ResultSet} objects returned by the methods
+     * {@code getImportedKeys},  {@code getExportedKeys},
+     * and {@code getCrossReference}.
      */
     int importedKeyInitiallyImmediate  = 6;
 
     /**
      * Indicates deferrability.  See SQL-92 for a definition.
      * <P>
-     * A possible value for the column <code>DEFERRABILITY</code>
-     * in the <code>ResultSet</code> objects returned by the methods
-     * <code>getImportedKeys</code>,  <code>getExportedKeys</code>,
-     * and <code>getCrossReference</code>.
+     * A possible value for the column {@code DEFERRABILITY}
+     * in the {@code ResultSet} objects returned by the methods
+     * {@code getImportedKeys},  {@code getExportedKeys},
+     * and {@code getCrossReference}.
      */
     int importedKeyNotDeferrable  = 7;
 
@@ -2196,14 +2196,14 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each foreign key column description has the following columns:
      *  <OL>
-     *  <LI><B>PKTABLE_CAT</B> String {@code =>} primary key table catalog (may be <code>null</code>)
-     *  <LI><B>PKTABLE_SCHEM</B> String {@code =>} primary key table schema (may be <code>null</code>)
+     *  <LI><B>PKTABLE_CAT</B> String {@code =>} primary key table catalog (may be {@code null})
+     *  <LI><B>PKTABLE_SCHEM</B> String {@code =>} primary key table schema (may be {@code null})
      *  <LI><B>PKTABLE_NAME</B> String {@code =>} primary key table name
      *  <LI><B>PKCOLUMN_NAME</B> String {@code =>} primary key column name
-     *  <LI><B>FKTABLE_CAT</B> String {@code =>} foreign key table catalog (may be <code>null</code>)
-     *      being exported (may be <code>null</code>)
-     *  <LI><B>FKTABLE_SCHEM</B> String {@code =>} foreign key table schema (may be <code>null</code>)
-     *      being exported (may be <code>null</code>)
+     *  <LI><B>FKTABLE_CAT</B> String {@code =>} foreign key table catalog (may be {@code null})
+     *      being exported (may be {@code null})
+     *  <LI><B>FKTABLE_SCHEM</B> String {@code =>} foreign key table schema (may be {@code null})
+     *      being exported (may be {@code null})
      *  <LI><B>FKTABLE_NAME</B> String {@code =>} foreign key table name
      *      being exported
      *  <LI><B>FKCOLUMN_NAME</B> String {@code =>} foreign key column name
@@ -2218,7 +2218,7 @@ public interface DatabaseMetaData extends Wrapper {
      *               key if it has been imported
      *      <LI> importedKeyCascade - change imported key to agree
      *               with primary key update
-     *      <LI> importedKeySetNull - change imported key to <code>NULL</code> if
+     *      <LI> importedKeySetNull - change imported key to {@code NULL} if
      *               its primary key has been updated
      *      <LI> importedKeySetDefault - change imported key to default values
      *               if its primary key has been updated
@@ -2231,15 +2231,15 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> importedKeyNoAction - do not allow delete of primary
      *               key if it has been imported
      *      <LI> importedKeyCascade - delete rows that import a deleted key
-     *      <LI> importedKeySetNull - change imported key to <code>NULL</code> if
+     *      <LI> importedKeySetNull - change imported key to {@code NULL} if
      *               its primary key has been deleted
      *      <LI> importedKeyRestrict - same as importedKeyNoAction
      *                                 (for ODBC 2.x compatibility)
      *      <LI> importedKeySetDefault - change imported key to default if
      *               its primary key has been deleted
      *      </UL>
-     *  <LI><B>FK_NAME</B> String {@code =>} foreign key name (may be <code>null</code>)
-     *  <LI><B>PK_NAME</B> String {@code =>} primary key name (may be <code>null</code>)
+     *  <LI><B>FK_NAME</B> String {@code =>} foreign key name (may be {@code null})
+     *  <LI><B>PK_NAME</B> String {@code =>} primary key name (may be {@code null})
      *  <LI><B>DEFERRABILITY</B> short {@code =>} can the evaluation of foreign key
      *      constraints be deferred until commit
      *      <UL>
@@ -2251,17 +2251,17 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in this database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schema a schema name; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param table a table name; must match the table name as it is stored
      *        in this database
-     * @return a <code>ResultSet</code> object in which each row is a
+     * @return a {@code ResultSet} object in which each row is a
      *         foreign key column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getImportedKeys
      */
     ResultSet getExportedKeys(String catalog, String schema,
@@ -2277,14 +2277,14 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each foreign key column description has the following columns:
      *  <OL>
-     *  <LI><B>PKTABLE_CAT</B> String {@code =>} parent key table catalog (may be <code>null</code>)
-     *  <LI><B>PKTABLE_SCHEM</B> String {@code =>} parent key table schema (may be <code>null</code>)
+     *  <LI><B>PKTABLE_CAT</B> String {@code =>} parent key table catalog (may be {@code null})
+     *  <LI><B>PKTABLE_SCHEM</B> String {@code =>} parent key table schema (may be {@code null})
      *  <LI><B>PKTABLE_NAME</B> String {@code =>} parent key table name
      *  <LI><B>PKCOLUMN_NAME</B> String {@code =>} parent key column name
-     *  <LI><B>FKTABLE_CAT</B> String {@code =>} foreign key table catalog (may be <code>null</code>)
-     *      being exported (may be <code>null</code>)
-     *  <LI><B>FKTABLE_SCHEM</B> String {@code =>} foreign key table schema (may be <code>null</code>)
-     *      being exported (may be <code>null</code>)
+     *  <LI><B>FKTABLE_CAT</B> String {@code =>} foreign key table catalog (may be {@code null})
+     *      being exported (may be {@code null})
+     *  <LI><B>FKTABLE_SCHEM</B> String {@code =>} foreign key table schema (may be {@code null})
+     *      being exported (may be {@code null})
      *  <LI><B>FKTABLE_NAME</B> String {@code =>} foreign key table name
      *      being exported
      *  <LI><B>FKCOLUMN_NAME</B> String {@code =>} foreign key column name
@@ -2299,7 +2299,7 @@ public interface DatabaseMetaData extends Wrapper {
      *               key if it has been imported
      *      <LI> importedKeyCascade - change imported key to agree
      *               with parent key update
-     *      <LI> importedKeySetNull - change imported key to <code>NULL</code> if
+     *      <LI> importedKeySetNull - change imported key to {@code NULL} if
      *               its parent key has been updated
      *      <LI> importedKeySetDefault - change imported key to default values
      *               if its parent key has been updated
@@ -2312,15 +2312,15 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> importedKeyNoAction - do not allow delete of parent
      *               key if it has been imported
      *      <LI> importedKeyCascade - delete rows that import a deleted key
-     *      <LI> importedKeySetNull - change imported key to <code>NULL</code> if
+     *      <LI> importedKeySetNull - change imported key to {@code NULL} if
      *               its primary key has been deleted
      *      <LI> importedKeyRestrict - same as importedKeyNoAction
      *                                 (for ODBC 2.x compatibility)
      *      <LI> importedKeySetDefault - change imported key to default if
      *               its parent key has been deleted
      *      </UL>
-     *  <LI><B>FK_NAME</B> String {@code =>} foreign key name (may be <code>null</code>)
-     *  <LI><B>PK_NAME</B> String {@code =>} parent key name (may be <code>null</code>)
+     *  <LI><B>FK_NAME</B> String {@code =>} foreign key name (may be {@code null})
+     *  <LI><B>PK_NAME</B> String {@code =>} parent key name (may be {@code null})
      *  <LI><B>DEFERRABILITY</B> short {@code =>} can the evaluation of foreign key
      *      constraints be deferred until commit
      *      <UL>
@@ -2332,22 +2332,22 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param parentCatalog a catalog name; must match the catalog name
      * as it is stored in the database; "" retrieves those without a
-     * catalog; <code>null</code> means drop catalog name from the selection criteria
+     * catalog; {@code null} means drop catalog name from the selection criteria
      * @param parentSchema a schema name; must match the schema name as
      * it is stored in the database; "" retrieves those without a schema;
-     * <code>null</code> means drop schema name from the selection criteria
+     * {@code null} means drop schema name from the selection criteria
      * @param parentTable the name of the table that exports the key; must match
      * the table name as it is stored in the database
      * @param foreignCatalog a catalog name; must match the catalog name as
      * it is stored in the database; "" retrieves those without a
-     * catalog; <code>null</code> means drop catalog name from the selection criteria
+     * catalog; {@code null} means drop catalog name from the selection criteria
      * @param foreignSchema a schema name; must match the schema name as it
      * is stored in the database; "" retrieves those without a schema;
-     * <code>null</code> means drop schema name from the selection criteria
+     * {@code null} means drop schema name from the selection criteria
      * @param foreignTable the name of the table that imports the key; must match
      * the table name as it is stored in the database
-     * @return <code>ResultSet</code> - each row is a foreign key column description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a foreign key column description
+     * @throws SQLException if a database access error occurs
      * @see #getImportedKeys
      */
     ResultSet getCrossReference(
@@ -2375,11 +2375,11 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>DATA_TYPE</B> int {@code =>} SQL data type from java.sql.Types
      *  <LI><B>PRECISION</B> int {@code =>} maximum precision
      *  <LI><B>LITERAL_PREFIX</B> String {@code =>} prefix used to quote a literal
-     *      (may be <code>null</code>)
+     *      (may be {@code null})
      *  <LI><B>LITERAL_SUFFIX</B> String {@code =>} suffix used to quote a literal
-     *  (may be <code>null</code>)
+     *  (may be {@code null})
      *  <LI><B>CREATE_PARAMS</B> String {@code =>} parameters used in creating
-     *      the type (may be <code>null</code>)
+     *      the type (may be {@code null})
      *  <LI><B>NULLABLE</B> short {@code =>} can you use NULL for this type.
      *      <UL>
      *      <LI> typeNoNulls - does not allow NULL values
@@ -2399,7 +2399,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>AUTO_INCREMENT</B> boolean {@code =>} can it be used for an
      *      auto-increment value.
      *  <LI><B>LOCAL_TYPE_NAME</B> String {@code =>} localized version of type name
-     *      (may be <code>null</code>)
+     *      (may be {@code null})
      *  <LI><B>MINIMUM_SCALE</B> short {@code =>} minimum scale supported
      *  <LI><B>MAXIMUM_SCALE</B> short {@code =>} maximum scale supported
      *  <LI><B>SQL_DATA_TYPE</B> int {@code =>} unused
@@ -2414,81 +2414,81 @@ public interface DatabaseMetaData extends Wrapper {
      * this is the length in bytes. Null is returned for data types where the
      * column size is not applicable.
      *
-     * @return a <code>ResultSet</code> object in which each row is an SQL
+     * @return a {@code ResultSet} object in which each row is an SQL
      *         type description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getTypeInfo() throws SQLException;
 
     /**
-     * Indicates that a <code>NULL</code> value is NOT allowed for this
+     * Indicates that a {@code NULL} value is NOT allowed for this
      * data type.
      * <P>
-     * A possible value for column <code>NULLABLE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getTypeInfo</code>.
+     * A possible value for column {@code NULLABLE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getTypeInfo}.
      */
     int typeNoNulls = 0;
 
     /**
-     * Indicates that a <code>NULL</code> value is allowed for this
+     * Indicates that a {@code NULL} value is allowed for this
      * data type.
      * <P>
-     * A possible value for column <code>NULLABLE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getTypeInfo</code>.
+     * A possible value for column {@code NULLABLE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getTypeInfo}.
      */
     int typeNullable = 1;
 
     /**
-     * Indicates that it is not known whether a <code>NULL</code> value
+     * Indicates that it is not known whether a {@code NULL} value
      * is allowed for this data type.
      * <P>
-     * A possible value for column <code>NULLABLE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getTypeInfo</code>.
+     * A possible value for column {@code NULLABLE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getTypeInfo}.
      */
     int typeNullableUnknown = 2;
 
     /**
-     * Indicates that <code>WHERE</code> search clauses are not supported
+     * Indicates that {@code WHERE} search clauses are not supported
      * for this type.
      * <P>
-     * A possible value for column <code>SEARCHABLE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getTypeInfo</code>.
+     * A possible value for column {@code SEARCHABLE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getTypeInfo}.
      */
     int typePredNone = 0;
 
     /**
      * Indicates that the data type
-     * can be only be used in <code>WHERE</code> search clauses
-     * that  use <code>LIKE</code> predicates.
+     * can be only be used in {@code WHERE} search clauses
+     * that  use {@code LIKE} predicates.
      * <P>
-     * A possible value for column <code>SEARCHABLE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getTypeInfo</code>.
+     * A possible value for column {@code SEARCHABLE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getTypeInfo}.
      */
     int typePredChar = 1;
 
     /**
-     * Indicates that the data type can be only be used in <code>WHERE</code>
+     * Indicates that the data type can be only be used in {@code WHERE}
      * search clauses
-     * that do not use <code>LIKE</code> predicates.
+     * that do not use {@code LIKE} predicates.
      * <P>
-     * A possible value for column <code>SEARCHABLE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getTypeInfo</code>.
+     * A possible value for column {@code SEARCHABLE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getTypeInfo}.
      */
     int typePredBasic = 2;
 
     /**
-     * Indicates that all <code>WHERE</code> search clauses can be
+     * Indicates that all {@code WHERE} search clauses can be
      * based on this type.
      * <P>
-     * A possible value for column <code>SEARCHABLE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getTypeInfo</code>.
+     * A possible value for column {@code SEARCHABLE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getTypeInfo}.
      */
     int typeSearchable  = 3;
 
@@ -2498,14 +2498,14 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each index column description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be {@code null})
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be {@code null})
      *  <LI><B>TABLE_NAME</B> String {@code =>} table name
      *  <LI><B>NON_UNIQUE</B> boolean {@code =>} Can index values be non-unique.
      *      false when TYPE is tableIndexStatistic
-     *  <LI><B>INDEX_QUALIFIER</B> String {@code =>} index catalog (may be <code>null</code>);
-     *      <code>null</code> when TYPE is tableIndexStatistic
-     *  <LI><B>INDEX_NAME</B> String {@code =>} index name; <code>null</code> when TYPE is
+     *  <LI><B>INDEX_QUALIFIER</B> String {@code =>} index catalog (may be {@code null});
+     *      {@code null} when TYPE is tableIndexStatistic
+     *  <LI><B>INDEX_NAME</B> String {@code =>} index name; {@code null} when TYPE is
      *      tableIndexStatistic
      *  <LI><B>TYPE</B> short {@code =>} index type:
      *      <UL>
@@ -2517,11 +2517,11 @@ public interface DatabaseMetaData extends Wrapper {
      *      </UL>
      *  <LI><B>ORDINAL_POSITION</B> short {@code =>} column sequence number
      *      within index; zero when TYPE is tableIndexStatistic
-     *  <LI><B>COLUMN_NAME</B> String {@code =>} column name; <code>null</code> when TYPE is
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column name; {@code null} when TYPE is
      *      tableIndexStatistic
      *  <LI><B>ASC_OR_DESC</B> String {@code =>} column sort sequence, "A" {@code =>} ascending,
-     *      "D" {@code =>} descending, may be <code>null</code> if sort sequence is not supported;
-     *      <code>null</code> when TYPE is tableIndexStatistic
+     *      "D" {@code =>} descending, may be {@code null} if sort sequence is not supported;
+     *      {@code null} when TYPE is tableIndexStatistic
      *  <LI><B>CARDINALITY</B> long {@code =>} When TYPE is tableIndexStatistic, then
      *      this is the number of rows in the table; otherwise, it is the
      *      number of unique values in the index.
@@ -2529,16 +2529,16 @@ public interface DatabaseMetaData extends Wrapper {
      *      this is the number of pages used for the table, otherwise it
      *      is the number of pages used for the current index.
      *  <LI><B>FILTER_CONDITION</B> String {@code =>} Filter condition, if any.
-     *      (may be <code>null</code>)
+     *      (may be {@code null})
      *  </OL>
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in this database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schema a schema name; must match the schema name
      *        as it is stored in this database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param table a table name; must match the table name as it is stored
      *        in this database
@@ -2547,8 +2547,8 @@ public interface DatabaseMetaData extends Wrapper {
      * @param approximate when true, result is allowed to reflect approximate
      *     or out of data values; when false, results are requested to be
      *     accurate
-     * @return <code>ResultSet</code> - each row is an index column description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is an index column description
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getIndexInfo(String catalog, String schema, String table,
                            boolean unique, boolean approximate)
@@ -2558,27 +2558,27 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that this column contains table statistics that
      * are returned in conjunction with a table's index descriptions.
      * <P>
-     * A possible value for column <code>TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getIndexInfo</code>.
+     * A possible value for column {@code TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getIndexInfo}.
      */
     short tableIndexStatistic = 0;
 
     /**
      * Indicates that this table index is a clustered index.
      * <P>
-     * A possible value for column <code>TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getIndexInfo</code>.
+     * A possible value for column {@code TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getIndexInfo}.
      */
     short tableIndexClustered = 1;
 
     /**
      * Indicates that this table index is a hashed index.
      * <P>
-     * A possible value for column <code>TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getIndexInfo</code>.
+     * A possible value for column {@code TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getIndexInfo}.
      */
     short tableIndexHashed    = 2;
 
@@ -2587,9 +2587,9 @@ public interface DatabaseMetaData extends Wrapper {
      * index, a hashed index, or table statistics;
      * it is something other than these.
      * <P>
-     * A possible value for column <code>TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getIndexInfo</code>.
+     * A possible value for column {@code TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getIndexInfo}.
      */
     short tableIndexOther     = 3;
 
@@ -2598,9 +2598,9 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether this database supports the given result set type.
      *
-     * @param type defined in <code>java.sql.ResultSet</code>
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @param type defined in {@code java.sql.ResultSet}
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @see Connection
      * @since 1.2
      */
@@ -2610,10 +2610,10 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the given concurrency type
      * in combination with the given result set type.
      *
-     * @param type defined in <code>java.sql.ResultSet</code>
-     * @param concurrency type defined in <code>java.sql.ResultSet</code>
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @param type defined in {@code java.sql.ResultSet}
+     * @param concurrency type defined in {@code java.sql.ResultSet}
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @see Connection
      * @since 1.2
      */
@@ -2622,16 +2622,16 @@ public interface DatabaseMetaData extends Wrapper {
 
     /**
      *
-     * Retrieves whether for the given type of <code>ResultSet</code> object,
+     * Retrieves whether for the given type of {@code ResultSet} object,
      * the result set's own updates are visible.
      *
-     * @param type the <code>ResultSet</code> type; one of
-     *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @return <code>true</code> if updates are visible for the given result set type;
-     *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @param type the {@code ResultSet} type; one of
+     *        {@code ResultSet.TYPE_FORWARD_ONLY},
+     *        {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *        {@code ResultSet.TYPE_SCROLL_SENSITIVE}
+     * @return {@code true} if updates are visible for the given result set type;
+     *        {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean ownUpdatesAreVisible(int type) throws SQLException;
@@ -2639,13 +2639,13 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether a result set's own deletes are visible.
      *
-     * @param type the <code>ResultSet</code> type; one of
-     *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @return <code>true</code> if deletes are visible for the given result set type;
-     *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @param type the {@code ResultSet} type; one of
+     *        {@code ResultSet.TYPE_FORWARD_ONLY},
+     *        {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *        {@code ResultSet.TYPE_SCROLL_SENSITIVE}
+     * @return {@code true} if deletes are visible for the given result set type;
+     *        {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean ownDeletesAreVisible(int type) throws SQLException;
@@ -2653,13 +2653,13 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether a result set's own inserts are visible.
      *
-     * @param type the <code>ResultSet</code> type; one of
-     *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @return <code>true</code> if inserts are visible for the given result set type;
-     *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @param type the {@code ResultSet} type; one of
+     *        {@code ResultSet.TYPE_FORWARD_ONLY},
+     *        {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *        {@code ResultSet.TYPE_SCROLL_SENSITIVE}
+     * @return {@code true} if inserts are visible for the given result set type;
+     *        {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean ownInsertsAreVisible(int type) throws SQLException;
@@ -2667,14 +2667,14 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether updates made by others are visible.
      *
-     * @param type the <code>ResultSet</code> type; one of
-     *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @return <code>true</code> if updates made by others
+     * @param type the {@code ResultSet} type; one of
+     *        {@code ResultSet.TYPE_FORWARD_ONLY},
+     *        {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *        {@code ResultSet.TYPE_SCROLL_SENSITIVE}
+     * @return {@code true} if updates made by others
      *        are visible for the given result set type;
-     *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     *        {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean othersUpdatesAreVisible(int type) throws SQLException;
@@ -2682,14 +2682,14 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether deletes made by others are visible.
      *
-     * @param type the <code>ResultSet</code> type; one of
-     *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @return <code>true</code> if deletes made by others
+     * @param type the {@code ResultSet} type; one of
+     *        {@code ResultSet.TYPE_FORWARD_ONLY},
+     *        {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *        {@code ResultSet.TYPE_SCROLL_SENSITIVE}
+     * @return {@code true} if deletes made by others
      *        are visible for the given result set type;
-     *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     *        {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean othersDeletesAreVisible(int type) throws SQLException;
@@ -2697,61 +2697,61 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether inserts made by others are visible.
      *
-     * @param type the <code>ResultSet</code> type; one of
-     *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @return <code>true</code> if inserts made by others
+     * @param type the {@code ResultSet} type; one of
+     *        {@code ResultSet.TYPE_FORWARD_ONLY},
+     *        {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *        {@code ResultSet.TYPE_SCROLL_SENSITIVE}
+     * @return {@code true} if inserts made by others
      *         are visible for the given result set type;
-     *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     *         {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean othersInsertsAreVisible(int type) throws SQLException;
 
     /**
      * Retrieves whether or not a visible row update can be detected by
-     * calling the method <code>ResultSet.rowUpdated</code>.
+     * calling the method {@code ResultSet.rowUpdated}.
      *
-     * @param type the <code>ResultSet</code> type; one of
-     *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @return <code>true</code> if changes are detected by the result set type;
-     *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @param type the {@code ResultSet} type; one of
+     *        {@code ResultSet.TYPE_FORWARD_ONLY},
+     *        {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *        {@code ResultSet.TYPE_SCROLL_SENSITIVE}
+     * @return {@code true} if changes are detected by the result set type;
+     *         {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean updatesAreDetected(int type) throws SQLException;
 
     /**
      * Retrieves whether or not a visible row delete can be detected by
-     * calling the method <code>ResultSet.rowDeleted</code>.  If the method
-     * <code>deletesAreDetected</code> returns <code>false</code>, it means that
+     * calling the method {@code ResultSet.rowDeleted}.  If the method
+     * {@code deletesAreDetected} returns {@code false}, it means that
      * deleted rows are removed from the result set.
      *
-     * @param type the <code>ResultSet</code> type; one of
-     *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @return <code>true</code> if deletes are detected by the given result set type;
-     *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @param type the {@code ResultSet} type; one of
+     *        {@code ResultSet.TYPE_FORWARD_ONLY},
+     *        {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *        {@code ResultSet.TYPE_SCROLL_SENSITIVE}
+     * @return {@code true} if deletes are detected by the given result set type;
+     *         {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean deletesAreDetected(int type) throws SQLException;
 
     /**
      * Retrieves whether or not a visible row insert can be detected
-     * by calling the method <code>ResultSet.rowInserted</code>.
+     * by calling the method {@code ResultSet.rowInserted}.
      *
-     * @param type the <code>ResultSet</code> type; one of
-     *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @return <code>true</code> if changes are detected by the specified result
-     *         set type; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @param type the {@code ResultSet} type; one of
+     *        {@code ResultSet.TYPE_FORWARD_ONLY},
+     *        {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *        {@code ResultSet.TYPE_SCROLL_SENSITIVE}
+     * @return {@code true} if changes are detected by the specified result
+     *         set type; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean insertsAreDetected(int type) throws SQLException;
@@ -2759,9 +2759,9 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether this database supports batch updates.
      *
-     * @return <code>true</code> if this database supports batch updates;
-     *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if this database supports batch updates;
+     *         {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean supportsBatchUpdates() throws SQLException;
@@ -2769,20 +2769,20 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves a description of the user-defined types (UDTs) defined
      * in a particular schema.  Schema-specific UDTs may have type
-     * <code>JAVA_OBJECT</code>, <code>STRUCT</code>,
-     * or <code>DISTINCT</code>.
+     * {@code JAVA_OBJECT}, {@code STRUCT},
+     * or {@code DISTINCT}.
      *
      * <P>Only types matching the catalog, schema, type name and type
-     * criteria are returned.  They are ordered by <code>DATA_TYPE</code>,
-     * <code>TYPE_CAT</code>, <code>TYPE_SCHEM</code>  and
-     * <code>TYPE_NAME</code>.  The type name parameter may be a fully-qualified
+     * criteria are returned.  They are ordered by {@code DATA_TYPE},
+     * {@code TYPE_CAT}, {@code TYPE_SCHEM}  and
+     * {@code TYPE_NAME}.  The type name parameter may be a fully-qualified
      * name.  In this case, the catalog and schemaPattern parameters are
      * ignored.
      *
      * <P>Each type description has the following columns:
      *  <OL>
-     *  <LI><B>TYPE_CAT</B> String {@code =>} the type's catalog (may be <code>null</code>)
-     *  <LI><B>TYPE_SCHEM</B> String {@code =>} type's schema (may be <code>null</code>)
+     *  <LI><B>TYPE_CAT</B> String {@code =>} the type's catalog (may be {@code null})
+     *  <LI><B>TYPE_SCHEM</B> String {@code =>} type's schema (may be {@code null})
      *  <LI><B>TYPE_NAME</B> String {@code =>} type name
      *  <LI><B>CLASS_NAME</B> String {@code =>} Java class name
      *  <LI><B>DATA_TYPE</B> int {@code =>} type value defined in java.sql.Types.
@@ -2791,7 +2791,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>BASE_TYPE</B> short {@code =>} type code of the source type of a
      *     DISTINCT type or the type that implements the user-generated
      *     reference type of the SELF_REFERENCING_COLUMN of a structured
-     *     type as defined in java.sql.Types (<code>null</code> if DATA_TYPE is not
+     *     type as defined in java.sql.Types ({@code null} if DATA_TYPE is not
      *     DISTINCT or not STRUCT with REFERENCE_GENERATION = USER_DEFINED)
      *  </OL>
      *
@@ -2800,18 +2800,18 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema pattern name; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param typeNamePattern a type name pattern; must match the type name
      *        as it is stored in the database; may be a fully qualified name
      * @param types a list of user-defined types (JAVA_OBJECT,
-     *        STRUCT, or DISTINCT) to include; <code>null</code> returns all types
-     * @return <code>ResultSet</code> object in which each row describes a UDT
-     * @exception SQLException if a database access error occurs
+     *        STRUCT, or DISTINCT) to include; {@code null} returns all types
+     * @return {@code ResultSet} object in which each row describes a UDT
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.2
      */
@@ -2823,7 +2823,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the connection that produced this metadata object.
      *
      * @return the connection that produced this metadata object
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     Connection getConnection() throws SQLException;
@@ -2833,9 +2833,9 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether this database supports savepoints.
      *
-     * @return <code>true</code> if savepoints are supported;
-     *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if savepoints are supported;
+     *         {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     boolean supportsSavepoints() throws SQLException;
@@ -2844,22 +2844,22 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports named parameters to callable
      * statements.
      *
-     * @return <code>true</code> if named parameters are supported;
-     *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if named parameters are supported;
+     *         {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     boolean supportsNamedParameters() throws SQLException;
 
     /**
-     * Retrieves whether it is possible to have multiple <code>ResultSet</code> objects
-     * returned from a <code>CallableStatement</code> object
+     * Retrieves whether it is possible to have multiple {@code ResultSet} objects
+     * returned from a {@code CallableStatement} object
      * simultaneously.
      *
-     * @return <code>true</code> if a <code>CallableStatement</code> object
-     *         can return multiple <code>ResultSet</code> objects
-     *         simultaneously; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if a {@code CallableStatement} object
+     *         can return multiple {@code ResultSet} objects
+     *         simultaneously; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     boolean supportsMultipleOpenResults() throws SQLException;
@@ -2868,12 +2868,12 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether auto-generated keys can be retrieved after
      * a statement has been executed
      *
-     * @return <code>true</code> if auto-generated keys can be retrieved
-     *         after a statement has executed; <code>false</code> otherwise
-     * <p>If <code>true</code> is returned, the JDBC driver must support the
+     * @return {@code true} if auto-generated keys can be retrieved
+     *         after a statement has executed; {@code false} otherwise
+     * <p>If {@code true} is returned, the JDBC driver must support the
      * returning of auto-generated keys for at least SQL INSERT statements
      *
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     boolean supportsGetGeneratedKeys() throws SQLException;
@@ -2890,17 +2890,17 @@ public interface DatabaseMetaData extends Wrapper {
      * ignored.
      * <P>
      * If a UDT does not have a direct super type, it is not listed here.
-     * A row of the <code>ResultSet</code> object returned by this method
+     * A row of the {@code ResultSet} object returned by this method
      * describes the designated UDT and a direct supertype. A row has the following
      * columns:
      *  <OL>
-     *  <LI><B>TYPE_CAT</B> String {@code =>} the UDT's catalog (may be <code>null</code>)
-     *  <LI><B>TYPE_SCHEM</B> String {@code =>} UDT's schema (may be <code>null</code>)
+     *  <LI><B>TYPE_CAT</B> String {@code =>} the UDT's catalog (may be {@code null})
+     *  <LI><B>TYPE_SCHEM</B> String {@code =>} UDT's schema (may be {@code null})
      *  <LI><B>TYPE_NAME</B> String {@code =>} type name of the UDT
      *  <LI><B>SUPERTYPE_CAT</B> String {@code =>} the direct super type's catalog
-     *                           (may be <code>null</code>)
+     *                           (may be {@code null})
      *  <LI><B>SUPERTYPE_SCHEM</B> String {@code =>} the direct super type's schema
-     *                             (may be <code>null</code>)
+     *                             (may be {@code null})
      *  <LI><B>SUPERTYPE_NAME</B> String {@code =>} the direct super type's name
      *  </OL>
      *
@@ -2908,12 +2908,12 @@ public interface DatabaseMetaData extends Wrapper {
      * empty result set is returned.
      *
      * @param catalog a catalog name; "" retrieves those without a catalog;
-     *        <code>null</code> means drop catalog name from the selection criteria
+     *        {@code null} means drop catalog name from the selection criteria
      * @param schemaPattern a schema name pattern; "" retrieves those
      *        without a schema
      * @param typeNamePattern a UDT name pattern; may be a fully-qualified
      *        name
-     * @return a <code>ResultSet</code> object in which a row gives information
+     * @return a {@code ResultSet} object in which a row gives information
      *         about the designated UDT
      * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
@@ -2936,8 +2936,8 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each type description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String {@code =>} the type's catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String {@code =>} type's schema (may be <code>null</code>)
+     *  <LI><B>TABLE_CAT</B> String {@code =>} the type's catalog (may be {@code null})
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} type's schema (may be {@code null})
      *  <LI><B>TABLE_NAME</B> String {@code =>} type name
      *  <LI><B>SUPERTABLE_NAME</B> String {@code =>} the direct super type's name
      *  </OL>
@@ -2946,12 +2946,12 @@ public interface DatabaseMetaData extends Wrapper {
      * empty result set is returned.
      *
      * @param catalog a catalog name; "" retrieves those without a catalog;
-     *        <code>null</code> means drop catalog name from the selection criteria
+     *        {@code null} means drop catalog name from the selection criteria
      * @param schemaPattern a schema name pattern; "" retrieves those
      *        without a schema
      * @param tableNamePattern a table name pattern; may be a fully-qualified
      *        name
-     * @return a <code>ResultSet</code> object in which each row is a type description
+     * @return a {@code ResultSet} object in which each row is a type description
      * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.4
@@ -2960,30 +2960,30 @@ public interface DatabaseMetaData extends Wrapper {
                              String tableNamePattern) throws SQLException;
 
     /**
-     * Indicates that <code>NULL</code> values might not be allowed.
+     * Indicates that {@code NULL} values might not be allowed.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code> in the <code>ResultSet</code> object
-     * returned by the method <code>getAttributes</code>.
+     * {@code NULLABLE} in the {@code ResultSet} object
+     * returned by the method {@code getAttributes}.
      */
     short attributeNoNulls = 0;
 
     /**
-     * Indicates that <code>NULL</code> values are definitely allowed.
+     * Indicates that {@code NULL} values are definitely allowed.
      * <P>
-     * A possible value for the column <code>NULLABLE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getAttributes</code>.
+     * A possible value for the column {@code NULLABLE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getAttributes}.
      */
     short attributeNullable = 1;
 
     /**
-     * Indicates that whether <code>NULL</code> values are allowed is not
+     * Indicates that whether {@code NULL} values are allowed is not
      * known.
      * <P>
-     * A possible value for the column <code>NULLABLE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getAttributes</code>.
+     * A possible value for the column {@code NULLABLE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getAttributes}.
      */
     short attributeNullableUnknown = 2;
 
@@ -2994,15 +2994,15 @@ public interface DatabaseMetaData extends Wrapper {
      * <P>
      * Descriptions are returned only for attributes of UDTs matching the
      * catalog, schema, type, and attribute name criteria. They are ordered by
-     * <code>TYPE_CAT</code>, <code>TYPE_SCHEM</code>,
-     * <code>TYPE_NAME</code> and <code>ORDINAL_POSITION</code>. This description
+     * {@code TYPE_CAT}, {@code TYPE_SCHEM},
+     * {@code TYPE_NAME} and {@code ORDINAL_POSITION}. This description
      * does not contain inherited attributes.
      * <P>
-     * The <code>ResultSet</code> object that is returned has the following
+     * The {@code ResultSet} object that is returned has the following
      * columns:
      * <OL>
-     *  <LI><B>TYPE_CAT</B> String {@code =>} type catalog (may be <code>null</code>)
-     *  <LI><B>TYPE_SCHEM</B> String {@code =>} type schema (may be <code>null</code>)
+     *  <LI><B>TYPE_CAT</B> String {@code =>} type catalog (may be {@code null})
+     *  <LI><B>TYPE_SCHEM</B> String {@code =>} type schema (may be {@code null})
      *  <LI><B>TYPE_NAME</B> String {@code =>} type name
      *  <LI><B>ATTR_NAME</B> String {@code =>} attribute name
      *  <LI><B>DATA_TYPE</B> int {@code =>} attribute type SQL type from java.sql.Types
@@ -3021,8 +3021,8 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> attributeNullable - definitely allows NULL values
      *      <LI> attributeNullableUnknown - nullability unknown
      *      </UL>
-     *  <LI><B>REMARKS</B> String {@code =>} comment describing column (may be <code>null</code>)
-     *  <LI><B>ATTR_DEF</B> String {@code =>} default value (may be <code>null</code>)
+     *  <LI><B>REMARKS</B> String {@code =>} comment describing column (may be {@code null})
+     *  <LI><B>ATTR_DEF</B> String {@code =>} default value (may be {@code null})
      *  <LI><B>SQL_DATA_TYPE</B> int {@code =>} unused
      *  <LI><B>SQL_DATETIME_SUB</B> int {@code =>} unused
      *  <LI><B>CHAR_OCTET_LENGTH</B> int {@code =>} for char types the
@@ -3038,30 +3038,30 @@ public interface DatabaseMetaData extends Wrapper {
      * attribute is unknown
      *       </UL>
      *  <LI><B>SCOPE_CATALOG</B> String {@code =>} catalog of table that is the
-     *      scope of a reference attribute (<code>null</code> if DATA_TYPE isn't REF)
+     *      scope of a reference attribute ({@code null} if DATA_TYPE isn't REF)
      *  <LI><B>SCOPE_SCHEMA</B> String {@code =>} schema of table that is the
-     *      scope of a reference attribute (<code>null</code> if DATA_TYPE isn't REF)
+     *      scope of a reference attribute ({@code null} if DATA_TYPE isn't REF)
      *  <LI><B>SCOPE_TABLE</B> String {@code =>} table name that is the scope of a
-     *      reference attribute (<code>null</code> if the DATA_TYPE isn't REF)
+     *      reference attribute ({@code null} if the DATA_TYPE isn't REF)
      * <LI><B>SOURCE_DATA_TYPE</B> short {@code =>} source type of a distinct type or user-generated
-     *      Ref type,SQL type from java.sql.Types (<code>null</code> if DATA_TYPE
+     *      Ref type,SQL type from java.sql.Types ({@code null} if DATA_TYPE
      *      isn't DISTINCT or user-generated REF)
      *  </OL>
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema name pattern; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param typeNamePattern a type name pattern; must match the
      *        type name as it is stored in the database
      * @param attributeNamePattern an attribute name pattern; must match the attribute
      *        name as it is declared in the database
-     * @return a <code>ResultSet</code> object in which each row is an
+     * @return a {@code ResultSet} object in which each row is an
      *         attribute description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.4
      */
@@ -3073,23 +3073,23 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the given result set holdability.
      *
      * @param holdability one of the following constants:
-     *          <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
-     *          <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     *          {@code ResultSet.HOLD_CURSORS_OVER_COMMIT} or
+     *          {@code ResultSet.CLOSE_CURSORS_AT_COMMIT}
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @see Connection
      * @since 1.4
      */
     boolean supportsResultSetHoldability(int holdability) throws SQLException;
 
     /**
-     * Retrieves this database's default holdability for <code>ResultSet</code>
+     * Retrieves this database's default holdability for {@code ResultSet}
      * objects.
      *
      * @return the default holdability; either
-     *         <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
-     *         <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
-     * @exception SQLException if a database access error occurs
+     *         {@code ResultSet.HOLD_CURSORS_OVER_COMMIT} or
+     *         {@code ResultSet.CLOSE_CURSORS_AT_COMMIT}
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getResultSetHoldability() throws SQLException;
@@ -3098,7 +3098,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the major version number of the underlying database.
      *
      * @return the underlying database's major version
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getDatabaseMajorVersion() throws SQLException;
@@ -3107,7 +3107,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the minor version number of the underlying database.
      *
      * @return underlying database's minor version
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getDatabaseMinorVersion() throws SQLException;
@@ -3117,7 +3117,7 @@ public interface DatabaseMetaData extends Wrapper {
      * driver.
      *
      * @return JDBC version major number
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getJDBCMajorVersion() throws SQLException;
@@ -3127,16 +3127,16 @@ public interface DatabaseMetaData extends Wrapper {
      * driver.
      *
      * @return JDBC version minor number
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getJDBCMinorVersion() throws SQLException;
 
     /**
      *  A possible return value for the method
-     * <code>DatabaseMetaData.getSQLStateType</code> which is used to indicate
+     * {@code DatabaseMetaData.getSQLStateType} which is used to indicate
      * whether the value returned by the method
-     * <code>SQLException.getSQLState</code> is an
+     * {@code SQLException.getSQLState} is an
      * X/Open (now know as Open Group) SQL CLI SQLSTATE value.
      *
      * @since 1.4
@@ -3145,9 +3145,9 @@ public interface DatabaseMetaData extends Wrapper {
 
     /**
      *  A possible return value for the method
-     * <code>DatabaseMetaData.getSQLStateType</code> which is used to indicate
+     * {@code DatabaseMetaData.getSQLStateType} which is used to indicate
      * whether the value returned by the method
-     * <code>SQLException.getSQLState</code> is an SQLSTATE value.
+     * {@code SQLException.getSQLState} is an SQLSTATE value.
      *
      * @since 1.6
      */
@@ -3155,19 +3155,19 @@ public interface DatabaseMetaData extends Wrapper {
 
      /**
      *  A possible return value for the method
-     * <code>DatabaseMetaData.getSQLStateType</code> which is used to indicate
+     * {@code DatabaseMetaData.getSQLStateType} which is used to indicate
      * whether the value returned by the method
-     * <code>SQLException.getSQLState</code> is an SQL99 SQLSTATE value.
+     * {@code SQLException.getSQLState} is an SQL99 SQLSTATE value.
      * <P>
      * <b>Note:</b>This constant remains only for compatibility reasons. Developers
-     * should use the constant <code>sqlStateSQL</code> instead.
+     * should use the constant {@code sqlStateSQL} instead.
      *
      * @since 1.4
      */
     int sqlStateSQL99 = sqlStateSQL;
 
     /**
-     * Indicates whether the SQLSTATE returned by <code>SQLException.getSQLState</code>
+     * Indicates whether the SQLSTATE returned by {@code SQLException.getSQLState}
      * is X/Open (now known as Open Group) SQL CLI or SQL:2003.
      * @return the type of SQLSTATE; one of:
      *        sqlStateXOpen or
@@ -3180,8 +3180,8 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Indicates whether updates made to a LOB are made on a copy or directly
      * to the LOB.
-     * @return <code>true</code> if updates are made to a copy of the LOB;
-     *         <code>false</code> if updates are made directly to the LOB
+     * @return {@code true} if updates are made to a copy of the LOB;
+     *         {@code false} if updates are made directly to the LOB
      * @throws SQLException if a database access error occurs
      * @since 1.4
      */
@@ -3190,7 +3190,7 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether this database supports statement pooling.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
+     * @return {@code true} if so; {@code false} otherwise
      * @throws SQLException if a database access error occurs
      * @since 1.4
      */
@@ -3210,13 +3210,13 @@ public interface DatabaseMetaData extends Wrapper {
 
     /**
      * Retrieves the schema names available in this database.  The results
-     * are ordered by <code>TABLE_CATALOG</code> and
-     * <code>TABLE_SCHEM</code>.
+     * are ordered by {@code TABLE_CATALOG} and
+     * {@code TABLE_SCHEM}.
      *
      * <P>The schema columns are:
      *  <OL>
      *  <LI><B>TABLE_SCHEM</B> String {@code =>} schema name
-     *  <LI><B>TABLE_CATALOG</B> String {@code =>} catalog name (may be <code>null</code>)
+     *  <LI><B>TABLE_CATALOG</B> String {@code =>} catalog name (may be {@code null})
      *  </OL>
      *
      *
@@ -3226,9 +3226,9 @@ public interface DatabaseMetaData extends Wrapper {
      * @param schemaPattern a schema name; must match the schema name as it is
      * stored in the database; null means
      * schema name should not be used to narrow down the search.
-     * @return a <code>ResultSet</code> object in which each row is a
+     * @return a {@code ResultSet} object in which each row is a
      *         schema description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.6
      */
@@ -3238,21 +3238,21 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports invoking user-defined or vendor functions
      * using the stored procedure escape syntax.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.6
      */
     boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException;
 
     /**
-     * Retrieves whether a <code>SQLException</code> while autoCommit is <code>true</code> indicates
-     * that all open ResultSets are closed, even ones that are holdable.  When a <code>SQLException</code> occurs while
-     * autocommit is <code>true</code>, it is vendor specific whether the JDBC driver responds with a commit operation, a
+     * Retrieves whether a {@code SQLException} while autoCommit is {@code true} indicates
+     * that all open ResultSets are closed, even ones that are holdable.  When a {@code SQLException} occurs while
+     * autocommit is {@code true}, it is vendor specific whether the JDBC driver responds with a commit operation, a
      * rollback operation, or by doing neither a commit nor a rollback.  A potential result of this difference
      * is in whether or not holdable ResultSets are closed.
      *
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.6
      */
     boolean autoCommitFailureClosesAllResultSets() throws SQLException;
@@ -3269,12 +3269,12 @@ public interface DatabaseMetaData extends Wrapper {
          *                                              stored in the database.
          * </ol>
          * <p>
-         * The <code>ResultSet</code> is sorted by the NAME column
+         * The {@code ResultSet} is sorted by the NAME column
          *
-         * @return      A <code>ResultSet</code> object; each row is a supported client info
+         * @return      A {@code ResultSet} object; each row is a supported client info
          * property
          *
-         *  @exception SQLException if a database access error occurs
+         * @throws SQLException if a database access error occurs
          *
          * @since 1.6
          */
@@ -3287,14 +3287,14 @@ public interface DatabaseMetaData extends Wrapper {
      * <P>
      * Only system and user function descriptions matching the schema and
      * function name criteria are returned.  They are ordered by
-     * <code>FUNCTION_CAT</code>, <code>FUNCTION_SCHEM</code>,
-     * <code>FUNCTION_NAME</code> and
-     * <code>SPECIFIC_ NAME</code>.
+     * {@code FUNCTION_CAT}, {@code FUNCTION_SCHEM},
+     * {@code FUNCTION_NAME} and
+     * {@code SPECIFIC_ NAME}.
      *
      * <P>Each function description has the following columns:
      *  <OL>
-     *  <LI><B>FUNCTION_CAT</B> String {@code =>} function catalog (may be <code>null</code>)
-     *  <LI><B>FUNCTION_SCHEM</B> String {@code =>} function schema (may be <code>null</code>)
+     *  <LI><B>FUNCTION_CAT</B> String {@code =>} function catalog (may be {@code null})
+     *  <LI><B>FUNCTION_SCHEM</B> String {@code =>} function schema (may be {@code null})
      *  <LI><B>FUNCTION_NAME</B> String {@code =>} function name.  This is the name
      * used to invoke the function
      *  <LI><B>REMARKS</B> String {@code =>} explanatory comment on the function
@@ -3307,25 +3307,25 @@ public interface DatabaseMetaData extends Wrapper {
      *      </UL>
      *  <LI><B>SPECIFIC_NAME</B> String  {@code =>} the name which uniquely identifies
      *  this function within its schema.  This is a user specified, or DBMS
-     * generated, name that may be different then the <code>FUNCTION_NAME</code>
+     * generated, name that may be different then the {@code FUNCTION_NAME}
      * for example with overload functions
      *  </OL>
      * <p>
      * A user may not have permission to execute any of the functions that are
-     * returned by <code>getFunctions</code>
+     * returned by {@code getFunctions}
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema name pattern; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param functionNamePattern a function name pattern; must match the
      *        function name as it is stored in the database
-     * @return <code>ResultSet</code> - each row is a function description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a function description
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.6
      */
@@ -3337,18 +3337,18 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Only descriptions matching the schema,  function and
      * parameter name criteria are returned. They are ordered by
-     * <code>FUNCTION_CAT</code>, <code>FUNCTION_SCHEM</code>,
-     * <code>FUNCTION_NAME</code> and
-     * <code>SPECIFIC_ NAME</code>. Within this, the return value,
+     * {@code FUNCTION_CAT}, {@code FUNCTION_SCHEM},
+     * {@code FUNCTION_NAME} and
+     * {@code SPECIFIC_ NAME}. Within this, the return value,
      * if any, is first. Next are the parameter descriptions in call
      * order. The column descriptions follow in column number order.
      *
-     * <P>Each row in the <code>ResultSet</code>
+     * <P>Each row in the {@code ResultSet}
      * is a parameter description, column description or
      * return type description with the following fields:
      *  <OL>
-     *  <LI><B>FUNCTION_CAT</B> String {@code =>} function catalog (may be <code>null</code>)
-     *  <LI><B>FUNCTION_SCHEM</B> String {@code =>} function schema (may be <code>null</code>)
+     *  <LI><B>FUNCTION_CAT</B> String {@code =>} function catalog (may be {@code null})
+     *  <LI><B>FUNCTION_SCHEM</B> String {@code =>} function schema (may be {@code null})
      *  <LI><B>FUNCTION_NAME</B> String {@code =>} function name.  This is the name
      * used to invoke the function
      *  <LI><B>COLUMN_NAME</B> String {@code =>} column/parameter name
@@ -3360,7 +3360,7 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> functionColumnOut - OUT parameter
      *      <LI> functionColumnReturn - function return value
      *      <LI> functionColumnResult - Indicates that the parameter or column
-     *  is a column in the <code>ResultSet</code>
+     *  is a column in the {@code ResultSet}
      *      </UL>
      *  <LI><B>DATA_TYPE</B> int {@code =>} SQL type from java.sql.Types
      *  <LI><B>TYPE_NAME</B> String {@code =>} SQL type name, for a UDT type the
@@ -3395,7 +3395,7 @@ public interface DatabaseMetaData extends Wrapper {
      *       </UL>
      *  <LI><B>SPECIFIC_NAME</B> String  {@code =>} the name which uniquely identifies
      * this function within its schema.  This is a user specified, or DBMS
-     * generated, name that may be different then the <code>FUNCTION_NAME</code>
+     * generated, name that may be different then the {@code FUNCTION_NAME}
      * for example with overload functions
      *  </OL>
      *
@@ -3408,20 +3408,20 @@ public interface DatabaseMetaData extends Wrapper {
      * column size is not applicable.
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema name pattern; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param functionNamePattern a procedure name pattern; must match the
      *        function name as it is stored in the database
      * @param columnNamePattern a parameter name pattern; must match the
      * parameter or column name as it is stored in the database
-     * @return <code>ResultSet</code> - each row describes a
+     * @return {@code ResultSet} - each row describes a
      * user function parameter, column  or return type
      *
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.6
      */
@@ -3435,9 +3435,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that type of the parameter or column is unknown.
      * <P>
      * A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getFunctionColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getFunctionColumns}.
      */
     int functionColumnUnknown = 0;
 
@@ -3445,9 +3445,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the parameter or column is an IN parameter.
      * <P>
      *  A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getFunctionColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getFunctionColumns}.
      * @since 1.6
      */
     int functionColumnIn = 1;
@@ -3456,9 +3456,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the parameter or column is an INOUT parameter.
      * <P>
      * A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getFunctionColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getFunctionColumns}.
      * @since 1.6
      */
     int functionColumnInOut = 2;
@@ -3467,9 +3467,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the parameter or column is an OUT parameter.
      * <P>
      * A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getFunctionColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getFunctionColumns}.
      * @since 1.6
      */
     int functionColumnOut = 3;
@@ -3477,9 +3477,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the parameter or column is a return value.
      * <P>
      *  A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getFunctionColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getFunctionColumns}.
      * @since 1.6
      */
     int functionReturn = 4;
@@ -3488,44 +3488,44 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that the parameter or column is a column in a result set.
      * <P>
      *  A possible value for the column
-     * <code>COLUMN_TYPE</code>
-     * in the <code>ResultSet</code>
-     * returned by the method <code>getFunctionColumns</code>.
+     * {@code COLUMN_TYPE}
+     * in the {@code ResultSet}
+     * returned by the method {@code getFunctionColumns}.
      * @since 1.6
      */
     int functionColumnResult = 5;
 
 
     /**
-     * Indicates that <code>NULL</code> values are not allowed.
+     * Indicates that {@code NULL} values are not allowed.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getFunctionColumns</code>.
+     * {@code NULLABLE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getFunctionColumns}.
      * @since 1.6
      */
     int functionNoNulls = 0;
 
     /**
-     * Indicates that <code>NULL</code> values are allowed.
+     * Indicates that {@code NULL} values are allowed.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getFunctionColumns</code>.
+     * {@code NULLABLE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getFunctionColumns}.
      * @since 1.6
      */
     int functionNullable = 1;
 
     /**
-     * Indicates that whether <code>NULL</code> values are allowed
+     * Indicates that whether {@code NULL} values are allowed
      * is unknown.
      * <P>
      * A possible value for the column
-     * <code>NULLABLE</code>
-     * in the <code>ResultSet</code> object
-     * returned by the method <code>getFunctionColumns</code>.
+     * {@code NULLABLE}
+     * in the {@code ResultSet} object
+     * returned by the method {@code getFunctionColumns}.
      * @since 1.6
      */
     int functionNullableUnknown = 2;
@@ -3534,9 +3534,9 @@ public interface DatabaseMetaData extends Wrapper {
      * Indicates that it is not known whether the function returns
      * a result or a table.
      * <P>
-     * A possible value for column <code>FUNCTION_TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getFunctions</code>.
+     * A possible value for column {@code FUNCTION_TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getFunctions}.
      * @since 1.6
      */
     int functionResultUnknown   = 0;
@@ -3544,9 +3544,9 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Indicates that the function  does not return a table.
      * <P>
-     * A possible value for column <code>FUNCTION_TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getFunctions</code>.
+     * A possible value for column {@code FUNCTION_TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getFunctions}.
      * @since 1.6
      */
     int functionNoTable         = 1;
@@ -3554,9 +3554,9 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Indicates that the function  returns a table.
      * <P>
-     * A possible value for column <code>FUNCTION_TYPE</code> in the
-     * <code>ResultSet</code> object returned by the method
-     * <code>getFunctions</code>.
+     * A possible value for column {@code FUNCTION_TYPE} in the
+     * {@code ResultSet} object returned by the method
+     * {@code getFunctions}.
      * @since 1.6
      */
     int functionReturnsTable    = 2;
@@ -3574,13 +3574,13 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Only column descriptions matching the catalog, schema, table
      * and column name criteria are returned.  They are ordered by
-     * <code>TABLE_CAT</code>,<code>TABLE_SCHEM</code>, <code>TABLE_NAME</code>
-     * and <code>COLUMN_NAME</code>.
+     * {@code TABLE_CAT},{@code TABLE_SCHEM}, {@code TABLE_NAME}
+     * and {@code COLUMN_NAME}.
      *
      * <P>Each column description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be {@code null})
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be {@code null})
      *  <LI><B>TABLE_NAME</B> String {@code =>} table name
      *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
      *  <LI><B>DATA_TYPE</B> int {@code =>} SQL type from java.sql.Types
@@ -3590,7 +3590,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>NUM_PREC_RADIX</B> int {@code =>} Radix (typically either 10 or 2)
      *  <LI><B>COLUMN_USAGE</B> String {@code =>} The allowed usage for the column.  The
      *  value returned will correspond to the enum name returned by {@link PseudoColumnUsage#name PseudoColumnUsage.name()}
-     *  <LI><B>REMARKS</B> String {@code =>} comment describing column (may be <code>null</code>)
+     *  <LI><B>REMARKS</B> String {@code =>} comment describing column (may be {@code null})
      *  <LI><B>CHAR_OCTET_LENGTH</B> int {@code =>} for char types the
      *       maximum number of bytes in the column
      *  <LI><B>IS_NULLABLE</B> String  {@code =>} ISO rules are used to determine the nullability for a column.
@@ -3610,18 +3610,18 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param catalog a catalog name; must match the catalog name as it
      *        is stored in the database; "" retrieves those without a catalog;
-     *        <code>null</code> means that the catalog name should not be used to narrow
+     *        {@code null} means that the catalog name should not be used to narrow
      *        the search
      * @param schemaPattern a schema name pattern; must match the schema name
      *        as it is stored in the database; "" retrieves those without a schema;
-     *        <code>null</code> means that the schema name should not be used to narrow
+     *        {@code null} means that the schema name should not be used to narrow
      *        the search
      * @param tableNamePattern a table name pattern; must match the
      *        table name as it is stored in the database
      * @param columnNamePattern a column name pattern; must match the column
      *        name as it is stored in the database
-     * @return <code>ResultSet</code> - each row is a column description
-     * @exception SQLException if a database access error occurs
+     * @return {@code ResultSet} - each row is a column description
+     * @throws SQLException if a database access error occurs
      * @see PseudoColumnUsage
      * @since 1.7
      */
@@ -3635,8 +3635,8 @@ public interface DatabaseMetaData extends Wrapper {
      * are valid and the statement succeeds.  The key that is returned may or
      * may not be based on the column(s) for the auto generated key.
      * Consult your JDBC driver documentation for additional details.
-     * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @return {@code true} if so; {@code false} otherwise
+     * @throws SQLException if a database access error occurs
      * @since 1.7
      */
     boolean  generatedKeyAlwaysReturned() throws SQLException;
@@ -3652,7 +3652,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return the maximum number of bytes allowed; a result of zero
      * means that there is no limit or the limit is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.8
      */
     default long getMaxLogicalLobSize() throws SQLException {
@@ -3666,7 +3666,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return {@code true} if this database supports REF CURSOR;
      *         {@code false} otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.8
      */
     default boolean supportsRefCursors() throws SQLException{
@@ -3682,7 +3682,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return {@code true} if this database supports sharding;
      *         {@code false} otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 9
      */
     default boolean supportsSharding() throws SQLException {

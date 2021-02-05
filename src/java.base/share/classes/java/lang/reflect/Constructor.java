@@ -172,7 +172,6 @@ public final class Constructor<T> extends Executable {
      * @throws SecurityException if the request is denied by the security manager
      *         or this is a constructor for {@code java.lang.Class}
      *
-     * @spec JPMS
      */
     @Override
     @CallerSensitive
@@ -309,8 +308,7 @@ public final class Constructor<T> extends Executable {
      * same formal parameter types.
      */
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof Constructor) {
-            Constructor<?> other = (Constructor<?>)obj;
+        if (obj instanceof Constructor<?> other) {
             if (getDeclaringClass() == other.getDeclaringClass()) {
                 return equalParamTypes(parameterTypes, other.parameterTypes);
             }
@@ -463,7 +461,7 @@ public final class Constructor<T> extends Executable {
      *              after possible unwrapping, a parameter value
      *              cannot be converted to the corresponding formal
      *              parameter type by a method invocation conversion; if
-     *              this constructor pertains to an enum type.
+     *              this constructor pertains to an enum class.
      * @throws    InstantiationException    if the class that declares the
      *              underlying constructor represents an abstract class.
      * @throws    InvocationTargetException if the underlying constructor
@@ -663,7 +661,7 @@ public final class Constructor<T> extends Executable {
                     getConstantPool(thisDeclClass),
                 this,
                 thisDeclClass,
-                enclosingClass,
+                parameterize(enclosingClass),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
     }
 }

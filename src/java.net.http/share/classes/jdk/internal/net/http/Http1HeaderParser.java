@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.net.http;
 
 import java.net.ProtocolException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +34,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.net.http.HttpHeaders;
+
+import jdk.internal.net.http.common.Utils;
+
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.net.http.common.Utils.ACCEPT_ALL;
@@ -92,9 +96,9 @@ class Http1HeaderParser {
                 headerName = headerName.substring(0, headerName.indexOf(':')+1) + "...";
             msg = format("parsing HTTP/1.1 header, receiving [%s]", headerName);
         } else {
-            msg =format("HTTP/1.1 parser receiving [%s]", state, sb.toString());
+            msg = format("HTTP/1.1 parser receiving [%s]", sb.toString());
         }
-        return format("%s, parser state [%s]", msg , state);
+        return format("%s, parser state [%s]", msg, state);
     }
 
     /**
@@ -112,42 +116,17 @@ class Http1HeaderParser {
 
         while (canContinueParsing(input)) {
             switch (state) {
-                case INITIAL:
-                    state = State.STATUS_LINE;
-                    break;
-                case STATUS_LINE:
-                    readResumeStatusLine(input);
-                    break;
-                // fallthrough
-                case STATUS_LINE_FOUND_CR:
-                case STATUS_LINE_FOUND_LF:
-                    readStatusLineFeed(input);
-                    break;
-                case STATUS_LINE_END:
-                    maybeStartHeaders(input);
-                    break;
-                // fallthrough
-                case STATUS_LINE_END_CR:
-                case STATUS_LINE_END_LF:
-                    maybeEndHeaders(input);
-                    break;
-                case HEADER:
-                    readResumeHeader(input);
-                    break;
-                // fallthrough
-                case HEADER_FOUND_CR:
-                case HEADER_FOUND_LF:
-                    resumeOrLF(input);
-                    break;
-                case HEADER_FOUND_CR_LF:
-                    resumeOrSecondCR(input);
-                    break;
-                case HEADER_FOUND_CR_LF_CR:
-                    resumeOrEndHeaders(input);
-                    break;
-                default:
-                    throw new InternalError(
-                            "Unexpected state: " + String.valueOf(state));
+                case INITIAL                                    ->  state = State.STATUS_LINE;
+                case STATUS_LINE                                ->  readResumeStatusLine(input);
+                case STATUS_LINE_FOUND_CR, STATUS_LINE_FOUND_LF ->  readStatusLineFeed(input);
+                case STATUS_LINE_END                            ->  maybeStartHeaders(input);
+                case STATUS_LINE_END_CR, STATUS_LINE_END_LF     ->  maybeEndHeaders(input);
+                case HEADER                                     ->  readResumeHeader(input);
+                case HEADER_FOUND_CR, HEADER_FOUND_LF           ->  resumeOrLF(input);
+                case HEADER_FOUND_CR_LF                         ->  resumeOrSecondCR(input);
+                case HEADER_FOUND_CR_LF_CR                      ->  resumeOrEndHeaders(input);
+
+                default -> throw new InternalError("Unexpected state: " + state);
             }
         }
 
@@ -157,18 +136,37 @@ class Http1HeaderParser {
     private boolean canContinueParsing(ByteBuffer buffer) {
         // some states don't require any input to transition
         // to the next state.
-        switch (state) {
-            case FINISHED: return false;
-            case STATUS_LINE_FOUND_LF: return true;
-            case STATUS_LINE_END_LF: return true;
-            case HEADER_FOUND_LF: return true;
-            default: return buffer.hasRemaining();
-        }
+        return switch (state) {
+            case FINISHED -> false;
+            case STATUS_LINE_FOUND_LF, STATUS_LINE_END_LF, HEADER_FOUND_LF -> true;
+            default -> buffer.hasRemaining();
+        };
+    }
+
+    /**
+     * Returns a character (char) corresponding to the next byte in the
+     * input, interpreted as an ISO-8859-1 encoded character.
+     * <p>
+     * The ISO-8859-1 encoding is a 8-bit character coding that
+     * corresponds to the first 256 Unicode characters - from U+0000 to
+     * U+00FF. UTF-16 is backward compatible with ISO-8859-1 - which
+     * means each byte in the input should be interpreted as an unsigned
+     * value from [0, 255] representing the character code.
+     *
+     * @param input a {@code ByteBuffer} containing a partial input
+     * @return the next byte in the input, interpreted as an ISO-8859-1
+     * encoded char
+     * @throws BufferUnderflowException
+     *          if the input buffer's current position is not smaller
+     *          than its limit
+     */
+    private char get(ByteBuffer input) {
+        return (char)(input.get() & 0xFF);
     }
 
     private void readResumeStatusLine(ByteBuffer input) {
         char c = 0;
-        while (input.hasRemaining() && (c =(char)input.get()) != CR) {
+        while (input.hasRemaining() && (c = get(input)) != CR) {
             if (c == LF) break;
             sb.append(c);
         }
@@ -180,7 +178,7 @@ class Http1HeaderParser {
     }
 
     private void readStatusLineFeed(ByteBuffer input) throws ProtocolException {
-        char c = state == State.STATUS_LINE_FOUND_LF ? LF : (char)input.get();
+        char c = state == State.STATUS_LINE_FOUND_LF ? LF : get(input);
         if (c != LF) {
             throw protocolException("Bad trailing char, \"%s\", when parsing status line, \"%s\"",
                                     c, sb.toString());
@@ -210,7 +208,7 @@ class Http1HeaderParser {
     private void maybeStartHeaders(ByteBuffer input) {
         assert state == State.STATUS_LINE_END;
         assert sb.length() == 0;
-        char c = (char)input.get();
+        char c = get(input);
         if (c == CR) {
             state = State.STATUS_LINE_END_CR;
         } else if (c == LF) {
@@ -224,7 +222,7 @@ class Http1HeaderParser {
     private void maybeEndHeaders(ByteBuffer input) throws ProtocolException {
         assert state == State.STATUS_LINE_END_CR || state == State.STATUS_LINE_END_LF;
         assert sb.length() == 0;
-        char c = state == State.STATUS_LINE_END_LF ? LF : (char)input.get();
+        char c = state == State.STATUS_LINE_END_LF ? LF : get(input);
         if (c == LF) {
             headers = HttpHeaders.of(privateMap, ACCEPT_ALL);
             privateMap = null;
@@ -238,7 +236,7 @@ class Http1HeaderParser {
         assert state == State.HEADER;
         assert input.hasRemaining();
         while (input.hasRemaining()) {
-            char c = (char)input.get();
+            char c = get(input);
             if (c == CR) {
                 state = State.HEADER_FOUND_CR;
                 break;
@@ -253,15 +251,23 @@ class Http1HeaderParser {
         }
     }
 
-    private void addHeaderFromString(String headerString) {
+    private void addHeaderFromString(String headerString) throws ProtocolException {
         assert sb.length() == 0;
         int idx = headerString.indexOf(':');
         if (idx == -1)
             return;
-        String name = headerString.substring(0, idx).trim();
-        if (name.isEmpty())
-            return;
-        String value = headerString.substring(idx + 1, headerString.length()).trim();
+        String name = headerString.substring(0, idx);
+
+        // compatibility with HttpURLConnection;
+        if (name.isEmpty()) return;
+
+        if (!Utils.isValidName(name)) {
+            throw protocolException("Invalid header name \"%s\"", name);
+        }
+        String value = headerString.substring(idx + 1).trim();
+        if (!Utils.isValidValue(value)) {
+            throw protocolException("Invalid header value \"%s: %s\"", name, value);
+        }
 
         privateMap.computeIfAbsent(name.toLowerCase(Locale.US),
                                    k -> new ArrayList<>()).add(value);
@@ -269,7 +275,7 @@ class Http1HeaderParser {
 
     private void resumeOrLF(ByteBuffer input) {
         assert state == State.HEADER_FOUND_CR || state == State.HEADER_FOUND_LF;
-        char c = state == State.HEADER_FOUND_LF ? LF : (char)input.get();
+        char c = state == State.HEADER_FOUND_LF ? LF : get(input);
         if (c == LF) {
             // header value will be flushed by
             // resumeOrSecondCR if next line does not
@@ -285,9 +291,9 @@ class Http1HeaderParser {
         }
     }
 
-    private void resumeOrSecondCR(ByteBuffer input) {
+    private void resumeOrSecondCR(ByteBuffer input) throws ProtocolException {
         assert state == State.HEADER_FOUND_CR_LF;
-        char c = (char)input.get();
+        char c = get(input);
         if (c == CR || c == LF) {
             if (sb.length() > 0) {
                 // no continuation line - flush
@@ -322,7 +328,7 @@ class Http1HeaderParser {
 
     private void resumeOrEndHeaders(ByteBuffer input) throws ProtocolException {
         assert state == State.HEADER_FOUND_CR_LF_CR;
-        char c = (char)input.get();
+        char c = get(input);
         if (c == LF) {
             state = State.FINISHED;
             headers = HttpHeaders.of(privateMap, ACCEPT_ALL);

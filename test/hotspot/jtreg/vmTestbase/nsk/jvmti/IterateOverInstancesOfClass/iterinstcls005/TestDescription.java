@@ -52,10 +52,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.IterateOverInstancesOfClass.iterinstcls005
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:iterinstcls005=-waittime=5 -verbose"
+ * @build nsk.jvmti.IterateOverInstancesOfClass.iterinstcls005
+ * @run main/othervm/native
+ *      -agentlib:iterinstcls005=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverInstancesOfClass.iterinstcls005
  */
 

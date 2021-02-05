@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 #ifndef SHARE_OPTO_OUTPUT_HPP
 #define SHARE_OPTO_OUTPUT_HPP
 
+#include "code/debugInfo.hpp"
+#include "code/exceptionHandlerTable.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "opto/ad.hpp"
 #include "opto/constantTable.hpp"
 #include "opto/phase.hpp"
-#include "code/debugInfo.hpp"
-#include "code/exceptionHandlerTable.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -70,6 +72,47 @@ public:
   { };
 };
 
+class C2SafepointPollStubTable {
+private:
+  struct C2SafepointPollStub: public ResourceObj {
+    uintptr_t _safepoint_offset;
+    Label     _stub_label;
+    Label     _trampoline_label;
+    C2SafepointPollStub(uintptr_t safepoint_offset) :
+      _safepoint_offset(safepoint_offset),
+      _stub_label(),
+      _trampoline_label() {}
+  };
+
+  GrowableArray<C2SafepointPollStub*> _safepoints;
+
+  static volatile int _stub_size;
+
+  void emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const;
+
+  // The selection logic below relieves the need to add dummy files to unsupported platforms.
+  template <bool enabled>
+  typename EnableIf<enabled>::type
+  select_emit_stub(MacroAssembler& masm, C2SafepointPollStub* entry) const {
+    emit_stub_impl(masm, entry);
+  }
+
+  template <bool enabled>
+  typename EnableIf<!enabled>::type
+  select_emit_stub(MacroAssembler& masm, C2SafepointPollStub* entry) const {}
+
+  void emit_stub(MacroAssembler& masm, C2SafepointPollStub* entry) const {
+    select_emit_stub<VM_Version::supports_stack_watermark_barrier()>(masm, entry);
+  }
+
+  int stub_size_lazy() const;
+
+public:
+  Label& add_safepoint(uintptr_t safepoint_offset);
+  int estimate_stub_size() const;
+  void emit(CodeBuffer& cb);
+};
+
 class PhaseOutput : public Phase {
 private:
   // Instruction bits passed off to the VM
@@ -78,6 +121,7 @@ private:
   int                    _first_block_size;      // Size of unvalidated entry point code / OSR poison code
   ExceptionHandlerTable  _handler_table;         // Table of native-code exception handlers
   ImplicitExceptionTable _inc_table;             // Table of implicit null checks in native code
+  C2SafepointPollStubTable _safepoint_poll_table;// Table for safepoint polls
   OopMapSet*             _oop_map_set;           // Table of oop maps (one for each safepoint location)
   BufferBlob*            _scratch_buffer_blob;   // For temporary code buffers.
   relocInfo*             _scratch_locs_memory;   // For temporary code buffers.
@@ -126,6 +170,9 @@ public:
   // Constant table
   ConstantTable& constant_table() { return _constant_table; }
 
+  // Safepoint poll table
+  C2SafepointPollStubTable* safepoint_poll_table() { return &_safepoint_poll_table; }
+
   // Code emission iterator
   Block* block()   { return _block; }
   int index()      { return _index; }
@@ -133,8 +180,9 @@ public:
   // The architecture description provides short branch variants for some long
   // branch instructions. Replace eligible long branches with short branches.
   void shorten_branches(uint* blk_starts);
-  ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
-  void set_sv_for_object_node(GrowableArray<ScopeValue*> *objs, ObjectValue* sv);
+  // If "objs" contains an ObjectValue whose id is "id", returns it, else NULL.
+  static ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
+  static void set_sv_for_object_node(GrowableArray<ScopeValue*> *objs, ObjectValue* sv);
   void FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                      GrowableArray<ScopeValue*> *array,
                      GrowableArray<ScopeValue*> *objs );
@@ -173,6 +221,7 @@ public:
   void          set_scratch_buffer_blob(BufferBlob* b) { _scratch_buffer_blob = b; }
   relocInfo*        scratch_locs_memory()       { return _scratch_locs_memory; }
   void          set_scratch_locs_memory(relocInfo* b)  { _scratch_locs_memory = b; }
+  int               scratch_buffer_code_size()  { return (address)scratch_locs_memory() - _scratch_buffer_blob->content_begin(); }
 
   // emit to scratch blob, report resulting size
   uint              scratch_emit_size(const Node* n);

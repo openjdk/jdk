@@ -138,12 +138,13 @@ public final class ObjectIdentifier implements Serializable {
                 componentLen = comp.length;
             }
 
-            // Check the estimated size before it is too later.
+            // Check the estimated size before it is too late. The check
+            // will be performed again in init().
             checkOidSize(componentLen);
-
             init(comp, componentLen);
         } else {
             checkOidSize(encoding.length);
+            check(encoding);
         }
     }
 
@@ -244,64 +245,20 @@ public final class ObjectIdentifier implements Serializable {
         }
     }
 
-    /**
-     * Constructor, from an ASN.1 encoded input stream.
-     * Validity check NOT included.
-     * The encoding of the ID in the stream uses "DER", a BER/1 subset.
-     * In this case, that means a triple { typeId, length, data }.
-     *
-     * <P><STRONG>NOTE:</STRONG>  When an exception is thrown, the
-     * input stream has not been returned to its "initial" state.
-     *
-     * @param in DER-encoded data holding an object ID
-     * @exception IOException indicates a decoding error
-     */
-    public ObjectIdentifier(DerInputStream in) throws IOException {
-        byte    type_id;
-        int     bufferEnd;
-
-        /*
-         * Object IDs are a "universal" type, and their tag needs only
-         * one byte of encoding.  Verify that the tag of this datum
-         * is that of an object ID.
-         *
-         * Then get and check the length of the ID's encoding.  We set
-         * up so that we can use in.available() to check for the end of
-         * this value in the data stream.
-         */
-        type_id = (byte)in.getByte();
-        if (type_id != DerValue.tag_ObjectId)
-            throw new IOException (
-                "ObjectIdentifier() -- data isn't an object ID"
-                + " (tag = " +  type_id + ")"
-                );
-
-        int len = in.getDefiniteLength();
-        checkOidSize(len);
-        if (len > in.available()) {
-            throw new IOException("ObjectIdentifier length exceeds " +
-                    "data available.  Length: " + len + ", Available: " +
-                    in.available());
-        }
-
-        encoding = new byte[len];
-        in.getBytes(encoding);
+    // Called by DerValue::getOID. No need to clone input.
+    ObjectIdentifier(byte[] encoding) throws IOException {
+        checkOidSize(encoding.length);
         check(encoding);
+        this.encoding = encoding;
     }
 
-    /*
-     * Constructor, from the rest of a DER input buffer;
-     * the tag and length have been removed/verified
-     * Validity check NOT included.
+    /**
+     * Reads an ObjectIdentifier from a DerInputStream.
+     * @param in the input stream
+     * @throws IOException if there is an encoding error
      */
-    ObjectIdentifier(DerInputBuffer buf) throws IOException {
-        DerInputStream in = new DerInputStream(buf);
-        int len = in.available();
-        checkOidSize(len);
-
-        encoding = new byte[len];
-        in.getBytes(encoding);
-        check(encoding);
+    public ObjectIdentifier(DerInputStream in) throws IOException {
+        encoding = in.getDerValue().getOID().encoding;
     }
 
     private void init(int[] components, int length) throws IOException {

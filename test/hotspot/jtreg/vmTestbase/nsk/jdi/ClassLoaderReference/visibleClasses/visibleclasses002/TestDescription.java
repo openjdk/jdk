@@ -53,13 +53,13 @@
  *          /test/lib
  * @build nsk.jdi.ClassLoaderReference.visibleClasses.visibleclasses002
  *        nsk.jdi.ClassLoaderReference.visibleClasses.visibleclasses002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassLoaderReference.visibleClasses.visibleclasses002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

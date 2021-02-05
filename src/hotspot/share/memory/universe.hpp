@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ class Universe: AllStatic {
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
   friend class MetaspaceShared;
+  friend class vmClasses;
 
   friend jint  universe_init();
   friend void  universe2_init();
@@ -232,7 +233,6 @@ class Universe: AllStatic {
 
   static oop java_mirror(BasicType t);
   static void replace_mirror(BasicType t, oop obj);
-  static void clear_basic_type_mirrors();
 
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);
@@ -302,6 +302,10 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
+  DEBUG_ONLY(static bool is_gc_active();)
+  DEBUG_ONLY(static bool is_in_heap(const void* p);)
+  DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == NULL || is_in_heap(p); })
+
   // Reserve Java heap and determine CompressedOops mode
   static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
 
@@ -357,8 +361,6 @@ class Universe: AllStatic {
   static int  verify_count()       { return _verify_count; }
   static void print_on(outputStream* st);
   static void print_heap_at_SIGBREAK();
-  static void print_heap_before_gc();
-  static void print_heap_after_gc();
 
   // Change the number of dummy objects kept reachable by the full gc dummy
   // array; this should trigger relocation in a sliding compaction collector.

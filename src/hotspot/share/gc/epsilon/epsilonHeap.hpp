@@ -95,7 +95,6 @@ public:
                                       size_t* actual_size);
 
   // TLAB allocation
-  virtual bool supports_tlab_allocation()           const { return true;           }
   virtual size_t tlab_capacity(Thread* thr)         const { return capacity();     }
   virtual size_t tlab_used(Thread* thr)             const { return used();         }
   virtual size_t max_tlab_size()                    const { return _max_tlab_size; }

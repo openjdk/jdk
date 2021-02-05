@@ -61,7 +61,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile FileAssociationsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest
@@ -74,7 +74,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest != null
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile FileAssociationsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest.test

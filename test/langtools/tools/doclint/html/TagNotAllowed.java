@@ -1,9 +1,9 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832
+ * @bug 8004832 8247957
  * @summary Add new doclint package
  * @library ..
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -ref TagNotAllowed.out TagNotAllowed.java
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import sun.awt.AWTAccessor;
-
 import java.io.ObjectStreamException;
-
+import java.io.Serial;
 import java.lang.annotation.Native;
+
+import sun.awt.AWTAccessor;
 
 /**
  * A class to encapsulate symbolic colors representing the color of
@@ -421,9 +422,10 @@ public final class SystemColor extends Color implements java.io.Serializable {
      */
     public static final SystemColor infoText = new SystemColor((byte)INFO_TEXT);
 
-    /*
-     * JDK 1.1 serialVersionUID.
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 4503142729533789064L;
 
     /*
@@ -514,6 +516,7 @@ public final class SystemColor extends Color implements java.io.Serializable {
      * @return one of the {@code SystemColor} static object
      *         fields that refers to the same system color.
      */
+    @Serial
     private Object readResolve() {
         // The instances of SystemColor are tightly controlled and
         // only the canonical instances appearing above as static
@@ -536,7 +539,10 @@ public final class SystemColor extends Color implements java.io.Serializable {
      * each {@code SystemColor} object.
      * @return a proxy {@code SystemColor} object with its value
      *         replaced by the corresponding system color index.
+     * @throws ObjectStreamException if a new object replacing this object could
+     *         not be created
      */
+    @Serial
     private Object writeReplace() throws ObjectStreamException
     {
         // we put an array index in the SystemColor.value while serialize

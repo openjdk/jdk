@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/universe.hpp"
 #include "opto/addnode.hpp"
@@ -49,6 +50,7 @@
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 #include "opto/type.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -92,44 +94,6 @@ void PhaseMacroExpand::migrate_outs(Node *old, Node *target) {
     --i;
   }
   assert(old->outcnt() == 0, "all uses must be deleted");
-}
-
-void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcall) {
-  // Copy debug information and adjust JVMState information
-  uint old_dbg_start = oldcall->tf()->domain()->cnt();
-  uint new_dbg_start = newcall->tf()->domain()->cnt();
-  int jvms_adj  = new_dbg_start - old_dbg_start;
-  assert (new_dbg_start == newcall->req(), "argument count mismatch");
-
-  // SafePointScalarObject node could be referenced several times in debug info.
-  // Use Dict to record cloned nodes.
-  Dict* sosn_map = new Dict(cmpkey,hashkey);
-  for (uint i = old_dbg_start; i < oldcall->req(); i++) {
-    Node* old_in = oldcall->in(i);
-    // Clone old SafePointScalarObjectNodes, adjusting their field contents.
-    if (old_in != NULL && old_in->is_SafePointScalarObject()) {
-      SafePointScalarObjectNode* old_sosn = old_in->as_SafePointScalarObject();
-      uint old_unique = C->unique();
-      Node* new_in = old_sosn->clone(sosn_map);
-      if (old_unique != C->unique()) { // New node?
-        new_in->set_req(0, C->root()); // reset control edge
-        new_in = transform_later(new_in); // Register new node.
-      }
-      old_in = new_in;
-    }
-    newcall->add_req(old_in);
-  }
-
-  // JVMS may be shared so clone it before we modify it
-  newcall->set_jvms(oldcall->jvms() != NULL ? oldcall->jvms()->clone_deep(C) : NULL);
-  for (JVMState *jvms = newcall->jvms(); jvms != NULL; jvms = jvms->caller()) {
-    jvms->set_map(newcall);
-    jvms->set_locoff(jvms->locoff()+jvms_adj);
-    jvms->set_stkoff(jvms->stkoff()+jvms_adj);
-    jvms->set_monoff(jvms->monoff()+jvms_adj);
-    jvms->set_scloff(jvms->scloff()+jvms_adj);
-    jvms->set_endoff(jvms->endoff()+jvms_adj);
-  }
 }
 
 Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* word, int mask, int bits, bool return_fast_path) {
@@ -177,14 +141,14 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
   // Slow-path call
  CallNode *call = leaf_name
    ? (CallNode*)new CallLeafNode      ( slow_call_type, slow_call, leaf_name, TypeRawPtr::BOTTOM )
-   : (CallNode*)new CallStaticJavaNode( slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), oldcall->jvms()->bci(), TypeRawPtr::BOTTOM );
+   : (CallNode*)new CallStaticJavaNode( slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), TypeRawPtr::BOTTOM );
 
   // Slow path call has no side-effects, uses few values
   copy_predefined_input_for_runtime_call(slow_path, oldcall, call );
   if (parm0 != NULL)  call->init_req(TypeFunc::Parms+0, parm0);
   if (parm1 != NULL)  call->init_req(TypeFunc::Parms+1, parm1);
   if (parm2 != NULL)  call->init_req(TypeFunc::Parms+2, parm2);
-  copy_call_debug_info(oldcall, call);
+  call->copy_call_debug_info(&_igvn, oldcall);
   call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   _igvn.replace_node(oldcall, call);
   transform_later(call);
@@ -280,8 +244,10 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       } else if (in->is_MemBar()) {
         ArrayCopyNode* ac = NULL;
         if (ArrayCopyNode::may_modify(tinst, in->as_MemBar(), phase, ac)) {
-          assert(ac != NULL && ac->is_clonebasic(), "Only basic clone is a non escaping clone");
-          return ac;
+          if (ac != NULL) {
+            assert(ac->is_clonebasic(), "Only basic clone is a non escaping clone");
+            return ac;
+          }
         }
         mem = in->in(TypeFunc::Memory);
       } else {
@@ -367,7 +333,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     Node* base = ac->in(ArrayCopyNode::Src);
     Node* adr = _igvn.transform(new AddPNode(base, base, MakeConX(offset)));
     const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
-    MergeMemNode* mergemen = MergeMemNode::make(mem);
+    MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
   } else {
@@ -407,7 +373,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
           return NULL;
         }
       }
-      MergeMemNode* mergemen = MergeMemNode::make(mem);
+      MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
     }
@@ -1089,11 +1055,12 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
 }
 
 bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
-  // Don't do scalar replacement if the frame can be popped by JVMTI:
-  // if reallocation fails during deoptimization we'll pop all
+  // If reallocation fails during deoptimization we'll pop all
   // interpreter frames for this compiled frame and that won't play
   // nice with JVMTI popframe.
-  if (!EliminateAllocations || JvmtiExport::can_pop_frame() || !alloc->_is_non_escaping) {
+  // We avoid this issue by eager reallocation when the popframe request
+  // is received.
+  if (!EliminateAllocations || !alloc->_is_non_escaping) {
     return false;
   }
   Node* klass = alloc->in(AllocateNode::KlassNode);
@@ -1458,7 +1425,6 @@ void PhaseMacroExpand::expand_allocate_common(
   // Generate slow-path call
   CallNode *call = new CallStaticJavaNode(slow_call_type, slow_call_address,
                                OptoRuntime::stub_name(slow_call_address),
-                               alloc->jvms()->bci(),
                                TypePtr::BOTTOM);
   call->init_req(TypeFunc::Control,   slow_region);
   call->init_req(TypeFunc::I_O,       top());    // does no i/o
@@ -1473,7 +1439,7 @@ void PhaseMacroExpand::expand_allocate_common(
 
   // Copy debug information and adjust JVMState information, then replace
   // allocate node with the call
-  copy_call_debug_info((CallNode *) alloc,  call);
+  call->copy_call_debug_info(&_igvn, alloc);
   if (expand_fast_path) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   } else {
@@ -2460,7 +2426,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node *slow_ctrl = _fallthroughproj->clone();
   transform_later(slow_ctrl);
   _igvn.hash_delete(_fallthroughproj);
-  _fallthroughproj->disconnect_inputs(NULL, C);
+  _fallthroughproj->disconnect_inputs(C);
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);
@@ -2528,7 +2494,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   Node *slow_ctrl = _fallthroughproj->clone();
   transform_later(slow_ctrl);
   _igvn.hash_delete(_fallthroughproj);
-  _fallthroughproj->disconnect_inputs(NULL, C);
+  _fallthroughproj->disconnect_inputs(C);
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);
@@ -2597,10 +2563,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   bool progress = true;
   while (progress) {
     progress = false;
-    for (int i = C->macro_count(); i > 0; i--) {
-      Node * n = C->macro_node(i-1);
+    for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
+      Node* n = C->macro_node(i - 1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
       }
@@ -2613,10 +2579,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   progress = true;
   while (progress) {
     progress = false;
-    for (int i = C->macro_count(); i > 0; i--) {
-      Node * n = C->macro_node(i-1);
+    for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
+      Node* n = C->macro_node(i - 1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       switch (n->class_id()) {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
@@ -2664,7 +2630,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     for (int i = C->macro_count(); i > 0; i--) {
       Node* n = C->macro_node(i-1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->Opcode() == Op_LoopLimit) {
         // Remove it from macro list and put on IGVN worklist to optimize.
         C->remove_macro_node(n);
@@ -2750,28 +2716,24 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       return true;
     }
 
-    debug_only(int old_macro_count = C->macro_count(););
+    DEBUG_ONLY(int old_macro_count = C->macro_count();)
     switch (n->class_id()) {
     case Node::Class_Lock:
       expand_lock_node(n->as_Lock());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     case Node::Class_Unlock:
       expand_unlock_node(n->as_Unlock());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     case Node::Class_ArrayCopy:
       expand_arraycopy_node(n->as_ArrayCopy());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     case Node::Class_SubTypeCheck:
       expand_subtypecheck_node(n->as_SubTypeCheck());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     default:
       assert(false, "unknown node type in macro list");
     }
-    assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
+    assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing())  return true;
 
     // Clean up the graph so we're less likely to hit the maximum node

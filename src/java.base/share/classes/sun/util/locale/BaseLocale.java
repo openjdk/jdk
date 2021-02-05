@@ -32,7 +32,7 @@
 
 package sun.util.locale;
 
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.ref.SoftReference;
@@ -62,7 +62,7 @@ public final class BaseLocale {
             ROOT = 18,
             NUM_CONSTANTS = 19;
     static {
-        VM.initializeFromArchive(BaseLocale.class);
+        CDS.initializeFromArchive(BaseLocale.class);
         BaseLocale[] baseLocales = constantBaseLocales;
         if (baseLocales == null) {
             baseLocales = new BaseLocale[NUM_CONSTANTS];

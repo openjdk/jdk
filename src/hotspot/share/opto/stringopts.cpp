@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "opto/addnode.hpp"
@@ -36,6 +37,7 @@
 #include "opto/stringopts.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ kit.
 
@@ -231,7 +233,7 @@ class StringConcat : public ResourceObj {
       const TypePtr* no_memory_effects = NULL;
       Compile* C = _stringopts->C;
       CallStaticJavaNode* call = new CallStaticJavaNode(call_type, call_addr, "uncommon_trap",
-                                                        jvms->bci(), no_memory_effects);
+                                                        no_memory_effects);
       for (int e = 0; e < TypeFunc::Parms; e++) {
         call->init_req(e, uct->in(e));
       }
@@ -249,13 +251,13 @@ class StringConcat : public ResourceObj {
 
       _stringopts->gvn()->transform(call);
       C->gvn_replace_by(uct, call);
-      uct->disconnect_inputs(NULL, C);
+      uct->disconnect_inputs(C);
     }
   }
 
   void cleanup() {
     // disconnect the hook node
-    _arguments->disconnect_inputs(NULL, _stringopts->C);
+    _arguments->disconnect_inputs(_stringopts->C);
   }
 };
 
@@ -373,7 +375,7 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
     C->gvn_replace_by(mem_proj, mem);
   }
   C->gvn_replace_by(init, C->top());
-  init->disconnect_inputs(NULL, C);
+  init->disconnect_inputs(C);
 }
 
 Node_List PhaseStringOpts::collect_toString_calls() {
@@ -417,13 +419,13 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
   ciSymbol* int_sig;
   ciSymbol* char_sig;
   if (m->holder() == C->env()->StringBuilder_klass()) {
-    string_sig = ciSymbol::String_StringBuilder_signature();
-    int_sig = ciSymbol::int_StringBuilder_signature();
-    char_sig = ciSymbol::char_StringBuilder_signature();
+    string_sig = ciSymbols::String_StringBuilder_signature();
+    int_sig = ciSymbols::int_StringBuilder_signature();
+    char_sig = ciSymbols::char_StringBuilder_signature();
   } else if (m->holder() == C->env()->StringBuffer_klass()) {
-    string_sig = ciSymbol::String_StringBuffer_signature();
-    int_sig = ciSymbol::int_StringBuffer_signature();
-    char_sig = ciSymbol::char_StringBuffer_signature();
+    string_sig = ciSymbols::String_StringBuffer_signature();
+    int_sig = ciSymbols::int_StringBuffer_signature();
+    char_sig = ciSymbols::char_StringBuffer_signature();
   } else {
     return NULL;
   }
@@ -470,14 +472,14 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
         if (use != NULL &&
             use->method() != NULL &&
             !use->method()->is_static() &&
-            use->method()->name() == ciSymbol::object_initializer_name() &&
+            use->method()->name() == ciSymbols::object_initializer_name() &&
             use->method()->holder() == m->holder()) {
           // Matched the constructor.
           ciSymbol* sig = use->method()->signature()->as_symbol();
-          if (sig == ciSymbol::void_method_signature() ||
-              sig == ciSymbol::int_void_signature() ||
-              sig == ciSymbol::string_void_signature()) {
-            if (sig == ciSymbol::string_void_signature()) {
+          if (sig == ciSymbols::void_method_signature() ||
+              sig == ciSymbols::int_void_signature() ||
+              sig == ciSymbols::string_void_signature()) {
+            if (sig == ciSymbols::string_void_signature()) {
               // StringBuilder(String) so pick this up as the first argument
               assert(use->in(TypeFunc::Parms + 1) != NULL, "what?");
               const Type* type = _gvn->type(use->in(TypeFunc::Parms + 1));
@@ -534,7 +536,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       break;
     } else if (!cnode->method()->is_static() &&
                cnode->method()->holder() == m->holder() &&
-               cnode->method()->name() == ciSymbol::append_name() &&
+               cnode->method()->name() == ciSymbols::append_name() &&
                (cnode->method()->signature()->as_symbol() == string_sig ||
                 cnode->method()->signature()->as_symbol() == char_sig ||
                 cnode->method()->signature()->as_symbol() == int_sig)) {
@@ -599,7 +601,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
   assert(OptimizeStringConcat, "shouldn't be here");
 
   size_table_field = C->env()->Integer_klass()->get_field_by_name(ciSymbol::make("sizeTable"),
-                                                                  ciSymbol::make("[I"), true);
+                                                                  ciSymbols::int_array_signature(), true);
   if (size_table_field == NULL) {
     // Something wrong so give up.
     assert(false, "why can't we find Integer.sizeTable?");
@@ -1210,6 +1212,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
 
     // Add loop predicate first.
     kit.add_empty_predicates();
+    C->set_has_loops(true);
 
     RegionNode *loop = new RegionNode(3);
     loop->init_req(1, kit.control());
@@ -1287,6 +1290,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   // Add loop predicate first.
   kit.add_empty_predicates();
 
+  C->set_has_loops(true);
   RegionNode* head = new RegionNode(3);
   head->init_req(1, kit.control());
 
@@ -1309,7 +1313,8 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
   Node* ch = __ AddI(r, __ intcon('0'));
   Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                                ch, bt, byte_adr_idx, MemNode::unordered, (bt != T_BYTE) /* mismatched */);
+                                ch, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+                                false /* unaligned */, (bt != T_BYTE) /* mismatched */);
 
   iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
                               PROB_FAIR, COUNT_UNKNOWN);
@@ -1347,7 +1352,8 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   } else {
     Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
     st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                            sign, bt, byte_adr_idx, MemNode::unordered, (bt != T_BYTE) /* mismatched */);
+                            sign, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+                            false /* unaligned */, (bt != T_BYTE) /* mismatched */);
 
     final_merge->init_req(merge_index + 1, kit.control());
     final_mem->init_req(merge_index + 1, st);
@@ -1540,7 +1546,8 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
       } else {
         val = readChar(src_array, i++);
       }
-      __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered, true /* mismatched */);
+      __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+               true /* mismatched */);
       index = __ AddI(index, __ ConI(2));
     }
     if (src_is_byte) {
@@ -1627,7 +1634,8 @@ Node* PhaseStringOpts::copy_char(GraphKit& kit, Node* val, Node* dst_array, Node
   }
   if (!dcon || !dbyte) {
     // Destination is UTF16. Store a char.
-    __ store(__ ctrl(), adr, val, T_CHAR, byte_adr_idx, MemNode::unordered, true /* mismatched */);
+    __ store(__ ctrl(), adr, val, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
     __ set(end, __ AddI(start, __ ConI(2)));
   }
   if (!dcon) {
@@ -1981,6 +1989,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   kit.replace_call(sc->end(), result);
 
   // Unhook any hook nodes
-  string_sizes->disconnect_inputs(NULL, C);
+  string_sizes->disconnect_inputs(C);
   sc->cleanup();
 }

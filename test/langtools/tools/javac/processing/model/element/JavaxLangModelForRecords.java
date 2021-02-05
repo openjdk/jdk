@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Verify that annotation processing works for records
  * @library /tools/lib /tools/javac/lib
  * @modules
@@ -67,7 +68,6 @@ public class JavaxLangModelForRecords extends TestRunner {
     }
 
     public static void main(String... args) throws Exception {
-        System.out.println(System.getProperties());
         new JavaxLangModelForRecords().runTests();
     }
 
@@ -105,17 +105,13 @@ public class JavaxLangModelForRecords extends TestRunner {
         tb.writeJavaFiles(r,
                 "record R(int i) {}");
 
-        List<String> expected = List.of("Note: field: i",
-                "Note: record component: i",
-                "Note: testQualifiedClassForProcessing" + File.separator + "src" + File.separator
-                     + "R" + File.separator + "R.java uses preview language features.",
-                "Note: Recompile with -Xlint:preview for details.");
+        List<String> expected = List.of(
+                "Note: field: i",
+                "Note: record component: i");
 
         for (Mode mode : new Mode[] {Mode.API}) {
             List<String> log = new JavacTask(tb, mode)
-                    .options("-processor", QualifiedClassForProcessing.class.getName(),
-                            "--enable-preview",
-                            "-source", Integer.toString(Runtime.version().feature()))
+                    .options("-processor", QualifiedClassForProcessing.class.getName())
                     .files(findJavaFiles(src))
                     .outdir(classes)
                     .run()

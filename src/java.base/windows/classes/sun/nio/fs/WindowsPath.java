@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ class WindowsPath implements Path {
         // directory on removal media devices can change during the lifetime
         // of the VM)
         if (type != WindowsPathType.DRIVE_RELATIVE) {
-            synchronized (path) {
+            synchronized (this) {
                 pathForWin32Calls = new WeakReference<String>(resolved);
             }
         }
@@ -689,9 +689,7 @@ class WindowsPath implements Path {
             throw new IllegalArgumentException();
 
         StringBuilder sb = new StringBuilder();
-        Integer[] nelems = new Integer[endIndex - beginIndex];
         for (int i = beginIndex; i < endIndex; i++) {
-            nelems[i-beginIndex] = sb.length();
             sb.append(elementAsString(i));
             if (i != (endIndex-1))
                 sb.append("\\");
@@ -800,8 +798,8 @@ class WindowsPath implements Path {
 
     @Override
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof WindowsPath)) {
-            return compareTo((Path)obj) == 0;
+        if (obj instanceof WindowsPath path) {
+            return compareTo(path) == 0;
         }
         return false;
     }

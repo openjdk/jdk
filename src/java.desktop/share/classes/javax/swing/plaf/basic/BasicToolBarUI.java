@@ -167,6 +167,11 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     private static String FOCUSED_COMP_INDEX = "JToolBar.focusedCompIndex";
 
     /**
+     * Constructs a {@code BasicToolBarUI}.
+     */
+    public BasicToolBarUI() {}
+
+    /**
      * Constructs a new instance of {@code BasicToolBarUI}.
      *
      * @param c a component
@@ -1408,6 +1413,11 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * The class listens for window events.
      */
     protected class FrameListener extends WindowAdapter {
+        /**
+         * Constructs a {@code FrameListener}.
+         */
+        protected FrameListener() {}
+
         public void windowClosing(WindowEvent w) {
             if (toolBar.isFloatable()) {
                 if (dragWindow != null)
@@ -1450,6 +1460,11 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+        /**
+         * Constructs a {@code ToolBarContListener}.
+         */
+        protected ToolBarContListener() {}
+
         public void componentAdded( ContainerEvent e )  {
             getHandler().componentAdded(e);
         }
@@ -1468,6 +1483,11 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+        /**
+         * Constructs a {@code ToolBarFocusListener}.
+         */
+        protected ToolBarFocusListener() {}
+
         public void focusGained( FocusEvent e ) {
             getHandler().focusGained(e);
             }
@@ -1485,6 +1505,11 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+        /**
+         * Constructs a {@code PropertyListener}.
+         */
+        protected PropertyListener() {}
+
         public void propertyChange( PropertyChangeEvent e ) {
             getHandler().propertyChange(e);
             }
