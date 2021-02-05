@@ -4398,8 +4398,8 @@ void java_lang_System::compute_offsets() {
   SYSTEM_FIELDS_DO(FIELD_COMPUTE_OFFSET);
 }
 
-// This field means that a security manager is never installed so we can completely
-// skip populating the ProtectionDomainCacheTable
+// This field tells us that a security manager can never be installed so we
+// can completely skip populating the ProtectionDomainCacheTable.
 bool java_lang_System::allow_security_manager() {
   static int initialized = false;
   static bool allowed = true; // default
@@ -4411,8 +4411,8 @@ bool java_lang_System::allow_security_manager() {
   return allowed;
 }
 
-// This field means that a security manager can be installed so still have to
-// populate the ProtectionDomainCacheTable
+// This field means that a security manager can be installed so we still have to
+// populate the ProtectionDomainCacheTable.
 bool java_lang_System::has_security_manager() {
   oop base = vmClasses::System_klass()->static_field_base_raw();
   return base->obj_field(_static_security_offset) != NULL;
