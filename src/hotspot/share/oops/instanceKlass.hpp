@@ -1430,4 +1430,57 @@ class InnerClassesIterator : public StackObj {
   }
 };
 
+// Iterator over class hierarchy under a particular class.
+// Implements depth-first preoder traversal.
+class ClassHierarchyIterator : public StackObj {
+ private:
+  InstanceKlass* _root;
+  Klass*         _current;
+  bool           _visit_subclasses;
+
+ public:
+  ClassHierarchyIterator(InstanceKlass* root) : _root(root), _current(NULL), _visit_subclasses(true) {
+    assert(!root->is_interface(), "no subclasses");
+  }
+
+  bool next() {
+    if (_current == NULL) {
+      // Either initial (_root != NULL) or final state (_root == NULL).
+      // Visit root class first or fail-fast when iteration is over.
+      _current = _root;
+      return (_current != NULL);
+    } else {
+      // Make a step iterating over the class hierarchy under the root class.
+      // Skip subclasses if requested.
+      if (_visit_subclasses && _current->subklass() != NULL) {
+        _current = _current->subklass();
+        return true; // visit next subclass
+      } else {
+        _visit_subclasses = true; // reset
+
+        while (_current->next_sibling() == NULL && _current != _root) {
+          _current = _current->superklass(); // backtrack; no more sibling subclasses left
+        }
+        if (_current != _root) {
+          _current = _current->next_sibling();
+          return true; // visit next sibling subclass
+        } else {
+          // Iteration is over (back at root after backtracking). Invalidate the iterator.
+          _current = _root = NULL;
+          return false;
+        }
+      }
+    }
+  }
+
+  Klass* klass() {
+    return _current;
+  }
+
+  // Skip subclasses of the current class.
+  void skip_subclasses() {
+    _visit_subclasses = false;
+  }
+};
+
 #endif // SHARE_OOPS_INSTANCEKLASS_HPP
