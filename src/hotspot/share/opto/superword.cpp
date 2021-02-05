@@ -3231,7 +3231,7 @@ void SuperWord::compute_vector_element_type() {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
                 vt = velt_type(load);
-              } else if (in->Opcode() != Op_LShiftI) {
+              } else if (op != Op_LShiftI) {
                 // Widen type to int to avoid the creation of vector nodes. Note
                 // that left shifts work regardless of the signedness.
                 vt = TypeInt::INT;
