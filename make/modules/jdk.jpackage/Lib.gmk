@@ -28,21 +28,15 @@ include LibCommon.gmk
 ################################################################################
 
 
-JPACKAGE_APPLAUNCHERLIB_SRC := \
-    $(call FindSrcDirsForComponent, jdk.jpackage, libapplauncher) \
-    $(call FindSrcDirsForComponent, jdk.jpackage, libapplaunchercommon) \
-    $(call FindSrcDirsForComponent, jdk.jpackage, common)
-
-
 ifeq ($(call isTargetOs, linux), true)
   JPACKAGE_APPLAUNCHER_SRC := \
-      $(call FindSrcDirsForComponent, jdk.jpackage, applauncher) \
-      $(call FindSrcDirsForComponent, jdk.jpackage, libapplaunchercommon)
+      $(call FindSrcDirsForComponent, jdk.jpackage, applauncher)
   JPACKAGE_APPLAUNCHER_TOOLCHAIN := TOOLCHAIN_DEFAULT
+  JPACKAGE_APPLAUNCHER_INCLUDE_FILES := %.c
 else
   JPACKAGE_APPLAUNCHER_SRC := \
       $(call FindSrcDirsForComponent, jdk.jpackage, applauncher) \
-      $(JPACKAGE_APPLAUNCHERLIB_SRC)
+      $(call FindSrcDirsForComponent, jdk.jpackage, common)
   JPACKAGE_APPLAUNCHER_TOOLCHAIN := TOOLCHAIN_LINK_CXX
 endif
 
@@ -59,9 +53,7 @@ endif
 JPACKAGE_OUTPUT_DIR := $(JDK_OUTPUTDIR)/modules/$(MODULE)/jdk/jpackage/internal/resources
 JPACKAGE_CXXFLAGS_windows := -EHsc -DUNICODE -D_UNICODE
 JPACKAGE_CFLAGS_windows := -DUNICODE -D_UNICODE
-JPACKAGE_APPLAUNCHER_INCLUDES := $(addprefix -I, \
-    $(sort $(JPACKAGE_APPLAUNCHER_SRC) $(JPACKAGE_APPLAUNCHERLIB_SRC)) \
-)
+JPACKAGE_APPLAUNCHER_INCLUDES := $(addprefix -I, $(JPACKAGE_APPLAUNCHER_SRC))
 
 # Output app launcher executable in resources dir, and symbols in the object dir
 $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
@@ -69,6 +61,7 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
     SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncher, \
     SRC := $(JPACKAGE_APPLAUNCHER_SRC), \
+    INCLUDE_FILES := $(JPACKAGE_APPLAUNCHER_INCLUDE_FILES), \
     TOOLCHAIN := $(JPACKAGE_APPLAUNCHER_TOOLCHAIN), \
     OPTIMIZATION := LOW, \
     CXXFLAGS := $(call JpackageWithStaticCrt, $(CXXFLAGS_JDKEXE)) \
@@ -92,21 +85,28 @@ JPACKAGE_TARGETS += $(BUILD_JPACKAGE_APPLAUNCHEREXE)
 
 ifeq ($(call isTargetOs, linux), true)
 
-  $(eval $(call SetupJdkLibrary, BUILD_JPACKAGE_APPLAUNCHERLIB, \
+  JPACKAGE_LIBAPPLAUNCHER_SRC := \
+      $(call FindSrcDirsForComponent, jdk.jpackage, applauncher) \
+      $(call FindSrcDirsForComponent, jdk.jpackage, libapplauncher) \
+      $(call FindSrcDirsForComponent, jdk.jpackage, common)
+
+  JPACKAGE_LIBAPPLAUNCHER_INCLUDES := $(addprefix -I, $(JPACKAGE_LIBAPPLAUNCHER_SRC))
+
+  $(eval $(call SetupJdkLibrary, BUILD_JPACKAGE_LIBAPPLAUNCHER, \
       NAME := jpackageapplauncher, \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjpackageapplauncher, \
-      SRC := $(JPACKAGE_APPLAUNCHERLIB_SRC), \
+      SRC := $(JPACKAGE_LIBAPPLAUNCHER_SRC), \
+      EXCLUDE_FILES := LinuxLauncher.c LinuxPackage.c, \
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
       OPTIMIZATION := LOW, \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JPACKAGE_APPLAUNCHER_INCLUDES), \
-      CFLAGS := $(CFLAGS_JDKLIB) $(JPACKAGE_APPLAUNCHER_INCLUDES), \
-      CFLAGS_linux := -Wno-format-nonliteral, \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
+      CFLAGS := $(CFLAGS_JDKLIB) $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
       LIBS := $(LIBCXX) -ldl, \
   ))
 
-  JPACKAGE_TARGETS += $(BUILD_JPACKAGE_APPLAUNCHERLIB)
+  JPACKAGE_TARGETS += $(BUILD_JPACKAGE_LIBAPPLAUNCHER)
 
 endif
 
