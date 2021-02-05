@@ -26,6 +26,7 @@
 #include "classfile/classListParser.hpp"
 #include "classfile/classListWriter.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
@@ -319,7 +320,7 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
 
 void ArchiveUtils::check_for_oom(oop exception) {
   assert(exception != nullptr, "Sanity check");
-  if (exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+  if (exception->is_a(vmClasses::OutOfMemoryError_klass())) {
     vm_direct_exit(-1,
       err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
               SIZE_FORMAT "M", MaxHeapSize/M));

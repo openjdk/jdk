@@ -38,8 +38,6 @@
 
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class LambdaInBaseArchive extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
@@ -54,12 +52,7 @@ public class LambdaInBaseArchive extends DynamicArchiveTestBase {
 
     static void createBaseArchive() throws Exception {
         // dump class list
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:DumpLoadedClassList=" + classList,
-            "-cp", appJar,
-            mainClass);
-        OutputAnalyzer output = TestCommon.executeAndLog(pb, "dumpClassList");
-        output.shouldHaveExitValue(0);
+        CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass);
 
         // create archive with the class list
         CDSOptions opts = (new CDSOptions())

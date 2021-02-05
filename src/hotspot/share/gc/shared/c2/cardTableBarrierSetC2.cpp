@@ -121,7 +121,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   }
 
   // Smash zero into card
-  if(!ct->scanned_concurrently()) {
+  if (!ct->scanned_concurrently()) {
     __ store(__ ctrl(), card_adr, zero, T_BYTE, adr_type, MemNode::unordered);
   } else {
     // Specialized path for CM store barrier

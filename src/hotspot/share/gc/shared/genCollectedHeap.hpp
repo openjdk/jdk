@@ -103,20 +103,6 @@ private:
 
 protected:
 
-  // The set of potentially parallel tasks in root scanning.
-  enum GCH_strong_roots_tasks {
-    GCH_PS_OopStorageSet_oops_do,
-    GCH_PS_ClassLoaderDataGraph_oops_do,
-    GCH_PS_CodeCache_oops_do,
-    AOT_ONLY(GCH_PS_aot_oops_do COMMA)
-    // Leave this one last.
-    GCH_PS_NumElements
-  };
-
-  // Data structure for claiming the (potentially) parallel tasks in
-  // (gen-specific) roots processing.
-  SubTasksDone* _process_strong_tasks;
-
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
 
@@ -357,8 +343,7 @@ public:
   };
 
  protected:
-  void process_roots(StrongRootsScope* scope,
-                     ScanningOption so,
+  void process_roots(ScanningOption so,
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
@@ -368,8 +353,7 @@ public:
   virtual void gc_epilogue(bool full);
 
  public:
-  void full_process_roots(StrongRootsScope* scope,
-                          bool is_adjust_phase,
+  void full_process_roots(bool is_adjust_phase,
                           ScanningOption so,
                           bool only_strong_roots,
                           OopClosure* root_closure,

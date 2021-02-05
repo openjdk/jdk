@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,7 +47,7 @@ import org.openide.NotifyDescriptor.Message;
  */
 public class NodeQuickSearch implements SearchProvider {
 
-    private static final String DEFAULT_PROPERTY = "name";
+    private static final String DEFAULT_PROPERTY = "label";
 
     /**
      * Method is called by infrastructure when search operation was requested.
@@ -66,18 +67,17 @@ public class NodeQuickSearch implements SearchProvider {
         final String[] parts = query.split("=", 2);
 
         String name;
+        String rawValue;
         String value;
 
         if (parts.length == 1) {
             name = DEFAULT_PROPERTY;
-            value = ".*" + Pattern.quote(parts[0]) + ".*";
+            rawValue = parts[0];
+            value = ".*" + Pattern.quote(rawValue) + ".*";
         } else {
             name = parts[0];
-            value = parts[1];
-        }
-
-        if (value.isEmpty()) {
-            value = ".*";
+            rawValue = parts[1];
+            value = (rawValue.isEmpty() ? "" : Pattern.quote(rawValue)) + ".*";
         }
 
         final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
@@ -109,25 +109,40 @@ public class NodeQuickSearch implements SearchProvider {
             if (matches != null) {
                 final Set<InputNode> set = new HashSet<>(matches);
                 final InputGraph theGraph = p.getGraph() != matchGraph ? matchGraph : null;
-                response.addResult(new Runnable() {
-                    @Override
-                    public void run() {
-                        final EditorTopComponent comp = EditorTopComponent.getActive();
-                        if (comp != null) {
-                            if (theGraph != null) {
-                                comp.getDiagramModel().selectGraph(theGraph);
+                // Show "All N matching nodes" entry only if 1) there are
+                // multiple matches and 2) the query does not only contain
+                // digits (it is rare to select all nodes whose id contains a
+                // certain subsequence of digits).
+                if (matches.size() > 1 && !rawValue.matches("\\d+")) {
+                    if (!response.addResult(new Runnable() {
+                        @Override
+                        public void run() {
+                            final EditorTopComponent comp = EditorTopComponent.getActive();
+                            if (comp != null) {
+                                if (theGraph != null) {
+                                    comp.getDiagramModel().selectGraph(theGraph);
+                                }
+                                comp.setSelectedNodes(set);
+                                comp.requestActive();
                             }
-                            comp.setSelectedNodes(set);
-                            comp.requestActive();
                         }
+                    },
+                            "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
+                    )) {
+                        return;
                     }
-                },
-                        "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
-                );
+                }
+
+                // Rank the matches.
+                Collections.sort(matches,
+                                 (InputNode a, InputNode b) ->
+                                 compareByRankThenNumVal(rawValue,
+                                                         a.getProperties().get(name),
+                                                         b.getProperties().get(name)));
 
                 // Single matches
                 for (final InputNode n : matches) {
-                    response.addResult(new Runnable() {
+                    if (!response.addResult(new Runnable() {
                         @Override
                         public void run() {
                             final EditorTopComponent comp = EditorTopComponent.getActive();
@@ -143,7 +158,9 @@ public class NodeQuickSearch implements SearchProvider {
                         }
                     },
                             n.getProperties().get(name) + " (" + n.getId() + " " + n.getProperties().get("name") + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
-                    );
+                    )) {
+                        return;
+                    }
                 }
             }
         } else {
@@ -172,5 +189,52 @@ public class NodeQuickSearch implements SearchProvider {
             );
         }
         return null;
+    }
+
+    /**
+     * Compare two matches for a given query, first by rank (see rankMatch()
+     * below) and then by numeric value, if applicable.
+     */
+    private int compareByRankThenNumVal(String qry, String prop1, String prop2) {
+        int key1 = rankMatch(qry, prop1);
+        int key2 = rankMatch(qry, prop2);
+        if (key1 == key2) {
+            // If the matches have the same rank, compare the numeric values of
+            // their first words, if applicable.
+            try {
+                key1 = Integer.parseInt(prop1.split("\\W+")[0]);
+                key2 = Integer.parseInt(prop2.split("\\W+")[0]);
+            } catch (Exception e) {
+                // Not applicable, return equality value.
+                return 0;
+            }
+        }
+        return Integer.compare(key1, key2);
+    }
+
+    /**
+     * Rank a match by splitting the property into words. Full matches of a word
+     * rank highest, followed by partial matches at the word start, followed by
+     * the rest of matches in increasing size of the partially matched word, for
+     * example:
+     *
+     *   rank("5", "5 AddI")   = 1 (full match of first word)
+     *   rank("5", "554 MulI") = 2 (start match of first word)
+     *   rank("5", "25 AddL")  = 3 (middle match of first word with excess 1)
+     *   rank("5", "253 AddL") = 4 (middle match of first word with excess 2)
+     */
+    private int rankMatch(String qry, String prop) {
+        String query = qry.toLowerCase();
+        String property = prop.toLowerCase();
+        for (String component : property.split("\\W+")) {
+            if (component.equals(query)) {
+                return 1;
+            } else if (component.startsWith(query)) {
+                return 2;
+            } else if (component.contains(query)) {
+                return component.length() - query.length() + 2;
+            }
+        }
+        return Integer.MAX_VALUE;
     }
 }

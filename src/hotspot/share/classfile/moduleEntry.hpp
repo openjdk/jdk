@@ -29,7 +29,6 @@
 #include "classfile/classLoaderData.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
