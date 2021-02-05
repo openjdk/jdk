@@ -53,7 +53,7 @@ public:
     // The visibility of the "armed" state must be ensured by safepoint/handshake.
 
     OrderAccess::release(); // Release modified oops
-    
+
     // Set the guard value (naming of 'offset' function is misleading).
     get_patchable_instruction_handle()->set_offset(value);
   }
