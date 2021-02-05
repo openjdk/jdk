@@ -22,68 +22,6 @@
  *
  */
 
-  // aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_fetch_add_8_type)__ pc();
-  // {
-  //   Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-  //   __ atomic_addal(prev, incr, addr);
-  //   __ mov(r0, prev);
-  //   __ ret(lr);
-  // }
-  // aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_fetch_add_4_type)__ pc();
-  // {
-  //   Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-  //   __ atomic_addalw(prev, incr, addr);
-  //   __ movw(r0, prev);
-  //   __ ret(lr);
-  // }
-  // aarch64_atomic_xchg_4_impl = (aarch64_atomic_xchg_4_type)__ pc();
-  // {
-  //   Register prev = r2, addr = c_rarg0, newv = c_rarg1;
-  //   __ atomic_xchgalw(prev, newv, addr);
-  //   __ movw(r0, prev);
-  //   __ ret(lr);
-  // }
-  // aarch64_atomic_xchg_8_impl = (aarch64_atomic_xchg_8_type)__ pc();
-  // {
-  //   Register prev = r2, addr = c_rarg0, newv = c_rarg1;
-  //   __ atomic_xchgal(prev, newv, addr);
-  //   __ mov(r0, prev);
-  //   __ ret(lr);
-  // }
-  // aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_cmpxchg_1_type)__ pc();
-  // {
-  //   Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
-  //     exchange_val = c_rarg2;
-  //   __ cmpxchg(ptr, compare_val, exchange_val,
-  //              MacroAssembler::byte,
-  //              /*acquire*/false, /*release*/false, /*weak*/false,
-  //              prev);
-  //   __ movw(r0, prev);
-  //   __ ret(lr);
-  // }
-  // aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_cmpxchg_4_type)__ pc();
-  // {
-  //   Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
-  //     exchange_val = c_rarg2;
-  //   __ cmpxchg(ptr, compare_val, exchange_val,
-  //              MacroAssembler::word,
-  //              /*acquire*/false, /*release*/false, /*weak*/false,
-  //              prev);
-  //   __ movw(r0, prev);
-  //   __ ret(lr);
-  // }
-  // aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_cmpxchg_8_type)__ pc();
-  // {
-  //   Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
-  //     exchange_val = c_rarg2;
-  //   __ cmpxchg(ptr, compare_val, exchange_val,
-  //              MacroAssembler::xword,
-  //              /*acquire*/false, /*release*/false, /*weak*/false,
-  //              prev);
-  //   __ mov(r0, prev);
-  //   __ ret(lr);
-  // }
-
         .text
 
         .globl aarch64_atomic_fetch_add_8_default_impl

@@ -78,13 +78,6 @@
 #define REG_FP 29
 #define REG_LR 30
 
-long foo_counter, bar_counter;
-
-void noOp(long) {
-  asm volatile("nop");
-}
-
-
 NOINLINE address os::current_stack_pointer() {
   return (address)__builtin_frame_address(0);
 }
