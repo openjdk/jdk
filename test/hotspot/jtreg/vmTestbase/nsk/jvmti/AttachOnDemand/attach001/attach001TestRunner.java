@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class attach001TestRunner extends AODTestRunner {
             try {
                 new TargetApplicationWaitingAgents().runTargetApplication(new String[] {
                         "-" + AODTargetArgParser.agentsNumberParam,
-                        new Integer(argParser.getAgents().size()).toString() });
+                        Integer.valueOf(argParser.getAgents().size()).toString() });
 
                 finishedSuccessfully = true;
             } catch (Throwable t) {
