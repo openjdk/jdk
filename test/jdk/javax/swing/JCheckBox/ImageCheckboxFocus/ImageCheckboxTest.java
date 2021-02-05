@@ -105,10 +105,5 @@ public class ImageCheckboxTest {
         public boolean hasFocus() {
             return focused;
         }
-
-        @Override
-        public Dimension getMaximumSize() {
-            return new Dimension(4, 4);
-        }
     }
 }
