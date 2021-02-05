@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,8 @@ public class VMSupport {
      * path is not a JAR file or some other error occurs.
      */
     public static boolean isClassPathAttributePresent(String path) {
-        try {
-            Manifest man = (new JarFile(path)).getManifest();
+        try (JarFile jarFile = new JarFile(path)) {
+            Manifest man = jarFile.getManifest();
             if (man != null) {
                 if (man.getMainAttributes().getValue(Attributes.Name.CLASS_PATH) != null) {
                     return true;
