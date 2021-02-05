@@ -1122,17 +1122,18 @@ class ClassHierarchyWalker {
     } else if (!k->is_instance_klass()) {
       return false; // no methods to find in an array type
     } else {
+      InstanceKlass* ik = InstanceKlass::cast(k);
       // Search class hierarchy first, skipping private implementations
       // as they never override any inherited methods
-      Method* m = InstanceKlass::cast(k)->find_instance_method(_name, _signature, Klass::PrivateLookupMode::skip);
-      if (!Dependencies::is_concrete_method(m, k)) {
+      Method* m = ik->find_instance_method(_name, _signature, Klass::PrivateLookupMode::skip);
+      if (!Dependencies::is_concrete_method(m, ik)) {
         // Check for re-abstraction of method
-        if (!k->is_interface() && m != NULL && m->is_abstract()) {
+        if (!ik->is_interface() && m != NULL && m->is_abstract()) {
           // Found a matching abstract method 'm' in the class hierarchy.
           // This is fine iff 'k' is an abstract class and all concrete subtypes
           // of 'k' override 'm' and are participates of the current search.
           ClassHierarchyWalker wf(_participants, _num_participants);
-          Klass* w = wf.find_witness_subtype(k);
+          Klass* w = wf.find_witness_subtype(ik);
           if (w != NULL) {
             Method* wm = InstanceKlass::cast(w)->find_instance_method(_name, _signature, Klass::PrivateLookupMode::skip);
             if (!Dependencies::is_concrete_method(wm, w)) {
@@ -1145,10 +1146,10 @@ class ClassHierarchyWalker {
           }
         }
         // Check interface defaults also, if any exist.
-        Array<Method*>* default_methods = InstanceKlass::cast(k)->default_methods();
+        Array<Method*>* default_methods = ik->default_methods();
         if (default_methods == NULL)
             return false;
-        m = InstanceKlass::cast(k)->find_method(default_methods, _name, _signature);
+        m = ik->find_method(default_methods, _name, _signature);
         if (!Dependencies::is_concrete_method(m, NULL))
             return false;
       }
