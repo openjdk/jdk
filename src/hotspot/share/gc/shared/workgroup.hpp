@@ -305,22 +305,16 @@ class SubTasksDone: public CHeapObj<mtInternal> {
   volatile bool* _tasks;
   uint _n_tasks;
 
-#ifdef ASSERT
-  // make sure verification logic is run exactly once
-  volatile bool _verification_done = false;
-  void all_tasks_completed_impl(uint skipped[], size_t skipped_size);
-#endif
+  // make sure verification logic is run exactly once to avoid duplicate assertion failures
+  DEBUG_ONLY(volatile bool _verification_done = false;)
+  void all_tasks_claimed_impl(uint skipped[], size_t skipped_size) NOT_DEBUG_RETURN;
 
   NONCOPYABLE(SubTasksDone);
 
 public:
   // Initializes "this" to a state in which there are "n" tasks to be
-  // processed, none of the which are originally claimed.  The number of
-  // threads doing the tasks is initialized 1.
+  // processed, none of the which are originally claimed.
   SubTasksDone(uint n);
-
-  // True iff the object is in a valid state.
-  bool valid();
 
   // Attempt to claim the task "t", returning true if successful,
   // false if it has already been claimed.  The task "t" is required
@@ -331,17 +325,16 @@ public:
   // that it will try to claim.  Tasks that are meant to be skipped must be
   // explicitly passed as extra arguments. Every thread in the parallel task
   // must execute this.
-  void all_tasks_completed() {
-    DEBUG_ONLY(all_tasks_completed_impl(nullptr, 0);)
-  }
-
-  // Augmented by variadic args, each for a skipped task.
   template<typename T0, typename... Ts,
           ENABLE_IF(Conjunction<std::is_same<T0, Ts>...>::value)>
-  void all_tasks_completed(T0 first_skipped, Ts... more_skipped) {
+  void all_tasks_claimed(T0 first_skipped, Ts... more_skipped) {
     static_assert(std::is_convertible<T0, uint>::value, "not convertible");
     uint skipped[] = { static_cast<uint>(first_skipped), static_cast<uint>(more_skipped)... };
-    DEBUG_ONLY(all_tasks_completed_impl(skipped, ARRAY_SIZE(skipped));)
+    all_tasks_claimed_impl(skipped, ARRAY_SIZE(skipped));
+  }
+  // if there are no skipped tasks.
+  void all_tasks_claimed() {
+    all_tasks_claimed_impl(nullptr, 0);
   }
 
   // Destructor.

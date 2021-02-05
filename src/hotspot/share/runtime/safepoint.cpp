@@ -591,7 +591,7 @@ public:
       OopStorage::trigger_cleanup_if_needed();
     }
 
-    _subtasks.all_tasks_completed();
+    _subtasks.all_tasks_claimed();
   }
 };
 

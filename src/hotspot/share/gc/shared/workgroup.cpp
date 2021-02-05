@@ -360,7 +360,7 @@ SubTasksDone::SubTasksDone(uint n) :
 }
 
 #ifdef ASSERT
-void SubTasksDone::all_tasks_completed_impl(uint skipped[], size_t skipped_size) {
+void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
   if (Atomic::cmpxchg(&_verification_done, false, true)) {
     // another thread has done the verification
     return;
@@ -387,17 +387,13 @@ void SubTasksDone::all_tasks_completed_impl(uint skipped[], size_t skipped_size)
 }
 #endif
 
-bool SubTasksDone::valid() {
-  return _tasks != NULL;
-}
-
 bool SubTasksDone::try_claim_task(uint t) {
   assert(t < _n_tasks, "bad task id.");
   return !_tasks[t] && !Atomic::cmpxchg(&_tasks[t], false, true);
 }
 
 SubTasksDone::~SubTasksDone() {
-  assert(_verification_done, "all_tasks_completed must have been called.");
+  assert(_verification_done, "all_tasks_claimed must have been called.");
   FREE_C_HEAP_ARRAY(bool, _tasks);
 }
 
