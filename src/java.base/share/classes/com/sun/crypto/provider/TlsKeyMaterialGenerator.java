@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -86,16 +87,18 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             throw new IllegalStateException(
                 "TlsKeyMaterialGenerator must be initialized");
         }
+        byte[] masterSecret = spec.getMasterSecret().getEncoded();
         try {
-            return engineGenerateKey0();
+            return engineGenerateKey0(masterSecret);
         } catch (GeneralSecurityException e) {
             throw new ProviderException(e);
+        } finally {
+            Arrays.fill(masterSecret, (byte)0);
         }
     }
 
     @SuppressWarnings("deprecation")
-    private SecretKey engineGenerateKey0() throws GeneralSecurityException {
-        byte[] masterSecret = spec.getMasterSecret().getEncoded();
+    private SecretKey engineGenerateKey0(byte[] masterSecret) throws GeneralSecurityException {
 
         byte[] clientRandom = spec.getClientRandom();
         byte[] serverRandom = spec.getServerRandom();

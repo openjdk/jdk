@@ -689,6 +689,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
 
         // store the expanded sub keys into 'sessionK'
         if (sessionK != null) {
+            // erase the previous values in sessionK
             Arrays.fill(sessionK[0], 0);
             Arrays.fill(sessionK[1], 0);
         }
