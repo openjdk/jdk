@@ -26,7 +26,6 @@
 
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -44,7 +43,6 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
 ShenandoahConcurrentGC::ShenandoahConcurrentGC() :

@@ -120,7 +120,7 @@ oop SystemDictionary::java_platform_loader() {
 
 void SystemDictionary::compute_java_loaders(TRAPS) {
   JavaValue result(T_OBJECT);
-  InstanceKlass* class_loader_klass = SystemDictionary::ClassLoader_klass();
+  InstanceKlass* class_loader_klass = vmClasses::ClassLoader_klass();
   JavaCalls::call_static(&result,
                          class_loader_klass,
                          vmSymbols::getSystemClassLoader_name(),
@@ -173,7 +173,7 @@ bool SystemDictionary::is_system_class_loader(oop class_loader) {
   if (class_loader == NULL) {
     return false;
   }
-  return (class_loader->klass() == SystemDictionary::jdk_internal_loader_ClassLoaders_AppClassLoader_klass() ||
+  return (class_loader->klass() == vmClasses::jdk_internal_loader_ClassLoaders_AppClassLoader_klass() ||
          class_loader == _java_system_loader.peek());
 }
 
@@ -182,7 +182,7 @@ bool SystemDictionary::is_platform_class_loader(oop class_loader) {
   if (class_loader == NULL) {
     return false;
   }
-  return (class_loader->klass() == SystemDictionary::jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass());
+  return (class_loader->klass() == vmClasses::jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass());
 }
 
 Handle SystemDictionary::compute_loader_lock_object(Thread* thread, Handle class_loader) {
@@ -236,7 +236,7 @@ static void handle_resolution_exception(Symbol* class_name, bool throw_error, TR
     // If we have a pending exception we forward it to the caller, unless throw_error is true,
     // in which case we have to check whether the pending exception is a ClassNotFoundException,
     // and convert it to a NoClassDefFoundError and chain the original ClassNotFoundException.
-    if (throw_error && PENDING_EXCEPTION->is_a(SystemDictionary::ClassNotFoundException_klass())) {
+    if (throw_error && PENDING_EXCEPTION->is_a(vmClasses::ClassNotFoundException_klass())) {
       ResourceMark rm(THREAD);
       Handle e(THREAD, PENDING_EXCEPTION);
       CLEAR_PENDING_EXCEPTION;
@@ -488,7 +488,7 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
   // The class_loader handle passed in is the initiating loader.
   Handle mirror(THREAD, klass->java_mirror());
 
-  InstanceKlass* system_loader = SystemDictionary::ClassLoader_klass();
+  InstanceKlass* system_loader = vmClasses::ClassLoader_klass();
   JavaCalls::call_special(&result,
                          class_loader,
                          system_loader,
@@ -939,7 +939,6 @@ Klass* SystemDictionary::find(Symbol* class_name,
                           protection_domain);
 }
 
-
 // Look for a loaded instance or array klass by name.  Do not do any loading.
 // return NULL in case of error.
 Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
@@ -1230,6 +1229,19 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
                                                      bool is_superclass, TRAPS) {
   assert(super_type->is_shared(), "must be");
 
+  // Quick check if the super type has been already loaded.
+  // + Don't do it for unregistered classes -- they can be unloaded so
+  //   super_type->class_loader_data() could be stale.
+  // + Don't check if loader data is NULL, ie. the super_type isn't fully loaded.
+  if (!super_type->is_shared_unregistered_class() && super_type->class_loader_data() != NULL) {
+    // Check if the super class is loaded by the current class_loader
+    Symbol* name = super_type->name();
+    Klass* check = find(name, class_loader, protection_domain, CHECK_0);
+    if (check == super_type) {
+      return true;
+    }
+  }
+
   Klass *found = resolve_super_or_fail(klass->name(), super_type->name(),
                                        class_loader, protection_domain, is_superclass, CHECK_0);
   if (found == super_type) {
@@ -1495,7 +1507,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
 
     JavaValue result(T_OBJECT);
 
-    InstanceKlass* spec_klass = SystemDictionary::ClassLoader_klass();
+    InstanceKlass* spec_klass = vmClasses::ClassLoader_klass();
 
     // Call public unsynchronized loadClass(String) directly for all class loaders.
     // For parallelCapable class loaders, JDK >=7, loadClass(String, boolean) will
@@ -2233,7 +2245,7 @@ Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
   int ref_kind = JVM_REF_invokeVirtual;
   oop name_oop = StringTable::intern(name, CHECK_NULL);
   Handle name_str (THREAD, name_oop);
-  objArrayHandle appendix_box = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), 1, CHECK_NULL);
+  objArrayHandle appendix_box = oopFactory::new_objArray_handle(vmClasses::Object_klass(), 1, CHECK_NULL);
   assert(appendix_box->obj_at(0) == NULL, "");
 
   // This should not happen.  JDK code should take care of that.
@@ -2251,7 +2263,7 @@ Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
   args.push_oop(appendix_box);
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
-                         SystemDictionary::MethodHandleNatives_klass(),
+                         vmClasses::MethodHandleNatives_klass(),
                          vmSymbols::linkMethod_name(),
                          vmSymbols::linkMethod_signature(),
                          &args, CHECK_NULL);
@@ -2274,8 +2286,8 @@ static bool is_always_visible_class(oop mirror) {
   }
   assert(klass->is_instance_klass(), "%s", klass->external_name());
   return klass->is_public() &&
-         (InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::Object_klass()) ||       // java.lang
-          InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::MethodHandle_klass()));  // java.lang.invoke
+         (InstanceKlass::cast(klass)->is_same_class_package(vmClasses::Object_klass()) ||       // java.lang
+          InstanceKlass::cast(klass)->is_same_class_package(vmClasses::MethodHandle_klass()));  // java.lang.invoke
 }
 
 // Find or construct the Java mirror (java.lang.Class instance) for
@@ -2344,7 +2356,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   }
   bool can_be_cached = true;
   int npts = ArgumentCount(signature).size();
-  objArrayHandle pts = oopFactory::new_objArray_handle(SystemDictionary::Class_klass(), npts, CHECK_(empty));
+  objArrayHandle pts = oopFactory::new_objArray_handle(vmClasses::Class_klass(), npts, CHECK_(empty));
   int arg = 0;
   Handle rt; // the return type from the signature
   ResourceMark rm(THREAD);
@@ -2385,7 +2397,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   args.push_oop(pts);
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
-                         SystemDictionary::MethodHandleNatives_klass(),
+                         vmClasses::MethodHandleNatives_klass(),
                          vmSymbols::findMethodHandleType_name(),
                          vmSymbols::findMethodHandleType_signature(),
                          &args, CHECK_(empty));
@@ -2442,7 +2454,7 @@ Handle SystemDictionary::link_method_handle_constant(Klass* caller,
   Handle signature_str = java_lang_String::create_from_symbol(signature, CHECK_(empty));
 
   // Put symbolic info from the MH constant into freshly created MemberName and resolve it.
-  Handle mname = MemberName_klass()->allocate_instance_handle(CHECK_(empty));
+  Handle mname = vmClasses::MemberName_klass()->allocate_instance_handle(CHECK_(empty));
   java_lang_invoke_MemberName::set_clazz(mname(), callee->java_mirror());
   java_lang_invoke_MemberName::set_name (mname(), name_str());
   java_lang_invoke_MemberName::set_type (mname(), signature_str());
@@ -2471,7 +2483,7 @@ Handle SystemDictionary::link_method_handle_constant(Klass* caller,
   args.push_oop(type);
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
-                         SystemDictionary::MethodHandleNatives_klass(),
+                         vmClasses::MethodHandleNatives_klass(),
                          vmSymbols::linkMethodHandleConstant_name(),
                          vmSymbols::linkMethodHandleConstant_signature(),
                          &args, CHECK_(empty));
@@ -2494,7 +2506,7 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
   objArrayHandle appendix_box;
   if (is_indy) {
     // Some method calls may require an appendix argument.  Arrange to receive it.
-    appendix_box = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), 1, CHECK);
+    appendix_box = oopFactory::new_objArray_handle(vmClasses::Object_klass(), 1, CHECK);
     assert(appendix_box->obj_at(0) == NULL, "");
   }
 
@@ -2512,7 +2524,7 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
   }
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
-                         SystemDictionary::MethodHandleNatives_klass(),
+                         vmClasses::MethodHandleNatives_klass(),
                          is_indy ? vmSymbols::linkCallSite_name() : vmSymbols::linkDynamicConstant_name(),
                          is_indy ? vmSymbols::linkCallSite_signature() : vmSymbols::linkDynamicConstant_signature(),
                          &args, CHECK);
@@ -2548,7 +2560,7 @@ ClassLoaderData* SystemDictionary::class_loader_data(Handle class_loader) {
 
 bool SystemDictionary::is_nonpublic_Object_method(Method* m) {
   assert(m != NULL, "Unexpected NULL Method*");
-  return !m->is_public() && m->method_holder() == SystemDictionary::Object_klass();
+  return !m->is_public() && m->method_holder() == vmClasses::Object_klass();
 }
 
 // ----------------------------------------------------------------------------

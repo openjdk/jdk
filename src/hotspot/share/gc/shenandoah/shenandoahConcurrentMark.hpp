@@ -25,14 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 
-#include "gc/shared/taskqueue.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
-class ShenandoahStrDedupQueue;
-class ShenandoahReferenceProcessor;
+class ShenandoahConcurrentMarkingTask;
+class ShenandoahFinalMarkingTask;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
   friend class ShenandoahConcurrentMarkingTask;

@@ -28,7 +28,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -1423,7 +1423,7 @@ class HeapObjectDumper : public ObjectClosure {
 
 void HeapObjectDumper::do_object(oop o) {
   // skip classes as these emitted as HPROF_GC_CLASS_DUMP records
-  if (o->klass() == SystemDictionary::Class_klass()) {
+  if (o->klass() == vmClasses::Class_klass()) {
     if (!java_lang_Class::is_primitive(o)) {
       return;
     }
@@ -1513,7 +1513,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
     if (oome) {
       assert(!Thread::current()->is_VM_thread(), "Dump from OutOfMemoryError cannot be called by the VMThread");
       // get OutOfMemoryError zero-parameter constructor
-      InstanceKlass* oome_ik = SystemDictionary::OutOfMemoryError_klass();
+      InstanceKlass* oome_ik = vmClasses::OutOfMemoryError_klass();
       _oome_constructor = oome_ik->find_method(vmSymbols::object_initializer_name(),
                                                           vmSymbols::void_method_signature());
       // get thread throwing OOME when generating the heap dump at OOME

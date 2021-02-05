@@ -83,6 +83,9 @@ public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
         // create the primary launcher
         createLauncherForEntryPoint(params, null);
 
+        // create app launcher shared library
+        createLauncherLib();
+
         // create the additional launchers, if any
         List<Map<String, ? super Object>> entryPoints
                 = ADD_LAUNCHERS.fetchFrom(params);
@@ -93,6 +96,17 @@ public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
 
         // Copy class path entries to Java folder
         copyApplication(params);
+    }
+
+    private void createLauncherLib() throws IOException {
+        Path path = appLayout.pathGroup().getPath(
+                ApplicationLayout.PathRole.LINUX_APPLAUNCHER_LIB);
+        try (InputStream resource = getResourceAsStream("libjpackageapplauncher.so")) {
+            writeEntry(resource, path);
+        }
+
+        path.toFile().setExecutable(true, false);
+        path.toFile().setWritable(true, true);
     }
 
     private void createLauncherForEntryPoint(Map<String, ? super Object> params,
