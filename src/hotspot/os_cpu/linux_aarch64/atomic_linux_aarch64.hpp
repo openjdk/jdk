@@ -142,13 +142,14 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(1 == sizeof(T));
+  aarch64_atomic_stub_t stub = aarch64_atomic_cmpxchg_1_impl;
   if (order == memory_order_relaxed) {
-    T old_value = atomic_fastcall(aarch64_atomic_cmpxchg_1_impl, dest,
+    T old_value = atomic_fastcall(stub, dest,
                                   compare_value, exchange_value);
     return old_value;
   } else {
     FULL_MEM_BARRIER;
-    T old_value = atomic_fastcall(aarch64_atomic_cmpxchg_1_impl, dest,
+    T old_value = atomic_fastcall(stub, dest,
                                   compare_value, exchange_value);
     FULL_MEM_BARRIER;
     return old_value;
@@ -162,13 +163,14 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
+  aarch64_atomic_stub_t stub = aarch64_atomic_cmpxchg_4_impl;
   if (order == memory_order_relaxed) {
-    T old_value = atomic_fastcall(aarch64_atomic_cmpxchg_4_impl, dest,
+    T old_value = atomic_fastcall(stub, dest,
                                   compare_value, exchange_value);
     return old_value;
   } else {
     FULL_MEM_BARRIER;
-    T old_value = atomic_fastcall(aarch64_atomic_cmpxchg_4_impl, dest,
+    T old_value = atomic_fastcall(stub, dest,
                                   compare_value, exchange_value);
     FULL_MEM_BARRIER;
     return old_value;
@@ -182,13 +184,14 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
+  aarch64_atomic_stub_t stub = aarch64_atomic_cmpxchg_8_impl;
   if (order == memory_order_relaxed) {
-    T old_value = atomic_fastcall(aarch64_atomic_cmpxchg_8_impl, dest,
+    T old_value = atomic_fastcall(stub, dest,
                                   compare_value, exchange_value);
     return old_value;
   } else {
     FULL_MEM_BARRIER;
-    T old_value = atomic_fastcall(aarch64_atomic_cmpxchg_8_impl, dest,
+    T old_value = atomic_fastcall(stub, dest,
                                   compare_value, exchange_value);
     FULL_MEM_BARRIER;
     return old_value;
