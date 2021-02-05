@@ -95,17 +95,11 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
   }
 
   bool do_malloc_site(const MallocSite* site) {
-    if (site->size() >= MemBaseline::SIZE_THRESHOLD) {
-      if (_malloc_sites.add(*site) != NULL) {
-        _count++;
-        return true;
-      } else {
-        return false;  // OOM
-      }
-    } else {
-      // malloc site does not meet threshold, ignore and continue
+    if (_malloc_sites.add(*site) != NULL) {
+      _count++;
       return true;
     }
+    return false;  // OOM
   }
 };
 
@@ -125,15 +119,11 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
   VirtualMemoryAllocationWalker() : _count(0) { }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
-    if (rgn->size() >= MemBaseline::SIZE_THRESHOLD) {
-      if (_virtual_memory_regions.add(*rgn) != NULL) {
-        _count ++;
-        return true;
-      } else {
-        return false;
-      }
+    if (_virtual_memory_regions.add(*rgn) != NULL) {
+      _count ++;
+      return true;
     }
-    return true;
+    return false;
   }
 
   LinkedList<ReservedMemoryRegion>* virtual_memory_allocations() {
