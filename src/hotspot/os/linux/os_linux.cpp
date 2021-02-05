@@ -2195,7 +2195,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   int num_found = 0;
   FILE* f = ::fopen("/proc/self/status", "r");
   char buf[256];
-  if (f) {
+  if (f != NULL) {
     while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
       if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
            (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
@@ -2222,6 +2222,8 @@ void os::Linux::print_process_memory_info(outputStream* st) {
     if (vmswap != -1) { // requires kernel >= 2.6.34
       st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
     }
+  } else {
+    st->print_cr("Could not open /proc/self/status to get process memory related information");
   }
 
   // Print glibc outstanding allocations.
