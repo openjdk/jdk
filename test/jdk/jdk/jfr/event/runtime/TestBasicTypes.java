@@ -84,6 +84,6 @@ public class TestBasicTypes {
         RecordedClass classField = event.getValue(fieldName);
         Asserts.assertEquals(classField.getName(), excepted.getName());
         Asserts.assertNull(classField.getClassLoader());
-        Asserts.assertEquals(classField.getModifiers(), Modifier.ABSTRACT | Modifier.FINAL | Modifier.PUBLIC);
+        Asserts.assertEquals(classField.getModifiers(), excepted.getModifiers());
     }
 }
