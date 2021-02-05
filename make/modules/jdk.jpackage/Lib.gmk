@@ -29,15 +29,15 @@ include LibCommon.gmk
 
 
 JPACKAGE_APPLAUNCHERLIB_SRC := \
-    $(call FindSrcDirsForComponent, jdk.jpackage, applauncherlib) \
-    $(call FindSrcDirsForComponent, jdk.jpackage, applauncherlibcommon) \
+    $(call FindSrcDirsForComponent, jdk.jpackage, libapplauncher) \
+    $(call FindSrcDirsForComponent, jdk.jpackage, libapplaunchercommon) \
     $(call FindSrcDirsForComponent, jdk.jpackage, common)
 
 
 ifeq ($(call isTargetOs, linux), true)
   JPACKAGE_APPLAUNCHER_SRC := \
       $(call FindSrcDirsForComponent, jdk.jpackage, applauncher) \
-      $(call FindSrcDirsForComponent, jdk.jpackage, applauncherlibcommon)
+      $(call FindSrcDirsForComponent, jdk.jpackage, libapplaunchercommon)
   JPACKAGE_APPLAUNCHER_TOOLCHAIN := TOOLCHAIN_DEFAULT
 else
   JPACKAGE_APPLAUNCHER_SRC := \
@@ -93,17 +93,16 @@ JPACKAGE_TARGETS += $(BUILD_JPACKAGE_APPLAUNCHEREXE)
 ifeq ($(call isTargetOs, linux), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_JPACKAGE_APPLAUNCHERLIB, \
-      NAME := jpackageapplauncherlib, \
+      NAME := jpackageapplauncher, \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
-      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncherlib, \
+      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjpackageapplauncher, \
       SRC := $(JPACKAGE_APPLAUNCHERLIB_SRC), \
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
       OPTIMIZATION := LOW, \
       CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JPACKAGE_APPLAUNCHER_INCLUDES), \
       CFLAGS := $(CFLAGS_JDKLIB) $(JPACKAGE_APPLAUNCHER_INCLUDES), \
       CFLAGS_linux := -Wno-format-nonliteral, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          -Wl$(COMMA)--version-script=$(TOPDIR)/make/modules/$(MODULE)/applauncherlib.ld-version-script, \
+      LDFLAGS := $(LDFLAGS_JDKLIB), \
       LIBS := $(LIBCXX) -ldl, \
   ))
 
