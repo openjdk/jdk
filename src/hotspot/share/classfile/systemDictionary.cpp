@@ -939,7 +939,6 @@ Klass* SystemDictionary::find(Symbol* class_name,
                           protection_domain);
 }
 
-
 // Look for a loaded instance or array klass by name.  Do not do any loading.
 // return NULL in case of error.
 Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
@@ -1229,6 +1228,19 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
                                                      Handle class_loader,  Handle protection_domain,
                                                      bool is_superclass, TRAPS) {
   assert(super_type->is_shared(), "must be");
+
+  // Quick check if the super type has been already loaded.
+  // + Don't do it for unregistered classes -- they can be unloaded so
+  //   super_type->class_loader_data() could be stale.
+  // + Don't check if loader data is NULL, ie. the super_type isn't fully loaded.
+  if (!super_type->is_shared_unregistered_class() && super_type->class_loader_data() != NULL) {
+    // Check if the super class is loaded by the current class_loader
+    Symbol* name = super_type->name();
+    Klass* check = find(name, class_loader, protection_domain, CHECK_0);
+    if (check == super_type) {
+      return true;
+    }
+  }
 
   Klass *found = resolve_super_or_fail(klass->name(), super_type->name(),
                                        class_loader, protection_domain, is_superclass, CHECK_0);
