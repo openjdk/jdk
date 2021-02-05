@@ -32,6 +32,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
+#include "atomic_aarch64.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/method.hpp"
