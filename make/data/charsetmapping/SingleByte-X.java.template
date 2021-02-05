@@ -48,24 +48,26 @@ public class $NAME_CLZ$ extends Charset implements HistoricallyNamedCharset
     }
 
     public CharsetDecoder newDecoder() {
-        return new SingleByte.Decoder(this, b2c, $ASCIICOMPATIBLE$, $LATIN1DECODABLE$);
+        return new SingleByte.Decoder(this, Holder.b2c, $ASCIICOMPATIBLE$, $LATIN1DECODABLE$);
     }
 
     public CharsetEncoder newEncoder() {
-        return new SingleByte.Encoder(this, c2b, c2bIndex, $ASCIICOMPATIBLE$);
+        return new SingleByte.Encoder(this, Holder.c2b, Holder.c2bIndex, $ASCIICOMPATIBLE$);
     }
 
-    private final static String b2cTable = $B2CTABLE$
+    private static class Holder {
+        private final static String b2cTable = $B2CTABLE$
 
-    private final static char[] b2c = b2cTable.toCharArray();
-    private final static char[] c2b = new char[$C2BLENGTH$];
-    private final static char[] c2bIndex = new char[0x100];
+        private final static char[] b2c = b2cTable.toCharArray();
+        private final static char[] c2b = new char[$C2BLENGTH$];
+        private final static char[] c2bIndex = new char[0x100];
 
-    static {
-        char[] b2cMap = b2c;
-        char[] c2bNR = null;
-        $NONROUNDTRIP_B2C$
-        $NONROUNDTRIP_C2B$
-        SingleByte.initC2B(b2cMap, c2bNR, c2b, c2bIndex);
+        static {
+            char[] b2cMap = b2c;
+            char[] c2bNR = null;
+            $NONROUNDTRIP_B2C$
+            $NONROUNDTRIP_C2B$
+            SingleByte.initC2B(b2cMap, c2bNR, c2b, c2bIndex);
+        }
     }
 }

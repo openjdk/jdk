@@ -931,7 +931,9 @@ public final class ModuleLayer {
             servicesCatalog = this.servicesCatalog;
             if (servicesCatalog == null) {
                 servicesCatalog = ServicesCatalog.create();
-                nameToModule.values().forEach(servicesCatalog::register);
+                for (Module m : nameToModule.values()) {
+                    servicesCatalog.register(m);
+                }
                 this.servicesCatalog = servicesCatalog;
             }
         }
