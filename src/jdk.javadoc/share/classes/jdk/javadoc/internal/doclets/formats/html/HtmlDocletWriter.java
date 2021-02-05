@@ -939,9 +939,9 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to.  This is not
-                 necessarily equal to element.containingClass().  We may be
-                 inheriting comments.
+     * @param typeElement the typeElement that we should link to. This is not
+     *            not necessarily the type containing element since we may be
+     *            inheriting comments.
      * @param element the member being linked to.
      * @param label the label for the link.
      * @return the link for the given member.
@@ -955,9 +955,9 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to.  This is not
-    necessarily equal to element.containingClass().  We may be
-    inheriting comments.
+     * @param typeElement the typeElement that we should link to. This is not
+     *            not necessarily the type containing element since we may be
+     *            inheriting comments.
      * @param element the member being linked to.
      * @param label the label for the link.
      * @return the link for the given member.
@@ -971,9 +971,9 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to.  This is not
-                 necessarily equal to element.containingClass().  We may be
-                 inheriting comments.
+     * @param typeElement the typeElement that we should link to. This is not
+     *            not necessarily the type containing element since we may be
+     *            inheriting comments.
      * @param element the member being linked to.
      * @param label the label for the link.
      * @param isProperty true if the element parameter is a JavaFX property.
