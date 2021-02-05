@@ -65,13 +65,25 @@ static address get_signal_handler(const struct sigaction* action);
 // signal handling (except suspend/resume)
 // suspend/resume
 
-// Glibc on Linux uses the SA_RESTORER flag to indicate
-// the use of a "signal trampoline". We have no interest
-// in this flag and need to ignore it when checking our
-// own flag settings.
-// Note: SA_RESTORER is not exposed through signal.h so we
-// have to hardwire its 0x04000000 value in the mask.
-LINUX_ONLY(const int SA_RESTORER_FLAG_MASK = ~0x04000000;)
+// Helper function to strip any flags from a sigaction sa_flag
+// which are not needed for semantic comparison (see remarks below
+// about SA_RESTORER on Linux).
+// Also to work around the fact that not all platforms define sa_flags
+// as signed int (looking at you, zlinux).
+static int get_sanitized_sa_flags(const struct sigaction* sa) {
+  int f = (int) sa->sa_flags;
+#ifdef LINUX
+  // Glibc on Linux uses the SA_RESTORER flag to indicate
+  // the use of a "signal trampoline". We have no interest
+  // in this flag and need to ignore it when checking our
+  // own flag settings.
+  // Note: SA_RESTORER is not exposed through signal.h so we
+  // have to hardcode its 0x04000000 value here.
+  const int sa_restorer_flag = 0x04000000;
+  f &= ~sa_restorer_flag;
+#endif // LINUX
+  return f;
+}
 
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
 // may have been configured, can be read more accurately from proc fs etc.
@@ -122,13 +134,6 @@ public:
     }
   }
 
-  void clear(int sig) {
-    if (check_signal_number(sig)) {
-      FREE_C_HEAP_OBJ(_sa[sig]);
-      _sa[sig] = NULL;
-    }
-  }
-
   const struct sigaction* get(int sig) const {
     if (check_signal_number(sig)) {
       return _sa[sig];
@@ -141,12 +146,12 @@ public:
 debug_only(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
 
-// For CheckJNI:
-//  Our own hotspot signal handlers should never ever get replaced by a third
-//  party one. To check that, store a copy of the handler setup and compare it
-//  periodically against reality (see os::run_periodic_checks()).
+// Our own signal handlers should never ever get replaced by a third party one.
+//  To check that, and to aid with diagnostics, store a copy of the handler setup
+//  and compare it periodically against reality (see os::run_periodic_checks()).
 static bool check_signals = true;
 static SavedSignalHandlers expected_handlers;
+static bool do_check_signal_periodically[NSIG];
 
 // For signal-chaining:
 //  if chaining is active, chained_handlers contains all handlers which we
@@ -800,18 +805,30 @@ typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *)
 
 static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
 
+// Semantically compare two sigaction structures. Return true if they are referring to
+// the same handler, using the same flags.
+static bool compare_handler_info(const struct sigaction* sa,
+                                 const struct sigaction* expected_sa) {
+  address this_handler = get_signal_handler(sa);
+  address expected_handler = get_signal_handler(expected_sa);
+  const int this_flags = get_sanitized_sa_flags(sa);
+  const int expected_flags = get_sanitized_sa_flags(expected_sa);
+  return this_handler == expected_handler &&
+         this_flags == expected_flags;
+}
+
 // If we installed one of our signal handlers for sig, check that the current
 //  setup matches what we originally installed.
 static void check_signal_handler(int sig) {
   char buf[O_BUFLEN];
   bool mismatch = false;
 
-  // Retrieve expected signal setup. If there is none we either had no handler installed
-  // in the first place or had a mismatch already; in both cases, nothing to do here.
-  const struct sigaction* expected_act = expected_handlers.get(sig);
-  if (expected_act == NULL) {
+  if (!do_check_signal_periodically[sig]) {
     return;
   }
+
+  const struct sigaction* expected_act = expected_handlers.get(sig);
+  assert(expected_act != NULL, "Sanity");
 
   // Retrieve current signal setup.
   struct sigaction act;
@@ -825,48 +842,21 @@ static void check_signal_handler(int sig) {
   os_sigaction(sig, (struct sigaction*)NULL, &act);
 
   // Compare both sigaction structures (intelligently; only the members we care about).
-
-  // Check handler
-  address this_handler = get_signal_handler(&act);
-  address expected_handler = get_signal_handler(expected_act);
-  if (this_handler != expected_handler) {
-    mismatch = true;
-    tty->print("Warning: %s handler ", os::exception_name(sig, buf, O_BUFLEN));
-    tty->print_raw("expected:");
-    print_signal_handler_name(tty, expected_handler, buf, O_BUFLEN);
-    tty->print_raw("  found:");
-    print_signal_handler_name(tty, this_handler, buf, O_BUFLEN);
-    tty->cr();
+  if (!compare_handler_info(&act, expected_act)) {
+    tty->print_cr("Warning: %s handler modified!", os::exception_name(sig, buf, sizeof(buf)));
+    // If we had a mismatch:
+    // - print all signal handlers. As part of that printout details will be printed
+    //   about any modified handlers.
+    // - Disable any further checks for this signal - we do not want to flood stdout. Though
+    //   depending on which signal had been overwritten, we may die very soon anyway.
+    os::print_signal_handlers(tty, buf, O_BUFLEN);
+    do_check_signal_periodically[sig] = false;
+    tty->print_cr("Consider using jsig library.");
     // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
     if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
-      tty->print_cr("Running in non-interactive shell, %s handler is replaced by shell",
+      tty->print_cr("Note: Running in non-interactive shell, %s handler is replaced by shell",
                     os::exception_name(sig, buf, O_BUFLEN));
     }
-  }
-
-  // Check flags
-
-  // When comparing, ignore the SA_RESTORER flag on Linux
-  int this_flags = act.sa_flags;
-  const int expected_flags = expected_act->sa_flags;
-  LINUX_ONLY(this_flags &= SA_RESTORER_FLAG_MASK;)
-  if (this_flags != expected_flags) {
-    mismatch = true;
-    tty->print("Warning: %s handler flags ", os::exception_name(sig, buf, O_BUFLEN));
-    tty->print("expected:");
-    print_sa_flags(tty, expected_flags);
-    tty->cr();
-    tty->print("  found:");
-    print_sa_flags(tty, this_flags);
-    tty->cr();
-  }
-
-  // If we had a mismatch:
-  // - remove the signal setup from the expected set since we do not need to check again
-  // - print all signal handlers for diagnostics
-  if (mismatch) {
-    expected_handlers.clear(sig);
-    os::print_signal_handlers(tty, buf, O_BUFLEN);
   }
 }
 
@@ -1266,6 +1256,7 @@ void set_signal_handler(int sig) {
 
   // Save handler setup for later checking
   expected_handlers.set(sig, &sigAct);
+  do_check_signal_periodically[sig] = true;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
@@ -1371,11 +1362,9 @@ static void print_signal_set_short(outputStream* st, const sigset_t* set) {
   st->print("%s", buf);
 }
 
-static void print_single_signal_handler(outputStream* st, int sig,
+static void print_single_signal_handler(outputStream* st,
                                         const struct sigaction* act,
                                         char* buf, size_t buflen) {
-
-  st->print("%10s: ", os::exception_name(sig, buf, buflen));
 
   address handler = get_signal_handler(act);
   if (HANDLER_IS_DFL(handler)) {
@@ -1390,9 +1379,7 @@ static void print_single_signal_handler(outputStream* st, int sig,
   print_signal_set_short(st, &(act->sa_mask));
 
   st->print(", flags=");
-  int flags = act->sa_flags;
-  // On Linux, hide the SA_RESTORER flag
-  LINUX_ONLY(flags &= SA_RESTORER_FLAG_MASK;)
+  int flags = get_sanitized_sa_flags(act);
   print_sa_flags(st, flags);
 
 }
@@ -1404,26 +1391,27 @@ static void print_single_signal_handler(outputStream* st, int sig,
 //    are not chained (e.g. if chaining is off), print that one too.
 void PosixSignals::print_signal_handler(outputStream* st, int sig,
                                         char* buf, size_t buflen) {
+
+  st->print("%10s: ", os::exception_name(sig, buf, buflen));
+
   struct sigaction current_act;
   sigaction(sig, NULL, &current_act);
 
-  print_single_signal_handler(st, sig, &current_act, buf, buflen);
+  print_single_signal_handler(st, &current_act, buf, buflen);
   st->cr();
 
   // If we expected to see our own hotspot signal handler but found a different one,
-  //  print a warning. Unless it had been replaced with our own secondary crash handler.
+  //  print a warning (unless the handler replacing it is our own crash handler, which can
+  //  happen if this function is called during error reporting).
   const struct sigaction* expected_act = expected_handlers.get(sig);
   if (expected_act != NULL) {
     const address current_handler = get_signal_handler(&current_act);
     if (!(HANDLER_IS(current_handler, VMError::crash_handler_address))) {
-      const address expected_handler = get_signal_handler(expected_act);
-      if (current_handler != expected_handler) {
-        st->print_cr("  *** Handler changed! Expected hotspot signal handler. Consider using jsig library.");
-      }
-      int this_flag = current_act.sa_flags;
-      LINUX_ONLY(this_flag &= SA_RESTORER_FLAG_MASK;)
-      if (this_flag != expected_act->sa_flags) {
-        st->print_cr("  *** Flags changed! Consider using jsig library.");
+      if (!compare_handler_info(&current_act, expected_act)) {
+        st->print_cr("  *** Handler was modified!");
+        st->print   ("  *** Expected: ");
+        print_single_signal_handler(st, expected_act, buf, buflen);
+        st->cr();
       }
     }
   }
@@ -1432,7 +1420,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   const struct sigaction* chained_act = get_chained_signal_action(sig);
   if (chained_act != NULL) {
     st->print("  chained to: ");
-    print_single_signal_handler(st, sig, &current_act, buf, buflen);
+    print_single_signal_handler(st, &current_act, buf, buflen);
     st->cr();
   }
 }
@@ -1715,6 +1703,7 @@ int SR_initialize() {
 
   // Save signal setup information for later checking.
   expected_handlers.set(PosixSignals::SR_signum, &act);
+  do_check_signal_periodically[PosixSignals::SR_signum] = true;
 
   return 0;
 }
