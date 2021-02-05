@@ -114,6 +114,9 @@ private:
 
   bool is_explicit_gc(GCCause::Cause cause) const;
 
+  // Breakpoint support
+  bool is_async_gc(GCCause::Cause cause) const;
+
   bool check_soft_max_changed() const;
 
 public:
