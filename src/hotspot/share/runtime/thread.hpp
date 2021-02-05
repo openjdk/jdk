@@ -35,7 +35,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaFrameAnchor.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
@@ -60,6 +59,7 @@ class ThreadSafepointState;
 class ThreadsList;
 class ThreadsSMRSupport;
 
+class JNIHandleBlock;
 class JvmtiRawMonitor;
 class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;

@@ -27,6 +27,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "jvm.h"
 #include "jvmci/jvmci_globals.hpp"
+#include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/globals_extension.hpp"
