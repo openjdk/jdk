@@ -921,7 +921,7 @@ public class ServerSocket implements java.io.Closeable {
      *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkSetFactory
-     * @deprecated Use {@link ServerSocketChannel}, or subclass {@code ServerSocket}
+     * @deprecated Use a {@link javax.net.ServerSocketFactory} and subclass {@code ServerSocket}
      *    directly.
      *    <br> This method provided a way in early JDK releases to replace the
      *    system wide implementation of {@code ServerSocket}. It has been mostly
