@@ -43,9 +43,6 @@ class WorkGang;
 // page allocation time by having the memory pretouched (with
 // AlwaysPretouch) and for optimizing page placement on NUMA systems
 // by make the underlying region interleaved (with UseNUMA).
-//
-// Invariant: bottom() <= top() <= end()
-// top() and end() are exclusive.
 
 class MutableSpaceMangler;
 
@@ -57,9 +54,11 @@ class MutableSpace: public CHeapObj<mtGC> {
   // The last region which page had been setup to be interleaved.
   MemRegion _last_setup_region;
   size_t _alignment;
-  HeapWord* _bottom;
-  HeapWord* volatile _top;
-  HeapWord* volatile _end;
+  // Supports CAS-based allocation.
+  // Invariant: bottom() <= top() <= end()
+  HeapWord* _bottom;            // Start of the region.
+  HeapWord* volatile _top;      // Current allocation pointer.
+  HeapWord* volatile _end;      // Current allocation limit.  expand() advances.
 
   MutableSpaceMangler* mangler() { return _mangler; }
 
