@@ -40,7 +40,7 @@ public class ProtectionDomainVerificationTest {
         // -Xlog:protectiondomain=trace
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=trace",
                                                                   "-Xmx128m",
-                                                                  Hello.class.getName());
+                                                                  Hello.class.getName(), "security_manager");
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
@@ -49,7 +49,7 @@ public class ProtectionDomainVerificationTest {
         // -Xlog:protectiondomain=debug
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=debug",
                                                                   "-Xmx128m",
-                                                                  Hello.class.getName());
+                                                                  Hello.class.getName(), "security_manager");
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
@@ -68,6 +68,10 @@ public class ProtectionDomainVerificationTest {
 
     public static class Hello {
         public static void main(String[] args) {
+            if (args.length == 1) {
+              // Need a security manager to trigger logging.
+              System.setSecurityManager(new SecurityManager());
+            }
             System.out.print("Hello!");
         }
     }

@@ -4411,8 +4411,7 @@ bool java_lang_System::allow_security_manager() {
   return allowed;
 }
 
-// This field means that a security manager can be installed so we still have to
-// populate the ProtectionDomainCacheTable.
+// This field tells us that a security manager is installed.
 bool java_lang_System::has_security_manager() {
   oop base = vmClasses::System_klass()->static_field_base_raw();
   return base->obj_field(_static_security_offset) != NULL;

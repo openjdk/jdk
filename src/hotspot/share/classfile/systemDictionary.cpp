@@ -463,21 +463,6 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
   assert(class_loader() != NULL, "Should not call this");
   assert(protection_domain() != NULL, "Should not call this");
 
-  JavaValue result(T_VOID);
-  LogTarget(Debug, protectiondomain) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
-    // Print out trace information
-    LogStream ls(lt);
-    ls.print_cr("Checking package access");
-    ls.print("class loader: ");
-    class_loader()->print_value_on(&ls);
-    ls.print(" protection domain: ");
-    protection_domain()->print_value_on(&ls);
-    ls.print(" loading: "); klass->print_value_on(&ls);
-    ls.cr();
-  }
-
   // We only have to call checkPackageAccess if there's a security manager installed.
   if (java_lang_System::has_security_manager()) {
 
@@ -487,6 +472,7 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
     Handle mirror(THREAD, klass->java_mirror());
 
     InstanceKlass* system_loader = vmClasses::ClassLoader_klass();
+    JavaValue result(T_VOID);
     JavaCalls::call_special(&result,
                            class_loader,
                            system_loader,
@@ -496,10 +482,22 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
                            protection_domain,
                            THREAD);
 
-    if (HAS_PENDING_EXCEPTION) {
-      log_debug(protectiondomain)("DENIED !!!!!!!!!!!!!!!!!!!!!");
-    } else {
-     log_debug(protectiondomain)("granted");
+    LogTarget(Debug, protectiondomain) lt;
+    if (lt.is_enabled()) {
+      ResourceMark rm(THREAD);
+      // Print out trace information
+      LogStream ls(lt);
+      ls.print_cr("Checking package access");
+      ls.print("class loader: ");
+      class_loader()->print_value_on(&ls);
+      ls.print(" protection domain: ");
+      protection_domain()->print_value_on(&ls);
+      ls.print(" loading: "); klass->print_value_on(&ls);
+      if (HAS_PENDING_EXCEPTION) {
+        ls.print_cr(" DENIED !!!!!!!!!!!!!!!!!!!!!");
+      } else {
+        ls.print_cr(" granted");
+      }
     }
 
     if (HAS_PENDING_EXCEPTION) return;

@@ -160,7 +160,6 @@ public final class System {
     public static final PrintStream err = null;
 
     // indicates if a security manager is possible
-    // @implNote The HotSpot JVM hardcodes the value of NEVER.
     private static final int NEVER = 1;
     private static final int MAYBE = 2;
     private static @Stable int allowSecurityManager;
