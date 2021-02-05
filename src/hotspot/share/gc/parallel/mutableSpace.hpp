@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -43,6 +42,9 @@ class WorkGang;
 // page allocation time by having the memory pretouched (with
 // AlwaysPretouch) and for optimizing page placement on NUMA systems
 // by make the underlying region interleaved (with UseNUMA).
+//
+// Invariant: bottom() <= top() <= end()
+// top() and end() are exclusive.
 
 class MutableSpaceMangler;
 
@@ -54,11 +56,9 @@ class MutableSpace: public CHeapObj<mtGC> {
   // The last region which page had been setup to be interleaved.
   MemRegion _last_setup_region;
   size_t _alignment;
-  // Supports CAS-based allocation.
-  // Invariant: bottom() <= top() <= end()
-  HeapWord* _bottom;            // Start of the region.
-  HeapWord* volatile _top;      // Current allocation pointer.
-  HeapWord* volatile _end;      // Current allocation limit.  expand() advances.
+  HeapWord* _bottom;
+  HeapWord* volatile _top;
+  HeapWord* _end;
 
   MutableSpaceMangler* mangler() { return _mangler; }
 
@@ -67,22 +67,21 @@ class MutableSpace: public CHeapObj<mtGC> {
   void set_last_setup_region(MemRegion mr) { _last_setup_region = mr;   }
   MemRegion last_setup_region() const      { return _last_setup_region; }
 
- protected:
-  HeapWord* volatile* top_addr()           { return &_top; }
-  HeapWord* volatile* end_addr()           { return &_end; }
-
  public:
   virtual ~MutableSpace();
   MutableSpace(size_t page_size);
 
   // Accessors
   HeapWord* bottom() const                 { return _bottom; }
-  HeapWord* top() const                    { return Atomic::load(&_top); }
-  HeapWord* end() const                    { return Atomic::load(&_end); }
+  HeapWord* top() const                    { return _top;    }
+  HeapWord* end() const                    { return _end; }
 
   void set_bottom(HeapWord* value)         { _bottom = value; }
-  virtual void set_top(HeapWord* value)    { Atomic::store(&_top, value); }
-  void set_end(HeapWord* value)            { Atomic::store(&_end, value); }
+  virtual void set_top(HeapWord* value)    { _top = value;   }
+  void set_end(HeapWord* value)            { _end = value; }
+
+  HeapWord* volatile* top_addr()           { return &_top; }
+  HeapWord** end_addr()                    { return &_end; }
 
   size_t alignment()                       { return _alignment; }
 
