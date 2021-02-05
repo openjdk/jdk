@@ -118,7 +118,7 @@ public class ClassHistogramTest {
     }
 
     @Test(dataProvider="ArgsProvider")
-    public void valid(String args, String expactedErrMsg) {
+    public void jmx(String args, String expactedErrMsg) {
         run(new JMXExecutor(), args, expactedErrMsg);
     }
 }
