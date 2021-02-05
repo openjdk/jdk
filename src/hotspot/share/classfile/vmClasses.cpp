@@ -37,14 +37,14 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals.hpp"
 
-InstanceKlass* vmClasses::_klasses[static_cast<int>(VMClassID::LIMIT)]
+InstanceKlass* vmClasses::_klasses[static_cast<int>(vmClassID::LIMIT)]
                                                  =  { NULL /*, NULL...*/ };
 InstanceKlass* vmClasses::_box_klasses[T_VOID+1] =  { NULL /*, NULL...*/ };
 
 
 // CDS: scan and relocate all classes referenced by _klasses[].
 void vmClasses::metaspace_pointers_do(MetaspaceClosure* it) {
-  for (auto id : EnumRange<VMClassID>{}) {
+  for (auto id : EnumRange<vmClassID>{}) {
     it->push(klass_addr_at(id));
   }
 }
@@ -79,7 +79,7 @@ bool vmClasses::contain(Klass* k) {
 }
 #endif
 
-bool vmClasses::resolve(VMClassID id, TRAPS) {
+bool vmClasses::resolve(vmClassID id, TRAPS) {
   InstanceKlass** klassp = &_klasses[as_int(id)];
 
 #if INCLUDE_CDS
@@ -102,9 +102,9 @@ bool vmClasses::resolve(VMClassID id, TRAPS) {
   return ((*klassp) != NULL);
 }
 
-void vmClasses::resolve_until(VMClassID limit_id, VMClassID &start_id, TRAPS) {
+void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
   assert((int)start_id <= (int)limit_id, "IDs are out of order!");
-  for (auto id : EnumRange<VMClassID>{start_id, limit_id}) { // (inclusive start, exclusive end)
+  for (auto id : EnumRange<vmClassID>{start_id, limit_id}) { // (inclusive start, exclusive end)
     resolve(id, CHECK);
   }
 
@@ -120,7 +120,7 @@ void vmClasses::resolve_all(TRAPS) {
   ClassLoader::classLoader_init2(CHECK);
 
   // Preload commonly used klasses
-  VMClassID scan = VMClassID::FIRST;
+  vmClassID scan = vmClassID::FIRST;
   // first do Object, then String, Class
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
@@ -135,7 +135,7 @@ void vmClasses::resolve_all(TRAPS) {
     //
     // HeapShared::fixup_mapped_heap_regions() fills the empty
     // spaces in the archived heap regions and may use
-    // SystemDictionary::Object_klass(), so we can do this only after
+    // vmClasses::Object_klass(), so we can do this only after
     // Object_klass is resolved. See the above resolve_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
@@ -185,11 +185,11 @@ void vmClasses::resolve_all(TRAPS) {
   vmClasses::PhantomReference_klass()->set_reference_type(REF_PHANTOM);
 
   // JSR 292 classes
-  VMClassID jsr292_group_start = VM_CLASS_ID(MethodHandle_klass);
-  VMClassID jsr292_group_end   = VM_CLASS_ID(VolatileCallSite_klass);
+  vmClassID jsr292_group_start = VM_CLASS_ID(MethodHandle_klass);
+  vmClassID jsr292_group_end   = VM_CLASS_ID(VolatileCallSite_klass);
   resolve_until(jsr292_group_start, scan, CHECK);
   resolve_through(jsr292_group_end, scan, CHECK);
-  resolve_until(VMClassID::LIMIT, scan, CHECK);
+  resolve_until(vmClassID::LIMIT, scan, CHECK);
 
   _box_klasses[T_BOOLEAN] = vmClasses::Boolean_klass();
   _box_klasses[T_CHAR]    = vmClasses::Character_klass();
@@ -206,7 +206,7 @@ void vmClasses::resolve_all(TRAPS) {
   if (UseSharedSpaces) {
     JVMTI_ONLY(assert(JvmtiExport::is_early_phase(),
                       "All well known classes must be resolved in JVMTI early phase"));
-    for (auto id : EnumRange<VMClassID>{}) {
+    for (auto id : EnumRange<vmClassID>{}) {
       InstanceKlass* k = _klasses[as_int(id)];
       assert(k->is_shared(), "must not be replaced by JVMTI class file load hook");
     }

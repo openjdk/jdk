@@ -28,7 +28,9 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -411,7 +413,7 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
     if (k_mirror == NULL) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
-    if (!k_mirror->is_a(SystemDictionary::Class_klass())) {
+    if (!k_mirror->is_a(vmClasses::Class_klass())) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
 
@@ -854,7 +856,7 @@ JvmtiEnv::GetThreadState(jthread thread, jint* thread_state_ptr) {
     java_thread = current_thread;
     thread_oop = java_thread->threadObj();
 
-    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
+    if (thread_oop == NULL || !thread_oop->is_a(vmClasses::Thread_klass())) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
   } else {
@@ -1129,7 +1131,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
   oop thread_oop = NULL;
   if (thread == NULL) {
     thread_oop = current_thread->threadObj();
-    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
+    if (thread_oop == NULL || !thread_oop->is_a(vmClasses::Thread_klass())) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
   } else {

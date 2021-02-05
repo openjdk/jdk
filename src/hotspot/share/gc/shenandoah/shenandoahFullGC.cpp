@@ -31,9 +31,9 @@
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
-#include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -61,17 +61,17 @@
 #include "utilities/growableArray.hpp"
 #include "gc/shared/workgroup.hpp"
 
-ShenandoahMarkCompact::ShenandoahMarkCompact() :
+ShenandoahFullGC::ShenandoahFullGC() :
   _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
 
-bool ShenandoahMarkCompact::collect(GCCause::Cause cause) {
+bool ShenandoahFullGC::collect(GCCause::Cause cause) {
   vmop_entry_full(cause);
   // Always success
   return true;
 }
 
-void ShenandoahMarkCompact::vmop_entry_full(GCCause::Cause cause) {
+void ShenandoahFullGC::vmop_entry_full(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->full_stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_gross);
@@ -81,7 +81,7 @@ void ShenandoahMarkCompact::vmop_entry_full(GCCause::Cause cause) {
   VMThread::execute(&op);
 }
 
-void ShenandoahMarkCompact::entry_full(GCCause::Cause cause) {
+void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
   static const char* msg = "Pause Full";
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::full_gc, true /* log_heap_usage */);
   EventMark em("%s", msg);
@@ -93,7 +93,7 @@ void ShenandoahMarkCompact::entry_full(GCCause::Cause cause) {
   op_full(cause);
 }
 
-void ShenandoahMarkCompact::op_full(GCCause::Cause cause) {
+void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   ShenandoahMetricsSnapshot metrics;
   metrics.snap_before();
 
@@ -111,7 +111,7 @@ void ShenandoahMarkCompact::op_full(GCCause::Cause cause) {
   }
 }
 
-void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
+void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   if (ShenandoahVerify) {
@@ -275,7 +275,7 @@ public:
   }
 };
 
-void ShenandoahMarkCompact::phase1_mark_heap() {
+void ShenandoahFullGC::phase1_mark_heap() {
   GCTraceTime(Info, gc, phases) time("Phase 1: Mark live objects", _gc_timer);
   ShenandoahGCPhase mark_phase(ShenandoahPhaseTimings::full_gc_mark);
 
@@ -435,7 +435,7 @@ public:
   }
 };
 
-void ShenandoahMarkCompact::calculate_target_humongous_objects() {
+void ShenandoahFullGC::calculate_target_humongous_objects() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   // Compute the new addresses for humongous objects. We need to do this after addresses
@@ -540,7 +540,7 @@ public:
   }
 };
 
-void ShenandoahMarkCompact::distribute_slices(ShenandoahHeapRegionSet** worker_slices) {
+void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   uint n_workers = heap->workers()->active_workers();
@@ -682,7 +682,7 @@ void ShenandoahMarkCompact::distribute_slices(ShenandoahHeapRegionSet** worker_s
 #endif
 }
 
-void ShenandoahMarkCompact::phase2_calculate_target_addresses(ShenandoahHeapRegionSet** worker_slices) {
+void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet** worker_slices) {
   GCTraceTime(Info, gc, phases) time("Phase 2: Compute new object addresses", _gc_timer);
   ShenandoahGCPhase calculate_address_phase(ShenandoahPhaseTimings::full_gc_calculate_addresses);
 
@@ -804,7 +804,7 @@ public:
   }
 };
 
-void ShenandoahMarkCompact::phase3_update_references() {
+void ShenandoahFullGC::phase3_update_references() {
   GCTraceTime(Info, gc, phases) time("Phase 3: Adjust pointers", _gc_timer);
   ShenandoahGCPhase adjust_pointer_phase(ShenandoahPhaseTimings::full_gc_adjust_pointers);
 
@@ -929,7 +929,7 @@ public:
   }
 };
 
-void ShenandoahMarkCompact::compact_humongous_objects() {
+void ShenandoahFullGC::compact_humongous_objects() {
   // Compact humongous regions, based on their fwdptr objects.
   //
   // This code is serial, because doing the in-slice parallel sliding is tricky. In most cases,
@@ -1023,7 +1023,7 @@ public:
   }
 };
 
-void ShenandoahMarkCompact::phase4_compact_objects(ShenandoahHeapRegionSet** worker_slices) {
+void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_slices) {
   GCTraceTime(Info, gc, phases) time("Phase 4: Move objects", _gc_timer);
   ShenandoahGCPhase compaction_phase(ShenandoahPhaseTimings::full_gc_copy_objects);
 
