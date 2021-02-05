@@ -735,7 +735,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         throws IllegalBlockSizeException, AEADBadTagException,
         ShortBufferException {
         if (len < tagLenBytes) {
-            throw new AEADBadTagException("Input too short - need tag");
+            throw new AEADBadTagException("No input given - need tag");
         }
 
         // do this check here can also catch the potential integer overflow
@@ -834,7 +834,7 @@ final class GaloisCounterMode extends FeedbackCipher {
             // Limit is how much of the ibuffer has been chopped off.
             len = buffer.remaining();
         } else {
-            throw new AEADBadTagException("Input too short - need tag");
+            throw new AEADBadTagException("No input given - need tag");
         }
 
         // 'len' contains the length in ibuffer and src
@@ -907,6 +907,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         // Decrypt the all the input data and put it into dst
         doLastBlock(buffer, ct, dst);
         restoreDst(dst);
+        src.position(src.limit());
         // 'processed' from the gctr decryption operation, not ghash
         return processed;
     }
