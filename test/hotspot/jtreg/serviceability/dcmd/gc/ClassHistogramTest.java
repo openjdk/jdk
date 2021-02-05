@@ -50,8 +50,12 @@ public class ClassHistogramTest {
         }
     }
 
-    public void run(CommandExecutor executor, String classHistogramArgs) {
+    public void run(CommandExecutor executor, String classHistogramArgs, String expactedErrMsg) {
         OutputAnalyzer output = executor.execute("GC.class_histogram " + classHistogramArgs);
+        if (!expactedErrMsg.isEmpty()) {
+            output.shouldMatch(expactedErrMsg);
+            return;
+        }
 
         /*
          * example output:
@@ -89,24 +93,32 @@ public class ClassHistogramTest {
 
     @DataProvider(name="ArgsProvider")
     private Object[][] getArgs() {
+        String parallelErr = "Parallel thread number out of range";
         return new Object[][] {
-                {""},
-                {"-parallel=0"},
-                {"-parallel=1"},
-                {"-parallel=2"},
-                {"-all=false -parallel=0"},
-                {"-all=false -parallel=1"},
-                {"-all=false -parallel=2"},
-                {"-all=true"},
-                {"-all=true -parallel=0"},
-                {"-all=true -parallel=1"},
-                {"-all=true -parallel=2"},
-                {"-parallel=2 -all=true"}
+                // valid args
+                {"", ""},
+                {"-parallel=0", ""},
+                {"-parallel=1", ""},
+                {"-parallel=2", ""},
+                {"-parallel="+Long.MAX_VALUE, ""},
+                {"-all=false -parallel=0", ""},
+                {"-all=false -parallel=1", ""},
+                {"-all=false -parallel=2", ""},
+                {"-all=true", ""},
+                {"-all=true -parallel=0", ""},
+                {"-all=true -parallel=1", ""},
+                {"-all=true -parallel=2", ""},
+                {"-parallel=2 -all=true", ""},
+                // invalid args
+                {"-parallel=-1", parallelErr},
+                {"-parallel="+Long.MIN_VALUE, parallelErr},
+                {"-all=false -parallel=-10", parallelErr},
+                {"-all=true -parallel=-100", parallelErr},
         };
     }
 
     @Test(dataProvider="ArgsProvider")
-    public void jmx(String args) {
-        run(new JMXExecutor(), args);
+    public void valid(String args, String expactedErrMsg) {
+        run(new JMXExecutor(), args, expactedErrMsg);
     }
 }

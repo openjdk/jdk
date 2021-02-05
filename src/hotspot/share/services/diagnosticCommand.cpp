@@ -556,17 +556,21 @@ ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
   _all("-all", "Inspect all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _parallel_thread_num("-parallel",
-       "parallel threads number for heap iteration. "
-       "0 use system determined number of threads, "
-       "1 use one thread, i.e., disable parallelism, "
-       "n use n threads, n must be positive.",
+       "Number of parallel threads for heap iteration. "
+       "0 means let the VM determined the number of threads. "
+       "1 means use one thread, i.e. disable parallelism. "
+       "n means use n threads. n must be positive.",
        "INT", false, "0") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_option(&_parallel_thread_num);
 }
 
 void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
-  uint num = (uint)_parallel_thread_num.value();
+  jlong num = _parallel_thread_num.value();
+  if (num < 0) {
+    output()->print_cr("Parallel thread number out of range (>=0): " JLONG_FORMAT, num);
+    return;
+  }
   uint parallel_thread_num = num == 0
       ? MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8)
       : num;
