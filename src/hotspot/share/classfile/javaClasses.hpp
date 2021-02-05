@@ -279,7 +279,7 @@ class java_lang_Class : AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
   static void archive_basic_type_mirrors() NOT_CDS_JAVA_HEAP_RETURN;
   static oop  archive_mirror(Klass* k) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  static oop  process_archived_mirror(Klass* k, oop mirror, oop archived_mirro)
+  static oop  process_archived_mirror(Klass* k, oop mirror, oop archived_mirror)
                                       NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static bool restore_archived_mirror(Klass *k, Handle class_loader, Handle module,
                                       Handle protection_domain,
