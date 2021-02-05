@@ -675,34 +675,35 @@ static void verify_the_heap(Klass* k, const char* which) {
 // Note: if a ArchivedKlassSubGraphInfoRecord contains non-early classes, and JVMTI
 // ClassFileLoadHook is enabled, it's possible for this class to be dynamically replaced. In
 // this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
-void HeapShared::resolve_classes(TRAPS) {
+void HeapShared::resolve_classes(Thread* THREAD) {
   if (!is_mapped()) {
     return; // nothing to do
   }
   resolve_classes_for_subgraphs(closed_archive_subgraph_entry_fields,
                                 num_closed_archive_subgraph_entry_fields,
-                                THREAD /* exceptions are ignored */);
+                                THREAD);
   resolve_classes_for_subgraphs(open_archive_subgraph_entry_fields,
                                 num_open_archive_subgraph_entry_fields,
-                                THREAD /* exceptions are ignored */);
+                                THREAD);
   resolve_classes_for_subgraphs(fmg_open_archive_subgraph_entry_fields,
                                 num_fmg_open_archive_subgraph_entry_fields,
-                                THREAD /* exceptions are ignored */);
+                                THREAD);
 }
 
 void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                               int num, TRAPS) {
+                                               int num, Thread* THREAD) {
   for (int i = 0; i < num; i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name = SymbolTable::new_symbol(info->klass_name);
     InstanceKlass* k = SystemDictionaryShared::find_builtin_class(klass_name);
     assert(k != NULL && k->is_shared_boot_class(), "sanity");
-    resolve_classes_for_subgraph_of(k, THREAD /* exceptions are ignored */);
+    resolve_classes_for_subgraph_of(k, THREAD);
   }
 }
 
-void HeapShared::resolve_classes_for_subgraph_of(Klass* k, TRAPS) {
- const ArchivedKlassSubGraphInfoRecord* record = resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
+void HeapShared::resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD) {
+ const ArchivedKlassSubGraphInfoRecord* record =
+   resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
  if (HAS_PENDING_EXCEPTION) {
    CLEAR_PENDING_EXCEPTION;
  }
@@ -711,7 +712,7 @@ void HeapShared::resolve_classes_for_subgraph_of(Klass* k, TRAPS) {
  }
 }
 
-void HeapShared::initialize_from_archived_subgraph(Klass* k, TRAPS) {
+void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
   if (!is_mapped()) {
     return; // nothing to do
   }
@@ -1238,7 +1239,7 @@ public:
 };
 
 void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
-                                            int num, TRAPS) {
+                                            int num, Thread* THREAD) {
   for (int i = 0; i < num; i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name =  SymbolTable::new_symbol(info->klass_name);
@@ -1267,26 +1268,26 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
   }
 }
 
-void HeapShared::init_subgraph_entry_fields(TRAPS) {
+void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
   assert(is_heap_object_archiving_allowed(), "Sanity check");
   _dump_time_subgraph_info_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeKlassSubGraphInfoTable();
   init_subgraph_entry_fields(closed_archive_subgraph_entry_fields,
                              num_closed_archive_subgraph_entry_fields,
-                             THREAD /* aborts on exception */);
+                             THREAD);
   init_subgraph_entry_fields(open_archive_subgraph_entry_fields,
                              num_open_archive_subgraph_entry_fields,
-                             THREAD /* aborts on exception */);
+                             THREAD);
   if (MetaspaceShared::use_full_module_graph()) {
     init_subgraph_entry_fields(fmg_open_archive_subgraph_entry_fields,
                                num_fmg_open_archive_subgraph_entry_fields,
-                               THREAD /* aborts on exception */);
+                               THREAD);
   }
 }
 
-void HeapShared::init_for_dumping(TRAPS) {
+void HeapShared::init_for_dumping(Thread* THREAD) {
   if (is_heap_object_archiving_allowed()) {
     _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
-    init_subgraph_entry_fields(THREAD /* aborts on exception */);
+    init_subgraph_entry_fields(THREAD);
   }
 }
 

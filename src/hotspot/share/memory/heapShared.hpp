@@ -223,7 +223,7 @@ private:
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
 
   static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
-                                         int num, TRAPS);
+                                         int num, Thread* THREAD);
 
   // Used by decode_from_archive
   static address _narrow_oop_base;
@@ -274,8 +274,8 @@ private:
   static void copy_roots();
 
   static void resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                            int num, TRAPS);
-  static void resolve_classes_for_subgraph_of(Klass* k, TRAPS);
+                                            int num, Thread* THREAD);
+  static void resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD);
   static void clear_archived_roots_of(Klass* k);
   static const ArchivedKlassSubGraphInfoRecord*
                resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS);
@@ -385,8 +385,8 @@ private:
 
   inline static bool is_archived_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  static void resolve_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static void initialize_from_archived_subgraph(Klass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void resolve_classes(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  static void initialize_from_archived_subgraph(Klass* k, Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
 
   // NarrowOops stored in the CDS archive may use a different encoding scheme
   // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_regions_impl.
@@ -399,8 +399,8 @@ private:
   static void patch_archived_heap_embedded_pointers(MemRegion mem, address  oopmap,
                                                     size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
-  static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_subgraph_entry_fields(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_for_dumping(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_subgraph_entry_fields(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_subgraph_info_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 };
