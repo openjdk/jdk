@@ -1403,6 +1403,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         @Override
         public synchronized void flush() throws IOException {
             if (segmentMode) {
+                // The case that nothing has been written in segment.
+                if (segmentWritten == 0) return;
+                // There must be more data than just header size written for non-empty segment.
                 assert segmentWritten > SEGMENT_HEADER_SIZE
                         : "invalid header in segmented mode";
 

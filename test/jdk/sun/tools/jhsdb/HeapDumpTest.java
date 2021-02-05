@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,13 @@ import jdk.test.lib.SA.SATestUtils;
 public class HeapDumpTest {
 
     private static LingeredAppWithExtendedChars theApp = null;
-
+    private static final String SUCCESS_STRING = "heap written to";
     /**
      *
      * @param vmArgs  - tool arguments to launch jhsdb
      * @return exit code of tool
      */
-    public static void launch(String expectedMessage, List<String> toolArgs)
+    public static void launch(int expectedExitValue, List<String> toolArgs)
         throws IOException {
 
         System.out.println("Starting LingeredApp");
@@ -81,9 +81,12 @@ public class HeapDumpTest {
             System.out.println(output.getStdout());
             System.out.println("stderr:");
             System.out.println(output.getStderr());
-            output.shouldContain(expectedMessage);
-            output.shouldHaveExitValue(0);
-
+            output.shouldHaveExitValue(expectedExitValue);
+            if (expectedExitValue == 0) {
+                output.shouldContain(SUCCESS_STRING);
+            } else {
+                output.stdoutShouldNotContain(SUCCESS_STRING);
+            }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
@@ -91,10 +94,9 @@ public class HeapDumpTest {
         }
     }
 
-    public static void launch(String expectedMessage, String... toolArgs)
+    public static void launch(int expectedExitValue, String... toolArgs)
         throws IOException {
-
-        launch(expectedMessage, Arrays.asList(toolArgs));
+        launch(expectedExitValue, Arrays.asList(toolArgs));
     }
 
     public static void printStackTraces(String file) throws IOException {
@@ -108,31 +110,66 @@ public class HeapDumpTest {
         }
     }
 
-    public static void testHeapDump() throws IOException {
+    public static void testHeapDump(SubTest subtest) throws IOException {
+        String gzOption = subtest.getGzOption();
+        boolean checkSuccess = subtest.needCheckSuccess();
+        int expectedExitValue = checkSuccess ? 0 : 1;
+
         File dump = new File("jhsdb.jmap.heap." +
                              System.currentTimeMillis() + ".hprof");
         if (dump.exists()) {
             dump.delete();
         }
+        if (gzOption == null || gzOption.length() == 0) {
+            launch(expectedExitValue, "jmap",
+                   "--binaryheap", "--dumpfile=" + dump.getAbsolutePath());
+        } else {
+            launch(expectedExitValue, "jmap",
+                   "--binaryheap", gzOption, "--dumpfile=" + dump.getAbsolutePath());
+        }
 
-        launch("heap written to", "jmap",
-               "--binaryheap", "--dumpfile=" + dump.getAbsolutePath());
+        if (checkSuccess) {
+            assertTrue(dump.exists() && dump.isFile(),
+                       "Could not create dump file " + dump.getAbsolutePath());
 
-        assertTrue(dump.exists() && dump.isFile(),
-                   "Could not create dump file " + dump.getAbsolutePath());
-
-        printStackTraces(dump.getAbsolutePath());
-
-        dump.delete();
+            printStackTraces(dump.getAbsolutePath());
+            dump.delete();
+        } else {
+            assertTrue(!dump.exists(), "Unexpected file created: " + dump.getAbsolutePath());
+        }
     }
 
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
-        testHeapDump();
-
+        SubTest[] subtests = new SubTest[] {
+                new SubTest("", true/*checkSuccess*/),
+                new SubTest("--gz=1", true),
+                new SubTest("--gz=9", true),
+                new SubTest("--gz=0", false),
+                new SubTest("--gz=100", false),
+                new SubTest("--gz=", false),
+                new SubTest("--gz", false),
+        };
+        // Run subtests
+        for (int i = 0; i < subtests.length;i++) {
+            testHeapDump(subtests[i]);
+        }
         // The test throws RuntimeException on error.
         // IOException is thrown if LingeredApp can't start because of some bad
         // environment condition
         System.out.println("Test PASSED");
+    }
+
+    private static class SubTest {
+        private String gzOption;
+        boolean needCheckSuccess;
+
+        public SubTest(String gzOpt, boolean checkSuccess) {
+            gzOption = gzOpt;
+            needCheckSuccess = checkSuccess;
+        }
+
+        public String getGzOption() { return gzOption; }
+        public boolean needCheckSuccess() { return needCheckSuccess; }
     }
 }

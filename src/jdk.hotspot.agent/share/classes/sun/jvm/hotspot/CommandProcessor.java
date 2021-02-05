@@ -1797,15 +1797,25 @@ public class CommandProcessor {
                         return;
                     }
                     if (cntTokens >= 1) { // parse first argument which is "gz=" option
-                        String option  = t.nextToken();
-                        gzlevel = parseHeapDumpCompressionLevel(option);
-                        if (gzlevel <= 0 || gzlevel > 9) {
+                        String option = t.nextToken();
+                        if (!option.startsWith("gz=")) {
+                            filename = option;
+                        } else {
+                            gzlevel = parseHeapDumpCompressionLevel(option);
+                            if (gzlevel <= 0 || gzlevel > 9) {
+                                usage();
+                                return;
+                            }
+                            filename = "heap.bin.gz";
+                        }
+                    }
+                    if (cntTokens == 2) { // parse second argument which is filename
+                        if (gzlevel == 0) {
+                            // The first option is not compression level, it is parsed as filename.
+                            err.println("unknown option: " + filename);
                             usage();
                             return;
                         }
-                        filename = "heap.bin.gz";
-                    }
-                    if (cntTokens == 2) { // parse second argument which is filename
                         filename = t.nextToken();
                         if (filename.startsWith("gz=")) {
                             err.println("Filename should not start with \"gz=\": " + filename);
