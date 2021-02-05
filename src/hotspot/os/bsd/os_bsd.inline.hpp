@@ -28,13 +28,6 @@
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
 
-// System includes
-
-#include <unistd.h>
-#include <sys/socket.h>
-#include <poll.h>
-#include <netdb.h>
-
 inline bool os::uses_stack_guard_pages() {
   return true;
 }
@@ -54,63 +47,6 @@ inline bool os::must_commit_stack_guard_pages() {
 
 // Bang the shadow pages if they need to be touched to be mapped.
 inline void os::map_stack_shadow_pages(address sp) {
-}
-
-inline void os::dll_unload(void *lib) {
-  ::dlclose(lib);
-}
-
-inline jlong os::lseek(int fd, jlong offset, int whence) {
-  return (jlong) ::lseek(fd, offset, whence);
-}
-
-inline int os::fsync(int fd) {
-  return ::fsync(fd);
-}
-
-inline int os::ftruncate(int fd, jlong length) {
-  return ::ftruncate(fd, length);
-}
-
-inline bool os::numa_has_static_binding()   { return true; }
-inline bool os::numa_has_group_homing()     { return false;  }
-
-inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  size_t res;
-  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
-  return res;
-}
-
-inline int os::socket_close(int fd) {
-  return ::close(fd);
-}
-
-inline int os::socket(int domain, int type, int protocol) {
-  return ::socket(domain, type, protocol);
-}
-
-inline int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
-  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
-}
-
-inline int os::send(int fd, char* buf, size_t nBytes, uint flags) {
-  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
-}
-
-inline int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
-  return os::send(fd, buf, nBytes, flags);
-}
-
-inline int os::connect(int fd, struct sockaddr* him, socklen_t len) {
-  RESTARTABLE_RETURN_INT(::connect(fd, him, len));
-}
-
-inline struct hostent* os::get_host_by_name(char* name) {
-  return ::gethostbyname(name);
-}
-
-inline void os::exit(int num) {
-  ::exit(num);
 }
 
 #endif // OS_BSD_OS_BSD_INLINE_HPP
