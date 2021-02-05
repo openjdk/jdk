@@ -554,6 +554,53 @@ void LateInlineVirtualCallGenerator::do_late_inline() {
   CallGenerator::do_late_inline_helper();
 }
 
+static void delay_box_in_uncommon_trap(CallNode* call, Node* resproj) {
+  if (resproj != NULL && call->is_CallStaticJava() &&
+      call->as_CallStaticJava()->is_boxing_method()) {
+    GraphKit kit(call->jvms());
+    PhaseGVN& gvn = kit.gvn();
+
+    Node_List delay_boxes;
+    bool no_use = true;
+    for (DUIterator_Fast imax, i = resproj->fast_outs(imax); i < imax; i++) {
+      Node* m = resproj->fast_out(i);
+      if (m->is_CallStaticJava() &&
+          m->as_CallStaticJava()->uncommon_trap_request() != 0) {
+        delay_boxes.push(m);
+      } else {
+        no_use = false;
+        break;
+      }
+    }
+
+    if (no_use) {
+      // delay box node in uncommon_trap runtime, treat box as a scalarized object
+      while (delay_boxes.size() > 0) {
+        ProjNode* res = resproj->as_Proj();
+        Node* uncommon_trap_node = delay_boxes.pop();
+        int in_edge = uncommon_trap_node->find_edge(res);
+        assert(in_edge > 0, "sanity");
+
+        ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
+        int n_fields = klass->nof_nonstatic_fields();
+        assert(n_fields == 1, "sanity");
+
+        uint first_ind = (uncommon_trap_node->req() - uncommon_trap_node->jvms()->scloff());
+        Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
+#ifdef ASSERT
+                                                  NULL,
+#endif // ASSERT
+                                                  first_ind, n_fields);
+        sobj->init_req(0, kit.root());
+        uncommon_trap_node->add_req(call->in(res->_con));
+        sobj = gvn.transform(sobj);
+        uncommon_trap_node->jvms()->set_endoff(uncommon_trap_node->req());
+        uncommon_trap_node->set_req(in_edge, sobj);
+      }
+    }
+  }
+}
+
 void CallGenerator::do_late_inline_helper() {
   assert(is_late_inline(), "only late inline allowed");
 
@@ -603,50 +650,7 @@ void CallGenerator::do_late_inline_helper() {
     C->remove_macro_node(call);
   }
 
-  if (callprojs.resproj != NULL && call->is_CallStaticJava() &&
-      call->as_CallStaticJava()->is_boxing_method()) {
-    GraphKit kit(call->jvms());
-    PhaseGVN& gvn = kit.gvn();
-
-    Node_List delay_boxes;
-    bool no_use = true;
-    for (DUIterator_Fast imax, i = callprojs.resproj->fast_outs(imax); i < imax; i++) {
-      Node* m = callprojs.resproj->fast_out(i);
-      if (m->is_CallStaticJava() &&
-          m->as_CallStaticJava()->uncommon_trap_request() != 0) {
-        delay_boxes.push(m);
-      } else {
-        no_use = false;
-        break;
-      }
-    }
-
-    if (no_use) {
-      // delay box node in uncommon_trap runtime, treat box as a scalarized object
-      while (delay_boxes.size() > 0) {
-        ProjNode* res = callprojs.resproj->as_Proj();
-        Node* uncommon_trap_node = delay_boxes.pop();
-        int in_edge = uncommon_trap_node->find_edge(res);
-        assert(in_edge > 0, "sanity");
-
-        ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
-        int n_fields = klass->nof_nonstatic_fields();
-        assert(n_fields == 1, "sanity");
-
-        uint first_ind = (uncommon_trap_node->req() - uncommon_trap_node->jvms()->scloff());
-        Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
-#ifdef ASSERT
-                                                  NULL,
-#endif // ASSERT
-                                                  first_ind, n_fields);
-        sobj->init_req(0, C->root());
-        uncommon_trap_node->add_req(call->in(res->_con));
-        sobj = gvn.transform(sobj);
-        uncommon_trap_node->jvms()->set_endoff(uncommon_trap_node->req());
-        uncommon_trap_node->set_req(in_edge, sobj);
-      }
-    }
-  }
+  delay_box_in_uncommon_trap(call, callprojs.resproj);
 
   bool result_not_used = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
   if (is_pure_call() && result_not_used) {
