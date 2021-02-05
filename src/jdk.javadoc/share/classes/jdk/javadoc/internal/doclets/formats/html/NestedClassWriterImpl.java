@@ -101,8 +101,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
 
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
-        Content classLink = writer.getPreQualifiedClassLink(
-                LinkInfoImpl.Kind.MEMBER, typeElement, false);
+        Content classLink = writer.getPreQualifiedClassLink(LinkInfoImpl.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = new StringContent(utils.isInterface(typeElement)

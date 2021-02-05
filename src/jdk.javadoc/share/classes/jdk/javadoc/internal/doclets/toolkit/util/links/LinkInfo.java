@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,11 +65,6 @@ public abstract class LinkInfo {
     public boolean isVarArg = false;
 
     /**
-     * Set this to true to indicate that you are linking to a type parameter.
-     */
-    public boolean isTypeBound = false;
-
-    /**
      * The label for the link.
      */
     public Content label;
@@ -80,16 +75,6 @@ public abstract class LinkInfo {
     public boolean isStrong = false;
 
     /**
-     * True if we should include the type in the link label.  False otherwise.
-     */
-    public boolean includeTypeInClassLinkLabel = true;
-
-    /**
-     * True if we should include the type as separate link.  False otherwise.
-     */
-    public boolean includeTypeAsSepLink = false;
-
-    /**
      * True if we should exclude the type bounds for the type parameter.
      */
     public boolean excludeTypeBounds = false;
@@ -98,11 +83,6 @@ public abstract class LinkInfo {
      * True if we should print the type parameters, but not link them.
      */
     public boolean excludeTypeParameterLinks = false;
-
-    /**
-     * True if we should print the type bounds, but not link them.
-     */
-    public boolean excludeTypeBoundsLinks = false;
 
     /**
      * By default, the link can be to the page it's already on.  However,
@@ -116,20 +96,28 @@ public abstract class LinkInfo {
     public boolean skipPreview;
 
     /**
-     * Return an empty instance of a content object.
+     * Returns an empty instance of a content object.
      *
      * @return an empty instance of a content object.
      */
     protected abstract Content newContent();
 
     /**
-     * Return true if this link is linkable and false if we can't link to the
+     * Returns true if this link is linkable and false if we can't link to the
      * desired place.
      *
      * @return true if this link is linkable and false if we can't link to the
      * desired place.
      */
     public abstract boolean isLinkable();
+
+    /**
+     * Returns true if links to declared types should include links to the
+     * type parameters.
+     *
+     * @return true if type parameter links should be included
+     */
+    public abstract boolean includeTypeParameterLinks();
 
     /**
      * Return the label for this class link.
@@ -157,14 +145,10 @@ public abstract class LinkInfo {
                 ", executableElement=" + executableElement +
                 ", type=" + type +
                 ", isVarArg=" + isVarArg +
-                ", isTypeBound=" + isTypeBound +
                 ", label=" + label +
                 ", isStrong=" + isStrong +
-                ", includeTypeInClassLinkLabel=" + includeTypeInClassLinkLabel +
-                ", includeTypeAsSepLink=" + includeTypeAsSepLink +
                 ", excludeTypeBounds=" + excludeTypeBounds +
                 ", excludeTypeParameterLinks=" + excludeTypeParameterLinks +
-                ", excludeTypeBoundsLinks=" + excludeTypeBoundsLinks +
                 ", linkToSelf=" + linkToSelf + '}';
     }
 }
