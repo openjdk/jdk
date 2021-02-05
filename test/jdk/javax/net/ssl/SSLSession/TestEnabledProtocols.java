@@ -128,11 +128,7 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             out.write(280);
         } catch (SSLHandshakeException e) {
             if (!exceptionExpected) {
-                System.out.println(
-                        "Client got UNEXPECTED SSLHandshakeException:");
-                e.printStackTrace(System.out);
-                System.out.println("** FAILURE **");
-                throw new RuntimeException(e);
+                failTest(e, "Client got UNEXPECTED SSLHandshakeException:");
             } else {
                 System.out.println(
                         "Client got expected SSLHandshakeException:");
@@ -141,14 +137,23 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             }
         } catch (SSLException ssle) {
             // The server side may have closed the socket.
-            System.out.println("Client SSLException:");
-            ssle.printStackTrace(System.out);
+            if ("Connection reset".equals(ssle.getCause().getMessage())) {
+                System.out.println("Client SSLException:");
+                ssle.printStackTrace(System.out);
+            } else {
+                failTest(ssle, "Client got UNEXPECTED SSLException:");
+            }
+
         } catch (Exception e) {
-            System.out.println("Client got UNEXPECTED Exception:");
-            e.printStackTrace(System.out);
-            System.out.println("** FAILURE **");
-            throw new RuntimeException(e);
+            failTest(e, "Client got UNEXPECTED Exception:");
         }
+    }
+
+    private void failTest(Exception e, String message) {
+        System.out.println(message);
+        e.printStackTrace(System.out);
+        System.out.println("** FAILURE **");
+        throw new RuntimeException(e);
     }
 
     public static void main(String[] args) throws Exception {
