@@ -204,10 +204,15 @@ AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
       # This is most likely not really correct.
 
       # Add runtime stack smashing and undefined behavior checks.
-      CFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
-      CXXFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
+      # Not all versions of gcc support -fstack-protector-all
+      STACK_PROTECTOR_ALL_CFLAG="-fstack-protector-all"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [STACK_PROTECTOR_ALL_CFLAG -Werror],
+        IF_FALSE: [STACK_PROTECTOR_ALL_CFLAG=""])
 
-      JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -fstack-protector-all --param ssp-buffer-size=1"
+      CFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_ALL_CFLAG --param ssp-buffer-size=1"
+      CXXFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_ALL_CFLAG --param ssp-buffer-size=1"
+
+      JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS $STACK_PROTECTOR_ALL_CFLAG --param ssp-buffer-size=1"
       ;;
     esac
   fi
