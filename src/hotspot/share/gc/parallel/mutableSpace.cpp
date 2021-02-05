@@ -215,6 +215,15 @@ bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
   return Atomic::cmpxchg(top_addr(), expected_top, obj) == expected_top;
 }
 
+// Only used by oldgen allocation.
+bool MutableSpace::needs_expand(size_t word_size) const {
+  assert_lock_strong(ExpandHeap_lock);
+  // Holding the lock means end is stable.  So while top may be advancing
+  // via concurrent allocations, there is no need to order the reads of top
+  // and end here, unlike in cas_allocate.
+  return pointer_delta(end(), top()) < word_size;
+}
+
 void MutableSpace::oop_iterate(OopIterateClosure* cl) {
   HeapWord* obj_addr = bottom();
   HeapWord* t = top();

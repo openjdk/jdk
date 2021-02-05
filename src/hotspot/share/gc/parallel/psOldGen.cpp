@@ -180,7 +180,19 @@ void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
 
 bool PSOldGen::expand_for_allocate(size_t word_size) {
   assert(word_size > 0, "allocating zero words?");
-  bool result = expand(word_size*HeapWordSize);
+  bool result = true;
+  {
+    MutexLocker x(ExpandHeap_lock);
+    // Avoid "expand storms" by rechecking available space after obtaining
+    // the lock, because another thread may have already made sufficient
+    // space available.  If insufficient space available, that will remain
+    // true until we expand, since we have the lock.  Other threads may take
+    // the space we need before we can allocate it, regardless of whether we
+    // expand.  That's okay, we'll just try expanding again.
+    if (object_space()->needs_expand(word_size)) {
+      result = expand(word_size*HeapWordSize);
+    }
+  }
   if (GCExpandToAllocateDelayMillis > 0) {
     os::naked_sleep(GCExpandToAllocateDelayMillis);
   }
@@ -188,8 +200,9 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
 }
 
 bool PSOldGen::expand(size_t bytes) {
+  assert_lock_strong(ExpandHeap_lock);
+  assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
-  MutexLocker x(ExpandHeap_lock);
   const size_t alignment = virtual_space()->alignment();
   size_t aligned_bytes  = align_up(bytes, alignment);
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
@@ -319,10 +332,10 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
+    MutexLocker x(ExpandHeap_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    // shrink doesn't grab this lock, expand does. Is that right?
     MutexLocker x(ExpandHeap_lock);
     shrink(change_bytes);
   }
