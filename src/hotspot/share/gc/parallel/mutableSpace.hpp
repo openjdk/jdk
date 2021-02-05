@@ -70,6 +70,7 @@ class MutableSpace: public CHeapObj<mtGC> {
 
  protected:
   HeapWord* volatile* top_addr()           { return &_top; }
+  HeapWord* volatile* end_addr()           { return &_end; }
 
  public:
   virtual ~MutableSpace();
