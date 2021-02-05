@@ -195,36 +195,22 @@ public:
 
   // Override JavaTestThread's main_run(), this is the code for thread to execute
   void main_run() {
+    // tty->print_cr("Starting test thread");
     long stopTime = os::javaTimeMillis() + TEST_DURATION;
-
-    int iteration = 0;
-    tty->print_cr("Start: TestIteration: %d ", iteration);
     while (os::javaTimeMillis() < stopTime) {
-      // tty->print_cr("TestIteration: %d ", iteration);
       run_unit_test();
-      iteration++;
     }
   }
 
 private:
   void run_unit_test() {
-    // os::naked_short_sleep(100);
     TestReservedSpace::test_reserved_space();
   }
-
-
 };
 
 
-class DriverThread : public JavaTestThread {
-public:
-  Semaphore _done; // TODO: which one to use? _done or local done?
-  DriverThread(Semaphore* post) : JavaTestThread(post) { };
-  virtual ~DriverThread(){}
-
-  void main_run() {
+TEST_VM(ReservedSpaceConcurrent, test_concurrent_threads) {
     Semaphore done(0);
-
 
     UnitTestThread* st[TEST_THREAD_COUNT];
     for (int i = 0; i < TEST_THREAD_COUNT; i++) {
@@ -235,13 +221,7 @@ public:
       st[i]->doit();
     }
 
-    // TODO: is this the correct logic here for Semaphore? Is loop really needed?
     for (int i = 0; i < TEST_THREAD_COUNT; i++) {
       done.wait();
     }
-  }
-};
-
-TEST_VM(ReservedSpaceConcurrent, test_concurrent_threads) {
-  mt_test_doer<DriverThread>();
 }
