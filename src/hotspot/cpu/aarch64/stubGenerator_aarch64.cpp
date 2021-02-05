@@ -72,6 +72,19 @@
 
 // Stub Code definitions
 
+
+class AtomicTest {
+public:
+  long _l;
+
+  AtomicTest() {
+    if (getenv("TEST_ATOMIC_SPEED_NOW")) {
+      for (_l = 0; Atomic::fetch_and_add(&_l, 1L) < 1000000000; );
+      exit(99);
+    }
+  }
+};
+
 class StubGenerator: public StubCodeGenerator {
  private:
 
@@ -5581,6 +5594,10 @@ class StubGenerator: public StubCodeGenerator {
     // CodeBuffer cbuf(code_mem, 65536);
     // MacroAssembler masm(&cbuf);
 
+    if (! UseLSE) {
+      return;
+    }
+
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "atomic entry points");
 
@@ -6760,6 +6777,8 @@ class StubGenerator: public StubCodeGenerator {
 
     generate_atomic_entry_points();
 
+    AtomicTest dummy;
+
     StubRoutines::aarch64::set_completed();
   }
 
@@ -6811,5 +6830,3 @@ DEFAULT_ATOMIC_OP(xchg, 8)
 DEFAULT_ATOMIC_OP(cmpxchg, 1)
 DEFAULT_ATOMIC_OP(cmpxchg, 4)
 DEFAULT_ATOMIC_OP(cmpxchg, 8)
-
-
