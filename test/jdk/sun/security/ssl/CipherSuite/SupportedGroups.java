@@ -23,7 +23,7 @@
 
  /*
   * @test
-  * @bug 8171279 8241372
+  * @bug 8171279
   * @library /javax/net/ssl/templates
   * @summary Test TLS connection with each individual supported group
   * @run main/othervm SupportedGroups x25519

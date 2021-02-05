@@ -23,13 +23,16 @@
 
 /*
  * @test
- * @bug 4748292 8241372
+ * @bug 4748292
+ * @library /test/lib
  * @summary Prevent/Disable reverse name lookups with JSSE SSL sockets
- * @run main/othervm ReverseNameLookup
+ * @run main/othervm ReverseNameLookup -Djava.net.preferIPv4Stack
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
  */
+
+import jdk.test.lib.net.IPSupport;
 
 import java.io.*;
 import java.net.*;
@@ -155,6 +158,7 @@ public class ReverseNameLookup {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;

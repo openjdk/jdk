@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 4416068 4478803 4479736 8241372
+ * @bug 4416068 4478803 4479736
  * @summary 4273544 JSSE request for function forceV3ClientHello()
  *          4479736 setEnabledProtocols API does not work correctly
  *          4478803 Need APIs to determine the protocol versions used in an SSL

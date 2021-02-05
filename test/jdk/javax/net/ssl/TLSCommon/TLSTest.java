@@ -50,7 +50,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 /*
  * @test
- * @bug 8205111 8241372
+ * @bug 8205111
  * @summary Test TLS with different types of supported keys.
  * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha1 TLS_AES_128_GCM_SHA256
  * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha256 TLS_AES_128_GCM_SHA256
