@@ -295,7 +295,6 @@ public class ServerSocket implements java.io.Closeable {
     }
 
     private void setImpl() {
-        @SuppressWarnings("deprecation")
         SocketImplFactory factory = ServerSocket.factory;
         if (factory != null) {
             impl = factory.createSocketImpl();
@@ -616,7 +615,6 @@ public class ServerSocket implements java.io.Closeable {
             return platformImplAccept();
         } else {
             // custom server SocketImpl, client SocketImplFactory must be set
-            @SuppressWarnings("deprecation")
             SocketImplFactory factory = Socket.socketImplFactory();
             if (factory == null) {
                 throw new IOException("An instance of " + impl.getClass() +
@@ -897,7 +895,6 @@ public class ServerSocket implements java.io.Closeable {
     /**
      * The factory for all server sockets.
      */
-    @Deprecated(since = "17")
     private static volatile SocketImplFactory factory;
 
     /**

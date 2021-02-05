@@ -202,7 +202,6 @@ public class Socket implements java.io.Closeable {
         } else {
             if (p == Proxy.NO_PROXY) {
                 // create a platform or custom SocketImpl for the DIRECT case
-                @SuppressWarnings("deprecation")
                 SocketImplFactory factory = Socket.factory;
                 if (factory == null) {
                     impl = SocketImpl.createPlatformSocketImpl(false);
@@ -542,7 +541,6 @@ public class Socket implements java.io.Closeable {
      * @since 1.4
      */
     void setImpl() {
-        @SuppressWarnings("deprecation")
         SocketImplFactory factory = Socket.factory;
         if (factory != null) {
             impl = factory.createSocketImpl();
@@ -1720,10 +1718,8 @@ public class Socket implements java.io.Closeable {
     /**
      * The factory for all client sockets.
      */
-    @Deprecated(since = "17")
     private static volatile SocketImplFactory factory;
 
-    @Deprecated(since = "17")
     static SocketImplFactory socketImplFactory() {
         return factory;
     }

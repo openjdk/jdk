@@ -919,7 +919,6 @@ public class DatagramSocket implements java.io.Closeable {
     /**
      * User defined factory for all datagram sockets.
      */
-    @Deprecated(since = "17")
     private static volatile DatagramSocketImplFactory factory;
 
     /**
@@ -1110,7 +1109,6 @@ public class DatagramSocket implements java.io.Closeable {
         DatagramSocket delegate = null;
         boolean initialized = false;
         try {
-            @SuppressWarnings("deprecation")
             DatagramSocketImplFactory factory = DatagramSocket.factory;
             if (USE_PLAINDATAGRAMSOCKET || factory != null) {
                 // create legacy DatagramSocket delegate
