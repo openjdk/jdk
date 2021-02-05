@@ -99,8 +99,6 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
 
-serviceability/attach/RemovingUnixDomainSocketTest.java 8248162 linux-x64
-
 #############################################################################
 
 # :hotspot_misc
