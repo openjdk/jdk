@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7124089 7131021 8042469 8066185 8074373
+ * @bug 7124089 7131021 8042469 8066185 8074373 8258917
  * @summary Checks for Launcher special flags, such as MacOSX specific flags,
  *          and JVM NativeMemoryTracking flags.
  * @modules jdk.compiler
@@ -249,6 +249,18 @@ public class TestSpecialArgs extends TestHelper {
 
         // Make sure we handle correctly the module long form (--module=)
         tr = doExec(javaCmd, "-XX:NativeMemoryTracking=summary", "--module=jdk.compiler/com.sun.tools.javac.Main", "--help");
+        ensureNoWarnings(tr);
+    }
+
+    @Test
+    void testNMTTools() throws FileNotFoundException {
+        TestResult tr;
+        // Tools (non-java launchers) should handle NTM (no "wrong launcher" warning).
+        tr = doExec(jarCmd, "-J-XX:NativeMemoryTracking=summary", "--help");
+        ensureNoWarnings(tr);
+
+        // And java terminal args (like "--help") don't stop "-J" args parsing.
+        tr = doExec(jarCmd, "--help", "-J-XX:NativeMemoryTracking=summary");
         ensureNoWarnings(tr);
     }
 

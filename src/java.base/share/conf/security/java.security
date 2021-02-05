@@ -441,21 +441,22 @@ networkaddress.cache.negative.ttl=10
 # Policy for failed Kerberos KDC lookups:
 #
 # When a KDC is unavailable (network error, service failure, etc), it is
-# put inside a blacklist and accessed less often for future requests. The
+# put inside a secondary list and accessed less often for future requests. The
 # value (case-insensitive) for this policy can be:
 #
 # tryLast
-#    KDCs in the blacklist are always tried after those not on the list.
+#    KDCs in the secondary list are always tried after those not on the list.
 #
 # tryLess[:max_retries,timeout]
-#    KDCs in the blacklist are still tried by their order in the configuration,
-#    but with smaller max_retries and timeout values. max_retries and timeout
-#    are optional numerical parameters (default 1 and 5000, which means once
-#    and 5 seconds). Please notes that if any of the values defined here is
-#    more than what is defined in krb5.conf, it will be ignored.
+#    KDCs in the secondary list are still tried by their order in the
+#    configuration, but with smaller max_retries and timeout values.
+#    max_retries and timeout are optional numerical parameters (default 1 and
+#    5000, which means once and 5 seconds). Please note that if any of the
+#    values defined here are more than what is defined in krb5.conf, it will be
+#    ignored.
 #
-# Whenever a KDC is detected as available, it is removed from the blacklist.
-# The blacklist is reset when krb5.conf is reloaded. You can add
+# Whenever a KDC is detected as available, it is removed from the secondary
+# list. The secondary list is reset when krb5.conf is reloaded. You can add
 # refreshKrb5Config=true to a JAAS configuration file so that krb5.conf is
 # reloaded whenever a JAAS authentication is attempted.
 #
@@ -924,10 +925,11 @@ jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37
 crypto.policy=crypto.policydir-tbd
 
 #
-# The policy for the XML Signature secure validation mode. The mode is
-# enabled by setting the property "org.jcp.xml.dsig.secureValidation" to
-# true with the javax.xml.crypto.XMLCryptoContext.setProperty() method,
-# or by running the code with a SecurityManager.
+# The policy for the XML Signature secure validation mode. Validation of
+# XML Signatures that violate any of these constraints will fail. The
+# mode is enforced by default. The mode can be disabled by setting the
+# property "org.jcp.xml.dsig.secureValidation" to Boolean.FALSE with the
+# javax.xml.crypto.XMLCryptoContext.setProperty() method.
 #
 #   Policy:
 #       Constraint {"," Constraint }
@@ -954,8 +956,8 @@ crypto.policy=crypto.policydir-tbd
 # MaxReferencesConstraint or KeySizeConstraint (for the same key type) is
 # specified more than once, only the last entry is enforced.
 #
-# Note: This property is currently used by the JDK Reference implementation. It
-# is not guaranteed to be examined and used by other implementations.
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
 #
 jdk.xml.dsig.secureValidationPolicy=\
     disallowAlg http://www.w3.org/TR/1999/REC-xslt-19991116,\

@@ -110,8 +110,26 @@ class PlatformPCSC {
             // if LIB2 exists, use that
             return lib;
         }
+
+        // As of macos 11, framework libraries have been removed from the file
+        // system, but in such a way that they can still be dlopen()ed, even
+        // though they can no longer be open()ed.
+        //
+        // https://developer.apple.com/documentation/macos-release-notes/macos-big-sur-11_0_1-release-notes
+        //
+        // """New in macOS Big Sur 11.0.1, the system ships with a built-in
+        // dynamic linker cache of all system-provided libraries. As part of
+        // this change, copies of dynamic libraries are no longer present on
+        // the filesystem. Code that attempts to check for dynamic library
+        // presence by looking for a file at a path or enumerating a directory
+        // will fail. Instead, check for library presence by attempting to
+        // dlopen() the path, which will correctly check for the library in the
+        // cache."""
+        //
+        // The directory structure remains otherwise intact, so check for
+        // existence of the containing directory instead of the file.
         lib = PCSC_FRAMEWORK;
-        if (new File(lib).isFile()) {
+        if (new File(lib).getParentFile().isDirectory()) {
             // if PCSC.framework exists, use that
             return lib;
         }

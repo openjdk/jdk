@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
@@ -36,14 +37,13 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 
 /**
  * Generate the file with list of all the classes in this run.
@@ -114,7 +114,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Table table = new Table(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                .setId("all-classes-table")
+                .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(resources.getText("doclet.All_Classes"))
                 .addTab(contents.interfaceSummary, utils::isInterface)
                 .addTab(contents.classSummary, e -> utils.isOrdinaryClass((TypeElement)e))
@@ -154,7 +154,11 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Content classLink = getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.INDEX, klass));
         ContentBuilder description = new ContentBuilder();
-        if (utils.isDeprecated(klass)) {
+        Set<ElementFlag> flags = utils.elementFlags(klass);
+        if (flags.contains(ElementFlag.PREVIEW)) {
+            description.add(contents.previewPhrase);
+            addSummaryComment(klass, description);
+        } else if (flags.contains(ElementFlag.DEPRECATED)) {
             description.add(getDeprecatedPhrase(klass));
             List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(klass);
             if (!tags.isEmpty()) {

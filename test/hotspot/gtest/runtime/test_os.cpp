@@ -25,6 +25,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -695,4 +696,57 @@ TEST_VM(os, pagesizes_test_print) {
   stringStream ss(buffer, sizeof(buffer));
   pss.print_on(&ss);
   ASSERT_EQ(strcmp(expected, buffer), 0);
+}
+
+TEST_VM(os, dll_address_to_function_and_library_name) {
+  char tmp[1024];
+  char output[1024];
+  stringStream st(output, sizeof(output));
+
+#define EXPECT_CONTAINS(haystack, needle) \
+  EXPECT_NE(::strstr(haystack, needle), (char*)NULL)
+#define EXPECT_DOES_NOT_CONTAIN(haystack, needle) \
+  EXPECT_EQ(::strstr(haystack, needle), (char*)NULL)
+// #define LOG(...) tty->print_cr(__VA_ARGS__); // enable if needed
+#define LOG(...)
+
+  // Invalid addresses
+  address addr = (address)(intptr_t)-1;
+  EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+  addr = NULL;
+  EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+
+  // Valid addresses
+  // Test with or without shorten-paths, demangle, and scratch buffer
+  for (int i = 0; i < 16; i++) {
+    const bool shorten_paths = (i & 1) != 0;
+    const bool demangle = (i & 2) != 0;
+    const bool strip_arguments = (i & 4) != 0;
+    const bool provide_scratch_buffer = (i & 8) != 0;
+    LOG("shorten_paths=%d, demangle=%d, strip_arguments=%d, provide_scratch_buffer=%d",
+        shorten_paths, demangle, strip_arguments, provide_scratch_buffer);
+
+    // Should show os::min_page_size in libjvm
+    addr = CAST_FROM_FN_PTR(address, Threads::create_vm);
+    st.reset();
+    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
+                                                    provide_scratch_buffer ? tmp : NULL,
+                                                    sizeof(tmp),
+                                                    shorten_paths, demangle,
+                                                    strip_arguments));
+    EXPECT_CONTAINS(output, "Threads");
+    EXPECT_CONTAINS(output, "create_vm");
+    EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
+    LOG("%s", output);
+
+    // Test truncation on scratch buffer
+    if (provide_scratch_buffer) {
+      st.reset();
+      tmp[10] = 'X';
+      EXPECT_TRUE(os::print_function_and_library_name(&st, addr, tmp, 10,
+                                                      shorten_paths, demangle));
+      EXPECT_EQ(tmp[10], 'X');
+      LOG("%s", output);
+    }
+  }
 }

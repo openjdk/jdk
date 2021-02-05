@@ -167,9 +167,6 @@ const intx ObjectAlignmentInBytes = 8;
           "region.")                                                        \
           range(1, max_uintx)                                               \
                                                                             \
-  develop(bool, CleanChunkPoolAsync, true,                                  \
-          "Clean the chunk pool asynchronously")                            \
-                                                                            \
   product(uint, HandshakeTimeout, 0, DIAGNOSTIC,                            \
           "If nonzero set a timeout in milliseconds for handshakes")        \
                                                                             \
@@ -461,9 +458,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, BytecodeVerificationLocal, false, DIAGNOSTIC,               \
           "Enable the Java bytecode verifier for local classes")            \
                                                                             \
-  develop(bool, ForceFloatExceptions, trueInDebug,                          \
-          "Force exceptions on FP stack under/overflow")                    \
-                                                                            \
   develop(bool, VerifyStackAtCalls, false,                                  \
           "Verify that the stack pointer is unchanged after calls")         \
                                                                             \
@@ -560,8 +554,11 @@ const intx ObjectAlignmentInBytes = 8;
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  develop(bool, BreakAtWarning, false,                                      \
-          "Execute breakpoint upon encountering VM warning")                \
+  product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
+          "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
+          "level of the dump file. 0 (the default) disables gzip "          \
+          "compression. Otherwise the level must be between 1 and 9.")      \
+          range(0, 9)                                                       \
                                                                             \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
@@ -666,9 +663,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \
-  notproduct(uintx, WarnOnStalledSpinLock, 0,                               \
-          "Print warnings for stalled SpinLocks")                           \
-                                                                            \
   product(bool, RegisterFinalizersAtInit, true,                             \
           "Register finalizable objects at end of Object.<init> or "        \
           "after allocation")                                               \
@@ -676,10 +670,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, RegisterReferences, true,                                   \
           "Tell whether the VM should register soft/weak/final/phantom "    \
           "references")                                                     \
-                                                                            \
-  develop(bool, IgnoreRewrites, false,                                      \
-          "Suppress rewrites of bytecodes in the oopmap generator. "        \
-          "This is unsafe!")                                                \
                                                                             \
   develop(bool, PrintCodeCacheExtension, false,                             \
           "Print extension of code cache")                                  \
@@ -728,12 +718,10 @@ const intx ObjectAlignmentInBytes = 8;
           "MonitorUsedDeflationThreshold is exceeded (0 is off).")          \
           range(0, max_jint)                                                \
                                                                             \
-  /* notice: the max range value here is max_jint, not max_intx  */         \
-  /* because of overflow issue                                   */         \
-  product(intx, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,             \
+  product(size_t, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,           \
           "Used to estimate a variable ceiling based on number of threads " \
           "for use with MonitorUsedDeflationThreshold (0 is off).")         \
-          range(0, max_jint)                                                \
+          range(0, max_uintx)                                               \
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
@@ -747,6 +735,11 @@ const intx ObjectAlignmentInBytes = 8;
           "off). The check is performed on GuaranteedSafepointInterval "    \
           "or AsyncDeflationInterval.")                                     \
           range(0, 100)                                                     \
+                                                                            \
+  product(uintx, NoAsyncDeflationProgressMax, 3, DIAGNOSTIC,                \
+          "Max number of no progress async deflation attempts to tolerate " \
+          "before adjusting the in_use_list_ceiling up (0 is off).")        \
+          range(0, max_uintx)                                               \
                                                                             \
   product(intx, hashCode, 5, EXPERIMENTAL,                                  \
                "(Unstable) select hashCode generation algorithm")           \
@@ -986,11 +979,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
-  develop(bool, UseStackBanging, true,                                      \
-          "use stack banging for stack overflow checks (required for "      \
-          "proper StackOverflow handling; disable only to measure cost "    \
-          "of stackbanging)")                                               \
-                                                                            \
   develop(bool, GenerateSynchronizationCode, true,                          \
           "generate locking/unlocking code for synchronized methods and "   \
           "monitors")                                                       \
@@ -1206,19 +1194,6 @@ const intx ObjectAlignmentInBytes = 8;
   /* statistics */                                                          \
   develop(bool, CountCompiledCalls, false,                                  \
           "Count method invocations")                                       \
-                                                                            \
-  notproduct(bool, CountRuntimeCalls, false,                                \
-          "Count VM runtime calls")                                         \
-                                                                            \
-  develop(bool, CountJNICalls, false,                                       \
-          "Count jni method invocations")                                   \
-                                                                            \
-  notproduct(bool, CountJVMCalls, false,                                    \
-          "Count jvm method invocations")                                   \
-                                                                            \
-  notproduct(bool, CountRemovableExceptions, false,                         \
-          "Count exceptions that could be replaced by branches due to "     \
-          "inlining")                                                       \
                                                                             \
   notproduct(bool, ICMissHistogram, false,                                  \
           "Produce histogram of IC misses")                                 \
@@ -1514,6 +1489,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
+                                                                            \
+  product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
+          "Print metaspace statistics upon VM exit.")                       \
                                                                             \
   product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
           "Metapace allocations are guarded.")                              \
@@ -1835,6 +1813,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   notproduct(bool, UseDebuggerErgo2, false,                                 \
           "Debugging Only: Limit the number of spawned JVM threads")        \
+                                                                            \
+  notproduct(bool, EnableJVMTIStackDepthAsserts, true,                      \
+          "Enable JVMTI asserts related to stack depth checks")             \
                                                                             \
   /* flags for performance data collection */                               \
                                                                             \

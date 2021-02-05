@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.FileAlreadyExistsException;
@@ -187,8 +186,7 @@ public class BootClassPathMismatch {
      */
     public void testBootClassPathMatchWithAppend() throws Exception {
       CDSOptions opts = new CDSOptions().setUseVersion(false);
-      OutputAnalyzer out = CDSTestUtils.createArchive(opts);
-      CDSTestUtils.checkDump(out);
+      CDSTestUtils.createArchiveAndCheck(opts);
 
       String appJar = JarBuilder.getOrCreateHelloJar();
       opts.addPrefix("-Xbootclasspath/a:" + appJar, "-showversion").addSuffix("Hello");

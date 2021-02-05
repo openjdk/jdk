@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
@@ -524,7 +525,6 @@ class JavaThreadInVMAndNative : public StackObj {
 };
 
 static void post_events(bool exception_handler, Thread* thread) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   if (exception_handler) {
     EventShutdown e;
     e.set_reason("VM Error");

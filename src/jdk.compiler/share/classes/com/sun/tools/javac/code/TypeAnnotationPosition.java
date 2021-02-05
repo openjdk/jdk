@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,10 @@ public class TypeAnnotationPosition {
     // use that value to determine the exception table index.
     // When read from class file, this holds
     private int exception_index = Integer.MIN_VALUE;
+
+    // The exception start position.
+    // Corresponding to the start_pc in the exception table.
+    private int exceptionStartPos = Integer.MIN_VALUE;
 
     // If this type annotation is within a lambda expression,
     // store a pointer to the lambda expression tree in order
@@ -322,20 +326,22 @@ public class TypeAnnotationPosition {
     public int getCatchType() {
         Assert.check(hasCatchType(),
                      "exception_index does not contain valid catch info");
-        return ((-this.exception_index) - 1) & 0xff ;
+        return (-this.exception_index) - 1;
     }
 
     public int getStartPos() {
-        Assert.check(hasCatchType(),
-                     "exception_index does not contain valid catch info");
-        return ((-this.exception_index) - 1) >> 8 ;
+        Assert.check(exceptionStartPos >= 0,
+                     "exceptionStartPos does not contain valid start position");
+        return this.exceptionStartPos;
     }
 
     public void setCatchInfo(final int catchType, final int startPos) {
         Assert.check(!hasExceptionIndex(),
                      "exception_index is already set");
         Assert.check(catchType >= 0, "Expected a valid catch type");
-        this.exception_index = -((catchType | startPos << 8) + 1);
+        Assert.check(startPos >= 0, "Expected a valid start position");
+        this.exception_index = -(catchType + 1);
+        this.exceptionStartPos = startPos;
     }
 
     /**

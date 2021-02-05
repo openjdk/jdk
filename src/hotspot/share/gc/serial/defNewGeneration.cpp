@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -556,8 +556,6 @@ void DefNewGeneration::collect(bool   full,
   // The preserved marks should be empty at the start of the GC.
   _preserved_marks_set.init(1);
 
-  heap->rem_set()->prepare_for_younger_refs_iterate(false);
-
   assert(heap->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
 
@@ -575,13 +573,9 @@ void DefNewGeneration::collect(bool   full,
          "save marks have not been newly set.");
 
   {
-    // DefNew needs to run with n_threads == 0, to make sure the serial
-    // version of the card table scanning code is used.
-    // See: CardTableRS::non_clean_card_iterate_possibly_parallel.
     StrongRootsScope srs(0);
 
-    heap->young_process_roots(&srs,
-                              &scan_closure,
+    heap->young_process_roots(&scan_closure,
                               &younger_gen_closure,
                               &cld_scan_closure);
   }
@@ -862,10 +856,6 @@ void DefNewGeneration::gc_epilogue(bool full) {
     eden()->check_mangled_unused_area_complete();
     from()->check_mangled_unused_area_complete();
     to()->check_mangled_unused_area_complete();
-  }
-
-  if (!CleanChunkPoolAsync) {
-    Chunk::clean_chunk_pool();
   }
 
   // update the generation and space performance counters

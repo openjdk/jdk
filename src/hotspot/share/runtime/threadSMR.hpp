@@ -172,6 +172,8 @@ class ThreadsList : public CHeapObj<mtThread> {
   JavaThread *const *const _threads;
   volatile intx _nested_handle_cnt;
 
+  NONCOPYABLE(ThreadsList);
+
   template <class T>
   void threads_do_dispatch(T *cl, JavaThread *const thread) const;
 
@@ -185,7 +187,7 @@ class ThreadsList : public CHeapObj<mtThread> {
   static ThreadsList* remove_thread(ThreadsList* list, JavaThread* java_thread);
 
 public:
-  ThreadsList(int entries);
+  explicit ThreadsList(int entries);
   ~ThreadsList();
 
   template <class T>

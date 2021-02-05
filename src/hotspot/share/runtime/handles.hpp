@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,6 +288,9 @@ class NoHandleMark: public StackObj {
 };
 
 
+// ResetNoHandleMark is called in a context where there is an enclosing
+// NoHandleMark. A thread in _thread_in_native must not create handles so
+// this is used when transitioning via ThreadInVMfromNative.
 class ResetNoHandleMark: public StackObj {
   int _no_handle_mark_nesting;
  public:

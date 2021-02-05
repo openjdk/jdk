@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -602,11 +601,11 @@ public:
 
 class VerifyThreadGCState : public ThreadClosure {
 private:
-  const char* _label;
-  char _expected;
+  const char* const _label;
+         char const _expected;
 
 public:
-  VerifyThreadGCState(const char* label, char expected) : _expected(expected) {}
+  VerifyThreadGCState(const char* label, char expected) : _label(label), _expected(expected) {}
   void do_thread(Thread* t) {
     char actual = ShenandoahThreadLocalData::gc_state(t);
     if (actual != _expected) {
@@ -814,7 +813,7 @@ void ShenandoahVerifier::verify_after_concmark() {
 
 void ShenandoahVerifier::verify_before_evacuation() {
   // Concurrent weak roots are evacuated during concurrent phase
-  VerifyWeakRoots verify_weak_roots = ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() ?
+  VerifyWeakRoots verify_weak_roots = _heap->unload_classes() ?
                                       _verify_serial_weak_roots :
                                       _verify_all_weak_roots;
 
@@ -832,7 +831,7 @@ void ShenandoahVerifier::verify_before_evacuation() {
 
 void ShenandoahVerifier::verify_during_evacuation() {
   // Concurrent weak roots are evacuated during concurrent phase
-  VerifyWeakRoots verify_weak_roots = ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() ?
+  VerifyWeakRoots verify_weak_roots = _heap->unload_classes() ?
                                       _verify_serial_weak_roots :
                                       _verify_all_weak_roots;
 

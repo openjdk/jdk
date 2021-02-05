@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public final class Utils {
 
     // This method reduces the number of loaded classes
     // compared to DateTimeFormatter
-    static String formatDateTime(LocalDateTime time) {
+    public static String formatDateTime(LocalDateTime time) {
         StringBuilder sb = new StringBuilder(19);
         sb.append(time.getYear() / 100);
         appendPadded(sb, time.getYear() % 100, true);
