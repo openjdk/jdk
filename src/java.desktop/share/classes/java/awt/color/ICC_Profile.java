@@ -1167,8 +1167,8 @@ public class ICC_Profile implements Serializable {
      *         error occurs while writing to the file
      */
     public void write(String fileName) throws IOException {
-        try (OutputStream fos = new FileOutputStream(fileName)) {
-            write(fos);
+        try (OutputStream out = new FileOutputStream(fileName)) {
+            write(out);
         }
     }
 
