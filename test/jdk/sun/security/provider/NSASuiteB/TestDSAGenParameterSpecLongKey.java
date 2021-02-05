@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,36 +19,18 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
-#define SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
-
-#include "runtime/nonJavaThread.hpp"
-#include "runtime/thread.hpp"
-
-class ConcurrentGCThread: public NamedThread {
-private:
-  volatile bool _should_terminate;
-  volatile bool _has_terminated;
-
-protected:
-  void create_and_start(ThreadPriority prio = NearMaxPriority);
-
-  virtual void run_service() = 0;
-  virtual void stop_service() = 0;
-
-public:
-  ConcurrentGCThread();
-
-  virtual bool is_ConcurrentGC_thread() const { return true; }
-
-  virtual void run();
-  virtual void stop();
-
-  bool should_terminate() const;
-  bool has_terminated() const;
-};
-
-#endif // SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
+/*
+ * @test
+ * @bug 8075286 8163498
+ * @summary Verify that DSAGenParameterSpec can and can only be used to generate
+ *          DSA within some certain range of key sizes as described in the class
+ *          specification (L, N) as (1024, 160), (2048, 224), (2048, 256) and
+ *          (3072, 256) should be OK for DSAGenParameterSpec.
+ *          This test has been split based on lower/higher key sizes in order to
+ *          reduce individual execution times and run in parallel
+ *          (see TestDSAGenParameterSpec.java)
+ * @run main/timeout=700 TestDSAGenParameterSpec 3072 256 true
+ * @run main TestDSAGenParameterSpec 4096 256
+ */

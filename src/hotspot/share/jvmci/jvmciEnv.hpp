@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/thread.hpp"
 
 class CompileTask;
