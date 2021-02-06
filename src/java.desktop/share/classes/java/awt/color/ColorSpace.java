@@ -113,11 +113,11 @@ public abstract class ColorSpace implements Serializable {
     private transient String [] compName = null;
 
     // Cache of singletons for the predefined color spaces.
-    private static ColorSpace sRGBspace;
-    private static ColorSpace XYZspace;
-    private static ColorSpace PYCCspace;
-    private static ColorSpace GRAYspace;
-    private static ColorSpace LINEAR_RGBspace;
+    private static volatile ColorSpace sRGBspace;
+    private static volatile ColorSpace XYZspace;
+    private static volatile ColorSpace PYCCspace;
+    private static volatile ColorSpace GRAYspace;
+    private static volatile ColorSpace LINEAR_RGBspace;
 
     /**
      * Any of the family of XYZ color spaces.
@@ -289,88 +289,76 @@ public abstract class ColorSpace implements Serializable {
      * Returns a {@code ColorSpace} representing one of the specific predefined
      * color spaces.
      *
-     * @param  colorspace a specific color space identified by one of the
-     *         predefined class constants (e.g. {@code CS_sRGB},
-     *         {@code CS_LINEAR_RGB}, {@code CS_CIEXYZ}, {@code CS_GRAY}, or
-     *         {@code CS_PYCC})
+     * @param  cspace a specific color space identified by one of the predefined
+     *         class constants (e.g. {@code CS_sRGB}, {@code CS_LINEAR_RGB},
+     *         {@code CS_CIEXYZ}, {@code CS_GRAY}, or {@code CS_PYCC})
      * @return the requested {@code ColorSpace} object
      */
     // NOTE: This method may be called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
-    public static ColorSpace getInstance (int colorspace)
-    {
-    ColorSpace    theColorSpace;
-
-        switch (colorspace) {
-        case CS_sRGB:
-            synchronized(ColorSpace.class) {
+    public static ColorSpace getInstance(int cspace) {
+        switch (cspace) {
+            case CS_sRGB -> {
                 if (sRGBspace == null) {
-                    ICC_Profile theProfile = ICC_Profile.getInstance (CS_sRGB);
-                    sRGBspace = new ICC_ColorSpace (theProfile);
+                    synchronized (ColorSpace.class) {
+                        if (sRGBspace == null) {
+                            sRGBspace = new ICC_ColorSpace(
+                                    ICC_Profile.getInstance(cspace));
+                        }
+                    }
                 }
-
-                theColorSpace = sRGBspace;
+                return sRGBspace;
             }
-            break;
-
-        case CS_CIEXYZ:
-            synchronized(ColorSpace.class) {
+            case CS_CIEXYZ -> {
                 if (XYZspace == null) {
-                    ICC_Profile theProfile =
-                        ICC_Profile.getInstance (CS_CIEXYZ);
-                    XYZspace = new ICC_ColorSpace (theProfile);
+                    synchronized (ColorSpace.class) {
+                        if (XYZspace == null) {
+                            XYZspace = new ICC_ColorSpace(
+                                    ICC_Profile.getInstance(cspace));
+                        }
+                    }
                 }
-
-                theColorSpace = XYZspace;
+                return XYZspace;
             }
-            break;
-
-        case CS_PYCC:
-            synchronized(ColorSpace.class) {
+            case CS_PYCC -> {
                 if (PYCCspace == null) {
-                    ICC_Profile theProfile = ICC_Profile.getInstance (CS_PYCC);
-                    PYCCspace = new ICC_ColorSpace (theProfile);
+                    synchronized (ColorSpace.class) {
+                        if (PYCCspace == null) {
+                            PYCCspace = new ICC_ColorSpace(
+                                    ICC_Profile.getInstance(cspace));
+                        }
+                    }
                 }
-
-                theColorSpace = PYCCspace;
+                return PYCCspace;
             }
-            break;
-
-
-        case CS_GRAY:
-            synchronized(ColorSpace.class) {
+            case CS_GRAY -> {
                 if (GRAYspace == null) {
-                    ICC_Profile theProfile = ICC_Profile.getInstance (CS_GRAY);
-                    GRAYspace = new ICC_ColorSpace (theProfile);
-                    /* to allow access from java.awt.ColorModel */
-                    CMSManager.GRAYspace = GRAYspace;
+                    synchronized (ColorSpace.class) {
+                        if (GRAYspace == null) {
+                            /* to allow access from java.awt.ColorModel */
+                            CMSManager.GRAYspace = new ICC_ColorSpace(
+                                    ICC_Profile.getInstance(cspace));
+                            GRAYspace = CMSManager.GRAYspace;
+                        }
+                    }
                 }
-
-                theColorSpace = GRAYspace;
+                return GRAYspace;
             }
-            break;
-
-
-        case CS_LINEAR_RGB:
-            synchronized(ColorSpace.class) {
+            case CS_LINEAR_RGB -> {
                 if (LINEAR_RGBspace == null) {
-                    ICC_Profile theProfile =
-                        ICC_Profile.getInstance(CS_LINEAR_RGB);
-                    LINEAR_RGBspace = new ICC_ColorSpace (theProfile);
-                    /* to allow access from java.awt.ColorModel */
-                    CMSManager.LINEAR_RGBspace = LINEAR_RGBspace;
+                    synchronized (ColorSpace.class) {
+                        if (LINEAR_RGBspace == null) {
+                            /* to allow access from java.awt.ColorModel */
+                            CMSManager.LINEAR_RGBspace = new ICC_ColorSpace(
+                                    ICC_Profile.getInstance(cspace));
+                            LINEAR_RGBspace = CMSManager.LINEAR_RGBspace;
+                        }
+                    }
                 }
-
-                theColorSpace = LINEAR_RGBspace;
+                return LINEAR_RGBspace;
             }
-            break;
-
-
-        default:
-            throw new IllegalArgumentException ("Unknown color space");
+            default -> throw new IllegalArgumentException("Unknown color space");
         }
-
-        return theColorSpace;
     }
 
     /**

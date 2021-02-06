@@ -97,11 +97,11 @@ public class ICC_Profile implements Serializable {
     // Registry of singleton profile objects for specific color spaces
     // defined in the ColorSpace class (e.g. CS_sRGB), see
     // getInstance(int cspace) factory method.
-    private static ICC_Profile sRGBprofile;
-    private static ICC_Profile XYZprofile;
-    private static ICC_Profile PYCCprofile;
-    private static ICC_Profile GRAYprofile;
-    private static ICC_Profile LINEAR_RGBprofile;
+    private static volatile ICC_Profile sRGBprofile;
+    private static volatile ICC_Profile XYZprofile;
+    private static volatile ICC_Profile PYCCprofile;
+    private static volatile ICC_Profile GRAYprofile;
+    private static volatile ICC_Profile LINEAR_RGBprofile;
 
     /**
      * Profile class is input.
@@ -817,89 +817,71 @@ public class ICC_Profile implements Serializable {
      * @throws IllegalArgumentException If {@code cspace} is not one of the
      *         predefined color space types
      */
-    public static ICC_Profile getInstance (int cspace) {
-        ICC_Profile thisProfile = null;
+    public static ICC_Profile getInstance(int cspace) {
+        /*
+         * Deferral is only used for standard profiles. Enabling the appropriate
+         * access privileges is handled at a lower level.
+         */
         switch (cspace) {
-        case ColorSpace.CS_sRGB:
-            synchronized(ICC_Profile.class) {
+            case ColorSpace.CS_sRGB:
                 if (sRGBprofile == null) {
-                    /*
-                     * Deferral is only used for standard profiles.
-                     * Enabling the appropriate access privileges is handled
-                     * at a lower level.
-                     */
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("sRGB.pf",
-                                                ColorSpace.TYPE_RGB, 3,
-                                                CLASS_DISPLAY);
-                    sRGBprofile = new ICC_ProfileRGB(pdi);
+                    synchronized (ICC_Profile.class) {
+                        if (sRGBprofile == null) {
+                            var pdi = new ProfileDeferralInfo("sRGB.pf",
+                                    ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY);
+                            sRGBprofile = new ICC_ProfileRGB(pdi);
+                        }
+                    }
                 }
-                thisProfile = sRGBprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_CIEXYZ:
-            synchronized(ICC_Profile.class) {
+                return sRGBprofile;
+            case ColorSpace.CS_CIEXYZ:
                 if (XYZprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("CIEXYZ.pf",
-                                                ColorSpace.TYPE_XYZ, 3,
-                                                CLASS_ABSTRACT);
-                    XYZprofile = new ICC_Profile(pdi);
+                    synchronized (ICC_Profile.class) {
+                        if (XYZprofile == null) {
+                            var pdi = new ProfileDeferralInfo("CIEXYZ.pf",
+                                    ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT);
+                            XYZprofile = new ICC_Profile(pdi);
+                        }
+                    }
                 }
-                thisProfile = XYZprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_PYCC:
-            synchronized(ICC_Profile.class) {
+                return XYZprofile;
+            case ColorSpace.CS_PYCC:
                 if (PYCCprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("PYCC.pf",
-                                                ColorSpace.TYPE_3CLR, 3,
-                                                CLASS_COLORSPACECONVERSION);
-                    PYCCprofile = new ICC_Profile(pdi);
+                    synchronized (ICC_Profile.class) {
+                        if (PYCCprofile == null) {
+                            var pdi = new ProfileDeferralInfo("PYCC.pf",
+                                    ColorSpace.TYPE_3CLR, 3,
+                                    CLASS_COLORSPACECONVERSION);
+                            PYCCprofile = new ICC_Profile(pdi);
+                        }
+                    }
                 }
-                thisProfile = PYCCprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_GRAY:
-            synchronized(ICC_Profile.class) {
+                return PYCCprofile;
+            case ColorSpace.CS_GRAY:
                 if (GRAYprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("GRAY.pf",
-                                                ColorSpace.TYPE_GRAY, 1,
-                                                CLASS_DISPLAY);
-                    GRAYprofile = new ICC_ProfileGray(pdi);
+                    synchronized (ICC_Profile.class) {
+                        if (GRAYprofile == null) {
+                            var pdi = new ProfileDeferralInfo("GRAY.pf",
+                                    ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY);
+                            GRAYprofile = new ICC_ProfileGray(pdi);
+                        }
+                    }
                 }
-                thisProfile = GRAYprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_LINEAR_RGB:
-            synchronized(ICC_Profile.class) {
+                return GRAYprofile;
+            case ColorSpace.CS_LINEAR_RGB:
                 if (LINEAR_RGBprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("LINEAR_RGB.pf",
-                                                ColorSpace.TYPE_RGB, 3,
-                                                CLASS_DISPLAY);
-                    LINEAR_RGBprofile = new ICC_ProfileRGB(pdi);
+                    synchronized (ICC_Profile.class) {
+                        if (LINEAR_RGBprofile == null) {
+                            var pdi = new ProfileDeferralInfo("LINEAR_RGB.pf",
+                                    ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY);
+                            LINEAR_RGBprofile = new ICC_ProfileRGB(pdi);
+                        }
+                    }
                 }
-                thisProfile = LINEAR_RGBprofile;
-            }
-
-            break;
-
-        default:
-            throw new IllegalArgumentException("Unknown color space");
+                return LINEAR_RGBprofile;
+            default:
+                throw new IllegalArgumentException("Unknown color space");
         }
-
-        return thisProfile;
     }
 
     /**
