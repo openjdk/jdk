@@ -62,8 +62,8 @@ public class Big5_HKSCS extends Charset implements HistoricallyNamedCharset
         private static DoubleByte.Decoder big5 =
             (DoubleByte.Decoder)new Big5().newDecoder();
 
-        private static char[][] b2cBmp = new char[0x100][];
-        private static char[][] b2cSupp = new char[0x100][];
+        private static final char[][] b2cBmp = new char[0x100][];
+        private static final char[][] b2cSupp = new char[0x100][];
         static {
             initb2c(b2cBmp, HKSCSMapping.b2cBmpStr);
             initb2c(b2cSupp, HKSCSMapping.b2cSuppStr);
@@ -78,8 +78,8 @@ public class Big5_HKSCS extends Charset implements HistoricallyNamedCharset
         private static DoubleByte.Encoder big5 =
             (DoubleByte.Encoder)new Big5().newEncoder();
 
-        static char[][] c2bBmp = new char[0x100][];
-        static char[][] c2bSupp = new char[0x100][];
+        static final char[][] c2bBmp = new char[0x100][];
+        static final char[][] c2bSupp = new char[0x100][];
         static {
             initc2b(c2bBmp, HKSCSMapping.b2cBmpStr, HKSCSMapping.pua);
             initc2b(c2bSupp, HKSCSMapping.b2cSuppStr, null);

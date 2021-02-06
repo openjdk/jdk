@@ -58,10 +58,10 @@ public class Big5_Solaris extends Charset implements HistoricallyNamedCharset
     }
 
     private static class Holder {
-        static char[][] b2c;
-        static char[] b2cSB;
-        static char[] c2b;
-        static char[] c2bIndex;
+        static final char[][] b2c;
+        static final char[] b2cSB;
+        static final char[] c2b;
+        static final char[] c2bIndex;
 
         static {
             b2c = Big5.DecodeHolder.b2c.clone();

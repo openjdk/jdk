@@ -61,9 +61,9 @@ public class IBM949C extends Charset implements HistoricallyNamedCharset
     }
 
     private static class Holder {
-        final static char[] b2cSB;
-        final static char[] c2b;
-        final static char[] c2bIndex;
+        static final char[] b2cSB;
+        static final char[] c2b;
+        static final char[] c2bIndex;
 
         static {
             b2cSB = new char[0x100];

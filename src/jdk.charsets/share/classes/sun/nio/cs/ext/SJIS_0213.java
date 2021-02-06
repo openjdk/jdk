@@ -77,7 +77,7 @@ public class SJIS_0213 extends Charset {
     }
 
     private static class Holder {
-        static CharsetMapping mapping = AccessController.doPrivileged(
+        static final CharsetMapping mapping = AccessController.doPrivileged(
                 new PrivilegedAction<CharsetMapping>() {
                     public CharsetMapping run() {
                         return CharsetMapping.get(SJIS_0213.class.getResourceAsStream("sjis0213.dat"));
