@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
-
-#include "gc/shenandoah/shenandoahMark.hpp"
-
-class ShenandoahSTWMarkTask;
-
-class ShenandoahSTWMark : public ShenandoahMark {
-  friend class ShenandoahSTWMarkTask;
-
-private:
-  ShenandoahSTWRootScanner      _root_scanner;
-  TaskTerminator                _terminator;
-  bool                          _full_gc;
-public:
- ShenandoahSTWMark(bool full_gc);
- void mark();
-
-private:
-  void mark_roots(uint worker_id);
-  void finish_mark(uint worker_id);
-};
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
-
+/*
+ * @test
+ * @bug 8072452 8163498
+ * @summary Support DHE sizes up to 8192-bits and DSA sizes up to 3072-bits
+ *          This test has been split based on lower/higher key sizes in order to
+ *          reduce individual execution times and run in parallel
+ *          (see SupportedDSAParamGen.java)
+ * @run main/timeout=700 SupportedDSAParamGen 3072 256
+ */

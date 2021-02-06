@@ -19,31 +19,42 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/**
+ * @test
+ * @bug 8260709
+ * @summary C2: assert(false) failed: unscheduable graph
+ *
+ * @run main/othervm -XX:-BackgroundCompilation TestLoadPinnedAfterAllocate
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
+public class TestLoadPinnedAfterAllocate {
+    private int field;
+    private static volatile int barrier;
+    private static Object field2;
 
-#include "gc/shenandoah/shenandoahMark.hpp"
+    public static void main(String[] args) {
+        final TestLoadPinnedAfterAllocate test = new TestLoadPinnedAfterAllocate();
+        for (int i = 0; i < 20_000; i++) {
+            test.test(1, 10);
+        }
+    }
 
-class ShenandoahSTWMarkTask;
-
-class ShenandoahSTWMark : public ShenandoahMark {
-  friend class ShenandoahSTWMarkTask;
-
-private:
-  ShenandoahSTWRootScanner      _root_scanner;
-  TaskTerminator                _terminator;
-  bool                          _full_gc;
-public:
- ShenandoahSTWMark(bool full_gc);
- void mark();
-
-private:
-  void mark_roots(uint worker_id);
-  void finish_mark(uint worker_id);
-};
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
-
+    private int test(int start, int stop) {
+        int[] array = new int[10];
+        for (int j = 0; j < 10; j++) {
+            barrier = 1;
+            // early control for field load below
+            for (int i = 1; i < 10; i *= 2) {
+                field2 = array;
+                array = new int[10];
+                // late control for field load below
+            }
+        }
+        int v = field;
+        array[0] = v;
+        return v+v;
+    }
+}
