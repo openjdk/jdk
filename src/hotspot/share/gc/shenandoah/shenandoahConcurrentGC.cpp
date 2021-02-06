@@ -26,7 +26,6 @@
 
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -44,7 +43,6 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
 ShenandoahConcurrentGC::ShenandoahConcurrentGC() :
@@ -596,9 +594,9 @@ private:
   ShenandoahJavaThreadsIterator _java_threads;
 
 public:
-  ShenandoahConcurrentEvacUpdateThreadTask() :
+  ShenandoahConcurrentEvacUpdateThreadTask(uint n_workers) :
     AbstractGangTask("Shenandoah Evacuate/Update Concurrent Thread Roots"),
-    _java_threads(ShenandoahPhaseTimings::conc_thread_roots) {
+    _java_threads(ShenandoahPhaseTimings::conc_thread_roots, n_workers) {
   }
 
   void work(uint worker_id) {
@@ -614,7 +612,7 @@ void ShenandoahConcurrentGC::op_thread_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(heap->is_evacuation_in_progress(), "Checked by caller");
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_thread_roots);
-  ShenandoahConcurrentEvacUpdateThreadTask task;
+  ShenandoahConcurrentEvacUpdateThreadTask task(heap->workers()->active_workers());
   heap->workers()->run_task(&task);
 }
 

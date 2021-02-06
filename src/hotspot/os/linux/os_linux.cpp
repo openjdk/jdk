@@ -25,7 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -2196,29 +2195,35 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   int num_found = 0;
   FILE* f = ::fopen("/proc/self/status", "r");
   char buf[256];
-  while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
-    if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
-         (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
-         (vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &vmswap) == 1) ||
-         (vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &vmhwm) == 1) ||
-         (vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &vmrss) == 1) ||
-         (rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &rssanon) == 1) ||
-         (rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &rssfile) == 1) ||
-         (rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &rssshmem) == 1)
-         )
-    {
-      num_found ++;
+  if (f != NULL) {
+    while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
+      if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
+           (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
+           (vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &vmswap) == 1) ||
+           (vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &vmhwm) == 1) ||
+           (vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &vmrss) == 1) ||
+           (rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &rssanon) == 1) ||
+           (rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &rssfile) == 1) ||
+           (rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &rssshmem) == 1)
+           )
+      {
+        num_found ++;
+      }
     }
-  }
-  st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmsize, vmpeak);
-  st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmrss, vmhwm);
-  if (rssanon != -1) { // requires kernel >= 4.5
-    st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
-                rssanon, rssfile, rssshmem);
-  }
-  st->cr();
-  if (vmswap != -1) { // requires kernel >= 2.6.34
-    st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
+    fclose(f);
+
+    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmsize, vmpeak);
+    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmrss, vmhwm);
+    if (rssanon != -1) { // requires kernel >= 4.5
+      st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
+                  rssanon, rssfile, rssshmem);
+    }
+    st->cr();
+    if (vmswap != -1) { // requires kernel >= 2.6.34
+      st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
+    }
+  } else {
+    st->print_cr("Could not open /proc/self/status to get process memory related information");
   }
 
   // Print glibc outstanding allocations.
@@ -4700,19 +4705,46 @@ int os::active_processor_count() {
   return active_cpus;
 }
 
+static bool should_warn_invalid_processor_id() {
+  if (os::processor_count() == 1) {
+    // Don't warn if we only have one processor
+    return false;
+  }
+
+  static volatile int warn_once = 1;
+
+  if (Atomic::load(&warn_once) == 0 ||
+      Atomic::xchg(&warn_once, 0) == 0) {
+    // Don't warn more than once
+    return false;
+  }
+
+  return true;
+}
+
 uint os::processor_id() {
   const int id = Linux::sched_getcpu();
 
-#ifndef PRODUCT
-  if (UseDebuggerErgo1 && id >= _processor_count) {
-    // Some debuggers limit the processor count without limiting
-    // the returned processor ids. Fake the processor id.
-    return 0;
+  if (id < processor_count()) {
+    return (uint)id;
   }
-#endif
 
-  assert(id >= 0 && id < _processor_count, "Invalid processor id [%d]", id);
-  return (uint)id;
+  // Some environments (e.g. openvz containers and the rr debugger) incorrectly
+  // report a processor id that is higher than the number of processors available.
+  // This is problematic, for example, when implementing CPU-local data structures,
+  // where the processor id is used to index into an array of length processor_count().
+  // If this happens we return 0 here. This is is safe since we always have at least
+  // one processor, but it's not optimal for performance if we're actually executing
+  // in an environment with more than one processor.
+  if (should_warn_invalid_processor_id()) {
+    log_warning(os)("Invalid processor id reported by the operating system "
+                    "(got processor id %d, valid processor id range is 0-%d)",
+                    id, processor_count() - 1);
+    log_warning(os)("Falling back to assuming processor id is 0. "
+                    "This could have a negative impact on performance.");
+  }
+
+  return 0;
 }
 
 void os::set_native_thread_name(const char *name) {

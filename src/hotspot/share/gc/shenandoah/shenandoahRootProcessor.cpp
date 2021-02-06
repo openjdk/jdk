@@ -37,20 +37,24 @@
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/thread.hpp"
 
-ShenandoahJavaThreadsIterator::ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase) :
+ShenandoahJavaThreadsIterator::ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase, uint n_workers) :
   _threads(),
+  _length(_threads.length()),
+  _stride(MAX2(1u, _length / n_workers / _chunks_per_worker)),
   _claimed(0),
   _phase(phase) {
 }
 
 uint ShenandoahJavaThreadsIterator::claim() {
-  return Atomic::fetch_and_add(&_claimed, 1u);
+  return Atomic::fetch_and_add(&_claimed, _stride);
 }
 
 void ShenandoahJavaThreadsIterator::threads_do(ThreadClosure* cl, uint worker_id) {
   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
-  for (uint i = claim(); i < _threads.length(); i = claim()) {
-    cl->do_thread(_threads.thread_at(i));
+  for (uint i = claim(); i < _length; i = claim()) {
+    for (uint t = i; t < MIN2(_length, i + _stride); t++) {
+      cl->do_thread(thread_at(t));
+    }
   }
 }
 
@@ -206,7 +210,7 @@ void ShenandoahConcurrentMarkThreadClosure::do_thread(Thread* thread) {
 ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
                                                                  ShenandoahPhaseTimings::Phase phase) :
    ShenandoahRootProcessor(phase),
-   _java_threads(phase),
+   _java_threads(phase, n_workers),
   _vm_roots(phase),
   _cld_roots(phase, n_workers),
   _codecache_snapshot(NULL),
@@ -230,19 +234,24 @@ void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id)
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
 
-  ShenandoahConcurrentMarkThreadClosure thr_cl(oops);
-  _java_threads.threads_do(&thr_cl, worker_id);
-
+  // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(oops, worker_id);
 
-  if (!heap->unload_classes()) {
-    _cld_roots.cld_do(&clds_cl, worker_id);
-    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
-    CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-    _codecache_snapshot->parallel_blobs_do(&blobs);
-  } else {
+  if (heap->unload_classes()) {
     _cld_roots.always_strong_cld_do(&clds_cl, worker_id);
+  } else {
+    _cld_roots.cld_do(&clds_cl, worker_id);
+
+    {
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+      CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
+      _codecache_snapshot->parallel_blobs_do(&blobs);
+    }
   }
+
+  // Process heavy-weight/fully parallel roots the last
+  ShenandoahConcurrentMarkThreadClosure thr_cl(oops);
+  _java_threads.threads_do(&thr_cl, worker_id);
 }
 
 void ShenandoahConcurrentRootScanner::update_tlab_stats() {

@@ -26,8 +26,6 @@
 #ifndef CGLLayer_h_Included
 #define CGLLayer_h_Included
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 @interface CGLLayer : CAOpenGLLayer
 {
 @private

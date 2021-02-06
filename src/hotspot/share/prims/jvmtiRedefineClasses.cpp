@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
@@ -4234,7 +4235,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   InstanceKlass* the_class = get_ik(the_jclass);
 
   // Set a flag to control and optimize adjusting method entries
-  _has_redefined_Object |= the_class == SystemDictionary::Object_klass();
+  _has_redefined_Object |= the_class == vmClasses::Object_klass();
 
   // Remove all breakpoints in methods of this class
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
@@ -4390,7 +4391,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   //  - all instanceKlasses for redefined classes reused & contents updated
   the_class->vtable().initialize_vtable(false, THREAD);
   the_class->itable().initialize_itable(false, THREAD);
-  assert(!HAS_PENDING_EXCEPTION || (THREAD->pending_exception()->is_a(SystemDictionary::ThreadDeath_klass())), "redefine exception");
+  assert(!HAS_PENDING_EXCEPTION || (THREAD->pending_exception()->is_a(vmClasses::ThreadDeath_klass())), "redefine exception");
 
   // Leave arrays of jmethodIDs and itable index cache unchanged
 

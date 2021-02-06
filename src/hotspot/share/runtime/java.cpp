@@ -34,6 +34,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
@@ -328,6 +329,10 @@ void print_statistics() {
     MemTracker::final_report(tty);
   }
 
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
+  }
+
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -368,6 +373,10 @@ void print_statistics() {
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
+  }
+
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {

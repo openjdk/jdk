@@ -22,14 +22,12 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARKCOMPACT_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHMARKCOMPACT_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
 
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
-#include "gc/shenandoah/shenandoahMetrics.hpp"
 
 /**
  * This implements Full GC (e.g. when invoking System.gc()) using a mark-compact algorithm.
@@ -56,7 +54,7 @@ class PreservedMarksSet;
 class VM_ShenandoahFullGC;
 class ShenandoahDegenGC;
 
-class ShenandoahMarkCompact : public ShenandoahGC {
+class ShenandoahFullGC : public ShenandoahGC {
   friend class ShenandoahPrepareForCompactionObjectClosure;
   friend class VM_ShenandoahFullGC;
   friend class ShenandoahDegenGC;
@@ -67,7 +65,7 @@ private:
   PreservedMarksSet* _preserved_marks;
 
 public:
-  ShenandoahMarkCompact();
+  ShenandoahFullGC();
   bool collect(GCCause::Cause cause);
 
 private:
@@ -88,4 +86,4 @@ private:
   void compact_humongous_objects();
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKCOMPACT_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
