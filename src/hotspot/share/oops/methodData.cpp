@@ -662,7 +662,7 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandl
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
-  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter && !WhiteBoxAPI) {
+  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter) {
     return no_profile_data;
   }
   switch (code) {
@@ -969,7 +969,7 @@ int MethodData::compute_allocation_size_in_words(const methodHandle& method) {
 // the segment in bytes.
 int MethodData::initialize_data(BytecodeStream* stream,
                                        int data_index) {
-  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter && !WhiteBoxAPI) {
+  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter) {
     return 0;
   }
   int cell_count = -1;
