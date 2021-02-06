@@ -1232,6 +1232,19 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
         if (offset_const == arrayOopDesc::length_offset_in_bytes()) {
           assert(n->Opcode() == Op_LoadRange, "res+12 must be the input of a LoadRange");
           _igvn.replace_node(n, length);
+        } else if (n->Opcode() == Op_StrEquals) {
+          assert(offset_const == arrayOopDesc::base_offset_in_bytes(T_BYTE), "offset equals to the base_offset");
+          if (src_adr == nullptr) {
+            src_adr = ConvI2L(ac->in(ArrayCopyNode::SrcPos));
+            src_adr = basic_plus_adr(src->in(1), src, src_adr);
+          }
+          Node* dst_adr = basic_plus_adr(src_adr->in(1), src_adr, offset);
+          if (n->in(2) == use) { // str1
+            _igvn.replace_input_of(n, 2, dst_adr);
+          }
+          if (n->in(3) == use) { // str2
+            _igvn.replace_input_of(n, 3, dst_adr);
+          }
         } else {
           assert(n->Opcode() == Op_LoadUB || n->Opcode() == Op_LoadB, "unknow code shape");
 
