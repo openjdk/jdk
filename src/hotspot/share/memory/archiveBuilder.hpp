@@ -314,6 +314,8 @@ public:
     return (u4)offset;
   }
 
+  static void assert_is_vm_thread() PRODUCT_RETURN;
+
 public:
   ArchiveBuilder(DumpRegion* mc_region, DumpRegion* rw_region, DumpRegion* ro_region);
   ~ArchiveBuilder();
@@ -348,6 +350,7 @@ public:
   }
 
   static ArchiveBuilder* current() {
+    assert_is_vm_thread();
     assert(_current != NULL, "ArchiveBuilder must be active");
     return _current;
   }

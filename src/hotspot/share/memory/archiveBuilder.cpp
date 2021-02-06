@@ -41,6 +41,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
@@ -1122,3 +1123,9 @@ void ArchiveBuilder::update_method_trampolines() {
     }
   }
 }
+
+#ifndef PRODUCT
+void ArchiveBuilder::assert_is_vm_thread() {
+  assert(Thread::current()->is_VM_thread(), "ArchiveBuilder should be used only inside the VMThread");
+}
+#endif

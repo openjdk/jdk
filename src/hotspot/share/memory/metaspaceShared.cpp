@@ -172,13 +172,13 @@ static bool shared_base_valid(char* shared_base) {
 #endif
 }
 
-static bool shared_base_too_high(char* shared_base, size_t cds_max) {
-  if (SharedBaseAddress != 0 && shared_base < (char*)SharedBaseAddress) {
+static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
+  if (specified_base != NULL && aligned_base < specified_base) {
     // SharedBaseAddress is very high (e.g., 0xffffffffffffff00) so
     // align_up(SharedBaseAddress, MetaspaceShared::reserved_space_alignment()) has wrapped around.
     return true;
   }
-  if (max_uintx - uintx(shared_base) < uintx(cds_max)) {
+  if (max_uintx - uintx(aligned_base) < uintx(cds_max)) {
     // The end of the archive will wrap around
     return true;
   }
@@ -187,22 +187,29 @@ static bool shared_base_too_high(char* shared_base, size_t cds_max) {
 }
 
 static char* compute_shared_base(size_t cds_max) {
-  char* shared_base = (char*)align_up((char*)SharedBaseAddress, MetaspaceShared::reserved_space_alignment());
+  char* specified_base = (char*)SharedBaseAddress;
+  char* aligned_base = align_up(specified_base, MetaspaceShared::reserved_space_alignment());
+
   const char* err = NULL;
-  if (shared_base_too_high(shared_base, cds_max)) {
+  if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
     err = "too high";
-  } else if (!shared_base_valid(shared_base)) {
+  } else if (!shared_base_valid(aligned_base)) {
     err = "invalid for this platform";
+  } else {
+    return aligned_base;
   }
-  if (err) {
-    log_warning(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is %s. Reverted to " INTPTR_FORMAT,
-                     p2i((void*)SharedBaseAddress), err,
-                     p2i((void*)Arguments::default_SharedBaseAddress()));
-    SharedBaseAddress = Arguments::default_SharedBaseAddress();
-    shared_base = (char*)align_up((char*)SharedBaseAddress, MetaspaceShared::reserved_space_alignment());
-  }
-  assert(!shared_base_too_high(shared_base, cds_max) && shared_base_valid(shared_base), "Sanity");
-  return shared_base;
+
+  log_warning(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is %s. Reverted to " INTPTR_FORMAT,
+                   p2i((void*)SharedBaseAddress), err,
+                   p2i((void*)Arguments::default_SharedBaseAddress()));
+
+  specified_base = (char*)Arguments::default_SharedBaseAddress();
+  aligned_base = align_up(specified_base, MetaspaceShared::reserved_space_alignment());
+
+  // Make sure the default value of SharedBaseAddress specified in globals.hpp is sane.
+  assert(!shared_base_too_high(specified_base, aligned_base, cds_max), "Sanity");
+  assert(shared_base_valid(aligned_base), "Sanity");
+  return aligned_base;
 }
 
 void MetaspaceShared::initialize_for_static_dump() {
