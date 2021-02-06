@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.Arrays;
 
 /**
  * @test
@@ -72,13 +73,8 @@ public final class WriteProfileToFile {
     }
 
     private static void compare(byte[] data1, byte[] data2) {
-        if (data1.length != data2.length) {
-            throw new RuntimeException("Wrong size");
-        }
-        for (int i = 0; i < data1.length; ++i) {
-            if (data1[i] != data2[i]) {
-                throw new RuntimeException("Wrong data");
-            }
+        if (!Arrays.equals(data1, data2)) {
+            throw new RuntimeException("Data mismatch");
         }
     }
 }
