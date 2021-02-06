@@ -724,19 +724,19 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
                                                      TRAPS) {
   JavaThread* thread = JavaThread::current();
   ClassPathEntry* new_entry = NULL;
-  if ((st->st_mode & S_IFMT) == S_IFREG) {
-    ResourceMark rm(thread);
-    // Regular file, should be a zip or jimage file
-    // Canonicalized filename
-    char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
-    if (!get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
-      // This matches the classic VM
-      if (throw_exception) {
-        THROW_MSG_(vmSymbols::java_io_IOException(), "Bad pathname", NULL);
-      } else {
-        return NULL;
-      }
+  ResourceMark rm(thread);
+  // Regular file, should be a zip or jimage file
+  // Canonicalized filename
+  char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
+  if (!get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
+    // This matches the classic VM
+    if (throw_exception) {
+      THROW_MSG_(vmSymbols::java_io_IOException(), "Bad pathname", NULL);
+    } else {
+      return NULL;
     }
+  }
+  if ((st->st_mode & S_IFMT) == S_IFREG) {
     jint error;
     JImageFile* jimage =(*JImageOpen)(canonical_path, &error);
     if (jimage != NULL) {
@@ -752,7 +752,11 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         zip = (*ZipOpen)(canonical_path, &error_msg);
       }
       if (zip != NULL && error_msg == NULL) {
-        new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
+        if (os::is_absolute_path(path) && Arguments::is_dumping_archive()) {
+          new_entry = new ClassPathZipEntry(zip, canonical_path, is_boot_append, from_class_path_attr);
+        } else {
+          new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
+        }
       } else {
         char *msg;
         if (error_msg == NULL) {
@@ -771,12 +775,22 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         }
       }
     }
-    log_info(class, path)("opened: %s", path);
-    log_info(class, load)("opened: %s", path);
+    if (os::is_absolute_path(path) && Arguments::is_dumping_archive()) {
+      log_info(class, path)("opened: %s", canonical_path);
+      log_info(class, load)("opened: %s", canonical_path);
+    } else {
+      log_info(class, path)("opened: %s", path);
+      log_info(class, load)("opened: %s", path);
+    }
   } else {
     // Directory
-    new_entry = new ClassPathDirEntry(path);
-    log_info(class, load)("path: %s", path);
+    if (os::is_absolute_path(path) && Arguments::is_dumping_archive()) {
+      new_entry = new ClassPathDirEntry(canonical_path);
+      log_info(class, load)("path: %s", canonical_path);
+    } else {
+      new_entry = new ClassPathDirEntry(path);
+      log_info(class, load)("path: %s", path);
+    }
   }
   return new_entry;
 }
@@ -1351,13 +1365,20 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
     assert(success, "must be valid path");
     for (int i = 0; i < FileMapInfo::get_number_of_shared_paths(); i++) {
       SharedClassPathEntry* ent = FileMapInfo::shared_path(i);
-      success = get_canonical_path(ent->name(), canonical_path_table_entry, JVM_MAXPATHLEN);
-      // A shared path has been validated during its creation in ClassLoader::create_class_path_entry(),
-      // it must be valid here.
-      assert(success, "must be valid path");
+      bool is_same = false;
+      if (!os::is_absolute_path(ent->name())) {
+        success = get_canonical_path(ent->name(), canonical_path_table_entry, JVM_MAXPATHLEN);
+        // A shared path has been validated during its creation in ClassLoader::create_class_path_entry(),
+        // it must be valid here.
+        assert(success, "must be valid path");
+        is_same = os::same_files(canonical_path_table_entry, canonical_class_src_path);
+      } else {
+        is_same = os::same_files(ent->name(), canonical_class_src_path);
+      }
       // If the path (from the class stream source) is the same as the shared
       // class or module path, then we have a match.
-      if (strcmp(canonical_path_table_entry, canonical_class_src_path) == 0) {
+      //if (strcmp(canonical_path_table_entry, canonical_class_src_path) == 0) {
+      if (is_same) {
         // NULL pkg_entry and pkg_entry in an unnamed module implies the class
         // is from the -cp or boot loader append path which consists of -Xbootclasspath/a
         // and jvmti appended entries.
