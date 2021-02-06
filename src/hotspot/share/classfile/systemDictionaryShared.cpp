@@ -36,6 +36,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verificationType.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -724,11 +725,11 @@ Handle SystemDictionaryShared::create_jar_manifest(const char* manifest_chars, s
   typeArrayHandle bufhandle(THREAD, buf);
   ArrayAccess<>::arraycopy_from_native(reinterpret_cast<const jbyte*>(manifest_chars),
                                          buf, typeArrayOopDesc::element_offset<jbyte>(0), size);
-  Handle bais = JavaCalls::construct_new_instance(SystemDictionary::ByteArrayInputStream_klass(),
+  Handle bais = JavaCalls::construct_new_instance(vmClasses::ByteArrayInputStream_klass(),
                       vmSymbols::byte_array_void_signature(),
                       bufhandle, CHECK_NH);
   // manifest = new Manifest(ByteArrayInputStream)
-  Handle manifest = JavaCalls::construct_new_instance(SystemDictionary::Jar_Manifest_klass(),
+  Handle manifest = JavaCalls::construct_new_instance(vmClasses::Jar_Manifest_klass(),
                       vmSymbols::input_stream_void_signature(),
                       bais, CHECK_NH);
   return manifest;
@@ -773,7 +774,7 @@ Handle SystemDictionaryShared::get_shared_jar_url(int shared_path_index, TRAPS) 
     const char* path = FileMapInfo::shared_path_name(shared_path_index);
     Handle path_string = java_lang_String::create_from_str(path, CHECK_(url_h));
     Klass* classLoaders_klass =
-        SystemDictionary::jdk_internal_loader_ClassLoaders_klass();
+        vmClasses::jdk_internal_loader_ClassLoaders_klass();
     JavaCalls::call_static(&result, classLoaders_klass,
                            vmSymbols::toFileURL_name(),
                            vmSymbols::toFileURL_signature(),
@@ -811,7 +812,7 @@ void SystemDictionaryShared::define_shared_package(Symbol*  class_name,
   // get_package_name() returns a NULL handle if the class is in unnamed package
   Handle pkgname_string = get_package_name(class_name, CHECK);
   if (pkgname_string.not_null()) {
-    Klass* app_classLoader_klass = SystemDictionary::jdk_internal_loader_ClassLoaders_AppClassLoader_klass();
+    Klass* app_classLoader_klass = vmClasses::jdk_internal_loader_ClassLoaders_AppClassLoader_klass();
     JavaValue result(T_OBJECT);
     JavaCallArguments args(3);
     args.set_receiver(class_loader);
@@ -830,12 +831,12 @@ void SystemDictionaryShared::define_shared_package(Symbol*  class_name,
 Handle SystemDictionaryShared::get_protection_domain_from_classloader(Handle class_loader,
                                                                       Handle url, TRAPS) {
   // CodeSource cs = new CodeSource(url, null);
-  Handle cs = JavaCalls::construct_new_instance(SystemDictionary::CodeSource_klass(),
+  Handle cs = JavaCalls::construct_new_instance(vmClasses::CodeSource_klass(),
                   vmSymbols::url_code_signer_array_void_signature(),
                   url, Handle(), CHECK_NH);
 
   // protection_domain = SecureClassLoader.getProtectionDomain(cs);
-  Klass* secureClassLoader_klass = SystemDictionary::SecureClassLoader_klass();
+  Klass* secureClassLoader_klass = vmClasses::SecureClassLoader_klass();
   JavaValue obj_result(T_OBJECT);
   JavaCalls::call_virtual(&obj_result, class_loader, secureClassLoader_klass,
                           vmSymbols::getProtectionDomain_name(),
@@ -875,12 +876,12 @@ Handle SystemDictionaryShared::get_shared_protection_domain(Handle class_loader,
       Handle url;
       JavaValue result(T_OBJECT);
       if (location->starts_with("jrt:/")) {
-        url = JavaCalls::construct_new_instance(SystemDictionary::URL_klass(),
+        url = JavaCalls::construct_new_instance(vmClasses::URL_klass(),
                                                 vmSymbols::string_void_signature(),
                                                 location_string, CHECK_NH);
       } else {
         Klass* classLoaders_klass =
-          SystemDictionary::jdk_internal_loader_ClassLoaders_klass();
+          vmClasses::jdk_internal_loader_ClassLoaders_klass();
         JavaCalls::call_static(&result, classLoaders_klass, vmSymbols::toFileURL_name(),
                                vmSymbols::toFileURL_signature(),
                                location_string, CHECK_NH);
@@ -1046,7 +1047,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
       k = load_shared_class_for_builtin_loader(name, class_loader, THREAD);
       if (k != NULL) {
-        define_instance_class(k, class_loader, CHECK_NULL);
+        k = find_or_define_instance_class(name, class_loader, k, CHECK_NULL);
       }
     }
   }
@@ -1092,7 +1093,7 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
 void SystemDictionaryShared::allocate_shared_protection_domain_array(int size, TRAPS) {
   if (_shared_protection_domains.resolve() == NULL) {
     oop spd = oopFactory::new_objArray(
-        SystemDictionary::ProtectionDomain_klass(), size, CHECK);
+        vmClasses::ProtectionDomain_klass(), size, CHECK);
     _shared_protection_domains = OopHandle(Universe::vm_global(), spd);
   }
 }
@@ -1100,7 +1101,7 @@ void SystemDictionaryShared::allocate_shared_protection_domain_array(int size, T
 void SystemDictionaryShared::allocate_shared_jar_url_array(int size, TRAPS) {
   if (_shared_jar_urls.resolve() == NULL) {
     oop sju = oopFactory::new_objArray(
-        SystemDictionary::URL_klass(), size, CHECK);
+        vmClasses::URL_klass(), size, CHECK);
     _shared_jar_urls = OopHandle(Universe::vm_global(), sju);
   }
 }
@@ -1108,7 +1109,7 @@ void SystemDictionaryShared::allocate_shared_jar_url_array(int size, TRAPS) {
 void SystemDictionaryShared::allocate_shared_jar_manifest_array(int size, TRAPS) {
   if (_shared_jar_manifests.resolve() == NULL) {
     oop sjm = oopFactory::new_objArray(
-        SystemDictionary::Jar_Manifest_klass(), size, CHECK);
+        vmClasses::Jar_Manifest_klass(), size, CHECK);
     _shared_jar_manifests = OopHandle(Universe::vm_global(), sjm);
   }
 }
@@ -1219,14 +1220,14 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
 }
 
 // This function is called to resolve the super/interfaces of shared classes for
-// non-built-in loaders. E.g., ChildClass in the below example
+// non-built-in loaders. E.g., SharedClass in the below example
 // where "super:" (and optionally "interface:") have been specified.
 //
 // java/lang/Object id: 0
 // Interface   id: 2 super: 0 source: cust.jar
-// ChildClass  id: 4 super: 0 interfaces: 2 source: cust.jar
+// SharedClass  id: 4 super: 0 interfaces: 2 source: cust.jar
 InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
-    Symbol* child_name, Symbol* class_name, Handle class_loader,
+    Symbol* class_name, Symbol* super_name, Handle class_loader,
     Handle protection_domain, bool is_superclass, TRAPS) {
 
   assert(DumpSharedSpaces, "only when dumping");
@@ -1236,13 +1237,13 @@ InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
     // We're still loading the well-known classes, before the ClassListParser is created.
     return NULL;
   }
-  if (child_name->equals(parser->current_class_name())) {
+  if (class_name->equals(parser->current_class_name())) {
     // When this function is called, all the numbered super and interface types
     // must have already been loaded. Hence this function is never recursively called.
     if (is_superclass) {
-      return parser->lookup_super_for_current_class(class_name);
+      return parser->lookup_super_for_current_class(super_name);
     } else {
-      return parser->lookup_interface_for_current_class(class_name);
+      return parser->lookup_interface_for_current_class(super_name);
     }
   } else {
     // The VM is not trying to resolve a super type of parser->current_class_name().
@@ -2187,8 +2188,8 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
 }
 
 void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
-  for (auto id : EnumRange<VMClassID>{}) {
-    soc->do_ptr((void**)klass_addr_at(id));
+  for (auto id : EnumRange<vmClassID>{}) {
+    soc->do_ptr((void**)vmClasses::klass_addr_at(id));
   }
 }
 

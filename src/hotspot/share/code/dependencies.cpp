@@ -28,6 +28,7 @@
 #include "ci/ciKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/dependencies.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
@@ -1811,7 +1812,7 @@ Klass* Dependencies::check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepCh
 Klass* Dependencies::check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes) {
   assert(call_site != NULL, "sanity");
   assert(method_handle != NULL, "sanity");
-  assert(call_site->is_a(SystemDictionary::CallSite_klass()),     "sanity");
+  assert(call_site->is_a(vmClasses::CallSite_klass()),     "sanity");
 
   if (changes == NULL) {
     // Validate all CallSites
@@ -2034,6 +2035,6 @@ void Dependencies::print_statistics() {
 CallSiteDepChange::CallSiteDepChange(Handle call_site, Handle method_handle) :
   _call_site(call_site),
   _method_handle(method_handle) {
-  assert(_call_site()->is_a(SystemDictionary::CallSite_klass()), "must be");
-  assert(_method_handle.is_null() || _method_handle()->is_a(SystemDictionary::MethodHandle_klass()), "must be");
+  assert(_call_site()->is_a(vmClasses::CallSite_klass()), "must be");
+  assert(_method_handle.is_null() || _method_handle()->is_a(vmClasses::MethodHandle_klass()), "must be");
 }

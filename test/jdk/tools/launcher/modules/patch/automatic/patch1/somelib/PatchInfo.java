@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,28 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package somelib;
 
-import static java.lang.ProcessBuilder.Redirect.*;
+// This class will be patched
+public class PatchInfo {
 
-class InheritIO {
-
-    public static class TestInheritIO {
-        public static void main(String args[]) throws Throwable {
-            int err = new ProcessBuilder(args).inheritIO().start().waitFor();
-            System.err.print("exit value: " + err);
-            System.exit(err);
-        }
+    public static String patchName() {
+        return "patch1";
     }
 
-    public static class TestRedirectInherit {
-        public static void main(String args[]) throws Throwable {
-            int err = new ProcessBuilder(args)
-                    .redirectInput(INHERIT)
-                    .redirectOutput(INHERIT)
-                    .redirectError(INHERIT)
-                    .start().waitFor();
-            System.err.print("exit value: " + err);
-            System.exit(err);
-        }
-    }
 }
