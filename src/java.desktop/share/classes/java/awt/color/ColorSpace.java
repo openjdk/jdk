@@ -116,6 +116,7 @@ public abstract class ColorSpace implements Serializable {
      * The cache of singletons for the predefined built-in color spaces.
      */
     private static final class BuiltInSpace {
+
         private static final ColorSpace SRGB =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_sRGB));
         private static final ColorSpace XYZ =
