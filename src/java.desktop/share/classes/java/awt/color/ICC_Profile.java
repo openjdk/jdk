@@ -96,8 +96,8 @@ public class ICC_Profile implements Serializable {
     private transient volatile ProfileDeferralInfo deferralInfo;
 
     /**
-     * Lazy registry of singleton profile objects for specific built-in color
-     * spaces defined in the ColorSpace class (e.g. CS_sRGB),
+     * The lazy registry of singleton profile objects for specific built-in
+     * color spaces defined in the ColorSpace class (e.g. CS_sRGB),
      * see getInstance(int cspace) factory method.
      */
     private interface BuiltInProfile {
