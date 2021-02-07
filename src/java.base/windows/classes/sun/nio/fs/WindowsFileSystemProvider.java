@@ -335,7 +335,9 @@ class WindowsFileSystemProvider
             fc.close();
         } catch (WindowsException exc) {
             try {
-                if (exc.lastError() == ERROR_CANT_ACCESS_FILE) {
+                if (exc.lastError() == ERROR_CANT_ACCESS_FILE &&
+                        isUnixDomainSocket(file))
+                {
                     FileChannel fc = WindowsChannelFactory
                         .newFileChannel(file.getPathForWin32Calls(),
                                 file.getPathForPermissionCheck(),
@@ -356,6 +358,11 @@ class WindowsFileSystemProvider
                 exc.rethrowAsIOException(file);
             }
         }
+    }
+
+    private static boolean isUnixDomainSocket(WindowsPath path) throws WindowsException {
+        WindowsFileAttributes attrs = WindowsFileAttributes.get(path, false);
+        return attrs.isUnixDomainSocket();
     }
 
     @Override

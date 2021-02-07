@@ -856,14 +856,14 @@ class WindowsPath implements Path {
     }
 
     /**
-     * returns INVALID_HANDLE_VALUE if path is not a socket
+     * Returns INVALID_HANDLE_VALUE if path is not a socket
      * and a handle to the socket file if it is.
      */
     private long openSocketForReadAttributeAccess() {
         long handle;
 
         try {
-            // needs one additional flag to open a Unix domain socket
+            // needs to specify FILE_FLAG_OPEN_REPARSE_POINT if the file is a socket
             int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
 
             handle = openFileForReadAttributeAccess(flags);
