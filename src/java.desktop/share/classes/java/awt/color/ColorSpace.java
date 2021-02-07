@@ -111,7 +111,7 @@ public abstract class ColorSpace implements Serializable {
     private transient String [] compName = null;
 
     /**
-     * The cache of singletons for the predefined built-in color spaces.
+     * The lazy cache of singletons for the predefined built-in color spaces.
      */
     private interface BuiltInSpace {
         ICC_ColorSpace SRGB =

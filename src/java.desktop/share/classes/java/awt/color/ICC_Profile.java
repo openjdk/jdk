@@ -96,8 +96,8 @@ public class ICC_Profile implements Serializable {
     private transient volatile ProfileDeferralInfo deferralInfo;
 
     /**
-     * Registry of singleton profile objects for specific built-in color spaces
-     * defined in the ColorSpace class (e.g. CS_sRGB),
+     * Lazy registry of singleton profile objects for specific built-in color
+     * spaces defined in the ColorSpace class (e.g. CS_sRGB),
      * see getInstance(int cspace) factory method.
      */
     private interface BuiltInProfile {
@@ -838,10 +838,10 @@ public class ICC_Profile implements Serializable {
     public static ICC_Profile getInstance(int cspace) {
         return switch (cspace) {
             case ColorSpace.CS_sRGB -> BuiltInProfile.SRGB;
+            case ColorSpace.CS_LINEAR_RGB -> BuiltInProfile.LRGB;
             case ColorSpace.CS_CIEXYZ -> BuiltInProfile.XYZ;
             case ColorSpace.CS_PYCC -> BuiltInProfile.PYCC;
             case ColorSpace.CS_GRAY -> BuiltInProfile.GRAY;
-            case ColorSpace.CS_LINEAR_RGB -> BuiltInProfile.LRGB;
             default -> {
                 throw new IllegalArgumentException("Unknown color space");
             }
