@@ -557,7 +557,7 @@ ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
        "BOOLEAN", false, "false"),
   _parallel_thread_num("-parallel",
        "Number of parallel threads for heap iteration. "
-       "0 means let the VM determined the number of threads. "
+       "0 means let the VM determine the number of threads. "
        "1 means use one thread, i.e. disable parallelism. "
        "n means use n threads. n must be positive.",
        "INT", false, "0") {
