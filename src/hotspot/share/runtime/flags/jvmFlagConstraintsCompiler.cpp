@@ -302,6 +302,9 @@ JVMFlag::Error TypeProfileLevelConstraintFunc(uintx value, bool verbose) {
 
 JVMFlag::Error InitArrayShortSizeConstraintFunc(intx value, bool verbose) {
   if (value % BytesPerLong != 0) {
+    JVMFlag::printError(verbose,
+                        "InitArrayShortSize (" INTX_FORMAT ") must be "
+                        "a multiple of %d\n", value, BytesPerLong);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;

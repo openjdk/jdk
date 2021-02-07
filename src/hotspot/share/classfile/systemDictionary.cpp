@@ -151,14 +151,14 @@ ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool cre
 // ----------------------------------------------------------------------------
 // Parallel class loading check
 
-bool SystemDictionary::is_parallelCapable(Handle class_loader) {
+bool is_parallelCapable(Handle class_loader) {
   if (class_loader.is_null()) return true;
   if (AlwaysLockClassLoader) return false;
   return java_lang_ClassLoader::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
 // ParallelDefineClass flag does not apply to bootclass loader
-bool SystemDictionary::is_parallelDefine(Handle class_loader) {
+bool is_parallelDefine(Handle class_loader) {
    if (class_loader.is_null()) return false;
    if (AllowParallelDefineClass && java_lang_ClassLoader::parallelCapable(class_loader())) {
      return true;
@@ -185,7 +185,7 @@ bool SystemDictionary::is_platform_class_loader(oop class_loader) {
   return (class_loader->klass() == vmClasses::jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass());
 }
 
-Handle SystemDictionary::compute_loader_lock_object(Thread* thread, Handle class_loader) {
+Handle SystemDictionary::compute_loader_lock_object(Handle class_loader) {
   // If class_loader is NULL or parallelCapable, the JVM doesn't acquire a lock while loading.
   if (is_parallelCapable(class_loader)) {
     return Handle();
@@ -703,7 +703,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // the define.
   // ParallelCapable Classloaders and the bootstrap classloader
   // do not acquire lock here.
-  Handle lockObject = compute_loader_lock_object(THREAD, class_loader);
+  Handle lockObject = compute_loader_lock_object(class_loader);
   ObjectLocker ol(lockObject, THREAD);
 
   // Check again (after locking) if the class already exists in SystemDictionary
@@ -939,7 +939,6 @@ Klass* SystemDictionary::find(Symbol* class_name,
                           protection_domain);
 }
 
-
 // Look for a loaded instance or array klass by name.  Do not do any loading.
 // return NULL in case of error.
 Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
@@ -1069,7 +1068,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 
   // Classloaders that support parallelism, e.g. bootstrap classloader,
   // do not acquire lock here
-  Handle lockObject = compute_loader_lock_object(THREAD, class_loader);
+  Handle lockObject = compute_loader_lock_object(class_loader);
   ObjectLocker ol(lockObject, THREAD);
 
   // Parse the stream and create a klass.
@@ -1230,6 +1229,19 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
                                                      bool is_superclass, TRAPS) {
   assert(super_type->is_shared(), "must be");
 
+  // Quick check if the super type has been already loaded.
+  // + Don't do it for unregistered classes -- they can be unloaded so
+  //   super_type->class_loader_data() could be stale.
+  // + Don't check if loader data is NULL, ie. the super_type isn't fully loaded.
+  if (!super_type->is_shared_unregistered_class() && super_type->class_loader_data() != NULL) {
+    // Check if the super class is loaded by the current class_loader
+    Symbol* name = super_type->name();
+    Klass* check = find(name, class_loader, protection_domain, CHECK_0);
+    if (check == super_type) {
+      return true;
+    }
+  }
+
   Klass *found = resolve_super_or_fail(klass->name(), super_type->name(),
                                        class_loader, protection_domain, is_superclass, CHECK_0);
   if (found == super_type) {
@@ -1347,7 +1359,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   {
     HandleMark hm(THREAD);
-    Handle lockObject = compute_loader_lock_object(THREAD, class_loader);
+    Handle lockObject = compute_loader_lock_object(class_loader);
     ObjectLocker ol(lockObject, THREAD);
     // prohibited package check assumes all classes loaded from archive call
     // restore_unshareable_info which calls ik->set_package()
@@ -1549,7 +1561,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // hole with systemDictionary updates and check_constraints
   if (!is_parallelCapable(class_loader)) {
     assert(ObjectSynchronizer::current_thread_holds_lock(THREAD->as_Java_thread(),
-           compute_loader_lock_object(THREAD, class_loader)),
+           compute_loader_lock_object(class_loader)),
            "define called without lock");
   }
 

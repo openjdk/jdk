@@ -41,6 +41,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
@@ -855,7 +856,9 @@ static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
         break;
       case T_OBJECT:
         {
-          assert(fd->signature() == vmSymbols::string_signature(),
+          // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
+          // during DumpSharedSpaces
+          assert(fd->signature()->equals("Ljava/lang/String;"),
                  "just checking");
           if (DumpSharedSpaces && HeapShared::is_archived_object(mirror())) {
             // Archive the String field and update the pointer.
@@ -1122,6 +1125,21 @@ class ResetMirrorField: public FieldClosure {
   }
 };
 
+static void set_klass_field_in_archived_mirror(oop mirror_obj, int offset, Klass* k) {
+  assert(java_lang_Class::is_instance(mirror_obj), "must be");
+  // this is the copy of k in the output buffer
+  Klass* copy = ArchiveBuilder::get_relocated_klass(k);
+
+  // This is the address of k, if the archive is loaded at the requested location
+  Klass* def = ArchiveBuilder::current()->to_requested(copy);
+
+  log_debug(cds, heap, mirror)(
+      "Relocate mirror metadata field at %d from " PTR_FORMAT " ==> " PTR_FORMAT,
+      offset, p2i(k), p2i(def));
+
+  mirror_obj->metadata_field_put(offset, def);
+}
+
 void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
   assert(HeapShared::is_heap_object_archiving_allowed(),
          "HeapShared::is_heap_object_archiving_allowed() must be true");
@@ -1136,8 +1154,7 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
       Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
       assert(ak != NULL || t == T_VOID, "should not be NULL");
       if (ak != NULL) {
-        Klass *reloc_ak = MetaspaceShared::get_relocated_klass(ak, true);
-        archived_m->metadata_field_put(_array_klass_offset, reloc_ak);
+        set_klass_field_in_archived_mirror(archived_m, _array_klass_offset, ak);
       }
 
       // Clear the fields. Just to be safe
@@ -1259,21 +1276,13 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   // The archived mirror's field at _klass_offset is still pointing to the original
   // klass. Updated the field in the archived mirror to point to the relocated
   // klass in the archive.
-  Klass *reloc_k = MetaspaceShared::get_relocated_klass(as_Klass(mirror), true);
-  log_debug(cds, heap, mirror)(
-    "Relocate mirror metadata field at _klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
-    p2i(as_Klass(mirror)), p2i(reloc_k));
-  archived_mirror->metadata_field_put(_klass_offset, reloc_k);
+  set_klass_field_in_archived_mirror(archived_mirror, _klass_offset, as_Klass(mirror));
 
   // The field at _array_klass_offset is pointing to the original one dimension
   // higher array klass if exists. Relocate the pointer.
   Klass *arr = array_klass_acquire(mirror);
   if (arr != NULL) {
-    Klass *reloc_arr = MetaspaceShared::get_relocated_klass(arr, true);
-    log_debug(cds, heap, mirror)(
-      "Relocate mirror metadata field at _array_klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
-      p2i(arr), p2i(reloc_arr));
-    archived_mirror->metadata_field_put(_array_klass_offset, reloc_arr);
+    set_klass_field_in_archived_mirror(archived_mirror, _array_klass_offset, arr);
   }
   return archived_mirror;
 }

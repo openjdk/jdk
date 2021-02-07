@@ -25,7 +25,6 @@
 #import "jni_util.h"
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "GeomUtilities.h"
 #import "ThreadUtilities.h"
@@ -204,7 +203,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CImage_nativeCreateNSImageFromFile
 
 JNI_COCOA_ENTER(env);
 
-    NSString *path = JNFNormalizedNSStringForPath(env, file);
+    NSString *path = NormalizedPathNSStringFromJavaString(env, file);
     image = [[NSImage alloc] initByReferencingFile:path];
 
 JNI_COCOA_EXIT(env);
@@ -224,7 +223,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CImage_nativeCreateNSImageOfFileFr
 
 JNI_COCOA_ENTER(env);
 
-    NSString *path = JNFNormalizedNSStringForPath(env, file);
+    NSString *path = NormalizedPathNSStringFromJavaString(env, file);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         image = [[[NSWorkspace sharedWorkspace] iconForFile:path] retain];
         [image setScalesWhenResized:TRUE];
@@ -247,7 +246,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CImage_nativeCreateNSImageFromImag
 
 JNI_COCOA_ENTER(env);
 
-    image = [[NSImage imageNamed:JNFJavaToNSString(env, name)] retain];
+    image = [[NSImage imageNamed:JavaStringToNSString(env, name)] retain];
 
 JNI_COCOA_EXIT(env);
 

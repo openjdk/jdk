@@ -40,6 +40,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/events.hpp"

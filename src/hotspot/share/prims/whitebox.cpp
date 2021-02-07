@@ -992,6 +992,15 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
   if ((!is_blocking && is_queued) || nm != NULL) {
     return true;
   }
+  // Check code again because compilation may be finished before Compile_lock is acquired.
+  if (bci == InvocationEntryBci) {
+    CompiledMethod* code = mh->code();
+    if (code != NULL && code->as_nmethod_or_null() != NULL) {
+      return true;
+    }
+  } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != NULL) {
+    return true;
+  }
   tty->print("WB error: failed to %s compile at level %d method ", is_blocking ? "blocking" : "", comp_level);
   mh->print_short_name(tty);
   tty->cr();

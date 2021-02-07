@@ -41,6 +41,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // setup and cleanup actions
