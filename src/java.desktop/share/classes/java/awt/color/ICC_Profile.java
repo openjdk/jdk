@@ -48,6 +48,7 @@ import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.annotation.Native;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.StringTokenizer;
@@ -107,6 +108,9 @@ public class ICC_Profile implements Serializable {
         ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
                "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
+        ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+                "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+
         ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
                "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
 
@@ -115,9 +119,6 @@ public class ICC_Profile implements Serializable {
 
         ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
                "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
-
-        ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-               "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
     }
 
     /**

@@ -116,14 +116,14 @@ public abstract class ColorSpace implements Serializable {
     private interface BuiltInSpace {
         ICC_ColorSpace SRGB =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_sRGB));
+        ICC_ColorSpace LRGB =
+                new ICC_ColorSpace(ICC_Profile.getInstance(CS_LINEAR_RGB));
         ICC_ColorSpace XYZ =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_CIEXYZ));
         ICC_ColorSpace PYCC =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_PYCC));
         ICC_ColorSpace GRAY =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_GRAY));
-        ICC_ColorSpace LRGB =
-                new ICC_ColorSpace(ICC_Profile.getInstance(CS_LINEAR_RGB));
     }
 
     /**
@@ -306,10 +306,10 @@ public abstract class ColorSpace implements Serializable {
     public static ColorSpace getInstance(int cspace) {
         return switch (cspace) {
             case CS_sRGB -> BuiltInSpace.SRGB;
+            case CS_LINEAR_RGB -> BuiltInSpace.LRGB;
             case CS_CIEXYZ -> BuiltInSpace.XYZ;
             case CS_PYCC -> BuiltInSpace.PYCC;
             case CS_GRAY -> BuiltInSpace.GRAY;
-            case CS_LINEAR_RGB -> BuiltInSpace.LRGB;
             default -> {
                 throw new IllegalArgumentException("Unknown color space");
             }
