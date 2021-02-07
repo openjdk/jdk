@@ -74,8 +74,7 @@ public class LambdaInBaseArchive extends DynamicArchiveTestBase {
              "-Xlog:class+load,cds,cds+dynamic=debug",
              "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                    output.shouldContain("Buffer-space to target-space delta")
-                           .shouldContain("Written dynamic archive 0x");
+                    output.shouldContain("Written dynamic archive 0x");
                 });
 
         run2(baseArchiveName, topArchiveName,
