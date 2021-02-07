@@ -586,8 +586,6 @@ Dictionary* ClassLoaderData::create_dictionary() {
   if (_the_null_class_loader_data == NULL) {
     size = _boot_loader_dictionary_size;
     resizable = true;
-  } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
-    size = 1;  // there's only one class in relection class loader and no initiated classes
   } else if (is_system_class_loader_data()) {
     size = _boot_loader_dictionary_size;
     resizable = true;
@@ -769,8 +767,6 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::BootMetaspaceType);
       } else if (has_class_mirror_holder()) {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ClassMirrorHolderMetaspaceType);
-      } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
-        metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType);
       } else {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::StandardMetaspaceType);
       }

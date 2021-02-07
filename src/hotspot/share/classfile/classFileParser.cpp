@@ -4450,8 +4450,7 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
     if (!this_klass->class_loader_data()->is_the_null_class_loader_data()) {
       PackageEntry* super_package = super->package();
       if (super_package != NULL &&
-          super_package->name()->fast_compare(vmSymbols::jdk_internal_reflect()) == 0 &&
-          !java_lang_ClassLoader::is_reflection_class_loader(this_klass->class_loader())) {
+          super_package->name()->fast_compare(vmSymbols::jdk_internal_reflect()) == 0) {
         ResourceMark rm(THREAD);
         Exceptions::fthrow(
           THREAD_AND_LOCATION,
