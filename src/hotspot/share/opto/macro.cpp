@@ -717,6 +717,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, bool str_al
 #endif /*ASSERT*/
     }
   }
+  assert(!str_alloc || can_eliminate, "OptimizeTempArray must success in Elimination");
 #endif
   return can_eliminate;
 }
@@ -1107,25 +1108,52 @@ bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
 
   const ConnectionGraph& cg = *C->congraph();
   CheckCastPPNode* dst = ac->in(ArrayCopyNode::Dest)->as_CheckCastPP();
+  // CheckCastPP <- Proj <- AllocateArray
   AllocateArrayNode* aa = dst->in(1)->in(0)->as_AllocateArray();
   PointsToNode* pt = cg.ptnode_adr(aa->_idx);
 
-  // if AllocateArray is non-ecape, stop discovering its object.
-  // users may directly use a array of byte to store the temporary string.
-  // byte[] buf = new byte[length] and System.arraycopy(str.value, 0, buf, 0, str.length())
-  // if (pt == nullptr || pt->escape_state() != PointsToNode::NoEscape) {
-  {
-    // be conservative. check alloc is j.l.lString and it is scalar replaceable
-    Node* obj = aa->in(TypeFunc::I_O);
-    pt = nullptr;
-    if (obj->is_Proj() && obj->in(0)->is_Allocate()) {
-      AllocateNode* alloc = obj->in(0)->as_Allocate();
-      const TypeKlassPtr* type = _igvn.type(alloc->in(AllocateNode::KlassNode))->isa_klassptr();
+  if (pt == nullptr || pt->escape_state() >= PointsToNode::GlobalEscape)
+    return false;
 
-      // others may load fiends from alloc->result_cast() directly
-      if (alloc->_is_scalar_replaceable &&
-          type != nullptr && type->name() == ciSymbols::java_lang_String()) {
-        pt = cg.ptnode_adr(alloc->_idx);
+  AllocateNode* obj = nullptr;
+  // if AllocateArray(aa) is non-ecape, we could stop checking obj,
+  // users may directly store the temporary contents to an array, eg.
+  // byte[] buf = new byte[length] and System.arraycopy(str.value, 0, buf, 0, str.length())
+  // but I have no idea how to guarantee aa is a stable array. just be conservative here.
+  pt = nullptr;
+
+  if (dst->has_out_with(Op_EncodeP)) {
+    Node* enc = dst->find_out_with(Op_EncodeP);
+
+    // check all Store nodes
+    for (DUIterator_Fast imax, i = enc->fast_outs(imax); i < imax && obj == nullptr; i++) {
+      Node* use = enc->fast_out(i);
+
+      if (use->is_Store()) {
+        // after we discover obj which is AllocateNode, verify it is j.l.String
+        // and scalar-replaceable
+        StoreNode* st = use->as_Store();
+        const TypePtr* adr_type = st->adr_type();
+        const TypeOopPtr* t_oop = nullptr;
+
+        if (adr_type != nullptr) {
+          t_oop = adr_type->isa_oopptr();
+        }
+
+        if (t_oop != nullptr && t_oop->is_known_instance_field()) {
+          Node* res = st->in(2)->as_AddP()->base_node();
+          if (res->is_CheckCastPP() &&
+              res->in(1)->in(0)->_idx == static_cast<node_idx_t>(t_oop->instance_id())) {
+            obj = res->in(1)->in(0)->as_Allocate();
+            const TypeKlassPtr* klass = _igvn.type(obj->in(AllocateNode::KlassNode))->isa_klassptr();
+
+            // be conservative. check alloc is j.l.lString and it is scalar replaceable
+            if (obj->_is_scalar_replaceable &&
+                klass->name() == ciSymbols::java_lang_String()) {
+              pt = cg.ptnode_adr(obj->_idx);
+            }
+          }
+        }
       }
     }
   }
@@ -1133,8 +1161,7 @@ bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
   if (pt != nullptr && pt->escape_state() == PointsToNode::NoEscape) {
   #ifndef PRODUCT
     if (PrintEliminateAllocations) {
-      tty->print_cr("[ArrayCopyNode] is eliminated");
-      ac->dump();
+      tty->print_cr(" %d ArrayCopyNode is eliminated", ac->_idx);
     }
   #endif
 
@@ -1264,6 +1291,16 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
     } else if (use->is_EncodeP()) {
       _igvn.replace_node(use, top());
       _igvn.remove_dead_node(use);
+    } else if (use->is_ArrayCopy()) {
+      if (use == ac) continue; // identity
+      ArrayCopyNode* ac2 = use->as_ArrayCopy();
+      assert(res == ac2->in(ArrayCopyNode::Src), "only valid if alloc is read by other ArrayCopy nodes");
+
+      Node* pos = transform_later(new AddINode(ac->in(ArrayCopyNode::SrcPos),
+                                               ac2->in(ArrayCopyNode::SrcPos)));
+      _igvn.replace_input_of(ac2, ArrayCopyNode::Src, src);
+      _igvn.replace_input_of(ac2, ArrayCopyNode::SrcPos, pos);
+      _igvn.replace_input_of(ac2, ArrayCopyNode::SrcLen, length);
     } else {
       // don't touch other nodes
       // remaining nodes should be SafePoint nodes. we should generate ad-hoc
