@@ -3578,7 +3578,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpdi(CCR0, R0, 0);
 
     // Return to prologue if no deoptimization is required (bnelr)
-    __ bclr(Assembler::bcondCRbiIs1_bhintIsTaken, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintIsTaken);
+    __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintIsTaken);
 
     // Deoptimization required.
     // For actually handling the deoptimization, the 'wrong method stub' is invoked.

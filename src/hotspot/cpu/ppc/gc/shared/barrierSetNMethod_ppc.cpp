@@ -41,12 +41,12 @@ class NativeNMethodBarrier: public NativeInstruction {
   }
 
 public:
-  unsigned short get_guard_value() const {
+  int get_guard_value() const {
     // Retrieve the guard value (naming of 'offset' function is misleading).
     return get_patchable_instruction_handle()->offset();
   }
 
-  void release_set_guard_value(unsigned short value) {
+  void release_set_guard_value(int value) {
     // Patching is not atomic.
     // Stale observations of the "armed" state is okay as invoking the barrier stub in that case has no
     // unwanted side effects. Disarming is thus a non-critical operation.
