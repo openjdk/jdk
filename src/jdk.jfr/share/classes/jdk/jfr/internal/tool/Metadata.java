@@ -31,31 +31,29 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
 
 import jdk.jfr.EventType;
-import jdk.jfr.FlightRecorder;
-import jdk.jfr.Name;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.TypeLibrary;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 final class Metadata extends Command {
 
-    private static class TypeComparator implements Comparator<EventType> {
+    private final static JdkJfrConsumer PRIVATE_ACCESS = JdkJfrConsumer.instance();
+
+    private static class TypeComparator implements Comparator<Type> {
 
         @Override
-        public int compare(EventType et1, EventType et2) {
-            Type t1 = PrivateAccess.getInstance().getType(et1);
-            Type t2 = PrivateAccess.getInstance().getType(et2);
+        public int compare(Type t1, Type t2) {
             int g1 = groupValue(t1);
             int g2 = groupValue(t2);
             if (g1 == g2) {
@@ -202,34 +200,36 @@ final class Metadata extends Command {
             PrettyWriter prettyWriter = new PrettyWriter(pw);
             prettyWriter.setShowIds(showIds);
             if (filter != null) {
-                filter = addCache(filter, eventType -> eventType.getId());
+                filter = addCache(filter, type -> type.getId());
             }
 
-            List<EventType> types = getAllTypes(file);
+            List<Type> types = getAllTypes(file);
             Collections.sort(types, new TypeComparator());
-            for (EventType type : types) {
-                if (filter != null && !filter.test(type)) {
-                    continue;
+            for (Type type : types) {
+                // if it's an event type, apply filter on it
+                if (Type.SUPER_TYPE_EVENT.equals(type.getSuperType())) {
+                    EventType et = PrivateAccess.getInstance().newEventType((PlatformEventType) type);
+                    if (filter != null && !filter.test(et)) {
+                        continue;
+                    }
                 }
 
-                prettyWriter.printType(PrivateAccess.getInstance().getType(type));
+                prettyWriter.printType(type);
             }
             prettyWriter.flush(true);
             pw.flush();
         }
     }
 
-    private List<EventType> getAllTypes(Path file) throws UserDataException {
-        // determine whether reading from recording file or reading from the JDK where
+    private List<Type> getAllTypes(Path file) throws UserDataException {
+        // Determine whether reading from recording file or reading from the JDK where
         // the jfr tool is located will be used
         if (file == null) {
-            // FlightRecorder.getEventTypes returns unmodifiable list thus disallowing
-            // sorting so copy its elements to a new list and sort it
-            return new ArrayList<>(FlightRecorder.getFlightRecorder().getEventTypes());
+            return TypeLibrary.getInstance().getTypes();
         }
-        List<EventType> types = null;
+        List<Type> types = null;
         try (RecordingFile rf = new RecordingFile(file)) {
-            types = rf.readEventTypes();
+            types = PRIVATE_ACCESS.readTypes(rf);
         } catch (IOException ioe) {
             couldNotReadError(file, ioe);
         }
