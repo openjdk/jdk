@@ -236,7 +236,7 @@ class MetaspaceShared : AllStatic {
   //
   // During dynamic dump: _requested_base_address is not always the same as SharedBaseAddress:
   // - SharedBaseAddress is used for *reading the base archive*. I.e., CompactHashtable uses
-  //   it to convery offsets to pointers to Symbols in the base archive.
+  //   it to convert offsets to pointers to Symbols in the base archive.
   //   The base archive may be mapped to an OS-selected address due to ASLR. E.g.,
   //   you may have SharedBaseAddress == 0x00ff123400000000.
   // - _requested_base_address is used for *writing the output archive*. It's usually
