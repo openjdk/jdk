@@ -94,14 +94,31 @@ public class ICC_Profile implements Serializable {
     private transient volatile Profile cmmProfile;
     private transient volatile ProfileDeferralInfo deferralInfo;
 
-    // Registry of singleton profile objects for specific color spaces
-    // defined in the ColorSpace class (e.g. CS_sRGB), see
-    // getInstance(int cspace) factory method.
-    private static volatile ICC_Profile sRGBprofile;
-    private static volatile ICC_Profile XYZprofile;
-    private static volatile ICC_Profile PYCCprofile;
-    private static volatile ICC_Profile GRAYprofile;
-    private static volatile ICC_Profile LINEAR_RGBprofile;
+    /**
+     * Registry of singleton profile objects for specific built-in color spaces
+     * defined in the ColorSpace class (e.g. CS_sRGB),
+     * see getInstance(int cspace) factory method.
+     */
+    private interface BuiltInProfile {
+        /*
+         * Deferral is only used for standard profiles. Enabling the appropriate
+         * access privileges is handled at a lower level.
+         */
+        ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+               "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+
+        ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
+               "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
+
+        ICC_Profile PYCC = new ICC_Profile(new ProfileDeferralInfo(
+               "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
+
+        ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
+               "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
+
+        ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+               "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+    }
 
     /**
      * Profile class is input.
@@ -818,70 +835,16 @@ public class ICC_Profile implements Serializable {
      *         predefined color space types
      */
     public static ICC_Profile getInstance(int cspace) {
-        /*
-         * Deferral is only used for standard profiles. Enabling the appropriate
-         * access privileges is handled at a lower level.
-         */
-        switch (cspace) {
-            case ColorSpace.CS_sRGB:
-                if (sRGBprofile == null) {
-                    synchronized (ICC_Profile.class) {
-                        if (sRGBprofile == null) {
-                            var pdi = new ProfileDeferralInfo("sRGB.pf",
-                                    ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY);
-                            sRGBprofile = new ICC_ProfileRGB(pdi);
-                        }
-                    }
-                }
-                return sRGBprofile;
-            case ColorSpace.CS_CIEXYZ:
-                if (XYZprofile == null) {
-                    synchronized (ICC_Profile.class) {
-                        if (XYZprofile == null) {
-                            var pdi = new ProfileDeferralInfo("CIEXYZ.pf",
-                                    ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT);
-                            XYZprofile = new ICC_Profile(pdi);
-                        }
-                    }
-                }
-                return XYZprofile;
-            case ColorSpace.CS_PYCC:
-                if (PYCCprofile == null) {
-                    synchronized (ICC_Profile.class) {
-                        if (PYCCprofile == null) {
-                            var pdi = new ProfileDeferralInfo("PYCC.pf",
-                                    ColorSpace.TYPE_3CLR, 3,
-                                    CLASS_COLORSPACECONVERSION);
-                            PYCCprofile = new ICC_Profile(pdi);
-                        }
-                    }
-                }
-                return PYCCprofile;
-            case ColorSpace.CS_GRAY:
-                if (GRAYprofile == null) {
-                    synchronized (ICC_Profile.class) {
-                        if (GRAYprofile == null) {
-                            var pdi = new ProfileDeferralInfo("GRAY.pf",
-                                    ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY);
-                            GRAYprofile = new ICC_ProfileGray(pdi);
-                        }
-                    }
-                }
-                return GRAYprofile;
-            case ColorSpace.CS_LINEAR_RGB:
-                if (LINEAR_RGBprofile == null) {
-                    synchronized (ICC_Profile.class) {
-                        if (LINEAR_RGBprofile == null) {
-                            var pdi = new ProfileDeferralInfo("LINEAR_RGB.pf",
-                                    ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY);
-                            LINEAR_RGBprofile = new ICC_ProfileRGB(pdi);
-                        }
-                    }
-                }
-                return LINEAR_RGBprofile;
-            default:
+        return switch (cspace) {
+            case ColorSpace.CS_sRGB -> BuiltInProfile.SRGB;
+            case ColorSpace.CS_CIEXYZ -> BuiltInProfile.XYZ;
+            case ColorSpace.CS_PYCC -> BuiltInProfile.PYCC;
+            case ColorSpace.CS_GRAY -> BuiltInProfile.GRAY;
+            case ColorSpace.CS_LINEAR_RGB -> BuiltInProfile.LRGB;
+            default -> {
                 throw new IllegalArgumentException("Unknown color space");
-        }
+            }
+        };
     }
 
     /**
@@ -1789,15 +1752,15 @@ public class ICC_Profile implements Serializable {
         s.defaultWriteObject();
 
         String csName = null;
-        if (this == sRGBprofile) {
+        if (this == BuiltInProfile.SRGB) {
             csName = "CS_sRGB";
-        } else if (this == XYZprofile) {
+        } else if (this == BuiltInProfile.XYZ) {
             csName = "CS_CIEXYZ";
-        } else if (this == PYCCprofile) {
+        } else if (this == BuiltInProfile.PYCC) {
             csName = "CS_PYCC";
-        } else if (this == GRAYprofile) {
+        } else if (this == BuiltInProfile.GRAY) {
             csName = "CS_GRAY";
-        } else if (this == LINEAR_RGBprofile) {
+        } else if (this == BuiltInProfile.LRGB) {
             csName = "CS_LINEAR_RGB";
         }
 
