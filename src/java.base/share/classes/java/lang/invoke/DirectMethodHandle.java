@@ -134,8 +134,10 @@ class DirectMethodHandle extends MethodHandle {
         return make(member.getDeclaringClass(), member);
     }
     private static DirectMethodHandle makeAllocator(MemberName ctor) {
+        return makeAllocator(ctor, ctor.getDeclaringClass());
+    }
+    static DirectMethodHandle makeAllocator(MemberName ctor, Class<?> instanceClass) {
         assert(ctor.isConstructor() && ctor.getName().equals("<init>"));
-        Class<?> instanceClass = ctor.getDeclaringClass();
         ctor = ctor.asConstructor();
         assert(ctor.isConstructor() && ctor.getReferenceKind() == REF_newInvokeSpecial) : ctor;
         MethodType mtype = ctor.getMethodType().changeReturnType(instanceClass);

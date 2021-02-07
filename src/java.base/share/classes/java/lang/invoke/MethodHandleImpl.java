@@ -42,6 +42,8 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1799,6 +1801,22 @@ abstract class MethodHandleImpl {
             @Override
             public VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
                 return VarHandles.insertCoordinates(target, pos, values);
+            }
+
+            @Override
+            public MethodHandle unreflectMethod(Method m) throws IllegalAccessException {
+                return MethodHandles.unreflectMethod(m);
+            }
+
+            @Override
+            public MethodHandle unreflectConstructor(Constructor<?> c) throws IllegalAccessException {
+                return MethodHandles.unreflectConstructor(c);
+            }
+
+            @Override
+            public MethodHandle unreflectConstructorForSerialization(Constructor<?> c,
+                    Class<?> instantiatedClass) throws IllegalAccessException {
+                return MethodHandles.unreflectConstructorForSerialization(c, instantiatedClass);
             }
         });
     }

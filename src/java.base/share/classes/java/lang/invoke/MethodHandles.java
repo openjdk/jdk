@@ -4196,6 +4196,19 @@ return mh1;
         static ConcurrentHashMap<MemberName, DirectMethodHandle> LOOKASIDE_TABLE = new ConcurrentHashMap<>();
     }
 
+    static MethodHandle unreflectMethod(Method m) throws IllegalAccessException {
+        return Lookup.IMPL_LOOKUP.unreflect(m);
+    }
+
+    static MethodHandle unreflectConstructor(Constructor<?> c) throws IllegalAccessException {
+        return Lookup.IMPL_LOOKUP.unreflectConstructor(c);
+    }
+
+    static MethodHandle unreflectConstructorForSerialization(Constructor<?> c, Class<?> instatiatedType) throws IllegalAccessException {
+        MemberName mn = new MemberName(c);
+        return DirectMethodHandle.makeAllocator(mn, instatiatedType).setVarargs(mn);
+    }
+
     /**
      * Produces a method handle constructing arrays of a desired type,
      * as if by the {@code anewarray} bytecode.
