@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * square root, and trigonometric functions.
  *
  * <p>Unlike some of the numeric methods of class
- * {@code StrictMath}, all implementations of the equivalent
+ * {@link java.lang.StrictMath StrictMath}, all implementations of the equivalent
  * functions of class {@code Math} are not defined to return the
  * bit-for-bit same results.  This relaxation permits
  * better-performing implementations where strict reproducibility is
@@ -234,7 +234,7 @@ public final class Math {
      * range 0.0 through <i>pi</i>.  Special case:
      * <ul><li>If the argument is NaN or its absolute value is greater
      * than 1, then the result is NaN.
-     * <li>If the argument is {@code 1.0}, the result is {@code +0.0}.
+     * <li>If the argument is {@code 1.0}, the result is positive zero.
      * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
@@ -331,7 +331,8 @@ public final class Math {
      * <li>If the argument is positive zero or negative zero, then the
      * result is negative infinity.
      * <li>If the argument is {@code 1.0}, then the result is positive
-     * zero.</ul>
+     * zero.
+     * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -713,7 +714,7 @@ public final class Math {
      * specifies a NaN is returned. The IEEE 754 specification treats
      * the infinite power as a large integer (large-magnitude
      * floating-point numbers are numerically integers, specifically
-     * even integer) and therefore specifies {@code 1.0} be returned.
+     * even integers) and therefore specifies {@code 1.0} be returned.
      *
      * @param   a   the base.
      * @param   b   the exponent.
