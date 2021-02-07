@@ -5475,7 +5475,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   // Set PackageEntry for this_klass
   oop cl = ik->class_loader();
-  Handle clh = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(cl));
+  Handle clh = Handle(THREAD, cl);
   ClassLoaderData* cld = ClassLoaderData::class_loader_data_or_null(clh());
   ik->set_package(cld, NULL, CHECK);
 

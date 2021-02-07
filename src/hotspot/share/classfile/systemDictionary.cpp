@@ -677,8 +677,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
 
   HandleMark hm(THREAD);
 
-  // Fix for 4474172; see evaluation for more details
-  class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
   ClassLoaderData* loader_data = register_loader(class_loader);
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int name_hash = dictionary->compute_hash(name);
@@ -921,10 +919,6 @@ Klass* SystemDictionary::find(Symbol* class_name,
                               Handle protection_domain,
                               TRAPS) {
 
-  // The result of this call should be consistent with the result
-  // of the call to resolve_instance_class_or_null().
-  // See evaluation 6790209 and 4474172 for more details.
-  class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader());
 
   if (loader_data == NULL) {
