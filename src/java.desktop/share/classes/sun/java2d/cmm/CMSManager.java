@@ -26,20 +26,12 @@
 package sun.java2d.cmm;
 
 import java.awt.color.CMMException;
-import java.awt.color.ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.security.AccessController;
 
 import sun.security.action.GetPropertyAction;
 
 public final class CMSManager {
-    /**
-     * These two fields allow access to java.awt.color.ColorSpace private fields
-     * from other packages. The fields are set by java.awt.color.ColorSpace and
-     * read by java.awt.image.ColorModel.
-     */
-    public static volatile ColorSpace GRAYspace;
-    public static volatile ColorSpace LINEAR_RGBspace;
 
     private static PCMM cmmImpl = null;
 

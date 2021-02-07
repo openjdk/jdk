@@ -39,8 +39,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.lang.annotation.Native;
 
-import sun.java2d.cmm.CMSManager;
-
 /**
  * This abstract class is used to serve as a color space tag to identify the
  * specific color space of a {@code Color} object or, via a {@code ColorModel}
@@ -115,24 +113,17 @@ public abstract class ColorSpace implements Serializable {
     /**
      * The cache of singletons for the predefined built-in color spaces.
      */
-    private static final class BuiltInSpace {
-
-        private static final ColorSpace SRGB =
+    private interface BuiltInSpace {
+        ICC_ColorSpace SRGB =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_sRGB));
-        private static final ColorSpace XYZ =
+        ICC_ColorSpace XYZ =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_CIEXYZ));
-        private static final ColorSpace PYCC =
+        ICC_ColorSpace PYCC =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_PYCC));
-        private static final ColorSpace GRAY =
+        ICC_ColorSpace GRAY =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_GRAY));
-        private static final ColorSpace LRGB =
+        ICC_ColorSpace LRGB =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_LINEAR_RGB));
-
-        static {
-            /* to allow access from java.awt.ColorModel */
-            CMSManager.GRAYspace = GRAY;
-            CMSManager.LINEAR_RGBspace = LRGB;
-        }
     }
 
     /**
