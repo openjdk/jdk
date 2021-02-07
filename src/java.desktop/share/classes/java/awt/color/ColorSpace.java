@@ -114,16 +114,12 @@ public abstract class ColorSpace implements Serializable {
      * The lazy cache of singletons for the predefined built-in color spaces.
      */
     private interface BuiltInSpace {
-        ICC_ColorSpace SRGB =
-                new ICC_ColorSpace(ICC_Profile.getInstance(CS_sRGB));
-        ICC_ColorSpace LRGB =
+        ColorSpace SRGB = new ICC_ColorSpace(ICC_Profile.getInstance(CS_sRGB));
+        ColorSpace LRGB =
                 new ICC_ColorSpace(ICC_Profile.getInstance(CS_LINEAR_RGB));
-        ICC_ColorSpace XYZ =
-                new ICC_ColorSpace(ICC_Profile.getInstance(CS_CIEXYZ));
-        ICC_ColorSpace PYCC =
-                new ICC_ColorSpace(ICC_Profile.getInstance(CS_PYCC));
-        ICC_ColorSpace GRAY =
-                new ICC_ColorSpace(ICC_Profile.getInstance(CS_GRAY));
+        ColorSpace XYZ = new ICC_ColorSpace(ICC_Profile.getInstance(CS_CIEXYZ));
+        ColorSpace PYCC = new ICC_ColorSpace(ICC_Profile.getInstance(CS_PYCC));
+        ColorSpace GRAY = new ICC_ColorSpace(ICC_Profile.getInstance(CS_GRAY));
     }
 
     /**
