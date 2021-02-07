@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class Big5_HKSCS extends Charset implements HistoricallyNamedCharset
     }
 
     static class Decoder extends HKSCS.Decoder {
-        private static DoubleByte.Decoder big5 =
+        private static final DoubleByte.Decoder big5 =
             (DoubleByte.Decoder)new Big5().newDecoder();
 
         private static final char[][] b2cBmp = new char[0x100][];
@@ -75,7 +75,7 @@ public class Big5_HKSCS extends Charset implements HistoricallyNamedCharset
     }
 
     static class Encoder extends HKSCS.Encoder {
-        private static DoubleByte.Encoder big5 =
+        private static final DoubleByte.Encoder big5 =
             (DoubleByte.Encoder)new Big5().newEncoder();
 
         static final char[][] c2bBmp = new char[0x100][];
