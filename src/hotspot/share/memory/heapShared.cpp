@@ -266,7 +266,6 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
   oop archived_oop = (oop)G1CollectedHeap::heap()->archive_mem_allocate(len);
   if (archived_oop != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
-    MetaspaceShared::relocate_klass_ptr(archived_oop);
     // Reinitialize markword to remove age/marking/locking/etc.
     //
     // We need to retain the identity_hash, because it may have been used by some hashtables
@@ -302,7 +301,7 @@ void HeapShared::archive_klass_objects(Thread* THREAD) {
   GrowableArray<Klass*>* klasses = MetaspaceShared::collected_klasses();
   assert(klasses != NULL, "sanity");
   for (int i = 0; i < klasses->length(); i++) {
-    Klass* k = klasses->at(i);
+    Klass* k = ArchiveBuilder::get_relocated_klass(klasses->at(i));
 
     // archive mirror object
     java_lang_Class::archive_mirror(k, CHECK);
@@ -454,7 +453,7 @@ HeapShared::RunTimeKlassSubGraphInfoTable   HeapShared::_run_time_subgraph_info_
 KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_graph) {
   assert(DumpSharedSpaces, "dump time only");
   bool created;
-  Klass* relocated_k = MetaspaceShared::get_relocated_klass(k);
+  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(k);
   KlassSubGraphInfo* info =
     _dump_time_subgraph_info_table->put_if_absent(relocated_k, KlassSubGraphInfo(relocated_k, is_full_module_graph),
                                                   &created);
@@ -464,7 +463,7 @@ KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_
 
 KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
   assert(DumpSharedSpaces, "dump time only");
-  Klass* relocated_k = MetaspaceShared::get_relocated_klass(k);
+  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(k);
   KlassSubGraphInfo* info = _dump_time_subgraph_info_table->get(relocated_k);
   assert(info != NULL, "must have been initialized");
   return info;
@@ -484,17 +483,16 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
 
 // Add the Klass* for an object in the current KlassSubGraphInfo's subgraphs.
 // Only objects of boot classes can be included in sub-graph.
-void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass* relocated_k) {
+void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   assert(DumpSharedSpaces, "dump time only");
-  assert(relocated_k == MetaspaceShared::get_relocated_klass(orig_k),
-         "must be the relocated Klass in the shared space");
+  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(orig_k);
 
   if (_subgraph_object_klasses == NULL) {
     _subgraph_object_klasses =
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
-  assert(ArchiveBuilder::singleton()->is_in_buffer_space(relocated_k), "must be a shared class");
+  assert(ArchiveBuilder::current()->is_in_buffer_space(relocated_k), "must be a shared class");
 
   if (_k == relocated_k) {
     // Don't add the Klass containing the sub-graph to it's own klass
@@ -619,8 +617,8 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
         (ArchivedKlassSubGraphInfoRecord*)MetaspaceShared::read_only_space_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
       record->init(&info);
 
-      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(klass);
-      u4 delta = MetaspaceShared::object_delta_u4(record);
+      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)klass);
+      u4 delta = ArchiveBuilder::current()->any_to_offset_u4(record);
       _writer->add(hash, delta);
     }
     return true; // keep on iterating
@@ -741,7 +739,10 @@ const ArchivedKlassSubGraphInfoRecord*
 HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS) {
   assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
 
-  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(k);
+  if (!k->is_shared()) {
+    return NULL;
+  }
+  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
 
   // Initialize from archived data. Currently this is done only
@@ -772,7 +773,11 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
     Array<Klass*>* klasses = record->subgraph_object_klasses();
     if (klasses != NULL) {
       for (int i = 0; i < klasses->length(); i++) {
-        resolve_or_init(klasses->at(i), do_init, CHECK_NULL);
+        Klass* klass = klasses->at(i);
+        if (!klass->is_shared()) {
+          return NULL;
+        }
+        resolve_or_init(klass, do_init, CHECK_NULL);
       }
     }
   }
@@ -829,7 +834,7 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
 }
 
 void HeapShared::clear_archived_roots_of(Klass* k) {
-  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(k);
+  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
   if (record != NULL) {
     Array<int>* entry_field_records = record->entry_field_records();
@@ -1021,8 +1026,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
 
   assert(archived_obj != NULL, "must be");
   Klass *orig_k = orig_obj->klass();
-  Klass *relocated_k = archived_obj->klass();
-  subgraph_info->add_subgraph_object_klass(orig_k, relocated_k);
+  subgraph_info->add_subgraph_object_klass(orig_k);
 
   WalkOopAndArchiveClosure walker(level, is_closed_archive, record_klasses_only,
                                   subgraph_info, orig_obj, archived_obj, THREAD);
@@ -1405,12 +1409,16 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
   HeapWord* p   = region.start();
   HeapWord* end = region.end();
   FindEmbeddedNonNullPointers finder((narrowOop*)p, &oopmap);
+  ArchiveBuilder* builder = DumpSharedSpaces ? ArchiveBuilder::current() : NULL;
 
   int num_objs = 0;
   while (p < end) {
     oop o = (oop)p;
     o->oop_iterate(&finder);
     p += o->size();
+    if (DumpSharedSpaces) {
+      builder->relocate_klass_ptr(o);
+    }
     ++ num_objs;
   }
 
