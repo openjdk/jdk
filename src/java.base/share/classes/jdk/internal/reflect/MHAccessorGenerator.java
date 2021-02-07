@@ -41,9 +41,9 @@ import static java.lang.invoke.MethodType.methodType;
 
 class MHAccessorGenerator {
 
-    private static final MethodType METHOD_MH_TYPE = 
+    private static final MethodType METHOD_MH_TYPE =
             methodType(Object.class, Object.class, Object[].class);
-    private static final MethodType CONSTRUCTOR_MH_TYPE = 
+    private static final MethodType CONSTRUCTOR_MH_TYPE =
             methodType(Object.class, Object[].class);
     private static final MethodHandle WRAP_AND_RETHROW;
 
@@ -53,7 +53,7 @@ class MHAccessorGenerator {
     static {
         try {
             Lookup l = MethodHandles.publicLookup();
-            MethodHandle wrap = l.findConstructor(InvocationTargetException.class, 
+            MethodHandle wrap = l.findConstructor(InvocationTargetException.class,
                             methodType(void.class, Throwable.class));
             MethodHandle thrower = MethodHandles.throwException(Object.class, InvocationTargetException.class);
             WRAP_AND_RETHROW = MethodHandles.filterArguments(thrower, 0, wrap);

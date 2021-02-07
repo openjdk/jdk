@@ -25,8 +25,6 @@
 
 package jdk.internal.reflect;
 
-import sun.reflect.misc.ReflectUtil;
-
 import java.lang.reflect.*;
 import jdk.internal.misc.Unsafe;
 
