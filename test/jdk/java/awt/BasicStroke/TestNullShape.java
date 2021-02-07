@@ -36,10 +36,11 @@ public class TestNullShape {
         try {
             Shape s = bs.createStrokedShape(null);
             System.out.println("result: false");
-            throw new RuntimeException("NPE is expected");
-        } catch (NullPointerException ne) {
+        }
+        catch(NullPointerException ne) {
             System.out.println("result (npe): true");
             return;
         }
+        throw new RuntimeException("NPE is expected");
     }
 }
