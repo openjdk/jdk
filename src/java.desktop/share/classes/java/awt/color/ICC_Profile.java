@@ -48,7 +48,6 @@ import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.lang.annotation.Native;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.StringTokenizer;
