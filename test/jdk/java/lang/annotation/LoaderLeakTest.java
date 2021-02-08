@@ -44,21 +44,6 @@ import java.util.*;
 
 public class LoaderLeakTest {
 
-    @BeforeClass
-    public void initialize() throws Exception {
-        final Path TEST_CLASSES_PATH = Paths.get(Utils.TEST_CLASSES).toAbsolutePath();
-        final Path REPOSITORY_PATH = TEST_CLASSES_PATH.resolve("classes").toAbsolutePath();
-        Files.createDirectories(REPOSITORY_PATH);
-        List<String> classes = List.of("A.class", "B.class", "C.class");
-        for (String fileName : classes) {
-            Files.move(
-                TEST_CLASSES_PATH.resolve(fileName),
-                REPOSITORY_PATH.resolve(fileName),
-                StandardCopyOption.REPLACE_EXISTING
-            );
-        }
-    }
-
     @Test
     public void testWithoutReadingAnnotations() throws Throwable {
         runJavaProcessExpectSuccessExitCode("Main");
@@ -123,75 +108,32 @@ class Main {
     B b();
 }
 
-@interface B {}
+@interface B { }
 
-@A(b=@B()) class C {}
+@A(b=@B()) class C { }
 
 class SimpleClassLoader extends ClassLoader {
+    public SimpleClassLoader() { }
 
-    private Map<String, Class<?>> classes = new HashMap<>();
-
-    public SimpleClassLoader() {
-    }
-
-    private byte getClassImplFromDataBase(String className)[] {
+    private byte[] getClassImplFromDataBase(String className) {
         byte result[];
         try {
-            FileInputStream fi = new FileInputStream("classes/"+className+".class");
-            result = new byte[fi.available()];
-            fi.read(result);
-            return result;
+            return Files.readAllBytes(Paths.get(className + ".class"));
         } catch (Exception e) {
-
-            /*
-             * If we caught an exception, either the class wasnt found or it
-             * was unreadable by our process.
-             */
-            return null;
+            throw new Error(e);
         }
-    }
-
-    @Override
-    public Class<?> loadClass(String className) throws ClassNotFoundException {
-        return (loadClass(className, true));
     }
 
     @Override
     public synchronized Class<?> loadClass(String className, boolean resolveIt)
             throws ClassNotFoundException {
-        Class<?> result;
-        byte  classData[];
-
-        /* Check our local cache of classes */
-        result = classes.get(className);
-        if (result != null) {
-            return result;
+        switch (className) {
+            case "A":
+            case "B":
+            case "C":
+                var classData = getClassImplFromDataBase(className);
+                return defineClass(className, classData, 0, classData.length);
         }
-
-        /* Check with the primordial class loader */
-        try {
-            result = super.findSystemClass(className);
-            return result;
-        } catch (ClassNotFoundException e) {
-        }
-
-        /* Try to load it from our repository */
-        classData = getClassImplFromDataBase(className);
-        if (classData == null) {
-            throw new ClassNotFoundException();
-        }
-
-        /* Define it (parse the class file) */
-        result = defineClass(className, classData, 0, classData.length);
-        if (result == null) {
-            throw new ClassFormatError();
-        }
-
-        if (resolveIt) {
-            resolveClass(result);
-        }
-
-        classes.put(className, result);
-        return result;
+        return super.loadClass(className, resolveIt);
     }
 }
