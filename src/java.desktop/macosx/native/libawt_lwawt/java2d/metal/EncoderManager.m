@@ -201,7 +201,7 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
 - (void) updateClip:(id<MTLRenderCommandEncoder>)encoder clip:(MTLClip *)clip forceUpdate:(jboolean)forceUpdate
 {
     if (clip.stencilMaskGenerationInProgress == JNI_TRUE) {
-        // don't set setScissorOrStencil when generateion in progress
+        // don't set setScissorOrStencil when generation in progress
         return;
     }
 

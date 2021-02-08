@@ -235,7 +235,6 @@ JNIEXPORT SurfaceDataOps * JNICALL
 SurfaceData_InitOps(JNIEnv *env, jobject sData, int opsSize)
 {
     SurfaceDataOps *ops = malloc(opsSize);
-
     SurfaceData_SetOps(env, sData, ops);
     if (ops != NULL) {
         memset(ops, 0, opsSize);

@@ -79,7 +79,7 @@ Java_sun_java2d_metal_MTLGraphicsConfig_isMetalFrameworkAvailable
     (JNIEnv *env, jclass mtlgc)
 {
     FILE *f = popen("/usr/sbin/system_profiler SPDisplaysDataType", "r");
-    bool metalSupported = JNI_FALSE;
+    jboolean metalSupported = JNI_FALSE;
     while (getc(f) != EOF)
     {
         char str[60];

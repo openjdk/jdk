@@ -34,12 +34,12 @@
 #include "Trace.h"
 
 /**
- * The MTLSDOps structure describes a native OpenGL surface and contains all
+ * The MTLSDOps structure describes a native Metal surface and contains all
  * information pertaining to the native surface.  Some information about
  * the more important/different fields:
  *
  *     void *privOps;
- * Pointer to native-specific (GLX, WGL, etc.) SurfaceData info, such as the
+ * Pointer to native-specific (Metal) SurfaceData info, such as the
  * native Drawable handle and GraphicsConfig data.
  *
  *     jint drawableType;
@@ -52,11 +52,6 @@
  * is true, then we should take appropriate action (i.e. call glColorMask()
  * to disable writes into the alpha channel) to ensure that the surface
  * remains fully opaque.
- *
- *     jboolean needsInit;
- * If true, the surface requires some one-time initialization, which should
- * be performed after a context has been made current to the surface for
- * the first time.
  *
  *     jint x/yOffset
  * The offset in pixels of the Metal viewport origin from the lower-left
@@ -83,15 +78,9 @@
  * value is null, the texture has not yet been initialized.
  *
  *     jint textureWidth/Height;
- * The actual bounds of the texture object for this surface.  If the
- * GL_ARB_texture_non_power_of_two extension is not present, the dimensions
- * of an OpenGL texture object must be a power-of-two (e.g. 64x32 or 128x512).
+ * The actual bounds of the texture object for this surface.
  * The texture image that we care about has dimensions specified by the width
- * and height fields in this MTLSDOps structure.  For example, if the image
- * to be stored in the texture has dimensions 115x47, the actual OpenGL
- * texture we allocate will have dimensions 128x64 to meet the pow2
- * restriction.  The image bounds within the texture can be accessed using
- * floating point texture coordinates in the range [0.0,1.0].
+ * and height fields in this MTLSDOps structure.
  */
 typedef struct {
     SurfaceDataOps               sdOps;

@@ -44,7 +44,7 @@
  *  for example destination, stencil, or any other property of MTLRenderPassDescriptor)
  *  2. Updates 'mutable' properties encoder: pipelineState (with corresponding buffers), clip, transform, e.t.c. To avoid
  *  unnecessary calls of [encoder setXXX] this manager compares requested state with cached one.
- * */
+ */
 @interface EncoderManager : NSObject
 - (id _Nonnull)init;
 - (void)dealloc;

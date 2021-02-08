@@ -74,7 +74,7 @@ static GlyphMode glyphMode = MODE_NOT_INITED;
  * stays in that mode for the duration of the application.  It should
  * be safe to use this one glyph cache for all screens in a multimon
  * environment, since the glyph cache texture is shared between all contexts,
- * and (in theory) OpenGL drivers should be smart enough to manage that
+ * and (in theory) Metal drivers should be smart enough to manage that
  * texture across all screens.
  */
 

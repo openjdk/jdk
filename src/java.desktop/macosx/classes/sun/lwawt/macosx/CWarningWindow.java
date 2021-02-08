@@ -223,8 +223,8 @@ public final class CWarningWindow extends CPlatformWindow
                     owner.execute(ownerPtr -> {
                         execute(ptr -> {
                             CWrapper.NSWindow.orderWindow(ptr,
-                                    CWrapper.NSWindow.NSWindowAbove,
-                                    ownerPtr);
+                                                          CWrapper.NSWindow.NSWindowAbove,
+                                                          ownerPtr);
                         });
                     });
 
@@ -367,7 +367,7 @@ public final class CWarningWindow extends CPlatformWindow
                 currentSize = newSize;
                 IconInfo ico = getSecurityIconInfo(currentSize, 0);
                 AWTAccessor.getWindowAccessor().setSecurityWarningSize(
-                        ownerWindow, ico.getWidth(), ico.getHeight());
+                    ownerWindow, ico.getWidth(), ico.getHeight());
             }
         }
     }
@@ -379,7 +379,7 @@ public final class CWarningWindow extends CPlatformWindow
         }
 
         return new SunGraphics2D(sd, SystemColor.windowText, SystemColor.window,
-                ownerWindow.getFont());
+                                 ownerWindow.getFont());
     }
 
 

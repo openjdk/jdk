@@ -189,18 +189,18 @@ public class CPlatformView extends CFRetainedResource {
 
         if (event.getType() == CocoaConstants.NSScrollWheel) {
             responder.handleScrollEvent(x, y, absX, absY, event.getModifierFlags(),
-                    event.getScrollDeltaX(), event.getScrollDeltaY(),
-                    event.getScrollPhase());
+                                        event.getScrollDeltaX(), event.getScrollDeltaY(),
+                                        event.getScrollPhase());
         } else {
             responder.handleMouseEvent(event.getType(), event.getModifierFlags(), event.getButtonNumber(),
-                    event.getClickCount(), x, y,
-                    absX, absY);
+                                       event.getClickCount(), x, y,
+                                       absX, absY);
         }
     }
 
     private void deliverKeyEvent(NSEvent event) {
         responder.handleKeyEvent(event.getType(), event.getModifierFlags(), event.getCharacters(),
-                event.getCharactersIgnoringModifiers(), event.getKeyCode(), true, false);
+                                 event.getCharactersIgnoringModifiers(), event.getKeyCode(), true, false);
     }
 
     /**
