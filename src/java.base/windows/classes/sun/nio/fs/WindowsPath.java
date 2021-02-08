@@ -837,7 +837,11 @@ class WindowsPath implements Path {
             if (!followLinks || e.lastError() != ERROR_CANT_ACCESS_FILE)
                 throw e;
             // Object could be a Unix domain socket
-            return openSocketForReadAttributeAccess();
+            try {
+                return openSocketForReadAttributeAccess();
+            } catch (WindowsException ignore) {
+                throw e;
+            }
         }
     }
 
