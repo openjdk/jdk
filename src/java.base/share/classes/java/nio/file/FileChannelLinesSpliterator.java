@@ -94,13 +94,14 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     // non-null to null, either when traversing begins or if the spliterator is
     // closed before traversal.  If the count is zero after decrementing, then
     // the buffer is unmapped.
-    private AtomicInteger bufRefCount;
+    private final AtomicInteger bufRefCount;
 
     FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index, int fence) {
         this.fc = fc;
         this.cs = cs;
         this.index = index;
         this.fence = fence;
+        this.bufRefCount = new AtomicInteger();
     }
 
     private FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index,
@@ -209,7 +210,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         ByteBuffer b;
         if ((b = buffer) == null) {
             b = buffer = getMappedByteBuffer();
-            bufRefCount = new AtomicInteger(1);
+            bufRefCount.set(1);
         }
 
         final int hi = fence, lo = index;
