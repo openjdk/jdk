@@ -1252,42 +1252,52 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
       Node* offset = use->in(AddPNode::Offset);
       jlong offset_const = offset->is_Con() ? offset->get_long() : -1;
 
-      for (DUIterator_Last jmin, j = use->last_outs(jmin); j >= jmin; ) {
-        Node* n = use->last_out(j);
-        uint oc2 = use->outcnt();
+      // second AddP, just redirect its Base
+      if (use->in(AddPNode::Address) != res) {
+        _igvn.replace_input_of(use, AddPNode::Base, src);
+      } else {
+        assert(use->in(AddPNode::Base) == res && use->in(AddPNode::Address) , "must be a direct AddP");
 
-        if (offset_const == arrayOopDesc::length_offset_in_bytes()) {
-          assert(n->Opcode() == Op_LoadRange, "res+12 must be the input of a LoadRange");
-          _igvn.replace_node(n, length);
-        } else if (n->Opcode() == Op_StrEquals) {
-          assert(offset_const == arrayOopDesc::base_offset_in_bytes(T_BYTE), "offset equals to the base_offset");
-          if (src_adr == nullptr) {
-            src_adr = ConvI2L(ac->in(ArrayCopyNode::SrcPos));
-            src_adr = basic_plus_adr(src->in(1), src, src_adr);
-          }
-          Node* dst_adr = basic_plus_adr(src_adr->in(1), src_adr, offset);
-          if (n->in(2) == use) { // str1
-            _igvn.replace_input_of(n, 2, dst_adr);
-          }
-          if (n->in(3) == use) { // str2
-            _igvn.replace_input_of(n, 3, dst_adr);
-          }
-        } else {
-          assert(n->Opcode() == Op_LoadUB || n->Opcode() == Op_LoadB, "unknow code shape");
+        for (DUIterator_Last jmin, j = use->last_outs(jmin); j >= jmin; ) {
+          Node* n = use->last_out(j);
+          uint oc2 = use->outcnt();
 
-          if (src_adr == nullptr) {
-            src_adr = ConvI2L(ac->in(ArrayCopyNode::SrcPos));
-            src_adr = basic_plus_adr(src->in(1), src, src_adr);
+          if (offset_const == arrayOopDesc::length_offset_in_bytes()) {
+            assert(n->Opcode() == Op_LoadRange, "res+12 must be the input of a LoadRange");
+            _igvn.replace_node(n, length);
+          } else if (n->Opcode() == Op_StrEquals) {
+            assert(offset_const == arrayOopDesc::base_offset_in_bytes(T_BYTE), "offset equals to the base_offset");
+            if (src_adr == nullptr) {
+              src_adr = ConvI2L(ac->in(ArrayCopyNode::SrcPos));
+              src_adr = basic_plus_adr(src->in(1), src, src_adr);
+            }
+            Node* dst_adr = basic_plus_adr(src_adr->in(1), src_adr, offset);
+            if (n->in(2) == use) { // str1
+              _igvn.replace_input_of(n, 2, dst_adr);
+            }
+            if (n->in(3) == use) { // str2
+              _igvn.replace_input_of(n, 3, dst_adr);
+            }
+          } else {
+            if (n->is_AddP() && n->in(AddPNode::Base) == res)
+              continue;
+
+            assert(n->Opcode() == Op_LoadUB || n->Opcode() == Op_LoadB, "unknow code shape");
+
+            if (src_adr == nullptr) {
+              src_adr = ConvI2L(ac->in(ArrayCopyNode::SrcPos));
+              src_adr = basic_plus_adr(src, src, src_adr);
+            }
+            Node* dst_adr = basic_plus_adr(src_adr->in(AddPNode::Base), src_adr, offset);
+            _igvn.replace_input_of(n, MemNode::Control, ac->in(TypeFunc::Control));
+            _igvn.replace_input_of(n, MemNode::Memory,  ac->in(TypeFunc::Memory));
+            _igvn.replace_input_of(n, MemNode::Address, dst_adr);
           }
-          Node* dst_adr = basic_plus_adr(src_adr->in(1), src_adr, offset);
-          _igvn.replace_input_of(n, MemNode::Control, ac->in(TypeFunc::Control));
-          _igvn.replace_input_of(n, MemNode::Memory,  ac->in(TypeFunc::Memory));
-          _igvn.replace_input_of(n, MemNode::Address, dst_adr);
+          j -= (oc2 - use->outcnt());
         }
-        j -= (oc2 - use->outcnt());
-      }
 
-      _igvn.remove_dead_node(use);
+        _igvn.remove_dead_node(use);
+      }
     } else if (use->is_EncodeP()) {
       _igvn.replace_node(use, top());
       _igvn.remove_dead_node(use);
