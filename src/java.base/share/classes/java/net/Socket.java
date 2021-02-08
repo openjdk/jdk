@@ -1747,7 +1747,7 @@ public class Socket implements java.io.Closeable {
      *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkSetFactory
-     * @deprecated Use a {@link javax.net.SocketFactory} and subclass {@code ServerSocket}
+     * @deprecated Use a {@link javax.net.SocketFactory} and subclass {@code Socket}
      *    directly.
      *    <br> This method provided a way in early JDK releases to replace the
      *    system wide implementation of {@code Socket}. It has been mostly
