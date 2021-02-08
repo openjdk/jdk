@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,10 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTable.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/disassembler.hpp"
@@ -2663,6 +2664,8 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
           as_FloatRegister(i+3), T1D, Address(post(sp, 4 * wordSize)));
   }
 
+  reinitialize_ptrue();
+
   pop(call_clobbered_registers() - exclude, sp);
 }
 
@@ -2699,6 +2702,11 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
       ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
           as_FloatRegister(i+3), restore_vectors ? T2D : T1D, Address(post(sp, step)));
   }
+
+  if (restore_vectors) {
+    reinitialize_ptrue();
+  }
+
   pop(0x3fffffff, sp);         // integer registers except lr & sp
 }
 
@@ -5309,7 +5317,9 @@ void MacroAssembler::verify_sve_vector_length() {
 
 void MacroAssembler::verify_ptrue() {
   Label verify_ok;
-  assert(UseSVE > 0, "should only be used for SVE");
+  if (!UseSVE) {
+    return;
+  }
   sve_cntp(rscratch1, B, ptrue, ptrue); // get true elements count.
   sve_dec(rscratch1, B);
   cbz(rscratch1, verify_ok);

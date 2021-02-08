@@ -211,7 +211,7 @@ var getJibProfiles = function (input) {
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
     data.conf_bundle_includes = [
-        "make/autoconf/version-numbers",
+        "make/conf/version-numbers.conf",
     ];
 
     // Define some common values
@@ -440,7 +440,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
-                "--with-macosx-version-max=10.9.0",
+                "--with-macosx-version-max=10.12.00",
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.
                 "SETFILE=/usr/bin/SetFile"),
@@ -1001,9 +1001,9 @@ var getJibProfilesProfiles = function (input, common, data) {
     // test tasks. Care must however be taken not to polute that work dir by
     // setting the appropriate make variables to control output directories.
     //
-    // Use the existance of the top level README as indication of if this is
+    // Use the existance of the top level README.md as indication of if this is
     // the full source or just src.conf.
-    if (!new java.io.File(__DIR__, "../../README").exists()) {
+    if (!new java.io.File(__DIR__, "../../README.md").exists()) {
         var runTestPrebuiltSrcFullExtra = {
             dependencies: "src.full",
             work_dir: input.get("src.full", "install_path"),
@@ -1354,7 +1354,7 @@ var concatObjects = function (o1, o2) {
 
 /**
  * Constructs the numeric version string from reading the
- * make/autoconf/version-numbers file and removing all trailing ".0".
+ * make/conf/version-numbers.conf file and removing all trailing ".0".
  *
  * @param feature Override feature version
  * @param interim Override interim version
@@ -1405,20 +1405,20 @@ var versionArgs = function(input, common) {
     return args;
 }
 
-// Properties representation of the make/autoconf/version-numbers file. Lazily
+// Properties representation of the make/conf/version-numbers.conf file. Lazily
 // initiated by the function below.
 var version_numbers;
 
 /**
- * Read the make/autoconf/version-numbers file into a Properties object.
+ * Read the make/conf/version-numbers.conf file into a Properties object.
  *
  * @returns {java.utilProperties}
  */
 var getVersionNumbers = function () {
-    // Read version information from make/autoconf/version-numbers
+    // Read version information from make/conf/version-numbers.conf
     if (version_numbers == null) {
         version_numbers = new java.util.Properties();
-        var stream = new java.io.FileInputStream(__DIR__ + "/../autoconf/version-numbers");
+        var stream = new java.io.FileInputStream(__DIR__ + "/version-numbers.conf");
         version_numbers.load(stream);
         stream.close();
     }

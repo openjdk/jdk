@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@
  *      GraalWithLimitedMetaspace
  */
 
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,21 +83,20 @@ public class GraalWithLimitedMetaspace {
     }
 
     static void dumpLoadedClasses(String[] expectedClasses) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:DumpLoadedClassList=" + CLASSLIST_FILE,
-            // trigger JVMCI runtime init so that JVMCI classes will be
-            // included in the classlist
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+EnableJVMCI",
-            "-XX:+EagerJVMCI",
-            "-cp",
-            TESTJAR,
-            TESTNAME,
-            TEST_OUT);
-
-        OutputAnalyzer output = TestCommon.executeAndLog(pb, "dump-loaded-classes")
-            .shouldHaveExitValue(0)
-            .shouldContain(TEST_OUT);
+        CDSTestUtils.dumpClassList(
+                       CLASSLIST_FILE,
+                       // trigger JVMCI runtime init so that JVMCI classes will be
+                       // included in the classlist
+                       "-XX:+UnlockExperimentalVMOptions",
+                       "-XX:+EnableJVMCI",
+                       "-XX:+EagerJVMCI",
+                       "-cp",
+                       TESTJAR,
+                       TESTNAME,
+                       TEST_OUT)
+            .assertNormalExit(output -> {
+                output.shouldContain(TEST_OUT);
+            });
 
         List<String> dumpedClasses = toClassNames(CLASSLIST_FILE);
 
@@ -110,17 +109,16 @@ public class GraalWithLimitedMetaspace {
     }
 
     static void dumpArchive() throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-cp",
-            TESTJAR,
-            "-XX:SharedClassListFile=" + CLASSLIST_FILE,
-            "-XX:SharedArchiveFile=" + ARCHIVE_FILE,
-            "-Xlog:cds",
-            "-Xshare:dump",
-            "-XX:MetaspaceSize=12M",
-            "-XX:MaxMetaspaceSize=12M");
-
-        OutputAnalyzer output = TestCommon.executeAndLog(pb, "dump-archive");
+        CDSOptions opts = (new CDSOptions())
+            .addPrefix("-cp",
+                       TESTJAR,
+                       "-XX:SharedClassListFile=" + CLASSLIST_FILE,
+                       "-Xlog:cds",
+                       "-Xshare:dump",
+                       "-XX:MetaspaceSize=12M",
+                       "-XX:MaxMetaspaceSize=12M")
+            .setArchiveName(ARCHIVE_FILE);
+        OutputAnalyzer output = CDSTestUtils.createArchive(opts);
         int exitValue = output.getExitValue();
         if (exitValue == 1) {
             output.shouldContain("Failed allocating metaspace object type");
