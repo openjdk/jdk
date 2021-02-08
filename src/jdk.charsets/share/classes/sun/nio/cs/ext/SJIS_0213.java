@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,12 +76,14 @@ public class SJIS_0213 extends Charset {
         return new Encoder(this);
     }
 
-    static CharsetMapping mapping = AccessController.doPrivileged(
-        new PrivilegedAction<CharsetMapping>() {
-            public CharsetMapping run() {
-                return CharsetMapping.get(SJIS_0213.class.getResourceAsStream("sjis0213.dat"));
-            }
-        });
+    private static class Holder {
+        static final CharsetMapping mapping = AccessController.doPrivileged(
+                new PrivilegedAction<CharsetMapping>() {
+                    public CharsetMapping run() {
+                        return CharsetMapping.get(SJIS_0213.class.getResourceAsStream("sjis0213.dat"));
+                    }
+                });
+    }
 
     protected static class Decoder extends CharsetDecoder {
         protected static final char UNMAPPABLE = CharsetMapping.UNMAPPABLE_DECODING;
@@ -188,21 +190,21 @@ public class SJIS_0213 extends Charset {
         }
 
         protected char decodeSingle(int b) {
-            return mapping.decodeSingle(b);
+            return Holder.mapping.decodeSingle(b);
         }
 
         protected char decodeDouble(int b1, int b2) {
-            return mapping.decodeDouble(b1, b2);
+            return Holder.mapping.decodeDouble(b1, b2);
         }
 
         private char[] cc = new char[2];
         private CharsetMapping.Entry comp = new CharsetMapping.Entry();
         protected char[] decodeDoubleEx(int b1, int b2) {
             int db = (b1 << 8) | b2;
-            if (mapping.decodeSurrogate(db, cc) != null)
+            if (Holder.mapping.decodeSurrogate(db, cc) != null)
                 return cc;
             comp.bs = db;
-            if (mapping.decodeComposite(comp, cc) != null)
+            if (Holder.mapping.decodeComposite(comp, cc) != null)
                 return cc;
             return null;
         }
@@ -221,23 +223,23 @@ public class SJIS_0213 extends Charset {
         }
 
         protected int encodeChar(char ch) {
-            return mapping.encodeChar(ch);
+            return Holder.mapping.encodeChar(ch);
         }
 
         protected int encodeSurrogate(char hi, char lo) {
-            return mapping.encodeSurrogate(hi, lo);
+            return Holder.mapping.encodeSurrogate(hi, lo);
         }
 
         private CharsetMapping.Entry comp = new CharsetMapping.Entry();
         protected int encodeComposite(char base, char cc) {
             comp.cp = base;
             comp.cp2 = cc;
-            return mapping.encodeComposite(comp);
+            return Holder.mapping.encodeComposite(comp);
         }
 
         protected boolean isCompositeBase(char ch) {
             comp.cp = ch;
-            return mapping.isCompositeBase(comp);
+            return Holder.mapping.isCompositeBase(comp);
         }
 
         // Unlike surrogate pair, the base character of a base+cc composite
