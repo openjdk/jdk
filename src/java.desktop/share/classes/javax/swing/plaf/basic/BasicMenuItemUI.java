@@ -925,7 +925,7 @@ public class BasicMenuItemUI extends MenuItemUI
      * Mouse input handler.
      * This class exists only for backward compatibility.
      * All its functionality has been moved into Handler.
-     * @deprecated As of JDK version 17.
+     * @deprecated
      */
     @Deprecated(since = "17", forRemoval = true)
     protected class MouseInputHandler implements MouseInputListener {

@@ -226,7 +226,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     /**
      * Obsolete - not used.
      * @param e list data event
-     * @deprecated As of JDK version 17.
+     * @deprecated Obsolete method, not used anymore.
      */
     @Deprecated(since = "17", forRemoval = true)
     public void intervalAdded(ListDataEvent e) {
@@ -235,7 +235,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     /**
      * Obsolete - not used.
      * @param e list data event
-     * @deprecated As of JDK version 17
+     * @deprecated Obsolete method, not used anymore.
      */
     @Deprecated(since = "17", forRemoval = true)
     public void intervalRemoved(ListDataEvent e) {
@@ -255,7 +255,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @return a comparison of the file names
      * @param a a file
      * @param b another file
-     * @deprecated As of JDK version 17.
+     * @deprecated Obsolete method, not used anymore.
      */
     @Deprecated(since = "17", forRemoval = true)
     protected boolean lt(File a, File b) {
