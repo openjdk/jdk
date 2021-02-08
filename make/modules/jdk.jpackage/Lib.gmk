@@ -74,7 +74,7 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
     LIBS_macosx := $(LIBCXX) -framework Cocoa, \
     LIBS_windows := $(LIBCXX), \
-    LIBS_linux := -nodefaultlibs -lc -ldl, \
+    LIBS_linux := -ldl, \
 ))
 
 JPACKAGE_TARGETS += $(BUILD_JPACKAGE_APPLAUNCHEREXE)
