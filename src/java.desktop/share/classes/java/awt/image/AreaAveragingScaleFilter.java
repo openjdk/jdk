@@ -73,7 +73,7 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
      * @param width the target width to scale the image
      * @param height the target height to scale the image
      * @throws IllegalArgumentException if {@code width} equals
-     *      *         zero or {@code height} equals zero
+     *         zero or {@code height} equals zero
      */
     public AreaAveragingScaleFilter(int width, int height) {
         super(width, height);
