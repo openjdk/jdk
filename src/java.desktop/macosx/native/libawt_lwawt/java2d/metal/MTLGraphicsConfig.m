@@ -35,7 +35,6 @@
 #import <stdlib.h>
 #import <string.h>
 #import <ApplicationServices/ApplicationServices.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #pragma mark -
 #pragma mark "--- Mac OS X specific methods for Metal pipeline ---"
