@@ -335,15 +335,8 @@ class WindowsFileSystemProvider
             fc.close();
         } catch (WindowsException exc) {
             try {
-                if (exc.lastError() == ERROR_CANT_ACCESS_FILE &&
-                        isUnixDomainSocket(file))
-                {
-                    FileChannel fc = WindowsChannelFactory
-                        .newFileChannel(file.getPathForWin32Calls(),
-                                file.getPathForPermissionCheck(),
-                                Set.of(WindowsChannelFactory.OPEN_REPARSE_POINT),
-                                0L);
-                    fc.close();
+                if (exc.lastError() == ERROR_CANT_ACCESS_FILE && isUnixDomainSocket(file)) {
+                    // socket file is accessible
                     return;
                 }
             } catch (WindowsException ignore) {}

@@ -837,10 +837,7 @@ class WindowsPath implements Path {
             if (!followLinks || e.lastError() != ERROR_CANT_ACCESS_FILE)
                 throw e;
             // Object could be a Unix domain socket
-            long handle = openSocketForReadAttributeAccess();
-            if (handle == INVALID_HANDLE_VALUE)
-                throw e;
-            return handle;
+            return openSocketForReadAttributeAccess();
         }
     }
 
@@ -856,31 +853,27 @@ class WindowsPath implements Path {
     }
 
     /**
-     * Returns INVALID_HANDLE_VALUE if path is not a socket
-     * and a handle to the socket file if it is.
+     * Returns a handle to the file if it is a socket.
+     * Throws WindowsException if file is not a socket
      */
-    private long openSocketForReadAttributeAccess() {
+    private long openSocketForReadAttributeAccess()
+        throws WindowsException
+    {
         long handle;
 
-        try {
-            // needs to specify FILE_FLAG_OPEN_REPARSE_POINT if the file is a socket
-            int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
+        // needs to specify FILE_FLAG_OPEN_REPARSE_POINT if the file is a socket
+        int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
 
-            handle = openFileForReadAttributeAccess(flags);
-        } catch (WindowsException ignore) {
-            return INVALID_HANDLE_VALUE;
-        }
+        handle = openFileForReadAttributeAccess(flags);
 
         try {
             WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(handle);
             if (!attrs.isUnixDomainSocket()) {
-                CloseHandle(handle);
-                return INVALID_HANDLE_VALUE;
+                throw new WindowsException("not a socket");
             }
             return handle;
-        } catch (WindowsException e) {
+        } finally {
             CloseHandle(handle);
-            return INVALID_HANDLE_VALUE;
         }
     }
 
