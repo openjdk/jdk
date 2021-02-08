@@ -1808,7 +1808,7 @@ void SystemDictionary::initialize(TRAPS) {
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
   if (UseSharedSpaces) {
-    HeapShared::resolve_classes(CHECK);
+    HeapShared::resolve_classes(THREAD);
   }
 }
 

@@ -276,7 +276,7 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 // Archive the resolved references
-void ConstantPool::archive_resolved_references(Thread* THREAD) {
+void ConstantPool::archive_resolved_references() {
   if (_cache == NULL) {
     return; // nothing to do
   }
@@ -311,7 +311,7 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
       }
     }
 
-    oop archived = HeapShared::archive_heap_object(rr, THREAD);
+    oop archived = HeapShared::archive_heap_object(rr);
     // If the resolved references array is not archived (too large),
     // the 'archived' object is NULL. No need to explicitly check
     // the return value of archive_heap_object here. At runtime, the
