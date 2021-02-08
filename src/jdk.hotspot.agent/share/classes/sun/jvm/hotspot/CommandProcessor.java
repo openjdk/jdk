@@ -1792,27 +1792,27 @@ public class CommandProcessor {
                      * Handle cases with cntTokens == 1 or 2.
                      */
                     if (cntTokens > 2) {
-                        err.println("Too big number of options: " + cntTokens);
+                        err.println("More than 2 options specified: " + cntTokens);
                         usage();
                         return;
                     }
-                    if (cntTokens >= 1) { // parse first argument which is "gz=" option
+                    if (cntTokens == 1) { // first argument could be filename or "gz="
                         String option = t.nextToken();
                         if (!option.startsWith("gz=")) {
                             filename = option;
                         } else {
                             gzlevel = parseHeapDumpCompressionLevel(option);
-                            if (gzlevel <= 0 || gzlevel > 9) {
+                            if (gzlevel == 0) {
                                 usage();
                                 return;
                             }
                             filename = "heap.bin.gz";
                         }
                     }
-                    if (cntTokens == 2) { // parse second argument which is filename
+                    if (cntTokens == 2) { // first argument is "gz=" followed by filename
+                        String option = t.nextToken();
+                        gzlevel = parseHeapDumpCompressionLevel(option);
                         if (gzlevel == 0) {
-                            // The first option is not compression level, it is parsed as filename.
-                            err.println("unknown option: " + filename);
                             usage();
                             return;
                         }
