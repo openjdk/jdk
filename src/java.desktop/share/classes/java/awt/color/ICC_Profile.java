@@ -758,8 +758,7 @@ public class ICC_Profile implements Serializable {
 
     /**
      * Constructs an {@code ICC_Profile} object corresponding to the data in a
-     * byte array. Throws an {@code IllegalArgumentException} if the data does
-     * not correspond to a valid ICC Profile.
+     * byte array.
      *
      * @param  data the specified ICC Profile data
      * @return an {@code ICC_Profile} object corresponding to the data in the
