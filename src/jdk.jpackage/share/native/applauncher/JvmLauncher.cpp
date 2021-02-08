@@ -53,7 +53,7 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
     const CfgFile::Properties& appOptions = cfgFile.getProperties(
             SectionName::Application);
 
-    do {
+    {
         const CfgFile::Properties::const_iterator modulepath = appOptions.find(
                 PropertyName::modulepath);
         if (modulepath != appOptions.end()) {
@@ -64,18 +64,18 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
                 addArgument(*it);
             };
         }
-    } while (0);
+    }
 
-    do {
+    {
         const CfgFile::Properties::const_iterator classpath = appOptions.find(
                 PropertyName::classpath);
         if (classpath != appOptions.end()) {
             addArgument(_T("-classpath"));
             addArgument(CfgFile::asPathList(*classpath));
         }
-    } while (0);
+    }
 
-    do {
+    {
         const CfgFile::Properties::const_iterator splash = appOptions.find(
                 PropertyName::splash);
         if (splash != appOptions.end()) {
@@ -88,9 +88,9 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
                         << splashPath << "\" not found");
             }
         }
-    } while (0);
+    }
 
-    do {
+    {
         const CfgFile::Properties& section = cfgFile.getProperties(
                 SectionName::JavaOptions);
         const CfgFile::Properties::const_iterator javaOptions = section.find(
@@ -102,44 +102,44 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
                 addArgument(*it);
             };
         }
-    } while (0);
+    }
 
-    do {
+    {
         addArgument(_T("-Djpackage.app-path=")
                 + SysInfo::getProcessModulePath());
-    } while (0);
+    }
 
     // No validation of data in config file related to how Java app should be
     // launched intentionally.
     // Just read what is in config file and put on jvm's command line as is.
 
-    do { // Run modular app
+    { // Run modular app
         const CfgFile::Properties::const_iterator mainmodule = appOptions.find(
                 PropertyName::mainmodule);
         if (mainmodule != appOptions.end()) {
             addArgument(_T("-m"));
             addArgument(CfgFile::asString(*mainmodule));
         }
-    } while (0);
+    }
 
-    do { // Run main class
+    { // Run main class
         const CfgFile::Properties::const_iterator mainclass = appOptions.find(
                 PropertyName::mainclass);
         if (mainclass != appOptions.end()) {
             addArgument(CfgFile::asString(*mainclass));
         }
-    } while (0);
+    }
 
-    do { // Run jar
+    { // Run jar
         const CfgFile::Properties::const_iterator mainjar = appOptions.find(
                 PropertyName::mainjar);
         if (mainjar != appOptions.end()) {
             addArgument(_T("-jar"));
             addArgument(CfgFile::asString(*mainjar));
         }
-    } while (0);
+    }
 
-    do {
+    {
         const CfgFile::Properties& section = cfgFile.getProperties(
                 SectionName::ArgOptions);
         const CfgFile::Properties::const_iterator arguments = section.find(
@@ -151,7 +151,7 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
                 addArgument(*it);
             };
         }
-    } while (0);
+    }
 
     return *this;
 }
@@ -233,7 +233,7 @@ private:
     int initJvmlLauncherData(JvmlLauncherData* ptr) const {
         // Store path to JLI library just behind JvmlLauncherData header.
         char* curPtr = reinterpret_cast<char*>(ptr + 1);
-        do {
+        {
             const size_t count = sizeof(char)
                     * (jliLibPath.size() + 1 /* trailing zero */);
             if (ptr) {
@@ -241,7 +241,7 @@ private:
                 ptr->jliLibPath = curPtr;
             }
             curPtr += count;
-        } while (false);
+        }
 
         // Next write array of char* pointing to JLI lib arg strings.
         if (ptr) {
@@ -284,13 +284,13 @@ JvmlLauncherHandle Jvm::exportLauncher() const {
     result->jliLibPath = tstrings::toUtf8(jvmPath);
 
 #ifdef TSTRINGS_WITH_WCHAR
-    do {
+    {
         tstring_array::const_iterator it = args.begin();
         const tstring_array::const_iterator end = args.end();
         for (; it != end; ++it) {
             result->args.push_back(tstrings::toACP(*it));
         }
-    } while (0);
+    }
 #else
     result->args = args;
 #endif
