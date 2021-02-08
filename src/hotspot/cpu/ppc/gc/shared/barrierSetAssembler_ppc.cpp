@@ -189,7 +189,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
 
   __ bind(bad_call);
 
-  __ load_const_optimized(tmp1, SharedRuntime::get_handle_wrong_method_stub(), tmp2);
+  __ calculate_address_from_global_toc(tmp1, SharedRuntime::get_handle_wrong_method_stub(), true, true, false);
   __ mtctr(tmp1);
   __ bctr();
 
