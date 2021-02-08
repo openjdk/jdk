@@ -2,33 +2,5 @@
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
     <folder name="Filters">
-        <file name="Coloring" url="filters/color.filter">
-            <attr name="enabled" boolvalue="true"/>
-        </file>
-        
-        
-        <file name="Stamp Coloring" url="filters/stampColor.filter">
-            <attr name="enabled" boolvalue="false"/>
-        </file>
-      
-        <file name="Probability Coloring" url="filters/probability.filter">
-            <attr name="enabled" boolvalue="false"/>
-        </file>
-        
-        <file name="Call Graph Coloring" url="filters/callgraph.filter">
-            <attr name="enabled" boolvalue="false"/>
-        </file>
-        
-        <file name="Reduce Edges" url="filters/reduceEdges.filter">
-            <attr name="enabled" boolvalue="true"/>
-        </file>
-        
-        <file name="Remove State" url="filters/removeState.filter">
-            <attr name="enabled" boolvalue="false"/>
-        </file>
-        
-        <file name="Remove Floating" url="filters/removeFloating.filter">
-            <attr name="enabled" boolvalue="false"/>
-        </file>
     </folder>
 </filesystem>
