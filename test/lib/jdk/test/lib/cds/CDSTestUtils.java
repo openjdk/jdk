@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,8 +271,7 @@ public class CDSTestUtils {
         if (!DYNAMIC_DUMP) {
             output.shouldContain("Loading classes to share");
         } else {
-            output.shouldContain("Buffer-space to target-space delta")
-                  .shouldContain("Written dynamic archive 0x");
+            output.shouldContain("Written dynamic archive 0x");
         }
         output.shouldHaveExitValue(0);
 
@@ -385,6 +384,18 @@ public class CDSTestUtils {
 
     public static Result run(CDSOptions opts) throws Exception {
         return new Result(opts, runWithArchive(opts));
+    }
+
+    // Dump a classlist using the -XX:DumpLoadedClassList option.
+    public static Result dumpClassList(String classListName, String... cli)
+        throws Exception {
+        CDSOptions opts = (new CDSOptions())
+            .setUseVersion(false)
+            .setXShareMode("auto")
+            .addPrefix("-XX:DumpLoadedClassList=" + classListName)
+            .addSuffix(cli);
+        Result res = run(opts).assertNormalExit();
+        return res;
     }
 
     // Execute JVM with CDS archive, specify command line args suffix

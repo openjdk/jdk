@@ -25,12 +25,11 @@
 #include "precompiled.hpp"
 
 #include "gc/shared/collectorCounters.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
+#include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
@@ -180,7 +179,7 @@ void ShenandoahDegenGC::op_degenerated() {
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       }
 
-      if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+      if (ClassUnloading) {
          // Disarm nmethods that armed in concurrent cycle.
          // In above case, update roots should disarm them
          ShenandoahCodeRoots::disarm_nmethods();
@@ -326,13 +325,13 @@ void ShenandoahDegenGC::op_degenerated_fail() {
   log_info(gc)("Cannot finish degeneration, upgrading to Full GC");
   ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
 
-  ShenandoahMarkCompact full_gc;
+  ShenandoahFullGC full_gc;
   full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }
 
 void ShenandoahDegenGC::op_degenerated_futile() {
   ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
-  ShenandoahMarkCompact full_gc;
+  ShenandoahFullGC full_gc;
   full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }
 

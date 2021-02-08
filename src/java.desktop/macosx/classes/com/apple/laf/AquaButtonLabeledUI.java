@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,13 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
                 altIcon = b.getIcon();
             }
 
-            altIcon.paintIcon(c, g, iconRect.x, iconRect.y);
+            int offset = 0;
+            if (b.isFocusOwner()) {
+                offset = 2;
+                altIcon = AquaFocus.createFocusedIcon(altIcon, c, 2);
+            }
+
+            altIcon.paintIcon(c, g, iconRect.x - offset, iconRect.y - offset);
         }
 
         // Draw the Text

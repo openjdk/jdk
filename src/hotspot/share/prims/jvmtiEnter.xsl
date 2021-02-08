@@ -38,6 +38,7 @@
   <xsl:text>
 # include "precompiled.hpp"
 # include "classfile/javaClasses.inline.hpp"
+# include "classfile/vmClasses.hpp"
 # include "memory/resourceArea.hpp"
 # include "utilities/macros.hpp"
 #if INCLUDE_JVMTI
@@ -47,6 +48,7 @@
 # include "prims/jvmtiRawMonitor.hpp"
 # include "prims/jvmtiUtil.hpp"
 # include "runtime/fieldDescriptor.inline.hpp"
+# include "runtime/jniHandles.hpp"
 # include "runtime/threadSMR.hpp"
 
 </xsl:text>
@@ -848,7 +850,7 @@ static jvmtiError JNICALL
     </xsl:apply-templates>
     <xsl:text>
   }
-  if (!k_mirror->is_a(SystemDictionary::Class_klass())) {
+  if (!k_mirror->is_a(vmClasses::Class_klass())) {
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">
       <xsl:with-param name="err">JVMTI_ERROR_INVALID_CLASS</xsl:with-param>
