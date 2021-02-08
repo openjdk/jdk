@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class ClhsdbFindPC {
 
             // Get the core file name if we are debugging a core instead of live process
             if (withCore) {
-                coreFileName = CoreUtils.getCoreFileLocation(theApp.getOutput().getStdout());
+                coreFileName = CoreUtils.getCoreFileLocation(theApp.getOutput().getStdout(), theApp.getPid());
             }
 
             // Run 'jstack -v' command to get the findpc address
