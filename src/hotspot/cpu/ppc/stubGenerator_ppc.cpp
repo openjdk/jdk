@@ -3588,8 +3588,9 @@ class StubGenerator: public StubCodeGenerator {
     // Pop the frame built in the prologue.
     __ pop_frame();
 
-    // Restore link register. Points to an instruction in the previous Java frame; effectively resuming
-    // its execution after this method's deoptimization.  This method's prologue is aborted.
+    // Restore link register.  Required as the 'wrong method stub' needs the caller's frame
+    // to properly deoptimize this method (e.g. by re-resolving the call site for compiled methods).
+    // This method's prologue is aborted.
     __ restore_LR_CR(R0);
 
     __ bctr();

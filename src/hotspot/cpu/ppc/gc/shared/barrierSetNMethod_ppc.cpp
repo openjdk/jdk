@@ -108,9 +108,8 @@ static NativeNMethodBarrier* get_nmethod_barrier(nmethod* nm) {
 }
 
 void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
-  // Nothing to do.
-  // Unlike other platforms, the frame resolution is done in the nmethod entry barrier stub.
-  // This way, writing frame information on the stack can be avoided.
+  // As PPC64 always has a valid back chain (unlike other platforms), the stub can simply pop the frame.
+  // Thus, there's nothing to do here.
 }
 
 void BarrierSetNMethod::disarm(nmethod* nm) {
