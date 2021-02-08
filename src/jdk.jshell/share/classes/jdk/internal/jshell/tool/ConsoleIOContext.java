@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,8 +116,8 @@ class ConsoleIOContext extends IOContext {
             }
         };
         Terminal terminal;
-        if (System.getProperty("test.jdk") != null) {
-            terminal = new TestTerminal(nonBlockingInput, cmdout);
+        if (cmdin != System.in) {
+            terminal = new NonSystemInTerminal(nonBlockingInput, cmdout);
             input.setInputStream(cmdin);
         } else {
             terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
@@ -1252,14 +1252,14 @@ class ConsoleIOContext extends IOContext {
         return in.getHistory();
     }
 
-    private static final class TestTerminal extends LineDisciplineTerminal {
+    private static final class NonSystemInTerminal extends LineDisciplineTerminal {
 
         private static final int DEFAULT_HEIGHT = 24;
 
         private final NonBlockingReader inputReader;
 
-        public TestTerminal(InputStream input, OutputStream output) throws Exception {
-            super("test", "ansi", output, Charset.forName("UTF-8"));
+        public NonSystemInTerminal(InputStream input, OutputStream output) throws Exception {
+            super("non-system-in", "ansi", output, Charset.forName("UTF-8"));
             this.inputReader = NonBlocking.nonBlocking(getName(), input, encoding());
             Attributes a = new Attributes(getAttributes());
             a.setLocalFlag(LocalFlag.ECHO, false);
@@ -1267,7 +1267,7 @@ class ConsoleIOContext extends IOContext {
             int h = DEFAULT_HEIGHT;
             try {
                 String hp = System.getProperty("test.terminal.height");
-                if (hp != null && !hp.isEmpty()) {
+                if (hp != null && !hp.isEmpty() && System.getProperty("test.jdk") != null) {
                     h = Integer.parseInt(hp);
                 }
             } catch (Throwable ex) {
