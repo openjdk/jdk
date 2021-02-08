@@ -183,9 +183,6 @@ void MemTracker::final_report(outputStream* output) {
     if (level >= NMT_summary) {
       report(level == NMT_summary, output);
     }
-#ifdef ASSERT
-    tuning_statistics(output);
-#endif
   }
 }
 
