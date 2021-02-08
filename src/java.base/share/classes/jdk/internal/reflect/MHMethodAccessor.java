@@ -56,6 +56,8 @@ class MHMethodAccessor extends MethodAccessorImpl {
         }
         try {
             return target.invokeExact(obj, args);
+        } catch (ClassCastException cce) {
+            throw new IllegalArgumentException(cce);
         } catch (Error | RuntimeException | InvocationTargetException e) {
             throw e;
         } catch (Throwable t) {

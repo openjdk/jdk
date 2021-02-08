@@ -51,6 +51,8 @@ class MHConstructorAccessor extends ConstructorAccessorImpl {
         UNSAFE.ensureClassInitialized(instantiatedType); // May throw ExInInitError
         try {
             return target.invokeExact(args);
+        } catch (ClassCastException cce) {
+            throw new IllegalArgumentException(cce);
         } catch (Error | RuntimeException | InvocationTargetException e) {
             throw e;
         }  catch (Throwable t) {
