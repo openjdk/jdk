@@ -324,6 +324,7 @@ char* getJvmLauncherLibPath(void) {
                                                         &launcherLibPath);
         if (popenStatus) {
             free(launcherLibPath);
+            launcherLibPath = NULL;
             goto cleanup;
         }
     }
