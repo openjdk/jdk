@@ -23,8 +23,8 @@
 /**
  * @test
  * @bug 6211242
- * @summary Verifies IAE is thrown if 0 is passed to 
- * 	    AreaAveragingScaleFilter(width,height) constructor.
+ * @summary Verifies IAE is thrown if 0 is passed to
+ *          AreaAveragingScaleFilter(width,height) constructor.
  */
 import java.awt.image.AreaAveragingScaleFilter;
 
