@@ -556,8 +556,6 @@ void DefNewGeneration::collect(bool   full,
   // The preserved marks should be empty at the start of the GC.
   _preserved_marks_set.init(1);
 
-  heap->rem_set()->prepare_for_younger_refs_iterate(false);
-
   assert(heap->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
 

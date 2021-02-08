@@ -1429,7 +1429,8 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
         // If n is a load, and the late control is the same as the current
         // control, then the cloning of n is a pointless exercise, because
         // GVN will ensure that we end up where we started.
-        if (!n->is_Load() || late_load_ctrl != n_ctrl) {
+        if (!n->is_Load() || (late_load_ctrl != n_ctrl && is_safe_load_ctrl(late_load_ctrl))) {
+          Node* outer_loop_clone = NULL;
           for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin; ) {
             Node *u = n->last_out(j); // Clone private computation per use
             _igvn.rehash_node_delayed(u);
@@ -1477,16 +1478,25 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
               IdealLoopTree* x_loop = get_loop(x_ctrl);
               Node* x_head = x_loop->_head;
-              if (x_head->is_Loop() && (x_head->is_OuterStripMinedLoop() || x_head->as_Loop()->is_strip_mined()) && is_dominator(n_ctrl, x_head)) {
-                // Anti dependence analysis is sometimes too
-                // conservative: a store in the outer strip mined loop
-                // can prevent a load from floating out of the outer
-                // strip mined loop but the load may not be referenced
-                // from the safepoint: loop strip mining verification
-                // code reports a problem in that case. Make sure the
-                // load is not moved in the outer strip mined loop in
-                // that case.
-                x_ctrl = x_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+              if (x_head->is_Loop() && (x_head->is_OuterStripMinedLoop() || x_head->as_Loop()->is_strip_mined())) {
+                if (is_dominator(n_ctrl, x_head)) {
+                  // Anti dependence analysis is sometimes too
+                  // conservative: a store in the outer strip mined loop
+                  // can prevent a load from floating out of the outer
+                  // strip mined loop but the load may not be referenced
+                  // from the safepoint: loop strip mining verification
+                  // code reports a problem in that case. Make sure the
+                  // load is not moved in the outer strip mined loop in
+                  // that case.
+                  x_ctrl = x_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+                } else if (x_head->is_OuterStripMinedLoop()) {
+                  // Do not add duplicate LoadNodes to the outer strip mined loop
+                  if (outer_loop_clone != NULL) {
+                    _igvn.replace_node(x, outer_loop_clone);
+                    continue;
+                  }
+                  outer_loop_clone = x;
+                }
               }
               assert(dom_depth(n_ctrl) <= dom_depth(x_ctrl), "n is later than its clone");
 
@@ -1503,8 +1513,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
             // to fold a StoreP and an AddP together (as part of an
             // address expression) and the AddP and StoreP have
             // different controls.
-            BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-            if (!x->is_Load() && !x->is_DecodeNarrowPtr() && !x->is_AddP() && !bs->is_gc_barrier_node(x)) {
+            if (!x->is_Load() && !x->is_DecodeNarrowPtr()) {
               _igvn._worklist.yank(x);
             }
           }
@@ -1523,6 +1532,13 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       get_loop(get_ctrl(n)) == get_loop(get_ctrl(n->in(1))) ) {
     _igvn.replace_node( n, n->in(1) );
   }
+}
+
+bool PhaseIdealLoop::is_safe_load_ctrl(Node* ctrl) {
+  if (ctrl->is_Proj() && ctrl->in(0)->is_Call() && ctrl->has_out_with(Op_Catch)) {
+    return false;
+  }
+  return true;
 }
 
 //------------------------------split_if_with_blocks---------------------------

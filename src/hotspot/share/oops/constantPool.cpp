@@ -29,6 +29,7 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -196,7 +197,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
 
     // Create Java array for holding resolved strings, methodHandles,
     // methodTypes, invokedynamic and invokehandle appendix objects, etc.
-    objArrayOop stom = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
+    objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
     Handle refs_handle (THREAD, (oop)stom);  // must handleize.
     set_resolved_references(loader_data->add_handle(refs_handle));
   }
@@ -364,7 +365,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   // restore the C++ vtable from the shared archive
   restore_vtable();
 
-  if (SystemDictionary::Object_klass_loaded()) {
+  if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
     if (HeapShared::open_archive_heap_region_mapped() &&
@@ -381,7 +382,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       // Recreate the object array and add to ClassLoaderData.
       int map_length = resolved_reference_length();
       if (map_length > 0) {
-        objArrayOop stom = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
+        objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
         Handle refs_handle(THREAD, (oop)stom);  // must handleize.
         set_resolved_references(loader_data->add_handle(refs_handle));
       }
@@ -821,7 +822,7 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
   int error_tag = tag.error_value();
 
   if (!PENDING_EXCEPTION->
-    is_a(SystemDictionary::LinkageError_klass())) {
+    is_a(vmClasses::LinkageError_klass())) {
     // Just throw the exception and don't prevent these classes from
     // being loaded due to virtual machine errors like StackOverflow
     // and OutOfMemoryError, etc, or if the thread was hit by stop()

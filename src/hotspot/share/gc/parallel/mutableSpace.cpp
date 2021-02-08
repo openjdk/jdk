@@ -133,7 +133,11 @@ void MutableSpace::initialize(MemRegion mr,
   }
 
   set_bottom(mr.start());
-  set_end(mr.end());
+  // When expanding concurrently with callers of cas_allocate, setting end
+  // makes the new space available for allocation by other threads.  So this
+  // assignment must follow all other configuration and initialization that
+  // might be done for expansion.
+  Atomic::release_store(end_addr(), mr.end());
 
   if (clear_space) {
     clear(mangle_space);

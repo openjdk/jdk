@@ -102,7 +102,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   }
   void add_subgraph_entry_field(int static_field_offset, oop v,
                                 bool is_closed_archive);
-  void add_subgraph_object_klass(Klass *orig_k, Klass *relocated_k);
+  void add_subgraph_object_klass(Klass *orig_k);
   int num_subgraph_object_klasses() {
     return _subgraph_object_klasses == NULL ? 0 :
            _subgraph_object_klasses->length();

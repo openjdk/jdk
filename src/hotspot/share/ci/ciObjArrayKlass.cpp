@@ -27,8 +27,8 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/signature.hpp"
 
 // ciObjArrayKlass
 //

@@ -32,7 +32,6 @@
 #import "AWTView.h"
 #import "JNIUtilities.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #define JAVA_LIST @"JAVA_LIST"
@@ -160,7 +159,7 @@ JNI_COCOA_ENTER(env);
     }];
 
     if (keyboardInfo == nil) return NULL;
-    returnValue = JNFNSToJavaString(env, keyboardInfo);
+    returnValue = NSStringToJavaString(env, keyboardInfo);
     [keyboardInfo release];
 
 JNI_COCOA_EXIT(env);
@@ -259,7 +258,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CInputMethod_setNativeLocale
 (JNIEnv *env, jobject this, jstring locale, jboolean isActivating)
 {
 JNI_COCOA_ENTER(env);
-    NSString *localeStr = JNFJavaToNSString(env, locale);
+    NSString *localeStr = JavaStringToNSString(env, locale);
     [localeStr retain];
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
