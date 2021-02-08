@@ -752,16 +752,8 @@ public class JavacState {
      * Store the source into the set of sources belonging to the given transform.
      */
     private void addFileToTransform(Map<Transformer,Map<String,Set<URI>>> gs, Transformer t, Source s) {
-        Map<String,Set<URI>> fs = gs.get(t);
-        if (fs == null) {
-            fs = new HashMap<>();
-            gs.put(t, fs);
-        }
-        Set<URI> ss = fs.get(s.pkg().name());
-        if (ss == null) {
-            ss = new HashSet<>();
-            fs.put(s.pkg().name(), ss);
-        }
+        Map<String, Set<URI>> fs = gs.computeIfAbsent(t, k -> new HashMap<>());
+        Set<URI> ss = fs.computeIfAbsent(s.pkg().name(), k -> new HashSet<>());
         ss.add(s.file().toURI());
     }
 

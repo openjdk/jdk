@@ -222,11 +222,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
     }
 
     void addArtifact(String pkgName, URI art) {
-        Set<URI> s = packageArtifacts.get(pkgName);
-        if (s == null) {
-            s = new HashSet<>();
-            packageArtifacts.put(pkgName, s);
-        }
+        Set<URI> s = packageArtifacts.computeIfAbsent(pkgName, k -> new HashSet<>());
         s.add(art);
     }
 

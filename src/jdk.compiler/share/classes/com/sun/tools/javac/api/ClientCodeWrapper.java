@@ -195,13 +195,8 @@ public class ClientCodeWrapper {
 
     protected boolean isTrusted(Object o) {
         Class<?> c = o.getClass();
-        Boolean trusted = trustedClasses.get(c);
-        if (trusted == null) {
-            trusted = c.getName().startsWith("com.sun.tools.javac.")
-                    || c.isAnnotationPresent(Trusted.class);
-            trustedClasses.put(c, trusted);
-        }
-        return trusted;
+        return trustedClasses.computeIfAbsent(c,
+                k -> c.getName().startsWith("com.sun.tools.javac.") || c.isAnnotationPresent(Trusted.class));
     }
 
     private String wrappedToString(Class<?> wrapperClass, Object wrapped) {

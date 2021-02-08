@@ -132,15 +132,9 @@ public class NewDependencyCollector implements TaskListener {
             String fqDep = cnode.getClassSymbol().outermostClass().flatname.toString();
             String depPkg = Util.pkgNameOfClassName(fqDep);
 
-            Map<String, Set<String>> depsForThisClass = result.get(depPkg);
-            if (depsForThisClass == null) {
-                result.put(depPkg, depsForThisClass = new HashMap<>());
-            }
+            Map<String, Set<String>> depsForThisClass = result.computeIfAbsent(depPkg, k -> new HashMap<>());
 
-            Set<String> fqDeps = depsForThisClass.get(fqDep);
-            if (fqDeps == null) {
-                depsForThisClass.put(fqDep, fqDeps = new HashSet<>());
-            }
+            Set<String> fqDeps = depsForThisClass.computeIfAbsent(fqDep, k -> new HashSet<>());
 
             for (Node<?,?> depNode : getAllDependencies(cnode)) {
                 CompletionNode cDepNode = (CompletionNode) depNode;

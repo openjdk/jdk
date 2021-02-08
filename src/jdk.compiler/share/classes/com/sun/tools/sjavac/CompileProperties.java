@@ -148,11 +148,7 @@ public class CompileProperties implements Transformer {
             }
         }
 
-        Set<URI> as = packageArtifacts.get(pkgName);
-        if (as == null) {
-            as = new HashSet<>();
-            packageArtifacts.put(pkgName, as);
-        }
+        Set<URI> as = packageArtifacts.computeIfAbsent(pkgName, k -> new HashSet<>());
         as.add(dest.toURI());
 
         if (dest.exists() && dest.lastModified() > src.lastModified()) {

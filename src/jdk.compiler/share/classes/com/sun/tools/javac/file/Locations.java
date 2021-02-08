@@ -1672,9 +1672,7 @@ public class Locations {
                     Path path = (suffix == null) ? entry : entry.resolve(suffix);
                     if (Files.isDirectory(path)) {
                         String name = entry.getFileName().toString();
-                        List<Path> paths = map.get(name);
-                        if (paths == null)
-                            map.put(name, paths = new ArrayList<>());
+                        List<Path> paths = map.computeIfAbsent(name, k -> new ArrayList<>());
                         paths.add(path);
                     }
                 }
