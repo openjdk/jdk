@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public final class InnocuousThread extends Thread {
     }
 
     /**
-     * Returns a new InnocuousThread with an auto-generated thread name
+     * Returns a new InnocuousThread with an auto-generated thread name,
      * and its context class loader is set to the system class loader.
      */
     public static Thread newThread(Runnable target) {
@@ -62,14 +62,22 @@ public final class InnocuousThread extends Thread {
      * set to the system class loader.
      */
     public static Thread newThread(String name, Runnable target) {
+        return newThread(name, target, -1);
+    }
+    /**
+     * Returns a new InnocuousThread with its context class loader
+     * set to the system class loader. The thread priority will be
+     * set to the given priority.
+     */
+    public static Thread newThread(String name, Runnable target, int priority) {
+        if (System.getSecurityManager() == null) {
+            return createThread(name, target, ClassLoader.getSystemClassLoader(), priority);
+        }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
-                        return new InnocuousThread(INNOCUOUSTHREADGROUP,
-                                                   target,
-                                                   name,
-                                                   ClassLoader.getSystemClassLoader());
+                        return createThread(name, target, ClassLoader.getSystemClassLoader(), priority);
                     }
                 });
     }
@@ -86,14 +94,33 @@ public final class InnocuousThread extends Thread {
      * Returns a new InnocuousThread with null context class loader.
      */
     public static Thread newSystemThread(String name, Runnable target) {
+        return newSystemThread(name, target, -1);
+    }
+
+    /**
+     * Returns a new InnocuousThread with null context class loader.
+     * Thread priority is set to the given priority.
+     */
+    public static Thread newSystemThread(String name, Runnable target, int priority) {
+        if (System.getSecurityManager() == null) {
+            return createThread(name, target, null, priority);
+        }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
-                        return new InnocuousThread(INNOCUOUSTHREADGROUP,
-                                                   target, name, null);
+                        return createThread(name, target, null, priority);
                     }
                 });
+    }
+
+    private static Thread createThread(String name, Runnable target, ClassLoader loader, int priority) {
+        Thread t = new InnocuousThread(INNOCUOUSTHREADGROUP,
+                target, name, loader);
+        if (priority >= 0) {
+            t.setPriority(priority);
+        }
+        return t;
     }
 
     private InnocuousThread(ThreadGroup group, Runnable target, String name, ClassLoader tccl) {
@@ -167,13 +194,17 @@ public final class InnocuousThread extends Thread {
                 group = parent;
             }
             final ThreadGroup root = group;
-            INNOCUOUSTHREADGROUP = AccessController.doPrivileged(
-                new PrivilegedAction<ThreadGroup>() {
-                    @Override
-                    public ThreadGroup run() {
-                        return new ThreadGroup(root, "InnocuousThreadGroup");
-                    }
-                });
+            if (System.getSecurityManager() == null) {
+                INNOCUOUSTHREADGROUP = new ThreadGroup(root, "InnocuousThreadGroup");
+            } else {
+                INNOCUOUSTHREADGROUP = AccessController.doPrivileged(
+                    new PrivilegedAction<ThreadGroup>() {
+                        @Override
+                        public ThreadGroup run() {
+                            return new ThreadGroup(root, "InnocuousThreadGroup");
+                        }
+                    });
+            }
         } catch (Exception e) {
             throw new Error(e);
         }

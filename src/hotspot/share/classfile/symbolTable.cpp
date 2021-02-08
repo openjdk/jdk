@@ -584,6 +584,7 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
 #if INCLUDE_CDS
 void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
                                            CompactHashtableWriter* writer) {
+  ArchiveBuilder* builder = ArchiveBuilder::current();
   int len = symbols->length();
   for (int i = 0; i < len; i++) {
     Symbol* sym = ArchiveBuilder::get_relocated_symbol(symbols->at(i));
@@ -591,10 +592,7 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
     sym->set_permanent();
-    if (DynamicDumpSharedSpaces) {
-      sym = DynamicArchive::buffer_to_target(sym);
-    }
-    writer->add(fixed_hash, MetaspaceShared::object_delta_u4(sym));
+    writer->add(fixed_hash, builder->buffer_to_offset_u4((address)sym));
   }
 }
 
@@ -609,15 +607,6 @@ void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
   if (!DynamicDumpSharedSpaces) {
     _shared_table.reset();
     writer.dump(&_shared_table, "symbol");
-
-    // Verify the written shared table is correct -- at this point,
-    // vmSymbols has already been relocated to point to the archived
-    // version of the Symbols.
-    Symbol* sym = vmSymbols::java_lang_Object();
-    const char* name = (const char*)sym->bytes();
-    int len = sym->utf8_length();
-    unsigned int hash = hash_symbol(name, len, _alt_hash);
-    assert(sym == _shared_table.lookup(name, hash, len), "sanity");
   } else {
     _dynamic_shared_table.reset();
     writer.dump(&_dynamic_shared_table, "symbol");
