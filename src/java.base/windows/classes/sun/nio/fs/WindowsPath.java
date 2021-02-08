@@ -859,12 +859,10 @@ class WindowsPath implements Path {
     private long openSocketForReadAttributeAccess()
         throws WindowsException
     {
-        long handle;
-
         // needs to specify FILE_FLAG_OPEN_REPARSE_POINT if the file is a socket
         int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
 
-        handle = openFileForReadAttributeAccess(flags);
+        long handle = openFileForReadAttributeAccess(flags);
 
         try {
             WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(handle);
@@ -872,8 +870,9 @@ class WindowsPath implements Path {
                 throw new WindowsException("not a socket");
             }
             return handle;
-        } finally {
+        } catch (WindowsException e) {
             CloseHandle(handle);
+            throw e;
         }
     }
 
