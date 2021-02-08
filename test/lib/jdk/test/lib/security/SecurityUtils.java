@@ -96,6 +96,6 @@ public final class SecurityUtils {
         }
         return false;
     }
-            
+
     private SecurityUtils() {}
 }
