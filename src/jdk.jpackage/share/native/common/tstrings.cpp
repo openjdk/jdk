@@ -207,7 +207,7 @@ namespace {
  */
 std::string toMultiByte(const std::wstring& utf16str, int encoding) {
     std::string reply;
-    do {
+    {
         int cm = WideCharToMultiByte(encoding,
                                     0,
                                     utf16str.c_str(),
@@ -235,7 +235,7 @@ std::string toMultiByte(const std::wstring& utf16str, int encoding) {
         if (cm != cm2) {
             JP_THROW("Unexpected reply from WideCharToMultiByte()");
         }
-    } while(0);
+    }
 
     return reply;
 }
@@ -245,7 +245,7 @@ std::string toMultiByte(const std::wstring& utf16str, int encoding) {
  */
 std::wstring fromMultiByte(const std::string& str, int encoding) {
     std::wstring utf16;
-    do {
+    {
         int cw = MultiByteToWideChar(encoding,
                                     MB_ERR_INVALID_CHARS,
                                     str.c_str(),
@@ -269,7 +269,7 @@ std::wstring fromMultiByte(const std::string& str, int encoding) {
         if (cw != cw2) {
             JP_THROW("Unexpected reply from MultiByteToWideChar()");
         }
-    } while(0);
+    }
 
     return utf16;
 }
