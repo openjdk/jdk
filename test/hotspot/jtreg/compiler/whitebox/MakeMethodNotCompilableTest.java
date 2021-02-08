@@ -201,7 +201,7 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
                 deoptimize();
             }
 
-            if (!isCompilable(COMP_LEVEL_ANY)) {
+            if (!isCompilable(COMP_LEVEL_ANY) && TIERED_STOP_AT_LEVEL == COMP_LEVEL_FULL_OPTIMIZATION) {
                 throw new RuntimeException(method
                         + " must be compilable at 'CompLevel::CompLevel_any'"
                         + ", if it is not compilable only at " + testedTier);
