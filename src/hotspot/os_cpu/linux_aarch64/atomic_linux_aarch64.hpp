@@ -85,8 +85,8 @@ struct Atomic::PlatformAdd {
 
   template<typename D, typename I>
   D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-    D old_value = fetch_and_add(dest, add_value, order) + add_value;
-    return old_value;
+    D value = fetch_and_add(dest, add_value, order) + add_value;
+    return value;
   }
 };
 
