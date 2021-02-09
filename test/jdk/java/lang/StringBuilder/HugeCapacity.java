@@ -22,25 +22,14 @@
  */
 
 /**
- * @test id=no-cs
+ * @test
  * @bug 8149330 8218227
  * @summary Capacity should not get close to Integer.MAX_VALUE unless
  *          necessary
  * @library /lib/testlibrary /test/lib
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 6G)
- * @requires !vm.opt.final.CompactStrings
- * @run main/othervm -Xms5G -Xmx5G HugeCapacity false
- */
-
-/**
- * @test id=cs
- * @bug 8149330 8218227
- * @summary Capacity should not get close to Integer.MAX_VALUE unless
- *          necessary
- * @library /lib/testlibrary /test/lib
- * @requires (sun.arch.data.model == "64" & os.maxMemory >= 6G)
- * @requires vm.opt.final.CompactStrings
- * @run main/othervm -Xms5G -Xmx5G HugeCapacity true
+ * @run main/othervm -Xms5G -Xmx5G -XX:+CompactStrings HugeCapacity true
+ * @run main/othervm -Xms5G -Xmx5G -XX:-CompactStrings HugeCapacity false
  */
 
 public class HugeCapacity {
