@@ -29,13 +29,9 @@
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide other nodes"/>
         </file>
-        <file name="Remove secondary edges" url="filters/remove.filter">
+        <file name="Simplify graph" url="filters/structural.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Show control flow only"/>
-        </file>
-        <file name="Simplify structure" url="filters/structural.filter">
-            <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Remove secondary edges"/>
         </file>
     </folder>
 </filesystem>
