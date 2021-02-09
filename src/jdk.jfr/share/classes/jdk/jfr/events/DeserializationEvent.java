@@ -34,7 +34,7 @@ import jdk.jfr.internal.MirrorEvent;
 @Category({"Java Development Kit", "Serialization"})
 @Label("Deserialization events")
 @Name("jdk.Deserialization")
-@Description("Results of ObjectInputFilter checks")
+@Description("Results of deserialiation and ObjectInputFilter checks")
 @MirrorEvent(className = "jdk.internal.event.DeserializationEvent")
 public final class DeserializationEvent extends AbstractJDKEvent {
 

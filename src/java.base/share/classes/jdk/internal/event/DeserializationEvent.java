@@ -26,7 +26,7 @@
 package jdk.internal.event;
 
 /**
- * Event details relating to the serialization filter checks
+ * Event details relating to deserialization
  */
 
 public final class DeserializationEvent extends Event {

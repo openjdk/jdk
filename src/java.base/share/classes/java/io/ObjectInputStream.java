@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1324,7 +1324,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Invoke the serialization filter if non-null.
+     * Invokes the serialization filter if non-null, and fires a
+     * {@code DeserializationEvent}.
+     *
      * If the filter rejects or an exception is thrown, throws InvalidClassException.
      *
      * @param clazz the class; may be null
@@ -1334,11 +1336,12 @@ public class ObjectInputStream
      */
     private void filterCheck(Class<?> clazz, int arrayLength)
             throws InvalidClassException {
+        // Info about the stream is not available if overridden by subclass, return 0
+        long bytesRead = (bin == null) ? 0 : bin.getBytesRead();
+        RuntimeException ex = null;
+        ObjectInputFilter.Status status = null;
+
         if (serialFilter != null) {
-            RuntimeException ex = null;
-            ObjectInputFilter.Status status;
-            // Info about the stream is not available if overridden by subclass, return 0
-            long bytesRead = (bin == null) ? 0 : bin.getBytesRead();
             try {
                 status = serialFilter.checkInput(new FilterValues(clazz, arrayLength,
                         totalObjectRefs, depth, bytesRead));
@@ -1346,17 +1349,6 @@ public class ObjectInputStream
                 // Preventive interception of an exception to log
                 status = ObjectInputFilter.Status.REJECTED;
                 ex = e;
-            }
-            DeserializationEvent event = new DeserializationEvent();
-            if (event.shouldCommit()) {
-                event.status = (status == null) ? "n/a" : status.name();
-                event.clazz = Objects.toString(clazz, "null");
-                event.arrayLength = arrayLength;
-                event.totalObjectRefs = totalObjectRefs;
-                event.depth = depth;
-                event.bytesRead = bytesRead;
-                event.exception = Objects.toString(ex, "n/a");
-                event.commit();
             }
             if (Logging.filterLogger != null) {
                 // Debug logging of filter checks that fail; Tracing for those that succeed
@@ -1367,12 +1359,22 @@ public class ObjectInputStream
                         status, clazz, arrayLength, totalObjectRefs, depth, bytesRead,
                         Objects.toString(ex, "n/a"));
             }
-            if (status == null ||
-                    status == ObjectInputFilter.Status.REJECTED) {
-                InvalidClassException ice = new InvalidClassException("filter status: " + status);
-                ice.initCause(ex);
-                throw ice;
-            }
+        }
+        DeserializationEvent event = new DeserializationEvent();
+        if (event.shouldCommit()) {
+            event.status = status == null ? "n/a" : status.name();
+            event.clazz = clazz == null ? "null" : clazz.getName();
+            event.arrayLength = arrayLength;
+            event.totalObjectRefs = totalObjectRefs;
+            event.depth = depth;
+            event.bytesRead = bytesRead;
+            event.exception = Objects.toString(ex, "n/a");
+            event.commit();
+        }
+        if (serialFilter != null && (status == null || status == ObjectInputFilter.Status.REJECTED)) {
+            InvalidClassException ice = new InvalidClassException("filter status: " + status);
+            ice.initCause(ex);
+            throw ice;
         }
     }
 
