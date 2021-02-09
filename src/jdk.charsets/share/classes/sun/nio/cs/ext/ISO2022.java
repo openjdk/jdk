@@ -39,13 +39,6 @@ import sun.nio.cs.Surrogate;
 abstract class ISO2022
     extends Charset
 {
-
-    private static final byte ISO_ESC = 0x1b;
-    private static final byte ISO_SI = 0x0f;
-    private static final byte ISO_SO = 0x0e;
-    private static final byte ISO_SS2_7 = 0x4e;
-    private static final byte ISO_SS3_7 = 0x4f;
-
     public ISO2022(String csname, String[] aliases) {
         super(csname, aliases);
     }
@@ -55,6 +48,13 @@ abstract class ISO2022
     public abstract CharsetEncoder newEncoder();
 
     protected static class Encoder extends CharsetEncoder {
+
+        private static final byte ISO_ESC = 0x1b;
+        private static final byte ISO_SI = 0x0f;
+        private static final byte ISO_SO = 0x0e;
+        private static final byte ISO_SS2_7 = 0x4e;
+        private static final byte ISO_SS3_7 = 0x4f;
+
         private final Surrogate.Parser sgp = new Surrogate.Parser();
         public static final byte SS2 = (byte)0x8e;
         public static final byte PLANE2 = (byte)0xA2;
