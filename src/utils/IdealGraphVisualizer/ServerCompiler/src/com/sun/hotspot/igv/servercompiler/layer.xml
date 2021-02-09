@@ -5,9 +5,13 @@
         <file name="Color by category" url="filters/color.filter">
             <attr name="enabled" boolvalue="true"/>
         </file>
-        <file name="Hide data nodes" url="filters/hideData.filter">
+        <file name="Simplify graph" url="filters/structural.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Color by category"/>
+        </file>
+        <file name="Hide data nodes" url="filters/hideData.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Simplify graph"/>
         </file>
         <file name="Hide memory nodes" url="filters/hideMemory.filter">
             <attr name="enabled" boolvalue="false"/>
@@ -28,10 +32,6 @@
         <file name="Show control flow only" url="filters/onlyControlFlow.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide other nodes"/>
-        </file>
-        <file name="Simplify graph" url="filters/structural.filter">
-            <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Show control flow only"/>
         </file>
     </folder>
 </filesystem>
