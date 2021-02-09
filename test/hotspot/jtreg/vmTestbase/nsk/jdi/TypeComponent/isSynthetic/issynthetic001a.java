@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ class ClassToCheck {
         Class     X0, X1[]={X0}, X2[][]={X1};
         Object    O0, O1[]={O0}, O2[][]={O1};
 
-        final     Long LF0 = new Long(1), LF1[]={LF0}, LF2[][]={LF1};
+        final     Long LF0 = Long.valueOf(1), LF1[]={LF0}, LF2[][]={LF1};
         private   Long LP0,               LP1[]={LP0}, LP2[][]={LP1};
         public    Long LU0,               LU1[]={LU0}, LU2[][]={LU1};
         protected Long LR0,               LR1[]={LR0}, LR2[][]={LR1};
