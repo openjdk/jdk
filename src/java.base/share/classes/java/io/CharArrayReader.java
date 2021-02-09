@@ -25,6 +25,8 @@
 
 package java.io;
 
+import java.nio.CharBuffer;
+
 /**
  * This class implements a character buffer that can be used as a
  * character-input stream.
@@ -142,6 +144,23 @@ public class CharArrayReader extends Reader {
             System.arraycopy(buf, pos, b, off, len);
             pos += len;
             return len;
+        }
+    }
+
+    @Override
+    public int read(CharBuffer target) throws IOException {
+        synchronized (lock) {
+            ensureOpen();
+
+            if (pos >= count) {
+                return -1;
+            }
+
+            int avail = count - pos;
+            int len = Math.min(avail, target.remaining());
+            target.put(buf, pos, len);
+            pos += len;
+            return avail;
         }
     }
 
