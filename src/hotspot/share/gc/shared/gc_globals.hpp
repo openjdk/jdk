@@ -344,6 +344,7 @@
   develop(uintx, MaxVirtMemFraction, 2,                                     \
           "Maximum fraction (1/n) of virtual memory used for ergonomically "\
           "determining maximum heap size")                                  \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, UseAdaptiveSizePolicy, true,                                \
           "Use adaptive generation sizing policies")                        \

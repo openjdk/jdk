@@ -40,6 +40,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
