@@ -181,7 +181,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   __ cmpdi(CCR0, tmp2, 0);
   __ bne(CCR0, skip_barrier);
 
-  // Class loader is weak. Determine whether the holder still alive.
+  // Class loader is weak. Determine whether the holder is still alive.
   __ ld(tmp2, in_bytes(ClassLoaderData::holder_offset()), tmp1_class_loader_data);
   __ resolve_weak_handle(tmp2, tmp1, tmp3, MacroAssembler::PreservationLevel::PRESERVATION_FRAME_LR_GP_FP_REGS);
   __ cmpdi(CCR0, tmp2, 0);
