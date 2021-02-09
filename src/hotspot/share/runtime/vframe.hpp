@@ -328,10 +328,6 @@ class vframeStreamCommon : StackObj {
   // Implements security traversal. Skips depth no. of frame including
   // special security frames and prefixed native methods
   void security_get_caller_frame(int depth);
-
-  // Helper routine for JVM_LatestUserDefinedLoader -- needed for 1.4
-  // reflection implementation
-  void skip_reflection_related_frames();
 };
 
 class vframeStream : public vframeStreamCommon {
