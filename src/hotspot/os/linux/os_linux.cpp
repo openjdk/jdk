@@ -3569,16 +3569,19 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
 #define CAP_IPC_LOCK_BIT  (1 << CAP_IPC_LOCK)
 
 static bool can_lock_memory() {
+  bool can_lock = false;
   FILE* f = ::fopen("/proc/self/status", "r");
   char buf[256];
   while (::fgets(buf, sizeof(buf), f) != NULL) {
     size_t cap;
     // Check permitted capabilities.
     if (sscanf(buf, "CapPrm: %" PRIxPTR, &cap) == 1) {
-      return (cap & CAP_IPC_LOCK_BIT) == CAP_IPC_LOCK_BIT;
+      can_lock = (cap & CAP_IPC_LOCK_BIT) == CAP_IPC_LOCK_BIT;
+      break;
     }
   }
-  return false;
+  ::fclose(f);
+  return can_lock;
 }
 
 bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
