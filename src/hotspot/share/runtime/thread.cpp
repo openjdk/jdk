@@ -484,6 +484,26 @@ void Thread::check_for_dangling_thread_pointer(Thread *thread) {
 }
 #endif
 
+bool Thread::is_JavaThread_protected(const JavaThread* p) {
+  if (current() == p) {
+    // Current thread is always protected:
+    return true;
+  }
+
+  // Check the ThreadsLists associated with the calling thread (if any)
+  // to see if one of them protects the target JavaThread:
+  for (SafeThreadsListPtr* stlp = _threads_list_ptr; stlp != NULL; stlp = stlp->previous()) {
+    if (stlp->list()->includes(p)) {
+      // The target JavaThread is protected by this ThreadsList:
+      return true;
+    }
+  }
+
+  // The target JavaThread is not on this ThreadsList or any of its
+  // nested ThreadsLists (if any) so it is not safe to query:
+  return false;
+}
+
 ThreadPriority Thread::get_priority(const Thread* const thread) {
   ThreadPriority priority;
   // Can return an error!
@@ -2826,21 +2846,19 @@ void JavaThread::verify() {
 // Most callers of this method assume that it can't return NULL but a
 // thread may not have a name whilst it is in the process of attaching to
 // the VM - see CR 6412693, and there are places where a JavaThread can be
-// seen prior to having it's threadObj set (eg JNI attaching threads and
+// seen prior to having it's threadObj set (e.g., JNI attaching threads and
 // if vm exit occurs during initialization). These cases can all be accounted
 // for such that this method never returns NULL.
 const char* JavaThread::get_thread_name() const {
-#ifdef ASSERT
-  // early safepoints can hit while current thread does not yet have TLS
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    // Current JavaThreads are allowed to get their own name without
-    // the Threads_lock.
-    if (Thread::current() != this) {
-      assert_locked_or_safepoint_or_handshake(Threads_lock, this);
-    }
+  ThreadsListHandle tlh;
+
+  if (Thread::current()->is_JavaThread_protected(this)) {
+    // The target JavaThread is protected so get_thread_name_string() is safe:
+    return get_thread_name_string();
   }
-#endif // ASSERT
-  return get_thread_name_string();
+
+  // The target JavaThread is not protected so we return "Unknown thread":
+  return Thread::name();
 }
 
 // Returns a non-NULL representation of this thread's name, or a suitable

@@ -212,8 +212,10 @@ class Thread: public ThreadShadow {
   uint nested_threads_hazard_ptr_cnt() {
     return _nested_threads_hazard_ptr_cnt;
   }
-
  public:
+  // Is the target JavaThread protected by this Thread:
+  bool is_JavaThread_protected(const JavaThread* p);
+
   void* operator new(size_t size) throw() { return allocate(size, true); }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
     return allocate(size, false); }
@@ -1687,6 +1689,7 @@ class JavaThread: public Thread {
   void verify();
   const char* get_thread_name() const;
  protected:
+  friend class JvmtiTrace;  // so get_thread_name_string() can be called
   // factor out low-level mechanics for use in both normal and error cases
   virtual const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
  public:
