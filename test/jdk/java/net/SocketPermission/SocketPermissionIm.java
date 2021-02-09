@@ -8,25 +8,26 @@
 import java.net.SocketPermission;
 import java.net.InetAddress;
 import java.io.*;
+import java.io.File;
 
 public class SocketPermissionIm {
-           public static void main(String[] args) throws Exception {
-             String hostname = "www.exmp.com";
-             String hostsFileName = System.getProperty("test.src", ".") + File.separator + "Host.txt";
-             System.setProperty("jdk.net.hosts.file", hostsFileName);
+    public static void main(String[] args) throws Exception {
+        String hostname = "www.exmp.com";
+        String hostsFileName = System.getProperty("test.src", ".") + File.separator + "Host.txt";
+        System.setProperty("jdk.net.hosts.file", hostsFileName);
 
-             int testPass = 0;
-             SocketPermission sp = new SocketPermission(hostname, "connect,resolve");
+        int testPass = 0;
+        SocketPermission sp = new SocketPermission(hostname, "connect,resolve");
 
-             do{
-                    if (!sp.implies(new SocketPermission(hostname, "connect,resolve"))) {
-                              System.out.println("Expected true, returned false");
-                              break;
-                     }
-                     addIpToHostsFile(hostname, "1.2.3."+testPass, hostsFileName);
-                     Thread.sleep(1000);
-                testPass++;
-               }while(testPass <= 2);
+            do {
+                   if (!sp.implies(new SocketPermission(hostname, "connect,resolve"))) {
+                       System.out.println("Expected true, returned false");
+                       break;
+                   }
+                   addIpToHostsFile(hostname, "1.2.3."+testPass, hostsFileName);
+                   Thread.sleep(1000);
+                   testPass++;
+               } while (testPass <= 2);
     }
 
     private  static void addIpToHostsFile(String host, String addr, String hostsFileName)

@@ -35,11 +35,10 @@ import java.security.AccessController;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.PrivilegedAction;
-import java.security.Security;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -652,22 +651,33 @@ public final class SocketPermission extends Permission
      * attempt to get the fully qualified domain name
      *
      */
-     void getCanonName() throws UnknownHostException {
-         if (cnames != null || invalid || untrusted) {
+    void getCanonName() throws UnknownHostException {
+        if (cnames != null || invalid || untrusted) {
             return;
-         }
+        }
         // attempt to get the canonical name
         try {
+            // first get the IP addresses if we don't have them yet
+            // this is because we need the IP address to then get
+            // FQDN.
+            if (addresses == null) {
+                getIP();
+            }
+
             // we have to do this check, otherwise we might not
             // get the fully qualified domain name
             if (init_with_ip) {
-                    cnames = new String[]{addresses[0].getHostName(false).toLowerCase()};
+                cnames = new String[]{addresses[0].getHostName(false).toLowerCase()};
             } else {
-               cnames = new String[addresses.length];
+                cnames = new String[addresses.length];
                 int index = 0;
                 for (InetAddress inAdd : addresses) {
-                    cnames[index++] = InetAddress.getByName(inAdd.getHostAddress()).
-                            getHostName(false).toLowerCase();
+                    try {
+                        cnames[index++] = InetAddress.getByName(inAdd.getHostAddress()).
+                                getHostName(false).toLowerCase();
+                    } catch (UnknownHostException ex) {
+                        cnames[index - 1] = null;
+                    }
                 }
             }
         } catch (UnknownHostException uhe) {
@@ -690,9 +700,9 @@ public final class SocketPermission extends Permission
         }
     }
 
-    private boolean matchArr(String[] cnames, String hname){
-        for(String cname: cnames){
-            if(match(cname, hname)){
+    private boolean matchArr(String[] cnames, String hname) {
+        for (String cname : cnames) {
+            if (Objects.nonNull(cname) && match(cname, hname)) {
                 return true;
             }
         }
@@ -814,7 +824,6 @@ public final class SocketPermission extends Permission
                     host = getName().substring(0,i);
                 }
             }
-
             addresses = InetAddress.getAllByName0(host, false);
 
         } catch (UnknownHostException uhe) {
@@ -920,7 +929,6 @@ public final class SocketPermission extends Permission
                 }
             }
         }
-
         // allow a "*" wildcard to always match anything
         if (this.wildcard && "".equals(this.cnames[0]))
             return true;
@@ -934,7 +942,6 @@ public final class SocketPermission extends Permission
             if (this.init_with_ip) { // we only check IP addresses
                 if (that.wildcard)
                     return false;
-
                 if (that.init_with_ip) {
                     return (this.addresses[0].equals(that.addresses[0]));
                 } else {
@@ -950,7 +957,6 @@ public final class SocketPermission extends Permission
                 // don't check any other cases
                 return false;
             }
-
             // check and see if we have any wildcards...
             if (this.wildcard || that.wildcard) {
                 // if they are both wildcards, return true iff
@@ -970,7 +976,6 @@ public final class SocketPermission extends Permission
                 }
                 return (that.cnames[0].endsWith(this.cnames[0]));
             }
-
             // compare IP addresses
             if (this.addresses == null) {
                 this.getIP();
@@ -979,7 +984,6 @@ public final class SocketPermission extends Permission
             if (that.addresses == null) {
                 that.getIP();
             }
-
             if (!(that.init_with_ip && this.isUntrusted())) {
                 for (j = 0; j < this.addresses.length; j++) {
                     for (i=0; i < that.addresses.length; i++) {
@@ -997,8 +1001,7 @@ public final class SocketPermission extends Permission
                 if (that.cnames == null) {
                     that.getCanonName();
                 }
-
-                return (this.cnames[0].equalsIgnoreCase(that.cnames[0]));
+                return this.cnames[0].equalsIgnoreCase(that.cnames[0]);
             }
 
         } catch (UnknownHostException uhe) {
