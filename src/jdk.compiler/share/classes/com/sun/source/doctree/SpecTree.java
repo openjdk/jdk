@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,25 +35,21 @@ import java.util.List;
  *    &#064;spec uri label
  * </pre>
  *
- * @since 16
+ * @since 17
  */
 public interface SpecTree extends BlockTagTree, InlineTagTree {
     /**
-     * Returns whether this instance is an inline tag.
-     * @return {@code true} if this instance is an inline tag
+     * {@return {@code true} if this instance is an inline tag, and {@code false} otherwise}
      */
     boolean isInline();
 
     /**
-     * Returns the URI.
-     *
-     * @return the URI
+     * {@return the URI}
      */
     TextTree getURI();
 
     /**
-     * Returns the label.
-     * @return the label
+     * {@return the label}
      */
     List<? extends DocTree> getLabel();
 }
