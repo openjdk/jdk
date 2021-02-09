@@ -66,10 +66,13 @@ public class ISO2022_CN_GB extends ISO2022 implements HistoricallyNamedCharset
     private static class Encoder extends ISO2022.Encoder {
 
         private static final Charset gb2312 = new EUC_CN();
+
+        private static final byte[] SOD = new byte[] {'$', ')', 'A' };
+
         public Encoder(Charset cs)
         {
             super(cs);
-            SODesig = new byte[] { '$', ')', 'A'};
+            SODesig = SOD;
             ISOEncoder = gb2312.newEncoder();
         }
 

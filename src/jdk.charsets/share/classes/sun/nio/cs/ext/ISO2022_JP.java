@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,14 +172,14 @@ public class ISO2022_JP
     static class Decoder extends CharsetDecoder
         implements DelegatableDecoder {
 
-        final static DoubleByte.Decoder DEC0208 =
+        static final DoubleByte.Decoder DEC0208 =
             (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
 
         private int currentState;
         private int previousState;
 
-        private DoubleByte.Decoder dec0208;
-        private DoubleByte.Decoder dec0212;
+        private final DoubleByte.Decoder dec0208;
+        private final DoubleByte.Decoder dec0212;
 
         private Decoder(Charset cs) {
             this(cs, DEC0208, null);
@@ -203,20 +203,16 @@ public class ISO2022_JP
         private CoderResult decodeArrayLoop(ByteBuffer src,
                                             CharBuffer dst)
         {
-            int inputSize = 0;
-            int b1 = 0, b2 = 0, b3 = 0, b4 = 0;
-            char c = UNMAPPABLE_DECODING;
+            int inputSize;
+            int b1, b2, b3, b4;
+            char c;
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
 
             char[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
 
             try {
                 while (sp < sl) {
@@ -331,8 +327,8 @@ public class ISO2022_JP
                                              CharBuffer dst)
         {
             int mark = src.position();
-            int b1 = 0, b2 = 0, b3 = 0, b4=0;
-            char c = UNMAPPABLE_DECODING;
+            int b1, b2, b3, b4;
+            char c;
             int inputSize = 0;
             try {
                 while (src.hasRemaining()) {
@@ -465,12 +461,12 @@ public class ISO2022_JP
         final static DoubleByte.Encoder ENC0208 =
             (DoubleByte.Encoder)new JIS_X_0208().newEncoder();
 
-        private static byte[] repl = { (byte)0x21, (byte)0x29 };
+        private static final byte[] repl = { (byte)0x21, (byte)0x29 };
         private int currentMode = ASCII;
         private int replaceMode = JISX0208_1983;
-        private DoubleByte.Encoder enc0208;
-        private DoubleByte.Encoder enc0212;
-        private boolean doSBKANA;
+        private final DoubleByte.Encoder enc0208;
+        private final DoubleByte.Encoder enc0212;
+        private final boolean doSBKANA;
 
         private Encoder(Charset cs) {
             this(cs, ENC0208, null, true);
@@ -535,13 +531,10 @@ public class ISO2022_JP
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
+
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
 
             try {
                 while (sp < sl) {
