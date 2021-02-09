@@ -64,6 +64,11 @@ public class TestLargePageUseForAuxMemory {
         }
     }
 
+    static boolean checkLargePagesEnabled(OutputAnalyzer output) {
+        String lp = output.firstMatch("Large Page Support: (\\w*)", 1);
+        return lp != null && lp.equals("Enabled");
+    }
+
     static void checkSmallTables(OutputAnalyzer output, long expectedPageSize) throws Exception {
         checkSize(output, expectedPageSize, "Block Offset Table: .*page_size=([^ ]+)");
         checkSize(output, expectedPageSize, "Card Counts Table: .*page_size=([^ ]+)");
@@ -82,15 +87,21 @@ public class TestLargePageUseForAuxMemory {
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                    "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
                                                    "-Xmx" + heapsize,
-                                                   "-Xlog:pagesize",
+                                                   "-Xlog:gc+init,pagesize",
                                                    "-XX:+UseLargePages",
                                                    "-XX:+IgnoreUnrecognizedVMOptions",  // there is no ObjectAlignmentInBytes in 32 bit builds
                                                    "-XX:ObjectAlignmentInBytes=8",
                                                    "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
-        checkBitmaps(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
+        // Make sure large pages are really enabled.
+        if (checkLargePagesEnabled(output)) {
+            checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
+            checkBitmaps(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
+        } else {
+            checkSmallTables(output, smallPageSize);
+            checkBitmaps(output, smallPageSize);
+        }
         output.shouldHaveExitValue(0);
 
         // Test with large page disabled.
