@@ -110,7 +110,7 @@ private:
   bool eliminate_allocate_node(AllocateNode *alloc);
   bool can_eliminate_allocation(AllocateNode *alloc, bool str_alloc, GrowableArray <SafePointNode *>& safepoints);
   bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
-  void frozen_array_replacement(AllocateArrayNode* alloc, ArrayCopyNode* ac, GrowableArray<SafePointNode* >& safepoints_done);
+  void stable_array_replacement(AllocateArrayNode* alloc, ArrayCopyNode* ac, GrowableArray<SafePointNode* >& safepoints_done);
   void process_users_of_allocation(CallNode *alloc);
   void process_users_of_string_allocation(AllocateArrayNode* alloc, ArrayCopyNode* ac);
 

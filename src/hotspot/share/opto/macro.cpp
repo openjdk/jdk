@@ -874,13 +874,12 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 #endif
         return false;
       }
-      if (UseCompressedOops && field_type->isa_narrowoop()) {
+
+      if (UseCompressedOops && field_type->isa_narrowoop() && !field_val->is_top()) {
         // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
         // to be able scalar replace the allocation.
         if (field_val->is_EncodeP()) {
           field_val = field_val->in(1);
-        } else if (field_val == C->top()) { // associated ArrayAllocate has been eliminated.
-          field_val = transform_later(new ConNNode(TypeNarrowOop::NULL_PTR));
         } else {
           field_val = transform_later(new DecodeNNode(field_val, field_val->get_ptr_type()));
         }
@@ -900,7 +899,13 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   return true;
 }
 
-void PhaseMacroExpand::frozen_array_replacement(AllocateArrayNode* alloc, ArrayCopyNode* ac, GrowableArray <SafePointNode* >& safepoints) {
+// this is the specialized version of "scalar" replacment, dedicated to j.l.String::value
+// the type of value is byte[]. process_users_of_string_allocation has replaced it with
+// ArrayCopy's src.
+//
+// Only create one SafePointScalarObject node and crecord 3 fixed fields:
+// 1. src oop 2. srcPos 3. length
+void PhaseMacroExpand::stable_array_replacement(AllocateArrayNode* alloc, ArrayCopyNode* ac, GrowableArray <SafePointNode* >& safepoints) {
   const int nfields = 3;
   Node* res = alloc->result_cast();
   if (res == nullptr) return ;
@@ -908,9 +913,6 @@ void PhaseMacroExpand::frozen_array_replacement(AllocateArrayNode* alloc, ArrayC
   assert(res->is_CheckCastPP(), "unexpected AllocateNode result");
   const TypeOopPtr* res_type = _igvn.type(res)->isa_oopptr();
 
-  //
-  // Process the safepoint uses
-  //
   while (safepoints.length() > 0) {
     SafePointNode* sfpt = safepoints.pop();
     // Fields of scalar objs are referenced only at the end
@@ -1099,6 +1101,57 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
   }
 }
 
+// find the Allocate Node of j.l.String from AllocateArrayNode's result_cast()
+//
+static AllocateNode* find_string_alloc_from_res(PhaseGVN& gvn, CheckCastPPNode* dst) {
+  AllocateNode* obj = nullptr;
+
+  if (dst != nullptr && dst->has_out_with(Op_EncodeP)) {
+    Node* enc = dst->find_out_with(Op_EncodeP);
+
+    // check all Store & Phi nodes
+    for (DUIterator_Fast imax, i = enc->fast_outs(imax); i < imax; i++) {
+      Node* use = enc->fast_out(i);
+
+      if (use->is_Store()) {
+        StoreNode* st = use->as_Store();
+        const TypePtr* adr_type = st->adr_type();
+        const TypeOopPtr* t_oop = nullptr;
+
+        if (adr_type != nullptr) {
+          t_oop = adr_type->isa_oopptr();
+        }
+
+        if (t_oop != nullptr && t_oop->is_known_instance_field()) {
+          Node* res = st->in(2)->as_AddP()->base_node();
+
+          if (res->is_CheckCastPP() &&
+              res->in(1)->in(0)->_idx == static_cast<node_idx_t>(t_oop->instance_id())) {
+            if (obj != nullptr && obj != res->in(1)->in(0)) {
+              // store this narrowoop to more than one places, bail out
+              return nullptr;
+            }
+
+            AllocateNode* alloc = res->in(1)->in(0)->as_Allocate();
+            const TypeKlassPtr* klass = gvn.type(alloc->in(AllocateNode::KlassNode))->isa_klassptr();
+            // after we discover an AllocateNode, verify it is j.l.String
+            // and scalar-replaceable
+            if (alloc->_is_scalar_replaceable &&
+                klass->name() == ciSymbols::java_lang_String()) {
+              obj = alloc;
+            }
+          }
+        }
+      } else if (use->is_Phi() && use->as_Phi()->unique_input(&gvn) == nullptr) {
+        // merge multiple values, bail out
+        return nullptr;
+      }
+    }
+  }
+
+  return obj;
+}
+
 bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
   if (!EliminateAllocations || !OptimizeTempArray || C->congraph() == nullptr)
     return false;
@@ -1115,55 +1168,23 @@ bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
   if (pt == nullptr || pt->escape_state() >= PointsToNode::GlobalEscape)
     return false;
 
-  AllocateNode* obj = nullptr;
   // if AllocateArray(aa) is non-ecape, we could stop checking obj,
   // users may directly store the temporary contents to an array, eg.
   // byte[] buf = new byte[length] and System.arraycopy(str.value, 0, buf, 0, str.length())
   // but I have no idea how to guarantee aa is a stable array. just be conservative here.
-  pt = nullptr;
-
-  if (dst->has_out_with(Op_EncodeP)) {
-    Node* enc = dst->find_out_with(Op_EncodeP);
-
-    // check all Store nodes
-    for (DUIterator_Fast imax, i = enc->fast_outs(imax); i < imax && obj == nullptr; i++) {
-      Node* use = enc->fast_out(i);
-
-      if (use->is_Store()) {
-        // after we discover obj which is AllocateNode, verify it is j.l.String
-        // and scalar-replaceable
-        StoreNode* st = use->as_Store();
-        const TypePtr* adr_type = st->adr_type();
-        const TypeOopPtr* t_oop = nullptr;
-
-        if (adr_type != nullptr) {
-          t_oop = adr_type->isa_oopptr();
-        }
-
-        if (t_oop != nullptr && t_oop->is_known_instance_field()) {
-          Node* res = st->in(2)->as_AddP()->base_node();
-          if (res->is_CheckCastPP() &&
-              res->in(1)->in(0)->_idx == static_cast<node_idx_t>(t_oop->instance_id())) {
-            obj = res->in(1)->in(0)->as_Allocate();
-            const TypeKlassPtr* klass = _igvn.type(obj->in(AllocateNode::KlassNode))->isa_klassptr();
-
-            // be conservative. check alloc is j.l.lString and it is scalar replaceable
-            if (obj->_is_scalar_replaceable &&
-                klass->name() == ciSymbols::java_lang_String()) {
-              pt = cg.ptnode_adr(obj->_idx);
-            }
-          }
-        }
-      }
-    }
+  AllocateNode* obj = find_string_alloc_from_res(_igvn, dst);
+  if (obj != nullptr) {
+    pt = cg.ptnode_adr(obj->_idx);
+  } else {
+    pt = nullptr;
   }
 
   if (pt != nullptr && pt->escape_state() == PointsToNode::NoEscape) {
-  #ifndef PRODUCT
+#ifndef PRODUCT
     if (PrintEliminateAllocations) {
       tty->print_cr(" %d ArrayCopyNode is eliminated", ac->_idx);
     }
-  #endif
+#endif
 
     aa->_is_non_escaping = true; // this AllocateArray must be eliminated
     aa->_is_scalar_replaceable = true; // not really, we don't do SR for it.
@@ -1389,7 +1410,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     }
   }
   if (str_alloc && ac != nullptr) {
-    frozen_array_replacement(alloc->as_AllocateArray(), ac, safepoints);
+    stable_array_replacement(alloc->as_AllocateArray(), ac, safepoints);
   } else if (!scalar_replacement(alloc, safepoints)) {
     return false;
   }
