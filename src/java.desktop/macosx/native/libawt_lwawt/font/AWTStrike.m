@@ -23,7 +23,6 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import "java_awt_geom_PathIterator.h"
 #import "sun_font_CStrike.h"
 #import "sun_font_CStrikeDisposer.h"

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
@@ -107,8 +108,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ restore_LR_CR(R0);
 }
 
-void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators, Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
-                                                 Register tmp1, Register tmp2, bool needs_frame) {
+void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators,
+                                                 Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
+                                                 Register tmp1, Register tmp2,
+                                                 MacroAssembler::PreservationLevel preservation_level) {
   bool not_null  = (decorators & IS_NOT_NULL) != 0,
        preloaded = obj == noreg;
   Register nv_save = noreg;
@@ -187,6 +190,11 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 
   __ bind(runtime);
 
+  // Determine necessary runtime invocation preservation measures
+  const bool needs_frame = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR;
+  assert(preservation_level <= MacroAssembler::PRESERVATION_FRAME_LR,
+         "g1_write_barrier_pre doesn't support preservation levels higher than PRESERVATION_FRAME_LR");
+
   // May need to preserve LR. Also needed if current frame is not compatible with C calling convention.
   if (needs_frame) {
     __ save_LR_CR(tmp1);
@@ -205,8 +213,10 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
   __ bind(filtered);
 }
 
-void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators, Register store_addr, Register new_val,
-                                                  Register tmp1, Register tmp2, Register tmp3) {
+void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators,
+                                                  Register store_addr, Register new_val,
+                                                  Register tmp1, Register tmp2, Register tmp3,
+                                                  MacroAssembler::PreservationLevel preservation_level) {
   bool not_null = (decorators & IS_NOT_NULL) != 0;
 
   Label runtime, filtered;
@@ -271,6 +281,9 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
   __ bind(runtime);
 
+  assert(preservation_level == MacroAssembler::PRESERVATION_NONE,
+         "g1_write_barrier_post doesn't support preservation levels higher than PRESERVATION_NONE");
+
   // Save the live input values.
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), Rcard_addr, R16_thread);
 
@@ -279,15 +292,21 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                        Register base, RegisterOrConstant ind_or_offs, Register val,
-                                       Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
+                                       Register tmp1, Register tmp2, Register tmp3,
+                                       MacroAssembler::PreservationLevel preservation_level) {
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;
   // Load and record the previous value.
-  g1_write_barrier_pre(masm, decorators, base, ind_or_offs,
-                       tmp1, tmp2, tmp3, needs_frame);
+  g1_write_barrier_pre(masm, decorators,
+                       base, ind_or_offs,
+                       tmp1, tmp2, tmp3,
+                       preservation_level);
 
-  BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
+  BarrierSetAssembler::store_at(masm, decorators,
+                                type, base, ind_or_offs, val,
+                                tmp1, tmp2, tmp3,
+                                preservation_level);
 
   // No need for post barrier if storing NULL
   if (val != noreg) {
@@ -298,13 +317,17 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
         __ add(base, ind_or_offs.as_register(), base);
       }
     }
-    g1_write_barrier_post(masm, decorators, base, val, tmp1, tmp2, tmp3);
+    g1_write_barrier_post(masm, decorators,
+                          base, val,
+                          tmp1, tmp2, tmp3,
+                          preservation_level);
   }
 }
 
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                     Register base, RegisterOrConstant ind_or_offs, Register dst,
-                                    Register tmp1, Register tmp2, bool needs_frame, Label *L_handle_null) {
+                                    Register tmp1, Register tmp2,
+                                    MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null) {
   bool on_oop = is_reference_type(type);
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
@@ -312,20 +335,27 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   Label done;
   if (on_oop && on_reference && L_handle_null == NULL) { L_handle_null = &done; }
   // Load the value of the referent field.
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, base, ind_or_offs, dst, tmp1, tmp2, needs_frame, L_handle_null);
+  ModRefBarrierSetAssembler::load_at(masm, decorators, type,
+                                     base, ind_or_offs, dst,
+                                     tmp1, tmp2,
+                                     preservation_level, L_handle_null);
   if (on_oop && on_reference) {
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer. Note with
     // these parameters the pre-barrier does not generate
     // the load of the previous value
     // We only reach here if value is not null.
-    g1_write_barrier_pre(masm, decorators | IS_NOT_NULL, noreg /* obj */, (intptr_t)0, dst /* pre_val */,
-                         tmp1, tmp2, needs_frame);
+    g1_write_barrier_pre(masm, decorators | IS_NOT_NULL,
+                         noreg /* obj */, (intptr_t)0, dst /* pre_val */,
+                         tmp1, tmp2,
+                         preservation_level);
   }
   __ bind(done);
 }
 
-void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2, bool needs_frame) {
+void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
+                                            Register tmp1, Register tmp2,
+                                            MacroAssembler::PreservationLevel preservation_level) {
   Label done, not_weak;
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.
@@ -338,7 +368,8 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ verify_oop(value, FILE_AND_LINE);
   g1_write_barrier_pre(masm, IN_NATIVE | ON_PHANTOM_OOP_REF,
                        noreg, noreg, value,
-                       tmp1, tmp2, needs_frame);
+                       tmp1, tmp2,
+                       preservation_level);
   __ bind(not_weak);
   __ verify_oop(value, FILE_AND_LINE);
   __ bind(done);

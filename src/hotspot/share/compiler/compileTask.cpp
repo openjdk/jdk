@@ -32,6 +32,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.hpp"
 
 CompileTask*  CompileTask::_task_free_list = NULL;
 

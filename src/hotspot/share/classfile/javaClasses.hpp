@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_JAVACLASSES_HPP
 #define SHARE_CLASSFILE_JAVACLASSES_HPP
 
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "oops/oop.hpp"
 #include "oops/instanceKlass.hpp"
@@ -277,9 +276,9 @@ class java_lang_Class : AllStatic {
 
   // Archiving
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-  static void archive_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static oop  archive_mirror(Klass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  static oop  process_archived_mirror(Klass* k, oop mirror, oop archived_mirror, Thread *THREAD)
+  static void archive_basic_type_mirrors() NOT_CDS_JAVA_HEAP_RETURN;
+  static oop  archive_mirror(Klass* k) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop  process_archived_mirror(Klass* k, oop mirror, oop archived_mirror)
                                       NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static bool restore_archived_mirror(Klass *k, Handle class_loader, Handle module,
                                       Handle protection_domain,
@@ -946,7 +945,7 @@ class java_lang_invoke_MethodHandle: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::MethodHandle_klass());
+    return klass->is_subclass_of(vmClasses::MethodHandle_klass());
   }
   static bool is_instance(oop obj);
 
@@ -973,7 +972,7 @@ class java_lang_invoke_DirectMethodHandle: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::DirectMethodHandle_klass());
+    return klass->is_subclass_of(vmClasses::DirectMethodHandle_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1001,8 +1000,8 @@ class java_lang_invoke_LambdaForm: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return SystemDictionary::LambdaForm_klass() != NULL &&
-      klass->is_subclass_of(SystemDictionary::LambdaForm_klass());
+    return vmClasses::LambdaForm_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::LambdaForm_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1041,8 +1040,8 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return SystemDictionary::NativeEntryPoint_klass() != NULL &&
-      klass->is_subclass_of(SystemDictionary::NativeEntryPoint_klass());
+    return vmClasses::NativeEntryPoint_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::NativeEntryPoint_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1135,7 +1134,7 @@ class java_lang_invoke_MemberName: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::MemberName_klass());
+    return klass->is_subclass_of(vmClasses::MemberName_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1231,7 +1230,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::CallSite_klass());
+    return klass->is_subclass_of(vmClasses::CallSite_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1257,7 +1256,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::ConstantCallSite_klass());
+    return klass->is_subclass_of(vmClasses::ConstantCallSite_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1286,7 +1285,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::Context_klass());
+    return klass->is_subclass_of(vmClasses::Context_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1354,7 +1353,7 @@ class java_lang_ClassLoader : AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::ClassLoader_klass());
+    return klass->is_subclass_of(vmClasses::ClassLoader_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1373,11 +1372,15 @@ class java_lang_System : AllStatic {
   static int _static_out_offset;
   static int _static_err_offset;
   static int _static_security_offset;
+  static int _static_allow_security_offset;
+  static int _static_never_offset;
 
  public:
   static int  in_offset() { CHECK_INIT(_static_in_offset); }
   static int out_offset() { CHECK_INIT(_static_out_offset); }
   static int err_offset() { CHECK_INIT(_static_err_offset); }
+  static bool allow_security_manager();
+  static bool has_security_manager();
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
@@ -1598,7 +1601,7 @@ class vector_VectorPayload : AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::vector_VectorPayload_klass());
+    return klass->is_subclass_of(vmClasses::vector_VectorPayload_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1718,7 +1721,7 @@ class java_lang_InternalError : AllStatic {
 
 class InjectedField {
  public:
-  const VMClassID klass_id;
+  const vmClassID klass_id;
   const vmSymbolID name_index;
   const vmSymbolID signature_index;
   const bool           may_be_java;

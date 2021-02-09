@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.BindingSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAssign;
 import com.sun.tools.javac.tree.JCTree.JCBinary;
 import com.sun.tools.javac.tree.JCTree.JCConditional;
@@ -49,7 +50,6 @@ import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
-import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -68,6 +68,7 @@ import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.List;
 import java.util.HashMap;
 
@@ -152,15 +153,23 @@ public class TransPatterns extends TreeTranslator {
             //E instanceof T N
             //=>
             //(let T' N$temp = E; N$temp instanceof T && (N = (T) N$temp == (T) N$temp))
+            Symbol exprSym = TreeInfo.symbol(tree.expr);
             JCBindingPattern patt = (JCBindingPattern)tree.pattern;
             VarSymbol pattSym = patt.var.sym;
             Type tempType = tree.expr.type.hasTag(BOT) ?
                     syms.objectType
                     : tree.expr.type;
-            VarSymbol temp = new VarSymbol(pattSym.flags() | Flags.SYNTHETIC,
-                    names.fromString(pattSym.name.toString() + target.syntheticNameChar() + "temp"),
-                    tempType,
-                    patt.var.sym.owner);
+            VarSymbol temp;
+            if (exprSym != null &&
+                exprSym.kind == Kind.VAR &&
+                exprSym.owner.kind.matches(Kinds.KindSelector.VAL_MTH)) {
+                temp = (VarSymbol) exprSym;
+            } else {
+                temp = new VarSymbol(pattSym.flags() | Flags.SYNTHETIC,
+                        names.fromString(pattSym.name.toString() + target.syntheticNameChar() + "temp"),
+                        tempType,
+                        patt.var.sym.owner);
+            }
             JCExpression translatedExpr = translate(tree.expr);
             Type castTargetType = types.boxedTypeOrType(pattSym.erasure(types));
 
@@ -176,8 +185,10 @@ public class TransPatterns extends TreeTranslator {
                 nestedLE.setType(syms.booleanType);
                 result = makeBinary(Tag.AND, (JCExpression)result, nestedLE);
             }
-            result = make.at(tree.pos).LetExpr(make.VarDef(temp, translatedExpr), (JCExpression)result).setType(syms.booleanType);
-            ((LetExpr) result).needsCond = true;
+            if (temp != exprSym) {
+                result = make.at(tree.pos).LetExpr(make.VarDef(temp, translatedExpr), (JCExpression)result).setType(syms.booleanType);
+                ((LetExpr) result).needsCond = true;
+            }
         } else {
             super.visitTypeTest(tree);
         }

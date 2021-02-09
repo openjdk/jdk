@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -107,7 +107,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _java_mirror = NULL;
 
   if (is_shared()) {
-    if (k != SystemDictionary::Object_klass()) {
+    if (k != vmClasses::Object_klass()) {
       super();
     }
     //compute_nonstatic_fields();  // done outside of constructor
@@ -260,7 +260,7 @@ bool ciInstanceKlass::uses_default_loader() const {
  */
 BasicType ciInstanceKlass::box_klass_type() const {
   if (uses_default_loader() && is_loaded()) {
-    return SystemDictionary::box_klass_type(get_Klass());
+    return vmClasses::box_klass_type(get_Klass());
   } else {
     return T_OBJECT;
   }
@@ -689,7 +689,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
             _out->print_cr("null");
           } else if (value->is_instance()) {
             assert(fd->field_type() == T_OBJECT, "");
-            if (value->is_a(SystemDictionary::String_klass())) {
+            if (value->is_a(vmClasses::String_klass())) {
               const char* ascii_value = java_lang_String::as_quoted_ascii(value);
               _out->print("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
             } else {

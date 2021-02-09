@@ -26,6 +26,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -288,7 +289,7 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   }
 
   // Otherwise call static method findNative in ClassLoader
-  Klass*   klass = SystemDictionary::ClassLoader_klass();
+  Klass*   klass = vmClasses::ClassLoader_klass();
   Handle name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
 
   JavaValue result(T_LONG);
