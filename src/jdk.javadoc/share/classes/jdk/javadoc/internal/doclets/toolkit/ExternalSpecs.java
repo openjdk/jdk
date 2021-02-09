@@ -31,7 +31,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +40,7 @@ import java.util.Map;
  * A class to manage an external file listing URLs and canonical titles for
  * external specifications.
  *
- * In the file, blank lines are lines beginning with {@code #} areew ignored.
+ * In the file, blank lines are lines beginning with {@code #} are ignored.
  * Otherwise, lines must be of the form:
  *
  * <pre>{@code
