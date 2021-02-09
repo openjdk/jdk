@@ -5,9 +5,13 @@
         <file name="Color by category" url="filters/color.filter">
             <attr name="enabled" boolvalue="true"/>
         </file>
-        <file name="Simplify graph" url="filters/structural.filter">
+        <file name="Color by execution frequency" url="filters/colorFrequency.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Color by category"/>
+        </file>
+        <file name="Simplify graph" url="filters/structural.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Color by execution frequency"/>
         </file>
         <file name="Hide data nodes" url="filters/hideData.filter">
             <attr name="enabled" boolvalue="false"/>

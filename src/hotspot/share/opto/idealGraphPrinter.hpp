@@ -92,6 +92,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   PhaseChaitin* _chaitin;
   bool _traverse_outs;
   Compile *C;
+  double max_freq;
 
   void print_method(ciMethod *method, int bci, InlineTree *tree);
   void print_inline_tree(InlineTree *tree);

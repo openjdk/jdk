@@ -30,6 +30,7 @@
 #include "opto/parse.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/stringUtils.hpp"
 
 #ifndef PRODUCT
 
@@ -378,6 +379,14 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         print_prop("block", C->cfg()->get_block(0)->_pre_order);
       } else {
         print_prop("block", block->_pre_order);
+        // Print estimated execution frequency, normalized within a [0,1] range.
+        buffer[0] = 0;
+        stringStream freq(buffer, sizeof(buffer) - 1);
+        freq.print("%.16f", block->_freq / max_freq);
+        assert(freq.size() < sizeof(buffer), "size in range");
+        // Enforce dots as decimal separators, as required by IGV.
+        StringUtils::replace_no_expand(buffer, ",", ".");
+        print_prop("frequency", buffer);
       }
     }
 
@@ -670,6 +679,16 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   VectorSet temp_set;
 
   head(NODES_ELEMENT);
+  if (C->cfg() != NULL) {
+    // Compute the maximum estimated frequency in the current graph.
+    max_freq = 1.0e-6;
+    for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+      Block* block = C->cfg()->get_block(i);
+      if (block->_freq > max_freq) {
+        max_freq = block->_freq;
+      }
+    }
+  }
   walk_nodes(node, false, &temp_set);
   tail(NODES_ELEMENT);
 

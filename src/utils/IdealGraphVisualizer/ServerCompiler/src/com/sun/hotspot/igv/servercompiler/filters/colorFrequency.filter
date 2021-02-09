@@ -1,0 +1,3 @@
+// Color nodes by estimated execution frequency. Applies only when control-flow
+// graph information is available (from "Global Code Motion").
+colorizeGradientCustom("frequency", 0.0, 1.05, "logarithmic", [blue, yellow, red], [0.0, 0.5, 1.0], 1024);
