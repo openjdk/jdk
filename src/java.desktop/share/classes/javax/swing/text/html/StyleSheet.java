@@ -2813,7 +2813,10 @@ public class StyleSheet extends StyleContext {
                                ((StyleConstants)key);
                 if (cssKey != null) {
                     Object value = doGetAttribute(cssKey);
-                    if (value instanceof CSS.CssValue) {
+                    if (value instanceof CSS.FontSize) {
+                        return ((CSS.FontSize)value)
+                                     .getValue(this, StyleSheet.this);
+                    } else if (value instanceof CSS.CssValue) {
                         return ((CSS.CssValue)value).toStyleConstants
                                      ((StyleConstants)key, host);
                     }
