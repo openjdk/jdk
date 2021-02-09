@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,14 +153,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   void set_pd_set(ProtectionDomainEntry* new_head) {  _pd_set = new_head; }
 
   // Tells whether the initiating class' protection domain can access the klass in this entry
-  bool is_valid_protection_domain(Handle protection_domain) {
-    if (!ProtectionDomainVerification) return true;
-
-    return protection_domain() == NULL
-         ? true
-         : contains_protection_domain(protection_domain());
-  }
-
+  inline bool is_valid_protection_domain(Handle protection_domain);
   void verify_protection_domain_set();
 
   bool equals(const Symbol* class_name) const {

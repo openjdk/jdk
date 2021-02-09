@@ -41,6 +41,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
@@ -855,12 +856,14 @@ static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
         break;
       case T_OBJECT:
         {
-          assert(fd->signature() == vmSymbols::string_signature(),
+          // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
+          // during DumpSharedSpaces
+          assert(fd->signature()->equals("Ljava/lang/String;"),
                  "just checking");
           if (DumpSharedSpaces && HeapShared::is_archived_object(mirror())) {
             // Archive the String field and update the pointer.
             oop s = mirror()->obj_field(fd->offset());
-            oop archived_s = StringTable::create_archived_string(s, CHECK);
+            oop archived_s = StringTable::create_archived_string(s);
             mirror()->obj_field_put(fd->offset(), archived_s);
           } else {
             oop string = fd->string_initial_value(CHECK);
@@ -1122,7 +1125,22 @@ class ResetMirrorField: public FieldClosure {
   }
 };
 
-void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
+static void set_klass_field_in_archived_mirror(oop mirror_obj, int offset, Klass* k) {
+  assert(java_lang_Class::is_instance(mirror_obj), "must be");
+  // this is the copy of k in the output buffer
+  Klass* copy = ArchiveBuilder::get_relocated_klass(k);
+
+  // This is the address of k, if the archive is loaded at the requested location
+  Klass* def = ArchiveBuilder::current()->to_requested(copy);
+
+  log_debug(cds, heap, mirror)(
+      "Relocate mirror metadata field at %d from " PTR_FORMAT " ==> " PTR_FORMAT,
+      offset, p2i(k), p2i(def));
+
+  mirror_obj->metadata_field_put(offset, def);
+}
+
+void java_lang_Class::archive_basic_type_mirrors() {
   assert(HeapShared::is_heap_object_archiving_allowed(),
          "HeapShared::is_heap_object_archiving_allowed() must be true");
 
@@ -1131,18 +1149,17 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
     oop m = Universe::_mirrors[t].resolve();
     if (m != NULL) {
       // Update the field at _array_klass_offset to point to the relocated array klass.
-      oop archived_m = HeapShared::archive_heap_object(m, THREAD);
+      oop archived_m = HeapShared::archive_heap_object(m);
       assert(archived_m != NULL, "sanity");
       Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
       assert(ak != NULL || t == T_VOID, "should not be NULL");
       if (ak != NULL) {
-        Klass *reloc_ak = MetaspaceShared::get_relocated_klass(ak, true);
-        archived_m->metadata_field_put(_array_klass_offset, reloc_ak);
+        set_klass_field_in_archived_mirror(archived_m, _array_klass_offset, ak);
       }
 
       // Clear the fields. Just to be safe
       Klass *k = m->klass();
-      Handle archived_mirror_h(THREAD, archived_m);
+      Handle archived_mirror_h(Thread::current(), archived_m);
       ResetMirrorField reset(archived_mirror_h);
       InstanceKlass::cast(k)->do_nonstatic_fields(&reset);
 
@@ -1162,7 +1179,7 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
 // archived mirror is restored. If archived java heap data cannot
 // be used at runtime, new mirror object is created for the shared
 // class. The _has_archived_raw_mirror is cleared also during the process.
-oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
+oop java_lang_Class::archive_mirror(Klass* k) {
   assert(HeapShared::is_heap_object_archiving_allowed(),
          "HeapShared::is_heap_object_archiving_allowed() must be true");
 
@@ -1191,12 +1208,12 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
   }
 
   // Now start archiving the mirror object
-  oop archived_mirror = HeapShared::archive_heap_object(mirror, THREAD);
+  oop archived_mirror = HeapShared::archive_heap_object(mirror);
   if (archived_mirror == NULL) {
     return NULL;
   }
 
-  archived_mirror = process_archived_mirror(k, mirror, archived_mirror, THREAD);
+  archived_mirror = process_archived_mirror(k, mirror, archived_mirror);
   if (archived_mirror == NULL) {
     return NULL;
   }
@@ -1213,12 +1230,11 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
 
 // The process is based on create_mirror().
 oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
-                                             oop archived_mirror,
-                                             Thread *THREAD) {
+                                             oop archived_mirror) {
   // Clear nonstatic fields in archived mirror. Some of the fields will be set
   // to archived metadata and objects below.
   Klass *c = archived_mirror->klass();
-  Handle archived_mirror_h(THREAD, archived_mirror);
+  Handle archived_mirror_h(Thread::current(), archived_mirror);
   ResetMirrorField reset(archived_mirror_h);
   InstanceKlass::cast(c)->do_nonstatic_fields(&reset);
 
@@ -1233,7 +1249,7 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
       assert(k->is_objArray_klass(), "Must be");
       Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
       assert(element_klass != NULL, "Must have an element klass");
-      archived_comp_mirror = archive_mirror(element_klass, THREAD);
+      archived_comp_mirror = archive_mirror(element_klass);
       if (archived_comp_mirror == NULL) {
         return NULL;
       }
@@ -1259,21 +1275,13 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   // The archived mirror's field at _klass_offset is still pointing to the original
   // klass. Updated the field in the archived mirror to point to the relocated
   // klass in the archive.
-  Klass *reloc_k = MetaspaceShared::get_relocated_klass(as_Klass(mirror), true);
-  log_debug(cds, heap, mirror)(
-    "Relocate mirror metadata field at _klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
-    p2i(as_Klass(mirror)), p2i(reloc_k));
-  archived_mirror->metadata_field_put(_klass_offset, reloc_k);
+  set_klass_field_in_archived_mirror(archived_mirror, _klass_offset, as_Klass(mirror));
 
   // The field at _array_klass_offset is pointing to the original one dimension
   // higher array klass if exists. Relocate the pointer.
   Klass *arr = array_klass_acquire(mirror);
   if (arr != NULL) {
-    Klass *reloc_arr = MetaspaceShared::get_relocated_klass(arr, true);
-    log_debug(cds, heap, mirror)(
-      "Relocate mirror metadata field at _array_klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
-      p2i(arr), p2i(reloc_arr));
-    archived_mirror->metadata_field_put(_array_klass_offset, reloc_arr);
+    set_klass_field_in_archived_mirror(archived_mirror, _array_klass_offset, arr);
   }
   return archived_mirror;
 }
@@ -4382,16 +4390,39 @@ int java_lang_System::_static_in_offset;
 int java_lang_System::_static_out_offset;
 int java_lang_System::_static_err_offset;
 int java_lang_System::_static_security_offset;
+int java_lang_System::_static_allow_security_offset;
+int java_lang_System::_static_never_offset;
 
 #define SYSTEM_FIELDS_DO(macro) \
   macro(_static_in_offset,  k, "in",  input_stream_signature, true); \
   macro(_static_out_offset, k, "out", print_stream_signature, true); \
   macro(_static_err_offset, k, "err", print_stream_signature, true); \
-  macro(_static_security_offset, k, "security", security_manager_signature, true)
+  macro(_static_security_offset, k, "security", security_manager_signature, true); \
+  macro(_static_allow_security_offset, k, "allowSecurityManager", int_signature, true); \
+  macro(_static_never_offset, k, "NEVER", int_signature, true)
 
 void java_lang_System::compute_offsets() {
   InstanceKlass* k = vmClasses::System_klass();
   SYSTEM_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+// This field tells us that a security manager can never be installed so we
+// can completely skip populating the ProtectionDomainCacheTable.
+bool java_lang_System::allow_security_manager() {
+  static int initialized = false;
+  static bool allowed = true; // default
+  if (!initialized) {
+    oop base = vmClasses::System_klass()->static_field_base_raw();
+    int never = base->int_field(_static_never_offset);
+    allowed = (base->int_field(_static_allow_security_offset) != never);
+  }
+  return allowed;
+}
+
+// This field tells us that a security manager is installed.
+bool java_lang_System::has_security_manager() {
+  oop base = vmClasses::System_klass()->static_field_base_raw();
+  return base->obj_field(_static_security_offset) != NULL;
 }
 
 #if INCLUDE_CDS

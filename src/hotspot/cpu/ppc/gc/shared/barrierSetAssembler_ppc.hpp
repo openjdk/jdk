@@ -57,6 +57,9 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
 
   virtual void barrier_stubs_init() {}
+
+  virtual void nmethod_entry_barrier(MacroAssembler* masm, Register tmp);
+  virtual void c2i_entry_barrier(MacroAssembler* masm, Register tmp1, Register tmp2, Register tmp3);
 };
 
 #endif // CPU_PPC_GC_SHARED_BARRIERSETASSEMBLER_PPC_HPP
