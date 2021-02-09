@@ -34,9 +34,8 @@
 #include "runtime/java.hpp"
 
 void ShenandoahIUMode::initialize_flags() const {
-  // See: https://bugs.openjdk.java.net/browse/JDK-8261341
   if (FLAG_IS_CMDLINE(ClassUnloading) && ClassUnloading) {
-    log_warning(gc)("Shenandoah I-U mode forces -XX:-ClassUnloading, for decails, see https://bugs.openjdk.java.net/browse/JDK-8261341");
+    log_warning(gc)("Shenandoah I-U mode sets -XX:-ClassUnloading; see JDK-8261341 for details");
   }
   FLAG_SET_DEFAULT(ClassUnloading, false);
 
