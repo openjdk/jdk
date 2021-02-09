@@ -118,6 +118,21 @@ public class CgroupSubsystemFactory {
         }
     }
 
+    /*
+     * Determine the type of the cgroup system (v1 - legacy or hybrid - or, v2 - unified)
+     * based on three files:
+     *
+     *  (1) mountInfo  (i.e. /proc/self/mountinfo)
+     *  (2) cgroups    (i.e. /proc/cgroups)
+     *  (3) selfCgroup (i.e. /proc/self/cgroup)
+     *
+     * File 'cgroups' is inspected for the hierarchy ID of the mounted cgroup pseudo
+     * filesystem. The hierarchy ID, in turn, helps us distinguish cgroups v2 and
+     * cgroup v1. For a system with zero hierarchy ID, but with >= 1 relevant cgroup
+     * controllers mounted in 'mountInfo' we can infer it's cgroups v2. Anything else
+     * will be cgroup v1 (hybrid or legacy). File 'selfCgroup' is being used for
+     * figuring out the mount path of the controller in the cgroup hierarchy.
+     */
     public static Optional<CgroupTypeResult> determineType(String mountInfo,
                                                            String cgroups,
                                                            String selfCgroup) throws IOException {
@@ -152,8 +167,8 @@ public class CgroupSubsystemFactory {
             anyControllersEnabled = anyControllersEnabled || info.isEnabled();
         }
 
-        // If there are no mounted, relevant cgroup controllers in mountinfo and only
-        // 0 hierarchy IDs in /proc/cgroups have been seen, we are on a cgroups v1 system.
+        // If there are no mounted, relevant cgroup controllers in 'mountinfo' and only
+        // 0 hierarchy IDs in file 'cgroups' have been seen, we are on a cgroups v1 system.
         // However, continuing in that case does not make sense as we'd need
         // information from mountinfo for the mounted controller paths which we wouldn't
         // find anyway in that case.
@@ -186,6 +201,16 @@ public class CgroupSubsystemFactory {
         return Optional.of(result);
     }
 
+    /*
+     * Sets the path to the cgroup controller for cgroups v2 based on a line
+     * in /proc/self/cgroup file (represented as the 'tokens' array).
+     *
+     * Example:
+     *
+     * 0::/
+     *
+     * => tokens = [ "0", "", "/" ]
+     */
     private static void setCgroupV2Path(Map<String, CgroupInfo> infos,
                                         String[] tokens) {
         int hierarchyId = Integer.parseInt(tokens[0]);
@@ -196,6 +221,18 @@ public class CgroupSubsystemFactory {
         }
     }
 
+    /*
+     * Sets the path to the cgroup controller for cgroups v1 based on a line
+     * in /proc/self/cgroup file (represented as the 'tokens' array).
+     *
+     * Note that multiple controllers might be joined at a single path.
+     *
+     * Example:
+     *
+     * 7:cpu,cpuacct:/system.slice/docker-74ad896fb40bbefe0f181069e4417505fffa19052098f27edf7133f31423bc0b.scope
+     *
+     * => tokens = [ "7", "cpu,cpuacct", "/system.slice/docker-74ad896fb40bbefe0f181069e4417505fffa19052098f27edf7133f31423bc0b.scope" ]
+     */
     private static void setCgroupV1Path(Map<String, CgroupInfo> infos,
                                         String[] tokens) {
         String controllerName = tokens[1];
@@ -220,7 +257,23 @@ public class CgroupSubsystemFactory {
     }
 
     /**
-     * Amends cgroup infos with mount path and mount root.
+     * Amends cgroup infos with mount path and mount root. The passed in
+     * 'mntInfoLine' represents a single line in, for example,
+     * /proc/self/mountinfo. Each line is matched with MOUNTINFO_PATTERN
+     * (see above), so as to extract the relevant tokens from the line.
+     *
+     * Host example cgroups v1:
+     *
+     * 44 30 0:41 / /sys/fs/cgroup/devices rw,nosuid,nodev,noexec,relatime shared:16 - cgroup cgroup rw,seclabel,devices
+     *
+     * Container example cgroups v1:
+     *
+     * 1901 1894 0:37 /system.slice/docker-2291eeb92093f9d761aaf971782b575e9be56bd5930d4b5759b51017df3c1387.scope /sys/fs/cgroup/cpu,cpuacct ro,nosuid,nodev,noexec,relatime master:12 - cgroup cgroup rw,seclabel,cpu,cpuacct
+     *
+     * Container example cgroups v2:
+     *
+     * 1043 1034 0:27 / /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,seclabel,nsdelegate
+     *
      *
      * @return {@code true} iff a relevant controller has been found at the
      * given line

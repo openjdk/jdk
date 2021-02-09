@@ -84,6 +84,28 @@ public class CgroupInfo {
         this.cgroupPath = cgroupPath;
     }
 
+    /*
+     * Creates a CgroupInfo instance from a line in /proc/cgroups.
+     * Comment token (hash) is handled by the caller.
+     *
+     * Example (annotated):
+     *
+     * #subsys_name	hierarchy	num_cgroups	enabled
+     * cpuset           10              1               1         (a)
+     * cpu              7               8               1         (b)
+     * [...]
+     *
+     * Line (a) would yield:
+     *   info = new CgroupInfo("cpuset", 10, true);
+     *   return info;
+     * Line (b) results in:
+     *   info = new CgroupInfo("cpu", 7, true);
+     *   return info;
+     *
+     *
+     * See CgroupSubsystemFactory.determineType()
+     *
+     */
     static CgroupInfo fromCgroupsLine(String line) {
         String[] tokens = line.split("\\s+");
         if (tokens.length != 4) {
