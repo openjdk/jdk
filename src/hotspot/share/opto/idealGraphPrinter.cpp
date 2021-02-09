@@ -381,6 +381,27 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       }
     }
 
+    switch (t->category()) {
+    case Type::CATEGORY::CatData:
+      print_prop("category", "data");
+      break;
+    case Type::CATEGORY::CatMemory:
+      print_prop("category", "memory");
+      break;
+    case Type::CATEGORY::CatMixed:
+      print_prop("category", "mixed");
+      break;
+    case Type::CATEGORY::CatControl:
+      print_prop("category", "control");
+      break;
+    case Type::CATEGORY::CatOther:
+      print_prop("category", "other");
+      break;
+    case Type::CATEGORY::CatUndef:
+      print_prop("category", "undef");
+      break;
+    }
+
     const jushort flags = node->flags();
     if (flags & Node::Flag_is_Copy) {
       print_prop("is_copy", "true");
