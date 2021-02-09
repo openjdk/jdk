@@ -151,7 +151,7 @@ static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
 //  and compare it periodically against reality (see os::run_periodic_checks()).
 static bool check_signals = true;
 static SavedSignalHandlers expected_handlers;
-static bool do_check_signal_periodically[NSIG];
+static bool do_check_signal_periodically[NSIG] = { 0 };
 
 // For signal-chaining:
 //  if chaining is active, chained_handlers contains all handlers which we
