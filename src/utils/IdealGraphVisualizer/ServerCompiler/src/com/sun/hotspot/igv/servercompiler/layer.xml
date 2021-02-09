@@ -5,9 +5,29 @@
         <file name="Color by category" url="filters/color.filter">
             <attr name="enabled" boolvalue="true"/>
         </file>
-        <file name="Show control flow only" url="filters/onlyControlFlow.filter">
+        <file name="Hide data nodes" url="filters/hideData.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Color by category"/>
+        </file>
+        <file name="Hide memory nodes" url="filters/hideMemory.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Hide data nodes"/>
+        </file>
+        <file name="Hide control nodes" url="filters/hideControl.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Hide memory nodes"/>
+        </file>
+        <file name="Hide mixed nodes" url="filters/hideMixed.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Hide control nodes"/>
+        </file>
+        <file name="Hide other nodes" url="filters/hideOther.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Hide mixed nodes"/>
+        </file>
+        <file name="Show control flow only" url="filters/onlyControlFlow.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Hide other nodes"/>
         </file>
         <file name="Remove secondary edges" url="filters/remove.filter">
             <attr name="enabled" boolvalue="false"/>
