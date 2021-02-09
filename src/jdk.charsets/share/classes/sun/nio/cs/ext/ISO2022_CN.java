@@ -85,7 +85,7 @@ public class ISO2022_CN
         private boolean shiftOut;
         private byte currentSODesig;
 
-        private static final DoubleByte.Decoder gb2312Decoder =
+        private static final DoubleByte.Decoder GB2312 =
                 (DoubleByte.Decoder)new EUC_CN().newDecoder();
 
         Decoder(Charset cs) {
@@ -119,8 +119,8 @@ public class ISO2022_CN
             byte1 |= MSB;
             byte2 |= MSB;
             if (SOD == SODesigGB) {
-                return gb2312Decoder.decodeDouble(byte1 & 0xff,
-                                                  byte2 & 0xff);
+                return GB2312.decodeDouble(byte1 & 0xff,
+                                           byte2 & 0xff);
             } else {    // SOD == SODesigCNS
                 return EUC_TW.Decoder.decodeSingleOrReplace(byte1 & 0xff,
                                                             byte2 & 0xff,

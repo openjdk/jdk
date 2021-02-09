@@ -110,8 +110,7 @@ implements HistoricallyNamedCharset
             if (sl - sp >= SOD.length) {
                 int j = 0;
                 while (j < SOD.length && in[sp + j] == SOD[j]) { j++; }
-                if (j == SOD.length)
-                    return true;
+                return j == SOD.length;
             }
             return false;
         }
