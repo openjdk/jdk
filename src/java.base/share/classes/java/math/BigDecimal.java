@@ -78,7 +78,7 @@ import java.util.Objects;
  * {@code BigDecimal} arithmetic are broadly compatible with selected
  * modes of operation of the arithmetic defined in ANSI X3.274-1996
  * and ANSI X3.274-1996/AM 1-2000 (section 7.4).  Unlike those
- * standards, {@code BigDecimal} includes many rounding modes
+ * standards, {@code BigDecimal} includes many rounding modes.
  * Any conflicts between these ANSI standards and the
  * {@code BigDecimal} specification are resolved in favor of
  * {@code BigDecimal}.
@@ -88,7 +88,7 @@ import java.util.Objects;
  * and rounding must specify both the numerical result and the scale
  * used in the result's representation.
 
- * The different representations of same numerical value are called
+ * The different representations of the same numerical value are called
  * members of the same <i>cohort</i>. The {@linkplain
  * compareTo(BigDecimal) natural order} of {@code BigDecimal}
  * considers members of the same cohort to be equal to each other. In
