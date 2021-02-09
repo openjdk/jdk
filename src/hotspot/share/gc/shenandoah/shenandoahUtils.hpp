@@ -226,4 +226,5 @@ public:
     assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
   }
 };
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP
