@@ -64,14 +64,26 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
         return getLongVal(file, CgroupSubsystem.LONG_RETVAL_UNLIMITED);
     }
 
+    /**
+     * Get the singleton instance of a cgroups v2 subsystem. On initialization,
+     * a new object from the given cgroup information 'anyController' is being
+     * created. Note that the cgroup information has been parsed from cgroup
+     * interface files ahead of time.
+     *
+     * See CgroupSubsystemFactory.determineType() for the cgroup interface
+     * files parsing logic.
+     *
+     * @return A singleton CgroupSubsystem instance, never null.
+     */
     public static CgroupSubsystem getInstance(CgroupInfo anyController) {
         if (INSTANCE == null) {
+            CgroupSubsystemController unified = new CgroupV2SubsystemController(
+                    anyController.getMountPoint(),
+                    anyController.getCgroupPath());
+            CgroupV2Subsystem tmpCgroupSystem = new CgroupV2Subsystem(unified);
             synchronized (CgroupV2Subsystem.class) {
                 if (INSTANCE == null) {
-                    CgroupSubsystemController unified = new CgroupV2SubsystemController(
-                            anyController.getMountPoint(),
-                            anyController.getCgroupPath());
-                    INSTANCE = new CgroupV2Subsystem(unified);
+                    INSTANCE = tmpCgroupSystem;
                 }
             }
         }

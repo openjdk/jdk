@@ -45,11 +45,22 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
 
     private CgroupV1Subsystem() {}
 
+    /**
+     * Get a singleton instance of CgroupV1Subsystem. Initially, it creates a new
+     * object by retrieving the pre-parsed information from cgroup interface
+     * files from the provided 'infos' map.
+     *
+     * See CgroupSubsystemFactory.determineType() where the actual parsing of
+     * cgroup interface files happens.
+     *
+     * @return A singleton CgroupV1Subsystem instance, never null
+     */
     public static CgroupV1Subsystem getInstance(Map<String, CgroupInfo> infos) {
         if (INSTANCE == null) {
+            CgroupV1Subsystem tmpSubsystem = initSubSystem(infos);
             synchronized (CgroupV1Subsystem.class) {
                 if (INSTANCE == null) {
-                    INSTANCE = initSubSystem(infos);
+                    INSTANCE = tmpSubsystem;
                 }
             }
         }
@@ -60,8 +71,8 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         CgroupV1Subsystem subsystem = new CgroupV1Subsystem();
 
         boolean anyActiveControllers = false;
-        /**
-         * Find the cgroup mount points for subsystems
+        /*
+         * Find the cgroup mount points for subsystem controllers
          * by looking up relevant data in the infos map
          */
         for (CgroupInfo info: infos.values()) {
