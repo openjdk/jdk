@@ -460,54 +460,54 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
                                                   Handle protection_domain,
                                                   TRAPS) {
   // Now we have to call back to java to check if the initating class has access
-  JavaValue result(T_VOID);
-  LogTarget(Debug, protectiondomain) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
-    // Print out trace information
-    LogStream ls(lt);
-    ls.print_cr("Checking package access");
-    if (class_loader() != NULL) {
+  assert(class_loader() != NULL, "Should not call this");
+  assert(protection_domain() != NULL, "Should not call this");
+
+  // We only have to call checkPackageAccess if there's a security manager installed.
+  if (java_lang_System::has_security_manager()) {
+
+    // This handle and the class_loader handle passed in keeps this class from
+    // being unloaded through several GC points.
+    // The class_loader handle passed in is the initiating loader.
+    Handle mirror(THREAD, klass->java_mirror());
+
+    InstanceKlass* system_loader = vmClasses::ClassLoader_klass();
+    JavaValue result(T_VOID);
+    JavaCalls::call_special(&result,
+                           class_loader,
+                           system_loader,
+                           vmSymbols::checkPackageAccess_name(),
+                           vmSymbols::class_protectiondomain_signature(),
+                           mirror,
+                           protection_domain,
+                           THREAD);
+
+    LogTarget(Debug, protectiondomain) lt;
+    if (lt.is_enabled()) {
+      ResourceMark rm(THREAD);
+      // Print out trace information
+      LogStream ls(lt);
+      ls.print_cr("Checking package access");
       ls.print("class loader: ");
       class_loader()->print_value_on(&ls);
-    } else {
-      ls.print_cr("class loader: NULL");
-    }
-    if (protection_domain() != NULL) {
       ls.print(" protection domain: ");
       protection_domain()->print_value_on(&ls);
-    } else {
-      ls.print_cr(" protection domain: NULL");
+      ls.print(" loading: "); klass->print_value_on(&ls);
+      if (HAS_PENDING_EXCEPTION) {
+        ls.print_cr(" DENIED !!!!!!!!!!!!!!!!!!!!!");
+      } else {
+        ls.print_cr(" granted");
+      }
     }
-    ls.print(" loading: "); klass->print_value_on(&ls);
-    ls.cr();
+
+    if (HAS_PENDING_EXCEPTION) return;
   }
-
-  // This handle and the class_loader handle passed in keeps this class from
-  // being unloaded through several GC points.
-  // The class_loader handle passed in is the initiating loader.
-  Handle mirror(THREAD, klass->java_mirror());
-
-  InstanceKlass* system_loader = vmClasses::ClassLoader_klass();
-  JavaCalls::call_special(&result,
-                         class_loader,
-                         system_loader,
-                         vmSymbols::checkPackageAccess_name(),
-                         vmSymbols::class_protectiondomain_signature(),
-                         mirror,
-                         protection_domain,
-                         THREAD);
-
-  if (HAS_PENDING_EXCEPTION) {
-    log_debug(protectiondomain)("DENIED !!!!!!!!!!!!!!!!!!!!!");
-  } else {
-   log_debug(protectiondomain)("granted");
-  }
-
-  if (HAS_PENDING_EXCEPTION) return;
 
   // If no exception has been thrown, we have validated the protection domain
   // Insert the protection domain of the initiating class into the set.
+  // We still have to add the protection_domain to the dictionary in case a new
+  // security manager is installed later. Calls to load the same class with class loader
+  // and protection domain are expected to succeed.
   {
     ClassLoaderData* loader_data = class_loader_data(class_loader);
     Dictionary* dictionary = loader_data->dictionary();
@@ -889,17 +889,14 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // Make sure we have the right class in the dictionary
   DEBUG_ONLY(verify_dictionary_entry(name, loaded_class));
 
-  // return if the protection domain in NULL
-  if (protection_domain() == NULL) return loaded_class;
-
-  // Check the protection domain has the right access
-  if (dictionary->is_valid_protection_domain(name_hash, name,
+  // Check if the protection domain is present it has the right access
+  if (protection_domain() != NULL &&
+     java_lang_System::allow_security_manager() &&
+     !dictionary->is_valid_protection_domain(name_hash, name,
                                              protection_domain)) {
-    return loaded_class;
+    // Verify protection domain. If it fails an exception is thrown
+    validate_protection_domain(loaded_class, class_loader, protection_domain, CHECK_NULL);
   }
-
-  // Verify protection domain. If it fails an exception is thrown
-  validate_protection_domain(loaded_class, class_loader, protection_domain, CHECK_NULL);
 
   return loaded_class;
 }
@@ -1773,12 +1770,16 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
   if (unloading_occurred) {
     SymbolTable::trigger_cleanup();
 
-    // Oops referenced by the protection domain cache table may get unreachable independently
-    // of the class loader (eg. cached protection domain oops). So we need to
-    // explicitly unlink them here.
-    // All protection domain oops are linked to the caller class, so if nothing
-    // unloads, this is not needed.
-    _pd_cache_table->trigger_cleanup();
+    if (java_lang_System::allow_security_manager()) {
+      // Oops referenced by the protection domain cache table may get unreachable independently
+      // of the class loader (eg. cached protection domain oops). So we need to
+      // explicitly unlink them here.
+      // All protection domain oops are linked to the caller class, so if nothing
+      // unloads, this is not needed.
+      _pd_cache_table->trigger_cleanup();
+    } else {
+      assert(_pd_cache_table->number_of_entries() == 0, "should be empty");
+    }
   }
 
   return unloading_occurred;
@@ -1807,7 +1808,7 @@ void SystemDictionary::initialize(TRAPS) {
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
   if (UseSharedSpaces) {
-    HeapShared::resolve_classes(CHECK);
+    HeapShared::resolve_classes(THREAD);
   }
 }
 

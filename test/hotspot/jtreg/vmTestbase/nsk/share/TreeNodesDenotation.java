@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class TreeNodesDenotation extends Denotation {
         int length = this.alphabeth.length();
         Set<Character> pool = new HashSet<Character>(); // still empty
         for (int i=0; i<length; i++)
-            pool.add(new Character(this.alphabeth.charAt(i)));
+            pool.add(Character.valueOf(this.alphabeth.charAt(i)));
         if (pool.size() != length)
             throw new IllegalArgumentException("collision: " + alphabeth);
     }
