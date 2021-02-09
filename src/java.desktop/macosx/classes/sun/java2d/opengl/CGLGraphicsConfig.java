@@ -137,9 +137,9 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
             cfginfo = getCGLConfigInfo();
             if (cfginfo != 0L) {
                 textureSize = nativeGetMaxTextureSize();
-                // TODO : This clamping code is same as in OpenGL.
-                // Whether we need such clamping or not in case of Metal
-                // will be pursued under 8260644
+                // 7160609: GL still fails to create a square texture of this
+                // size. Half should be safe enough.
+                // Explicitly not support a texture more than 2^14, see 8010999.
                 textureSize = textureSize <= 16384 ? textureSize / 2 : 8192;
                 OGLContext.setScratchSurface(cfginfo);
                 rq.flushAndInvokeNow(() -> {

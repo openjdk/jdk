@@ -128,10 +128,8 @@ final class MTLContext extends BufferedContext {
          */
         @Native
         static final int CAPS_EXT_GRAD_SHADER  = (FIRST_PRIVATE_CAP << 3);
-        /** Indicates the presence of the GL_ARB_texture_rectangle extension. */
         @Native
         static final int CAPS_EXT_TEXRECT      = (FIRST_PRIVATE_CAP << 4);
-        /** Indicates the presence of the GL_NV_texture_barrier extension. */
         @Native
         static final int CAPS_EXT_TEXBARRIER = (FIRST_PRIVATE_CAP << 5);
 
