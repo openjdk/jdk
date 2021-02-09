@@ -90,7 +90,7 @@ public class CgroupInfo {
      *
      * Example (annotated):
      *
-     * #subsys_name	hierarchy	num_cgroups	enabled
+     * #subsys_name     hierarchy       num_cgroups     enabled
      * cpuset           10              1               1         (a)
      * cpu              7               8               1         (b)
      * [...]
