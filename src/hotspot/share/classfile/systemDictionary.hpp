@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 
-#include "classfile/vmClasses.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
@@ -74,7 +73,6 @@ class BootstrapInfo;
 class ClassFileStream;
 class ClassLoadInfo;
 class Dictionary;
-class PlaceholderTable;
 class LoaderConstraintTable;
 template <MEMFLAGS F> class HashtableBucket;
 class ResolutionErrorTable;
@@ -87,10 +85,7 @@ class EventClassLoad;
 class Symbol;
 class TableStatistics;
 
-// TMP: subclass from vmClasses so that we can still access the VM classes like
-// SystemDictionary::Object_klass(). This will be fixed when we replace all SystemDictionary::*_klass()
-// calls with vmClasses::*_klass().
-class SystemDictionary : public vmClasses {
+class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
   friend class vmClasses;
   friend class VMStructs;
@@ -105,24 +100,23 @@ class SystemDictionary : public vmClasses {
 
   static Klass* resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS);
   // Convenient call for null loader and protection domain.
-  static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS);
-protected:
-  // handle error translation for resolve_or_null results
-  static Klass* handle_resolution_exception(Symbol* class_name, bool throw_error, Klass* klass, TRAPS);
-
-public:
+  static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS) {
+    return resolve_or_fail(class_name, Handle(), Handle(), throw_error, THREAD);
+  }
 
   // Returns a class with a given class name and class loader.
   // Loads the class if needed. If not found NULL is returned.
   static Klass* resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
   // Version with null loader and protection domain
-  static Klass* resolve_or_null(Symbol* class_name, TRAPS);
+  static Klass* resolve_or_null(Symbol* class_name, TRAPS) {
+    return resolve_or_null(class_name, Handle(), Handle(), THREAD);
+  }
 
   // Resolve a superclass or superinterface. Called from ClassFileParser,
   // parse_interfaces, resolve_instance_class_or_null, load_shared_class
-  // "child_name" is the class whose super class or interface is being resolved.
-  static InstanceKlass* resolve_super_or_fail(Symbol* child_name,
-                                              Symbol* class_name,
+  // "class_name" is the class whose super class or interface is being resolved.
+  static InstanceKlass* resolve_super_or_fail(Symbol* class_name,
+                                              Symbol* super_name,
                                               Handle class_loader,
                                               Handle protection_domain,
                                               bool is_superclass,
@@ -151,9 +145,9 @@ public:
   // Do not make any queries to class loaders; consult only the cache.
   // If not found NULL is returned.
   static Klass* find_instance_or_array_klass(Symbol* class_name,
-                                               Handle class_loader,
-                                               Handle protection_domain,
-                                               TRAPS);
+                                             Handle class_loader,
+                                             Handle protection_domain,
+                                             TRAPS);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
@@ -191,13 +185,9 @@ public:
   // loaders.  Returns "true" iff something was unloaded.
   static bool do_unloading(GCTimer* gc_timer);
 
-  // System loader lock
-  static oop system_loader_lock();
-
   // Protection Domain Table
   static ProtectionDomainCacheTable* pd_cache_table() { return _pd_cache_table; }
 
-public:
   // Printing
   static void print();
   static void print_on(outputStream* st);
@@ -226,19 +216,8 @@ public:
 
   // Register a new class loader
   static ClassLoaderData* register_loader(Handle class_loader, bool create_mirror_cld = false);
-protected:
-  // Mirrors for primitive classes (created eagerly)
-  static oop check_mirror(oop m) {
-    assert(m != NULL, "mirror not initialized");
-    return m;
-  }
 
 public:
-  // Note:  java_lang_Class::primitive_type is the inverse of java_mirror
-
-  // Check class loader constraints
-  static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
-                                    Handle loader2, TRAPS);
   static Symbol* check_signature_loaders(Symbol* signature, Klass* klass_being_linked,
                                          Handle loader1, Handle loader2, bool is_method, TRAPS);
 
@@ -312,20 +291,8 @@ public:
 
   static ProtectionDomainCacheEntry* cache_get(Handle protection_domain);
 
- protected:
-
-  enum Constants {
-    _loader_constraint_size = 107,                     // number of entries in constraint table
-    _resolution_error_size  = 107,                     // number of entries in resolution error table
-    _invoke_method_size     = 139,                     // number of entries in invoke method table
-    _placeholder_table_size = 1009                     // number of entries in hash table for placeholders
-  };
-
-
+ private:
   // Static tables owned by the SystemDictionary
-
-  // Hashtable holding placeholders for classes being loaded.
-  static PlaceholderTable*       _placeholders;
 
   // Constraints on class loaders
   static LoaderConstraintTable*  _loader_constraints;
@@ -340,35 +307,52 @@ public:
   static ProtectionDomainCacheTable*   _pd_cache_table;
 
 protected:
+  static InstanceKlass* _well_known_klasses[];
+
+private:
+  // table of box klasses (int_klass, etc.)
+  static InstanceKlass* _box_klasses[T_VOID+1];
+
+  static OopHandle  _java_system_loader;
+  static OopHandle  _java_platform_loader;
+
   static void validate_protection_domain(InstanceKlass* klass,
                                          Handle class_loader,
                                          Handle protection_domain, TRAPS);
 
   friend class VM_PopulateDumpSharedSpace;
-  friend class TraversePlaceholdersClosure;
-  static PlaceholderTable*   placeholders() { return _placeholders; }
   static LoaderConstraintTable* constraints() { return _loader_constraints; }
   static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
   static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
-  static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
 
+private:
   // Basic loading operations
   static InstanceKlass* resolve_instance_class_or_null_helper(Symbol* name,
                                                               Handle class_loader,
                                                               Handle protection_domain,
                                                               TRAPS);
-  static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
-  static Klass* resolve_array_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
-  static InstanceKlass* handle_parallel_super_load(Symbol* class_name, Symbol* supername, Handle class_loader, Handle protection_domain, Handle lockObject, TRAPS);
+  static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name,
+                                                       Handle class_loader,
+                                                       Handle protection_domain, TRAPS);
+  static Klass* resolve_array_class_or_null(Symbol* class_name,
+                                            Handle class_loader,
+                                            Handle protection_domain, TRAPS);
+  static InstanceKlass* handle_parallel_super_load(Symbol* class_name,
+                                                   Symbol* supername,
+                                                   Handle class_loader,
+                                                   Handle protection_domain,
+                                                   Handle lockObject, TRAPS);
   // Wait on SystemDictionary_lock; unlocks lockObject before
   // waiting; relocks lockObject with correct recursion count
   // after waiting, but before reentering SystemDictionary_lock
   // to preserve lock order semantics.
   static void double_lock_wait(Thread* thread, Handle lockObject);
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
-  static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
-                                                Handle class_loader,
-                                                InstanceKlass* k, TRAPS);
+  static InstanceKlass* find_or_define_helper(Symbol* class_name,
+                                              Handle class_loader,
+                                              InstanceKlass* k, TRAPS);
+  static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
+
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
                                       PackageEntry* pkg_entry,
                                       Handle class_loader, TRAPS);
@@ -376,11 +360,19 @@ protected:
                                            InstanceKlass* ik,
                                            PackageEntry* pkg_entry,
                                            Handle class_loader, TRAPS);
-  static bool check_shared_class_super_type(InstanceKlass* child, InstanceKlass* super,
+  static bool check_shared_class_super_type(InstanceKlass* klass, InstanceKlass* super,
                                             Handle class_loader,  Handle protection_domain,
                                             bool is_superclass, TRAPS);
   static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader,
                                                Handle protection_domain, TRAPS);
+  // Second part of load_shared_class
+  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) NOT_CDS_RETURN;
+protected:
+  // Used by SystemDictionaryShared
+
+  static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
+                                    Handle loader2, TRAPS);
+  static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
   static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
                                                        Handle class_loader,
                                                        Handle protection_domain,
@@ -392,16 +384,13 @@ protected:
                                           const ClassFileStream *cfs,
                                           PackageEntry* pkg_entry,
                                           TRAPS);
-  // Second part of load_shared_class
-  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) NOT_CDS_RETURN;
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                PackageEntry* pkg_entry,
                                                TRAPS);
-  static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
-  static Handle compute_loader_lock_object(Thread* thread, Handle class_loader);
-  static bool is_parallelCapable(Handle class_loader);
-  static bool is_parallelDefine(Handle class_loader);
-
+  static Handle compute_loader_lock_object(Handle class_loader);
+  static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
+                                                      Handle class_loader,
+                                                      InstanceKlass* k, TRAPS);
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
@@ -433,10 +422,6 @@ protected:
                                 bool defining, TRAPS);
   static void update_dictionary(unsigned int hash,
                                 InstanceKlass* k, Handle loader);
-
-private:
-  static OopHandle  _java_system_loader;
-  static OopHandle  _java_platform_loader;
 
 public:
   static TableStatistics placeholders_statistics();

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -47,6 +48,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/stringUtils.hpp"
 #include "utilities/utf8.hpp"
 
@@ -168,7 +170,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
   for (int x = 0; x < num_packages; x++) {
     oop pkg_str = pkgs->obj_at(x);
 
-    if (pkg_str == NULL || pkg_str->klass() != SystemDictionary::String_klass()) {
+    if (pkg_str == NULL || pkg_str->klass() != vmClasses::String_klass()) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("Bad package name"));
     }
@@ -325,7 +327,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
   GrowableArray<Symbol*>* pkg_list = new GrowableArray<Symbol*>(num_packages);
   for (int x = 0; x < num_packages; x++) {
     oop pkg_str = packages_h->obj_at(x);
-    if (pkg_str == NULL || pkg_str->klass() != SystemDictionary::String_klass()) {
+    if (pkg_str == NULL || pkg_str->klass() != vmClasses::String_klass()) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("Bad package name"));
     }

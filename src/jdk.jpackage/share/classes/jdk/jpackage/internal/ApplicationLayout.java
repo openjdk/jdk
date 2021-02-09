@@ -62,6 +62,11 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
          * Directory with application Java modules.
          */
         MODULES,
+
+        /**
+         * Linux app launcher shared library.
+         */
+        LINUX_APPLAUNCHER_LIB
     }
 
     ApplicationLayout(Map<Object, Path> paths) {
@@ -131,7 +136,8 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME, Path.of("lib/runtime"),
                 PathRole.RUNTIME_HOME, Path.of("lib/runtime"),
                 PathRole.DESKTOP, Path.of("lib"),
-                PathRole.MODULES, Path.of("lib/app/mods")
+                PathRole.MODULES, Path.of("lib/app/mods"),
+                PathRole.LINUX_APPLAUNCHER_LIB, Path.of("lib/libapplauncher.so")
         ));
     }
 
@@ -186,7 +192,9 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME, lib.resolve("runtime"),
                 PathRole.RUNTIME_HOME, lib.resolve("runtime"),
                 PathRole.DESKTOP, lib,
-                PathRole.MODULES, lib.resolve("app/mods")
+                PathRole.MODULES, lib.resolve("app/mods"),
+                PathRole.LINUX_APPLAUNCHER_LIB, lib.resolve(
+                        "lib/libapplauncher.so")
         ));
     }
 
