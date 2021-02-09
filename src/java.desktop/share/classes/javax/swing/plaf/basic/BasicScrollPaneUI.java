@@ -505,9 +505,7 @@ public class BasicScrollPaneUI
     {
         /**
          * Constructs a {@code ViewportChangeHandler}.
-         * @deprecated
          */
-        @Deprecated(since = "17", forRemoval = true)
         public ViewportChangeHandler() {}
 
         // NOTE: This class exists only for backward compatibility. All
@@ -515,7 +513,6 @@ public class BasicScrollPaneUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
-        @Deprecated(since = "17", forRemoval = true)
         public void stateChanged(ChangeEvent e) {
             getHandler().stateChanged(e);
         }
@@ -542,9 +539,7 @@ public class BasicScrollPaneUI
     {
         /**
          * Constructs a {@code HSBChangeListener}.
-         * @deprecated
          */
-        @Deprecated(since = "17", forRemoval = true)
         public HSBChangeListener() {}
 
         // NOTE: This class exists only for backward compatibility. All
@@ -552,7 +547,6 @@ public class BasicScrollPaneUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
-        @Deprecated(since = "17", forRemoval = true)
         public void stateChanged(ChangeEvent e)
         {
             getHandler().stateChanged(e);
@@ -588,9 +582,7 @@ public class BasicScrollPaneUI
     {
         /**
          * Constructs a {@code VSBChangeListener}.
-         * @deprecated
          */
-        @Deprecated(since = "17", forRemoval = true)
         public VSBChangeListener() {}
 
         // NOTE: This class exists only for backward compatibility. All
@@ -598,7 +590,6 @@ public class BasicScrollPaneUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
-        @Deprecated(since = "17", forRemoval = true)
         public void stateChanged(ChangeEvent e)
         {
             getHandler().stateChanged(e);
@@ -800,9 +791,7 @@ public class BasicScrollPaneUI
     {
         /**
          * Constructs a {@code PropertyChangeHandler}.
-         * @deprecated
          */
-        @Deprecated(since = "17", forRemoval = true)
         public PropertyChangeHandler() {}
 
         // NOTE: This class exists only for backward compatibility. All
@@ -812,9 +801,7 @@ public class BasicScrollPaneUI
 
         /**
          * {@inheritDoc}
-         * @deprecated
          */
-        @Deprecated(since = "17", forRemoval = true)
         public void propertyChange(PropertyChangeEvent e)
         {
             getHandler().propertyChange(e);
