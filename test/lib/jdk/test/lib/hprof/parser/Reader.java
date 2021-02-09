@@ -46,6 +46,8 @@ import jdk.test.lib.hprof.model.*;
 
 public abstract class Reader {
     protected PositionDataInputStream in;
+    // Magic number of gzip dump file header.
+    private static final int GZIP_HEADER_MAGIC = 0x1f8b08;
 
     protected Reader(PositionDataInputStream in) {
         this.in = in;
@@ -143,11 +145,12 @@ public abstract class Reader {
                                       true, debugLevel);
                 r.read();
                 return r.printStackTraces();
-            } else if ((i >>> 8) == 0x1f8b08) {
-                // Possible gziped file.
+            } else if ((i >>> 8) == GZIP_HEADER_MAGIC) {
+                // Possible gziped file, try decompress it and get the stack trace.
                 in.close();
                 String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
                 File out = new File(deCompressedFile);
+                // Decompress to get dump file.
                 try {
                     GZIPInputStream gis = new GZIPInputStream(new FileInputStream(heapFile));
                     FileOutputStream fos = new FileOutputStream(out);
@@ -156,7 +159,7 @@ public abstract class Reader {
                     while ((len = gis.read(buffer)) > 0) {
                         fos.write(buffer, 0, len);
                     }
-
+                    // Check dump data header and print stack trace.
                     PositionDataInputStream in2 = new PositionDataInputStream(
                         new BufferedInputStream(new FileInputStream(out)));
                     i = in2.readInt();
