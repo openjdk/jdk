@@ -1013,7 +1013,11 @@ public class Collections {
      *         returned.
      * @return an unmodifiable view of the specified collection.
      */
+    @SuppressWarnings("unchecked")
     public static <T> Collection<T> unmodifiableCollection(Collection<? extends T> c) {
+        if(c.getClass() == UnmodifiableCollection.class) {
+            return (Collection<T>) c;
+        }
         return new UnmodifiableCollection<>(c);
     }
 
@@ -1120,7 +1124,13 @@ public class Collections {
      * @param  s the set for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified set.
      */
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> unmodifiableSet(Set<? extends T> s) {
+        if(s.getClass() == UnmodifiableSet.class ||
+           s.getClass() == ImmutableCollections.Set12.class ||
+           s.getClass() == ImmutableCollections.SetN.class) {
+            return (Set<T>) s;
+        }
         return new UnmodifiableSet<>(s);
     }
 
@@ -1154,6 +1164,9 @@ public class Collections {
      * @return an unmodifiable view of the specified sorted set.
      */
     public static <T> SortedSet<T> unmodifiableSortedSet(SortedSet<T> s) {
+        if(s.getClass() == UnmodifiableSortedSet.class) {
+            return s;
+        }
         return new UnmodifiableSortedSet<>(s);
     }
 
@@ -1204,6 +1217,9 @@ public class Collections {
      * @since 1.8
      */
     public static <T> NavigableSet<T> unmodifiableNavigableSet(NavigableSet<T> s) {
+        if(s.getClass() == UnmodifiableNavigableSet.class) {
+            return s;
+        }
         return new UnmodifiableNavigableSet<>(s);
     }
 
@@ -1293,7 +1309,15 @@ public class Collections {
      * @param  list the list for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified list.
      */
+    @SuppressWarnings("unchecked")
     public static <T> List<T> unmodifiableList(List<? extends T> list) {
+        if (list.getClass() == UnmodifiableList.class || list.getClass() == UnmodifiableRandomAccessList.class ||
+            list.getClass() == ImmutableCollections.List12.class ||
+            list.getClass() == ImmutableCollections.ListN.class ||
+            list.getClass() == ImmutableCollections.SubList.class) {
+           return (List<T>) list;
+        }
+
         return (list instanceof RandomAccess ?
                 new UnmodifiableRandomAccessList<>(list) :
                 new UnmodifiableList<>(list));
@@ -1443,7 +1467,13 @@ public class Collections {
      * @param  m the map for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified map.
      */
+    @SuppressWarnings("unchecked")
     public static <K,V> Map<K,V> unmodifiableMap(Map<? extends K, ? extends V> m) {
+        if(m.getClass() == UnmodifiableMap.class ||
+           m.getClass() == ImmutableCollections.Map1.class ||
+           m.getClass() == ImmutableCollections.MapN.class) {
+            return (Map<K,V>) m;
+        }
         return new UnmodifiableMap<>(m);
     }
 
@@ -1801,7 +1831,11 @@ public class Collections {
      *        returned.
      * @return an unmodifiable view of the specified sorted map.
      */
+    @SuppressWarnings("unchecked")
     public static <K,V> SortedMap<K,V> unmodifiableSortedMap(SortedMap<K, ? extends V> m) {
+        if(m.getClass() == UnmodifiableSortedMap.class) {
+            return (SortedMap<K,V>) m;
+        }
         return new UnmodifiableSortedMap<>(m);
     }
 
@@ -1847,7 +1881,11 @@ public class Collections {
      * @return an unmodifiable view of the specified navigable map
      * @since 1.8
      */
+    @SuppressWarnings("unchecked")
     public static <K,V> NavigableMap<K,V> unmodifiableNavigableMap(NavigableMap<K, ? extends V> m) {
+        if(m.getClass() == UnmodifiableNavigableMap.class) {
+            return (NavigableMap<K,V>) m;
+        }
         return new UnmodifiableNavigableMap<>(m);
     }
 
