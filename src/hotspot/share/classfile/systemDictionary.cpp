@@ -748,8 +748,8 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     //    but only allows a single thread to load a class/classloader pair.
     //    The LOAD_INSTANCE placeholder is the mechanism for mutual exclusion.
     // case 2. parallelCapable user level classloaders
-    //    These class loaders don't lock the object until load_instance_class is
-    //    called. A LOAD_INSTANCE placeholder isn't used for mutual exclusion.
+    //    These class loaders lock a per-class object lock when ClassLoader.loadClass()
+    //    is called. A LOAD_INSTANCE placeholder isn't used for mutual exclusion.
     // case 3. traditional classloaders that rely on the classloader object lock
     //    There should be no need for need for LOAD_INSTANCE, except:
     // case 4. traditional class loaders that break the classloader object lock
