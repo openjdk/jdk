@@ -2,20 +2,20 @@
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
       <folder name="Filters">
-        <file name="Color" url="filters/color.filter">
+        <file name="Color by category" url="filters/color.filter">
             <attr name="enabled" boolvalue="true"/>
+        </file>
+        <file name="Show control flow only" url="filters/onlyControlFlow.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Color by category"/>
         </file>
         <file name="Remove secondary edges" url="filters/remove.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Color"/>
+            <attr name="after" stringvalue="Show control flow only"/>
         </file>
         <file name="Simplify structure" url="filters/structural.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Remove secondary edges"/>
-        </file>
-        <file name="Show only control flow" url="filters/onlyControlFlow.filter">
-            <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Simplify structure"/>
         </file>
     </folder>
 </filesystem>
