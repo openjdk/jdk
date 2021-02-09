@@ -1003,6 +1003,9 @@ public class Basic$Type$
         catchReadOnlyBuffer(b, () -> rb.put(new String(new char[rb.remaining() + 1])));
         catchReadOnlyBuffer(b, () -> rb.append(new String(new char[rb.remaining() + 1])));
 
+        // 8266320
+        catchReadOnlyBuffer(b, () -> rb.put("x", 0, 1));
+
 #end[char]
 
         if (rb.getClass().getName().startsWith("java.nio.Heap")) {
