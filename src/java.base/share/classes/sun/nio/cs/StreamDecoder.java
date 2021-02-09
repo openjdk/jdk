@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,30 +189,6 @@ public class StreamDecoder extends Reader
         }
     }
 
-    public int read(CharBuffer target) throws IOException {
-        int len = target.remaining();
-        synchronized (lock) {
-            ensureOpen();
-            if (len == 0)
-                return 0;
-
-            int n = 0;
-
-            if (haveLeftoverChar) {
-                // Copy the leftover char into the buffer
-                target.put(leftoverChar);
-                len--;
-                haveLeftoverChar = false;
-                n = 1;
-                if ((len == 0) || !implReady())
-                    // Return now if this is all we can produce w/o blocking
-                    return n;
-            }
-
-            return n + implRead(target);
-        }
-    }
-
     public boolean ready() throws IOException {
         synchronized (lock) {
             ensureOpen();
@@ -346,57 +322,47 @@ public class StreamDecoder extends Reader
         assert (end - off > 1);
 
         CharBuffer cb = CharBuffer.wrap(cbuf, off, end - off);
-
-        return implRead(cb);
-    }
-
-    int implRead(CharBuffer cb) throws IOException {
-
-        // In order to handle surrogate pairs, this method requires that
-        // the invoker attempt to read at least two characters.  Saving the
-        // extra character, if any, at a higher level is easier than trying
-        // to deal with it here.
+        if (cb.position() != 0)
+        // Ensure that cb[0] == cbuf[off]
+        cb = cb.slice();
 
         boolean eof = false;
-        int initialPosition = cb.position();
-        int nread;
         for (;;) {
-            CoderResult cr = decoder.decode(bb, cb, eof);
-            nread = cb.position() - initialPosition;
-            if (cr.isUnderflow()) {
-                if (eof)
-                    break;
-                if (!cb.hasRemaining())
-                    break;
-                if ((nread > 0) && !inReady())
-                    break;          // Block at most once
-                int n = readBytes();
-                if (n < 0) {
-                    eof = true;
-                    if ((nread == 0) && (!bb.hasRemaining()))
-                        break;
-                    decoder.reset();
-                }
-                continue;
-            }
-            if (cr.isOverflow()) {
-                assert nread > 0;
+        CoderResult cr = decoder.decode(bb, cb, eof);
+        if (cr.isUnderflow()) {
+            if (eof)
                 break;
+            if (!cb.hasRemaining())
+                break;
+            if ((cb.position() > 0) && !inReady())
+                break;          // Block at most once
+            int n = readBytes();
+            if (n < 0) {
+                eof = true;
+                if ((cb.position() == 0) && (!bb.hasRemaining()))
+                    break;
+                decoder.reset();
             }
-            cr.throwException();
+            continue;
+        }
+        if (cr.isOverflow()) {
+            assert cb.position() > 0;
+            break;
+        }
+        cr.throwException();
         }
 
         if (eof) {
-            // ## Need to flush decoder
-            decoder.reset();
+        // ## Need to flush decoder
+        decoder.reset();
         }
 
-        if (nread == 0) {
+        if (cb.position() == 0) {
             if (eof)
                 return -1;
             assert false;
         }
-        return nread;
+        return cb.position();
     }
 
     String encodingName() {
