@@ -339,11 +339,8 @@ TEST_VM(VirtualSpace, disable_large_pages) {
   EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 10 * M, Commit));
 }
 
+
 // ========================= concurrent virtual space memory tests
-
-#define TEST_THREAD_COUNT 10 // TODO: update to original value of 30
-#define TEST_DURATION 15000 // milliSeconds
-
 // This class have been imported from the original "internal VM test" w/o modification
 class TestReservedSpace : AllStatic {
  public:
@@ -503,40 +500,76 @@ class TestReservedSpace : AllStatic {
 };
 
 
+class TestRunnable {
+public:
+  virtual void runUnitTest() {
+        tty->print_cr("ERROR: Should not be here !!!");
+  };
+};
+
+class ReservedSpaceRunnable : public TestRunnable {
+public:
+  void runUnitTest() {
+    tty->print(".");
+    TestReservedSpace::test_reserved_space();
+  }
+};
+
 class UnitTestThread : public JavaTestThread {
 public:
-  UnitTestThread(Semaphore* post) : JavaTestThread(post) {}
+  long testDuration;
+  TestRunnable* runnable;
+
+  UnitTestThread(TestRunnable* runnableArg, Semaphore* doneArg, long testDurationArg) : JavaTestThread(doneArg) {
+    runnable = runnableArg;
+    testDuration = testDurationArg;
+  }
   virtual ~UnitTestThread() {}
 
-  // Override JavaTestThread's main_run(), this is the code for thread to execute
   void main_run() {
-    // tty->print_cr("Starting test thread");
-    long stopTime = os::javaTimeMillis() + TEST_DURATION;
+    tty->print_cr("Starting test thread");
+    long stopTime = os::javaTimeMillis() + testDuration;
     while (os::javaTimeMillis() < stopTime) {
-      run_unit_test();
+      runnable->runUnitTest();
     }
+    tty->print_cr("Leaving test thread");
+  }
+};
+
+class ConcurrentTestRunner {
+public:
+  long testDurationMillis;
+  int nrOfThreads;
+  TestRunnable* unitTestRunnable;
+
+  ConcurrentTestRunner(TestRunnable* runnableArg, int nrOfThreadsArg, long testDurationMillisArg) {
+    unitTestRunnable = runnableArg;
+    nrOfThreads = nrOfThreadsArg;
+    testDurationMillis = testDurationMillisArg;
   }
 
-private:
-  void run_unit_test() {
-    TestReservedSpace::test_reserved_space();
+  virtual ~ConcurrentTestRunner() {}
+
+  void run() {
+    Semaphore done(0);
+
+    UnitTestThread* t[nrOfThreads];
+    for (int i = 0; i < nrOfThreads; i++) {
+      t[i] = new UnitTestThread(unitTestRunnable, &done, testDurationMillis);
+    }
+
+    for (int i = 0; i < nrOfThreads; i++) {
+      t[i]->doit();
+    }
+
+    for (int i = 0; i < nrOfThreads; i++) {
+      done.wait();
+    }
   }
 };
 
 
 TEST_VM(VirtualSpace, reserve_space_concurrent) {
-    Semaphore done(0);
-
-    UnitTestThread* st[TEST_THREAD_COUNT];
-    for (int i = 0; i < TEST_THREAD_COUNT; i++) {
-      st[i] = new UnitTestThread(&done);
-    }
-
-    for (int i = 0; i < TEST_THREAD_COUNT; i++) {
-      st[i]->doit();
-    }
-
-    for (int i = 0; i < TEST_THREAD_COUNT; i++) {
-      done.wait();
-    }
+  ConcurrentTestRunner testRunner(new ReservedSpaceRunnable(), 10, 15000); // TODO: update to original value of 30
+  testRunner.run();
 }
