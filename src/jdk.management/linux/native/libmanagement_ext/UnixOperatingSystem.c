@@ -63,7 +63,10 @@ static struct perfbuf {
 #define DEC_64 "%"SCNd64
 
 static void next_line(FILE *f) {
-    while (fgetc(f) != '\n');
+    int c;
+    do {
+        c = fgetc(f);
+    } while (c != '\n' && c != EOF);
 }
 
 /**
