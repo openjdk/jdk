@@ -107,8 +107,6 @@ serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 w
 
 # :hotspot_misc
 
-testlibrary_tests/ctw/JarDirTest.java 8258457 windows-all
-
 #############################################################################
 
 
