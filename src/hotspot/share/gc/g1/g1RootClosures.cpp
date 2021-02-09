@@ -50,10 +50,10 @@ public:
 // Closures used during concurrent start.
 // The treatment of "weak" roots is selectable through the template parameter,
 // this is usually used to control unloading of classes and interned strings.
-template <bool mark_weak>
+template <bool should_mark_weak>
 class G1ConcurrentStartMarkClosures : public G1EvacuationRootClosures {
   G1SharedClosures<true>        _strong;
-  G1SharedClosures<mark_weak>   _weak;
+  G1SharedClosures<should_mark_weak>   _weak;
 
 public:
   G1ConcurrentStartMarkClosures(G1CollectedHeap* g1h,
