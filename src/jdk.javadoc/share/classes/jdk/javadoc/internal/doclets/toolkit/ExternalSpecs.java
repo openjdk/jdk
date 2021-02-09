@@ -37,8 +37,41 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A class to manage an external file listing URLs and canonical titles for
+ * external specifications.
+ *
+ * In the file, blank lines are lines beginning with {@code #} areew ignored.
+ * Otherwise, lines must be of the form:
+ *
+ * <pre>{@code
+ *     URL title
+ * }</pre>
+ *
+ * where <i>URL</i> is the URL for the external specification, and
+ * <i>title</i> is the canonical title of the specification.
+ *
+ * <p>The URL may not contain a fragment ({@code #frag}) or query ({@code ?query}.
+ * It may be absolute or relative. The URL should end with {@code /} if it
+ * if the specification consists of a group of pages rooted at that URL.
+ *
+ * <p>The title must not be empty, plain text, and not contain any HTML or entities.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ */
 public class ExternalSpecs {
 
+    /**
+     * Reads a file containing a list of external specifications.
+     *
+     * @param file the file
+     * @param messages used to report any errors while reading the content of the file
+     * @return the contents of the file
+     * @throws IOException if an error occurs while accessing the file
+     */
     static ExternalSpecs read(Path file, Messages messages) throws IOException {
         ExternalSpecs sl = new ExternalSpecs();
         int lineNo = 0;
@@ -88,9 +121,27 @@ public class ExternalSpecs {
         }
     }
 
+    /**
+     * A map of the entries in the file whose URLs did not end with {@code /}.
+     */
     private final Map<URI, String> fileEntries = new HashMap<>();
+
+    /**
+     * A multi-map of the entries in the file whose URLs did end with {@code /}.
+     * The map is grouped by host name, to reduce the linear cost of searching
+     * for the best match for a given URL.
+     */
     private final Map<String, List<Entry>> dirEntries = new HashMap<>();
 
+    /**
+     * {@return the title of an external specification}
+     *
+     * The external specification is determined by looking up an exact
+     * match for an entry in the file that did not end with {@code /},
+     * or the longest match for an entry that did end with {@code /}.
+     *
+     * @param u the URL for the specification
+     */
     public String getTitle(URI u) {
         if (u.getQuery() != null || u.getFragment() != null) {
             try {
@@ -117,6 +168,14 @@ public class ExternalSpecs {
         return null;
     }
 
+    /**
+     * Adds a new entry to the collection.
+     * Entries that do not end with {@code /} are put in a simple hash map for direct lookup.
+     * Entries that end with {@code /} are put in a multi-map, indexed by host name.
+     *
+     * @param url   the URL
+     * @param title the title
+     */
     private void addEntry(URI url, String title) {
         Entry e = new Entry(url, title);
         if (!url.getPath().endsWith("/")) {
@@ -126,10 +185,14 @@ public class ExternalSpecs {
         }
     }
 
+    /**
+     * Sorts the directory entries first by length (longest first) and then by name.
+     * The sort by length ensures that we find the longest match first in {@link #getTitle(URI)}.
+     */
     private void sortDirEntries() {
         Comparator<Entry> c =
                 Comparator.comparing((Entry e) -> e.uri.getPath().length()).reversed()
                         .thenComparing(e -> e.uri.toString());
-        dirEntries.values().forEach(l -> Collections.sort(l, c));
+        dirEntries.values().forEach(l -> l.sort(c));
     }
 }
