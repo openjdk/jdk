@@ -149,12 +149,12 @@ public class TestMetadata extends JavadocTester {
         "constants-summary-page",
         "deprecated-list-page",
         "doc-file-page",
+        "external-specs-page",
         "help-page",
         "index-page",
         "index-redirect-page",
         "module-declaration-page",
         "module-index-page",
-        "other-specs-page",
         "package-declaration-page",
         "package-index-page",
         "package-tree-page",
@@ -216,12 +216,12 @@ public class TestMetadata extends JavadocTester {
             "ConstantsSummaryWriterImpl",
             "DeprecatedListWriter",
             "DocFileWriter",
+            "ExternalSpecsWriter",
             "HelpWriter",
             "IndexRedirectWriter",
             "IndexWriter",
             "ModuleIndexWriter",
             "ModuleWriterImpl",
-            "OtherSpecsWriter",
             "PackageIndexWriter",
             "PackageTreeWriter",
             "PackageUseWriter",
@@ -345,6 +345,10 @@ public class TestMetadata extends JavadocTester {
                 passed("no constraint for user-provided doc-files");
                 break;
 
+            case "ExternalSpecsWriter":
+                check(generator, content, content.startsWith("external specifications"));
+                break;
+
             case "HelpWriter":
                 check(generator, content, content.contains("help"));
                 break;
@@ -355,10 +359,6 @@ public class TestMetadata extends JavadocTester {
 
             case "IndexWriter":
                 check(generator, content, content.startsWith("index"));
-                break;
-
-            case "OtherSpecsWriter":
-                check(generator, content, content.startsWith("other specifications"));
                 break;
 
             case "PackageTreeWriter":

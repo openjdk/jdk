@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.net.URI;
@@ -36,6 +37,7 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SpecTree;
+
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -55,14 +57,14 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Generates the file with the summary of all the references to other specifications.
+ * Generates the file with the summary of all the references to external specifications.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class OtherSpecsWriter extends HtmlDocletWriter {
+public class ExternalSpecsWriter extends HtmlDocletWriter {
 
     private final Navigation navBar;
 
@@ -72,47 +74,47 @@ public class OtherSpecsWriter extends HtmlDocletWriter {
     final Map<Element, String> titles = new WeakHashMap<>();
 
     /**
-     * Constructs OtherSpecWriter object.
+     * Constructs ExternalSpecsWriter object.
      *
      * @param configuration The current configuration
      * @param filename Path to the file which is getting generated.
      */
-    public OtherSpecsWriter(HtmlConfiguration configuration, DocPath filename) {
+    public ExternalSpecsWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.OTHER_SPECS, path);
+        this.navBar = new Navigation(null, configuration, PageMode.EXTERNAL_SPECS, path);
     }
 
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        generate(configuration, DocPaths.OTHER_SPECS);
+        generate(configuration, DocPaths.EXTERNAL_SPECS);
     }
 
     private static void generate(HtmlConfiguration configuration, DocPath fileName) throws DocFileIOException {
-        boolean hasOtherSpecs = configuration.mainIndex != null
+        boolean hasExternalSpecs = configuration.mainIndex != null
                 && !configuration.mainIndex.getItems(DocTree.Kind.SPEC).isEmpty();
-        if (!hasOtherSpecs) {
+        if (!hasExternalSpecs) {
             return;
         }
-        OtherSpecsWriter otherSpecWriter = new OtherSpecsWriter(configuration, fileName);
-        otherSpecWriter.buildOtherSpecsPage();
-        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.OTHER_SPECS);
+        ExternalSpecsWriter w = new ExternalSpecsWriter(configuration, fileName);
+        w.buildExternalSpecsPage();
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.EXTERNAL_SPECS);
     }
 
     /**
-     * Prints all the "other specs" to the file.
+     * Prints all the "external specs" to the file.
      */
-    protected void buildOtherSpecsPage() throws DocFileIOException {
-        String title = resources.getText("doclet.Other_Specifications");
+    protected void buildExternalSpecsPage() throws DocFileIOException {
+        String title = resources.getText("doclet.External_Specifications");
         HtmlTree body = getBody(getWindowTitle(title));
         Content mainContent = new ContentBuilder();
-        addOtherSpecs(mainContent);
+        addExternalSpecs(mainContent);
         body.add(new BodyContents()
-                .setHeader(getHeader(PageMode.OTHER_SPECS))
+                .setHeader(getHeader(PageMode.EXTERNAL_SPECS))
                 .addMainContent(HtmlTree.DIV(HtmlStyle.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
-                                contents.getContent("doclet.Other_Specifications"))))
+                                contents.getContent("doclet.External_Specifications"))))
                 .addMainContent(mainContent)
                 .setFooter(getFooter()));
-        printHtmlDocument(null, "other specifications", body);
+        printHtmlDocument(null, "external specifications", body);
 
         if (configuration.mainIndex != null) {
             configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
@@ -120,15 +122,15 @@ public class OtherSpecsWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Adds all the references to other specifications to the content tree.
+     * Adds all the references to external specifications to the content tree.
      *
      * @param content HtmlTree content to which the links will be added
      */
-    protected void addOtherSpecs(Content content) {
-        Map<String, List<IndexItem>> searchIndexMap = groupOtherSpecs();
+    protected void addExternalSpecs(Content content) {
+        Map<String, List<IndexItem>> searchIndexMap = groupExternalSpecs();
         Content separator = new StringContent(", ");
         Table table = new Table(HtmlStyle.summaryTable)
-                .setCaption(contents.otherSpecifications)
+                .setCaption(contents.externalSpecifications)
                 .setHeader(new TableHeader(contents.specificationLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (Entry<String, List<IndexItem>> entry : searchIndexMap.entrySet()) {
@@ -145,7 +147,7 @@ public class OtherSpecsWriter extends HtmlDocletWriter {
         content.add(table);
     }
 
-    private Map<String, List<IndexItem>> groupOtherSpecs() {
+    private Map<String, List<IndexItem>> groupExternalSpecs() {
         return configuration.mainIndex.getItems(DocTree.Kind.SPEC).stream()
                 .collect(groupingBy(IndexItem::getLabel, TreeMap::new, toList()));
     }
@@ -184,7 +186,7 @@ public class OtherSpecsWriter extends HtmlDocletWriter {
         assert i.getDocTree().getKind() == DocTree.Kind.SPEC : i;
         SpecTree specTree = (SpecTree) i.getDocTree();
 
-        Content label = commentTagsToContent(specTree, i.getElement(), specTree.getLabel(), false);
+        Content label = new StringContent(i.getLabel());
 
         URI specURI;
         try {

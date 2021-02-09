@@ -70,6 +70,9 @@ public class DocPaths {
     /** The name of the file for the element list. */
     public static final DocPath ELEMENT_LIST = DocPath.create("element-list");
 
+    /** The name of the file for all references to external specifications. */
+    public static final DocPath EXTERNAL_SPECS = DocPath.create("external-specs.html");
+
     /** The name of the image file showing a magnifying glass on the search box. */
     public static final DocPath GLASS_IMG = DocPath.create("glass.png");
 
@@ -117,9 +120,6 @@ public class DocPaths {
 
     /** The name of the module search index js file. */
     public static final DocPath MODULE_SEARCH_INDEX_JS = DocPath.create("module-search-index.js");
-
-    /** The name of the file for all references to other specifications. */
-    public static final DocPath OTHER_SPECS = DocPath.create("other-specs.html");
 
     /** The name of the file for the overview summary. */
     public static final DocPath OVERVIEW_SUMMARY = DocPath.create("overview-summary.html");

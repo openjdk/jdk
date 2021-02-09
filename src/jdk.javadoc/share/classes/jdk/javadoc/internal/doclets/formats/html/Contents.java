@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
@@ -100,6 +99,7 @@ public class Contents {
     public final Content exception;
     public final Content exceptions;
     public final Content exportedTo;
+    public final Content externalSpecifications;
     public final Content fieldLabel;
     public final Content fieldDetailsLabel;
     public final Content fieldSummaryLabel;
@@ -143,7 +143,6 @@ public class Contents {
     public final Content noScriptMessage;
     public final Content openModuleLabel;
     public final Content openedTo;
-    public final Content otherSpecifications;
     public final Content overridesLabel;
     public final Content overviewLabel;
     public final Content packageHierarchies;
@@ -248,6 +247,7 @@ public class Contents {
         exception = getContent("doclet.Exception");
         exceptions = getContent("doclet.Exceptions");
         exportedTo = getContent("doclet.ExportedTo");
+        externalSpecifications = getContent("doclet.External_Specifications");
         fieldDetailsLabel = getContent("doclet.Field_Detail");
         fieldSummaryLabel = getContent("doclet.Field_Summary");
         fieldLabel = getContent("doclet.Field");
@@ -291,7 +291,6 @@ public class Contents {
         noScriptMessage = getContent("doclet.No_Script_Message");
         openedTo = getContent("doclet.OpenedTo");
         openModuleLabel = getContent("doclet.Open_Module");
-        otherSpecifications = getContent("doclet.Other_Specifications");
         overridesLabel = getContent("doclet.Overrides");
         overviewLabel = getContent("doclet.Overview");
         packageHierarchies = getContent("doclet.Package_Hierarchies");

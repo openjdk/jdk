@@ -249,7 +249,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createIndex()) {
-            OtherSpecsWriter.generate(configuration);
+            ExternalSpecsWriter.generate(configuration);
             SystemPropertiesWriter.generate(configuration);
             configuration.mainIndex.addElements();
             IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);

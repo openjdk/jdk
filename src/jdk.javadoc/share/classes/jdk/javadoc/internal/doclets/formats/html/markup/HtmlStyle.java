@@ -649,6 +649,11 @@ public enum HtmlStyle {
     docFilePage,
 
     /**
+     * The class of the {@code body} element for the "external specifications" page.
+     */
+    externalSpecsPage,
+
+    /**
      * The class of the {@code body} element for the "help" page.
      */
     helpPage,
@@ -672,11 +677,6 @@ public enum HtmlStyle {
      * The class of the {@code body} element for the module-index page.
      */
     moduleIndexPage,
-
-    /**
-     * The class of the {@code body} element for the other-specifications page.
-     */
-    otherSpecsPage,
 
     /**
      * The class of the {@code body} element for a package-declaration page.

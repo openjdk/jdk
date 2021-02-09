@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.toolkit;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -160,6 +161,8 @@ public abstract class BaseConfiguration {
      * The tracker of external package links.
      */
     public Extern extern;
+
+    public ExternalSpecs externalSpecs;
 
     public final Reporter reporter;
 
@@ -382,6 +385,15 @@ public abstract class BaseConfiguration {
         }
         if (!options.noPlatformLinks()) {
             extern.checkPlatformLinks(options.linkPlatformProperties(), reporter);
+        }
+        Path specListFile = options.specListFile();
+        if (specListFile != null) {
+            try {
+                externalSpecs = ExternalSpecs.read(specListFile, getMessages());
+            } catch (IOException e) {
+                getMessages().error("doclet.exception.read.file", specListFile, e);
+                return false;
+            }
         }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
         initTagletManager(options.customTagStrs());

@@ -81,12 +81,12 @@ public class TestSpecTag extends JavadocTester {
         checkOutput("p/C.html", true,
                 """
                     <dl class="notes">
-                    <dt>Other Specifications</dt>
+                    <dt>External Specifications</dt>
                     <dd><span id="label" class="search-tag-result">label</span></dd>
                     </dl>
                     """);
 
-        checkOutput("other-specs.html", true,
+        checkOutput("external-specs.html", true,
                 """
                     <div class="col-first even-row-color">label</div>
                     <div class="col-last even-row-color">
@@ -104,7 +104,7 @@ public class TestSpecTag extends JavadocTester {
                 "p");
         checkExit(Exit.OK);
 
-        checkOutput("other-specs.html", true,
+        checkOutput("external-specs.html", true,
                 """
                     <!-- ========= START OF TOP NAVBAR ======= -->
                     <div class="top-nav" id="navbar.top">
@@ -154,7 +154,7 @@ public class TestSpecTag extends JavadocTester {
         checkOutput("p/C.html", true,
                 """
                     <dl class="notes">
-                    <dt>Other Specifications</dt>
+                    <dt>External Specifications</dt>
                     <dd><a href="http://example.com/a+b"><span id="space:plus" class="search-tag-result">space: plus</span></a>,\s
                     <a href="http://example.com/a%20b"><span id="space:percent" class="search-tag-result">space: percent</span></a>,\s
                     <a href="http://example.com/a%C2%A7b"><span id="other:section;U+00A7,UTF-8c2a7" class="search-tag-result">other: section; U+00A7, UTF-8 c2 a7</span></a>,\s
@@ -162,7 +162,7 @@ public class TestSpecTag extends JavadocTester {
                     </dl>
                     """);
 
-        checkOutput("other-specs.html", true,
+        checkOutput("external-specs.html", true,
                 """
                     <div class="table-header col-first">Specification</div>
                     <div class="table-header col-last">Referenced In</div>
@@ -213,21 +213,21 @@ public class TestSpecTag extends JavadocTester {
         checkOrder("p/C.html",
                 "<h1 title=\"Class C\" class=\"title\">Class C</h1>",
                 """
-                    <dt>Other Specifications</dt>
+                    <dt>External Specifications</dt>
                     <dd><a href="http://example.com/"><span id="example" class="search-tag-result">example</span></a></dd>
                     """,
                 "<section class=\"field-details\" id=\"field.detail\">",
                 """
-                    <dt>Other Specifications</dt>
+                    <dt>External Specifications</dt>
                     <dd><a href="http://example.com/"><span id="example-1" class="search-tag-result">example</span></a></dd>
                     """,
                 "<section class=\"detail\" id=\"m()\">",
                 """
-                    <dt>Other Specifications</dt>
+                    <dt>External Specifications</dt>
                     <dd><a href="http://example.com/"><span id="example-2" class="search-tag-result">example</span></a></dd>
                     """);
 
-        checkOutput("other-specs.html", true,
+        checkOutput("external-specs.html", true,
                 """
                     <div class="col-first even-row-color"><a href="http://example.com/">example</a></div>
                     <div class="col-last even-row-color">
@@ -265,12 +265,12 @@ public class TestSpecTag extends JavadocTester {
                      Another reference: <a href="http://example.com/2"><span id="example-2" class="search-tag-result">example-2</span></a>.</div>
                     """,
                 """
-                    <dt>Other Specifications</dt>
+                    <dt>External Specifications</dt>
                     <dd><a href="http://example.com/3"><span id="example-3" class="search-tag-result">example-3</span></a>,\s
                     <a href="http://example.com/4"><span id="example-4" class="search-tag-result">example-4</span></a></dd>
                     """);
 
-        checkOutput("other-specs.html", true,
+        checkOutput("external-specs.html", true,
                 """
                     <div class="col-first even-row-color"><a href="http://example.com/1">example-1</a></div>
                     <div class="col-last even-row-color">
@@ -324,7 +324,7 @@ public class TestSpecTag extends JavadocTester {
                 checkOutput("p/C.html", true,
                         """
                             <dl class="notes">
-                            <dt>Other Specifications</dt>
+                            <dt>External Specifications</dt>
                             <dd><a href="http://example.com/#LK#"><span id="#LK#reference" \
                             class="search-tag-result">#LK# reference</span></a></dd>
                             </dl>"""
@@ -332,7 +332,7 @@ public class TestSpecTag extends JavadocTester {
 
         }
 
-        checkOutput("other-specs.html", true,
+        checkOutput("external-specs.html", true,
                 """
                         <div class="col-first even-row-color"><a href="http://example.com/#LK#">#LK# reference</a></div>
                         <div class="col-last even-row-color">

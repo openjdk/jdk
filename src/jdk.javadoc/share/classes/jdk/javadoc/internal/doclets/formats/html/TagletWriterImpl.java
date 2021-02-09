@@ -61,6 +61,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
+import jdk.javadoc.internal.doclets.toolkit.ExternalSpecs;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
 import jdk.javadoc.internal.doclets.toolkit.taglets.ParamTaglet;
@@ -330,38 +331,53 @@ public class TagletWriterImpl extends TagletWriter {
                 return body;
 
             return new ContentBuilder(
-                    HtmlTree.DT(contents.otherSpecifications),
+                    HtmlTree.DT(contents.externalSpecifications),
                     HtmlTree.DD(body));
         }
     }
 
     private Content specTagToContent(Element holder, SpecTree specTree) {
-        Content label = createAnchorAndSearchIndex(holder,
-                textOf(specTree.getLabel()),
-                htmlWriter.commentTagsToContent(specTree, holder, specTree.getLabel(), isFirstSentence),
-                resources.getText("doclet.Other_Specification"),
-                specTree);
+        Content label = htmlWriter.commentTagsToContent(specTree, holder, specTree.getLabel(), isFirstSentence);
         URI specURI;
+        String searchText = null;
         try {
             specURI = new URI(specTree.getURI().getBody());
+            ExternalSpecs extSpecs = configuration.externalSpecs;
+            if (extSpecs != null) {
+                searchText = extSpecs.getTitle(specURI);
+            }
         } catch (URISyntaxException e) {
             CommentHelper ch = utils.getCommentHelper(holder);
             DocTreePath dtp = ch.getDocTreePath(specTree);
             htmlWriter.messages.error(dtp, "doclet.Invalid_URI", e.getMessage());
-            return label;
+            specURI = null;
         }
 
-        if (!specURI.isAbsolute()) {
-            URI baseURI = configuration.getOptions().specBaseURI();
-            if (baseURI != null) {
-                if (!baseURI.isAbsolute() && !htmlWriter.pathToRoot.isEmpty()) {
-                    baseURI = URI.create(htmlWriter.pathToRoot.getPath() + "/").resolve(baseURI);
+        if (searchText == null) {
+            searchText = textOf(specTree.getLabel());
+        }
+
+        Content labelWithAnchor = createAnchorAndSearchIndex(holder,
+                searchText,
+                label,
+                resources.getText("doclet.External_Specification"),
+                specTree);
+
+        if (specURI == null) {
+            return labelWithAnchor;
+        } else {
+            if (!specURI.isAbsolute()) {
+                URI baseURI = configuration.getOptions().specBaseURI();
+                if (baseURI != null) {
+                    if (!baseURI.isAbsolute() && !htmlWriter.pathToRoot.isEmpty()) {
+                        baseURI = URI.create(htmlWriter.pathToRoot.getPath() + "/").resolve(baseURI);
+                    }
+                    specURI = baseURI.resolve(specURI);
                 }
-                specURI = baseURI.resolve(specURI);
             }
-        }
 
-        return HtmlTree.A(specURI, label);
+            return HtmlTree.A(specURI, labelWithAnchor);
+        }
     }
 
     @Override

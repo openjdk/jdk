@@ -74,14 +74,14 @@ public class TestConditionalPages extends JavadocTester {
     }
 
     @Test
-    public void testOtherSpecs(Path base) throws IOException {
+    public void testExternalSpecs(Path base) throws IOException {
         test(base, """
                 package p;
                 /** @spec http://example.com label. */
                 public class C {  }
                 """,
-                "other-specs.html",
-                b -> checkOutput("index-all.html", b, "Other&nbsp;Specifications"));
+                "external-specs.html",
+                b -> checkOutput("index-all.html", b, "External&nbsp;Specifications"));
     }
 
     @Test
