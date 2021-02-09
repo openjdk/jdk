@@ -187,11 +187,14 @@ public abstract class Reader implements Readable, Closeable {
         int nread;
         if (target.hasArray()) {
             char cbuf[] = target.array();
-            int off = target.arrayOffset() + target.position();
-            int len = target.remaining();
-            nread = this.read(cbuf, off, len);
+            int pos = target.position();
+            int rem = target.limit() - pos;
+            if (rem <= 0)
+                return -1;
+            int off = target.arrayOffset() + pos;
+            nread = this.read(cbuf, off, rem);
             if (nread > 0)
-                target.position(target.position() + nread);
+                target.position(pos + nread);
         } else {
             int remaining = target.remaining();
             char cbuf[] = new char[Math.min(remaining, TRANSFER_BUFFER_SIZE)];
