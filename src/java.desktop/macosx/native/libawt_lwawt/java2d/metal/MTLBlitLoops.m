@@ -23,8 +23,6 @@
  * questions.
  */
 
-#ifndef HEADLESS
-
 #include <jni.h>
 #include <jlong.h>
 
@@ -779,5 +777,3 @@ MTLBlitLoops_CopyArea(JNIEnv *env,
     // TODO:
     //  1. check rect bounds
 }
-
-#endif /* !HEADLESS */

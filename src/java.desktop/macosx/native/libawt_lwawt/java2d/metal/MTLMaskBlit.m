@@ -23,8 +23,6 @@
  * questions.
  */
 
-#ifndef HEADLESS
-
 #include <stdlib.h>
 #include <jlong.h>
 
@@ -70,5 +68,3 @@ MTLMaskBlit_MaskBlit(JNIEnv *env, MTLContext *mtlc, BMTLSDOps * dstOps,
     drawTex2Tex(mtlc, texBuff, dstOps->pTexture, JNI_FALSE, dstOps->isOpaque, 0,
                 0, 0, width, height, dstx, dsty, dstx + width, dsty + height);
 }
-
-#endif /* !HEADLESS */

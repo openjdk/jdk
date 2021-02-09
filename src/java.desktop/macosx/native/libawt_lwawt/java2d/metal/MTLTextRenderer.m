@@ -23,8 +23,6 @@
  * questions.
  */
 
-#ifndef HEADLESS
-
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>
@@ -894,5 +892,3 @@ Java_sun_java2d_metal_MTLTextRenderer_drawGlyphList
                                               images, JNI_ABORT);
     }
 }
-
-#endif /* !HEADLESS */

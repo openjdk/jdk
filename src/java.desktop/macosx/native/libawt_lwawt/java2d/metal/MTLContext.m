@@ -23,8 +23,6 @@
  * questions.
  */
 
-#ifndef HEADLESS
-
 #include <stdlib.h>
 
 #include "sun_java2d_SunGraphics2D.h"
@@ -439,5 +437,3 @@ extern void initSamplers(id<MTLDevice> device);
 }
 
 @end
-
-#endif /* !HEADLESS */

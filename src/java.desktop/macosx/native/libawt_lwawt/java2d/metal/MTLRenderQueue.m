@@ -23,8 +23,6 @@
  * questions.
  */
 
-#ifndef HEADLESS
-
 #include <stdlib.h>
 
 #include "sun_java2d_pipe_BufferedOpCodes.h"
@@ -947,5 +945,3 @@ void commitEncodedCommands() {
     [commandbuf commit];
     [commandbuf waitUntilCompleted];
 }
-
-#endif /* !HEADLESS */

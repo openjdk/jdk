@@ -23,8 +23,6 @@
  * questions.
  */
 
-#ifndef HEADLESS
-
 #include <jlong.h>
 
 #include "MTLBufImgOps.h"
@@ -223,5 +221,3 @@
 }
 
 @end
-
-#endif /* !HEADLESS */

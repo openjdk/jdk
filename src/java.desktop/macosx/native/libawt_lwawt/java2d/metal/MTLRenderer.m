@@ -23,8 +23,6 @@
  * questions.
  */
 
-#ifndef HEADLESS
-
 #include <jlong.h>
 #include <jni_util.h>
 #include <math.h>
@@ -954,4 +952,3 @@ MTLRenderer_DrawAAParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
                                         odx12, ody12);
     }
 }
-#endif /* !HEADLESS */

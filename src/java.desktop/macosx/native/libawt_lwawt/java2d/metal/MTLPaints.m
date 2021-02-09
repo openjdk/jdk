@@ -23,12 +23,8 @@
  * questions.
  */
 
-#ifndef HEADLESS
-
 #include "MTLPaints.h"
-
 #include "MTLClip.h"
-
 #include "common.h"
 
 #include "sun_java2d_SunGraphics2D.h"
@@ -991,4 +987,3 @@ static void setTxtUniforms(
 }
 
 @end
-#endif /* !HEADLESS */

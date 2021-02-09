@@ -23,8 +23,6 @@
  * questions.
  */
 
-#ifndef HEADLESS
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -316,5 +314,3 @@ MTLVertexCache_AddGlyphQuad(MTLContext *mtlc,
     MTLVC_ADD_TRIANGLES(tx1, ty1, tx2, ty2,
                         dx1, dy1, dx2, dy2);
 }
-
-#endif /* !HEADLESS */
