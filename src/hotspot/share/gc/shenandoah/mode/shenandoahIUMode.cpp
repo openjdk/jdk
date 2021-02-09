@@ -34,6 +34,12 @@
 #include "runtime/java.hpp"
 
 void ShenandoahIUMode::initialize_flags() const {
+  // See: https://bugs.openjdk.java.net/browse/JDK-8261341
+  if (FLAG_IS_CMDLINE(ClassUnloading) && ClassUnloading) {
+    log_warning(gc)("Shenandoah I-U mode forces -XX:-ClassUnloading, for decails, see https://bugs.openjdk.java.net/browse/JDK-8261341");
+  }
+  FLAG_SET_DEFAULT(ClassUnloading, false);
+
   if (ClassUnloading) {
     FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
