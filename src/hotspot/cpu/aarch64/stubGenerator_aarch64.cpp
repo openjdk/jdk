@@ -5586,7 +5586,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "atomic entry points");
 
-    __align(32);
+    __ align(32);
     aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r2, addr = c_rarg0, incr = c_rarg1;
@@ -5594,7 +5594,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(r0, prev);
       __ ret(lr);
     }
-    __align(32);
+    __ align(32);
     aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r2, addr = c_rarg0, incr = c_rarg1;
@@ -5602,7 +5602,7 @@ class StubGenerator: public StubCodeGenerator {
       __ movw(r0, prev);
       __ ret(lr);
     }
-    __align(32);
+    __ align(32);
     aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r2, addr = c_rarg0, newv = c_rarg1;
@@ -5610,7 +5610,7 @@ class StubGenerator: public StubCodeGenerator {
       __ movw(r0, prev);
       __ ret(lr);
     }
-    __align(32);
+    __ align(32);
     aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r2, addr = c_rarg0, newv = c_rarg1;
@@ -5618,7 +5618,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(r0, prev);
       __ ret(lr);
     }
-    __align(32);
+    __ align(32);
     aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
@@ -5630,7 +5630,7 @@ class StubGenerator: public StubCodeGenerator {
       __ movw(r0, prev);
       __ ret(lr);
     }
-    __align(32);
+    __ align(32);
     aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
@@ -5642,7 +5642,7 @@ class StubGenerator: public StubCodeGenerator {
       __ movw(r0, prev);
       __ ret(lr);
     }
-    __align(32);
+    __ align(32);
     aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
