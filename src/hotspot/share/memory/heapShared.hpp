@@ -102,7 +102,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   }
   void add_subgraph_entry_field(int static_field_offset, oop v,
                                 bool is_closed_archive);
-  void add_subgraph_object_klass(Klass *orig_k, Klass *relocated_k);
+  void add_subgraph_object_klass(Klass *orig_k);
   int num_subgraph_object_klasses() {
     return _subgraph_object_klasses == NULL ? 0 :
            _subgraph_object_klasses->length();
@@ -200,21 +200,19 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  static void check_closed_archive_heap_region_object(InstanceKlass* k,
-                                                      Thread* THREAD);
+  static void check_closed_archive_heap_region_object(InstanceKlass* k);
 
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        int num,
                                        bool is_closed_archive,
-                                       bool is_full_module_graph,
-                                       Thread* THREAD);
+                                       bool is_full_module_graph);
 
   // Archive object sub-graph starting from the given static field
   // in Klass k's mirror.
   static void archive_reachable_objects_from_static_field(
     InstanceKlass* k, const char* klass_name,
     int field_offset, const char* field_name,
-    bool is_closed_archive, TRAPS);
+    bool is_closed_archive);
 
   static void verify_subgraph_from_static_field(
     InstanceKlass* k, int field_offset) PRODUCT_RETURN;
@@ -276,13 +274,13 @@ private:
   static void copy_roots();
 
   static void resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                            int num, TRAPS);
-  static void resolve_classes_for_subgraph_of(Klass* k, TRAPS);
+                                            int num, Thread* THREAD);
+  static void resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD);
   static void clear_archived_roots_of(Klass* k);
   static const ArchivedKlassSubGraphInfoRecord*
                resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS);
   static void resolve_or_init(Klass* k, bool do_init, TRAPS);
-  static void init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphInfoRecord* record, TRAPS);
+  static void init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphInfoRecord* record);
  public:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {
@@ -298,9 +296,9 @@ private:
   }
 
   static oop find_archived_heap_object(oop obj);
-  static oop archive_heap_object(oop obj, Thread* THREAD);
+  static oop archive_heap_object(oop obj);
 
-  static void archive_klass_objects(Thread* THREAD);
+  static void archive_klass_objects();
 
   static void set_archive_heap_region_fixed() {
     _archive_heap_region_fixed = true;
@@ -317,8 +315,7 @@ private:
   static oop archive_reachable_objects_from(int level,
                                             KlassSubGraphInfo* subgraph_info,
                                             oop orig_obj,
-                                            bool is_closed_archive,
-                                            TRAPS);
+                                            bool is_closed_archive);
 
   static ResourceBitMap calculate_oopmap(MemRegion region);
   static void add_to_dumped_interned_strings(oop string);
@@ -388,8 +385,8 @@ private:
 
   inline static bool is_archived_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  static void resolve_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static void initialize_from_archived_subgraph(Klass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void resolve_classes(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  static void initialize_from_archived_subgraph(Klass* k, Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
 
   // NarrowOops stored in the CDS archive may use a different encoding scheme
   // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_regions_impl.
