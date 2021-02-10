@@ -304,7 +304,7 @@ void FileMapHeader::print(outputStream* st) {
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
   _type = non_existent_entry;
-  set_name(path, THREAD);
+  set_name(path, CHECK);
 }
 
 void SharedClassPathEntry::init(bool is_modules_image,
@@ -343,7 +343,7 @@ void SharedClassPathEntry::init(bool is_modules_image,
   // No need to save the name of the module file, as it will be computed at run time
   // to allow relocation of the JDK directory.
   const char* name = is_modules_image  ? "" : cpe->name();
-  set_name(name, THREAD);
+  set_name(name, CHECK);
 }
 
 void SharedClassPathEntry::set_name(const char* name, TRAPS) {
@@ -502,7 +502,7 @@ void FileMapInfo::allocate_shared_path_table(TRAPS) {
 
   assert(i == _shared_path_table.size(), "number of shared path entry mismatch");
 
-  copy_shared_path_table(loader_data, THREAD);
+  copy_shared_path_table(loader_data, CHECK);
 }
 
 int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {
@@ -2363,7 +2363,8 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   ClassFileStream* cfs = cpe->open_stream_for_loader(file_name, loader_data, THREAD);
-  assert(cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
+  assert(!HAS_PENDING_EXCEPTION &&
+         cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
   log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
                         cfs->source(), cfs->length());
   return cfs;

@@ -77,7 +77,7 @@ void ClassLoaderExt::setup_app_search_path(TRAPS) {
     trace_class_path("app loader class path (skipped)=", app_class_path);
   } else {
     trace_class_path("app loader class path=", app_class_path);
-    ClassLoader::setup_app_search_path(app_class_path, THREAD);
+    ClassLoader::setup_app_search_path(app_class_path, CHECK);
   }
 }
 
@@ -100,7 +100,7 @@ void ClassLoaderExt::setup_module_paths(TRAPS) {
                               ClassLoader::num_app_classpath_entries();
   Handle system_class_loader (THREAD, SystemDictionary::java_system_loader());
   ModuleEntryTable* met = Modules::get_module_entry_table(system_class_loader);
-  process_module_table(met, THREAD);
+  process_module_table(met, CHECK);
 }
 
 char* ClassLoaderExt::read_manifest(ClassPathEntry* entry, jint *manifest_size, bool clean_text, TRAPS) {
@@ -227,7 +227,7 @@ void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
 }
 
 void ClassLoaderExt::setup_search_paths(TRAPS) {
-  ClassLoaderExt::setup_app_search_path(THREAD);
+  ClassLoaderExt::setup_app_search_path(CHECK);
 }
 
 void ClassLoaderExt::record_result(const s2 classpath_index,

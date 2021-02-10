@@ -510,7 +510,7 @@ void ClassLoader::setup_bootstrap_search_path(TRAPS) {
   } else {
     trace_class_path("bootstrap loader class path=", sys_class_path);
   }
-  setup_bootstrap_search_path_impl(sys_class_path, THREAD);
+  setup_bootstrap_search_path_impl(sys_class_path, CHECK);
 }
 
 #if INCLUDE_CDS
@@ -867,7 +867,7 @@ void ClassLoader::add_to_app_classpath_entries(const char* path,
   }
 
   if (entry->is_jar_file()) {
-    ClassLoaderExt::process_jar_manifest(entry, check_for_duplicates, THREAD);
+    ClassLoaderExt::process_jar_manifest(entry, check_for_duplicates, CHECK);
   }
 #endif
 }
@@ -1416,7 +1416,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
                                                          ik->name()->utf8_length());
   assert(file_name != NULL, "invariant");
 
-  ClassLoaderExt::record_result(classpath_index, ik, THREAD);
+  ClassLoaderExt::record_result(classpath_index, ik, CHECK);
 }
 #endif // INCLUDE_CDS
 
@@ -1457,7 +1457,7 @@ void ClassLoader::initialize(TRAPS) {
   // lookup java library entry points
   load_java_library();
   // jimage library entry points are loaded below, in lookup_vm_options
-  setup_bootstrap_search_path(THREAD);
+  setup_bootstrap_search_path(CHECK);
 }
 
 char* lookup_vm_resource(JImageFile *jimage, const char *jimage_version, const char *path) {
@@ -1496,14 +1496,14 @@ char* ClassLoader::lookup_vm_options() {
 #if INCLUDE_CDS
 void ClassLoader::initialize_shared_path(TRAPS) {
   if (Arguments::is_dumping_archive()) {
-    ClassLoaderExt::setup_search_paths(THREAD);
+    ClassLoaderExt::setup_search_paths(CHECK);
   }
 }
 
 void ClassLoader::initialize_module_path(TRAPS) {
   if (Arguments::is_dumping_archive()) {
     ClassLoaderExt::setup_module_paths(CHECK);
-    FileMapInfo::allocate_shared_path_table(THREAD);
+    FileMapInfo::allocate_shared_path_table(CHECK);
   }
 }
 
