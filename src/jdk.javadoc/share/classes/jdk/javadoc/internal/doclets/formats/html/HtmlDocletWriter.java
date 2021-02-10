@@ -931,7 +931,7 @@ public class HtmlDocletWriter {
      */
     public Content getDocLink(LinkInfoImpl.Kind context, Element element, CharSequence label) {
         return getDocLink(context, utils.getEnclosingTypeElement(element), element,
-                new StringContent(label),null, false);
+                new StringContent(label), null, false);
     }
 
     /**
