@@ -39,9 +39,9 @@ public class TestNullClip {
 
         try {
             g2d.setClip(0, 0, 100, 100);
-	    Shape clip = g2d.getClip();
-	    g2d.setClip(null);
-	    Shape clip1 = g2d.getClip();
+            Shape clip = g2d.getClip();
+            g2d.setClip(null);
+            Shape clip1 = g2d.getClip();
 	    if (clip1 != null) {
                 throw new RuntimeException("Clip is not cleared");
 	    }
