@@ -5573,6 +5573,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+#ifdef LINUX
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
   //
   // If LSE is in use, generate LSE versions of all the stubs. The
@@ -5655,6 +5656,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ret(lr);
     }
   }
+#endif // LINUX
 
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
@@ -6792,6 +6794,8 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
 }
 
 
+#ifdef LINUX
+
 // Define pointers to atomic stubs and initialize them to point to the
 // code in atomic_aarch64.S.
 
@@ -6810,3 +6814,5 @@ DEFAULT_ATOMIC_OP(cmpxchg, 4)
 DEFAULT_ATOMIC_OP(cmpxchg, 8)
 
 #undef DEFAULT_ATOMIC_OP
+
+#endif // LINUX
