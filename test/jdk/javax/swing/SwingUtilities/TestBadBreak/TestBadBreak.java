@@ -40,7 +40,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
  * @bug 8015085 8079253
  * @summary Shortening via " ... " is broken for Strings containing a combining
  *          diaeresis.
- * @run main TestBadBreak
+ * @run main/othervm -Dsun.java2d.uiScale=1 TestBadBreak
  */
 public class TestBadBreak {
 
@@ -54,6 +54,7 @@ public class TestBadBreak {
         final BufferedImage bi1 = new BufferedImage(200, 90, TYPE_INT_ARGB);
         final BufferedImage bi2 = new BufferedImage(200, 90, TYPE_INT_ARGB);
         test(withCombiningDiaeresis, bi1);
+        robot.delay(1000);
         test(withoutCombiningDiaeresis, bi2);
         for (int x = 0; x < bi1.getWidth(); ++x) {
             for (int y = 0; y < bi1.getHeight(); ++y) {
@@ -83,11 +84,14 @@ public class TestBadBreak {
                 label.setOpaque(true);
                 frame.getContentPane().add(label);
                 frame.setBounds(200, 200, 200, 90);
+                frame.setUndecorated(true);
+                frame.setLocationRelativeTo(null);
             }
         });
         robot.waitForIdle();
         SwingUtilities.invokeAndWait(() -> frame.setVisible(true));
         robot.waitForIdle();
+        robot.delay(1000);
         SwingUtilities.invokeAndWait(frame::dispose);
         robot.waitForIdle();
     }
