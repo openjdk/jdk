@@ -39,13 +39,13 @@ package compiler.loopopts.superword;
 public class TestPickFirstMemoryState {
 
     static int iArrFld[] = new int[50];
-    
+
     static int test() {
         int x = 2;
         for (int i = 50; i > 9; i--) {
             // We create an AddI pack and a LoadI pack for the following loop. The StoreI pack gets filtered. When
             // finding the memory state for the load pack, we cannot pick the memory state from the last load as
-            // the stores (which are not vectorized) could interfere and be executed before the load pack (already 
+            // the stores (which are not vectorized) could interfere and be executed before the load pack (already
             // writing 'j' to iArrFld which is afterwards loaded by the load vector operation). This leads to a
             // wrong result for 'x'. We must take the memory state of the first load where we have not yet assigned
             // any new values ('j') to the iArrFld array.
@@ -59,7 +59,7 @@ public class TestPickFirstMemoryState {
 
         return x;
     }
-    
+
     static int test2() {
         int x = 2;
         int y = 3;
@@ -72,8 +72,8 @@ public class TestPickFirstMemoryState {
             reset();
         }
         return x;
-    } 
-        
+    }
+
     static int test3() {
         int x = 2;
         for (int i = 50; i > 9; i--) {
@@ -88,7 +88,7 @@ public class TestPickFirstMemoryState {
         }
         return x;
     }
-            
+
     static int test4() {
         int x = 2;
         long y = 3L;
@@ -102,7 +102,7 @@ public class TestPickFirstMemoryState {
         }
         return x;
     }
-    
+
     public static void main(String[] strArr) {
         for (int i = 0; i < 5000; i++) {
             reset();
@@ -124,7 +124,7 @@ public class TestPickFirstMemoryState {
             }
         }
     }
-    
+
     public static void reset() {
         for (int i = 0; i < iArrFld.length; i++) {
             iArrFld[i] = 5;
