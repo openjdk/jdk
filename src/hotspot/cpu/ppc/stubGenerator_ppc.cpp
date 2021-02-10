@@ -2763,27 +2763,24 @@ class StubGenerator: public StubCodeGenerator {
     __ vcipher         (vRet, vRet, vKey1);
     __ vcipherlast     (vRet, vRet, vKey2);
 
+#ifdef VM_LITTLE_ENDIAN
+    // Swap Bytes
+    // toPerm = 0x0F0E0D0C0B0A09080706050403020100
+    __ li(temp, 0);
+    __ vspltisb(vTmp1, 0xf);
+    __ lvsl(vTmp2, temp);
+    __ vxor(toPerm, vTmp1, vTmp2);
+
+    __ vperm(vRet, vRet, vRet, toPerm);
+#endif
+
     // store result (unaligned)
-#ifdef VM_LITTLE_ENDIAN
-    __ lvsl            (toPerm, to);
-#else
-    __ lvsr            (toPerm, to);
-#endif
-    __ vspltisb        (vTmp3, -1);
-    __ vspltisb        (vTmp4, 0);
-    __ lvx             (vTmp1, to);
-    __ lvx             (vTmp2, fifteen, to);
-#ifdef VM_LITTLE_ENDIAN
-    __ vperm           (vTmp3, vTmp3, vTmp4, toPerm); // generate select mask
-    __ vxor            (toPerm, toPerm, fSplt);       // swap bytes
-#else
-    __ vperm           (vTmp3, vTmp4, vTmp3, toPerm); // generate select mask
-#endif
-    __ vperm           (vTmp4, vRet, vRet, toPerm);   // rotate data
-    __ vsel            (vTmp2, vTmp4, vTmp2, vTmp3);
-    __ vsel            (vTmp1, vTmp1, vTmp4, vTmp3);
-    __ stvx            (vTmp2, fifteen, to);          // store this one first (may alias)
-    __ stvx            (vTmp1, to);
+    Register lo = temp, hi = fifteen; // Reuse
+    __ vsldoi          (vTmp1, vRet, vRet, 8);
+    __ mfvrd           (hi, vRet);
+    __ mfvrd           (lo, vTmp1);
+    __ std             (hi, 0 LITTLE_ENDIAN_ONLY(+ 8), to);
+    __ std             (lo, 0 BIG_ENDIAN_ONLY(+ 8), to);
 
     __ blr();
      return start;
@@ -3000,27 +2997,24 @@ class StubGenerator: public StubCodeGenerator {
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipherlast    (vRet, vRet, vKey5);
 
+#ifdef VM_LITTLE_ENDIAN
+    // Swap Bytes
+    // toPerm = 0x0F0E0D0C0B0A09080706050403020100
+    __ li(temp, 0);
+    __ vspltisb(vTmp1, 0xf);
+    __ lvsl(vTmp2, temp);
+    __ vxor(toPerm, vTmp1, vTmp2);
+
+    __ vperm(vRet, vRet, vRet, toPerm);
+#endif
+
     // store result (unaligned)
-#ifdef VM_LITTLE_ENDIAN
-    __ lvsl            (toPerm, to);
-#else
-    __ lvsr            (toPerm, to);
-#endif
-    __ vspltisb        (vTmp3, -1);
-    __ vspltisb        (vTmp4, 0);
-    __ lvx             (vTmp1, to);
-    __ lvx             (vTmp2, fifteen, to);
-#ifdef VM_LITTLE_ENDIAN
-    __ vperm           (vTmp3, vTmp3, vTmp4, toPerm); // generate select mask
-    __ vxor            (toPerm, toPerm, fSplt);       // swap bytes
-#else
-    __ vperm           (vTmp3, vTmp4, vTmp3, toPerm); // generate select mask
-#endif
-    __ vperm           (vTmp4, vRet, vRet, toPerm);   // rotate data
-    __ vsel            (vTmp2, vTmp4, vTmp2, vTmp3);
-    __ vsel            (vTmp1, vTmp1, vTmp4, vTmp3);
-    __ stvx            (vTmp2, fifteen, to);          // store this one first (may alias)
-    __ stvx            (vTmp1, to);
+    Register lo = temp, hi = fifteen; // Reuse
+    __ vsldoi          (vTmp1, vRet, vRet, 8);
+    __ mfvrd           (hi, vRet);
+    __ mfvrd           (lo, vTmp1);
+    __ std             (hi, 0 LITTLE_ENDIAN_ONLY(+ 8), to);
+    __ std             (lo, 0 BIG_ENDIAN_ONLY(+ 8), to);
 
     __ blr();
      return start;
