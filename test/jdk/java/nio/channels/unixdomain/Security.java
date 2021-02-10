@@ -162,6 +162,7 @@ public class Security {
 
     public static void testPolicy3() throws Exception {
         Path sock1 = Path.of("sock3");
+        Path sock2 = null;
         Files.deleteIfExists(sock1);
         final UnixDomainSocketAddress saddr = UnixDomainSocketAddress.of(sock1);
         try (var s1 = ServerSocketChannel.open(UNIX)) {
@@ -169,8 +170,7 @@ public class Security {
             try (var s2 = ServerSocketChannel.open(UNIX)) {
                 s2.bind(null);
                 var add2 = (UnixDomainSocketAddress)s2.getLocalAddress();
-                saddr.getPath().toFile().deleteOnExit();
-                add2.getPath().toFile().deleteOnExit();
+                sock2 = add2.getPath();
 
                 // Now set security manager and check if we can see addresses
 
@@ -194,6 +194,10 @@ public class Security {
                     throw new RuntimeException("address should have been empty");
                 }
             }
+        } finally {
+            System.setSecurityManager(null);
+            Files.deleteIfExists(sock1);
+            Files.deleteIfExists(sock2);
         }
     }
 }

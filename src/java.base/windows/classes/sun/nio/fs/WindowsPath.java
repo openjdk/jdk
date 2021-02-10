@@ -834,14 +834,13 @@ class WindowsPath implements Path {
         try {
             return openFileForReadAttributeAccess(flags);
         } catch (WindowsException e) {
-            if (!followLinks || e.lastError() != ERROR_CANT_ACCESS_FILE)
-                throw e;
-            // Object could be a Unix domain socket
-            try {
-                return openSocketForReadAttributeAccess();
-            } catch (WindowsException ignore) {
-                throw e;
+            if (followLinks && e.lastError() == ERROR_CANT_ACCESS_FILE) {
+                // Object could be a Unix domain socket
+                try {
+                    return openSocketForReadAttributeAccess();
+                } catch (WindowsException ignore) {}
             }
+            throw e;
         }
     }
 
