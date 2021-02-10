@@ -28,7 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-static unsigned calculate_hash(address stack[NMT_TrackingStackDepth]) {
+static unsigned int calculate_hash(address stack[NMT_TrackingStackDepth]) {
   uintptr_t hash = 0;
   for (int i = 0; i < NMT_TrackingStackDepth; i++) {
     hash += (uintptr_t)stack[i];
