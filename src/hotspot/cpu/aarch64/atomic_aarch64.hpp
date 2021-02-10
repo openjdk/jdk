@@ -25,7 +25,7 @@
 #define CPU_AARCH64_ATOMIC_AARCH64_HPP
 
 // Atomic stub implementation.
-// Default implementations are in atomic_aarch64.S
+// Default implementations are in atomic_linux_aarch64.S
 //
 // All stubs pass arguments the same way
 // x0: src/dest address

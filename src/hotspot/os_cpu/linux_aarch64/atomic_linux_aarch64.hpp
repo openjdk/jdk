@@ -26,29 +26,10 @@
 #ifndef OS_CPU_LINUX_AARCH64_ATOMIC_LINUX_AARCH64_HPP
 #define OS_CPU_LINUX_AARCH64_ATOMIC_LINUX_AARCH64_HPP
 
-#include "runtime/vm_version.hpp"
 #include "atomic_aarch64.hpp"
+#include "runtime/vm_version.hpp"
 
 // Implementation of class atomic
-
-// Atomic stub implementation.
-// Default implementations are in atomic_aarch64.S
-//
-// All stubs pass arguments the same way
-// x0: src/dest address
-// x1: arg1
-// x2: arg2 (optional)
-// x3, x8, x9: scratch
-typedef uint64_t (*aarch64_atomic_stub_t)(volatile void *ptr, uint64_t arg1, uint64_t arg2);
-
-// Pointers to stubs
-extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_4_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_8_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_xchg_4_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_xchg_8_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_1_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_4_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_8_impl;
 
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
