@@ -573,7 +573,6 @@ static void delay_box_in_uncommon_trap(CallNode* call, Node* resproj) {
     if (no_use) {
       GraphKit kit(call->jvms());
       PhaseGVN& gvn = kit.gvn();
-
       // delay box node in uncommon_trap runtime, treat box as a scalarized object
       while (uncommon_trap_list.size() > 0) {
         ProjNode* res = resproj->as_Proj();
