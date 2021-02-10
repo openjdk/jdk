@@ -2691,7 +2691,7 @@ public:
      */                                                                 \
     assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");           \
     if (shift == 0) {                                                   \
-      bool accumulate = opc2 & 0b100;                                   \
+      bool accumulate = (opc2 & 0b100 != 0);                            \
       if (accumulate && isSHR) {                                        \
         f(0, 31), f((int)T & 1, 30), f(0b001110, 29, 24);               \
         f((int)T >> 1, 23, 22), f(1, 21), rf(Vd, 16);                   \
