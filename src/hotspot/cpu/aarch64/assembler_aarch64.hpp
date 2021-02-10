@@ -2684,12 +2684,19 @@ public:
      *   01xx xxx       2S/4S,  shift = UInt(immh:immb) - 32            \
      *   1xxx xxx       1D/2D,  shift = UInt(immh:immb) - 64            \
      *   (1D is RESERVED)                                               \
+     *                                                                  \
+     * If shift is zero, an 'orr', actually a 'mov', is generated.      \
      */                                                                 \
     assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");           \
-    int cVal = (1 << (((T >> 1) + 3) + (isSHR ? 1 : 0)));               \
-    int encodedShift = isSHR ? cVal - shift : cVal + shift;             \
-    f(0, 31), f(T & 1, 30), f(opc, 29), f(0b011110, 28, 23),            \
-    f(encodedShift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0);     \
+    if (shift == 0) {                                                   \
+      f(0, 31), f(T & 1, 30), f(0b001110101, 29, 21);                   \
+      rf(Vn, 16), f(0b000111, 15, 10), rf(Vn, 5), rf(Vd, 0);            \
+    } else {                                                            \
+      int cVal = (1 << (((T >> 1) + 3) + (isSHR ? 1 : 0)));             \
+      int encodedShift = isSHR ? cVal - shift : cVal + shift;           \
+      f(0, 31), f(T & 1, 30), f(opc, 29), f(0b011110, 28, 23),          \
+      f(encodedShift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0);   \
+    }                                                                   \
   }
 
   INSN(shl,  0, 0b010101, /* isSHR = */ false);
