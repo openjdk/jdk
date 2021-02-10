@@ -38,6 +38,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -488,7 +489,7 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
     // an accurate hint suggesting the depth of the stack walk, and 2) we are not just
     // peeking  at a few frames. Take the cost of flushing out any pending deferred GC
     // processing of the stack.
-    StackWatermarkSet::finish_processing(jt, NULL /* context */, StackWatermarkKind::gc);
+    KeepStackGCProcessedMark keep_stack(jt);
     stream.next(); // advance past the last frame decoded in previous batch
     if (!stream.at_end()) {
       int n = fill_in_frames(mode, stream, frame_count, start_index,
