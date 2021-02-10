@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -779,6 +779,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
             boolean isBold = false;
             boolean isDashed = true;
+            boolean isVisible = true;
 
             for (Connection c : connectionList) {
 
@@ -788,6 +789,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
                 if (c.getStyle() != Connection.ConnectionStyle.DASHED) {
                     isDashed = false;
+                }
+
+                if (c.getStyle() == Connection.ConnectionStyle.INVISIBLE) {
+                    isVisible = false;
                 }
             }
 
@@ -804,6 +809,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
                     curAnimator = null;
                 }
                 LineWidget w = new LineWidget(this, s, connectionList, p1, p2, predecessor, curAnimator, isBold, isDashed);
+                w.setVisible(isVisible);
                 lineCache.add(curPair);
 
                 newPredecessor = w;
