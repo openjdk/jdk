@@ -183,8 +183,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     protected void addSummaryLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element member,
             Content tdSummary) {
-        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                writer.getDocLink(context, typeElement , member, name(member)));
+        Content memberLink = writer.getDocLink(context, typeElement , member, name(member),
+                HtmlStyle.memberNameLink);
         Content code = HtmlTree.CODE(memberLink);
         tdSummary.add(code);
     }
@@ -192,7 +192,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     protected void addInheritedSummaryLink(TypeElement typeElement, Element member, Content linksTree) {
         linksTree.add(
-                writer.getDocLink(LinkInfoImpl.Kind.MEMBER, typeElement, member, name(member)));
+                writer.getDocLink(LinkInfoImpl.Kind.MEMBER, typeElement, member, name(member), null));
     }
 
     @Override

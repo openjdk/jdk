@@ -66,10 +66,10 @@ public class TestTypeParameters extends JavadocTester {
 
         checkOutput("pkg/class-use/Foo4.html", true,
                 """
-                    <a href="../ClassUseTest3.html" title="class in pkg">ClassUseTest3</a>&lt;T exte\
-                    nds <a href="../ParamTest2.html" title="class in pkg">ParamTest2</a>&lt;java.uti\
-                    l.List&lt;? extends <a href="../Foo4.html" title="class in pkg">Foo4</a>&gt;&gt;\
-                    &gt;""");
+                    <a href="../ClassUseTest3.html" class="type-name-link" title="class in pkg">Clas\
+                    sUseTest3</a>&lt;T extends <a href="../ParamTest2.html" title="class in pkg">Par\
+                    amTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html" title="class i\
+                    n pkg">Foo4</a>&gt;&gt;&gt;""");
 
         // Nested type parameters
         checkOutput("pkg/C.html", true,

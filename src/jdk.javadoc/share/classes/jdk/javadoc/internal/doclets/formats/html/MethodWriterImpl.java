@@ -154,7 +154,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                         holder, method,
                         utils.isIncluded(holder)
                                 ? utils.getSimpleName(holder)
-                                : utils.getFullyQualifiedName(holder));
+                                : utils.getFullyQualifiedName(holder),
+                        null);
                 Content codeLink = HtmlTree.CODE(link);
                 Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel,
                         utils.isClass(holder)

@@ -159,8 +159,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     @Override
     protected void addSummaryLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element member,
             Content tdSummary) {
-        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                writer.getDocLink(context, member, name(member)));
+        Content memberLink = writer.getDocLink(context, utils.getEnclosingTypeElement(member), member,
+                name(member), HtmlStyle.memberNameLink);
         Content code = HtmlTree.CODE(memberLink);
         tdSummary.add(code);
     }

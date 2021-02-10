@@ -775,12 +775,12 @@ public class HtmlDocletWriter {
      * @param refMemName the name of the member being referenced.  This should
      * be null or empty string if no member is being referenced.
      * @param label the label for the external link.
-     * @param strong true if the link should be strong.
+     * @param style optional style for the link.
      * @param code true if the label should be code font.
      * @return the link
      */
     public Content getCrossClassLink(TypeElement classElement, String refMemName,
-                                    Content label, boolean strong, boolean code) {
+                                    Content label, HtmlStyle style, boolean code) {
         if (classElement != null) {
             String className = utils.getSimpleName(classElement);
             PackageElement packageElement = utils.containingPackage(classElement);
@@ -798,8 +798,7 @@ public class HtmlDocletWriter {
                 DocLink link = configuration.extern.getExternalLink(packageElement, pathToRoot,
                                 className + ".html", refMemName);
                 return links.createLink(link,
-                    (label == null) || label.isEmpty() ? defaultLabel : label,
-                    strong,
+                    (label == null) || label.isEmpty() ? defaultLabel : label, style,
                     resources.getText("doclet.Href_Class_Or_Interface_Title",
                         utils.getPackageName(packageElement)), true);
             }
@@ -844,7 +843,7 @@ public class HtmlDocletWriter {
      * @param contentTree the content tree to which the link will be added
      */
     public void addPreQualifiedClassLink(LinkInfoImpl.Kind context, TypeElement typeElement, Content contentTree) {
-        addPreQualifiedClassLink(context, typeElement, false, contentTree);
+        addPreQualifiedClassLink(context, typeElement, null, contentTree);
     }
 
     /**
@@ -873,18 +872,18 @@ public class HtmlDocletWriter {
      *
      * @param context the id of the context where the link will be added
      * @param typeElement the class to link to
-     * @param isStrong true if the link should be strong
+     * @param style optional style for the link
      * @param contentTree the content tree to which the link with be added
      */
     public void addPreQualifiedClassLink(LinkInfoImpl.Kind context,
-            TypeElement typeElement, boolean isStrong, Content contentTree) {
+            TypeElement typeElement, HtmlStyle style, Content contentTree) {
         PackageElement pkg = utils.containingPackage(typeElement);
         if(pkg != null && ! configuration.shouldExcludeQualifier(pkg.getSimpleName().toString())) {
             contentTree.add(getEnclosingPackageName(typeElement));
         }
         LinkInfoImpl linkinfo = new LinkInfoImpl(configuration, context, typeElement)
                 .label(utils.getSimpleName(typeElement))
-                .strong(isStrong);
+                .style(style);
         Content link = getLink(linkinfo);
         contentTree.add(link);
     }
@@ -919,7 +918,7 @@ public class HtmlDocletWriter {
      * @param contentTree the content tree to which the link with be added
      */
     public void addPreQualifiedStrongClassLink(LinkInfoImpl.Kind context, TypeElement typeElement, Content contentTree) {
-        addPreQualifiedClassLink(context, typeElement, true, contentTree);
+        addPreQualifiedClassLink(context, typeElement, HtmlStyle.typeNameLink, contentTree);
     }
 
     /**
@@ -932,7 +931,7 @@ public class HtmlDocletWriter {
      */
     public Content getDocLink(LinkInfoImpl.Kind context, Element element, CharSequence label) {
         return getDocLink(context, utils.getEnclosingTypeElement(element), element,
-                new StringContent(label), false);
+                new StringContent(label),null, false);
     }
 
     /**
@@ -944,11 +943,12 @@ public class HtmlDocletWriter {
      *            inheriting comments.
      * @param element the member being linked to.
      * @param label the label for the link.
+     * @param style optional style for the link.
      * @return the link for the given member.
      */
     public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
-                              CharSequence label) {
-        return getDocLink(context, typeElement, element, label, false);
+                              CharSequence label, HtmlStyle style) {
+        return getDocLink(context, typeElement, element, new StringContent(label), style, false);
     }
 
     /**
@@ -964,7 +964,7 @@ public class HtmlDocletWriter {
      */
     public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
                               CharSequence label, boolean isProperty) {
-        return getDocLink(context, typeElement, element, new StringContent(label), isProperty);
+        return getDocLink(context, typeElement, element, new StringContent(label), null, isProperty);
     }
 
     /**
@@ -976,11 +976,12 @@ public class HtmlDocletWriter {
      *            inheriting comments.
      * @param element the member being linked to.
      * @param label the label for the link.
+     * @param style optional style to use for the link.
      * @param isProperty true if the element parameter is a JavaFX property.
      * @return the link for the given member.
      */
     public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
-            Content label, boolean isProperty) {
+            Content label, HtmlStyle style, boolean isProperty) {
         if (!utils.isLinkable(typeElement, element)) {
             return label;
         }
@@ -991,6 +992,7 @@ public class HtmlDocletWriter {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(id.name())
+                .style(style)
                 .targetMember(element));
         }
 
@@ -998,6 +1000,7 @@ public class HtmlDocletWriter {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(element.getSimpleName().toString())
+                .style(style)
                 .targetMember(element));
         }
 
@@ -1133,7 +1136,7 @@ public class HtmlDocletWriter {
             text = plainOrCode(kind == LINK_PLAIN, new StringContent(refMemName));
 
             return getDocLink(LinkInfoImpl.Kind.SEE_TAG, containing,
-                    refMem, (label.isEmpty() ? text: label), false);
+                    refMem, (label.isEmpty() ? text: label), null, false);
         }
     }
 

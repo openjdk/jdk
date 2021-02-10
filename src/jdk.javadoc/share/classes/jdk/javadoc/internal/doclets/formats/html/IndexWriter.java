@@ -215,7 +215,7 @@ public class IndexWriter extends HtmlDocletWriter {
             case ANNOTATION_TYPE:
             case INTERFACE:
                 dt = HtmlTree.DT(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.INDEX, (TypeElement) element).strong(true)));
+                        LinkInfoImpl.Kind.INDEX, (TypeElement) element).style(HtmlStyle.typeNameLink)));
                 dt.add(" - ");
                 addClassInfo((TypeElement) element, dt);
                 break;
@@ -225,9 +225,8 @@ public class IndexWriter extends HtmlDocletWriter {
             case FIELD:
             case ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
-                dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                        getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element,
-                                new StringContent(label), false)));
+                dt = HtmlTree.DT(getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element,
+                                label, HtmlStyle.memberNameLink));
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
                 break;
@@ -340,7 +339,7 @@ public class IndexWriter extends HtmlDocletWriter {
         };
         contentTree.add(contents.getContent(resource, kindName)).add(" ");
         addPreQualifiedClassLink(LinkInfoImpl.Kind.INDEX, enclosing,
-                false, contentTree);
+                null, contentTree);
     }
 
     /**

@@ -50,33 +50,33 @@ public class TestSummaryTag extends JavadocTester {
         checkOutput("index-all.html", true,
             """
                 <dl class="index">
-                <dt><span class="member-name-link"><a href="p1/A.html#m()">m()</a></span> - Meth\
-                od in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dt><a href="p1/A.html#m()" class="member-name-link">m()</a> - Method in class p1.<a\
+                 href="p1/A.html" title="class in p1">A</a></dt>
                 <dd>
                 <div class="block">First sentence</div>
                 </dd>
-                <dt><span class="member-name-link"><a href="p1/B.html#m()">m()</a></span> - Meth\
-                od in class p1.<a href="p1/B.html" title="class in p1">B</a></dt>
+                <dt><a href="p1/B.html#m()" class="member-name-link">m()</a> - Method in class p1.<a\
+                 href="p1/B.html" title="class in p1">B</a></dt>
                 <dd>
                 <div class="block">First sentence</div>
                 </dd>
-                <dt><span class="member-name-link"><a href="p1/A.html#m1()">m1()</a></span> - Me\
-                thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dt><a href="p1/A.html#m1()" class="member-name-link">m1()</a> - Method in class p1.\
+                <a href="p1/A.html" title="class in p1">A</a></dt>
                 <dd>
                 <div class="block"> First sentence </div>
                 </dd>
-                <dt><span class="member-name-link"><a href="p1/A.html#m2()">m2()</a></span> - Me\
-                thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dt><a href="p1/A.html#m2()" class="member-name-link">m2()</a> - Method in class p1.\
+                <a href="p1/A.html" title="class in p1">A</a></dt>
                 <dd>
                 <div class="block">Some html &lt;foo&gt; &nbsp; codes</div>
                 </dd>
-                <dt><span class="member-name-link"><a href="p1/A.html#m3()">m3()</a></span> - Me\
-                thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dt><a href="p1/A.html#m3()" class="member-name-link">m3()</a> - Method in class p1.\
+                <a href="p1/A.html" title="class in p1">A</a></dt>
                 <dd>
                 <div class="block">First sentence </div>
                 </dd>
-                <dt><span class="member-name-link"><a href="p1/A.html#m4()">m4()</a></span> - Me\
-                thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dt><a href="p1/A.html#m4()" class="member-name-link">m4()</a> - Method in class p1.\
+                <a href="p1/A.html" title="class in p1">A</a></dt>
                 <dd>
                 <div class="block">First sentence i.e. the first sentence</div>
                 </dd>

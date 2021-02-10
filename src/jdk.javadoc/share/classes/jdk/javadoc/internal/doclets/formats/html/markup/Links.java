@@ -85,7 +85,7 @@ public class Links {
      * @return a content tree for the link
      */
     public Content createLink(DocPath path, String label) {
-        return createLink(path, new StringContent(label), false, "");
+        return createLink(path, new StringContent(label), null, "");
     }
 
     /**
@@ -106,12 +106,12 @@ public class Links {
      *
      * @param path      the path for the link
      * @param label     the content for the link
-     * @param strong    whether to wrap the {@code label} in a SPAN element
+     * @param style     optional style for the link
      * @param title     the title for the link
      * @return a content tree for the link
      */
-    public Content createLink(DocPath path, Content label, boolean strong, String title) {
-        return createLink(new DocLink(path), label, strong, title);
+    public Content createLink(DocPath path, Content label, HtmlStyle style, String title) {
+        return createLink(new DocLink(path), label, style, title);
     }
 
     /**
@@ -160,13 +160,13 @@ public class Links {
      *
      * @param link      the details for the link
      * @param label     the content for the link
-     * @param strong    whether to wrap the {@code label} in a SPAN element
+     * @param style    whether to wrap the {@code label} in a SPAN element
      * @param title     the title for the link
      * @return a content tree for the link
      */
-    public Content createLink(DocLink link, Content label, boolean strong,
+    public Content createLink(DocLink link, Content label, HtmlStyle style,
                               String title) {
-        return createLink(link, label, strong, title, false);
+        return createLink(link, label, style, title, false);
     }
 
     /**
@@ -176,23 +176,23 @@ public class Links {
      *
      * @param link       the details for the link
      * @param label      the content for the link
-     * @param strong     whether to wrap the {@code label} in a SPAN element
+     * @param style      optional style for the link
      * @param title      the title for the link
      * @param isExternal is the link external to the generated documentation
      * @return a content tree for the link
      */
-    public Content createLink(DocLink link, Content label, boolean strong,
+    public Content createLink(DocLink link, Content label, HtmlStyle style,
                               String title, boolean isExternal) {
-        Content body = label;
-        if (strong) {
-            body = HtmlTree.SPAN(HtmlStyle.typeNameLink, body);
+        HtmlTree l = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
+        if (style != null) {
+            l.setStyle(style);
         }
-        HtmlTree l = HtmlTree.A(link.relativizeAgainst(file).toString(), body);
         if (title != null && title.length() != 0) {
             l.put(HtmlAttr.TITLE, title);
         }
         if (isExternal) {
-            l.setStyle(HtmlStyle.externalLink);
+            // Use addStyle as external links might have an explicit style set above as well.
+            l.addStyle(HtmlStyle.externalLink);
         }
         return l;
     }

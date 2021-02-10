@@ -31,6 +31,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -241,6 +242,11 @@ public class LinkInfoImpl extends LinkInfo {
      */
     public Element targetMember;
 
+    /**
+     * Optional style for the link.
+     */
+    public HtmlStyle style = null;
+
     public final Utils utils;
 
     /**
@@ -308,10 +314,10 @@ public class LinkInfoImpl extends LinkInfo {
     }
 
     /**
-     * Set whether or not the link should be strong.
+     * Sets the style to be used for the link.
      */
-    public LinkInfoImpl strong(boolean strong) {
-        this.isStrong = strong;
+    public LinkInfoImpl style(HtmlStyle style) {
+        this.style = style;
         return this;
     }
 
@@ -433,6 +439,7 @@ public class LinkInfoImpl extends LinkInfo {
         return "LinkInfoImpl{" +
                 "context=" + context +
                 ", where=" + where +
+                ", style=" + style +
                 super.toString() + '}';
     }
 }

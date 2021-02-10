@@ -136,8 +136,8 @@ public class TestInterface extends JavadocTester {
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
                     ab1 method-summary-table-tab4"><code>static void</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
-                    tab1 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m\
-                    ()">m</a></span>()</code></div>
+                    tab1 method-summary-table-tab4"><code><a href="#m()" class="member-name-link">m<\
+                    /a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b1 method-summary-table-tab4">
                     <div class="block">A hider method</div>

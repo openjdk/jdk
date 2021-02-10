@@ -55,24 +55,23 @@ public class TestMemberSummary extends JavadocTester {
                 """
                     <code><a href="PublicChild.html" title="class in pkg">PublicChild</a></code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
-                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#return\
-                    TypeTest()">returnTypeTest</a></span>()</code></div>""",
+                    tab2 method-summary-table-tab4"><code><a href="#returnTypeTest()" class="member-\
+                    name-link">returnTypeTest</a>()</code></div>""",
                 // Check return type in member detail.
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type"><a href="PublicChild.html" title="class in pkg">PublicChild</\
                     a></span>&nbsp;<span class="element-name">returnTypeTest</span>()</div>""",
                 """
-                    <div class="col-constructor-name even-row-color"><code><span class="member-name-link"\
-                    ><a href="#%3Cinit%3E()">PublicChild</a></span>()</code></div>
+                    <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E()" c\
+                    lass="member-name-link">PublicChild</a>()</code></div>
                     <div class="col-last even-row-color">&nbsp;</div>""");
 
         checkOutput("pkg/PrivateParent.html", true,
                 """
                     <div class="col-first even-row-color"><code>private </code></div>
-                    <div class="col-constructor-name even-row-color"><code><span class="member-name-link"\
-                    ><a href="#%3Cinit%3E(int)">PrivateParent</a></span>&#8203;(int&nbsp;i)</code></\
-                    div>""");
+                    <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(int)\
+                    " class="member-name-link">PrivateParent</a>&#8203;(int&nbsp;i)</code></div>""");
 
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,

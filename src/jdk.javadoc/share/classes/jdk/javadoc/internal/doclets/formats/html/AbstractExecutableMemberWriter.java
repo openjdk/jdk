@@ -96,7 +96,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         content.add(signature);
 
         return writer.getDocLink(MEMBER_DEPRECATED_PREVIEW, utils.getEnclosingTypeElement(member),
-                member, content, false);
+                member, content, null, false);
     }
 
     /**
@@ -111,8 +111,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addSummaryLink(LinkInfoImpl.Kind context, TypeElement te, Element member,
             Content tdSummary) {
         ExecutableElement ee = (ExecutableElement)member;
-        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                writer.getDocLink(context, te, ee, name(ee)));
+        Content memberLink = writer.getDocLink(context, te, ee, name(ee), HtmlStyle.memberNameLink);
         Content code = HtmlTree.CODE(memberLink);
         addParameters(ee, code);
         tdSummary.add(code);
@@ -127,7 +126,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     @Override
     protected void addInheritedSummaryLink(TypeElement te, Element member, Content linksTree) {
-        linksTree.add(writer.getDocLink(MEMBER, te, member, name(member)));
+        linksTree.add(writer.getDocLink(MEMBER, te, member, name(member), null));
     }
 
     /**

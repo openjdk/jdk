@@ -112,7 +112,7 @@ public class LinkFactoryImpl extends LinkFactory {
                         link.add(m_writer.links.createLink(
                                 filename.fragment(classLinkInfo.where),
                                 label,
-                                classLinkInfo.isStrong,
+                                classLinkInfo.style,
                                 title));
                         if (flags.contains(ElementFlag.PREVIEW)) {
                             link.add(HtmlTree.SUP(m_writer.links.createLink(
@@ -125,7 +125,7 @@ public class LinkFactoryImpl extends LinkFactory {
         } else {
             Content crossLink = m_writer.getCrossClassLink(
                 typeElement, classLinkInfo.where,
-                label, classLinkInfo.isStrong, true);
+                label, classLinkInfo.style, true);
             if (crossLink != null) {
                 link.add(crossLink);
                 if (flags.contains(ElementFlag.PREVIEW)) {
@@ -133,7 +133,7 @@ public class LinkFactoryImpl extends LinkFactory {
                         typeElement,
                         m_writer.htmlIds.forPreviewSection(target).name(),
                         m_writer.contents.previewMark,
-                        false, false)));
+                        null, false)));
                 }
                 return link;
             }

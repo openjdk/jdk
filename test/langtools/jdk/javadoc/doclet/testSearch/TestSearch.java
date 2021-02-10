@@ -486,15 +486,17 @@ public class TestSearch extends JavadocTester {
                     <dt><span class="search-tag-link"><a href="pkg/AnotherClass.html#quoted">quoted<\
                     /a></span> - Search tag in pkg.AnotherClass.CONSTANT1</dt>""",
                 """
-                    <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#ONE">ONE</a></spa\
-                    n> - Enum constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></dt>""",
+                    <dt><a href="pkg2/TestEnum.html#ONE" class="member-name-link">ONE</a> - Enum con\
+                    stant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2"\
+                    >TestEnum</a></dt>""",
                 """
-                    <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#THREE">THREE</a><\
-                    /span> - Enum constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></dt\
-                    >""",
+                    <dt><a href="pkg2/TestEnum.html#THREE" class="member-name-link">THREE</a> - Enum\
+                     constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in p\
+                    kg2">TestEnum</a></dt>""",
                 """
-                    <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#TWO">TWO</a></spa\
-                    n> - Enum constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></dt>""");
+                    <dt><a href="pkg2/TestEnum.html#TWO" class="member-name-link">TWO</a> - Enum con\
+                    stant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2"\
+                    >TestEnum</a></dt>""");
         checkOutput("index-all.html", true,
                 """
                     <div class="deprecation-comment">class_test1 passes. Search tag <span id="Search\
@@ -574,18 +576,18 @@ public class TestSearch extends JavadocTester {
                     ed</a></span> - Search tag in pkg.AnotherClass.CONSTANT1</dt>""");
         checkOutput("index-files/index-9.html", true,
                 """
-                    <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#ONE">ONE</a></\
-                    span> - Enum constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></\
-                    dt>""");
+                    <dt><a href="../pkg2/TestEnum.html#ONE" class="member-name-link">ONE</a> - Enum \
+                    constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in\
+                     pkg2">TestEnum</a></dt>""");
         checkOutput("index-files/index-14.html", true,
                 """
-                    <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#THREE">THREE</\
-                    a></span> - Enum constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</\
-                    a></dt>""",
+                    <dt><a href="../pkg2/TestEnum.html#THREE" class="member-name-link">THREE</a> - E\
+                    num constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum clas\
+                    s in pkg2">TestEnum</a></dt>""",
                 """
-                    <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#TWO">TWO</a></\
-                    span> - Enum constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></\
-                    dt>""");
+                    <dt><a href="../pkg2/TestEnum.html#TWO" class="member-name-link">TWO</a> - Enum \
+                    constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in\
+                     pkg2">TestEnum</a></dt>""");
     }
 
     void checkIndexNoComment() {

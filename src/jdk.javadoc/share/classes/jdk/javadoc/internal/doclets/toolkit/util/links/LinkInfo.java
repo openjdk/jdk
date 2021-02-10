@@ -70,11 +70,6 @@ public abstract class LinkInfo {
     public Content label;
 
     /**
-     * True if the link should be strong.
-     */
-    public boolean isStrong = false;
-
-    /**
      * True if we should exclude the type bounds for the type parameter.
      */
     public boolean excludeTypeBounds = false;
@@ -146,7 +141,6 @@ public abstract class LinkInfo {
                 ", type=" + type +
                 ", isVarArg=" + isVarArg +
                 ", label=" + label +
-                ", isStrong=" + isStrong +
                 ", excludeTypeBounds=" + excludeTypeBounds +
                 ", excludeTypeParameterLinks=" + excludeTypeParameterLinks +
                 ", linkToSelf=" + linkToSelf + '}';
