@@ -98,7 +98,22 @@ class Method : public Metadata {
   JFR_ONLY(DEFINE_TRACE_FLAG;)
 
 #ifndef PRODUCT
-  int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
+  union {
+    int64_t _compiled_invocation_count64;
+#if defined(VM_LITTLE_ENDIAN)
+    struct {
+      int     _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
+                                           // Must preserve this as int. Is used outside the jdk by SA.
+      int     _cic_high;
+    };
+#else
+    struct {
+      int     _cic_high;
+      int     _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
+                                           // Must preserve this as int. Is used outside the jdk by SA.
+    };
+#endif
+  };
 #endif
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
@@ -436,11 +451,13 @@ class Method : public Metadata {
   int interpreter_invocation_count()            { return invocation_count();          }
 
 #ifndef PRODUCT
-  int  compiled_invocation_count() const        { return _compiled_invocation_count;  }
-  void set_compiled_invocation_count(int count) { _compiled_invocation_count = count; }
+  int      compiled_invocation_count() const    { return _compiled_invocation_count;  }
+  int64_t  compiled_invocation_count64() const  { return _compiled_invocation_count64;}
+  void set_compiled_invocation_count(int count) { _compiled_invocation_count64 = (int64_t)count; }
 #else
   // for PrintMethodData in a product build
-  int  compiled_invocation_count() const        { return 0;  }
+  int      compiled_invocation_count() const    { return 0; }
+  int64_t  compiled_invocation_count64() const  { return 0; }
 #endif // not PRODUCT
 
   // Clear (non-shared space) pointers which could not be relevant
@@ -708,6 +725,7 @@ public:
   }
 #ifndef PRODUCT
   static ByteSize compiled_invocation_counter_offset() { return byte_offset_of(Method, _compiled_invocation_count); }
+  static ByteSize compiled_invocation_counter_offset64() { return byte_offset_of(Method, _compiled_invocation_count64); }
 #endif // not PRODUCT
   static ByteSize native_function_offset()       { return in_ByteSize(sizeof(Method));                 }
   static ByteSize from_interpreted_offset()      { return byte_offset_of(Method, _from_interpreted_entry ); }

@@ -493,6 +493,7 @@ bool Method::was_executed_more_than(int n) {
 }
 
 void Method::print_invocation_count() {
+  //---<  compose+print method return type, klass, name, and signature  >---
   if (is_static()) tty->print("static ");
   if (is_final()) tty->print("final ");
   if (is_synchronized()) tty->print("synchronized ");
@@ -507,12 +508,33 @@ void Method::print_invocation_count() {
   }
   tty->cr();
 
-  tty->print_cr ("  interpreter_invocation_count: %8d ", interpreter_invocation_count());
-  tty->print_cr ("  invocation_counter:           %8d ", invocation_count());
-  tty->print_cr ("  backedge_counter:             %8d ", backedge_count());
+  // Internal counting is based on signed int counters. They tend to
+  // overflow with longer-running workloads on fast machines. To shift
+  // the overflow limit, we interpret the return value as unsigned int.
+  // This is ok because counters are unsigned by nature, and it gives us
+  // another factor of 2 before the counter values become meaningless.
+  // Print a "overflow" notification to create awareness.
+  const char* addMsg;
+  unsigned int maxInt = (1U<<31) - 1;
+  unsigned int iic    = (unsigned int)interpreter_invocation_count();
+  addMsg = (iic > maxInt) ? "counter in overflow" : "";
+  tty->print_cr ("  interpreter_invocation_count: " UINT32_FORMAT_W(11) " %s", iic, addMsg);
+  unsigned int ic     = (unsigned int)invocation_count();
+  addMsg = (ic  > maxInt) ? "counter in overflow" : "";
+  tty->print_cr ("  invocation_counter:           " UINT32_FORMAT_W(11) " %s", ic, addMsg);
+  unsigned int bec    = (unsigned int)backedge_count();
+  addMsg = (bec > maxInt) ? "counter in overflow" : "";
+  tty->print_cr ("  backedge_counter:             " UINT32_FORMAT_W(11) " %s", bec, addMsg);
+
+  if (method_data() != NULL) {
+    unsigned int dcc    = (unsigned int)method_data()->decompile_count();
+    addMsg = (dcc > maxInt) ? "counter in overflow" : "";
+    tty->print_cr ("  decompile_count:              " UINT32_FORMAT_W(11)" %s", dcc, addMsg);
+  }
+
 #ifndef PRODUCT
   if (CountCompiledCalls) {
-    tty->print_cr ("  compiled_invocation_count: %8d ", compiled_invocation_count());
+    tty->print_cr ("  compiled_invocation_count:    " INT64_FORMAT_W(11), compiled_invocation_count64());
   }
 #endif
 }

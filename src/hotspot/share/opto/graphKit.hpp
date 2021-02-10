@@ -721,6 +721,8 @@ class GraphKit : public Phase {
   // helper functions for statistics
   void increment_counter(address counter_addr);   // increment a debug counter
   void increment_counter(Node*   counter_addr);   // increment a debug counter
+  void increment_counter64(address counter_addr); // increment a debug counter (64bit)
+  void increment_counter64(Node*   counter_addr); // increment a debug counter (64bit)
 
   // Bail out to the interpreter right now
   // The optional klass is the one causing the trap.
