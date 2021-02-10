@@ -195,32 +195,13 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 SignatureAlgorithmsExtension.ssStringizer),
 
-    CH_SIGNATURE_ALGORITHMS_CERT (0x0032, "signature_algorithms_cert",
-                                SSLHandshake.CLIENT_HELLO,
-                                ProtocolVersion.PROTOCOLS_12_13,
-                                CertSignAlgsExtension.chNetworkProducer,
-                                CertSignAlgsExtension.chOnLoadConsumer,
-                                null,
-                                CertSignAlgsExtension.chOnTradeConsumer,
-                                null,
-                                CertSignAlgsExtension.ssStringizer),
-    CR_SIGNATURE_ALGORITHMS_CERT (0x0032, "signature_algorithms_cert",
-                                SSLHandshake.CERTIFICATE_REQUEST,
-                                ProtocolVersion.PROTOCOLS_OF_13,
-                                CertSignAlgsExtension.crNetworkProducer,
-                                CertSignAlgsExtension.crOnLoadConsumer,
-                                null,
-                                CertSignAlgsExtension.crOnTradeConsumer,
-                                null,
-                                CertSignAlgsExtension.ssStringizer),
-
     // extensions defined in RFC 5764
     USE_SRTP                (0x000E, "use_srtp"),
 
     // extensions defined in RFC 6520
     HEARTBEAT               (0x000E, "heartbeat"),
 
-    // extension defined in RFC 7301 (ALPN)
+    // extensions defined in RFC 7301 (ALPN)
     CH_ALPN                 (0x0010, "application_layer_protocol_negotiation",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_TO_13,
@@ -302,8 +283,8 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 ExtendedMasterSecretExtension.emsStringizer),
 
-    // extensions defined in RFC draft-ietf-tokbind-negotiation
-    TOKEN_BINDING           (0x0018, "token_binding "),
+    // extensions defined in RFC 8472
+    TOKEN_BINDING           (0x0018, "token_binding"),
 
     // extensions defined in RFC 7924
     CACHED_INFO             (0x0019, "cached_info"),
@@ -319,7 +300,6 @@ enum SSLExtension implements SSLStringizer {
             null,
             SessionTicketExtension.steStringizer),
             //null),
-
     SH_SESSION_TICKET       (0x0023, "session_ticket",
             SSLHandshake.SERVER_HELLO,
             ProtocolVersion.PROTOCOLS_10_12,
@@ -331,7 +311,7 @@ enum SSLExtension implements SSLStringizer {
             SessionTicketExtension.steStringizer),
             //null),
 
-    // extensions defined in TLS 1.3
+    // extensions defined in RFC 8446
     CH_EARLY_DATA           (0x002A, "early_data"),
     EE_EARLY_DATA           (0x002A, "early_data"),
     NST_EARLY_DATA          (0x002A, "early_data"),
@@ -406,7 +386,6 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 PskKeyExchangeModesExtension.chOnTradeAbsence,
                                 PskKeyExchangeModesExtension.pkemStringizer),
-
     CH_CERTIFICATE_AUTHORITIES (0x002F, "certificate_authorities",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_OF_13,
@@ -416,7 +395,6 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 null,
                                 CertificateAuthoritiesExtension.ssStringizer),
-
     CR_CERTIFICATE_AUTHORITIES (0x002F, "certificate_authorities",
                                 SSLHandshake.CERTIFICATE_REQUEST,
                                 ProtocolVersion.PROTOCOLS_OF_13,
@@ -429,6 +407,25 @@ enum SSLExtension implements SSLStringizer {
 
     OID_FILTERS             (0x0030, "oid_filters"),
     POST_HANDSHAKE_AUTH     (0x0030, "post_handshake_auth"),
+
+    CH_SIGNATURE_ALGORITHMS_CERT (0x0032, "signature_algorithms_cert",
+                                SSLHandshake.CLIENT_HELLO,
+                                ProtocolVersion.PROTOCOLS_12_13,
+                                CertSignAlgsExtension.chNetworkProducer,
+                                CertSignAlgsExtension.chOnLoadConsumer,
+                                null,
+                                CertSignAlgsExtension.chOnTradeConsumer,
+                                null,
+                                CertSignAlgsExtension.ssStringizer),
+    CR_SIGNATURE_ALGORITHMS_CERT (0x0032, "signature_algorithms_cert",
+                                SSLHandshake.CERTIFICATE_REQUEST,
+                                ProtocolVersion.PROTOCOLS_OF_13,
+                                CertSignAlgsExtension.crNetworkProducer,
+                                CertSignAlgsExtension.crOnLoadConsumer,
+                                null,
+                                CertSignAlgsExtension.crOnTradeConsumer,
+                                null,
+                                CertSignAlgsExtension.ssStringizer),
 
     CH_KEY_SHARE            (0x0033, "key_share",
                                 SSLHandshake.CLIENT_HELLO,
@@ -482,7 +479,7 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 RenegoInfoExtension.rniStringizer),
 
-    // TLS 1.3 PSK extension must be last
+    // RFC 8446 PSK extension must be last
     CH_PRE_SHARED_KEY       (0x0029, "pre_shared_key",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_OF_13,
