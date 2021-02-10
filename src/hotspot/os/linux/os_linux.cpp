@@ -3564,26 +3564,6 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   return result;
 }
 
-// The capability needed to lock memory CAP_IPC_LOCK
-#define CAP_IPC_LOCK      14
-#define CAP_IPC_LOCK_BIT  (1 << CAP_IPC_LOCK)
-
-static bool can_lock_memory() {
-  bool can_lock = false;
-  FILE* f = ::fopen("/proc/self/status", "r");
-  char buf[256];
-  while (::fgets(buf, sizeof(buf), f) != NULL) {
-    size_t cap;
-    // Check effective capabilities.
-    if (sscanf(buf, "CapEff: %" PRIxPTR, &cap) == 1) {
-      can_lock = (cap & CAP_IPC_LOCK_BIT) == CAP_IPC_LOCK_BIT;
-      break;
-    }
-  }
-  ::fclose(f);
-  return can_lock;
-}
-
 bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
   // Try to create a large shared memory segment.
   int shmid = shmget(IPC_PRIVATE, page_size, SHM_HUGETLB|IPC_CREAT|SHM_R|SHM_W);
@@ -3601,24 +3581,6 @@ bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
     }
     return false;
   }
-
-  // Check if process is privileged and can lock memory or if there will be a limit
-  // on how much memory can be locked by SHM.
-  if (!can_lock_memory()) {
-    struct rlimit64 lock_limit;
-    getrlimit64(RLIMIT_MEMLOCK, &lock_limit);
-
-    if (warn) {
-      warning("UseSHM large pages limit due to missing CAP_IPC_LOCK capability: " SIZE_FORMAT "%s",
-              byte_size_in_exact_unit(lock_limit.rlim_max),
-              exact_unit_for_byte_size(lock_limit.rlim_max));
-    } else {
-      log_debug(pagesize)("UseSHM large pages limit due to missing CAP_IPC_LOCK capability: " SIZE_FORMAT "%s",
-                          byte_size_in_exact_unit(lock_limit.rlim_max),
-                          exact_unit_for_byte_size(lock_limit.rlim_max));
-    }
-  }
-
   // Managed to create a segment, now delete it.
   shmctl(shmid, IPC_RMID, NULL);
   return true;
