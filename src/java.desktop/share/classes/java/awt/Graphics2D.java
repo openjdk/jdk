@@ -1202,8 +1202,9 @@ public abstract class Graphics2D extends Graphics {
      * argument, the specified {@code Shape} becomes the new
      * user clip.
      * @param s the {@code Shape} to be intersected with the current
-     *          {@code Clip}.
+     *          {@code Clip}. This method clears the current {@code Clip}.
      * @throws NullPointerException if {@code s} is {@code null}
+     *         and clip is already set via {@code setClip}
      */
      public abstract void clip(Shape s);
 

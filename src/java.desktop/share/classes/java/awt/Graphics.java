@@ -354,7 +354,8 @@ public abstract class Graphics {
      * {@code Rectangle} objects.  This method sets the
      * user clip, which is independent of the clipping associated
      * with device bounds and window visibility.
-     * @param clip the {@code Shape} to use to set the clip
+     * @param clip the {@code Shape} to use to set the clip.
+     *             Passing {@code null} clears the current {@code clip}.
      * @see         java.awt.Graphics#getClip()
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
