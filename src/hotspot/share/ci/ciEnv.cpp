@@ -957,7 +957,7 @@ void ciEnv::register_method(ciMethod* target,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
                             RTMState  rtm_state,
-                            const GrowableArrayView<BufferBlob*>& native_invokers) {
+                            const GrowableArrayView<RuntimeStub*>& native_invokers) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
