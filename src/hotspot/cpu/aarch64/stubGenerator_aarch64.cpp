@@ -6770,7 +6770,11 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
+#ifdef LINUX
+
     generate_atomic_entry_points();
+
+#endif // LINUX
 
     StubRoutines::aarch64::set_completed();
   }
