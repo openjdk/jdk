@@ -3574,8 +3574,8 @@ static bool can_lock_memory() {
   char buf[256];
   while (::fgets(buf, sizeof(buf), f) != NULL) {
     size_t cap;
-    // Check permitted capabilities.
-    if (sscanf(buf, "CapPrm: %" PRIxPTR, &cap) == 1) {
+    // Check effective capabilities.
+    if (sscanf(buf, "CapEff: %" PRIxPTR, &cap) == 1) {
       can_lock = (cap & CAP_IPC_LOCK_BIT) == CAP_IPC_LOCK_BIT;
       break;
     }
