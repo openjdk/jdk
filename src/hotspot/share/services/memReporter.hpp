@@ -164,7 +164,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 
  public:
   MemSummaryDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
-    outputStream* output, size_t scale = 0) : MemReporterBase(output, scale),
+    outputStream* output, size_t scale = default_scale) : MemReporterBase(output, scale),
     _early_baseline(early_baseline), _current_baseline(current_baseline) {
     assert(early_baseline.baseline_type()   != MemBaseline::Not_baselined, "Not baselined");
     assert(current_baseline.baseline_type() != MemBaseline::Not_baselined, "Not baselined");
