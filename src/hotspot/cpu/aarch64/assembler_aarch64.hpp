@@ -2685,12 +2685,21 @@ public:
      *   1xxx xxx       1D/2D,  shift = UInt(immh:immb) - 64            \
      *   (1D is RESERVED)                                               \
      *                                                                  \
-     * If shift is zero, an 'orr', actually a 'mov', is generated.      \
+     * Shift is zero?                                                   \
+     *   Not accumulte:  generate an 'orr', actually a 'mov'.           \
+     *   Need accumulte: generate an 'add'.                             \
      */                                                                 \
     assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");           \
     if (shift == 0) {                                                   \
-      f(0, 31), f(T & 1, 30), f(0b001110101, 29, 21);                   \
-      rf(Vn, 16), f(0b000111, 15, 10), rf(Vn, 5), rf(Vd, 0);            \
+      bool accumulate = opc2 & 0b100;                                   \
+      if (accumulate && isSHR) {                                        \
+        f(0, 31), f((int)T & 1, 30), f(0b001110, 29, 24);               \
+        f((int)T >> 1, 23, 22), f(1, 21), rf(Vd, 16);                   \
+        f(0b100001, 15, 10), rf(Vn, 5), rf(Vd, 0);                      \
+      } else {                                                          \
+        f(0, 31), f(T & 1, 30), f(0b001110101, 29, 21);                 \
+        rf(Vn, 16), f(0b000111, 15, 10), rf(Vn, 5), rf(Vd, 0);          \
+      }                                                                 \
     } else {                                                            \
       int cVal = (1 << (((T >> 1) + 3) + (isSHR ? 1 : 0)));             \
       int encodedShift = isSHR ? cVal - shift : cVal + shift;           \
