@@ -145,7 +145,7 @@ public class Object {
      * In other words, under the reference equality equivalence
      * relation, each equivalence class only has a single element.
      *
-     * @apiNoted
+     * @apiNote
      * Note that it is generally necessary to override the {@link hashCode hashCode}
      * method whenever this method is overridden, so as to maintain the
      * general contract for the {@code hashCode} method, which states
@@ -195,7 +195,7 @@ public class Object {
      * the case that no fields in the object returned by {@code super.clone}
      * need to be modified.
      *
-     * @implspec
+     * @implSpec
      * The method {@code clone} for class {@code Object} performs a
      * specific cloning operation. First, if the class of this object does
      * not implement the interface {@code Cloneable}, then a
