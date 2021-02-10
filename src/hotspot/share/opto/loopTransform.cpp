@@ -124,7 +124,8 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
     jlong limit_con = (stride_con > 0) ? limit_type->_hi : limit_type->_lo;
     int stride_m = stride_con - (stride_con > 0 ? 1 : -1);
     jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
-    if (trip_count > 0 && (julong)trip_count < (julong)max_juint) {
+    trip_count = MAX2(trip_count, (jlong)1);
+    if (trip_count < (jlong)max_juint) {
       if (init_n->is_Con() && limit_n->is_Con()) {
         // Set exact trip count.
         cl->set_exact_trip_count((uint)trip_count);
