@@ -555,18 +555,15 @@ void LateInlineVirtualCallGenerator::do_late_inline() {
 }
 
 static void delay_box_in_uncommon_trap(CallNode* call, Node* resproj) {
-  if (resproj != NULL && call->is_CallStaticJava() &&
+  if (resproj != nullptr && call->is_CallStaticJava() &&
       call->as_CallStaticJava()->is_boxing_method()) {
-    GraphKit kit(call->jvms());
-    PhaseGVN& gvn = kit.gvn();
-
-    Node_List delay_boxes;
+    Unique_Node_List uncommon_trap_list;
     bool no_use = true;
     for (DUIterator_Fast imax, i = resproj->fast_outs(imax); i < imax; i++) {
       Node* m = resproj->fast_out(i);
       if (m->is_CallStaticJava() &&
           m->as_CallStaticJava()->uncommon_trap_request() != 0) {
-        delay_boxes.push(m);
+        uncommon_trap_list.push(m);
       } else {
         no_use = false;
         break;
@@ -574,28 +571,32 @@ static void delay_box_in_uncommon_trap(CallNode* call, Node* resproj) {
     }
 
     if (no_use) {
+      GraphKit kit(call->jvms());
+      PhaseGVN& gvn = kit.gvn();
+
       // delay box node in uncommon_trap runtime, treat box as a scalarized object
-      while (delay_boxes.size() > 0) {
+      while (uncommon_trap_list.size() > 0) {
         ProjNode* res = resproj->as_Proj();
-        Node* uncommon_trap_node = delay_boxes.pop();
-        int in_edge = uncommon_trap_node->find_edge(res);
-        assert(in_edge > 0, "sanity");
+        Node* uncommon_trap_node = uncommon_trap_list.pop();
 
         ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
         int n_fields = klass->nof_nonstatic_fields();
-        assert(n_fields == 1, "sanity");
+        assert(n_fields == 1, "the klass must be an auto-boxing klass");
 
         uint first_ind = (uncommon_trap_node->req() - uncommon_trap_node->jvms()->scloff());
         Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
 #ifdef ASSERT
-                                                  NULL,
+                                                  (AllocateNode*)call,
 #endif // ASSERT
                                                   first_ind, n_fields);
         sobj->init_req(0, kit.root());
         uncommon_trap_node->add_req(call->in(res->_con));
         sobj = gvn.transform(sobj);
-        uncommon_trap_node->jvms()->set_endoff(uncommon_trap_node->req());
-        uncommon_trap_node->set_req(in_edge, sobj);
+        JVMState* jvms = uncommon_trap_node->jvms();
+        jvms->set_endoff(uncommon_trap_node->req());
+        int start = jvms->debug_start();
+        int end   = jvms->debug_end();
+        uncommon_trap_node->replace_edges_in_range(res, sobj, start, end);
       }
     }
   }
