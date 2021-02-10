@@ -63,13 +63,13 @@ public class TestDeserializationEvent {
         byte[] ba3 = serialize(new R[] { new R(), new R() });
         byte[] ba4 = serialize(new char[][] { new char[] {'a', 'b'}, new char[] {'c'} });
 
-        // data provider columns- 1:id, 2:serialize-operation, 3:expected-event-checkers
+        // data provider columns- 1:id, 2:deserialize-operation, 3:expected-event-checkers
         return new Object[][] {
             {   1,  // single stream object, R
                 (Runnable)() -> deserialize(ba1),
                 List.of(
                     Set.of(
-                        assertStatus("n/a"),
+                        assertFilterStatus("n/a"),
                         assertClass("jdk.jfr.event.io.TestDeserializationEvent$R"),
                         assertArrayLength(-1),
                         assertTotalObjectRefs(1),
@@ -142,22 +142,22 @@ public class TestDeserializationEvent {
             thunk.run();
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
-            assertTrue(events.size() > 0);
+            assertEquals(events.size(), expectedValuesChecker.size());
             assertEventList(events, expectedValuesChecker);
         }
     }
 
     static final Class<InvalidClassException> ICE = InvalidClassException.class;
 
-    @DataProvider(name = "filterDisallowValues")
-    public Object[][] filterDisallowValues() {
+    @DataProvider(name = "filterDisallowedValues")
+    public Object[][] filterDisallowedValues() {
         return new Object[][] {
                 { Status.REJECTED,   "REJECTED" },
                 { null,              "n/a"      }
         };
     }
 
-    @Test(dataProvider = "filterDisallowValues")
+    @Test(dataProvider = "filterDisallowedValues")
     public void testFilterDisallow(Status filterStatus,
                                    String expectedValue)
         throws Exception
@@ -171,10 +171,9 @@ public class TestDeserializationEvent {
             assertThrows(ICE, () -> ois.readObject());
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
-            assertTrue(events.size() > 0);
-            events.stream()
-                  .filter(e -> e.getEventType().getName().equals("jdk.Deserialization"))
-                  .forEach(assertStatus(expectedValue));
+            assertEquals(events.size(), 1);
+            assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
+            assertFilterStatus(expectedValue).accept(events.get(0));
         }
     }
 
@@ -198,10 +197,9 @@ public class TestDeserializationEvent {
             ois.readObject();
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
-            assertTrue(events.size() > 0);
-            events.stream()
-                  .filter(e -> e.getEventType().getName().equals("jdk.Deserialization"))
-                  .forEach(assertStatus(expectedValue));
+            assertEquals(events.size(), 1);
+            assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
+            assertFilterStatus(expectedValue).accept(events.get(0));
         }
     }
 
@@ -219,10 +217,9 @@ public class TestDeserializationEvent {
             recording.stop();
             out.println("caught: " + ice);
             List<RecordedEvent> events = Events.fromRecording(recording);
-            assertTrue(events.size() > 0);
-            events.stream()
-                    .filter(e -> e.getEventType().getName().equals("jdk.Deserialization"))
-                    .forEach(assertException("jdk.jfr.event.io.TestDeserializationEvent$XYZException"));
+            assertEquals(events.size(), 1);
+            assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
+            assertException("jdk.jfr.event.io.TestDeserializationEvent$XYZException").accept(events.get(0));
         }
     }
 
@@ -230,9 +227,7 @@ public class TestDeserializationEvent {
                                 List<Set<Consumer<RecordedEvent>>> expectedValuesChecker) {
         int found = 0;
         for (RecordedEvent recordedEvent : actualEvents) {
-            if (!recordedEvent.getEventType().getName().equals("jdk.Deserialization"))
-                continue;
-
+            assertEquals(recordedEvent.getEventType().getName(), "jdk.Deserialization");
             out.println("Checking recorded event:" + recordedEvent);
             Set<Consumer<RecordedEvent>> checkers = expectedValuesChecker.get(found);
             for (Consumer<RecordedEvent> checker : checkers) {
@@ -245,14 +240,14 @@ public class TestDeserializationEvent {
         assertEquals(found, expectedValuesChecker.size());
     }
 
-    static Consumer<RecordedEvent> assertStatus(String expectedValue) {
+    static Consumer<RecordedEvent> assertFilterStatus(String expectedValue) {
         return new Consumer<>() {
             @Override public void accept(RecordedEvent recordedEvent) {
-                assertTrue(recordedEvent.hasField("status"));
-                assertEquals(recordedEvent.getValue("status"), expectedValue);
+                assertTrue(recordedEvent.hasField("filterStatus"));
+                assertEquals(recordedEvent.getValue("filterStatus"), expectedValue);
             }
             @Override public String toString() {
-                return "assertStatus, expectedValue=" + expectedValue;
+                return "assertFilterStatus, expectedValue=" + expectedValue;
             }
         };
     }

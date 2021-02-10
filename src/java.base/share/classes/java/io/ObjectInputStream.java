@@ -1324,10 +1324,11 @@ public class ObjectInputStream
     }
 
     /**
-     * Invokes the serialization filter if non-null, and fires a
-     * {@code DeserializationEvent}.
+     * Invokes the serialization filter if non-null.
      *
      * If the filter rejects or an exception is thrown, throws InvalidClassException.
+     *
+     * Logs and/or commits a {@code DeserializationEvent}, if configured.
      *
      * @param clazz the class; may be null
      * @param arrayLength the array length requested; use {@code -1} if not creating an array
@@ -1362,7 +1363,7 @@ public class ObjectInputStream
         }
         DeserializationEvent event = new DeserializationEvent();
         if (event.shouldCommit()) {
-            event.status = status == null ? "n/a" : status.name();
+            event.filterStatus = status == null ? "n/a" : status.name();
             event.clazz = clazz == null ? "null" : clazz.getName();
             event.arrayLength = arrayLength;
             event.totalObjectRefs = totalObjectRefs;

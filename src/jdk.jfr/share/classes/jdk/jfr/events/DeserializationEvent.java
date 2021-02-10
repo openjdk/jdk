@@ -38,8 +38,8 @@ import jdk.jfr.internal.MirrorEvent;
 @MirrorEvent(className = "jdk.internal.event.DeserializationEvent")
 public final class DeserializationEvent extends AbstractJDKEvent {
 
-    @Label("Status")
-    public String status;
+    @Label("Filter Status")
+    public String filterStatus;
 
     @Label ("Class")
     public String clazz;

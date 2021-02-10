@@ -26,11 +26,11 @@
 package jdk.internal.event;
 
 /**
- * Event details relating to deserialization
+ * Event details relating to deserialization.
  */
 
 public final class DeserializationEvent extends Event {
-    public String status;
+    public String filterStatus;
     public String clazz;
     public int arrayLength;
     public long totalObjectRefs;
