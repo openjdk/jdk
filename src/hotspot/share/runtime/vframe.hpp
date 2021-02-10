@@ -60,8 +60,9 @@ class vframe: public ResourceObj {
   vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread);
   vframe(const frame* fr, JavaThread* thread);
  public:
-  // Factory method for creating vframes
+  // Factory methods for creating vframes
   static vframe* new_vframe(const frame* f, const RegisterMap *reg_map, JavaThread* thread);
+  static vframe* new_vframe(StackFrameStream& fst, JavaThread* thread);
 
   // Accessors
   frame              fr()           const { return _fr;       }
