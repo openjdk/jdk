@@ -139,7 +139,7 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
       int vslot = (i * elem_size) / VMRegImpl::stack_slot_size;
       int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
 
-      address elem_addr = reg_map->location(vreg->next(vslot)) + off;
+      address elem_addr = reg_map->location(vreg, vslot) + off; // assumes little endian element order
       init_payload_element(arr, is_mask, elem_bt, i, elem_addr);
     }
   } else {

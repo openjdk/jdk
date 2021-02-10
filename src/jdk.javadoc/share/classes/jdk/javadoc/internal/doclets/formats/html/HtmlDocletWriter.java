@@ -763,7 +763,7 @@ public class HtmlDocletWriter {
      */
     public Content getTypeParameterLinks(LinkInfoImpl linkInfo) {
         LinkFactoryImpl factory = new LinkFactoryImpl(this);
-        return factory.getTypeParameterLinks(linkInfo, false);
+        return factory.getTypeParameterLinks(linkInfo);
     }
 
     /*************************************************************
@@ -853,18 +853,16 @@ public class HtmlDocletWriter {
      * link label.
      *
      * @param typeElement the class to link to.
-     * @param isStrong true if the link should be strong.
      * @return the link with the package portion of the label in plain text.
      */
-    public Content getPreQualifiedClassLink(LinkInfoImpl.Kind context,
-            TypeElement typeElement, boolean isStrong) {
+    public Content getPreQualifiedClassLink(LinkInfoImpl.Kind context, TypeElement typeElement) {
         ContentBuilder classlink = new ContentBuilder();
         PackageElement pkg = utils.containingPackage(typeElement);
         if (pkg != null && ! configuration.shouldExcludeQualifier(pkg.getSimpleName().toString())) {
             classlink.add(getEnclosingPackageName(typeElement));
         }
         classlink.add(getLink(new LinkInfoImpl(configuration,
-                context, typeElement).label(utils.getSimpleName(typeElement)).strong(isStrong)));
+                context, typeElement).label(utils.getSimpleName(typeElement))));
         return classlink;
     }
 
@@ -934,65 +932,55 @@ public class HtmlDocletWriter {
      */
     public Content getDocLink(LinkInfoImpl.Kind context, Element element, CharSequence label) {
         return getDocLink(context, utils.getEnclosingTypeElement(element), element,
-                new StringContent(label));
+                new StringContent(label), false);
     }
 
     /**
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
+     * @param typeElement the typeElement that we should link to. This is not
+     *            not necessarily the type containing element since we may be
+     *            inheriting comments.
      * @param element the member being linked to.
      * @param label the label for the link.
-     * @param strong true if the link should be strong.
-     * @return the link for the given member.
-     */
-    public Content getDocLink(LinkInfoImpl.Kind context, Element element, CharSequence label,
-            boolean strong) {
-        return getDocLink(context, utils.getEnclosingTypeElement(element), element, label, strong);
-    }
-
-    /**
-     * Return the link for the given member.
-     *
-     * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to.  This is not
-                 necessarily equal to element.containingClass().  We may be
-                 inheriting comments.
-     * @param element the member being linked to.
-     * @param label the label for the link.
-     * @param strong true if the link should be strong.
      * @return the link for the given member.
      */
     public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
-            CharSequence label, boolean strong) {
-        return getDocLink(context, typeElement, element, label, strong, false);
-    }
-
-    public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
-            Content label, boolean strong) {
-        return getDocLink(context, typeElement, element, label, strong, false);
+                              CharSequence label) {
+        return getDocLink(context, typeElement, element, label, false);
     }
 
     /**
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to.  This is not
-                 necessarily equal to element.containingClass().  We may be
-                 inheriting comments.
+     * @param typeElement the typeElement that we should link to. This is not
+     *            not necessarily the type containing element since we may be
+     *            inheriting comments.
      * @param element the member being linked to.
      * @param label the label for the link.
-     * @param strong true if the link should be strong.
+     * @return the link for the given member.
+     */
+    public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
+                              CharSequence label, boolean isProperty) {
+        return getDocLink(context, typeElement, element, new StringContent(label), isProperty);
+    }
+
+    /**
+     * Return the link for the given member.
+     *
+     * @param context the id of the context where the link will be printed.
+     * @param typeElement the typeElement that we should link to. This is not
+     *            not necessarily the type containing element since we may be
+     *            inheriting comments.
+     * @param element the member being linked to.
+     * @param label the label for the link.
      * @param isProperty true if the element parameter is a JavaFX property.
      * @return the link for the given member.
      */
     public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
-            CharSequence label, boolean strong, boolean isProperty) {
-        return getDocLink(context, typeElement, element, new StringContent(label), strong, isProperty);
-    }
-
-    public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
-            Content label, boolean strong, boolean isProperty) {
+            Content label, boolean isProperty) {
         if (!utils.isLinkable(typeElement, element)) {
             return label;
         }
@@ -1003,50 +991,17 @@ public class HtmlDocletWriter {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(id.name())
-                .targetMember(element)
-                .strong(strong));
+                .targetMember(element));
         }
 
         if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(element.getSimpleName().toString())
-                .targetMember(element)
-                .strong(strong));
+                .targetMember(element));
         }
 
         return label;
-    }
-
-    /**
-     * Return the link for the given member.
-     *
-     * @param context the id of the context where the link will be added
-     * @param typeElement the typeElement that we should link to.  This is not
-                 necessarily equal to element.containingClass().  We may be
-                 inheriting comments
-     * @param element the member being linked to
-     * @param label the label for the link
-     * @return the link for the given member
-     */
-    public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
-            Content label) {
-        if (!(utils.isIncluded(element) || utils.isLinkable(typeElement))) {
-            return label;
-        } else if (utils.isExecutableElement(element)) {
-            ExecutableElement emd = (ExecutableElement) element;
-            return getLink(new LinkInfoImpl(configuration, context, typeElement)
-                    .label(label)
-                    .where(htmlIds.forMember(emd).name())
-                    .targetMember(element));
-        } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
-            return getLink(new LinkInfoImpl(configuration, context, typeElement)
-                    .label(label)
-                    .where(element.getSimpleName().toString())
-                    .targetMember(element));
-        } else {
-            return label;
-        }
     }
 
     public Content seeTagToContent(Element element, DocTree see) {
@@ -1900,8 +1855,7 @@ public class HtmlDocletWriter {
                 }
                 String simpleName = element.getSimpleName().toString();
                 if (multipleValues || !"value".equals(simpleName)) { // Omit "value=" where unnecessary
-                    annotation.add(getDocLink(LinkInfoImpl.Kind.ANNOTATION,
-                                                     element, simpleName, false));
+                    annotation.add(getDocLink(LinkInfoImpl.Kind.ANNOTATION, element, simpleName));
                     annotation.add("=");
                 }
                 AnnotationValue annotationValue = map.get(element);
@@ -2015,8 +1969,7 @@ public class HtmlDocletWriter {
             }
             @Override
             public Content visitEnumConstant(VariableElement c, Void p) {
-                return getDocLink(LinkInfoImpl.Kind.ANNOTATION,
-                        c, c.getSimpleName(), false);
+                return getDocLink(LinkInfoImpl.Kind.ANNOTATION, c, c.getSimpleName());
             }
             @Override
             public Content visitArray(List<? extends AnnotationValue> vals, Void p) {

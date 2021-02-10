@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,24 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+/**
+ * @test
+ * @bug 6211257
+ * @summary Verifies NPE is thrown for BasicStroke.createStrokedShape(null).
+ */
+import java.awt.BasicStroke;
+import java.awt.Shape;
 
-#ifndef CPU_AARCH64_REGISTERMAP_AARCH64_HPP
-#define CPU_AARCH64_REGISTERMAP_AARCH64_HPP
+public class TestNullShape {
 
-// machine-dependent implemention for register maps
-  friend class frame;
+    public static void main(String[] args) {
 
- private:
-  // This is the hook for finding a register in an "well-known" location,
-  // such as a register block of a predetermined format.
-  address pd_location(VMReg reg) const { return NULL; }
-  address pd_location(VMReg base_reg, int slot_idx) const;
-
-  // no PD state to clear or copy:
-  void pd_clear() {}
-  void pd_initialize() {}
-  void pd_initialize_from(const RegisterMap* map) {}
-
-#endif // CPU_AARCH64_REGISTERMAP_AARCH64_HPP
+        BasicStroke bs = new BasicStroke();
+        try {
+            Shape s = bs.createStrokedShape(null);
+            System.out.println("result: false");
+            throw new RuntimeException("NPE is expected");
+        } catch (NullPointerException ne) {
+            System.out.println("result (npe): true");
+        }
+    }
+}

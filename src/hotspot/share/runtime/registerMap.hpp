@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,14 @@ class RegisterMap : public StackObj {
       return (address) _location[reg->value()];
     } else {
       return pd_location(reg);
+    }
+  }
+
+  address location(VMReg base_reg, int slot_idx) const {
+    if (slot_idx > 0) {
+      return pd_location(base_reg, slot_idx);
+    } else {
+      return location(base_reg);
     }
   }
 

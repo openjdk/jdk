@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,12 +132,17 @@ bool Dictionary::resize_if_needed() {
   return (desired_size != 0);
 }
 
+bool DictionaryEntry::is_valid_protection_domain(Handle protection_domain) {
+
+  return protection_domain() == NULL || !java_lang_System::allow_security_manager()
+        ? true
+        : contains_protection_domain(protection_domain());
+}
+
 bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
-  // Lock the pd_set list.  This lock cannot safepoint since the caller holds
-  // a Dictionary entry, which can be moved if the Dictionary is resized.
-  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
   if (protection_domain == instance_klass()->protection_domain()) {
+    MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
     // Ensure this doesn't show up in the pd_set (invariant)
     bool in_pd_set = false;
     for (ProtectionDomainEntry* current = pd_set();
@@ -160,10 +165,15 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
     return true;
   }
 
+  // Lock the pd_set list.  This lock cannot safepoint since the caller holds
+  // a Dictionary entry, which can be moved if the Dictionary is resized.
+  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
   for (ProtectionDomainEntry* current = pd_set();
                               current != NULL;
                               current = current->next()) {
-    if (current->object_no_keepalive() == protection_domain) return true;
+    if (current->object_no_keepalive() == protection_domain) {
+      return true;
+    }
   }
   return false;
 }
@@ -283,6 +293,7 @@ DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
 }
 
 
+
 InstanceKlass* Dictionary::find(unsigned int hash, Symbol* name,
                                 Handle protection_domain) {
   NoSafepointVerifier nsv;
@@ -307,11 +318,11 @@ InstanceKlass* Dictionary::find_class(unsigned int hash,
   return (entry != NULL) ? entry->instance_klass() : NULL;
 }
 
-
 void Dictionary::add_protection_domain(int index, unsigned int hash,
                                        InstanceKlass* klass,
                                        Handle protection_domain,
                                        TRAPS) {
+  assert(java_lang_System::allow_security_manager(), "only needed if security manager allowed");
   Symbol*  klass_name = klass->name();
   DictionaryEntry* entry = get_entry(index, hash, klass_name);
 
