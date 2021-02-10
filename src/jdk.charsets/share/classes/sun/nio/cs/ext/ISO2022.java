@@ -47,6 +47,13 @@ abstract class ISO2022
 
     public abstract CharsetEncoder newEncoder();
 
+    // No default Decoder implementation is provided here; the concrete
+    // encodings differ enough that most had been specialized for
+    // performance reasons, leaving the generic implementation that existed
+    // here before JDK-8261418 unused except by ISO2022_KR. As both a
+    // simplification and an optimization the implementation was moved
+    // there and specialized.
+
     protected static class Encoder extends CharsetEncoder {
 
         private static final byte ISO_ESC = 0x1b;
