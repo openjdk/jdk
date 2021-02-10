@@ -116,7 +116,6 @@ class MemTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
 
  public:
-
   static inline NMT_TrackingLevel tracking_level() {
     if (_tracking_level == NMT_unknown) {
       // No fencing is needed here, since JVM is in single-threaded

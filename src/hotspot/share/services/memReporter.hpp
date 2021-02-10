@@ -40,14 +40,15 @@
 class MemReporterBase : public StackObj {
  private:
   const size_t  _scale;         // report in this scale
-  static const size_t default_scale = K;
   outputStream* const _output;  // destination
 
  public:
-  // scale = 0 -> default scale
-  MemReporterBase(outputStream* out = NULL, size_t scale = 0) :
-    _scale(scale == 0 ? default_scale : scale),
-    _output(out == NULL ? tty : out)
+
+  // Default scale to use if no scale given.
+  static const size_t default_scale = K;
+
+  MemReporterBase(outputStream* out, size_t scale = default_scale) :
+    _scale(scale), _output(out)
   {}
 
  protected:
@@ -101,7 +102,7 @@ class MemSummaryReporter : public MemReporterBase {
  public:
   // This constructor is for normal reporting from a recent baseline.
   MemSummaryReporter(MemBaseline& baseline, outputStream* output,
-    size_t scale = 0) : MemReporterBase(output, scale),
+    size_t scale = default_scale) : MemReporterBase(output, scale),
     _malloc_snapshot(baseline.malloc_memory_snapshot()),
     _vm_snapshot(baseline.virtual_memory_snapshot()),
     _instance_class_count(baseline.instance_class_count()),
@@ -126,7 +127,7 @@ class MemDetailReporter : public MemSummaryReporter {
   MemBaseline&   _baseline;
 
  public:
-  MemDetailReporter(MemBaseline& baseline, outputStream* output, size_t scale = 0) :
+  MemDetailReporter(MemBaseline& baseline, outputStream* output, size_t scale = default_scale) :
     MemSummaryReporter(baseline, output, scale),
      _baseline(baseline) { }
 
@@ -202,7 +203,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 class MemDetailDiffReporter : public MemSummaryDiffReporter {
  public:
   MemDetailDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
-    outputStream* output, size_t scale = 0) :
+    outputStream* output, size_t scale = default_scale) :
     MemSummaryDiffReporter(early_baseline, current_baseline, output, scale) { }
 
   // Generate detail comparison report

@@ -173,7 +173,7 @@ bool MemTracker::transition_to(NMT_TrackingLevel level) {
 // Report during error reporting.
 void MemTracker::error_report(outputStream* output) {
   if (tracking_level() >= NMT_summary) {
-    report(true, output, 0); // just print summary for error case.
+    report(true, output, K); // just print summary for error case.
   }
 }
 
