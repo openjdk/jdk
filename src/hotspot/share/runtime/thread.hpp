@@ -274,12 +274,6 @@ class Thread: public ThreadShadow {
   // suspend/resume lock: used for self-suspend
   Monitor* _SR_lock;
 
-  // Stack watermark barriers.
-  StackWatermarks _stack_watermarks;
-
- public:
-  inline StackWatermarks* stack_watermarks() { return &_stack_watermarks; }
-
  protected:
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
@@ -1061,6 +1055,11 @@ class JavaThread: public Thread {
   friend class ThreadWaitTransition;
   friend class VM_Exit;
 
+  // Stack watermark barriers.
+  StackWatermarks _stack_watermarks;
+
+ public:
+  inline StackWatermarks* stack_watermarks() { return &_stack_watermarks; }
 
  public:
   // Constructor
