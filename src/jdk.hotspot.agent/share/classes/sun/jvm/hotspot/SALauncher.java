@@ -125,9 +125,9 @@ public class SALauncher {
 
         System.out.println("    <no option>             To print same info as Solaris pmap.");
         System.out.println("    --heap                  To print java heap summary.");
-        System.out.println("    --binaryheap            To dump java heap in hprof binary format. Only valid with --binaryheap.");
+        System.out.println("    --binaryheap            To dump java heap in hprof binary format.");
         System.out.println("    --dumpfile <name>       The name of the dump file. Only valid with --binaryheap.");
-        System.out.println("    --gz <1-9>              The compression level for gzipped dump file.");
+        System.out.println("    --gz <1-9>              The compression level for gzipped dump file. Only valid with --binaryheap.");
         System.out.println("    --histo                 To print histogram of java object heap.");
         System.out.println("    --clstats               To print class loader statistics.");
         System.out.println("    --finalizerinfo         To print information on objects awaiting finalization.");

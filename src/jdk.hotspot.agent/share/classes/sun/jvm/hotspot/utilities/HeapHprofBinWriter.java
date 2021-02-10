@@ -25,6 +25,8 @@
 package sun.jvm.hotspot.utilities;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.*;
 import java.util.*;
 import java.util.zip.*;
@@ -532,13 +534,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         // seek the position to write length
         fos.getChannel().position(currentSegmentStart);
 
+        // write length
         int dumpLen = (int) dumpLenLong;
-
-        // write length as integer
-        fos.write((dumpLen >>> 24) & 0xFF);
-        fos.write((dumpLen >>> 16) & 0xFF);
-        fos.write((dumpLen >>> 8) & 0xFF);
-        fos.write((dumpLen >>> 0) & 0xFF);
+        byte[] lenBytes = genByteArrayFromInt(dumpLen);
+        fos.write(lenBytes);
 
         //Reset to previous current position
         fos.getChannel().position(currentPosition);
@@ -1251,6 +1250,14 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return (gzLevel >= 1 && gzLevel <= 9);
     }
 
+    // Convert integer to byte array with BIG_ENDIAN byte order.
+    private static byte[] genByteArrayFromInt(int integer) {
+       ByteBuffer intBuffer = ByteBuffer.allocate(4);
+       intBuffer.order(ByteOrder.BIG_ENDIAN);
+       intBuffer.putInt(integer);
+       return intBuffer.array();
+    }
+
     // We don't have allocation site info. We write a dummy
     // stack trace with this id.
     private static final int DUMMY_STACK_TRACE_ID = 1;
@@ -1486,10 +1493,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          * Fills the segmented data size into the header.
          */
         private void fillSegmentSize(int size) {
-            segmentBuffer[5] = (byte)(size >>> 24);
-            segmentBuffer[6] = (byte)(size >>> 16);
-            segmentBuffer[7] = (byte)(size >>>  8);
-            segmentBuffer[8] = (byte)(size >>>  0);
+            byte[] lenBytes = genByteArrayFromInt(size);
+            System.arraycopy(lenBytes, 0, segmentBuffer, 5, 4);
         }
 
         /**
@@ -1497,10 +1502,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          * {@code written} is incremented by {@code 4}.
          */
         private final void writeInteger(int v) {
-            segmentBuffer[segmentWritten++] = (byte)(v >>> 24);
-            segmentBuffer[segmentWritten++] = (byte)(v >>> 16);
-            segmentBuffer[segmentWritten++] = (byte)(v >>>  8);
-            segmentBuffer[segmentWritten++] = (byte)(v >>>  0);
+            byte[] intBytes = genByteArrayFromInt(v);
+            System.arraycopy(intBytes, 0, segmentBuffer, segmentWritten, 4);
+            segmentWritten += 4;
         }
 
         // The buffer size for segmentBuffer.
