@@ -382,7 +382,8 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         // Print estimated execution frequency, normalized within a [0,1] range.
         buffer[0] = 0;
         stringStream freq(buffer, sizeof(buffer) - 1);
-        freq.print("%.16f", block->_freq / max_freq);
+        // Higher precision has no practical effect in visualizations.
+        freq.print("%.8f", block->_freq / max_freq);
         assert(freq.size() < sizeof(buffer), "size in range");
         // Enforce dots as decimal separators, as required by IGV.
         StringUtils::replace_no_expand(buffer, ",", ".");
