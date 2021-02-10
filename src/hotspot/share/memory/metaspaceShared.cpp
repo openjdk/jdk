@@ -816,8 +816,15 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
 }
 
 void MetaspaceShared::prepare_for_dumping() {
+  Arguments::assert_is_dumping_archive();
   Arguments::check_unsupported_dumping_properties();
-  ClassLoader::initialize_shared_path();
+
+  EXCEPTION_MARK;
+  ClassLoader::initialize_shared_path(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
+    vm_exit_during_initialization("ClassLoader::initialize_shared_path() failed unexpectedly");
+  }
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a

@@ -2934,7 +2934,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
 // in an unnamed module.  It is also used to indicate (for all packages whose
 // classes are loaded by the boot loader) that at least one of the package's
 // classes has been loaded.
-void InstanceKlass::set_classpath_index(s2 path_index, TRAPS) {
+void InstanceKlass::set_classpath_index(s2 path_index) {
   if (_package_entry != NULL) {
     DEBUG_ONLY(PackageEntryTable* pkg_entry_tbl = ClassLoaderData::the_null_class_loader_data()->packages();)
     assert(pkg_entry_tbl->lookup_only(_package_entry->name()) == _package_entry, "Should be same");
