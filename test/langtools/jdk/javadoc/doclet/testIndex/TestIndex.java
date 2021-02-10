@@ -76,6 +76,6 @@ public class TestIndex extends JavadocTester {
                     <dd>&nbsp;</dd>
                     </dl>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/Coin.html#Enum">Enum</a></span> - Search tag in enum class pkg.Coin</dt>""");
+                    <dt><a href="pkg/Coin.html#Enum" class="search-tag-link">Enum</a> - Search tag in enum class pkg.Coin</dt>""");
     }
 }

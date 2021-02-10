@@ -268,7 +268,7 @@ public class IndexWriter extends HtmlDocletWriter {
         String itemPath = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
         itemPath += item.getUrl();
         HtmlTree labelLink = HtmlTree.A(itemPath, new StringContent(item.getLabel()));
-        Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.searchTagLink, labelLink));
+        Content dt = HtmlTree.DT(labelLink.setStyle(HtmlStyle.searchTagLink));
         dt.add(" - ");
         dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
         dlTree.add(dt);

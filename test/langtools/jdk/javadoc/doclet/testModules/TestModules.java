@@ -848,20 +848,20 @@ public class TestModules extends JavadocTester {
                     </dl>""",
                 """
                     <dl class="index">
-                    <dt><span class="search-tag-link"><a href="moduleB/module-summary.html#search_wo\
-                    rd">search_word</a></span> - Search tag in module moduleB</dt>
+                    <dt><a href="moduleB/module-summary.html#search_word" class="search-tag-link">se\
+                    arch_word</a> - Search tag in module moduleB</dt>
                     <dd>&nbsp;</dd>
-                    <dt><span class="search-tag-link"><a href="moduleA/module-summary.html#searchphr\
-                    ase">search phrase</a></span> - Search tag in module moduleA</dt>
+                    <dt><a href="moduleA/module-summary.html#searchphrase" class="search-tag-link">s\
+                    earch phrase</a> - Search tag in module moduleA</dt>
                     <dd>with description</dd>
                     </dl>""");
         checkOutput("index-all.html", false,
                 """
-                    <dt><span class="search-tag-link"><a href="moduleA/module-summary.html#searchphr\
-                    ase">search phrase</a></span> - Search tag in module moduleA</dt>
+                    <dt><a href="moduleA/module-summary.html#searchphrase" class="search-tag-link">s\
+                    earch phrase</a> - Search tag in module moduleA</dt>
                     <dd>with description</dd>
-                    <dt><span class="search-tag-link"><a href="moduleA/module-summary.html#searchphr\
-                    ase">search phrase</a></span> - Search tag in module moduleA</dt>
+                    <dt><a href="moduleA/module-summary.html#searchphrase" class="search-tag-link">s\
+                    earch phrase</a></span> - Search tag in module moduleA</dt>
                     <dd>with description</dd>""");
     }
 
