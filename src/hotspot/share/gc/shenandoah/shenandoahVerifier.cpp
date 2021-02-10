@@ -160,7 +160,7 @@ private:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          Atomic::add(&_ld[obj_reg->index()], (uint) obj->size());
+          Atomic::add(&_ld[obj_reg->index()], (uint) obj->size(), memory_order_relaxed);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live(),
@@ -483,7 +483,7 @@ public:
       }
     }
 
-    Atomic::add(&_processed, processed);
+    Atomic::add(&_processed, processed, memory_order_relaxed);
   }
 };
 
@@ -512,7 +512,7 @@ public:
           _processed(0) {};
 
   size_t processed() {
-    return _processed;
+    return Atomic::load(&_processed);
   }
 
   virtual void work(uint worker_id) {
@@ -522,7 +522,7 @@ public:
                                   _options);
 
     while (true) {
-      size_t v = Atomic::fetch_and_add(&_claimed, 1u);
+      size_t v = Atomic::fetch_and_add(&_claimed, 1u, memory_order_relaxed);
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
         if (!r->is_humongous() && !r->is_trash()) {
@@ -542,7 +542,7 @@ public:
     if (_heap->complete_marking_context()->is_marked((oop)obj)) {
       verify_and_follow(obj, stack, cl, &processed);
     }
-    Atomic::add(&_processed, processed);
+    Atomic::add(&_processed, processed, memory_order_relaxed);
   }
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
@@ -575,7 +575,7 @@ public:
       }
     }
 
-    Atomic::add(&_processed, processed);
+    Atomic::add(&_processed, processed, memory_order_relaxed);
   }
 
   void verify_and_follow(HeapWord *addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t *processed) {
@@ -747,12 +747,12 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = Atomic::load_acquire(&ld[r->humongous_start_region()->index()]);
+        juint start_live = Atomic::load(&ld[r->humongous_start_region()->index()]);
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }
       } else {
-        verf_live = Atomic::load_acquire(&ld[r->index()]);
+        verf_live = Atomic::load(&ld[r->index()]);
       }
 
       size_t reg_live = r->get_live_data_words();
