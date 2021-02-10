@@ -173,7 +173,7 @@ bool MemTracker::transition_to(NMT_TrackingLevel level) {
 // Report during error reporting.
 void MemTracker::error_report(outputStream* output) {
   if (tracking_level() >= NMT_summary) {
-    report(true, output, K); // just print summary for error case.
+    report(true, output, MemReporterBase::default_scale); // just print summary for error case.
   }
 }
 
@@ -206,9 +206,7 @@ void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
       output->print("Metaspace:");
       // The basic metaspace report avoids any locking and should be safe to
       // be called at any time.
-      // (Note: scale = 0 in NMT is default scale, in metaspace reporting
-      //  it means dynamic, human readable scale.)
-      MetaspaceUtils::print_basic_report(output, scale == 0 ? K : scale);
+      MetaspaceUtils::print_basic_report(output, scale);
     }
   }
 }
