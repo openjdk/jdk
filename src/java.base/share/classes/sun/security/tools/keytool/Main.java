@@ -4265,6 +4265,26 @@ public final class Main {
             }
         }
         try {
+            // always non-critical
+            setExt(result, new SubjectKeyIdentifierExtension(
+                    new KeyIdentifier(pkey).getIdentifier()));
+            if (akey != null && !pkey.equals(akey)) {
+                if (aSubjectKeyIdExt == null) {
+                    setExt(result, new AuthorityKeyIdentifierExtension(
+                            new KeyIdentifier(akey), null, null));
+                } else {
+                    // To enforce compliance with RFC 5280 section 4.2.1.1: "Where a key
+                    // identifier has been previously established, the CA SHOULD use the
+                    // previously established identifier."
+                    // SubjectKeyIdentifierExtension in X509Certificate encapsulates its
+                    // value with two levels of OCTET_STRING wrapper.
+                    byte[] subjectKeyId1 = new DerValue(aSubjectKeyIdExt).getOctetString();
+                    byte[] subjectKeyId2 = new DerValue(subjectKeyId1).getOctetString();
+                    setExt(result, new AuthorityKeyIdentifierExtension(
+                            new KeyIdentifier(subjectKeyId2), null, null));
+                }
+            }
+
             // name{:critical}{=value}
             // Honoring requested extensions
             if (requestedEx != null) {
@@ -4585,25 +4605,6 @@ public final class Main {
                     default:
                         throw new Exception(rb.getString(
                                 "Unknown.extension.type.") + extstr);
-                }
-            }
-            // always non-critical
-            setExt(result, new SubjectKeyIdentifierExtension(
-                    new KeyIdentifier(pkey).getIdentifier()));
-            if (akey != null && !pkey.equals(akey)) {
-                if (aSubjectKeyIdExt == null) {
-                    setExt(result, new AuthorityKeyIdentifierExtension(
-                            new KeyIdentifier(akey), null, null));
-                } else {
-                    // To enforce compliance with RFC 5280 section 4.2.1.1: "Where a key
-                    // identifier has been previously established, the CA SHOULD use the
-                    // previously established identifier."
-                    // SubjectKeyIdentifierExtension in X509Certificate encapsulates its
-                    // value with two levels of OCTET_STRING wrapper.
-                    byte[] subjectKeyId1 = new DerValue(aSubjectKeyIdExt).getOctetString();
-                    byte[] subjectKeyId2 = new DerValue(subjectKeyId1).getOctetString();
-                    setExt(result, new AuthorityKeyIdentifierExtension(
-                            new KeyIdentifier(subjectKeyId2), null, null));
                 }
             }
         } catch(IOException e) {
