@@ -1252,10 +1252,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     // Convert integer to byte array with BIG_ENDIAN byte order.
     private static byte[] genByteArrayFromInt(int integer) {
-       ByteBuffer intBuffer = ByteBuffer.allocate(4);
-       intBuffer.order(ByteOrder.BIG_ENDIAN);
-       intBuffer.putInt(integer);
-       return intBuffer.array();
+        ByteBuffer intBuffer = ByteBuffer.allocate(4);
+        intBuffer.order(ByteOrder.BIG_ENDIAN);
+        intBuffer.putInt(integer);
+        return intBuffer.array();
     }
 
     // We don't have allocation site info. We write a dummy
