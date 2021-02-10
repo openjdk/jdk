@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,28 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+/**
+ * @test
+ * @bug 6211257
+ * @summary Verifies NPE is thrown for BasicStroke.createStrokedShape(null).
+ */
+import java.awt.BasicStroke;
+import java.awt.Shape;
 
-import static java.lang.ProcessBuilder.Redirect.*;
+public class TestNullShape {
 
-class InheritIO {
+    public static void main(String[] args) {
 
-    public static class TestInheritIO {
-        public static void main(String args[]) throws Throwable {
-            int err = new ProcessBuilder(args).inheritIO().start().waitFor();
-            System.err.print("exit value: " + err);
-            System.exit(err);
-        }
-    }
-
-    public static class TestRedirectInherit {
-        public static void main(String args[]) throws Throwable {
-            int err = new ProcessBuilder(args)
-                    .redirectInput(INHERIT)
-                    .redirectOutput(INHERIT)
-                    .redirectError(INHERIT)
-                    .start().waitFor();
-            System.err.print("exit value: " + err);
-            System.exit(err);
+        BasicStroke bs = new BasicStroke();
+        try {
+            Shape s = bs.createStrokedShape(null);
+            System.out.println("result: false");
+            throw new RuntimeException("NPE is expected");
+        } catch (NullPointerException ne) {
+            System.out.println("result (npe): true");
         }
     }
 }

@@ -3379,7 +3379,7 @@ int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register t
   assert(!VM_Version::has_vpmsumb(), "Vector version should be used instead!");
 
   // Point to 4 byte folding tables (byte-reversed version for Big Endian)
-  // Layout: See StubRoutines::generate_crc_constants.
+  // Layout: See StubRoutines::ppc::generate_crc_constants.
 #ifdef VM_LITTLE_ENDIAN
   const int ix0 = 3 * CRC32_TABLE_SIZE;
   const int ix1 = 2 * CRC32_TABLE_SIZE;

@@ -3048,15 +3048,19 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Add a package name prefix if the name is not absolute Remove leading "/"
+     * Add a package name prefix if the name is not absolute. Remove leading "/"
      * if name is absolute
      */
     private String resolveName(String name) {
         if (!name.startsWith("/")) {
-            Class<?> c = isArray() ? elementType() : this;
-            String baseName = c.getPackageName();
+            String baseName = getPackageName();
             if (baseName != null && !baseName.isEmpty()) {
-                name = baseName.replace('.', '/') + "/" + name;
+                int len = baseName.length() + 1 + name.length();
+                StringBuilder sb = new StringBuilder(len);
+                name = sb.append(baseName.replace('.', '/'))
+                    .append('/')
+                    .append(name)
+                    .toString();
             }
         } else {
             name = name.substring(1);

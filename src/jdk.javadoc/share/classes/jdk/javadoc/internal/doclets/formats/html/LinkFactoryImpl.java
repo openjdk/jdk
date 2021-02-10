@@ -39,7 +39,6 @@ import javax.lang.model.type.TypeMirror;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -78,7 +77,6 @@ public class LinkFactoryImpl extends LinkFactory {
     protected Content getClassLink(LinkInfo linkInfo) {
         BaseConfiguration configuration = m_writer.configuration;
         LinkInfoImpl classLinkInfo = (LinkInfoImpl) linkInfo;
-        boolean noLabel = linkInfo.label == null || linkInfo.label.isEmpty();
         TypeElement typeElement = classLinkInfo.typeElement;
         // Create a tool tip if we are linking to a class or interface.  Don't
         // create one if we are linking to a member.
@@ -121,9 +119,6 @@ public class LinkFactoryImpl extends LinkFactory {
                                     filename.fragment(m_writer.htmlIds.forPreviewSection(target).name()),
                                     m_writer.contents.previewMark)));
                         }
-                        if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-                            link.add(getTypeParameterLinks(linkInfo));
-                        }
                         return link;
                 }
             }
@@ -140,9 +135,6 @@ public class LinkFactoryImpl extends LinkFactory {
                         m_writer.contents.previewMark,
                         false, false)));
                 }
-                if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-                    link.add(getTypeParameterLinks(linkInfo));
-                }
                 return link;
             }
         }
@@ -151,14 +143,11 @@ public class LinkFactoryImpl extends LinkFactory {
         if (flags.contains(ElementFlag.PREVIEW)) {
             link.add(HtmlTree.SUP(m_writer.contents.previewMark));
         }
-        if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-            link.add(getTypeParameterLinks(linkInfo));
-        }
         return link;
     }
 
     @Override
-    protected Content getTypeParameterLinks(LinkInfo linkInfo, boolean isClassLabel) {
+    protected Content getTypeParameterLinks(LinkInfo linkInfo) {
         Content links = newContent();
         List<TypeMirror> vars = new ArrayList<>();
         TypeMirror ctype = linkInfo.type != null
@@ -176,8 +165,7 @@ public class LinkFactoryImpl extends LinkFactory {
             // Nothing to document.
             return links;
         }
-        if (((linkInfo.includeTypeInClassLinkLabel && isClassLabel)
-                || (linkInfo.includeTypeAsSepLink && !isClassLabel)) && !vars.isEmpty()) {
+        if (!vars.isEmpty()) {
             links.add("<");
             boolean many = false;
             for (TypeMirror t : vars) {
@@ -284,11 +272,6 @@ public class LinkFactoryImpl extends LinkFactory {
      * @param linkInfo the information about the link.
      */
     private DocPath getPath(LinkInfoImpl linkInfo) {
-        if (linkInfo.context == LinkInfoImpl.Kind.PACKAGE_FRAME) {
-            //Not really necessary to do this but we want to be consistent
-            //with 1.4.2 output.
-            return docPaths.forName(linkInfo.typeElement);
-        }
         return m_writer.pathToRoot.resolve(docPaths.forClass(linkInfo.typeElement));
     }
 }
