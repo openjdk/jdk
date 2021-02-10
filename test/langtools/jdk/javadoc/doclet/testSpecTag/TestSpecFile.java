@@ -53,8 +53,8 @@ public class TestSpecFile extends JavadocTester {
         tb.writeJavaFiles(src,
                 """
                     package p;
-                    /** 
-                     * First sentence. 
+                    /**
+                     * First sentence.
                      * @spec http://example.com/spec1.txt silly text 1
                      * @spec http://example.com/spec2.txt silly text 2
                      */
@@ -107,21 +107,21 @@ public class TestSpecFile extends JavadocTester {
         tb.writeFile(specFile,
                 """
                     # Example copyright line
-                    
+
                     # first example
                     http://example.com/spec1.txt Canonical Spec1 Title
-                    
+
                     #second example
                     http://example.com/spec2.txt Canonical Spec2 Title
-                    
+
                     # EOF
                     """);
 
         tb.writeJavaFiles(src,
                 """
                     package p;
-                    /** 
-                     * First sentence. 
+                    /**
+                     * First sentence.
                      * @spec http://example.com/spec1.txt silly text 1
                      * @spec http://example.com/spec2.txt silly text 2
                      */
@@ -160,8 +160,8 @@ public class TestSpecFile extends JavadocTester {
         tb.writeJavaFiles(src,
                 """
                     package p;
-                    /** 
-                     * First sentence. 
+                    /**
+                     * First sentence.
                      * @spec http://example.com/spec1.txt silly text 1
                      * @spec http://example.com/spec2.txt silly text 2
                      */
@@ -220,8 +220,8 @@ public class TestSpecFile extends JavadocTester {
         tb.writeJavaFiles(src,
                 """
                     package p;
-                    /** 
-                     * First sentence. 
+                    /**
+                     * First sentence.
                      * @spec http://example.com/spec/file1.html silly text 1
                      * @spec http://example.com/spec/file2.html silly text 2
                      */
