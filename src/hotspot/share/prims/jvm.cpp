@@ -3290,6 +3290,7 @@ JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
     InstanceKlass* ik = vfst.method()->method_holder();
     oop loader = ik->class_loader();
     if (loader != NULL && !SystemDictionary::is_platform_class_loader(loader)) {
+      // Skip reflection related frames
       if (!ik->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass()) &&
           !ik->is_subclass_of(vmClasses::reflect_ConstructorAccessorImpl_klass())) {
         return JNIHandles::make_local(THREAD, loader);
