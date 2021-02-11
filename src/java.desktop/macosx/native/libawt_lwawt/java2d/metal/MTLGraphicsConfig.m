@@ -113,20 +113,20 @@ JNIEXPORT jboolean JNICALL
 Java_sun_java2d_metal_MTLGraphicsConfig_tryLoadMetalLibrary
     (JNIEnv *env, jclass mtlgc, jint displayID, jstring shadersLibName)
 {
-  jboolean ret = JNI_FALSE;
-  JNI_COCOA_ENTER(env);
-  NSMutableArray * retArray = [NSMutableArray arrayWithCapacity:3];
-  [retArray addObject: [NSNumber numberWithInt: (int)displayID]];
-  [retArray addObject: [NSString stringWithUTF8String: JNU_GetStringPlatformChars(env, shadersLibName, 0)]];
-  if ([NSThread isMainThread]) {
-      [MTLGraphicsConfigUtil _tryLoadMetalLibrary: retArray];
-  } else {
-      [MTLGraphicsConfigUtil performSelectorOnMainThread: @selector(_tryLoadMetalLibrary:) withObject: retArray waitUntilDone: YES];
-  }
-  NSNumber * num = (NSNumber *)[retArray objectAtIndex: 0];
-  ret = (jboolean)[num boolValue];
-  JNI_COCOA_EXIT(env);
-  return ret;
+    jboolean ret = JNI_FALSE;
+    JNI_COCOA_ENTER(env);
+    NSMutableArray * retArray = [NSMutableArray arrayWithCapacity:3];
+    [retArray addObject: [NSNumber numberWithInt: (int)displayID]];
+    [retArray addObject: [NSString stringWithUTF8String: JNU_GetStringPlatformChars(env, shadersLibName, 0)]];
+
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^() {
+        [MTLGraphicsConfigUtil _tryLoadMetalLibrary: retArray];
+    }];
+
+    NSNumber * num = (NSNumber *)[retArray objectAtIndex: 0];
+    ret = (jboolean)[num boolValue];
+    JNI_COCOA_EXIT(env);
+    return ret;
 }
 
 
@@ -144,20 +144,20 @@ JNIEXPORT jlong JNICALL
 Java_sun_java2d_metal_MTLGraphicsConfig_getMTLConfigInfo
     (JNIEnv *env, jclass mtlgc, jint displayID, jstring mtlShadersLib)
 {
-  jlong ret = 0L;
-  JNI_COCOA_ENTER(env);
-  NSMutableArray * retArray = [NSMutableArray arrayWithCapacity:3];
-  [retArray addObject: [NSNumber numberWithInt: (int)displayID]];
-  [retArray addObject: [NSString stringWithUTF8String: JNU_GetStringPlatformChars(env, mtlShadersLib, 0)]];
-  if ([NSThread isMainThread]) {
-      [MTLGraphicsConfigUtil _getMTLConfigInfo: retArray];
-  } else {
-      [MTLGraphicsConfigUtil performSelectorOnMainThread: @selector(_getMTLConfigInfo:) withObject: retArray waitUntilDone: YES];
-  }
-  NSNumber * num = (NSNumber *)[retArray objectAtIndex: 0];
-  ret = (jlong)[num longValue];
-  JNI_COCOA_EXIT(env);
-  return ret;
+    jlong ret = 0L;
+    JNI_COCOA_ENTER(env);
+    NSMutableArray * retArray = [NSMutableArray arrayWithCapacity:3];
+    [retArray addObject: [NSNumber numberWithInt: (int)displayID]];
+    [retArray addObject: [NSString stringWithUTF8String: JNU_GetStringPlatformChars(env, mtlShadersLib, 0)]];
+
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^() {
+        [MTLGraphicsConfigUtil _getMTLConfigInfo: retArray];
+    }];
+
+    NSNumber * num = (NSNumber *)[retArray objectAtIndex: 0];
+    ret = (jlong)[num longValue];
+    JNI_COCOA_EXIT(env);
+    return ret;
 }
 
 
