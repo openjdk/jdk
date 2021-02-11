@@ -66,7 +66,7 @@ import org.xml.sax.SAXException;
 
 /*
  * @test
- * @bug 6439439 8087303 8174025 8223291 8249867
+ * @bug 6439439 8087303 8174025 8223291 8249867 8261209
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true common.prettyprint.PrettyPrintTest
  * @run testng/othervm common.prettyprint.PrettyPrintTest
@@ -78,11 +78,15 @@ public class PrettyPrintTest {
     private static final String JDK_IS_STANDALONE =
             "http://www.oracle.com/xml/jaxp/properties/isStandalone";
     private static final String SP_JDK_IS_STANDALONE = "jdk.xml.isStandalone";
+    // pretty-print=true, isStandalone=true, linebreak added after header
     private static final String XML_LB
             = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sometag/>\n";
-    private static final String XML_NOLB
+    // pretty-print=true, isStandalone=false, no linebreak after header
+    private static final String XML_PPTRUE_NOLB
             = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sometag/>\n";
-
+    // pretty-print=false, isStandalone=true, linebreak added after header
+    private static final String XML_PPFALSE_LB
+            = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sometag/>";
     /*
      * test CDATA, elements only, text and element, xml:space property, mixed
      * node types.
@@ -101,16 +105,22 @@ public class PrettyPrintTest {
     /*
      * Bug: 8249867
      * DataProvider: for testing the isStandalone property
-     * Data columns: property, system property, value, expected result
+     * Data columns: pretty-print, property, system property, value, expected result
      */
     @DataProvider(name = "setting")
     Object[][] getData() throws Exception {
         return new Object[][]{
-            {false, true, true, XML_LB},   //set System property
-            {false, true, false, XML_NOLB},//set System property
-            {true, false, true, XML_LB},   //set property
-            {true, false, false, XML_NOLB},//set property
-            {false, false, false, XML_NOLB} //default
+            // pretty-print = true
+            {true, false, true, true, XML_LB},       //set System property = true
+            {true, false, true, false, XML_PPTRUE_NOLB}, //set System property = false
+            {true, true, false, true, XML_LB},       //set property = true
+            {true, true, false, false, XML_PPTRUE_NOLB}, //set property = false
+            {true, false, false, false, XML_PPTRUE_NOLB},//default
+
+            // pretty-print = false
+            {false, false, true, true, XML_PPFALSE_LB}, //System property = true
+            {false, true, false, true, XML_PPFALSE_LB}, //set property = true
+
         };
     }
 
@@ -134,9 +144,14 @@ public class PrettyPrintTest {
      * Bug: 8249867
      * Verifies the use of the new property "isStandalone" and the
      * corresponding System property "jdk.xml.isStandalone".
+     *
+     * Bug: 8261209
+     * Verifies that the property takes effect regardless of the settings of
+     * property "pretty-print".
      */
     @Test(dataProvider = "setting")
-    public void test(boolean p, boolean sp, boolean val, String expected)
+    public void testIsStandalone_DOMLS(boolean pretty, boolean p, boolean sp,
+            boolean val, String expected)
             throws Exception {
         if (sp) {
             setSystemProperty(SP_JDK_IS_STANDALONE, Boolean.toString(val));
@@ -144,9 +159,12 @@ public class PrettyPrintTest {
         Document document = getDocument();
         DOMImplementationLS impl = (DOMImplementationLS)document.getImplementation();
         LSSerializer ser = impl.createLSSerializer();
-        ser.getDomConfig().setParameter("format-pretty-print", true);
+        DOMConfiguration config = ser.getDomConfig();
+        if (pretty) {
+            config.setParameter("format-pretty-print", true);
+        }
         if (p && !sp) {
-            ser.getDomConfig().setParameter(JDK_IS_STANDALONE, val);
+            config.setParameter(JDK_IS_STANDALONE, val);
         }
         if (sp) {
             clearSystemProperty(SP_JDK_IS_STANDALONE);

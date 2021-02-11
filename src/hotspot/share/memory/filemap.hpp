@@ -117,7 +117,7 @@ public:
   SharedPathTable() : _table(NULL), _size(0) {}
   SharedPathTable(Array<u8>* table, int size) : _table(table), _size(size) {}
 
-  void dumptime_init(ClassLoaderData* loader_data, Thread* THREAD);
+  void dumptime_init(ClassLoaderData* loader_data, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
 
   int size() {
@@ -498,8 +498,8 @@ public:
   // Stop CDS sharing and unmap CDS regions.
   static void stop_sharing_and_unmap(const char* msg);
 
-  static void allocate_shared_path_table();
-  static void copy_shared_path_table(ClassLoaderData* loader_data, Thread* THREAD);
+  static void allocate_shared_path_table(TRAPS);
+  static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool validate_shared_path_table();
