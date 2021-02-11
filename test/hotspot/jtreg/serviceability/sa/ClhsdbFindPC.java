@@ -216,10 +216,11 @@ public class ClhsdbFindPC {
             // This tests PointerFinder support for native C++ symbols.
             cmds = List.of("examine " + tid);
             String examineOutput = runTest(withCore, cmds, null);
-            // Extract <value> and use findpc on it. The output should look something like:
-            //    Address 0x00007fed86f610b8: vtable for JavaThread + 0x10
-            parts = examineOutput.split(": ");
+            // Extract <value>.
+            parts = examineOutput.split(tid + ": ");
             String value = parts[1];
+            // Use findpc on <value>. The output should look something like:
+            //    Address 0x00007fed86f610b8: vtable for JavaThread + 0x10
             cmdStr = "findpc " + value;
             cmds = List.of(cmdStr);
             expStrMap = new HashMap<>();
