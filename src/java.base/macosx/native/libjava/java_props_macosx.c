@@ -247,7 +247,7 @@ void setOSNameAndVersion(java_props_t *sprops) {
         [invoke getReturnValue:&osVer];
 
         NSString *nsVerStr;
-        // Copy out the char* if running on version other than pre-10.16 Mac OS (10.16 == 11.x)
+        // Copy out the char* if running on version other than 10.16 Mac OS (10.16 == 11.x)
         if (!((long)osVer.majorVersion == 10 &&
                    (long)osVer.minorVersion >= 16)) {
             if (osVer.patchVersion == 0) { // Omit trailing ".0"
