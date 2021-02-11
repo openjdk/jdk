@@ -3885,7 +3885,9 @@ public class Lower extends TreeTranslator {
 
                 stmtList.append(switch2);
 
-                return make.Block(0L, stmtList.toList());
+                JCBlock res = make.Block(0L, stmtList.toList());
+                res.endpos = TreeInfo.endPos(tree);
+                return res;
             } else {
                 JCSwitchExpression switch2 = make.SwitchExpression(make.Ident(dollar_tmp), lb.toList());
 
