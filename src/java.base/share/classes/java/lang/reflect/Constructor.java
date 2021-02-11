@@ -308,8 +308,7 @@ public final class Constructor<T> extends Executable {
      * same formal parameter types.
      */
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof Constructor) {
-            Constructor<?> other = (Constructor<?>)obj;
+        if (obj instanceof Constructor<?> other) {
             if (getDeclaringClass() == other.getDeclaringClass()) {
                 return equalParamTypes(parameterTypes, other.parameterTypes);
             }

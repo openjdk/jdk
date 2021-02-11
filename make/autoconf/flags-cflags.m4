@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -167,11 +167,6 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
       DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
-
-      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-        # missing-method-return-type triggers in JavaNativeFoundation framework
-        DISABLED_WARNINGS="$DISABLED_WARNINGS missing-method-return-type"
-      fi
 
       ;;
 
@@ -605,25 +600,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     fi
   fi
 
-  # Optional POSIX functionality needed by the JVM
-  #
-  # Check if clock_gettime is available and in which library. This indicates
-  # availability of CLOCK_MONOTONIC for hotspot. But we don't need to link, so
-  # don't let it update LIBS.
-  save_LIBS="$LIBS"
-  AC_SEARCH_LIBS(clock_gettime, rt, [HAS_CLOCK_GETTIME=true], [])
-  if test "x$LIBS" = "x-lrt "; then
-    CLOCK_GETTIME_IN_LIBRT=true
-  fi
-  LIBS="$save_LIBS"
-
-  if test "x$HAS_CLOCK_GETTIME" = "xtrue"; then
-    OS_CFLAGS_JVM="$OS_CFLAGS_JVM -DSUPPORTS_CLOCK_MONOTONIC"
-    if test "x$CLOCK_GETTIME_IN_LIBRT" = "xtrue"; then
-      OS_CFLAGS_JVM="$OS_CFLAGS_JVM -DNEEDS_LIBRT"
-    fi
-  fi
-
   # Extra flags needed when building optional static versions of certain
   # JDK libraries.
   STATIC_LIBS_CFLAGS="-DSTATIC_BUILD=1"
@@ -684,9 +660,21 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   # CFLAGS PER CPU
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     # COMMON to gcc and clang
+    AC_MSG_CHECKING([if $1 is x86])
     if test "x$FLAGS_CPU" = xx86; then
-      # Force compatibility with i586 on 32 bit intel platforms.
-      $1_CFLAGS_CPU="-march=i586"
+      AC_MSG_RESULT([yes])
+      AC_MSG_CHECKING([if control flow protection is enabled by additional compiler flags])
+      if echo "${EXTRA_CFLAGS}${EXTRA_CXXFLAGS}${EXTRA_ASFLAGS}" | ${GREP} -q 'fcf-protection' ; then
+        # cf-protection requires CMOV and thus i686
+        $1_CFLAGS_CPU="-march=i686"
+        AC_MSG_RESULT([yes, forcing ${$1_CFLAGS_CPU}])
+      else
+        # Force compatibility with i586 on 32 bit intel platforms.
+        $1_CFLAGS_CPU="-march=i586"
+        AC_MSG_RESULT([no, forcing ${$1_CFLAGS_CPU}])
+      fi
+    else
+      AC_MSG_RESULT([no])
     fi
   fi
 

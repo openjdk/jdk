@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,9 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Locale;
+import java.util.*;
+
+import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.util.HexDumpEncoder;
 
@@ -648,8 +647,8 @@ enum SSLExtension implements SSLStringizer {
     }
 
     public boolean isAvailable(ProtocolVersion protocolVersion) {
-        for (int i = 0; i < supportedProtocols.length; i++) {
-            if (supportedProtocols[i] == protocolVersion) {
+        for (ProtocolVersion supportedProtocol : supportedProtocols) {
+            if (supportedProtocol == protocolVersion) {
                 return true;
             }
         }
@@ -674,8 +673,7 @@ enum SSLExtension implements SSLStringizer {
         String extData;
         if (stringizer == null) {
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
-            String encoded = hexEncoder.encode(byteBuffer.duplicate());
-            extData = encoded;
+            extData = hexEncoder.encode(byteBuffer.duplicate());
         } else {
             extData = stringizer.toString(handshakeContext, byteBuffer);
         }
@@ -714,18 +712,23 @@ enum SSLExtension implements SSLStringizer {
         static final Collection<SSLExtension> defaults;
 
         static {
+            Collection<String> clientDisabledExtensions =
+                    getDisabledExtensions("jdk.tls.client.disableExtensions");
             Collection<SSLExtension> extensions = new LinkedList<>();
             for (SSLExtension extension : SSLExtension.values()) {
-                if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE) {
+                if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE &&
+                        !clientDisabledExtensions.contains(extension.name)) {
                     extensions.add(extension);
                 }
             }
 
-            // Switch off SNI extention?
-            boolean enableExtension =
-                Utilities.getBooleanProperty("jsse.enableSNIExtension", true);
-            if (!enableExtension) {
-                extensions.remove(CH_SERVER_NAME);
+            // Switch off SNI extension?
+            if (extensions.contains(CH_SERVER_NAME)) {
+                boolean enableExtension = Utilities.getBooleanProperty(
+                        "jsse.enableSNIExtension", true);
+                if (!enableExtension) {
+                    extensions.remove(CH_SERVER_NAME);
+                }
             }
 
             // To switch off the max_fragment_length extension.
@@ -736,13 +739,15 @@ enum SSLExtension implements SSLStringizer {
             // the two properties set to true, the extension is switch on.
             // We may remove the "jsse.enableMFLExtension" property in the
             // future.  Please don't continue to use the misspelling property.
-            enableExtension =
-                Utilities.getBooleanProperty(
-                        "jsse.enableMFLNExtension", false) ||
-                Utilities.getBooleanProperty(
-                        "jsse.enableMFLExtension", false);
-            if (!enableExtension) {
-                extensions.remove(CH_MAX_FRAGMENT_LENGTH);
+            if (extensions.contains(CH_MAX_FRAGMENT_LENGTH)) {
+                boolean enableExtension =
+                        Utilities.getBooleanProperty(
+                                "jsse.enableMFLNExtension", false) ||
+                        Utilities.getBooleanProperty(
+                                "jsse.enableMFLExtension", false);
+                if (!enableExtension) {
+                    extensions.remove(CH_MAX_FRAGMENT_LENGTH);
+                }
             }
 
             // To switch on certificate_authorities extension in ClientHello.
@@ -783,10 +788,12 @@ enum SSLExtension implements SSLStringizer {
             // lot in practice.  When there is a need to use this extension
             // in ClientHello handshake message, please take care of the
             // potential compatibility and interoperability issues above.
-            enableExtension = Utilities.getBooleanProperty(
-                    "jdk.tls.client.enableCAExtension", false);
-            if (!enableExtension) {
-                extensions.remove(CH_CERTIFICATE_AUTHORITIES);
+            if (extensions.contains(CH_CERTIFICATE_AUTHORITIES)) {
+                boolean enableExtension = Utilities.getBooleanProperty(
+                        "jdk.tls.client.enableCAExtension", false);
+                if (!enableExtension) {
+                    extensions.remove(CH_CERTIFICATE_AUTHORITIES);
+                }
             }
 
             defaults = Collections.unmodifiableCollection(extensions);
@@ -798,14 +805,51 @@ enum SSLExtension implements SSLStringizer {
         static final Collection<SSLExtension> defaults;
 
         static {
+            Collection<String> serverDisabledExtensions =
+                    getDisabledExtensions("jdk.tls.server.disableExtensions");
             Collection<SSLExtension> extensions = new LinkedList<>();
             for (SSLExtension extension : SSLExtension.values()) {
-                if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE) {
+                if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE &&
+                        !serverDisabledExtensions.contains(extension.name)) {
                     extensions.add(extension);
                 }
             }
 
             defaults = Collections.unmodifiableCollection(extensions);
         }
+    }
+
+    // Get disabled extensions, which could be customized with System Properties.
+    private static Collection<String> getDisabledExtensions(
+                String propertyName) {
+        String property = GetPropertyAction.privilegedGetProperty(propertyName);
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+            SSLLogger.fine(
+                    "System property " + propertyName + " is set to '" +
+                            property + "'");
+        }
+        if (property != null && !property.isEmpty()) {
+            // remove double quote marks from beginning/end of the property
+            if (property.length() > 1 && property.charAt(0) == '"' &&
+                    property.charAt(property.length() - 1) == '"') {
+                property = property.substring(1, property.length() - 1);
+            }
+        }
+
+        if (property != null && !property.isEmpty()) {
+            String[] extensionNames = property.split(",");
+            Collection<String> extensions =
+                    new ArrayList<>(extensionNames.length);
+            for (String extension : extensionNames) {
+                extension = extension.trim();
+                if (!extension.isEmpty()) {
+                    extensions.add(extension);
+                }
+            }
+
+            return extensions;
+        }
+
+        return Collections.emptyList();
     }
 }

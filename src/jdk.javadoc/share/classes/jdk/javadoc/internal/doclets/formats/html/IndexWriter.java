@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ public class IndexWriter extends HtmlDocletWriter {
     protected void addHeading(char ch, Content contentTree) {
         Content headContent = new StringContent(String.valueOf(ch));
         HtmlTree heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, HtmlStyle.title, headContent)
-                .setId(getNameForIndex(ch));
+                .setId(HtmlIds.forIndexChar(ch));
         contentTree.add(heading);
     }
 
@@ -226,7 +226,8 @@ public class IndexWriter extends HtmlDocletWriter {
             case ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
                 dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                        getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element, new StringContent(label))));
+                        getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element,
+                                new StringContent(label), false)));
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
                 break;
@@ -355,7 +356,7 @@ public class IndexWriter extends HtmlDocletWriter {
             Content label = new StringContent(Character.toString(ch));
             Content link = splitIndex
                     ? links.createLink(DocPaths.indexN(iter.nextIndex()), label)
-                    : links.createLink(getNameForIndex(ch), label);
+                    : links.createLink(HtmlIds.forIndexChar(ch), label);
             contentTree.add(link);
             contentTree.add(Entity.NO_BREAK_SPACE);
         }
@@ -370,15 +371,4 @@ public class IndexWriter extends HtmlDocletWriter {
                 .collect(Collectors.toList());
         contentTree.add(contents.join(getVerticalSeparator(), pageLinks));
     }
-
-    /**
-     * Returns the anchor name for a first character of names in the index.
-     *
-     * @param firstCharacter the character
-     * @return               a name
-     */
-    protected String getNameForIndex(char firstCharacter) {
-        return "I:" + links.getName(Character.toString(firstCharacter));
-    }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "asm/assembler.hpp"
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
+#include "runtime/vm_version.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -167,6 +168,9 @@ class MacroAssembler: public Assembler {
   void movflt(XMMRegister dst, Address src) { movss(dst, src); }
   void movflt(XMMRegister dst, AddressLiteral src);
   void movflt(Address dst, XMMRegister src) { movss(dst, src); }
+
+  // Move with zero extension
+  void movfltz(XMMRegister dst, XMMRegister src) { movss(dst, src); }
 
   void movdbl(XMMRegister dst, XMMRegister src) {
     if (dst-> encoding() == src->encoding()) return;

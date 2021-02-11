@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
- *      ByteMaxVectorLoadStoreTests
+ *      -XX:-TieredCompilation ByteMaxVectorLoadStoreTests
  *
  */
 
@@ -66,36 +66,14 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
 
     static final int BUFFER_SIZE = Integer.getInteger("jdk.incubator.vector.test.buffer-size", BUFFER_REPS * (Max / 8));
 
-    static void assertArraysEquals(byte[] a, byte[] r, boolean[] mask) {
+    static void assertArraysEquals(byte[] r, byte[] a, boolean[] mask) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(mask[i % SPECIES.length()] ? a[i] : (byte) 0, r[i]);
+                Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (byte) 0);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(mask[i % SPECIES.length()] ? a[i] : (byte) 0, r[i], "at index #" + i);
-        }
-    }
-
-    static void assertArraysEquals(byte[] a, byte[] r, int[] im) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(a[im[i]], r[i]);
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(a[im[i]], r[i], "at index #" + i);
-        }
-    }
-
-    static void assertArraysEquals(byte[] a, byte[] r, int[] im, boolean[] mask) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(mask[i % SPECIES.length()] ? a[im[i]] : (byte) 0, r[i]);
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(mask[i % SPECIES.length()] ? a[im[i]] : (byte) 0, r[i], "at index #" + i);
+            Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (byte) 0, "at index #" + i);
         }
     }
 
@@ -399,7 +377,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
                 av.intoArray(r, i);
             }
         }
-        Assert.assertEquals(a, r);
+        Assert.assertEquals(r, a);
     }
 
     @Test(dataProvider = "byteProviderForIOOBE")
@@ -470,7 +448,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
                 av.intoArray(r, i);
             }
         }
-        assertArraysEquals(a, r, mask);
+        assertArraysEquals(r, a, mask);
 
 
         r = new byte[a.length];
@@ -481,7 +459,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
                 av.intoArray(r, i, vmask);
             }
         }
-        assertArraysEquals(a, r, mask);
+        assertArraysEquals(r, a, mask);
     }
 
     @Test(dataProvider = "byteMaskProviderForIOOBE")
@@ -554,7 +532,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
                 vmask.intoArray(r, i);
             }
         }
-        Assert.assertEquals(mask, r);
+        Assert.assertEquals(r, mask);
     }
 
 
@@ -578,7 +556,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
         Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
         Assert.assertEquals(r.position(), 0, "Result buffer position changed");
         Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        Assert.assertEquals(a, r, "Buffers not equal");
+        Assert.assertEquals(r, a, "Buffers not equal");
     }
 
     @Test(dataProvider = "byteByteProviderForIOOBE")
@@ -665,7 +643,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
         Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
         Assert.assertEquals(r.position(), 0, "Result buffer position changed");
         Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        assertArraysEquals(_a, bufferToArray(r), mask);
+        assertArraysEquals(bufferToArray(r), _a, mask);
 
 
         r = fb.apply(a.limit());
@@ -680,7 +658,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
         Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
         Assert.assertEquals(r.position(), 0, "Result buffer position changed");
         Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        assertArraysEquals(_a, bufferToArray(r), mask);
+        assertArraysEquals(bufferToArray(r), _a, mask);
     }
 
     @Test(dataProvider = "byteByteMaskProviderForIOOBE")
@@ -796,7 +774,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
                 av.intoByteArray(r, i, bo);
             }
         }
-        Assert.assertEquals(a, r, "Byte arrays not equal");
+        Assert.assertEquals(r, a, "Byte arrays not equal");
     }
 
     @Test(dataProvider = "byteByteProviderForIOOBE")
@@ -877,7 +855,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
               av.intoByteArray(r, i, bo);
           }
         }
-        assertArraysEquals(a, r, mask);
+        assertArraysEquals(r, a, mask);
 
 
         r = new byte[a.length];
@@ -888,7 +866,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
                 av.intoByteArray(r, i, bo, vmask);
             }
         }
-        assertArraysEquals(a, r, mask);
+        assertArraysEquals(r, a, mask);
     }
 
     @Test(dataProvider = "byteByteMaskProviderForIOOBE")
@@ -965,7 +943,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
                 vmask.intoArray(r, i);
             }
         }
-        Assert.assertEquals(a, r);
+        Assert.assertEquals(r, a);
     }
 
     @Test
@@ -976,7 +954,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorTest {
             int [] r = shuffle.toArray();
 
             int [] a = expectedShuffle(SPECIES.length(), fn);
-            Assert.assertEquals(a, r);
+            Assert.assertEquals(r, a);
        }
     }
 }

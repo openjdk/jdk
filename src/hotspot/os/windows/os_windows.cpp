@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -4183,21 +4182,14 @@ jint os::init_2(void) {
 #endif
 
   // for debugging float code generation bugs
-  if (ForceFloatExceptions) {
-#ifndef  _WIN64
-    static long fp_control_word = 0;
-    __asm { fstcw fp_control_word }
-    // see Intel PPro Manual, Vol. 2, p 7-16
-    const long precision = 0x20;
-    const long underflow = 0x10;
-    const long overflow  = 0x08;
-    const long zero_div  = 0x04;
-    const long denorm    = 0x02;
-    const long invalid   = 0x01;
-    fp_control_word |= invalid;
-    __asm { fldcw fp_control_word }
+#if defined(ASSERT) && !defined(_WIN64)
+  static long fp_control_word = 0;
+  __asm { fstcw fp_control_word }
+  // see Intel PPro Manual, Vol. 2, p 7-16
+  const long invalid   = 0x01;
+  fp_control_word |= invalid;
+  __asm { fldcw fp_control_word }
 #endif
-  }
 
   // If stack_commit_size is 0, windows will reserve the default size,
   // but only commit a small portion of it.
@@ -5438,11 +5430,10 @@ void os::PlatformEvent::unpark() {
 
 // The Windows implementation of Park is very straightforward: Basic
 // operations on Win32 Events turn out to have the right semantics to
-// use them directly. We opportunistically resuse the event inherited
-// from Monitor.
+// use them directly.
 
 void Parker::park(bool isAbsolute, jlong time) {
-  guarantee(_ParkEvent != NULL, "invariant");
+  guarantee(_ParkHandle != NULL, "invariant");
   // First, demultiplex/decode time arguments
   if (time < 0) { // don't wait
     return;
@@ -5464,16 +5455,16 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Don't wait if interrupted or already triggered
   if (thread->is_interrupted(false) ||
-      WaitForSingleObject(_ParkEvent, 0) == WAIT_OBJECT_0) {
-    ResetEvent(_ParkEvent);
+      WaitForSingleObject(_ParkHandle, 0) == WAIT_OBJECT_0) {
+    ResetEvent(_ParkHandle);
     return;
   } else {
     ThreadBlockInVM tbivm(thread);
     OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
     thread->set_suspend_equivalent();
 
-    WaitForSingleObject(_ParkEvent, time);
-    ResetEvent(_ParkEvent);
+    WaitForSingleObject(_ParkHandle, time);
+    ResetEvent(_ParkHandle);
 
     // If externally suspended while waiting, re-suspend
     if (thread->handle_special_suspend_equivalent_condition()) {
@@ -5483,8 +5474,8 @@ void Parker::park(bool isAbsolute, jlong time) {
 }
 
 void Parker::unpark() {
-  guarantee(_ParkEvent != NULL, "invariant");
-  SetEvent(_ParkEvent);
+  guarantee(_ParkHandle != NULL, "invariant");
+  SetEvent(_ParkHandle);
 }
 
 // Platform Monitor implementation

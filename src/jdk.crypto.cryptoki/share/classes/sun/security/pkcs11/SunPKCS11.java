@@ -508,12 +508,13 @@ public final class SunPKCS11 extends AuthProvider {
         // names of all the implementation classes
         // use local variables, only used here
         String P11Digest           = "sun.security.pkcs11.P11Digest";
-        String P11MAC              = "sun.security.pkcs11.P11MAC";
+        String P11Mac              = "sun.security.pkcs11.P11Mac";
         String P11KeyPairGenerator = "sun.security.pkcs11.P11KeyPairGenerator";
         String P11KeyGenerator     = "sun.security.pkcs11.P11KeyGenerator";
         String P11RSAKeyFactory    = "sun.security.pkcs11.P11RSAKeyFactory";
         String P11DSAKeyFactory    = "sun.security.pkcs11.P11DSAKeyFactory";
         String P11DHKeyFactory     = "sun.security.pkcs11.P11DHKeyFactory";
+        String P11ECKeyFactory     = "sun.security.pkcs11.P11ECKeyFactory";
         String P11KeyAgreement     = "sun.security.pkcs11.P11KeyAgreement";
         String P11SecretKeyFactory = "sun.security.pkcs11.P11SecretKeyFactory";
         String P11Cipher           = "sun.security.pkcs11.P11Cipher";
@@ -552,33 +553,33 @@ public final class SunPKCS11 extends AuthProvider {
         dA(MD, "SHA3-512",        P11Digest,
                 m(CKM_SHA3_512));
 
-        d(MAC, "HmacMD5",       P11MAC,
+        d(MAC, "HmacMD5",       P11Mac,
                 m(CKM_MD5_HMAC));
-        dA(MAC, "HmacSHA1",      P11MAC,
+        dA(MAC, "HmacSHA1",      P11Mac,
                 m(CKM_SHA_1_HMAC));
-        dA(MAC, "HmacSHA224",    P11MAC,
+        dA(MAC, "HmacSHA224",    P11Mac,
                 m(CKM_SHA224_HMAC));
-        dA(MAC, "HmacSHA256",    P11MAC,
+        dA(MAC, "HmacSHA256",    P11Mac,
                 m(CKM_SHA256_HMAC));
-        dA(MAC, "HmacSHA384",    P11MAC,
+        dA(MAC, "HmacSHA384",    P11Mac,
                 m(CKM_SHA384_HMAC));
-        dA(MAC, "HmacSHA512",    P11MAC,
+        dA(MAC, "HmacSHA512",    P11Mac,
                 m(CKM_SHA512_HMAC));
-        dA(MAC, "HmacSHA512/224",    P11MAC,
+        dA(MAC, "HmacSHA512/224",    P11Mac,
                 m(CKM_SHA512_224_HMAC));
-        dA(MAC, "HmacSHA512/256",    P11MAC,
+        dA(MAC, "HmacSHA512/256",    P11Mac,
                 m(CKM_SHA512_256_HMAC));
-        dA(MAC, "HmacSHA3-224",    P11MAC,
+        dA(MAC, "HmacSHA3-224",    P11Mac,
                 m(CKM_SHA3_224_HMAC));
-        dA(MAC, "HmacSHA3-256",    P11MAC,
+        dA(MAC, "HmacSHA3-256",    P11Mac,
                 m(CKM_SHA3_256_HMAC));
-        dA(MAC, "HmacSHA3-384",    P11MAC,
+        dA(MAC, "HmacSHA3-384",    P11Mac,
                 m(CKM_SHA3_384_HMAC));
-        dA(MAC, "HmacSHA3-512",    P11MAC,
+        dA(MAC, "HmacSHA3-512",    P11Mac,
                 m(CKM_SHA3_512_HMAC));
-        d(MAC, "SslMacMD5",     P11MAC,
+        d(MAC, "SslMacMD5",     P11Mac,
                 m(CKM_SSL3_MD5_MAC));
-        d(MAC, "SslMacSHA1",    P11MAC,
+        d(MAC, "SslMacSHA1",    P11Mac,
                 m(CKM_SSL3_SHA1_MAC));
 
         d(KPG, "RSA",           P11KeyPairGenerator,
@@ -640,7 +641,7 @@ public final class SunPKCS11 extends AuthProvider {
         d(KF, "DH",             P11DHKeyFactory,
                 dhAlias,
                 m(CKM_DH_PKCS_KEY_PAIR_GEN, CKM_DH_PKCS_DERIVE));
-        d(KF, "EC",             P11DHKeyFactory,
+        d(KF, "EC",             P11ECKeyFactory,
                 m(CKM_EC_KEY_PAIR_GEN, CKM_ECDH1_DERIVE,
                     CKM_ECDSA, CKM_ECDSA_SHA1));
 
@@ -1133,6 +1134,7 @@ public final class SunPKCS11 extends AuthProvider {
             this.mechanism = mechanism & 0xFFFFFFFFL;
         }
 
+        @Override
         public Object newInstance(Object param)
                 throws NoSuchAlgorithmException {
             if (token.isValid() == false) {

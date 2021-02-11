@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ inline Node* mark_for_removal(Node* node) {
 
 /*
  * The insertion marker (i.e. the insertion bit) is represented by '[ ]' as part of state description comments:
- * "node --> next" becomes "[node] --> next", in an attempt to convey node as being exlusively reserved.
+ * "node --> next" becomes "[node] --> next", in an attempt to convey the node as exlusively reserved.
  */
 template <typename Node>
 inline bool mark_for_insertion(Node* node, const Node* tail) {
@@ -66,8 +66,7 @@ Node* find_adjacent(Node* head, const Node* tail, Node** predecessor, VersionHan
   Node* predecessor_next = NULL;
   while (true) {
     Node* current = head;
-    version_handle.checkout();
-    assert(version_handle.is_tracked(), "invariant");
+    version_handle->checkout();
     Node* next = Atomic::load_acquire(&current->_next);
     do {
       assert(next != NULL, "invariant");
@@ -117,7 +116,6 @@ void JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::insert_head
   while (true) {
     // Find an adjacent predecessor and successor node pair.
     successor = find_adjacent<Node, VersionHandle, HeadNode>(head, tail, &predecessor, version_handle, predicate);
-    assert(version_handle.is_tracked(), "invariant");
     // Invariant (adjacency): predecessor --> successor
     // Invariant (optional: key-based total order): predecessor->key() < key  && key <= successor->key().
     // We can now attempt to insert the new node in-between.
@@ -149,7 +147,6 @@ void JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::insert_tail
   while (true) {
     // Find an adjacent predecessor and successor node pair, where the successor == tail
     const NodePtr successor = find_adjacent<Node, VersionHandle, LastNode>(last, tail, &predecessor, version_handle, predicate);
-    assert(version_handle.is_tracked(), "invariant");
     assert(successor == tail, "invariant");
     // Invariant: predecessor --> successor
     // We first attempt to mark the predecessor node to signal our intent of performing an insertion.
@@ -182,7 +179,7 @@ void JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::insert_tail
     head->_next = node;
     // Invariant: head --> [node] --> tail
   }
-  version_handle.release(); // release_store_fence
+  OrderAccess::storestore();
   // Publish the inserted node by removing the insertion marker.
   node->_next = const_cast<NodePtr>(tail);
   // Invariant: last --> node --> tail (possibly also head --> node --> tail)
@@ -204,7 +201,6 @@ typename Client::Node* JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPo
   while (true) {
     // Find an adjacent predecessor and successor node pair.
     successor = find_adjacent<Node, VersionHandle, SearchPolicy>(head, tail, &predecessor, version_handle, predicate);
-    assert(version_handle.is_tracked(), "invariant");
     if (successor == tail) {
       return NULL;
     }
@@ -228,7 +224,6 @@ typename Client::Node* JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPo
     // Physically excise using slow path, can be completed asynchronously by other threads.
     Identity<Node> excise(successor);
     find_adjacent<Node, VersionHandle, Identity>(head, tail, &predecessor, version_handle, excise);
-    assert(version_handle.is_tracked(), "invariant");
   }
   if (last != NULL && Atomic::load_acquire(&last->_next) == successor) {
     guarantee(!insert_is_head, "invariant");
@@ -237,11 +232,9 @@ typename Client::Node* JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPo
     find_adjacent<Node, VersionHandle, LastNode>(last, tail, &predecessor, version_handle, excise);
     // Invariant: successor excised from last list
   }
-  // Increment the current version so we can track when other threads have seen this update.
-  VersionType version = version_handle.increment();
-  version_handle.release(); // release_store_fence
-  // Rendezvous with checkouts for versions less than this version.
-  version_handle.await(version);
+  // Commit the modification back to the version control system.
+  // It blocks until all checkouts for versions earlier than the commit have been released.
+  version_handle->commit();
   // At this point we know there can be no references onto the excised node. It is safe, enjoy it.
   return successor;
 }
@@ -255,8 +248,7 @@ bool JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::in_list(con
   assert(head != tail, "invariant");
   VersionHandle version_handle = _client->get_version_handle();
   const Node* current = head;
-  version_handle.checkout();
-  assert(version_handle.is_tracked(), "invariant");
+  version_handle->checkout();
   const Node* next = Atomic::load_acquire(&current->_next);
   while (true) {
     if (!is_marked_for_removal(next)) {
@@ -281,8 +273,7 @@ inline void JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::iter
   assert(head != tail, "invariant");
   VersionHandle version_handle = _client->get_version_handle();
   NodePtr current = head;
-  version_handle.checkout();
-  assert(version_handle.is_tracked(), "invariant");
+  version_handle->checkout();
   NodePtr next = Atomic::load_acquire(&current->_next);
   while (true) {
     if (!is_marked_for_removal(next)) {

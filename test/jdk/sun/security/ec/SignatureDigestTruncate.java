@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-import jdk.test.lib.Convert;
 
 import java.security.*;
 import java.security.spec.*;
@@ -79,10 +77,8 @@ public class SignatureDigestTruncate {
     private static void assertEquals(byte[] expected, byte[] actual,
             String name) {
         if (!Arrays.equals(actual, expected)) {
-            System.out.println("expect: "
-                    + Convert.byteArrayToHexString(expected));
-            System.out.println("actual: "
-                    + Convert.byteArrayToHexString(actual));
+            System.out.println("expect: " + HexFormat.of().withUpperCase().formatHex(expected));
+            System.out.println("actual: " + HexFormat.of().withUpperCase().formatHex(actual));
             throw new RuntimeException("Incorrect " + name + " value");
         }
     }
@@ -93,10 +89,11 @@ public class SignatureDigestTruncate {
 
         System.out.println("Testing " + alg + " with " + curveName);
 
-        byte[] privateKey = Convert.hexStringToByteArray(privateKeyStr);
-        byte[] msg = Convert.hexStringToByteArray(msgStr);
-        byte[] k = Convert.hexStringToByteArray(kStr);
-        byte[] expectedSig = Convert.hexStringToByteArray(sigStr);
+        HexFormat hex = HexFormat.of();
+        byte[] privateKey = hex.parseHex(privateKeyStr);
+        byte[] msg = hex.parseHex(msgStr);
+        byte[] k = hex.parseHex(kStr);
+        byte[] expectedSig = hex.parseHex(sigStr);
 
         AlgorithmParameters params =
             AlgorithmParameters.getInstance("EC", "SunEC");

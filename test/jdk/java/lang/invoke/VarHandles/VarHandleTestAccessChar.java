@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1230,127 +1230,127 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char x = (char) vh.get(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.set(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char x = (char) vh.getVolatile(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setVolatile(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char x = (char) vh.getAcquire(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setRelease(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char x = (char) vh.getOpaque(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setOpaque(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.compareAndSet(array, ci, '\u0123', '\u4567');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char r = (char) vh.compareAndExchange(array, ci, '\u4567', '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char r = (char) vh.compareAndExchangeAcquire(array, ci, '\u4567', '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char r = (char) vh.compareAndExchangeRelease(array, ci, '\u4567', '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetPlain(array, ci, '\u0123', '\u4567');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, '\u0123', '\u4567');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, '\u0123', '\u4567');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetRelease(array, ci, '\u0123', '\u4567');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndSet(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndSetAcquire(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndSetRelease(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndAdd(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndAddAcquire(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndAddRelease(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndBitwiseOr(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndBitwiseOrAcquire(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndBitwiseOrRelease(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndBitwiseAnd(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndBitwiseAndAcquire(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndBitwiseAndRelease(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndBitwiseXor(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndBitwiseXorAcquire(array, ci, '\u0123');
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char o = (char) vh.getAndBitwiseXorRelease(array, ci, '\u0123');
             });
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.awt.image.ColorModel;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.lang.ref.WeakReference;
-import sun.java2d.loops.GraphicsPrimitive;
+
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
 import sun.java2d.pipe.SpanIterator;
@@ -114,9 +114,9 @@ public class Blit extends GraphicsPrimitive
         GraphicsPrimitiveMgr.registerGeneral(new Blit(null, null, null));
     }
 
-    public GraphicsPrimitive makePrimitive(SurfaceType srctype,
-                                           CompositeType comptype,
-                                           SurfaceType dsttype)
+    protected GraphicsPrimitive makePrimitive(SurfaceType srctype,
+                                              CompositeType comptype,
+                                              SurfaceType dsttype)
     {
         /*
         System.out.println("Constructing general blit for:");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             KeyStore ks = builder.getKeyStore();
             Entry newEntry = ks.getEntry
                     (keyStoreAlias, builder.getProtectionParameter(alias));
-            if (newEntry instanceof PrivateKeyEntry == false) {
+            if (!(newEntry instanceof PrivateKeyEntry)) {
                 // unexpected type of entry
                 return null;
             }
@@ -581,7 +581,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                             // require either signature bit
                             // or if server also allow key encipherment bit
                             if (!supportsDigitalSignature) {
-                                if (this == CLIENT || getBit(ku, 2) == false) {
+                                if (this == CLIENT || !getBit(ku, 2)) {
                                     return CheckResult.EXTENSION_MISMATCH;
                                 }
                             }
@@ -599,7 +599,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                             break;
                         case "DH":
                             // require keyagreement bit
-                            if (getBit(ku, 4) == false) {
+                            if (!getBit(ku, 4)) {
                                 return CheckResult.EXTENSION_MISMATCH;
                             }
                             break;
@@ -614,7 +614,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                             // exchange and not ephemeral ECDH. We leave it in
                             // for now until there are signs that this check
                             // causes problems for real world EC certificates.
-                            if ((this == SERVER) && (getBit(ku, 4) == false)) {
+                            if (this == SERVER && !getBit(ku, 4)) {
                                 return CheckResult.EXTENSION_MISMATCH;
                             }
                             break;
@@ -748,7 +748,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
             boolean incompatible = false;
             for (Certificate cert : chain) {
-                if (cert instanceof X509Certificate == false) {
+                if (!(cert instanceof X509Certificate)) {
                     // not an X509Certificate, ignore this alias
                     incompatible = true;
                     break;
@@ -785,7 +785,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                         break;
                     }
                 }
-                if (found == false) {
+                if (!found) {
                     if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
                         SSLLogger.fine(
                                 "Ignore alias " + alias
@@ -820,7 +820,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             if (!preferred && checkResult == CheckResult.OK && keyIndex == 0) {
                 preferred = true;
             }
-            if (preferred && (findAll == false)) {
+            if (preferred && !findAll) {
                 // if we have a good match and do not need all matches,
                 // return immediately
                 return Collections.singletonList(status);

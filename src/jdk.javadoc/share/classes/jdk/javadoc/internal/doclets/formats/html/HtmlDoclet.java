@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * The class with "start" method, calls individual Writers.
@@ -175,6 +176,11 @@ public class HtmlDoclet extends AbstractDoclet {
                 configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
             }
         }
+        PreviewAPIListBuilder builder = new PreviewAPIListBuilder(configuration);
+        if (!builder.isEmpty()) {
+            configuration.previewAPIListBuilder = builder;
+            configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.PREVIEW);
+        }
 
         super.generateClassFiles(classTree);
     }
@@ -221,6 +227,10 @@ public class HtmlDoclet extends AbstractDoclet {
 
         if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.DEPRECATED))) {
             DeprecatedListWriter.generate(configuration);
+        }
+
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.PREVIEW))) {
+            PreviewListWriter.generate(configuration);
         }
 
         if (options.createOverview()) {

@@ -1103,7 +1103,7 @@ final class CertStatusExtension {
         public byte[] produce(ConnectionContext context,
                 HandshakeMessage message) throws IOException {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
-            byte[] producedData = null;
+            byte[] producedData;
 
             // Stapling needs to be active and have valid data to proceed
             if (shc.stapleParams == null) {

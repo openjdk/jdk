@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,22 +120,32 @@ HandlerTableEntry* ExceptionHandlerTable::entry_for(int catch_pco, int handler_b
 }
 
 
-void ExceptionHandlerTable::print_subtable(HandlerTableEntry* t) const {
+void ExceptionHandlerTable::print_subtable(HandlerTableEntry* t, address base) const {
   int l = t->len();
-  tty->print_cr("catch_pco = %d (%d entries)", t->pco(), l);
+  bool have_base_addr = (base != NULL);
+  if (have_base_addr) {
+    tty->print_cr("catch_pco = %d (pc=" INTPTR_FORMAT ", %d entries)", t->pco(), p2i(base + t->pco()), l);
+  } else {
+    tty->print_cr("catch_pco = %d (%d entries)", t->pco(), l);
+  }
   while (l-- > 0) {
     t++;
-    tty->print_cr("  bci %d at scope depth %d -> pco %d", t->bci(), t->scope_depth(), t->pco());
+    if (have_base_addr) {
+      tty->print_cr("  bci %d at scope depth %d -> pco %d (pc=" INTPTR_FORMAT ")",
+                    t->bci(), t->scope_depth(), t->pco(), p2i(base + t->pco()));
+    } else {
+      tty->print_cr("  bci %d at scope depth %d -> pco %d", t->bci(), t->scope_depth(), t->pco());
+    }
   }
 }
 
 
-void ExceptionHandlerTable::print() const {
+void ExceptionHandlerTable::print(address base) const {
   tty->print_cr("ExceptionHandlerTable (size = %d bytes)", size_in_bytes());
   int i = 0;
   while (i < _length) {
     HandlerTableEntry* t = _table + i;
-    print_subtable(t);
+    print_subtable(t, base);
     // advance to next subtable
     i += t->len() + 1; // +1 for header
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
@@ -64,7 +65,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   guarantee(cds_klass != NULL, "jdk/internal/misc/CDS must exist!");
 
   int len = _lambdaform_lines->length();
-  objArrayHandle list_lines = oopFactory::new_objArray_handle(SystemDictionary::String_klass(), len, CHECK);
+  objArrayHandle list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
   for (int i = 0; i < len; i++) {
     Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
     list_lines->obj_at_put(i, h_line());

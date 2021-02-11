@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -69,6 +70,7 @@
 #include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
 
 bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
@@ -1331,11 +1333,6 @@ void G1ConcurrentMark::cleanup() {
     _g1h->heap_region_iterate(&cl);
   }
 
-  if (log_is_enabled(Trace, gc, liveness)) {
-    G1PrintRegionLivenessInfoClosure cl("Post-Cleanup");
-    _g1h->heap_region_iterate(&cl);
-  }
-
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
 
   // We need to make this be a "collection" so any collection pause that
@@ -1737,22 +1734,22 @@ public:
 };
 
 class G1RemarkThreadsClosure : public ThreadClosure {
-  G1CMSATBBufferClosure _cm_satb_cl;
+  G1SATBMarkQueueSet& _qset;
   G1CMOopClosure _cm_cl;
   MarkingCodeBlobClosure _code_cl;
   uintx _claim_token;
 
  public:
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, G1CMTask* task) :
-    _cm_satb_cl(task, g1h),
+    _qset(G1BarrierSet::satb_mark_queue_set()),
     _cm_cl(g1h, task),
     _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
     if (thread->claim_threads_do(true, _claim_token)) {
-      SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
-      queue.apply_closure_and_empty(&_cm_satb_cl);
+      // Transfer any partial buffer to the qset for completed buffer processing.
+      _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
       if (thread->is_Java_thread()) {
         // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
         // however the liveness of oops reachable from nmethods have very complex lifecycles:
@@ -2895,8 +2892,9 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_STATE_H_FORMAT         "   %5s"
 #define G1PPRL_BYTE_FORMAT            "  " SIZE_FORMAT_W(9)
 #define G1PPRL_BYTE_H_FORMAT          "  %9s"
-#define G1PPRL_DOUBLE_FORMAT          "  %14.1f"
-#define G1PPRL_DOUBLE_H_FORMAT        "  %14s"
+#define G1PPRL_DOUBLE_FORMAT          "%14.1f"
+#define G1PPRL_GCEFF_FORMAT           "  %14s"
+#define G1PPRL_GCEFF_H_FORMAT         "  %14s"
 
 // For summary info
 #define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
@@ -2931,7 +2929,7 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
-                          G1PPRL_DOUBLE_H_FORMAT
+                          G1PPRL_GCEFF_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_STATE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT,
@@ -2944,7 +2942,7 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
-                          G1PPRL_DOUBLE_H_FORMAT
+                          G1PPRL_GCEFF_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_STATE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT,
@@ -2969,6 +2967,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t strong_code_roots_bytes = r->rem_set()->strong_code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
+  FormatBuffer<16> gc_efficiency("");
 
   _total_used_bytes      += used_bytes;
   _total_capacity_bytes  += capacity_bytes;
@@ -2977,20 +2976,26 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
   _total_remset_bytes    += remset_bytes;
   _total_strong_code_roots_bytes += strong_code_roots_bytes;
 
+  if(gc_eff < 0) {
+    gc_efficiency.append("-");
+  } else {
+    gc_efficiency.append(G1PPRL_DOUBLE_FORMAT, gc_eff);
+  }
+
   // Print a line for this particular region.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
-                          G1PPRL_TYPE_FORMAT
-                          G1PPRL_ADDR_BASE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_DOUBLE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_STATE_FORMAT
-                          G1PPRL_BYTE_FORMAT,
-                          type, p2i(bottom), p2i(end),
-                          used_bytes, prev_live_bytes, next_live_bytes, gc_eff,
-                          remset_bytes, remset_type, strong_code_roots_bytes);
+                        G1PPRL_TYPE_FORMAT
+                        G1PPRL_ADDR_BASE_FORMAT
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_GCEFF_FORMAT
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_STATE_FORMAT
+                        G1PPRL_BYTE_FORMAT,
+                        type, p2i(bottom), p2i(end),
+                        used_bytes, prev_live_bytes, next_live_bytes, gc_efficiency.buffer(),
+                        remset_bytes, remset_type, strong_code_roots_bytes);
 
   return false;
 }

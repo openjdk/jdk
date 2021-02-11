@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ public class TestStylesheet extends JavadocTester {
                     .col-first a:link, .col-first a:visited,
                     .col-second a:link, .col-second a:visited,
                     .col-constructor-name a:link, .col-constructor-name a:visited,
-                    .col-deprecated-item-name a:link, .col-deprecated-item-name a:visited,
+                    .col-summary-item-name a:link, .col-summary-item-name a:visited,
                     .constant-values-container a:link, .constant-values-container a:visited,
                     .all-classes-container a:link, .all-classes-container a:visited,
                     .all-packages-container a:link, .all-packages-container a:visited {

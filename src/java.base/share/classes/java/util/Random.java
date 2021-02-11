@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,9 @@ import jdk.internal.misc.Unsafe;
 /**
  * An instance of this class is used to generate a stream of
  * pseudorandom numbers. The class uses a 48-bit seed, which is
- * modified using a linear congruential formula. (See Donald Knuth,
- * <i>The Art of Computer Programming, Volume 2</i>, Section 3.2.1.)
+ * modified using a linear congruential formula. (See Donald E. Knuth,
+ * <cite>The Art of Computer Programming, Volume 2, Third
+ * edition: Seminumerical Algorithms</cite>, Section 3.2.1.)
  * <p>
  * If two instances of {@code Random} are created with the same
  * seed, and the same sequence of method calls is made for each, they
@@ -187,8 +188,8 @@ public class Random implements java.io.Serializable {
      *
      * This is a linear congruential pseudorandom number generator, as
      * defined by D. H. Lehmer and described by Donald E. Knuth in
-     * <i>The Art of Computer Programming,</i> Volume 2:
-     * <i>Seminumerical Algorithms</i>, section 3.2.1.
+     * <cite>The Art of Computer Programming, Volume 2, Third edition:
+     * Seminumerical Algorithms</cite>, section 3.2.1.
      *
      * @param  bits random bits
      * @return the next pseudorandom value from this random number
@@ -569,8 +570,8 @@ public class Random implements java.io.Serializable {
      *   }
      * }}</pre>
      * This uses the <i>polar method</i> of G. E. P. Box, M. E. Muller, and
-     * G. Marsaglia, as described by Donald E. Knuth in <i>The Art of
-     * Computer Programming</i>, Volume 2: <i>Seminumerical Algorithms</i>,
+     * G. Marsaglia, as described by Donald E. Knuth in <cite>The Art of
+     * Computer Programming, Volume 2, third edition: Seminumerical Algorithms</cite>,
      * section 3.4.1, subsection C, algorithm P. Note that it generates two
      * independent values at the cost of only one call to {@code StrictMath.log}
      * and one call to {@code StrictMath.sqrt}.
@@ -581,7 +582,7 @@ public class Random implements java.io.Serializable {
      *         generator's sequence
      */
     public synchronized double nextGaussian() {
-        // See Knuth, ACP, Section 3.4.1 Algorithm C.
+        // See Knuth, TAOCP, Vol. 2, 3rd edition, Section 3.4.1 Algorithm C.
         if (haveNextNextGaussian) {
             haveNextNextGaussian = false;
             return nextNextGaussian;

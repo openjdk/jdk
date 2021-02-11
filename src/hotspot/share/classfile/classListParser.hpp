@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ class ClassListParser : public StackObj {
   bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
 
   void resolve_indy(Symbol* class_name_symbol, TRAPS);
+  void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
 public:
   ClassListParser(const char* file);
   ~ClassListParser();

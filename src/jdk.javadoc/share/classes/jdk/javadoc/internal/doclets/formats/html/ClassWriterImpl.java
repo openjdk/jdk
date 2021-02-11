@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
@@ -58,7 +56,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * Generate the Class Information Page.
@@ -85,6 +82,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.lang.constant.Constable",
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
+
+    private static final Set<String> previewModifiers
+            = Set.of("sealed", "non-sealed");
 
     protected final TypeElement typeElement;
 
@@ -188,21 +188,44 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override @SuppressWarnings("preview")
     public void addClassSignature(String modifiers, Content classInfoTree) {
+        ContentBuilder mods = new ContentBuilder();
+        String sep = null;
+        for (String modifiersPart : modifiers.split(" ")) {
+            if (sep != null) {
+                mods.add(sep);
+            }
+            if (previewModifiers.contains(modifiersPart)) {
+                mods.add(modifiersPart);
+                mods.add(HtmlTree.SUP(links.createLink(htmlIds.forPreviewSection(typeElement),
+                                                       contents.previewMark)));
+            } else {
+                mods.add(modifiersPart);
+            }
+            sep = " ";
+        }
+        if (modifiers.endsWith(" ")) {
+            mods.add(" ");
+        }
         classInfoTree.add(new HtmlTree(TagName.HR));
         classInfoTree.add(new Signatures.TypeSignature(typeElement, this)
-                .setModifiers(new StringContent(modifiers))
+                .setModifiers(mods)
                 .toContent());
     }
 
 
     @Override
     public void addClassDescription(Content classInfoTree) {
+        addPreviewInfo(classInfoTree);
         if (!options.noComment()) {
             // generate documentation for the class.
             if (!utils.getFullBody(typeElement).isEmpty()) {
                 addInlineComment(typeElement, classInfoTree);
             }
         }
+    }
+
+    private void addPreviewInfo(Content classInfoTree) {
+        addPreviewInfo(typeElement, classInfoTree);
     }
 
     @Override
@@ -471,7 +494,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         HtmlTree section = HtmlTree.SECTION(HtmlStyle.details, contentTree);
         // The following id is required by the Navigation bar
         if (utils.isAnnotationType(typeElement)) {
-            section.setId(SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL.getName());
+            section.setId(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL);
         }
         return section;
     }

@@ -70,7 +70,7 @@ void JfrConcurrentQueue<NodeType, AllocPolicy>::iterate(Callback& cb) {
 
 template <typename NodeType, typename AllocPolicy>
 inline JfrVersionSystem::Handle JfrConcurrentQueue<NodeType, AllocPolicy>::get_version_handle() {
-  return _version_system.get_handle();
+  return _version_system.get();
 }
 
 template <typename NodeType, typename AllocPolicy>

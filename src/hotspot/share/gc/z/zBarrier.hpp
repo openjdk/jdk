@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@ private:
 
   static uintptr_t mark_barrier_on_oop_slow_path(uintptr_t addr);
   static uintptr_t mark_barrier_on_finalizable_oop_slow_path(uintptr_t addr);
+
+  static void verify_on_weak(volatile oop* referent_addr) NOT_DEBUG_RETURN;
 
 public:
   // Load barrier

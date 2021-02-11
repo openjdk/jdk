@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "jimage.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
@@ -53,6 +53,7 @@ public:
   ClassPathEntry* next() const;
   virtual ~ClassPathEntry() {}
   void set_next(ClassPathEntry* next);
+
   virtual bool is_modules_image() const { return false; }
   virtual bool is_jar_file() const { return false; }
   // Is this entry created from the "Class-path" attribute from a JAR Manifest?
@@ -181,12 +182,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_app_classfile_bytes_read;
   static PerfCounter* _perf_sys_classfile_bytes_read;
 
-  static PerfCounter* _sync_systemLoaderLockContentionRate;
-  static PerfCounter* _sync_nonSystemLoaderLockContentionRate;
-  static PerfCounter* _sync_JVMFindLoadedClassLockFreeCounter;
-  static PerfCounter* _sync_JVMDefineClassLockFreeCounter;
-  static PerfCounter* _sync_JNIDefineClassLockFreeCounter;
-
   static PerfCounter* _unsafe_defineClassCallCounter;
 
   // The boot class path consists of 3 ordered pieces:
@@ -214,9 +209,13 @@ class ClassLoader: AllStatic {
   // 3. the boot loader's append path
   //    [-Xbootclasspath/a]; [jvmti appended entries]
   //    Note: boot loader append path does not support named modules.
-  static ClassPathEntry* _first_append_entry;
+  static ClassPathEntry* volatile _first_append_entry_list;
+  static ClassPathEntry* first_append_entry() {
+    return Atomic::load_acquire(&_first_append_entry_list);
+  }
+
   // Last entry in linked list of appended ClassPathEntry instances
-  static ClassPathEntry* _last_append_entry;
+  static ClassPathEntry* volatile _last_append_entry;
 
   // Info used by CDS
   CDS_ONLY(static ClassPathEntry* _app_classpath_entries;)
@@ -234,7 +233,7 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
   CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
 
-  static bool has_bootclasspath_append() { return _first_append_entry != NULL; }
+  static bool has_bootclasspath_append() { return first_append_entry() != NULL; }
 
  protected:
   // Initialization:
@@ -299,31 +298,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_define_appclass_selftime() { return _perf_define_appclass_selftime; }
   static PerfCounter* perf_app_classfile_bytes_read() { return _perf_app_classfile_bytes_read; }
   static PerfCounter* perf_sys_classfile_bytes_read() { return _perf_sys_classfile_bytes_read; }
-
-  // Record how often system loader lock object is contended
-  static PerfCounter* sync_systemLoaderLockContentionRate() {
-    return _sync_systemLoaderLockContentionRate;
-  }
-
-  // Record how often non system loader lock object is contended
-  static PerfCounter* sync_nonSystemLoaderLockContentionRate() {
-    return _sync_nonSystemLoaderLockContentionRate;
-  }
-
-  // Record how many calls to JVM_FindLoadedClass w/o holding a lock
-  static PerfCounter* sync_JVMFindLoadedClassLockFreeCounter() {
-    return _sync_JVMFindLoadedClassLockFreeCounter;
-  }
-
-  // Record how many calls to JVM_DefineClass w/o holding a lock
-  static PerfCounter* sync_JVMDefineClassLockFreeCounter() {
-    return _sync_JVMDefineClassLockFreeCounter;
-  }
-
-  // Record how many calls to jni_DefineClass w/o holding a lock
-  static PerfCounter* sync_JNIDefineClassLockFreeCounter() {
-    return _sync_JNIDefineClassLockFreeCounter;
-  }
 
   // Record how many calls to Unsafe_DefineClass
   static PerfCounter* unsafe_defineClassCallCounter() {

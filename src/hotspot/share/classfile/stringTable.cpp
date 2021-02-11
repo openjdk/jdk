@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -542,7 +542,7 @@ static int literal_size(oop obj) {
   // array is not shared anymore.
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == SystemDictionary::String_klass()) {
+  } else if (obj->klass() == vmClasses::String_klass()) {
     return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
   } else {
     return obj->size();
@@ -717,17 +717,18 @@ oop StringTable::lookup_shared(const jchar* name, int len, unsigned int hash) {
   return _shared_table.lookup(name, hash, len);
 }
 
-oop StringTable::create_archived_string(oop s, Thread* THREAD) {
+oop StringTable::create_archived_string(oop s) {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
+  assert(java_lang_String::is_instance(s), "sanity");
   assert(!HeapShared::is_archived_object(s), "sanity");
 
   oop new_s = NULL;
   typeArrayOop v = java_lang_String::value_no_keepalive(s);
-  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v, THREAD);
+  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v);
   if (new_v == NULL) {
     return NULL;
   }
-  new_s = HeapShared::archive_heap_object(s, THREAD);
+  new_s = HeapShared::archive_heap_object(s);
   if (new_s == NULL) {
     return NULL;
   }
@@ -744,7 +745,7 @@ public:
   bool do_entry(oop s, bool value_ignored) {
     assert(s != NULL, "sanity");
     unsigned int hash = java_lang_String::hash_code(s);
-    oop new_s = StringTable::create_archived_string(s, Thread::current());
+    oop new_s = StringTable::create_archived_string(s);
     if (new_s == NULL) {
       return true;
     }

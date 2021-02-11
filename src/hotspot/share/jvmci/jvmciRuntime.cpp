@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,10 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
@@ -257,15 +260,11 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
     pc = exception_frame.pc();
   }
-#ifdef ASSERT
   assert(exception.not_null(), "NULL exceptions should be handled by throw_exception");
   assert(oopDesc::is_oop(exception()), "just checking");
-  // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
-  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
-    if (ExitVMOnVerifyError) vm_exit(-1);
-    ShouldNotReachHere();
-  }
-#endif
+  // Check that exception is a subclass of Throwable
+  assert(exception->is_a(vmClasses::Throwable_klass()),
+         "Exception not subclass of Throwable");
 
   // debugging support
   // tracing
@@ -372,7 +371,7 @@ address JVMCIRuntime::exception_handler_for_pc(JavaThread* thread) {
   oop exception = thread->exception_oop();
   address pc = thread->exception_pc();
   // Still in Java mode
-  DEBUG_ONLY(ResetNoHandleMark rnhm);
+  DEBUG_ONLY(NoHandleMark nhm);
   CompiledMethod* cm = NULL;
   address continuation = NULL;
   {
@@ -1075,7 +1074,7 @@ void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD, bool c
     const char* exception_file = THREAD->exception_file();
     int exception_line = THREAD->exception_line();
     CLEAR_PENDING_EXCEPTION;
-    if (exception->is_a(SystemDictionary::ThreadDeath_klass())) {
+    if (exception->is_a(vmClasses::ThreadDeath_klass())) {
       // Don't print anything if we are being killed.
     } else {
       java_lang_Throwable::print_stack_trace(exception, tty);
@@ -1380,7 +1379,7 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
   Symbol* sig_sym  = cpool->signature_ref_at(index);
 
   if (cpool->has_preresolution()
-      || ((holder == SystemDictionary::MethodHandle_klass() || holder == SystemDictionary::VarHandle_klass()) &&
+      || ((holder == vmClasses::MethodHandle_klass() || holder == vmClasses::VarHandle_klass()) &&
           MethodHandles::is_signature_polymorphic_name(holder, name_sym))) {
     // Short-circuit lookups for JSR 292-related call sites.
     // That is, do not rely only on name-based lookups, because they may fail
@@ -1425,7 +1424,7 @@ InstanceKlass* JVMCIRuntime::get_instance_klass_for_declared_method_holder(Klass
   if (method_holder->is_instance_klass()) {
     return InstanceKlass::cast(method_holder);
   } else if (method_holder->is_array_klass()) {
-    return SystemDictionary::Object_klass();
+    return vmClasses::Object_klass();
   } else {
     ShouldNotReachHere();
   }
@@ -1656,17 +1655,15 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         if (install_default) {
           assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == NULL, "must be");
           if (entry_bci == InvocationEntryBci) {
-            if (TieredCompilation) {
-              // If there is an old version we're done with it
-              CompiledMethod* old = method->code();
-              if (TraceMethodReplacement && old != NULL) {
-                ResourceMark rm;
-                char *method_name = method->name_and_sig_as_C_string();
-                tty->print_cr("Replacing method %s", method_name);
-              }
-              if (old != NULL ) {
-                old->make_not_entrant();
-              }
+            // If there is an old version we're done with it
+            CompiledMethod* old = method->code();
+            if (TraceMethodReplacement && old != NULL) {
+              ResourceMark rm;
+              char *method_name = method->name_and_sig_as_C_string();
+              tty->print_cr("Replacing method %s", method_name);
+            }
+            if (old != NULL ) {
+              old->make_not_entrant();
             }
 
             LogTarget(Info, nmethod, install) lt;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import jdk.internal.icu.text.NormalizerBase;
  * sorting and searching of text.
  * The {@code normalize} method supports the standard normalization forms
  * described in
- * <a href="http://www.unicode.org/unicode/reports/tr15/tr15-23.html">
+ * <a href="https://www.unicode.org/reports/tr15/">
  * Unicode Standard Annex #15 &mdash; Unicode Normalization Forms</a>.
  * <p>
  * Characters with accents or other adornments can be encoded in
@@ -112,7 +112,7 @@ public final class Normalizer {
     /**
      * This enum provides constants of the four Unicode normalization forms
      * that are described in
-     * <a href="http://www.unicode.org/unicode/reports/tr15/tr15-23.html">
+     * <a href="https://www.unicode.org/reports/tr15/">
      * Unicode Standard Annex #15 &mdash; Unicode Normalization Forms</a>
      * and two methods to access them.
      *

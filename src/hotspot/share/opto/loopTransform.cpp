@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -912,12 +912,12 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       const TypeInt* iv_type = phase->_igvn.type(phi)->is_int();
       int next_stride = stride_con * 2; // stride after this unroll
       if (next_stride > 0) {
-        if (iv_type->_lo + next_stride <= iv_type->_lo || // overflow
+        if (iv_type->_lo > max_jint - next_stride || // overflow
             iv_type->_lo + next_stride >  iv_type->_hi) {
           return false;  // over-unrolling
         }
       } else if (next_stride < 0) {
-        if (iv_type->_hi + next_stride >= iv_type->_hi || // overflow
+        if (iv_type->_hi < min_jint - next_stride || // overflow
             iv_type->_hi + next_stride <  iv_type->_lo) {
           return false;  // over-unrolling
         }
@@ -928,8 +928,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   // After unroll limit will be adjusted: new_limit = limit-stride.
   // Bailout if adjustment overflow.
   const TypeInt* limit_type = phase->_igvn.type(limit_n)->is_int();
-  if ((stride_con > 0 && ((limit_type->_hi - stride_con) >= limit_type->_hi)) ||
-      (stride_con < 0 && ((limit_type->_lo - stride_con) <= limit_type->_lo)))
+  if ((stride_con > 0 && ((min_jint + stride_con) > limit_type->_hi)) ||
+      (stride_con < 0 && ((max_jint + stride_con) < limit_type->_lo)))
     return false;  // overflow
 
   // Adjust body_size to determine if we unroll or not

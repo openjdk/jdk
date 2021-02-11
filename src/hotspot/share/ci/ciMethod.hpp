@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 #include "ci/ciSignature.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/methodLiveness.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/bitMap.hpp"
 
@@ -201,15 +203,6 @@ class ciMethod : public ciMetadata {
   bool dont_inline()           const { return get_Method()->dont_inline();           }
   bool intrinsic_candidate()   const { return get_Method()->intrinsic_candidate();   }
   bool is_static_initializer() const { return get_Method()->is_static_initializer(); }
-
-  bool check_intrinsic_candidate() const {
-    if (intrinsic_id() == vmIntrinsics::_blackhole) {
-      // This is the intrinsic without an associated method, so no intrinsic_candidate
-      // flag is set. The intrinsic is still correct.
-      return true;
-    }
-    return (CheckIntrinsics ? intrinsic_candidate() : true);
-  }
 
   int highest_osr_comp_level();
 

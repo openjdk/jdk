@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Comparator;
-import java.io.*;
 import java.util.Enumeration;
-import sun.awt.SunToolkit;
 
+import sun.awt.SunToolkit;
 
 /**
  * A SortingFocusTraversalPolicy which sorts Components based on their size,
@@ -276,10 +281,12 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
         return fitnessTestPolicy.accept(aComponent);
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeObject(getComparator());
         out.writeBoolean(getImplicitDownCycleTraversal());
     }
+    @Serial
     @SuppressWarnings("unchecked") // Cast to (Comparator<? super Component>)
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException

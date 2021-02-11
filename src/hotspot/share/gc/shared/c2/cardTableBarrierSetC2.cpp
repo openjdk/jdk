@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
@@ -120,7 +121,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   }
 
   // Smash zero into card
-  if(!ct->scanned_concurrently()) {
+  if (!ct->scanned_concurrently()) {
     __ store(__ ctrl(), card_adr, zero, T_BYTE, adr_type, MemNode::unordered);
   } else {
     // Specialized path for CM store barrier

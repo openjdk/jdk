@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1198,7 +1198,11 @@ void VectorMaskCmpNode::dump_spec(outputStream *st) const {
 Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
   Node* n = in(1);
   if (n->Opcode() == Op_VectorReinterpret) {
-    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0) {
+    // "VectorReinterpret (VectorReinterpret node) ==> node" if:
+    //   1) Types of 'node' and 'this' are identical
+    //   2) Truncations are not introduced by the first VectorReinterpret
+    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0 &&
+        length_in_bytes() <= n->bottom_type()->is_vect()->length_in_bytes()) {
       return n->in(1);
     }
   }

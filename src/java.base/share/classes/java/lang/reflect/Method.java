@@ -358,8 +358,7 @@ public final class Method extends Executable {
      * and formal parameter types and return type.
      */
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof Method) {
-            Method other = (Method)obj;
+        if (obj instanceof Method other) {
             if ((getDeclaringClass() == other.getDeclaringClass())
                 && (getName() == other.getName())) {
                 if (!returnType.equals(other.getReturnType()))

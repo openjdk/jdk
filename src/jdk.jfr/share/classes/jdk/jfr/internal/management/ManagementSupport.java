@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
+import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.WriteableUserPath;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
@@ -141,7 +142,12 @@ public final class ManagementSupport {
     public static void removeBefore(Recording recording, Instant timestamp) {
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
         pr.removeBefore(timestamp);
+    }
 
+    // Needed callback to detect when a chunk has been parsed.
+    public static void removePath(Recording recording, Path path) {
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+        pr.removePath(new SafePath(path));
     }
 
     // Needed callback to detect when a chunk has been parsed.

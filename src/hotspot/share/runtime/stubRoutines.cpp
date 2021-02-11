@@ -483,6 +483,7 @@ address StubRoutines::select_fill_function(BasicType t, bool aligned, const char
   case T_NARROWOOP:
   case T_NARROWKLASS:
   case T_ADDRESS:
+  case T_VOID:
     // Currently unsupported
     return NULL;
 

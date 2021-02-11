@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class getvaluesii004 {
         for (int i = 0; i < FIELD_NAME.length; i++) {
             Field field;
             String name = FIELD_NAME[i][0];
-            Integer lengthOfArray = new Integer(FIELD_NAME[i][1]);
+            Integer lengthOfArray = Integer.valueOf(FIELD_NAME[i][1]);
             int length = lengthOfArray.intValue();
             Value value;
             ArrayReference arrayRef;

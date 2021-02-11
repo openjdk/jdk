@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ TARGETS += $(patsubst %, $(BUILDTOOLS_OUTPUTDIR)/gensrc/%/module-info.java, \
     $(INTERIM_LANGTOOLS_MODULES))
 
 $(eval $(call SetupCopyFiles, COPY_PREVIEW_FEATURES, \
-    FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/PreviewFeature.java, \
-    DEST := $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/, \
+    FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java, \
+    DEST := $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/, \
 ))
 
 TARGETS += $(COPY_PREVIEW_FEATURES)
@@ -81,8 +81,8 @@ define SetupInterimModule
           --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
           $$(INTERIM_LANGTOOLS_ADD_EXPORTS) \
           --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
-          --add-exports java.base/jdk.internal=java.compiler.interim \
-          --add-exports java.base/jdk.internal=jdk.compiler.interim, \
+          --add-exports java.base/jdk.internal.javac=java.compiler.interim \
+          --add-exports java.base/jdk.internal.javac=jdk.compiler.interim, \
   ))
 
   $1_DEPS_INTERIM := $$(addsuffix .interim, $$(filter \

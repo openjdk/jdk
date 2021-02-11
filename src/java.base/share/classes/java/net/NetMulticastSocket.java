@@ -801,19 +801,19 @@ final class NetMulticastSocket extends MulticastSocket {
         if (isClosed())
             throw new SocketException("Socket is closed");
 
-        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress addr))
             throw new IllegalArgumentException("Unsupported address type");
 
         if (oldImpl)
             throw new UnsupportedOperationException();
 
-        checkAddress(((InetSocketAddress)mcastaddr).getAddress(), "joinGroup");
+        checkAddress(addr.getAddress(), "joinGroup");
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkMulticast(((InetSocketAddress)mcastaddr).getAddress());
+            security.checkMulticast(addr.getAddress());
         }
 
-        if (!((InetSocketAddress)mcastaddr).getAddress().isMulticastAddress()) {
+        if (!addr.getAddress().isMulticastAddress()) {
             throw new SocketException("Not a multicast address");
         }
 
@@ -826,19 +826,19 @@ final class NetMulticastSocket extends MulticastSocket {
         if (isClosed())
             throw new SocketException("Socket is closed");
 
-        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress addr))
             throw new IllegalArgumentException("Unsupported address type");
 
         if (oldImpl)
             throw new UnsupportedOperationException();
 
-        checkAddress(((InetSocketAddress)mcastaddr).getAddress(), "leaveGroup");
+        checkAddress(addr.getAddress(), "leaveGroup");
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkMulticast(((InetSocketAddress)mcastaddr).getAddress());
+            security.checkMulticast(addr.getAddress());
         }
 
-        if (!((InetSocketAddress)mcastaddr).getAddress().isMulticastAddress()) {
+        if (!addr.getAddress().isMulticastAddress()) {
             throw new SocketException("Not a multicast address");
         }
 

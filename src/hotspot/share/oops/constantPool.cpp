@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -196,7 +197,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
 
     // Create Java array for holding resolved strings, methodHandles,
     // methodTypes, invokedynamic and invokehandle appendix objects, etc.
-    objArrayOop stom = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
+    objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
     Handle refs_handle (THREAD, (oop)stom);  // must handleize.
     set_resolved_references(loader_data->add_handle(refs_handle));
   }
@@ -275,7 +276,7 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 // Archive the resolved references
-void ConstantPool::archive_resolved_references(Thread* THREAD) {
+void ConstantPool::archive_resolved_references() {
   if (_cache == NULL) {
     return; // nothing to do
   }
@@ -310,7 +311,7 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
       }
     }
 
-    oop archived = HeapShared::archive_heap_object(rr, THREAD);
+    oop archived = HeapShared::archive_heap_object(rr);
     // If the resolved references array is not archived (too large),
     // the 'archived' object is NULL. No need to explicitly check
     // the return value of archive_heap_object here. At runtime, the
@@ -364,7 +365,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   // restore the C++ vtable from the shared archive
   restore_vtable();
 
-  if (SystemDictionary::Object_klass_loaded()) {
+  if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
     if (HeapShared::open_archive_heap_region_mapped() &&
@@ -381,7 +382,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       // Recreate the object array and add to ClassLoaderData.
       int map_length = resolved_reference_length();
       if (map_length > 0) {
-        objArrayOop stom = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
+        objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
         Handle refs_handle(THREAD, (oop)stom);  // must handleize.
         set_resolved_references(loader_data->add_handle(refs_handle));
       }
@@ -406,15 +407,14 @@ void ConstantPool::remove_unshareable_info() {
   _flags |= (_on_stack | _is_shared);
   int num_klasses = 0;
   for (int index = 1; index < length(); index++) { // Index 0 is unused
-    if (!DynamicDumpSharedSpaces) {
-      assert(!tag_at(index).is_unresolved_klass_in_error(), "This must not happen during static dump time");
-    } else {
-      if (tag_at(index).is_unresolved_klass_in_error() ||
-          tag_at(index).is_method_handle_in_error()    ||
-          tag_at(index).is_method_type_in_error()      ||
-          tag_at(index).is_dynamic_constant_in_error()) {
-        tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
-      }
+    if (tag_at(index).is_unresolved_klass_in_error()) {
+      tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
+    } else if (tag_at(index).is_method_handle_in_error()) {
+      tag_at_put(index, JVM_CONSTANT_MethodHandle);
+    } else if (tag_at(index).is_method_type_in_error()) {
+      tag_at_put(index, JVM_CONSTANT_MethodType);
+    } else if (tag_at(index).is_dynamic_constant_in_error()) {
+      tag_at_put(index, JVM_CONSTANT_Dynamic);
     }
     if (tag_at(index).is_klass()) {
       // This class was resolved as a side effect of executing Java code
@@ -822,7 +822,7 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
   int error_tag = tag.error_value();
 
   if (!PENDING_EXCEPTION->
-    is_a(SystemDictionary::LinkageError_klass())) {
+    is_a(vmClasses::LinkageError_klass())) {
     // Just throw the exception and don't prevent these classes from
     // being loaded due to virtual machine errors like StackOverflow
     // and OutOfMemoryError, etc, or if the thread was hit by stop()

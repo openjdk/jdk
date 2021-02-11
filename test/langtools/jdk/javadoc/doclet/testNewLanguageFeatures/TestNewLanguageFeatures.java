@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,11 +141,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      V&nbsp;param2)</span></div>""",
                 // Method that returns TypeParameters
                 """
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code><a href="TypeParameters.html" title="type parame\
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><a href="TypeParameters.html" title="type parame\
                     ter in TypeParameters">E</a>[]</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#method\
                     ThatReturnsTypeParameterA(E%5B%5D)">methodThatReturnsTypeParameterA</a></span>&#\
                     8203;(<a href="TypeParameters.html" title="type parameter in TypeParameters">E</\
                     a>[]&nbsp;e)</code>""",
@@ -157,11 +157,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     le="type parameter in TypeParameters">E</a>[]&nbsp;e)</span></div>
                     """,
                 """
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>&lt;T extends java.lang.Object &amp; java.lang.C\
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>&lt;T extends java.lang.Object &amp; java.lang.C\
                     omparable&lt;? super T&gt;&gt;<br>T</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#method\
                     tThatReturnsTypeParametersB(java.util.Collection)">methodtThatReturnsTypeParamet\
                     ersB</a></span>&#8203;(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>""",
                 """
@@ -169,12 +169,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     """,
                 // Method takes a TypeVariable
                 """
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>&lt;X extends java.lang.Throwable&gt;<br><a href\
-                    ="TypeParameters.html" title="type parameter in TypeParameters">E</a></code></di\
-                    v>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#orElse\
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4"><code>&lt;X extends java.lang.Throwable&gt;<br><a href\
+                    ="TypeParameters.html" title="type parameter in TypeParameters">E</a></code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#orElse\
                     Throw(java.util.function.Supplier)">orElseThrow</a></span>&#8203;(java.util.func\
                     tion.Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"""
                 );

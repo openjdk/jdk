@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
 #include "code/compiledIC.hpp"
@@ -469,7 +469,7 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, Meth
     }
     bci = branch_bci + offset;
   }
-  osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
+  osr_nm = CompilationPolicy::event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
   return osr_nm;
 }
 
@@ -530,14 +530,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
     pc = exception_frame.pc();
   }
-#ifdef ASSERT
   assert(exception.not_null(), "NULL exceptions should be handled by throw_exception");
-  // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
-  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
-    if (ExitVMOnVerifyError) vm_exit(-1);
-    ShouldNotReachHere();
-  }
-#endif
+  // Check that exception is a subclass of Throwable
+  assert(exception->is_a(vmClasses::Throwable_klass()),
+         "Exception not subclass of Throwable");
 
   // debugging support
   // tracing
@@ -644,7 +640,7 @@ address Runtime1::exception_handler_for_pc(JavaThread* thread) {
   oop exception = thread->exception_oop();
   address pc = thread->exception_pc();
   // Still in Java mode
-  DEBUG_ONLY(ResetNoHandleMark rnhm);
+  DEBUG_ONLY(NoHandleMark nhm);
   nmethod* nm = NULL;
   address continuation = NULL;
   {
@@ -1311,7 +1307,6 @@ int Runtime1::move_klass_patching(JavaThread* thread) {
   debug_only(NoHandleMark nhm;)
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, load_klass_patching_id);
   }
@@ -1330,7 +1325,6 @@ int Runtime1::move_mirror_patching(JavaThread* thread) {
   debug_only(NoHandleMark nhm;)
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, load_mirror_patching_id);
   }
@@ -1349,7 +1343,6 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
   debug_only(NoHandleMark nhm;)
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, load_appendix_patching_id);
   }
@@ -1369,14 +1362,14 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
 // assembly code in the cpu directories.
 //
 int Runtime1::access_field_patching(JavaThread* thread) {
-//
-// NOTE: we are still in Java
-//
-  Thread* THREAD = thread;
-  debug_only(NoHandleMark nhm;)
+  //
+  // NOTE: we are still in Java
+  //
+  // Handles created in this function will be deleted by the
+  // HandleMarkCleaner in the transition to the VM.
+  NoHandleMark nhm;
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, access_field_patching_id);
   }
@@ -1409,8 +1402,6 @@ JRT_END
 JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
   ResourceMark rm;
 
-  assert(!TieredCompilation, "incompatible with tiered compilation");
-
   RegisterMap reg_map(thread, false);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
@@ -1428,7 +1419,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
     Method::build_interpreter_method_data(m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // Only metaspace OOM is expected. No Java code executed.
-      assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+      assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
       CLEAR_PENDING_EXCEPTION;
     }
     mdo = m->method_data();

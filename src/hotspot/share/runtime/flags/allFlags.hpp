@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #define SHARE_RUNTIME_FLAGS_ALLFLAGS_HPP
 
 #include "compiler/compiler_globals.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "runtime/globals.hpp"
 
 // Put LP64/ARCH/JVMCI/COMPILER1/COMPILER2 at the top,
@@ -111,6 +113,15 @@
     constraint)               \
                               \
   GC_FLAGS(                   \
+    develop,                  \
+    develop_pd,               \
+    product,                  \
+    product_pd,               \
+    notproduct,               \
+    range,                    \
+    constraint)               \
+                              \
+  TLAB_FLAGS(                 \
     develop,                  \
     develop_pd,               \
     product,                  \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 #include "classfile/classListParser.hpp"
 #include "classfile/classListWriter.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bootstrapInfo.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
@@ -149,14 +151,12 @@ char* DumpRegion::expand_top_to(char* newtop) {
     ShouldNotReachHere();
   }
 
+  MetaspaceShared::commit_to(_rs, _vs, newtop);
+  _top = newtop;
+
   if (_rs == MetaspaceShared::shared_rs()) {
-    uintx delta;
-    if (DynamicDumpSharedSpaces) {
-      delta = DynamicArchive::object_delta_uintx(newtop);
-    } else {
-      delta = MetaspaceShared::object_delta_uintx(newtop);
-    }
-    if (delta > MAX_SHARED_DELTA) {
+    uintx delta = ArchiveBuilder::current()->buffer_to_offset((address)(newtop-1));
+    if (delta > ArchiveBuilder::MAX_SHARED_DELTA) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
@@ -165,8 +165,6 @@ char* DumpRegion::expand_top_to(char* newtop) {
     }
   }
 
-  MetaspaceShared::commit_to(_rs, _vs, newtop);
-  _top = newtop;
   return _top;
 }
 
@@ -192,7 +190,7 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 void DumpRegion::print(size_t total_bytes) const {
   log_debug(cds)("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
-                 p2i(_base + MetaspaceShared::final_delta()));
+                 p2i(ArchiveBuilder::current()->to_requested(_base)));
 }
 
 void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {
@@ -322,7 +320,7 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
 
 void ArchiveUtils::check_for_oom(oop exception) {
   assert(exception != nullptr, "Sanity check");
-  if (exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+  if (exception->is_a(vmClasses::OutOfMemoryError_klass())) {
     vm_direct_exit(-1,
       err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
               SIZE_FORMAT "M", MaxHeapSize/M));

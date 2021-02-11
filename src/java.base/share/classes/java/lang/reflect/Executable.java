@@ -707,7 +707,9 @@ public abstract class Executable extends AccessibleObject
         Class<?> ownerClass = c.getDeclaringClass();
         TypeVariable<?>[] typeVars = c.getTypeParameters();
 
-        if (ownerClass == null) { // base case
+        // base case, static nested classes, according to JLS 8.1.3, has no
+        // enclosing instance, therefore its owner is not generified.
+        if (ownerClass == null || Modifier.isStatic(c.getModifiers())) {
             if (typeVars.length == 0)
                 return c;
             else

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
@@ -181,8 +182,9 @@ public class Container extends Component {
     transient Color preserveBackgroundColor = null;
 
     /**
-     * JDK 1.1 serialVersionUID
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 4613797578919906343L;
 
     /**
@@ -240,6 +242,7 @@ public class Container extends Component {
      * @serialField focusTraversalPolicyProvider    boolean
      *       Stores the value of focusTraversalPolicyProvider property.
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("ncomponents", Integer.TYPE),
         new ObjectStreamField("component", Component[].class),
@@ -3682,6 +3685,7 @@ public class Container extends Component {
      * @see Container#containerListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         ObjectOutputStream.PutField f = s.putFields();
         f.put("ncomponents", component.size());
@@ -3723,6 +3727,7 @@ public class Container extends Component {
      * @see #addContainerListener
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {
@@ -3807,8 +3812,9 @@ public class Container extends Component {
     protected class AccessibleAWTContainer extends AccessibleAWTComponent {
 
         /**
-         * JDK1.3 serialVersionUID
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 5081320404842566097L;
 
         /**
@@ -3871,6 +3877,11 @@ public class Container extends Component {
          */
         protected class AccessibleContainerHandler
             implements ContainerListener, Serializable {
+
+            /**
+             * Use serialVersionUID from JDK 1.3 for interoperability.
+             */
+            @Serial
             private static final long serialVersionUID = -480855353991814677L;
 
             /**
@@ -4427,9 +4438,10 @@ public class Container extends Component {
  */
 class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 5184291520170872969L;
     /*
      * Our own mouse event for when we're dragged over from another hw

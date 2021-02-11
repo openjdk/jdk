@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,21 +83,25 @@ public class SharedSecrets {
     }
 
     public static JavaUtilCollectionAccess getJavaUtilCollectionAccess() {
-        if (javaUtilCollectionAccess == null) {
+        var access = javaUtilCollectionAccess;
+        if (access == null) {
             try {
                 Class.forName("java.util.ImmutableCollections$Access", true, null);
+                access = javaUtilCollectionAccess;
             } catch (ClassNotFoundException e) {};
         }
-        return javaUtilCollectionAccess;
+        return access;
     }
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
-        if (javaUtilJarAccess == null) {
+        var access = javaUtilJarAccess;
+        if (access == null) {
             // Ensure JarFile is initialized; we know that this class
             // provides the shared secret
             ensureClassInitialized(JarFile.class);
+            access = javaUtilJarAccess;
         }
-        return javaUtilJarAccess;
+        return access;
     }
 
     public static void setJavaUtilJarAccess(JavaUtilJarAccess access) {
@@ -117,12 +121,14 @@ public class SharedSecrets {
     }
 
     public static JavaLangInvokeAccess getJavaLangInvokeAccess() {
-        if (javaLangInvokeAccess == null) {
+        var access = javaLangInvokeAccess;
+        if (access == null) {
             try {
                 Class.forName("java.lang.invoke.MethodHandleImpl", true, null);
+                access = javaLangInvokeAccess;
             } catch (ClassNotFoundException e) {};
         }
-        return javaLangInvokeAccess;
+        return access;
     }
 
     public static void setJavaLangModuleAccess(JavaLangModuleAccess jlrma) {
@@ -130,10 +136,12 @@ public class SharedSecrets {
     }
 
     public static JavaLangModuleAccess getJavaLangModuleAccess() {
-        if (javaLangModuleAccess == null) {
+        var access = javaLangModuleAccess;
+        if (access == null) {
             ensureClassInitialized(ModuleDescriptor.class);
+            access = javaLangModuleAccess;
         }
-        return javaLangModuleAccess;
+        return access;
     }
 
     public static void setJavaLangRefAccess(JavaLangRefAccess jlra) {
@@ -157,9 +165,12 @@ public class SharedSecrets {
     }
 
     public static JavaNetUriAccess getJavaNetUriAccess() {
-        if (javaNetUriAccess == null)
+        var access = javaNetUriAccess;
+        if (access == null) {
             ensureClassInitialized(java.net.URI.class);
-        return javaNetUriAccess;
+            access = javaNetUriAccess;
+        }
+        return access;
     }
 
     public static void setJavaNetURLAccess(JavaNetURLAccess jnua) {
@@ -167,9 +178,12 @@ public class SharedSecrets {
     }
 
     public static JavaNetURLAccess getJavaNetURLAccess() {
-        if (javaNetURLAccess == null)
+        var access = javaNetURLAccess;
+        if (access == null) {
             ensureClassInitialized(java.net.URL.class);
-        return javaNetURLAccess;
+            access = javaNetURLAccess;
+        }
+        return access;
     }
 
     public static void setJavaNetInetAddressAccess(JavaNetInetAddressAccess jna) {
@@ -177,9 +191,12 @@ public class SharedSecrets {
     }
 
     public static JavaNetInetAddressAccess getJavaNetInetAddressAccess() {
-        if (javaNetInetAddressAccess == null)
+        var access = javaNetInetAddressAccess;
+        if (access == null) {
             ensureClassInitialized(java.net.InetAddress.class);
-        return javaNetInetAddressAccess;
+            access = javaNetInetAddressAccess;
+        }
+        return access;
     }
 
     public static void setJavaNetHttpCookieAccess(JavaNetHttpCookieAccess a) {
@@ -187,9 +204,12 @@ public class SharedSecrets {
     }
 
     public static JavaNetHttpCookieAccess getJavaNetHttpCookieAccess() {
-        if (javaNetHttpCookieAccess == null)
+        var access = javaNetHttpCookieAccess;
+        if (access == null) {
             ensureClassInitialized(java.net.HttpCookie.class);
-        return javaNetHttpCookieAccess;
+            access = javaNetHttpCookieAccess;
+        }
+        return access;
     }
 
     public static void setJavaNioAccess(JavaNioAccess jna) {
@@ -197,12 +217,14 @@ public class SharedSecrets {
     }
 
     public static JavaNioAccess getJavaNioAccess() {
-        if (javaNioAccess == null) {
+        var access = javaNioAccess;
+        if (access == null) {
             // Ensure java.nio.Buffer is initialized, which provides the
             // shared secret.
             ensureClassInitialized(java.nio.Buffer.class);
+            access = javaNioAccess;
         }
-        return javaNioAccess;
+        return access;
     }
 
     public static void setJavaIOAccess(JavaIOAccess jia) {
@@ -210,10 +232,12 @@ public class SharedSecrets {
     }
 
     public static JavaIOAccess getJavaIOAccess() {
-        if (javaIOAccess == null) {
+        var access = javaIOAccess;
+        if (access == null) {
             ensureClassInitialized(Console.class);
+            access = javaIOAccess;
         }
-        return javaIOAccess;
+        return access;
     }
 
     public static void setJavaIOFileDescriptorAccess(JavaIOFileDescriptorAccess jiofda) {
@@ -221,10 +245,12 @@ public class SharedSecrets {
     }
 
     public static JavaIOFilePermissionAccess getJavaIOFilePermissionAccess() {
-        if (javaIOFilePermissionAccess == null)
+        var access = javaIOFilePermissionAccess;
+        if (access == null) {
             ensureClassInitialized(FilePermission.class);
-
-        return javaIOFilePermissionAccess;
+            access = javaIOFilePermissionAccess;
+        }
+        return access;
     }
 
     public static void setJavaIOFilePermissionAccess(JavaIOFilePermissionAccess jiofpa) {
@@ -232,10 +258,12 @@ public class SharedSecrets {
     }
 
     public static JavaIOFileDescriptorAccess getJavaIOFileDescriptorAccess() {
-        if (javaIOFileDescriptorAccess == null)
+        var access = javaIOFileDescriptorAccess;
+        if (access == null) {
             ensureClassInitialized(FileDescriptor.class);
-
-        return javaIOFileDescriptorAccess;
+            access = javaIOFileDescriptorAccess;
+        }
+        return access;
     }
 
     public static void setJavaSecurityAccess(JavaSecurityAccess jsa) {
@@ -243,16 +271,21 @@ public class SharedSecrets {
     }
 
     public static JavaSecurityAccess getJavaSecurityAccess() {
-        if (javaSecurityAccess == null) {
+        var access = javaSecurityAccess;
+        if (access == null) {
             ensureClassInitialized(ProtectionDomain.class);
+            access = javaSecurityAccess;
         }
-        return javaSecurityAccess;
+        return access;
     }
 
     public static JavaUtilZipFileAccess getJavaUtilZipFileAccess() {
-        if (javaUtilZipFileAccess == null)
+        var access = javaUtilZipFileAccess;
+        if (access == null) {
             ensureClassInitialized(java.util.zip.ZipFile.class);
-        return javaUtilZipFileAccess;
+            access = javaUtilZipFileAccess;
+        }
+        return access;
     }
 
     public static void setJavaUtilZipFileAccess(JavaUtilZipFileAccess access) {
@@ -288,9 +321,12 @@ public class SharedSecrets {
     }
 
     public static JavaUtilResourceBundleAccess getJavaUtilResourceBundleAccess() {
-        if (javaUtilResourceBundleAccess == null)
+        var access = javaUtilResourceBundleAccess;
+        if (access == null) {
             ensureClassInitialized(ResourceBundle.class);
-        return javaUtilResourceBundleAccess;
+            access = javaUtilResourceBundleAccess;
+        }
+        return access;
     }
 
     public static void setJavaUtilResourceBundleAccess(JavaUtilResourceBundleAccess access) {
@@ -298,10 +334,12 @@ public class SharedSecrets {
     }
 
     public static JavaObjectInputStreamReadString getJavaObjectInputStreamReadString() {
-        if (javaObjectInputStreamReadString == null) {
+        var access = javaObjectInputStreamReadString;
+        if (access == null) {
             ensureClassInitialized(ObjectInputStream.class);
+            access = javaObjectInputStreamReadString;
         }
-        return javaObjectInputStreamReadString;
+        return access;
     }
 
     public static void setJavaObjectInputStreamReadString(JavaObjectInputStreamReadString access) {
@@ -309,10 +347,12 @@ public class SharedSecrets {
     }
 
     public static JavaObjectInputStreamAccess getJavaObjectInputStreamAccess() {
-        if (javaObjectInputStreamAccess == null) {
+        var access = javaObjectInputStreamAccess;
+        if (access == null) {
             ensureClassInitialized(ObjectInputStream.class);
+            access = javaObjectInputStreamAccess;
         }
-        return javaObjectInputStreamAccess;
+        return access;
     }
 
     public static void setJavaObjectInputStreamAccess(JavaObjectInputStreamAccess access) {
@@ -320,10 +360,12 @@ public class SharedSecrets {
     }
 
     public static JavaObjectInputFilterAccess getJavaObjectInputFilterAccess() {
-        if (javaObjectInputFilterAccess == null) {
+        var access = javaObjectInputFilterAccess;
+        if (access == null) {
             ensureClassInitialized(ObjectInputFilter.Config.class);
+            access = javaObjectInputFilterAccess;
         }
-        return javaObjectInputFilterAccess;
+        return access;
     }
 
     public static void setJavaObjectInputFilterAccess(JavaObjectInputFilterAccess access) {
@@ -335,10 +377,12 @@ public class SharedSecrets {
     }
 
     public static JavaIORandomAccessFileAccess getJavaIORandomAccessFileAccess() {
-        if (javaIORandomAccessFileAccess == null) {
+        var access = javaIORandomAccessFileAccess;
+        if (access == null) {
             ensureClassInitialized(RandomAccessFile.class);
+            access = javaIORandomAccessFileAccess;
         }
-        return javaIORandomAccessFileAccess;
+        return access;
     }
 
     public static void setJavaSecuritySignatureAccess(JavaSecuritySignatureAccess jssa) {
@@ -346,10 +390,12 @@ public class SharedSecrets {
     }
 
     public static JavaSecuritySignatureAccess getJavaSecuritySignatureAccess() {
-        if (javaSecuritySignatureAccess == null) {
+        var access = javaSecuritySignatureAccess;
+        if (access == null) {
             ensureClassInitialized(Signature.class);
+            access = javaSecuritySignatureAccess;
         }
-        return javaSecuritySignatureAccess;
+        return access;
     }
 
     public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {
@@ -357,10 +403,12 @@ public class SharedSecrets {
     }
 
     public static JavaxCryptoSealedObjectAccess getJavaxCryptoSealedObjectAccess() {
-        if (javaxCryptoSealedObjectAccess == null) {
+        var access = javaxCryptoSealedObjectAccess;
+        if (access == null) {
             ensureClassInitialized(SealedObject.class);
+            access = javaxCryptoSealedObjectAccess;
         }
-        return javaxCryptoSealedObjectAccess;
+        return access;
     }
 
     private static void ensureClassInitialized(Class<?> c) {

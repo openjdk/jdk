@@ -70,6 +70,7 @@ import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -215,11 +216,13 @@ class TaskFactory {
                      //additional cleanup: purge the REPL package:
                      Symtab syms = Symtab.instance(context);
                      Names names = Names.instance(context);
-                     PackageSymbol repl = syms.getPackage(syms.unnamedModule, names.fromString(Util.REPL_PACKAGE));
+                     ModuleSymbol replModule = syms.java_base == syms.noModule ? syms.noModule
+                                                                               : syms.unnamedModule;
+                     PackageSymbol repl = syms.getPackage(replModule, names.fromString(Util.REPL_PACKAGE));
                      if (repl != null) {
                          for (ClassSymbol clazz : syms.getAllClasses()) {
                              if (clazz.packge() == repl) {
-                                 syms.removeClass(syms.unnamedModule, clazz.flatName());
+                                 syms.removeClass(replModule, clazz.flatName());
                              }
                          }
                          repl.members_field = null;

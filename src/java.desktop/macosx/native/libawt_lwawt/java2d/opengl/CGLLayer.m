@@ -42,7 +42,7 @@ extern NSOpenGLContext *sharedContext;
 @synthesize textureWidth;
 @synthesize textureHeight;
 
-- (id) initWithJavaLayer:(JNFWeakJObjectWrapper *)layer;
+- (id) initWithJavaLayer:(jobject)layer;
 {
 AWT_ASSERT_APPKIT_THREAD;
     // Initialize ourselves
@@ -79,6 +79,8 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (void) dealloc {
+    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
+    (*env)->DeleteWeakGlobalRef(env, self.javaLayer);
     self.javaLayer = nil;
     [super dealloc];
 }
@@ -133,7 +135,7 @@ AWT_ASSERT_APPKIT_THREAD;
     DECLARE_CLASS(jc_JavaLayer, "sun/java2d/opengl/CGLLayer");
     DECLARE_METHOD(jm_drawInCGLContext, jc_JavaLayer, "drawInCGLContext", "()V");
 
-    jobject javaLayerLocalRef = [self.javaLayer jObjectWithEnv:env];
+    jobject javaLayerLocalRef = (*env)->NewLocalRef(env, self.javaLayer);
     if ((*env)->IsSameObject(env, javaLayerLocalRef, NULL)) {
         return;
     }
@@ -170,9 +172,9 @@ Java_sun_java2d_opengl_CGLLayer_nativeCreateLayer
 {
     __block CGLLayer *layer = nil;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
-    JNFWeakJObjectWrapper *javaLayer = [JNFWeakJObjectWrapper wrapperWithJObject:obj withEnv:env];
+    jobject javaLayer = (*env)->NewWeakGlobalRef(env, obj);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
             AWT_ASSERT_APPKIT_THREAD;
@@ -180,7 +182,7 @@ JNF_COCOA_ENTER(env);
             layer = [[CGLLayer alloc] initWithJavaLayer: javaLayer];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return ptr_to_jlong(layer);
 }
@@ -217,7 +219,7 @@ JNIEXPORT void JNICALL
 Java_sun_java2d_opengl_CGLLayer_nativeSetScale
 (JNIEnv *env, jclass cls, jlong layerPtr, jdouble scale)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
     CGLLayer *layer = jlong_to_ptr(layerPtr);
     // We always call all setXX methods asynchronously, exception is only in
     // this method where we need to change native texture size and layer's scale
@@ -226,5 +228,5 @@ Java_sun_java2d_opengl_CGLLayer_nativeSetScale
     [ThreadUtilities performOnMainThreadWaiting:[NSThread isMainThread] block:^(){
         layer.contentsScale = scale;
     }];
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }
