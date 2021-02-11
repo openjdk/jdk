@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.security.Security;
 import java.util.Arrays;
 
@@ -137,16 +138,24 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             }
         } catch (SSLException ssle) {
             // The server side may have closed the socket.
-            if ("Connection reset".equals(ssle.getCause().getMessage())) {
-                System.out.println("Client SSLException:");
-                ssle.printStackTrace(System.out);
-            } else {
+            if (!isConnectionReset(ssle)) {
                 failTest(ssle, "Client got UNEXPECTED SSLException:");
             }
 
         } catch (Exception e) {
             failTest(e, "Client got UNEXPECTED Exception:");
         }
+    }
+
+    private boolean isConnectionReset(SSLException ssle) {
+        Throwable cause = ssle.getCause();
+        if (cause instanceof SocketException
+                && "Connection reset".equals(cause.getMessage())) {
+            System.out.println("Client SSLException:");
+            ssle.printStackTrace(System.out);
+            return true;
+        }
+        return false;
     }
 
     private void failTest(Exception e, String message) {
