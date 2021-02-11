@@ -129,6 +129,8 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
 #include "utilities/vmError.hpp"
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitals.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -3017,6 +3019,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   JFR_ONLY(Jfr::on_create_vm_3();)
 
+  // SapMachine 2019-02-20 : vitals
+  if (EnableVitals) {
+    sapmachine_vitals::initialize();
+  }
+
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
 
@@ -3475,6 +3482,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   p->set_on_thread_list();
 
   _number_of_threads++;
+
   oop threadObj = p->threadObj();
   bool daemon = true;
   // Bootstrapping problem: threadObj can be null for initial
@@ -3497,6 +3505,10 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   // Make new thread known to active EscapeBarrier
   EscapeBarrier::thread_added(p);
+
+  // SapMachine 2019-02-20 : vitals
+  sapmachine_vitals::counters::inc_threads_created(1);
+
 }
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
@@ -3752,6 +3764,13 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   cl.do_thread(WatcherThread::watcher_thread());
   cl.do_thread(AsyncLogWriter::instance());
 
+  // SapMachine 2019-11-07 : vitals
+  const Thread* vitals_sampler_thread = sapmachine_vitals::samplerthread();
+  if (vitals_sampler_thread != NULL) {
+    vitals_sampler_thread->print_on(st);
+    st->cr();
+  }
+
   st->flush();
 }
 
@@ -3805,6 +3824,10 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
   print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);
+
+  // SapMachine 2019-11-07 : vitals
+  print_on_error(const_cast<Thread*>(sapmachine_vitals::samplerthread()),
+                 st, current, buf, buflen, &found_current);
 
   if (Universe::heap() != NULL) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);

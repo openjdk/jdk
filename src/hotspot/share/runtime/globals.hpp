@@ -497,6 +497,29 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
+  /* SapMachine 2019-02-20 : vitals */                                      \
+  product(bool, EnableVitals, true,                                         \
+          "Enable sampling of vitals: memory, cpu utilization and various " \
+          "VM core statistics; display via jcmd \"VM.vitals\".")            \
+                                                                            \
+  product(uintx, VitalsSampleInterval, 10,                                  \
+          "Vitals sample rate interval in seconds (default 10)")            \
+                                                                            \
+  product(bool, VitalsLockFreeSampling, false, DIAGNOSTIC,                  \
+          "When sampling vitals, omit any actions which require locking.")  \
+                                                                            \
+  product(bool, DumpVitalsAtExit, false,                                    \
+          "Dump vitals at VM exit into two files, by default called "       \
+          "sapmachine_vitals_<pid>.txt and sapmachine_vitals_<pid>.csv. "   \
+          "Use -XX:VitalsFile option to change the file names.")            \
+                                                                            \
+  product(bool, PrintVitalsAtExit, false,                                   \
+          "Prints vitals at VM exit to tty.")                               \
+                                                                            \
+  product(ccstr, VitalsFile, NULL,                                          \
+          "When DumpVitalsAtExit is set, the file name prefix for the "     \
+          "output files (default is sapmachine_vitals_<pid>).")             \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \
