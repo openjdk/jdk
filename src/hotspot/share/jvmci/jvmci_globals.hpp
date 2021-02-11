@@ -25,6 +25,7 @@
 #ifndef SHARE_JVMCI_JVMCI_GLOBALS_HPP
 #define SHARE_JVMCI_JVMCI_GLOBALS_HPP
 
+#include "runtime/globals_shared.hpp"
 #include "utilities/vmEnums.hpp"
 
 class fileStream;
@@ -138,6 +139,8 @@ class fileStream;
           "Enables intrinsification of BigInteger.montgomerySquare()"))
 
 // end of JVMCI_FLAGS
+
+DECLARE_FLAGS(JVMCI_FLAGS)
 
 // The base name for the shared library containing the JVMCI based compiler
 #define JVMCI_SHARED_LIBRARY_NAME "jvmcicompiler"

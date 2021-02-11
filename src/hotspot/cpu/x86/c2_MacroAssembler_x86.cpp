@@ -29,6 +29,7 @@
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/subnode.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -485,10 +486,10 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   Label IsInflated, DONE_LABEL;
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmpReg, objReg, cx1Reg);
     movl(tmpReg, Address(tmpReg, Klass::access_flags_offset()));
-    testl(tmpReg, JVM_ACC_IS_BOX_CLASS);
+    testl(tmpReg, JVM_ACC_IS_VALUE_BASED_CLASS);
     jcc(Assembler::notZero, DONE_LABEL);
   }
 
@@ -2154,6 +2155,61 @@ void C2_MacroAssembler::evpblend(BasicType typ, XMMRegister dst, KRegister kmask
     case T_LONG:
     case T_DOUBLE:
       evpblendmq(dst, kmask, src1, src2, merge, vector_len);
+      break;
+    default:
+      assert(false,"Should not reach here.");
+      break;
+  }
+}
+
+void C2_MacroAssembler::vectortest(int bt, int vlen, XMMRegister src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch(vlen) {
+    case 4:
+      assert(vtmp1 != xnoreg, "required.");
+      // Broadcast lower 32 bits to 128 bits before ptest
+      pshufd(vtmp1, src1, 0x0);
+      if (bt == BoolTest::overflow) {
+        assert(vtmp2 != xnoreg, "required.");
+        pshufd(vtmp2, src2, 0x0);
+      } else {
+        assert(vtmp2 == xnoreg, "required.");
+        vtmp2 = src2;
+      }
+      ptest(vtmp1, vtmp2);
+     break;
+    case 8:
+      assert(vtmp1 != xnoreg, "required.");
+      // Broadcast lower 64 bits to 128 bits before ptest
+      pshufd(vtmp1, src1, 0x4);
+      if (bt == BoolTest::overflow) {
+        assert(vtmp2 != xnoreg, "required.");
+        pshufd(vtmp2, src2, 0x4);
+      } else {
+        assert(vtmp2 == xnoreg, "required.");
+        vtmp2 = src2;
+      }
+      ptest(vtmp1, vtmp2);
+     break;
+    case 16:
+      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
+      ptest(src1, src2);
+      break;
+    case 32:
+      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
+      vptest(src1, src2, Assembler::AVX_256bit);
+      break;
+    case 64:
+      {
+        KRegister ktemp = k2; // Use a hardcoded temp due to no k register allocation.
+        assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
+        evpcmpeqb(ktemp, src1, src2, Assembler::AVX_512bit);
+        if (bt == BoolTest::ne) {
+          ktestql(ktemp, ktemp);
+        } else {
+          assert(bt == BoolTest::overflow, "required");
+          kortestql(ktemp, ktemp);
+        }
+      }
       break;
     default:
       assert(false,"Should not reach here.");

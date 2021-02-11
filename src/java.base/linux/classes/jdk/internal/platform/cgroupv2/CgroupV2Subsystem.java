@@ -48,16 +48,21 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     private static final int PER_CPU_SHARES = 1024;
     private static final String MAX_VAL = "max";
     private static final Object EMPTY_STR = "";
+    private static final long NO_SWAP = 0;
 
     private CgroupV2Subsystem(CgroupSubsystemController unified) {
         this.unified = unified;
     }
 
-    private long getLongVal(String file) {
+    private long getLongVal(String file, long defaultValue) {
         return CgroupSubsystemController.getLongValue(unified,
                                                       file,
                                                       CgroupV2SubsystemController::convertStringToLong,
-                                                      CgroupSubsystem.LONG_RETVAL_UNLIMITED);
+                                                      defaultValue);
+    }
+
+    private long getLongVal(String file) {
+        return getLongVal(file, CgroupSubsystem.LONG_RETVAL_UNLIMITED);
     }
 
     private static CgroupV2Subsystem initSubsystem() {
@@ -289,6 +294,11 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     @Override
     public long getMemoryAndSwapLimit() {
         String strVal = CgroupSubsystemController.getStringValue(unified, "memory.swap.max");
+        // We only get a null string when file memory.swap.max doesn't exist.
+        // In that case we return the memory limit without any swap.
+        if (strVal == null) {
+            return getMemoryLimit();
+        }
         long swapLimit = limitFromString(strVal);
         if (swapLimit >= 0) {
             long memoryLimit = getMemoryLimit();
@@ -307,9 +317,14 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
      */
     @Override
     public long getMemoryAndSwapUsage() {
-        long swapUsage = getLongVal("memory.swap.current");
         long memoryUsage = getMemoryUsage();
-        return memoryUsage + swapUsage;
+        if (memoryUsage >= 0) {
+            // If file memory.swap.current doesn't exist, only return the regular
+            // memory usage (without swap). Thus, use default value of NO_SWAP.
+            long swapUsage = getLongVal("memory.swap.current", NO_SWAP);
+            return memoryUsage + swapUsage;
+        }
+        return memoryUsage; // case of no memory limits
     }
 
     @Override

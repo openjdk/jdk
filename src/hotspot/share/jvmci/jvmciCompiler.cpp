@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -40,6 +41,16 @@ JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _global_compilation_ticks = 0;
   assert(_instance == NULL, "only one instance allowed");
   _instance = this;
+}
+
+JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
+  if (!EnableJVMCI) {
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
+  }
+  if (_instance == NULL && require_non_null) {
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
+  }
+  return _instance;
 }
 
 // Initialization

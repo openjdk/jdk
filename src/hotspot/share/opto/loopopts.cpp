@@ -56,8 +56,8 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   // Splitting range check CastIIs through a loop induction Phi can
   // cause new Phis to be created that are left unrelated to the loop
   // induction Phi and prevent optimizations (vectorization)
-  if (n->Opcode() == Op_CastII && n->as_CastII()->has_range_check() &&
-      region->is_CountedLoop() && n->in(1) == region->as_CountedLoop()->phi()) {
+  if (n->Opcode() == Op_CastII && region->is_CountedLoop() &&
+      n->in(1) == region->as_CountedLoop()->phi()) {
     return NULL;
   }
 
@@ -1116,7 +1116,7 @@ static bool merge_point_safe(Node* region) {
         Node* m = n->fast_out(j);
         if (m->Opcode() == Op_ConvI2L)
           return false;
-        if (m->is_CastII() && m->isa_CastII()->has_range_check()) {
+        if (m->is_CastII()) {
           return false;
         }
       }

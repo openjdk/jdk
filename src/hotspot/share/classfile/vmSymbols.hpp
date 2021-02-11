@@ -249,6 +249,7 @@
   template(java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl,     "java/util/concurrent/atomic/AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl") \
   template(jdk_internal_vm_annotation_Contended_signature,                   "Ljdk/internal/vm/annotation/Contended;")    \
   template(jdk_internal_vm_annotation_ReservedStackAccess_signature,         "Ljdk/internal/vm/annotation/ReservedStackAccess;") \
+  template(jdk_internal_ValueBased_signature,                                "Ljdk/internal/ValueBased;") \
                                                                                                   \
   /* class symbols needed by intrinsics */                                                        \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, template, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -721,8 +722,6 @@ enum class vmSymbolID : int {
 };
 
 ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
-constexpr EnumRange<vmSymbolID> vmSymbolsRange; // the default range of all valid vmSymbolIDs
-using vmSymbolsIterator = EnumIterator<vmSymbolID>; // convenience
 
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;

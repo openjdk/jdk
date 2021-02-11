@@ -40,7 +40,6 @@
 //
 // case 2:
 // enum has sequential values, with U start and U end (exclusive).
-// WeakProcessorPhases is an example because of oopstorage.
 // This can be mapped onto case 1 by casting start/(end-1).
 //
 // case 3:
@@ -57,20 +56,18 @@
 // EnumRange -- defines the range of *one specific* iteration loop.
 // EnumIterator -- the current point in the iteration loop.
 
-// Example (see vmSymbols.hpp/cpp)
+// Example:
 //
-// ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
-// constexpr EnumRange<vmSymbolID> vmSymbolsRange;
-// using vmSymbolsIterator = EnumIterator<vmSymbolID>;
-//
-// /* Without range-based for, allowed */
-// for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
-//  vmSymbolID index = *it; ....
+// /* With range-base for (recommended) */
+// for (vmSymbolID index : EnumRange<vmSymbolID>{}) {
+//    ....
 // }
 //
-// /* With range-base for, not allowed by HotSpot coding style yet */
-// for (vmSymbolID index : vmSymbolsRange) {
-//    ....
+// /* Without range-based for */
+// constexpr EnumRange<vmSymbolID> vmSymbolsRange{};
+// using vmSymbolsIterator = EnumIterator<vmSymbolID>;
+// for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+//  vmSymbolID index = *it; ....
 // }
 
 // EnumeratorRange is a traits type supporting iteration over the enumerators of T.

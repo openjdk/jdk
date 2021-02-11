@@ -494,8 +494,10 @@ void CompilerConfig::ergo_initialize() {
   if (!EliminateLocks) {
     EliminateNestedLocks = false;
   }
-  if (!Inline) {
+  if (!Inline || !IncrementalInline) {
     IncrementalInline = false;
+    IncrementalInlineMH = false;
+    IncrementalInlineVirtual = false;
   }
 #ifndef PRODUCT
   if (!IncrementalInline) {

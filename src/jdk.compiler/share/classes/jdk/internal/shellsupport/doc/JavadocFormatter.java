@@ -174,20 +174,33 @@ public class JavadocFormatter {
                     if (current.matches(t)) {
                         if (!seenAny) {
                             seenAny = true;
-                            if (result.charAt(result.length() - 1) != '\n')
-                                result.append("\n");
-                            result.append("\n");
-                            result.append(escape(CODE_UNDERLINE))
-                                  .append(docSections.get(current))
-                                  .append(escape(CODE_RESET))
-                                  .append("\n");
+                            startSection(current);
                         }
 
                         scan(t, null);
                     }
                 }
+                if (current == Sections.RETURNS && !seenAny) {
+                    List<? extends DocTree> firstSentence = node.getFirstSentence();
+                    if (firstSentence.size() == 1
+                            && firstSentence.get(0).getKind() == DocTree.Kind.RETURN) {
+                        startSection(current);
+                        scan(firstSentence.get(0), true);
+                    }
+                }
             }
             return null;
+        }
+
+        private void startSection(Sections current) {
+            if (result.charAt(result.length() - 1) != '\n')
+                result.append("\n");
+            result.append("\n");
+            result.append(escape(CODE_UNDERLINE))
+                    .append(docSections.get(current))
+                    .append(escape(CODE_RESET))
+                    .append("\n");
+
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -250,13 +263,34 @@ public class JavadocFormatter {
             return scan(node.getBody(), p);
         }
 
+        /**
+         * {@inheritDoc}
+         * {@code @return} is a bimodal tag and can be used as either a block tag or an inline
+         * tag. If the parameter {@code p} is {@code null}, the node will be formatted according to
+         * the value of {@link ReturnTree#isInline()}. If the parameter is not {@code null}, the node will
+         * be formatted as a block tag.
+         * @param node  {@inheritDoc}
+         * @param p     not {@code null} to force the node to be formatted as a block tag
+         * @return
+         */
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Object visitReturn(ReturnTree node, Object p) {
-            reflownTo = result.length();
-            try {
-                return super.visitReturn(node, p);
-            } finally {
-                reflow(result, reflownTo, 0, limit);
+            if (node.isInline() && p == null) {
+                String MARKER = "{0}";
+                int p0 = inlineReturns.indexOf(MARKER);
+                result.append(inlineReturns, 0, p0);
+                try {
+                    return super.visitReturn(node, p);
+                } finally {
+                    result.append(inlineReturns.substring(p0 + MARKER.length()));
+                }
+            } else {
+                reflownTo = result.length();
+                try {
+                    return super.visitReturn(node, p);
+                } finally {
+                    reflow(result, reflownTo, 0, limit);
+                }
             }
         }
 
@@ -569,6 +603,7 @@ public class JavadocFormatter {
     }
 
     private static final Map<Sections, String> docSections = new LinkedHashMap<>();
+    private static final String inlineReturns;
 
     static {
         ResourceBundle bundle =
@@ -577,6 +612,7 @@ public class JavadocFormatter {
         docSections.put(Sections.PARAMS, bundle.getString("CAP_Parameters"));
         docSections.put(Sections.RETURNS, bundle.getString("CAP_Returns"));
         docSections.put(Sections.THROWS, bundle.getString("CAP_Thrown_Exceptions"));
+        inlineReturns = bundle.getString("Inline_Returns");
     }
 
     private static String indentString(int indent) {

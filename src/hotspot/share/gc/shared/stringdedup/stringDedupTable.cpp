@@ -32,7 +32,7 @@
 #include "memory/padded.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/arrayOop.inline.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/atomic.hpp"

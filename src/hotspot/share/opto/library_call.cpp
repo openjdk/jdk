@@ -26,7 +26,7 @@
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/vmSymbols.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -55,12 +55,13 @@
 #include "prims/unsafe.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
-  vmIntrinsics::ID id = m->intrinsic_id();
+  vmIntrinsicID id = m->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   if (!m->is_loaded()) {
@@ -89,7 +90,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     return new LibraryIntrinsic(m, is_virtual,
                                 vmIntrinsics::predicates_needed(id),
                                 vmIntrinsics::does_virtual_dispatch(id),
-                                (vmIntrinsics::ID) id);
+                                id);
   } else {
     return NULL;
   }
@@ -672,7 +673,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
-    // to the list in vmSymbols.hpp without implementing it here.
+    // to the list in vmIntrinsics.hpp without implementing it here.
 #ifndef PRODUCT
     if ((PrintMiscellaneous && (Verbose || WizardMode)) || PrintOpto) {
       tty->print_cr("*** Warning: Unimplemented intrinsic %s(%d)",
@@ -708,7 +709,7 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
-    // to the list in vmSymbols.hpp without implementing it here.
+    // to the list in vmIntrinsics.hpp without implementing it here.
 #ifndef PRODUCT
     if ((PrintMiscellaneous && (Verbose || WizardMode)) || PrintOpto) {
       tty->print_cr("*** Warning: Unimplemented predicate for intrinsic %s(%d)",

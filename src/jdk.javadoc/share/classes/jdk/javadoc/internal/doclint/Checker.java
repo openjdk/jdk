@@ -939,6 +939,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         if (foundReturn) {
             env.messages.warning(REFERENCE, tree, "dc.exists.return");
         }
+        if (tree.isInline()) {
+            DocCommentTree dct = getCurrentPath().getDocComment();
+            if (tree != dct.getFirstSentence().get(0)) {
+                env.messages.warning(REFERENCE, tree, "dc.return.not.first");
+            }
+        }
 
         Element e = env.trees.getElement(env.currPath);
         if (e.getKind() != ElementKind.METHOD

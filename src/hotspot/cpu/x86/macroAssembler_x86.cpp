@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"

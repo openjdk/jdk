@@ -57,6 +57,22 @@ public class TestHtmlTableTags extends JavadocTester {
         checkHtmlTableTag();
         checkHtmlTableCaptions();
         checkHtmlTableHeaders();
+        checkHtmlTableContents();
+    }
+
+    @Test
+    public void testNoComment() {
+        javadoc("-d", "out-nocomment",
+                "-nocomment",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg1", "pkg2");
+        checkExit(Exit.OK);
+
+        checkHtmlTableTag();
+        checkHtmlTableCaptions();
+        checkHtmlTableHeaders();
+        checkHtmlTableContentsNoComment();
     }
 
     /*
@@ -519,5 +535,299 @@ public class TestHtmlTableTags extends JavadocTester {
                 """
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>""");
+    }
+
+    /*
+     * Test for validating HTML table contents.
+     */
+    void checkHtmlTableContents() {
+        //Package summary
+        checkOutput("pkg1/package-summary.html", true,
+                """
+                    <div class="col-first even-row-color"><a href="I1.html" title="interface in pkg1">I1</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">A sample interface used to test table tags.</div>
+                    </div>""",
+                """
+                    <div class="col-first even-row-color"><a href="C1.html" title="class in pkg1">C1</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">A test class.</div>
+                    </div>""");
+
+        checkOutput("pkg2/package-summary.html", true,
+                """
+                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title="enum in pkg2">C2.ModalExclusionType</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">A sample enum.</div>
+                    </div>""",
+                """
+                    <div class="col-first even-row-color"><a href="C3.html" title="annotation in pkg2">C3</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">Test Annotation class.</div>
+                    </div>""");
+
+        // Class documentation
+        checkOutput("pkg1/C1.html", true,
+                """
+                    <div class="col-first odd-row-color"><code><a href="../pkg2/C2.html" title="class in pkg2">C2</a></code></div>
+                    <div class="col-second odd-row-color"><code><span class="member-name-link"><a href="#field">field</a></span></code></div>
+                    <div class="col-last odd-row-color">
+                    <div class="block">Test field for class.</div>
+                    </div>""",
+                """
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
+                    ble-tab4 method-summary-table"><code>void</code></div>
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-t\
+                    able-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m\
+                    ethod1(int,int)">method1</a></span>&#8203;(int&nbsp;a,
+                     int&nbsp;b)</code></div>
+                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="block">Method that is implemented.</div>
+                    </div>""");
+
+        checkOutput("pkg2/C2.html", true,
+                """
+                    <div class="col-first even-row-color"><code><a href="../pkg1/C1.html" title="class in pkg1">C1</a></code></div>
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="#field">field</a></span></code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">A test field.</div>
+                    </div>""",
+                """
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
+                    ble-tab4 method-summary-table"><code><a href="../pkg1/C1.html" title="class in p\
+                    kg1">C1</a></code></div>
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-t\
+                    able-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m\
+                    ethod(pkg1.C1)">method</a></span>&#8203;(<a href="../pkg1/C1.html" title="class \
+                    in pkg1">C1</a>&nbsp;param)</code></div>
+                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-tab\
+                    le-tab4 method-summary-table">
+                    <div class="block">A sample method.</div>
+                    </div>""");
+
+        checkOutput("pkg2/C2.ModalExclusionType.html", true,
+                """
+                    <div class="col-first odd-row-color"><code><span class="member-name-link"><a hre\
+                    f="#NO_EXCLUDE">NO_EXCLUDE</a></span></code></div>
+                    <div class="col-last odd-row-color">
+                    <div class="block">Test comment.</div>
+                    </div>""");
+
+        checkOutput("pkg2/C3.html", true,
+                """
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="#value()">value</a></span></code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">Comment.</div>
+                    </div>""");
+
+        checkOutput("pkg2/C4.html", true,
+                """
+                    <div class="col-first even-row-color"><code>boolean</code></div>
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="#value()">value</a></span></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>""");
+
+        // Class use documentation
+        checkOutput("pkg1/class-use/I1.html", true,
+                """
+                    <div class="col-first even-row-color"><a href="#pkg1">pkg1</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">Test package 1 used to test table tags.</div>
+                    </div>""");
+
+        checkOutput("pkg2/class-use/C2.html", true,
+                """
+                    <div class="col-first even-row-color"><code><a href="../C2.html" title="class in pkg2">C2</a></code></div>
+                    <div class="col-second even-row-color"><span class="type-name-label">C1.</span><\
+                    code><span class="member-name-link"><a href="../../pkg1/C1.html#field">field</a>\
+                    </span></code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">Test field for class.</div>
+                    </div>""",
+                """
+                    <div class="col-first even-row-color"><code><a href="../C2.html" title="class in pkg2">C2</a></code></div>
+                    <div class="col-second even-row-color"><span class="type-name-label">C1.</span><\
+                    code><span class="member-name-link"><a href="../../pkg1/C1.html#method(pkg2.C2)"\
+                    >method</a></span>&#8203;(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp\
+                    ;param)</code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">Method thats does some processing.</div>
+                    </div>""");
+
+        // Package use documentation
+        checkOutput("pkg1/package-use.html", true,
+                """
+                    <div class="col-first even-row-color"><a href="#pkg1">pkg1</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">Test package 1 used to test table tags.</div>
+                    </div>""",
+                """
+                    <div class="col-first even-row-color"><a href="class-use/C1.html#pkg2">C1</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">A test class.</div>
+                    </div>""");
+
+        // Deprecated
+        checkOutput("deprecated-list.html", true,
+                """
+                    <div class="col-deprecated-item-name even-row-color"><a href="pkg2/C2.html#dep_field">pkg2.C2.dep_field</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="deprecation-comment">don't use this field anymore.</div>
+                    </div>""",
+                """
+                    <div class="col-deprecated-item-name even-row-color"><a href="pkg1/C1.html#deprecatedMethod()">pkg1.C1.deprecatedMethod()</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="deprecation-comment">don't use this anymore.</div>
+                    </div>""");
+
+        // Constant values
+        checkOutput("constant-values.html", true,
+                """
+                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
+                    tatic&nbsp;final&nbsp;<a href="https://download.java.net/java/early_access/jdk17\
+                    /docs/api/java.base/java/lang/String.html" title="class or interface in java.lan\
+                    g" class="external-link">String</a></code></div>
+                    <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CO\
+                    NSTANT1</a></code></div>
+                    <div class="col-last even-row-color"><code>"C1"</code></div>
+                    </div>""");
+
+        // Overview Summary
+        checkOutput("index.html", true,
+                """
+                    <div class="col-first even-row-color all-packages-table-tab1 all-packages-table"\
+                    ><a href="pkg1/package-summary.html">pkg1</a></div>
+                    <div class="col-last even-row-color all-packages-table-tab1 all-packages-table">
+                    <div class="block">Test package 1 used to test table tags.</div>
+                    </div>""");
+    }
+
+    /*
+     * Test for validating HTML table contents with -nocomment option.
+     */
+    void checkHtmlTableContentsNoComment() {
+        //Package summary
+        checkOutput("pkg1/package-summary.html", true,
+                """
+                    <div class="col-first even-row-color"><a href="I1.html" title="interface in pkg1">I1</a></div>
+                    <div class="col-last even-row-color"></div>""",
+                """
+                    <div class="col-first even-row-color"><a href="C1.html" title="class in pkg1">C1</a></div>
+                    <div class="col-last even-row-color"></div>""");
+
+        checkOutput("pkg2/package-summary.html", true,
+                """
+                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title="enum in pkg2">C2.ModalExclusionType</a></div>
+                    <div class="col-last even-row-color"></div>""",
+                """
+                    <div class="col-first even-row-color"><a href="C3.html" title="annotation in pkg2">C3</a></div>
+                    <div class="col-last even-row-color"></div>""");
+
+        // Class documentation
+        checkOutput("pkg1/C1.html", true,
+                """
+                    <div class="col-first odd-row-color"><code><a href="../pkg2/C2.html" title="class in pkg2">C2</a></code></div>
+                    <div class="col-second odd-row-color"><code><span class="member-name-link"><a href="#field">field</a></span></code></div>
+                    <div class="col-last odd-row-color"></div>""",
+                """
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
+                    ble-tab4 method-summary-table"><code>void</code></div>
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-t\
+                    able-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m\
+                    ethod1(int,int)">method1</a></span>&#8203;(int&nbsp;a,
+                     int&nbsp;b)</code></div>
+                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"></div>""");
+
+        checkOutput("pkg2/C2.html", true,
+                """
+                    <div class="col-first even-row-color"><code><a href="../pkg1/C1.html" title="class in pkg1">C1</a></code></div>
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="#field">field</a></span></code></div>
+                    <div class="col-last even-row-color"></div>""",
+                """
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
+                    ble-tab4 method-summary-table"><code><a href="../pkg1/C1.html" title="class in p\
+                    kg1">C1</a></code></div>
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-t\
+                    able-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m\
+                    ethod(pkg1.C1)">method</a></span>&#8203;(<a href="../pkg1/C1.html" title="class \
+                    in pkg1">C1</a>&nbsp;param)</code></div>
+                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-tab\
+                    le-tab4 method-summary-table"></div>""");
+
+        checkOutput("pkg2/C2.ModalExclusionType.html", true,
+                """
+                    <div class="col-first odd-row-color"><code><span class="member-name-link"><a hre\
+                    f="#NO_EXCLUDE">NO_EXCLUDE</a></span></code></div>
+                    <div class="col-last odd-row-color"></div>""");
+
+        checkOutput("pkg2/C3.html", true,
+                """
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="#value()">value</a></span></code></div>
+                    <div class="col-last even-row-color"></div>""");
+
+        checkOutput("pkg2/C4.html", true,
+                """
+                    <div class="col-first even-row-color"><code>boolean</code></div>
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="#value()">value</a></span></code></div>
+                    <div class="col-last even-row-color"></div>
+                    </div>""");
+
+        // Class use documentation
+        checkOutput("pkg1/class-use/I1.html", true,
+                """
+                    <div class="col-first even-row-color"><a href="#pkg1">pkg1</a></div>
+                    <div class="col-last even-row-color"></div>""");
+
+        checkOutput("pkg2/class-use/C2.html", true,
+                """
+                    <div class="col-first even-row-color"><code><a href="../C2.html" title="class in pkg2">C2</a></code></div>
+                    <div class="col-second even-row-color"><span class="type-name-label">C1.</span><\
+                    code><span class="member-name-link"><a href="../../pkg1/C1.html#field">field</a>\
+                    </span></code></div>
+                    <div class="col-last even-row-color"></div>""",
+                """
+                    <div class="col-first even-row-color"><code><a href="../C2.html" title="class in pkg2">C2</a></code></div>
+                    <div class="col-second even-row-color"><span class="type-name-label">C1.</span><\
+                    code><span class="member-name-link"><a href="../../pkg1/C1.html#method(pkg2.C2)"\
+                    >method</a></span>&#8203;(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp\
+                    ;param)</code></div>
+                    <div class="col-last even-row-color"></div>""");
+
+        // Package use documentation
+        checkOutput("pkg1/package-use.html", true,
+                """
+                    <div class="col-first even-row-color"><a href="#pkg1">pkg1</a></div>
+                    <div class="col-last even-row-color"></div>""",
+                """
+                    <div class="col-first even-row-color"><a href="class-use/C1.html#pkg2">C1</a></div>
+                    <div class="col-last even-row-color"></div>""");
+
+        // Deprecated
+        checkOutput("deprecated-list.html", true,
+                """
+                    <div class="col-deprecated-item-name even-row-color"><a href="pkg2/C2.html#dep_field">pkg2.C2.dep_field</a></div>
+                    <div class="col-last even-row-color"></div>""",
+                """
+                    <div class="col-deprecated-item-name even-row-color"><a href="pkg1/C1.html#deprecatedMethod()">pkg1.C1.deprecatedMethod()</a></div>
+                    <div class="col-last even-row-color"></div>""");
+
+        // Constant values
+        checkOutput("constant-values.html", true,
+                """
+                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
+                    tatic&nbsp;final&nbsp;<a href="https://download.java.net/java/early_access/jdk17\
+                    /docs/api/java.base/java/lang/String.html" title="class or interface in java.lan\
+                    g" class="external-link">String</a></code></div>
+                    <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CO\
+                    NSTANT1</a></code></div>
+                    <div class="col-last even-row-color"><code>"C1"</code></div>
+                    </div>""");
+
+        // Overview Summary
+        checkOutput("index.html", true,
+                """
+                    <div class="col-first even-row-color all-packages-table-tab1 all-packages-table"\
+                    ><a href="pkg1/package-summary.html">pkg1</a></div>
+                    <div class="col-last even-row-color all-packages-table-tab1 all-packages-table"></div>""");
     }
 }

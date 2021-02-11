@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  * keeps its value across a GC and the check in Test.java fails.
  * @requires !vm.musl
  * @summary verify if the native library is unloaded when the class loader is GC'ed
+ * @library /test/lib/
+ * @build jdk.test.lib.util.ForceGC
  * @build p.Test
  * @run main/othervm/native -Xcheck:jni NativeLibraryTest
  */
@@ -40,6 +42,8 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import jdk.test.lib.util.ForceGC;
 
 public class NativeLibraryTest {
     static final Path CLASSES = Paths.get("classes");
@@ -58,13 +62,12 @@ public class NativeLibraryTest {
         for (int count=1; count <= 5; count++) {
             // create a class loader and load a native library
             runTest();
-            // unloading the class loader and native library
-            System.gc();
-            // give Cleaner thread a chance to unload the native library
-            Thread.sleep(100);
-
-            // unloadedCount is incremented when the native library is unloaded
-            if (count != unloadedCount) {
+            // Unload the class loader and native library, and give the Cleaner
+            // thread a chance to unload the native library.
+            // unloadedCount is incremented when the native library is unloaded.
+            ForceGC gc = new ForceGC();
+            final int finalCount = count;
+            if (!gc.await(() -> finalCount == unloadedCount)) {
                 throw new RuntimeException("Expected unloaded=" + count +
                     " but got=" + unloadedCount);
             }

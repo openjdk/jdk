@@ -26,6 +26,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"

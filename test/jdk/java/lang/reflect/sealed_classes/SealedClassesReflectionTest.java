@@ -110,8 +110,7 @@ public class SealedClassesReflectionTest {
     @Test(dataProvider = "notSealedClasses")
     public void testNotSealedClasses(Class<?> cls) {
         assertTrue(!cls.isSealed());
-        assertTrue(cls.getPermittedSubclasses() != null);
-        assertTrue(cls.getPermittedSubclasses().length == 0);
+        assertTrue(cls.getPermittedSubclasses() == null);
     }
 
     @DataProvider(name = "non_sealedClasses")
@@ -128,8 +127,7 @@ public class SealedClassesReflectionTest {
         assertTrue(!cls.isSealed());
         assertTrue(!Modifier.isFinal(cls.getModifiers()));
         assertTrue((cls.getSuperclass() != null && cls.getSuperclass().isSealed()) || Arrays.stream(cls.getInterfaces()).anyMatch(Class::isSealed));
-        assertTrue(cls.getPermittedSubclasses() != null);
-        assertTrue(cls.getPermittedSubclasses().length == 0);
+        assertTrue(cls.getPermittedSubclasses() == null);
     }
 
     @DataProvider(name = "reflectionData")

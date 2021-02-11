@@ -66,6 +66,9 @@ public final class EventType {
     /**
      * Returns the field with the specified name, or {@code null} if it doesn't
      * exist.
+     * <p>
+     * It's possible to index into a nested field by using {@code "."} (for
+     * instance {@code "thread.group.parent.name}").
      *
      * @param name of the field to get, not {@code null}
      *
@@ -82,7 +85,12 @@ public final class EventType {
             }
             cache = newCache;
         }
-        return cache.get(name);
+        ValueDescriptor result = cache.get(name);
+        if (result == null) {
+            // Cache doesn't contain subfields
+            result = platformEventType.getField(name);
+        }
+        return result;
     }
 
     /**

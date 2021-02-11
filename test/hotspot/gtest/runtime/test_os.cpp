@@ -102,7 +102,7 @@ TEST_VM(os, page_size_for_region_unaligned) {
     for (size_t s = os::page_sizes().largest(); s != 0; s = os::page_sizes().next_smaller(s)) {
       const size_t expected = os::page_sizes().next_smaller(s);
       if (expected != 0) {
-        size_t actual = os::page_size_for_region_unaligned(expected - 17, 1);
+        size_t actual = os::page_size_for_region_unaligned(s - 17, 1);
         ASSERT_EQ(actual, expected);
       }
     }

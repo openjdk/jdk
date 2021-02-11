@@ -111,7 +111,7 @@ public class DeployParams {
             if (forApp) {
                 return;
             } else {
-                throw new PackagerException(exceptionKey, s);
+                throw new PackagerException(exceptionKey);
             }
         }
         if (s.length() == 0 || s.charAt(s.length() - 1) == '\\') {
@@ -208,7 +208,9 @@ public class DeployParams {
                 Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId());
         if (appImage != null) {
             Path appImageDir = Path.of(appImage);
-            if (!Files.exists(appImageDir) || appImageDir.toFile().list().length == 0) {
+            if (!Files.exists(appImageDir)
+                    || appImageDir.toFile().list() == null
+                    || appImageDir.toFile().list().length == 0) {
                 throw new PackagerException("ERR_AppImageNotExist", appImage);
             }
         }

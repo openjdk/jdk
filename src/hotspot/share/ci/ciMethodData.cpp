@@ -37,46 +37,21 @@
 // ------------------------------------------------------------------
 // ciMethodData::ciMethodData
 //
-ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md) {
-  assert(md != NULL, "no null method data");
-  Copy::zero_to_words((HeapWord*) &_orig, sizeof(_orig) / sizeof(HeapWord));
-  _data = NULL;
-  _data_size = 0;
-  _extra_data_size = 0;
-  _current_mileage = 0;
-  _invocation_counter = 0;
-  _backedge_counter = 0;
-  _state = empty_state;
-  _saw_free_extra_data = false;
+ciMethodData::ciMethodData(MethodData* md)
+: ciMetadata(md),
+  _data_size(0), _extra_data_size(0), _data(NULL),
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
-  _hint_di = first_di();
+  _hint_di(first_di()),
+  _state(empty_state),
+  _saw_free_extra_data(false),
   // Initialize the escape information (to "don't know.");
-  _eflags = _arg_local = _arg_stack = _arg_returned = 0;
-  _parameters = NULL;
-}
-
-// ------------------------------------------------------------------
-// ciMethodData::ciMethodData
-//
-// No MethodData*.
-ciMethodData::ciMethodData() : ciMetadata(NULL) {
-  Copy::zero_to_words((HeapWord*) &_orig, sizeof(_orig) / sizeof(HeapWord));
-  _data = NULL;
-  _data_size = 0;
-  _extra_data_size = 0;
-  _current_mileage = 0;
-  _invocation_counter = 0;
-  _backedge_counter = 0;
-  _state = empty_state;
-  _saw_free_extra_data = false;
-  // Set an initial hint. Don't use set_hint_di() because
-  // first_di() may be out of bounds if data_size is 0.
-  _hint_di = first_di();
-  // Initialize the escape information (to "don't know.");
-  _eflags = _arg_local = _arg_stack = _arg_returned = 0;
-  _parameters = NULL;
-}
+  _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
+  _current_mileage(0),
+  _invocation_counter(0),
+  _backedge_counter(0),
+  _orig(),
+  _parameters(NULL) {}
 
 // Check for entries that reference an unloaded method
 class PrepareExtraDataClosure : public CleanExtraDataClosure {
@@ -226,7 +201,8 @@ void ciMethodData::load_data() {
   // _extra_data_size = extra_data_limit - extra_data_base
   // total_size = _data_size + _extra_data_size
   // args_data_limit = data_base + total_size - parameter_data_size
-  Copy::disjoint_words_atomic((HeapWord*) mdo,
+  static_assert(sizeof(_orig) % HeapWordSize == 0, "align");
+  Copy::disjoint_words_atomic((HeapWord*) &mdo->_compiler_counters,
                               (HeapWord*) &_orig,
                               sizeof(_orig) / HeapWordSize);
   Arena* arena = CURRENT_ENV->arena();

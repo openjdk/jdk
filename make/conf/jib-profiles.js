@@ -240,7 +240,7 @@ var getJibProfilesCommon = function (input, data) {
     // List of the main profile names used for iteration
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64",
-        "windows-x64", "windows-x86",
+        "windows-x64", "windows-x86", "windows-aarch64",
         "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x"
     ];
 
@@ -461,6 +461,15 @@ var getJibProfilesProfiles = function (input, common, data) {
             configure_args: concat(common.configure_args_32bit),
         },
 
+        "windows-aarch64": {
+            target_os: "windows",
+            target_cpu: "aarch64",
+            dependencies: ["devkit", "gtest", "build_devkit"],
+            configure_args: [
+                "--openjdk-target=aarch64-unknown-cygwin",
+            ],
+        },
+
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
@@ -671,6 +680,10 @@ var getJibProfilesProfiles = function (input, common, data) {
         },
         "windows-x86": {
             platform: "windows-x86",
+            jdk_suffix: "zip",
+        },
+        "windows-aarch64": {
+            platform: "windows-aarch64",
             jdk_suffix: "zip",
         },
        "linux-aarch64": {
@@ -1014,7 +1027,7 @@ var getJibProfilesDependencies = function (input, common) {
     var devkit_platform_revisions = {
         linux_x64: "gcc10.2.0-OL6.4+1.0",
         macosx_x64: "Xcode11.3.1-MacOSX10.15+1.1",
-        windows_x64: "VS2019-16.7.2+1.0",
+        windows_x64: "VS2019-16.7.2+1.1",
         linux_aarch64: "gcc10.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
@@ -1024,9 +1037,11 @@ var getJibProfilesDependencies = function (input, common) {
     var devkit_platform = (input.target_cpu == "x86"
         ? input.target_os + "_x64"
         : input.target_platform);
-
+    if (input.target_platform == "windows_aarch64") {
+        devkit_platform = "windows_x64";
+    }
     var devkit_cross_prefix = "";
-    if (!(input.target_os == "windows" && isWsl(input))) {
+    if (!(input.target_os == "windows")) {
         if (input.build_platform != input.target_platform
            && input.build_platform != devkit_platform) {
             devkit_cross_prefix = input.build_platform + "-to-";

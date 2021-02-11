@@ -234,8 +234,7 @@ void Compile::print_intrinsic_statistics() {
   if (total == 0)  total = 1;  // avoid div0 in case of no successes
   #define PRINT_STAT_LINE(name, c, f) \
     tty->print_cr("  %4d (%4.1f%%) %s (%s)", (int)(c), ((c) * 100.0) / total, name, f);
-  for (vmIntrinsicsIterator it = vmIntrinsicsRange.begin(); it != vmIntrinsicsRange.end(); ++it) {
-    vmIntrinsicID id = *it;
+  for (vmIntrinsicID id : EnumRange<vmIntrinsicID>{}) {
     int   flags = _intrinsic_hist_flags[as_int(id)];
     juint count = _intrinsic_hist_count[as_int(id)];
     if ((flags | count) != 0) {
@@ -339,24 +338,69 @@ void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines
   int shift = 0;
   for (int i = 0; i < inlines->length(); i++) {
     CallGenerator* cg = inlines->at(i);
-    CallNode* call = cg->call_node();
-    if (shift > 0) {
-      inlines->at_put(i-shift, cg);
-    }
-    if (!useful.member(call)) {
-      shift++;
+    if (useful.member(cg->call_node())) {
+      if (shift > 0) {
+        inlines->at_put(i - shift, cg);
+      }
+    } else {
+      shift++; // skip over the dead element
     }
   }
-  inlines->trunc_to(inlines->length()-shift);
+  if (shift > 0) {
+    inlines->trunc_to(inlines->length() - shift); // remove last elements from compacted array
+  }
+}
+
+void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead) {
+  assert(dead != NULL && dead->is_Call(), "sanity");
+  int found = 0;
+  for (int i = 0; i < inlines->length(); i++) {
+    if (inlines->at(i)->call_node() == dead) {
+      inlines->remove_at(i);
+      found++;
+      NOT_DEBUG( break; ) // elements are unique, so exit early
+    }
+  }
+  assert(found <= 1, "not unique");
 }
 
 void Compile::remove_useless_nodes(GrowableArray<Node*>& node_list, Unique_Node_List& useful) {
   for (int i = node_list.length() - 1; i >= 0; i--) {
     Node* n = node_list.at(i);
     if (!useful.member(n)) {
-      node_list.remove_if_existing(n);
+      node_list.delete_at(i); // replaces i-th with last element which is known to be useful (already processed)
     }
   }
+}
+
+void Compile::remove_useless_node(Node* dead) {
+  remove_modified_node(dead);
+
+  // Constant node that has no out-edges and has only one in-edge from
+  // root is usually dead. However, sometimes reshaping walk makes
+  // it reachable by adding use edges. So, we will NOT count Con nodes
+  // as dead to be conservative about the dead node count at any
+  // given time.
+  if (!dead->is_Con()) {
+    record_dead_node(dead->_idx);
+  }
+  if (dead->is_macro()) {
+    remove_macro_node(dead);
+  }
+  if (dead->is_expensive()) {
+    remove_expensive_node(dead);
+  }
+  if (dead->for_post_loop_opts_igvn()) {
+    remove_from_post_loop_opts_igvn(dead);
+  }
+  if (dead->is_Call()) {
+    remove_useless_late_inlines(                &_late_inlines, dead);
+    remove_useless_late_inlines(         &_string_late_inlines, dead);
+    remove_useless_late_inlines(         &_boxing_late_inlines, dead);
+    remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
+  }
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->unregister_potential_barrier_node(dead);
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
@@ -394,9 +438,9 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_useless_gc_barriers(useful, this);
   // clean up the late inline lists
-  remove_useless_late_inlines(&_string_late_inlines, useful);
-  remove_useless_late_inlines(&_boxing_late_inlines, useful);
-  remove_useless_late_inlines(&_late_inlines, useful);
+  remove_useless_late_inlines(                &_late_inlines, useful);
+  remove_useless_late_inlines(         &_string_late_inlines, useful);
+  remove_useless_late_inlines(         &_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
   debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
 }
@@ -1860,21 +1904,34 @@ bool Compile::inline_incrementally_one() {
   assert(IncrementalInline, "incremental inlining should be on");
 
   TracePhase tp("incrementalInline_inline", &timers[_t_incrInline_inline]);
+
   set_inlining_progress(false);
   set_do_cleanup(false);
-  int i = 0;
-  for (; i <_late_inlines.length() && !inlining_progress(); i++) {
-    CallGenerator* cg = _late_inlines.at(i);
+
+  for (int i = 0; i < _late_inlines.length(); i++) {
     _late_inlines_pos = i+1;
-    cg->do_late_inline();
-    if (failing())  return false;
+    CallGenerator* cg = _late_inlines.at(i);
+    bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
+    if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
+      cg->do_late_inline();
+      assert(_late_inlines.at(i) == cg, "no insertions before current position allowed");
+      if (failing()) {
+        return false;
+      } else if (inlining_progress()) {
+        _late_inlines_pos = i+1; // restore the position in case new elements were inserted
+        print_method(PHASE_INCREMENTAL_INLINE_STEP, cg->call_node(), 3);
+        break; // process one call site at a time
+      }
+    } else {
+      // Ignore late inline direct calls when inlining is not allowed.
+      // They are left in the late inline list when node budget is exhausted until the list is fully drained.
+    }
   }
-  int j = 0;
-  for (; i < _late_inlines.length(); i++, j++) {
-    _late_inlines.at_put(j, _late_inlines.at(i));
-  }
-  _late_inlines.trunc_to(j);
-  assert(inlining_progress() || _late_inlines.length() == 0, "");
+  // Remove processed elements.
+  _late_inlines.remove_till(_late_inlines_pos);
+  _late_inlines_pos = 0;
+
+  assert(inlining_progress() || _late_inlines.length() == 0, "no progress");
 
   bool needs_cleanup = do_cleanup() || over_inlining_cutoff();
 
@@ -1896,6 +1953,7 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
   }
+  print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
 }
 
 // Perform incremental inlining until bound on number of live nodes is reached
@@ -1919,6 +1977,18 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
       }
 
       if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
+        bool do_print_inlining = print_inlining() || print_intrinsics();
+        if (do_print_inlining || log() != NULL) {
+          // Print inlining message for candidates that we couldn't inline for lack of space.
+          for (int i = 0; i < _late_inlines.length(); i++) {
+            CallGenerator* cg = _late_inlines.at(i);
+            const char* msg = "live nodes > LiveNodeCountInliningCutoff";
+            if (do_print_inlining) {
+              cg->print_inlining_late(msg);
+            }
+            log_late_inline_failure(cg, msg);
+          }
+        }
         break; // finish
       }
     }
@@ -1929,7 +1999,6 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     while (inline_incrementally_one()) {
       assert(!failing(), "inconsistent");
     }
-
     if (failing())  return;
 
     inline_incrementally_cleanup(igvn);
@@ -1937,6 +2006,10 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     print_method(PHASE_INCREMENTAL_INLINE_STEP, 3);
 
     if (failing())  return;
+
+    if (_late_inlines.length() == 0) {
+      break; // no more progress
+    }
   }
   assert( igvn._worklist.size() == 0, "should be done with igvn" );
 
@@ -1955,6 +2028,27 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   set_inlining_incrementally(false);
 }
 
+void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
+  // "inlining_incrementally() == false" is used to signal that no inlining is allowed
+  // (see LateInlineVirtualCallGenerator::do_late_inline_check() for details).
+  // Tracking and verification of modified nodes is disabled by setting "_modified_nodes == NULL"
+  // as if "inlining_incrementally() == true" were set.
+  assert(inlining_incrementally() == false, "not allowed");
+  assert(_modified_nodes == NULL, "not allowed");
+  assert(_late_inlines.length() > 0, "sanity");
+
+  while (_late_inlines.length() > 0) {
+    for_igvn()->clear();
+    initial_gvn()->replace_with(&igvn);
+
+    while (inline_incrementally_one()) {
+      assert(!failing(), "inconsistent");
+    }
+    if (failing())  return;
+
+    inline_incrementally_cleanup(igvn);
+  }
+}
 
 bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
   if (_loop_opts_cnt > 0) {
@@ -2235,10 +2329,20 @@ void Compile::Optimize() {
   }
 
   DEBUG_ONLY( _modified_nodes = NULL; )
+
   assert(igvn._worklist.size() == 0, "not empty");
+
+  assert(_late_inlines.length() == 0 || IncrementalInlineMH || IncrementalInlineVirtual, "not empty");
+
+  if (_late_inlines.length() > 0) {
+    // More opportunities to optimize virtual and MH calls.
+    // Though it's maybe too late to perform inlining, strength-reducing them to direct calls is still an option.
+    process_late_inline_calls_no_inline(igvn);
+  }
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
  process_print_inlining();
+
  // A method with only infinite loops has no edges entering loops from root
  {
    TracePhase tp("graphReshape", &timers[_t_graphReshaping]);
@@ -2254,8 +2358,6 @@ void Compile::Optimize() {
 
 void Compile::inline_vector_reboxing_calls() {
   if (C->_vector_reboxing_late_inlines.length() > 0) {
-    PhaseGVN* gvn = C->initial_gvn();
-
     _late_inlines_pos = C->_late_inlines.length();
     while (_vector_reboxing_late_inlines.length() > 0) {
       CallGenerator* cg = _vector_reboxing_late_inlines.pop();
@@ -3261,25 +3363,17 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
 
   case Op_Proj: {
-    if (OptimizeStringConcat) {
-      ProjNode* p = n->as_Proj();
-      if (p->_is_io_use) {
+    if (OptimizeStringConcat || IncrementalInline) {
+      ProjNode* proj = n->as_Proj();
+      if (proj->_is_io_use) {
+        assert(proj->_con == TypeFunc::I_O || proj->_con == TypeFunc::Memory, "");
         // Separate projections were used for the exception path which
         // are normally removed by a late inline.  If it wasn't inlined
         // then they will hang around and should just be replaced with
-        // the original one.
-        Node* proj = NULL;
-        // Replace with just one
-        for (SimpleDUIterator i(p->in(0)); i.has_next(); i.next()) {
-          Node *use = i.get();
-          if (use->is_Proj() && p != use && use->as_Proj()->_con == p->_con) {
-            proj = use;
-            break;
-          }
-        }
-        assert(proj != NULL || p->_con == TypeFunc::I_O, "io may be dropped at an infinite loop");
-        if (proj != NULL) {
-          p->subsume_by(proj, this);
+        // the original one. Merge them.
+        Node* non_io_proj = proj->in(0)->as_Multi()->proj_out_or_null(proj->_con, false /*is_io_use*/);
+        if (non_io_proj  != NULL) {
+          proj->subsume_by(non_io_proj , this);
         }
       }
     }
@@ -4141,12 +4235,7 @@ Compile::PrintInliningBuffer& Compile::print_inlining_current() {
 
 void Compile::print_inlining_update(CallGenerator* cg) {
   if (print_inlining() || print_intrinsics()) {
-    if (!cg->is_late_inline()) {
-      if (print_inlining_current().cg() != NULL) {
-        print_inlining_push();
-      }
-      print_inlining_commit();
-    } else {
+    if (cg->is_late_inline()) {
       if (print_inlining_current().cg() != cg &&
           (print_inlining_current().cg() != NULL ||
            print_inlining_current().ss()->size() != 0)) {
@@ -4154,6 +4243,11 @@ void Compile::print_inlining_update(CallGenerator* cg) {
       }
       print_inlining_commit();
       print_inlining_current().set_cg(cg);
+    } else {
+      if (print_inlining_current().cg() != NULL) {
+        print_inlining_push();
+      }
+      print_inlining_commit();
     }
   }
 }
@@ -4161,7 +4255,7 @@ void Compile::print_inlining_update(CallGenerator* cg) {
 void Compile::print_inlining_move_to(CallGenerator* cg) {
   // We resume inlining at a late inlining call site. Locate the
   // corresponding inlining buffer so that we can update it.
-  if (print_inlining()) {
+  if (print_inlining() || print_intrinsics()) {
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       if (_print_inlining_list->adr_at(i)->cg() == cg) {
         _print_inlining_idx = i;
@@ -4173,7 +4267,7 @@ void Compile::print_inlining_move_to(CallGenerator* cg) {
 }
 
 void Compile::print_inlining_update_delayed(CallGenerator* cg) {
-  if (print_inlining()) {
+  if (print_inlining() || print_intrinsics()) {
     assert(_print_inlining_stream->size() > 0, "missing inlining msg");
     assert(print_inlining_current().cg() == cg, "wrong entry");
     // replace message with new message
@@ -4188,22 +4282,8 @@ void Compile::print_inlining_assert_ready() {
 }
 
 void Compile::process_print_inlining() {
-  bool do_print_inlining = print_inlining() || print_intrinsics();
-  if (do_print_inlining || log() != NULL) {
-    // Print inlining message for candidates that we couldn't inline
-    // for lack of space
-    for (int i = 0; i < _late_inlines.length(); i++) {
-      CallGenerator* cg = _late_inlines.at(i);
-      if (!cg->is_mh_late_inline()) {
-        const char* msg = "live nodes > LiveNodeCountInliningCutoff";
-        if (do_print_inlining) {
-          cg->print_inlining_late(msg);
-        }
-        log_late_inline_failure(cg, msg);
-      }
-    }
-  }
-  if (do_print_inlining) {
+  assert(_late_inlines.length() == 0, "not drained yet");
+  if (print_inlining() || print_intrinsics()) {
     ResourceMark rm;
     stringStream ss;
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");

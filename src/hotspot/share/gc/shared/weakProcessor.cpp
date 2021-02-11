@@ -29,7 +29,6 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
-#include "gc/shared/weakProcessorPhases.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"

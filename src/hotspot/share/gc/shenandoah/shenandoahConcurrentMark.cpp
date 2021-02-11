@@ -474,12 +474,12 @@ void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   switch (_scm->generation_mode()) {
     case YOUNG: {
-      ShenandoahMarkResolveRefsClosure<YOUNG> cl(q, _rp);
+      ShenandoahMarkRefsClosure<YOUNG> cl(q, _rp);
       _rs.oops_do(&cl, worker_id);
       break;
     }
     case GLOBAL: {
-      ShenandoahMarkResolveRefsClosure<GLOBAL> cl(q, _rp);
+      ShenandoahMarkRefsClosure<GLOBAL> cl(q, _rp);
       _rs.oops_do(&cl, worker_id);
       break;
     }

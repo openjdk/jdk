@@ -323,8 +323,6 @@ final class CertStatusExtension {
 
         final List<ResponderId> responderIds;
         final List<Extension> extensions;
-        private final int ridListLen;
-        private final int extListLen;
 
         static {
             OCSPStatusRequest ocspReq = null;
@@ -360,7 +358,7 @@ final class CertStatusExtension {
             List<Extension> exts = new ArrayList<>();
             ByteBuffer m = ByteBuffer.wrap(encoded);
 
-            this.ridListLen = Record.getInt16(m);
+            int ridListLen = Record.getInt16(m);
             if (m.remaining() < (ridListLen + 2)) {
                 throw new SSLProtocolException(
                         "Invalid OCSP status request: insufficient data");
@@ -384,7 +382,7 @@ final class CertStatusExtension {
             }
 
             byte[] extListBytes = Record.getBytes16(m);
-            this.extListLen = extListBytes.length;
+            int extListLen = extListBytes.length;
             if (extListLen > 0) {
                 try {
                     DerInputStream dis = new DerInputStream(extListBytes);

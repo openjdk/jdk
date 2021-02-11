@@ -176,7 +176,8 @@ private:
   // Flags of the current shared class.
   u2     _shared_class_flags;
   enum {
-    _archived_lambda_proxy_is_available = 2
+    _archived_lambda_proxy_is_available = 2,
+    _has_value_based_class_annotation = 4
   };
 #endif
 
@@ -320,6 +321,18 @@ protected:
     CDS_ONLY(return (_shared_class_flags & _archived_lambda_proxy_is_available) != 0;)
     NOT_CDS(return false;)
   }
+
+  void set_has_value_based_class_annotation() {
+    CDS_ONLY(_shared_class_flags |= _has_value_based_class_annotation;)
+  }
+  void clear_has_value_based_class_annotation() {
+    CDS_ONLY(_shared_class_flags &= ~_has_value_based_class_annotation;)
+  }
+  bool has_value_based_class_annotation() const {
+    CDS_ONLY(return (_shared_class_flags & _has_value_based_class_annotation) != 0;)
+    NOT_CDS(return false;)
+  }
+
 
   // Obtain the module or package for this class
   virtual ModuleEntry* module() const = 0;
@@ -624,8 +637,8 @@ protected:
   void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
   bool is_non_strong_hidden() const     { return access_flags().is_hidden_class() &&
                                           class_loader_data()->has_class_mirror_holder(); }
-  bool is_box() const                   { return access_flags().is_box_class(); }
-  void set_is_box()                     { _access_flags.set_is_box_class(); }
+  bool is_value_based()                 { return _access_flags.is_value_based_class(); }
+  void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
 
   bool is_cloneable() const;
   void set_is_cloneable();

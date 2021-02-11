@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "opto/addnode.hpp"
@@ -36,6 +37,7 @@
 #include "opto/stringopts.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ kit.
 
@@ -417,13 +419,13 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
   ciSymbol* int_sig;
   ciSymbol* char_sig;
   if (m->holder() == C->env()->StringBuilder_klass()) {
-    string_sig = ciSymbol::String_StringBuilder_signature();
-    int_sig = ciSymbol::int_StringBuilder_signature();
-    char_sig = ciSymbol::char_StringBuilder_signature();
+    string_sig = ciSymbols::String_StringBuilder_signature();
+    int_sig = ciSymbols::int_StringBuilder_signature();
+    char_sig = ciSymbols::char_StringBuilder_signature();
   } else if (m->holder() == C->env()->StringBuffer_klass()) {
-    string_sig = ciSymbol::String_StringBuffer_signature();
-    int_sig = ciSymbol::int_StringBuffer_signature();
-    char_sig = ciSymbol::char_StringBuffer_signature();
+    string_sig = ciSymbols::String_StringBuffer_signature();
+    int_sig = ciSymbols::int_StringBuffer_signature();
+    char_sig = ciSymbols::char_StringBuffer_signature();
   } else {
     return NULL;
   }
@@ -470,14 +472,14 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
         if (use != NULL &&
             use->method() != NULL &&
             !use->method()->is_static() &&
-            use->method()->name() == ciSymbol::object_initializer_name() &&
+            use->method()->name() == ciSymbols::object_initializer_name() &&
             use->method()->holder() == m->holder()) {
           // Matched the constructor.
           ciSymbol* sig = use->method()->signature()->as_symbol();
-          if (sig == ciSymbol::void_method_signature() ||
-              sig == ciSymbol::int_void_signature() ||
-              sig == ciSymbol::string_void_signature()) {
-            if (sig == ciSymbol::string_void_signature()) {
+          if (sig == ciSymbols::void_method_signature() ||
+              sig == ciSymbols::int_void_signature() ||
+              sig == ciSymbols::string_void_signature()) {
+            if (sig == ciSymbols::string_void_signature()) {
               // StringBuilder(String) so pick this up as the first argument
               assert(use->in(TypeFunc::Parms + 1) != NULL, "what?");
               const Type* type = _gvn->type(use->in(TypeFunc::Parms + 1));
@@ -534,7 +536,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       break;
     } else if (!cnode->method()->is_static() &&
                cnode->method()->holder() == m->holder() &&
-               cnode->method()->name() == ciSymbol::append_name() &&
+               cnode->method()->name() == ciSymbols::append_name() &&
                (cnode->method()->signature()->as_symbol() == string_sig ||
                 cnode->method()->signature()->as_symbol() == char_sig ||
                 cnode->method()->signature()->as_symbol() == int_sig)) {
@@ -599,7 +601,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
   assert(OptimizeStringConcat, "shouldn't be here");
 
   size_table_field = C->env()->Integer_klass()->get_field_by_name(ciSymbol::make("sizeTable"),
-                                                                  ciSymbol::make("[I"), true);
+                                                                  ciSymbols::int_array_signature(), true);
   if (size_table_field == NULL) {
     // Something wrong so give up.
     assert(false, "why can't we find Integer.sizeTable?");

@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.ArrayList;
+import jdk.test.lib.cds.CDSTestUtils;
 
 /*
  * @test
@@ -58,7 +59,7 @@ public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
         ArrayList<String> list = new ArrayList<>();
         TestCommon.findAllClasses(list);
 
-        String classList = System.getProperty("user.dir") + File.separator +
+        String classList = CDSTestUtils.getOutputDir() + File.separator +
                            "LotsOfClasses.list";
         List<String> lines = list;
         Path file = Paths.get(classList);

@@ -341,6 +341,13 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
             }
         }
         handleStateChange(old_state, state);
+
+        // RepaintManager does not repaint iconified windows. Window needs to be
+        // repainted explicitly, when it is deiconified.
+        if (((changed & Frame.ICONIFIED) != 0) &&
+            ((state & Frame.ICONIFIED) == 0)) {
+            repaint();
+        }
     }
 
     // NOTE: This method may be called by privileged threads.

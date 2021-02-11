@@ -27,8 +27,8 @@
 
 #include "memory/memRegion.hpp"
 #include "memory/iterator.hpp"
-#include "oops/arrayOop.inline.hpp"
 #include "oops/arrayKlass.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/klass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"

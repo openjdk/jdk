@@ -38,6 +38,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
+#include "runtime/stubRoutines.hpp"
 
 //--------------------gen_stub-------------------------------
 void GraphKit::gen_stub(address C_function,

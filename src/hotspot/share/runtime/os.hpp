@@ -237,7 +237,7 @@ class os: AllStatic {
 
   static julong available_memory();
   static julong physical_memory();
-  static bool has_allocatable_memory_limit(julong* limit);
+  static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
 
   // Returns the id of the processor on which the calling thread is currently executing.

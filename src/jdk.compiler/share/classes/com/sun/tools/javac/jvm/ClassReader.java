@@ -1205,7 +1205,16 @@ public class ClassReader {
                     if (sym.kind == TYP) {
                         sym.flags_field |= RECORD;
                     }
-                    bp = bp + attrLen;
+                    int componentCount = nextChar();
+                    ListBuffer<RecordComponent> components = new ListBuffer<>();
+                    for (int i = 0; i < componentCount; i++) {
+                        Name name = poolReader.getName(nextChar());
+                        Type type = poolReader.getType(nextChar());
+                        RecordComponent c = new RecordComponent(name, type, sym);
+                        readAttrs(c, AttributeKind.MEMBER);
+                        components.add(c);
+                    }
+                    ((ClassSymbol) sym).setRecordComponents(components.toList());
                 }
             },
             new AttributeReader(names.PermittedSubclasses, V59, CLASS_ATTRIBUTE) {

@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_WEAKPROCESSORPHASETIMES_HPP
 #define SHARE_GC_SHARED_WEAKPROCESSORPHASETIMES_HPP
 
-#include "gc/shared/weakProcessorPhases.hpp"
+#include "gc/shared/weakProcessorPhase.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
@@ -44,9 +44,7 @@ class WeakProcessorPhaseTimes {
   double _total_time_sec;
 
   // Per-worker times and linked items.
-  static const uint worker_data_count = WeakProcessorPhases::oopstorage_phase_count;
-  WorkerDataArray<double>* _worker_data[worker_data_count];
-
+  WorkerDataArray<double>* _worker_data[EnumRange<WeakProcessorPhase>().size()];
   WorkerDataArray<double>* worker_data(WeakProcessorPhase phase) const;
 
   void log_phase_summary(WeakProcessorPhase phase, uint indent) const;

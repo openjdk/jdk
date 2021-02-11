@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/oopStorage.hpp"
-#include "gc/shared/weakProcessorPhases.hpp"
+#include "gc/shared/weakProcessorPhase.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "logging/log.hpp"
@@ -100,7 +100,9 @@ void WeakProcessorPhaseTimes::record_total_time_sec(double time_sec) {
 }
 
 WorkerDataArray<double>* WeakProcessorPhaseTimes::worker_data(WeakProcessorPhase phase) const {
-  return _worker_data[phase];
+  size_t index = EnumRange<WeakProcessorPhase>().index(phase);
+  assert(index < ARRAY_SIZE(_worker_data), "invalid phase");
+  return _worker_data[index];
 }
 
 double WeakProcessorPhaseTimes::worker_time_sec(uint worker_id, WeakProcessorPhase phase) const {
@@ -203,9 +205,8 @@ void WeakProcessorPhaseTimes::log_phase_details(WorkerDataArray<T>* data,
 
 void WeakProcessorPhaseTimes::log_print_phases(uint indent) const {
   if (log_is_enabled(Debug, gc, phases)) {
-    typedef WeakProcessorPhases::Iterator Iterator;
-    for (Iterator it = WeakProcessorPhases::oopstorage_iterator(); !it.is_end(); ++it) {
-      log_phase_summary(*it, indent);
+    for (WeakProcessorPhase phase : EnumRange<WeakProcessorPhase>()) {
+      log_phase_summary(phase, indent);
     }
   }
 }

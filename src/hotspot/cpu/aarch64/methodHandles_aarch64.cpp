@@ -33,6 +33,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ _masm->
 

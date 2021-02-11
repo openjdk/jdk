@@ -386,7 +386,12 @@ public class DocTreeMaker implements DocTreeFactory {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCReturn newReturnTree(List<? extends DocTree> description) {
-        DCReturn tree = new DCReturn(cast(description));
+        return newReturnTree(false, description);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCReturn newReturnTree(boolean isInline, List<? extends DocTree> description) {
+        DCReturn tree = new DCReturn(isInline, cast(description));
         tree.pos = pos;
         return tree;
     }
@@ -533,6 +538,7 @@ public class DocTreeMaker implements DocTreeFactory {
                     continue;
                 }
                 switch (dt.getKind()) {
+                    case RETURN:
                     case SUMMARY:
                         foundFirstSentence = true;
                         break;

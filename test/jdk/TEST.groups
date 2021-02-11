@@ -464,7 +464,7 @@ jdk_jfr_sanity = \
     jdk/jfr/api/recording/event/TestLoadEventAfterStart.java \
     jdk/jfr/api/recording/state/TestState.java \
     jdk/jfr/event/os/TestCPULoad.java \
-    jdk/jfr/event/compiler/TestAllocInNewTLAB.java \
+    jdk/jfr/event/allocation/TestObjectAllocationSampleEvent.java \
     jdk/jfr/jcmd/TestJcmdStartStopDefault.java \
     jdk/jfr/event/io/TestFileStreamEvents.java \
     jdk/jfr/event/compiler/TestCompilerCompile.java \
@@ -510,3 +510,54 @@ needs_g1gc = \
   jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1FullCollection.java \
   jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1ConcurrentMark.java \
   jdk/jfr/event/gc/heapsummary/TestHeapSummaryEventG1.java
+  
+jdk_core_manual = \
+    :jdk_core_manual_no_input \
+    :jdk_core_manual_no_input_security \
+    :jdk_core_manual_requires_human_input
+
+jdk_core_manual_no_input = \
+    java/net/HugeDataTransferTest.java \
+    java/net/httpclient/BodyProcessorInputStreamTest.java \
+    java/net/httpclient/HttpInputStreamTest.java \
+    java/nio/MappedByteBuffer/PmemTest.java \
+    java/rmi/activation/nonLocalActivation/NonLocalActivationTest.java \
+    java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
+    java/util/zip/ZipFile/TestZipFile.java \
+    javax/net/ssl/compatibility/AlpnTest.java \
+    javax/net/ssl/compatibility/BasicConnectTest.java \
+    javax/net/ssl/compatibility/HrrTest.java \
+    javax/net/ssl/compatibility/SniTest.java \
+    jdk/nio/zipfs/TestLocOffsetFromZip64EF.java
+
+jdk_core_manual_no_input_security = \
+    com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
+    com/sun/security/auth/callback/TextCallbackHandler/Default.java \
+    com/sun/security/auth/callback/TextCallbackHandler/Password.java \
+    com/sun/security/sasl/gsskerb/AuthOnly.java \
+    com/sun/security/sasl/gsskerb/ConfSecurityLayer.java \
+    com/sun/security/sasl/gsskerb/NoSecurityLayer.java \
+    sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java \
+    sun/security/provider/PolicyParser/ExtDirs.java \
+    sun/security/provider/PolicyParser/ExtDirsChange.java \
+    sun/security/provider/PolicyParser/ExtDirsDefaultPolicy.java \
+    sun/security/provider/PolicyParser/PrincipalExpansionError.java \
+    sun/security/smartcardio/TestChannel.java \
+    sun/security/smartcardio/TestConnect.java \
+    sun/security/smartcardio/TestConnectAgain.java \
+    sun/security/smartcardio/TestControl.java \
+    sun/security/smartcardio/TestDefault.java \
+    sun/security/smartcardio/TestDirect.java \
+    sun/security/smartcardio/TestExclusive.java \
+    sun/security/smartcardio/TestMultiplePresent.java \
+    sun/security/smartcardio/TestPresent.java \
+    sun/security/smartcardio/TestTransmit.java \
+    sun/security/tools/jarsigner/compatibility/Compatibility.java \
+    sun/security/tools/keytool/console.sh \
+    sun/security/tools/keytool/i18n.java
+
+jdk_core_manual_requires_human_input = \
+    com/sun/jndi/dns/Test6991580.java \
+    java/util/TimeZone/DefaultTimeZoneTest.java
+
+

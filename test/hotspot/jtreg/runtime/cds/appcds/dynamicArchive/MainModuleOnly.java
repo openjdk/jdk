@@ -40,13 +40,14 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
+import jdk.test.lib.cds.CDSTestUtils;
 
 import jtreg.SkippedException;
 import sun.hotspot.code.Compiler;
 
 public class MainModuleOnly extends DynamicArchiveTestBase {
 
-    private static final Path USER_DIR = Paths.get(System.getProperty("user.dir"));
+    private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
 
     private static final String FS = File.separator;
     private static final String TEST_SRC = System.getProperty("test.src") +

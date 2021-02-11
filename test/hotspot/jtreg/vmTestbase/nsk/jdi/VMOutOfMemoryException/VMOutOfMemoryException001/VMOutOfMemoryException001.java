@@ -79,7 +79,14 @@ public class VMOutOfMemoryException001 extends TestDebuggerType2 {
             // create array in debuggee VM till VMOutOfMemoryException
             while (true) {
                 ArrayReference array = referenceType.newInstance(100000);
-                array.disableCollection();
+                try {
+                    // Since the VM is not suspended, the object may have been collected
+                    // before disableCollection() could be called on it. Just ignore and
+                    // continue doing allocations until we run out of memory.
+                    array.disableCollection();
+                } catch (ObjectCollectedException e) {
+                    continue;
+                }
                 objects.add(array);
             }
         } catch (VMOutOfMemoryException e) {

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
 #include "opto/castnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/phaseX.hpp"
@@ -358,8 +359,8 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   Node* vec_obj = kit.new_instance(klass_node);
 
   // Store the allocated array into object.
-  ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbol::payload_name(),
-                                                                                     ciSymbol::object_signature(),
+  ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
+                                                                                     ciSymbols::object_signature(),
                                                                                      false);
   assert(field != NULL, "");
   Node* vec_field = kit.basic_plus_adr(vec_obj, field->offset_in_bytes());
@@ -403,8 +404,8 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
       bt = T_BYTE;
     }
 
-    ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbol::payload_name(),
-                                                                                       ciSymbol::object_signature(),
+    ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
+                                                                                       ciSymbols::object_signature(),
                                                                                        false);
     assert(field != NULL, "");
     int offset = field->offset_in_bytes();

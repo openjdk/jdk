@@ -638,9 +638,9 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             }
         }
         if (e != null) {
-            throw new Error(msg, e);
+            throw new InternalError(msg, e);
         } else {
-            throw new Error(msg);
+            throw new InternalError(msg);
         }
     }
 
@@ -716,7 +716,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 Compilation c = log.compiles.get(ble.getId());
                 if (c == null) {
                     if (!(ble instanceof NMethod)) {
-                        throw new InternalError("only nmethods should have a null compilation, here's a " + ble.getClass());
+                        if (ble instanceof MakeNotEntrantEvent && ((MakeNotEntrantEvent) ble).getCompileKind().equals("c2n")) {
+                            // this is ok for c2n
+                            assert ((MakeNotEntrantEvent) ble).getLevel().equals("0") : "Should be level 0";
+                        } else {
+                            throw new InternalError("only nmethods should have a null compilation, here's a " + ble.getClass());
+                        }
                     }
                     continue;
                 }
@@ -1071,8 +1076,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             String id = makeId(atts);
             NMethod nm = nmethods.get(id);
             if (nm == null) reportInternalError("nm == null");
-            LogEvent e = new MakeNotEntrantEvent(Double.parseDouble(search(atts, "stamp")), id,
+            MakeNotEntrantEvent e = new MakeNotEntrantEvent(Double.parseDouble(search(atts, "stamp")), id,
                                                  atts.getValue("zombie") != null, nm);
+            String compileKind = atts.getValue("compile_kind");
+            e.setCompileKind(compileKind);
+            String level = atts.getValue("level");
+            e.setLevel(level);
             events.add(e);
         } else if (qname.equals("uncommon_trap")) {
             String id = atts.getValue("compile_id");

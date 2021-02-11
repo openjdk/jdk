@@ -98,8 +98,8 @@ class BCEscapeAnalyzer : public ResourceObj {
   void initialize();
   void clear_escape_info();
   void compute_escape_info();
-  vmIntrinsics::ID known_intrinsic();
-  void compute_escape_for_intrinsic(vmIntrinsics::ID iid);
+  vmIntrinsicID known_intrinsic();
+  void compute_escape_for_intrinsic(vmIntrinsicID iid);
   void do_analysis();
 
   void read_escape_info();

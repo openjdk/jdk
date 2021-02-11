@@ -980,6 +980,8 @@ source_hpp %{
 
 source %{
 
+#include "oops/klass.inline.hpp"
+
 void PhaseOutput::pd_perform_mach_node_analysis() {
 }
 
@@ -2150,6 +2152,10 @@ const bool Matcher::has_predicated_vectors(void) {
 }
 
 bool Matcher::supports_vector_variable_shifts(void) {
+  return false; // not supported
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
   return false; // not supported
 }
 
@@ -3635,9 +3641,9 @@ encode %{
     Register Rtoc = (ra_) ? $constanttablebase : R2_TOC;
 
     int vtable_index = this->_vtable_index;
-    if (_vtable_index < 0) {
+    if (vtable_index < 0) {
       // Must be invalid_vtable_index, not nonvirtual_vtable_index.
-      assert(_vtable_index == Method::invalid_vtable_index, "correct sentinel value");
+      assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
       Register ic_reg = as_Register(Matcher::inline_cache_reg_encode());
 
       // Virtual call relocation will point to ic load.
@@ -3663,7 +3669,7 @@ encode %{
 
       __ load_klass(R11_scratch1, R3);
 
-      int entry_offset = in_bytes(Klass::vtable_start_offset()) + _vtable_index * vtableEntry::size_in_bytes();
+      int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
       int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
       __ li(R19_method, v_off);
       __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);

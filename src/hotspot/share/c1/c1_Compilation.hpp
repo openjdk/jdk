@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "ci/ciEnv.hpp"
 #include "ci/ciMethodData.hpp"
 #include "code/exceptionHandlerTable.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"

@@ -106,6 +106,8 @@ BASIC_SETUP_DEVKIT
 # To properly create a configuration name, we need to have the OpenJDK target
 # and options (variants and debug level) parsed.
 BASIC_SETUP_OUTPUT_DIR
+# After we have the output dir we can finalize the fixpath wrapper
+BASIC_WINDOWS_FINALIZE_FIXPATH
 
 # Must be done before we can call HELP_MSG_MISSING_DEPENDENCY.
 HELP_SETUP_DEPENDENCY_HELP
@@ -220,9 +222,6 @@ JDKOPT_SETUP_ADDRESS_SANITIZER
 #
 ###############################################################################
 
-# After we have toolchain, we can compile fixpath. It's needed by the lib checks.
-BASIC_COMPILE_FIXPATH
-
 LIB_DETERMINE_DEPENDENCIES
 LIB_SETUP_LIBRARIES
 
@@ -294,6 +293,7 @@ BASIC_CHECK_LEFTOVER_OVERRIDDEN
 CONFIG_STATUS="$CONFIGURESUPPORT_OUTPUTDIR/config.status"
 
 # Create the actual output files. Now the main work of configure is done.
+BASIC_WINDOWS_FINALIZE
 AC_OUTPUT
 
 # After AC_OUTPUT, we need to do final work

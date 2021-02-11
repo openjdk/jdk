@@ -105,10 +105,10 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   std(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Rscratch, Roop);
     lwz(Rscratch, in_bytes(Klass::access_flags_offset()), Rscratch);
-    testbitdi(CCR0, R0, Rscratch, exact_log2(JVM_ACC_IS_BOX_CLASS));
+    testbitdi(CCR0, R0, Rscratch, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     bne(CCR0, slow_int);
   }
 

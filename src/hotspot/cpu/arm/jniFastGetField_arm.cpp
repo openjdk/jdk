@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "assembler_arm.inline.hpp"
+#include "code/codeBlob.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"

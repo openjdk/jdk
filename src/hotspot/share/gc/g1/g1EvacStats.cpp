@@ -27,6 +27,7 @@
 #include "gc/shared/gcId.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/globals.hpp"
 
 void G1EvacStats::log_plab_allocation() {
   PLABStats::log_plab_allocation();
@@ -88,8 +89,8 @@ size_t G1EvacStats::compute_desired_plab_sz() {
   return cur_plab_sz;
 }
 
-G1EvacStats::G1EvacStats(const char* description, size_t desired_plab_sz_, unsigned wt) :
-  PLABStats(description, desired_plab_sz_, wt),
+G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab_size, unsigned wt) :
+  PLABStats(description, default_per_thread_plab_size, default_per_thread_plab_size * ParallelGCThreads, wt),
   _region_end_waste(0),
   _regions_filled(0),
   _direct_allocated(0),

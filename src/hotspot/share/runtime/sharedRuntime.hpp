@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_SHAREDRUNTIME_HPP
 #define SHARE_RUNTIME_SHAREDRUNTIME_HPP
 
+#include "code/codeBlob.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"

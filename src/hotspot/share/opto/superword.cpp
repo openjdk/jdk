@@ -1328,7 +1328,7 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   bool retValue = false;
   int d1 = depth(s1);
   int d2 = depth(s2);
-  if (d1 + 1 == d2) {
+  if (d2 > d1) {
     if (s1->is_reduction() && s2->is_reduction()) {
       // This is an ordered set, so s1 should define s2
       for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {

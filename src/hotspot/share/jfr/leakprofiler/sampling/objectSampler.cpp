@@ -175,7 +175,7 @@ void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) 
   record_stacktrace(thread);
   // try enter critical section
   JfrTryLock tryLock(&_lock);
-  if (!tryLock.has_lock()) {
+  if (!tryLock.acquired()) {
     log_trace(jfr, oldobject, sampling)("Skipping old object sample due to lock contention");
     return;
   }

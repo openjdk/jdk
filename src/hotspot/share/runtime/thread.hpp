@@ -41,7 +41,6 @@
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/stackOverflow.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
@@ -71,6 +70,7 @@ class ParkEvent;
 class Parker;
 class MonitorInfo;
 
+class BufferBlob;
 class AbstractCompiler;
 class ciEnv;
 class CompileThread;

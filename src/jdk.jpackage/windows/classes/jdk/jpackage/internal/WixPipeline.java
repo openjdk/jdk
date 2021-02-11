@@ -95,7 +95,7 @@ public class WixPipeline {
         lightCmdline.addAll(lightOptions);
         wixObjs.stream().map(Path::toString).forEach(lightCmdline::add);
 
-        Files.createDirectories(msi.getParent());
+        Files.createDirectories(IOUtils.getParent(msi));
         execute(lightCmdline);
     }
 
@@ -105,7 +105,7 @@ public class WixPipeline {
         };
 
         Path wixObj = adjustPath.apply(wixObjDir).resolve(IOUtils.replaceSuffix(
-                wixSource.source.getFileName(), ".wixobj"));
+                IOUtils.getFileName(wixSource.source), ".wixobj"));
 
         List<String> cmdline = new ArrayList<>(List.of(
                 toolset.get(WixTool.Candle).toString(),

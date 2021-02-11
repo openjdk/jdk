@@ -418,7 +418,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
             // Generate default CPL file
             Path cpl = CONFIG_ROOT.fetchFrom(params).resolve("cpl.plist");
-            ProcessBuilder pb = new ProcessBuilder("pkgbuild",
+            ProcessBuilder pb = new ProcessBuilder("/usr/bin/pkgbuild",
                     "--root",
                     root,
                     "--install-location",
@@ -433,7 +433,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             preparePackageScripts(params);
 
             // build application package
-            pb = new ProcessBuilder("pkgbuild",
+            pb = new ProcessBuilder("/usr/bin/pkgbuild",
                     "--root",
                     root,
                     "--install-location",
@@ -454,7 +454,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             Files.createDirectories(outdir);
 
             List<String> commandLine = new ArrayList<>();
-            commandLine.add("productbuild");
+            commandLine.add("/usr/bin/productbuild");
 
             commandLine.add("--resources");
             commandLine.add(CONFIG_ROOT.fetchFrom(params).toAbsolutePath().toString());

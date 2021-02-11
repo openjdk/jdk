@@ -286,7 +286,7 @@ class CompileReplay : public StackObj {
       return NULL;
     }
 
-    int actual_size = sizeof(MethodData);
+    int actual_size = sizeof(MethodData::CompilerCounters);
     char *result = NEW_RESOURCE_ARRAY(char, actual_size);
     int i = 0;
     if (read_size != actual_size) {

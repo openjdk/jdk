@@ -2827,7 +2827,14 @@ public class Lower extends TreeTranslator {
         // If we have an anonymous class, create its flat version, rather
         // than the class or interface following new.
         if (tree.def != null) {
-            translate(tree.def);
+            Map<Symbol, Symbol> prevLambdaTranslationMap = lambdaTranslationMap;
+            try {
+                lambdaTranslationMap = null;
+                translate(tree.def);
+            } finally {
+                lambdaTranslationMap = prevLambdaTranslationMap;
+            }
+
             tree.clazz = access(make_at(tree.clazz.pos()).Ident(tree.def.sym));
             tree.def = null;
         } else {

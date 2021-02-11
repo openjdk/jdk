@@ -574,8 +574,7 @@ void vmIntrinsics::init_vm_intrinsic_name_table() {
   const char** nt = &vm_intrinsic_name_table[0];
   char* string = (char*) &vm_intrinsic_name_bodies[0];
 
-  for (vmIntrinsicsIterator it = vmIntrinsicsRange.begin(); it != vmIntrinsicsRange.end(); ++it) {
-    vmIntrinsicID index = *it;
+  for (vmIntrinsicID index : EnumRange<vmIntrinsicID>{}) {
     nt[as_int(index)] = string;
     string += strlen(string); // skip string body
     string += 1;              // skip trailing null
@@ -602,8 +601,7 @@ vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
     init_vm_intrinsic_name_table();
   }
 
-  for (vmIntrinsicsIterator it = vmIntrinsicsRange.begin(); it != vmIntrinsicsRange.end(); ++it) {
-    vmIntrinsicID index = *it;
+  for (vmIntrinsicID index : EnumRange<vmIntrinsicID>{}) {
     if (0 == strcmp(name, nt[as_int(index)])) {
       return index;
     }

@@ -775,39 +775,6 @@ public final class URL implements java.io.Serializable {
     }
 
     /**
-     * Sets the fields of the URL. This is not a public method so that
-     * only URLStreamHandlers can modify URL fields. URLs are
-     * otherwise constant.
-     *
-     * @param protocol the name of the protocol to use
-     * @param host the name of the host
-     * @param port the port number on the host
-     * @param file the file on the host
-     * @param ref the internal reference in the URL
-     */
-    void set(String protocol, String host, int port,
-             String file, String ref) {
-        synchronized (this) {
-            this.protocol = protocol;
-            this.host = host;
-            authority = port == -1 ? host : host + ":" + port;
-            this.port = port;
-            this.file = file;
-            this.ref = ref;
-            /* This is very important. We must recompute this after the
-             * URL has been changed. */
-            hashCode = -1;
-            hostAddress = null;
-            int q = file.lastIndexOf('?');
-            if (q != -1) {
-                query = file.substring(q+1);
-                path = file.substring(0, q);
-            } else
-                path = file;
-        }
-    }
-
-    /**
      * Sets the specified 8 fields of the URL. This is not a public method so
      * that only URLStreamHandlers can modify URL fields. URLs are otherwise
      * constant.

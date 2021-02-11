@@ -741,8 +741,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
 bool InstanceKlass::is_sealed() const {
   return _permitted_subclasses != NULL &&
-         _permitted_subclasses != Universe::the_empty_short_array() &&
-         _permitted_subclasses->length() > 0;
+         _permitted_subclasses != Universe::the_empty_short_array();
 }
 
 bool InstanceKlass::should_be_initialized() const {
@@ -2599,6 +2598,12 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   // Initialize current biased locking state.
   if (UseBiasedLocking && BiasedLocking::enabled()) {
     set_prototype_header(markWord::biased_locking_prototype());
+  }
+
+  // Initialize @ValueBased class annotation
+  if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
+    set_is_value_based();
+    set_prototype_header(markWord::prototype());
   }
 }
 

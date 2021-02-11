@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
                     MAC_APP_STORE_PKG_SIGNING_KEY.fetchFrom(params);
 
             List<String> buildOptions = new ArrayList<>();
-            buildOptions.add("productbuild");
+            buildOptions.add("/usr/bin/productbuild");
             buildOptions.add("--component");
             buildOptions.add(appLocation.toString());
             buildOptions.add("/Applications");

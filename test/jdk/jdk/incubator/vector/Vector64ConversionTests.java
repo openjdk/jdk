@@ -31,20 +31,30 @@ import java.util.function.IntFunction;
 
 /**
  * @test
+ * @requires (os.arch != "ppc64") & (os.arch != "ppc64le")
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
  * @run testng/othervm  -XX:-TieredCompilation --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
  *      Vector64ConversionTests
  */
 
+/**
+ * @test VectorConversionHighTimeout
+ * @requires os.arch == "ppc64" | os.arch == "ppc64le"
+ * @modules jdk.incubator.vector
+ * @modules java.base/jdk.internal.vm.annotation
+ * @run testng/othervm/timeout=1800  -XX:-TieredCompilation --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
+ *      Vector64ConversionTests
+ */
+
 /*
  * @test VectorConversionPPC64
  * @bug 8256479
- * @requires os.arch =="ppc64" | os.arch == "ppc64le"
+ * @requires os.arch == "ppc64" | os.arch == "ppc64le"
  * @summary VectorConversion on PPC64 without Vector Register usage
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
- * @run testng/othervm  -XX:-SuperwordUseVSX -XX:-TieredCompilation --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
+ * @run testng/othervm/timeout=1800  -XX:-SuperwordUseVSX -XX:-TieredCompilation --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
  * Vector64ConversionTests
  */
 

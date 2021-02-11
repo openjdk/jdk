@@ -141,6 +141,7 @@ class ImmutableCollections {
 
     static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
 
+    @jdk.internal.ValueBased
     static abstract class AbstractImmutableCollection<E> extends AbstractCollection<E> {
         // all mutating methods throw UnsupportedOperationException
         @Override public boolean add(E e) { throw uoe(); }
@@ -247,6 +248,7 @@ class ImmutableCollections {
 
     // ---------- List Implementations ----------
 
+    @jdk.internal.ValueBased
     static abstract class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
             implements List<E>, RandomAccess {
 
@@ -540,6 +542,7 @@ class ImmutableCollections {
         }
     }
 
+    @jdk.internal.ValueBased
     static final class List12<E> extends AbstractImmutableList<E>
             implements Serializable {
 
@@ -646,6 +649,7 @@ class ImmutableCollections {
         }
     }
 
+    @jdk.internal.ValueBased
     static final class ListN<E> extends AbstractImmutableList<E>
             implements Serializable {
 
@@ -737,6 +741,7 @@ class ImmutableCollections {
 
     // ---------- Set Implementations ----------
 
+    @jdk.internal.ValueBased
     static abstract class AbstractImmutableSet<E> extends AbstractImmutableCollection<E>
             implements Set<E> {
 
@@ -764,6 +769,7 @@ class ImmutableCollections {
         public abstract int hashCode();
     }
 
+    @jdk.internal.ValueBased
     static final class Set12<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
@@ -889,6 +895,7 @@ class ImmutableCollections {
      * least one null is always present.
      * @param <E> the element type
      */
+    @jdk.internal.ValueBased
     static final class SetN<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
@@ -1055,6 +1062,7 @@ class ImmutableCollections {
 
     // ---------- Map Implementations ----------
 
+    @jdk.internal.ValueBased
     abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
         @Override public void clear() { throw uoe(); }
         @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
@@ -1085,6 +1093,7 @@ class ImmutableCollections {
         }
     }
 
+    @jdk.internal.ValueBased
     static final class Map1<K,V> extends AbstractImmutableMap<K,V> {
         @Stable
         private final K k0;
@@ -1151,6 +1160,7 @@ class ImmutableCollections {
      * @param <K> the key type
      * @param <V> the value type
      */
+    @jdk.internal.ValueBased
     static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
 
         @Stable

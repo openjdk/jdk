@@ -204,10 +204,10 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj,
 
   null_check_offset = offset();
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
     ldr_u32(tmp1, Address(tmp1, Klass::access_flags_offset()));
-    tst(tmp1, JVM_ACC_IS_BOX_CLASS);
+    tst(tmp1, JVM_ACC_IS_VALUE_BASED_CLASS);
     b(slow_case, ne);
   }
 

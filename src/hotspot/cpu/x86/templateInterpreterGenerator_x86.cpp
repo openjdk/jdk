@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"

@@ -76,12 +76,22 @@ public class TestLogCompilation {
         "-Xbatch"
     };
 
+    static final String setupArgsJFR[] = {
+        "java",
+        "-XX:+IgnoreUnrecognizedVMOptions",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile=target/jfr.log",
+        "-XX:StartFlightRecording=dumponexit=true,filename=rwrecording.jfr"
+    };
+
     static final String allSetupArgs[][] = {
         setupArgsTieredVersion,
         setupArgsTiered,
         setupArgsTieredBatch,
         setupArgsNoTiered,
-        setupArgsNoTieredBatch
+        setupArgsNoTieredBatch,
+        setupArgsJFR
     };
 
     @Parameters
@@ -92,7 +102,8 @@ public class TestLogCompilation {
             {"./target/tiered_short.log"},
             {"./target/tiered_short_batch.log"},
             {"./target/no_tiered_short.log"},
-            {"./target/no_tiered_short_batch.log"}
+            {"./target/no_tiered_short_batch.log"},
+            {"./target/jfr.log"},
         };
         assert data.length == allSetupArgs.length : "Files dont match args.";
         return Arrays.asList(data);

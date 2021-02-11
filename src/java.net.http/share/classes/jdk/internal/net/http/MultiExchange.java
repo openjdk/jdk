@@ -471,7 +471,7 @@ class MultiExchange<T> implements Cancelable {
     /** True if ALL ( even non-idempotent ) requests can be automatic retried. */
     private static final boolean RETRY_ALWAYS = retryPostValue();
     /** True if ConnectException should cause a retry. Enabled by default */
-    private static final boolean RETRY_CONNECT = !disableRetryConnect();
+    static final boolean RETRY_CONNECT = !disableRetryConnect();
 
     /** Returns true is given request has an idempotent method. */
     private static boolean isIdempotentRequest(HttpRequest request) {

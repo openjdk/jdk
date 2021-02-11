@@ -25,6 +25,7 @@
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "runtime/globals.hpp"
@@ -92,6 +93,10 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(ZVerifyRoots, true);
     FLAG_SET_DEFAULT(ZVerifyObjects, true);
   }
+}
+
+size_t ZArguments::heap_virtual_to_physical_ratio() {
+  return ZHeapViews * ZVirtualToPhysicalRatio;
 }
 
 size_t ZArguments::conservative_max_heap_alignment() {
