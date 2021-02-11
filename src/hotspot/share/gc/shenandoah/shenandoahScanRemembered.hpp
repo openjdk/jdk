@@ -30,9 +30,7 @@
 #include <stdint.h>
 #include "memory/iterator.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
-#include "gc/shared/referenceDiscoverer.hpp"
-#include "gc/shared/referencePolicy.hpp"
-#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+
 
 // Terminology used within this source file:
 //
@@ -213,7 +211,7 @@
 // These limitations will be addressed in future enhancements to the
 // existing implementation.
 
-class ReferenceProcessor;
+class ShenandoahReferenceProcessor;
 class ShenandoahConcurrentMark;
 class ShenandoahHeap;
 class CardTable;
