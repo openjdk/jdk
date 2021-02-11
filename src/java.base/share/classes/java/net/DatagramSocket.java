@@ -1132,7 +1132,18 @@ public class DatagramSocket implements java.io.Closeable {
      * @see       java.net.DatagramSocketImplFactory#createDatagramSocketImpl()
      * @see       SecurityManager#checkSetFactory
      * @since 1.3
+     *
+     * @deprecated Use {@link DatagramChannel}, or subclass {@code DatagramSocket}
+     *    directly.
+     *    <br> This method provided a way in early JDK releases to replace the
+     *    system wide implementation of {@code DatagramSocket}. It has been mostly
+     *    obsolete since Java 1.4. If required, a {@code DatagramSocket} can be
+     *    created to use a custom implementation by extending {@code DatagramSocket}
+     *    and using the {@linkplain #DatagramSocket(DatagramSocketImpl) protected
+     *    constructor} that takes an {@linkplain DatagramSocketImpl implementation}
+     *    as a parameter.
      */
+    @Deprecated(since = "17")
     public static synchronized void
     setDatagramSocketImplFactory(DatagramSocketImplFactory fac)
             throws IOException
