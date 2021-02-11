@@ -341,7 +341,8 @@ TEST_VM(VirtualSpace, disable_large_pages) {
 
 
 // ========================= concurrent virtual space memory tests
-// This class have been imported from the original "internal VM test" w/o modification
+// This class have been imported from the original "internal VM test" with minor modification,
+// specifically using GTest asserts instead of native HotSpot asserts.
 class TestReservedSpace : AllStatic {
  public:
   static void small_page_write(void* addr, size_t size) {
@@ -362,18 +363,18 @@ class TestReservedSpace : AllStatic {
   }
 
   static void test_reserved_space1(size_t size, size_t alignment) {
-    assert(is_aligned(size, alignment), "Incorrect input parameters");
+    ASSERT_TRUE(is_aligned(size, alignment)) << "Incorrect input parameters";
 
     ReservedSpace rs(size,          // size
                      alignment,     // alignment
                      UseLargePages, // large
                      (char *)NULL); // requested_address
 
-    assert(rs.base() != NULL, "Must be");
-    assert(rs.size() == size, "Must be");
+    EXPECT_TRUE(rs.base() != NULL);
+    EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
 
-    assert(is_aligned(rs.base(), alignment), "aligned sizes should always give aligned addresses");
-    assert(is_aligned(rs.size(), alignment), "aligned sizes should always give aligned addresses");
+    EXPECT_TRUE(is_aligned(rs.base(), alignment)) << "aligned sizes should always give aligned addresses";
+    EXPECT_TRUE(is_aligned(rs.size(), alignment)) <<  "aligned sizes should always give aligned addresses";
 
     if (rs.special()) {
       small_page_write(rs.base(), size);
@@ -383,12 +384,12 @@ class TestReservedSpace : AllStatic {
   }
 
   static void test_reserved_space2(size_t size) {
-    assert(is_aligned(size, os::vm_allocation_granularity()), "Must be at least AG aligned");
+    ASSERT_TRUE(is_aligned(size, os::vm_allocation_granularity())) << "Must be at least AG aligned";
 
     ReservedSpace rs(size);
 
-    assert(rs.base() != NULL, "Must be");
-    assert(rs.size() == size, "Must be");
+    EXPECT_TRUE(rs.base() != NULL);
+    EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
 
     if (rs.special()) {
       small_page_write(rs.base(), size);
@@ -400,19 +401,19 @@ class TestReservedSpace : AllStatic {
   static void test_reserved_space3(size_t size, size_t alignment, bool maybe_large) {
     if (size < alignment) {
       // Tests might set -XX:LargePageSizeInBytes=<small pages> and cause unexpected input arguments for this test.
-      assert((size_t)os::vm_page_size() == os::large_page_size(), "Test needs further refinement");
+      ASSERT_EQ((size_t)os::vm_page_size(), os::large_page_size()) << "Test needs further refinement";
       return;
     }
 
-    assert(is_aligned(size, os::vm_allocation_granularity()), "Must be at least AG aligned");
-    assert(is_aligned(size, alignment), "Must be at least aligned against alignment");
+    EXPECT_TRUE(is_aligned(size, os::vm_allocation_granularity())) << "Must be at least AG aligned";
+    EXPECT_TRUE(is_aligned(size, alignment)) << "Must be at least aligned against alignment";
 
     bool large = maybe_large && UseLargePages && size >= os::large_page_size();
 
     ReservedSpace rs(size, alignment, large);
 
-    assert(rs.base() != NULL, "Must be");
-    assert(rs.size() == size, "Must be");
+    EXPECT_TRUE(rs.base() != NULL);
+    EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
 
     if (rs.special()) {
       small_page_write(rs.base(), size);
@@ -503,16 +504,8 @@ class TestReservedSpace : AllStatic {
 class TestRunnable {
 public:
   virtual void runUnitTest() {
-        tty->print_cr("ERROR: Should not be here !!!");
+    tty->print_cr("ERROR: Should not be here !!!");
   };
-};
-
-class ReservedSpaceRunnable : public TestRunnable {
-public:
-  void runUnitTest() {
-    tty->print(".");
-    TestReservedSpace::test_reserved_space();
-  }
 };
 
 class UnitTestThread : public JavaTestThread {
@@ -568,6 +561,13 @@ public:
   }
 };
 
+
+class ReservedSpaceRunnable : public TestRunnable {
+public:
+  void runUnitTest() {
+    TestReservedSpace::test_reserved_space();
+  }
+};
 
 TEST_VM(VirtualSpace, reserve_space_concurrent) {
   ConcurrentTestRunner testRunner(new ReservedSpaceRunnable(), 10, 15000); // TODO: update to original value of 30
