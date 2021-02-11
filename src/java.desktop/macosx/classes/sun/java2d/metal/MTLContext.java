@@ -128,11 +128,6 @@ final class MTLContext extends BufferedContext {
          */
         @Native
         static final int CAPS_EXT_GRAD_SHADER  = (FIRST_PRIVATE_CAP << 3);
-        @Native
-        static final int CAPS_EXT_TEXRECT      = (FIRST_PRIVATE_CAP << 4);
-        @Native
-        static final int CAPS_EXT_TEXBARRIER = (FIRST_PRIVATE_CAP << 5);
-
 
         public MTLContextCaps(int caps, String adapterId) {
             super(caps, adapterId);
@@ -152,12 +147,6 @@ final class MTLContext extends BufferedContext {
             }
             if ((caps & CAPS_EXT_GRAD_SHADER) != 0) {
                 sb.append("CAPS_EXT_GRAD_SHADER|");
-            }
-            if ((caps & CAPS_EXT_TEXRECT) != 0) {
-                sb.append("CAPS_EXT_TEXRECT|");
-            }
-            if ((caps & CAPS_EXT_TEXBARRIER) != 0) {
-                sb.append("CAPS_EXT_TEXBARRIER|");
             }
             return sb.toString();
         }
