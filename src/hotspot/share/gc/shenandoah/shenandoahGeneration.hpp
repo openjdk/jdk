@@ -31,16 +31,13 @@
 class ShenandoahGeneration : public CHeapObj<mtGC> {
 private:
   GenerationMode const _generation_mode;
-  ShenandoahConcurrentMark* const _scm;
+
 public:
-  ShenandoahGeneration(GenerationMode generation_mode) :
-    _generation_mode(generation_mode),
-    _scm(new ShenandoahConcurrentMark(generation_mode)) {
+  explicit ShenandoahGeneration(GenerationMode generation_mode) :
+    _generation_mode(generation_mode) {
   }
 
   inline GenerationMode generation_mode() const { return _generation_mode; }
-
-  inline ShenandoahConcurrentMark* concurrent_mark() const { return _scm; }
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP

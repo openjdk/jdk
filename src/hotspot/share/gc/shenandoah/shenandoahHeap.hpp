@@ -388,8 +388,8 @@ public:
   // Entry methods to normally concurrent GC operations. These set up logging, monitoring
   // for concurrent operation.
   void entry_reset();
-  void entry_mark_roots();
-  void entry_mark();
+  void entry_mark_roots(ShenandoahGeneration* generation);
+  void entry_mark(ShenandoahGeneration* generation);
   void entry_weak_refs();
   void entry_weak_roots();
   void entry_class_unloading();
@@ -414,8 +414,8 @@ private:
   void op_degenerated_futile();
 
   void op_reset();
-  void op_mark_roots();
-  void op_mark();
+  void op_mark_roots(ShenandoahGeneration* generation);
+  void op_mark(ShenandoahGeneration* generation);
   void op_weak_refs();
   void op_weak_roots();
   void op_class_unloading();
@@ -439,7 +439,7 @@ private:
   const char* degen_event_message(ShenandoahDegenPoint point) const;
 
 // Helpers
-  void finish_mark();
+  void finish_mark(ShenandoahGeneration* generation);
   void prepare_evacuation();
 
 // ---------- GC subsystems

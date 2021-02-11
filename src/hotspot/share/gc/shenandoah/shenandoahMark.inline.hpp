@@ -38,9 +38,17 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+template<GenerationMode GENERATION>
+ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
+  _queue(q),
+  _heap(ShenandoahHeap::heap()),
+  _mark_context(_heap->marking_context()) {
+}
+
+template <GenerationMode GENERATION>
 template <class T>
-void ShenandoahInitMarkRootsClosure::do_oop_work(T* p) {
-  ShenandoahMark::mark_through_ref<T, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
+void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
+  ShenandoahMark::mark_through_ref<T, GENERATION, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
 }
 
 template <class T>
@@ -236,12 +244,12 @@ public:
   void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, GENERATION, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context, false);
     }
   }
 };
 
-template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
+template<class T, GenerationMode GENERATION, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
 inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {

@@ -407,7 +407,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   heap->vmop_entry_init_mark(generation);
 
   // Concurrent mark roots
-  heap->entry_mark_roots();
+  heap->entry_mark_roots(generation);
   if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_outside_cycle)) return;
 
   // Continue concurrent mark

@@ -33,22 +33,23 @@
 
 class ShenandoahStrDedupQueue;
 class ShenandoahReferenceProcessor;
+class ShenandoahGeneration;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
-  friend class ShenandoahConcurrentMarkingTask;
-  friend class ShenandoahFinalMarkingTask;
+  template <GenerationMode GENERATION> friend class ShenandoahConcurrentMarkingTask;
+  template <GenerationMode GENERATION> friend class ShenandoahFinalMarkingTask;
 
 public:
   ShenandoahConcurrentMark();
 
   // When concurrent stack processing is not supported
-  void mark_stw_roots();
-  void mark_concurrent_roots();
+  void mark_stw_roots(ShenandoahGeneration* generation);
+  void mark_concurrent_roots(ShenandoahGeneration* generation);
 
   // Concurrent mark
-  void concurrent_mark();
+  void concurrent_mark(ShenandoahGeneration* generation);
   // Finish mark at a safepoint
-  void finish_mark();
+  void finish_mark(ShenandoahGeneration* generation);
 
 
   static void cancel();
@@ -58,7 +59,7 @@ public:
   static void update_thread_roots(ShenandoahPhaseTimings::Phase root_phase);
 
 private:
-  void finish_mark_work();
+  void finish_mark_work(ShenandoahGeneration* generation);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP

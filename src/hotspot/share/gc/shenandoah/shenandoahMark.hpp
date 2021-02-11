@@ -32,6 +32,7 @@
 
 class ShenandoahCMDrainMarkingStackClosure;
 
+template<GenerationMode GENERATION>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
 private:
   ShenandoahObjToScanQueue* const _queue;
@@ -61,7 +62,7 @@ protected:
   ShenandoahMark();
 
 public:
-  template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
+  template<class T, GenerationMode GENERATION, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
   static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
 
   static void clear();
@@ -83,14 +84,14 @@ private:
 
   inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
 
-  template <class T, bool CANCELLABLE>
+  template <class T, GenerationMode GENERATION, bool CANCELLABLE>
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
 
-  template <bool CANCELLABLE>
+  template <GenerationMode GENERATION, bool CANCELLABLE>
   void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, bool strdedup);
 
 protected:
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
+  void mark_loop(GenerationMode generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
                  bool cancellable, bool strdedup);
 };
 

@@ -1635,7 +1635,7 @@ void ShenandoahHeap::op_init_mark(ShenandoahGeneration* generation) {
   OrderAccess::fence();
 
   ShenandoahConcurrentMark mark;
-  mark.mark_stw_roots();
+  mark.mark_stw_roots(generation);
 
   if (ShenandoahPacing) {
     pacer()->setup_for_mark();
@@ -1649,14 +1649,14 @@ void ShenandoahHeap::op_init_mark(ShenandoahGeneration* generation) {
   }
 }
 
-void ShenandoahHeap::op_mark_roots() {
+void ShenandoahHeap::op_mark_roots(ShenandoahGeneration* generation) {
   ShenandoahConcurrentMark mark;
-  mark.mark_concurrent_roots();
+  mark.mark_concurrent_roots(generation);
 }
 
-void ShenandoahHeap::op_mark() {
+void ShenandoahHeap::op_mark(ShenandoahGeneration* generation) {
   ShenandoahConcurrentMark mark;
-  mark.concurrent_mark();
+  mark.concurrent_mark(generation);
 }
 
 class ShenandoahFinalMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
@@ -1711,7 +1711,7 @@ void ShenandoahHeap::op_final_mark(ShenandoahGeneration* generation) {
   assert(!has_forwarded_objects(), "No forwarded objects on this path");
 
   if (!cancelled_gc()) {
-    finish_mark();
+    finish_mark(generation);
     prepare_evacuation();
   } else {
     // If this cycle was updating references, we need to keep the has_forwarded_objects
@@ -1769,10 +1769,10 @@ void ShenandoahHeap::op_cleanup_complete() {
 }
 
 // Helpers
-void ShenandoahHeap::finish_mark() {
+void ShenandoahHeap::finish_mark(ShenandoahGeneration* generation) {
   assert(!cancelled_gc(), "Should not continue");
   ShenandoahConcurrentMark mark;
-  mark.finish_mark();
+  mark.finish_mark(generation);
   // Marking is completed, deactivate SATB barrier
   set_concurrent_mark_in_progress(false);
   mark_complete_marking_context();
@@ -2233,7 +2233,7 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
       }
     case _degenerated_mark:
       if (point == _degenerated_mark) {
-        finish_mark();
+        finish_mark(global_generation());
       }
       prepare_evacuation();
 
@@ -3136,7 +3136,7 @@ void ShenandoahHeap::entry_degenerated(int point) {
   set_degenerated_gc_in_progress(false);
 }
 
-void ShenandoahHeap::entry_mark_roots() {
+void ShenandoahHeap::entry_mark_roots(ShenandoahGeneration* generation) {
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
 
   const char* msg = "Concurrent marking roots";
@@ -3148,10 +3148,10 @@ void ShenandoahHeap::entry_mark_roots() {
                               "concurrent marking roots");
 
   try_inject_alloc_failure();
-  op_mark_roots();
+  op_mark_roots(generation);
 }
 
-void ShenandoahHeap::entry_mark() {
+void ShenandoahHeap::entry_mark(ShenandoahGeneration* generation) {
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
 
   const char* msg = conc_mark_event_message();
