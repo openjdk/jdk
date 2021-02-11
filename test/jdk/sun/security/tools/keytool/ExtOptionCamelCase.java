@@ -38,6 +38,7 @@ import sun.security.util.DerValue;
 import sun.security.x509.BasicConstraintsExtension;
 import sun.security.x509.CertificateExtensions;
 import sun.security.x509.Extension;
+import sun.security.x509.KeyIdentifier;
 import sun.security.x509.KeyUsageExtension;
 
 import java.io.ByteArrayOutputStream;
@@ -155,7 +156,7 @@ public class ExtOptionCamelCase {
                 List.class,
                 PublicKey.class,
                 PublicKey.class,
-                byte[].class);
+                KeyIdentifier.class);
         createV3Extensions.setAccessible(true);
         ctor = Main.class.getDeclaredConstructor();
         ctor.setAccessible(true);

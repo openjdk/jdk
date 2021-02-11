@@ -1477,8 +1477,13 @@ public final class Main {
             }
         }
 
-        byte[] signerSubjectKeyIdExt = ((X509Certificate)signerCert).getExtensionValue(
-                KnownOIDs.SubjectKeyID.value());
+        X509CertImpl certImpl;
+        if (signerCert instanceof X509CertImpl) {
+            certImpl = (X509CertImpl) signerCert;
+        } else {
+            certImpl = new X509CertImpl(signerCert.getEncoded());
+        }
+        KeyIdentifier signerSubjectKeyId = certImpl.getSubjectKeyId();
 
         CertificateExtensions ext = createV3Extensions(
                 reqex,
@@ -1486,7 +1491,7 @@ public final class Main {
                 v3ext,
                 req.getSubjectPublicKeyInfo(),
                 signerCert.getPublicKey(),
-                signerSubjectKeyIdExt);
+                signerSubjectKeyId);
         info.set(X509CertInfo.EXTENSIONS, ext);
         X509CertImpl cert = new X509CertImpl(info);
         cert.sign(privateKey, sigAlgName);
@@ -4231,7 +4236,7 @@ public final class Main {
      * @param extstrs -ext values, Read keytool doc
      * @param pkey the public key for the certificate
      * @param akey the public key for the authority (issuer)
-     * @param aSubjectKeyIdExt the subject key identifier extension for the authority (issuer)
+     * @param aSubjectKeyId the subject key identifier for the authority (issuer)
      * @return the created CertificateExtensions
      */
     private CertificateExtensions createV3Extensions(
@@ -4240,7 +4245,7 @@ public final class Main {
             List <String> extstrs,
             PublicKey pkey,
             PublicKey akey,
-            byte[] aSubjectKeyIdExt) throws Exception {
+            KeyIdentifier aSubjectKeyId) throws Exception {
 
         // By design, inside a CertificateExtensions object, all known
         // extensions uses name (say, "BasicConstraints") as key and
@@ -4269,19 +4274,15 @@ public final class Main {
             setExt(result, new SubjectKeyIdentifierExtension(
                     new KeyIdentifier(pkey).getIdentifier()));
             if (akey != null && !pkey.equals(akey)) {
-                if (aSubjectKeyIdExt == null) {
+                if (aSubjectKeyId == null) {
                     setExt(result, new AuthorityKeyIdentifierExtension(
                             new KeyIdentifier(akey), null, null));
                 } else {
                     // To enforce compliance with RFC 5280 section 4.2.1.1: "Where a key
                     // identifier has been previously established, the CA SHOULD use the
                     // previously established identifier."
-                    // SubjectKeyIdentifierExtension in X509Certificate encapsulates its
-                    // value with two levels of OCTET_STRING wrapper.
-                    byte[] subjectKeyId1 = new DerValue(aSubjectKeyIdExt).getOctetString();
-                    byte[] subjectKeyId2 = new DerValue(subjectKeyId1).getOctetString();
                     setExt(result, new AuthorityKeyIdentifierExtension(
-                            new KeyIdentifier(subjectKeyId2), null, null));
+                            aSubjectKeyId, null, null));
                 }
             }
 
