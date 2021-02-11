@@ -352,7 +352,7 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     public Content valueTagOutput(VariableElement field, String constantVal, boolean includeLink) {
         return includeLink
-                ? htmlWriter.getDocLink(LinkInfoImpl.Kind.VALUE_TAG, field, constantVal, false)
+                ? htmlWriter.getDocLink(LinkInfoImpl.Kind.VALUE_TAG, field, constantVal)
                 : new StringContent(constantVal);
     }
 

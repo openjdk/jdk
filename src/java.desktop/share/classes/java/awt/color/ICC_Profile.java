@@ -758,12 +758,13 @@ public class ICC_Profile implements Serializable {
 
     /**
      * Constructs an {@code ICC_Profile} object corresponding to the data in a
-     * byte array. Throws an {@code IllegalArgumentException} if the data does
-     * not correspond to a valid ICC Profile.
+     * byte array.
      *
      * @param  data the specified ICC Profile data
      * @return an {@code ICC_Profile} object corresponding to the data in the
      *         specified {@code data} array
+     * @throws IllegalArgumentException If the byte array does not contain valid
+     *         ICC Profile data
      */
     public static ICC_Profile getInstance(byte[] data) {
     ICC_Profile thisProfile;
@@ -957,12 +958,7 @@ public class ICC_Profile implements Serializable {
      *         Profile data
      */
     public static ICC_Profile getInstance(InputStream s) throws IOException {
-        byte[] profileData;
-        if ((profileData = getProfileDataFromStream(s)) == null) {
-            throw new IllegalArgumentException("Invalid ICC Profile Data");
-        }
-
-        return getInstance(profileData);
+        return getInstance(getProfileDataFromStream(s));
     }
 
 
