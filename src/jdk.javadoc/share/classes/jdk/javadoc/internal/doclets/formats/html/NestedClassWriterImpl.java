@@ -72,7 +72,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.nestedClassSummary,
-                SectionName.NESTED_CLASS_SUMMARY, summariesList, content);
+                HtmlIds.NESTED_CLASS_SUMMARY, summariesList, content);
     }
 
     @Override
@@ -116,8 +116,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
                     : resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
         }
         HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING, label);
-        labelHeading.setId(SectionName.NESTED_CLASSES_INHERITANCE.getName()
-                + links.getName(utils.getFullyQualifiedName(typeElement)));
+        labelHeading.setId(htmlIds.forInheritedClasses(typeElement));
         labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         inheritedTree.add(labelHeading);

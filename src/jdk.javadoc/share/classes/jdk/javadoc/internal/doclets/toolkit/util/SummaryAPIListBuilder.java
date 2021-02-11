@@ -52,6 +52,7 @@ public class SummaryAPIListBuilder {
     private final BaseConfiguration configuration;
     protected final Utils utils;
     private final Predicate<Element> belongsToSummary;
+
     public enum SummaryElementKind {
         MODULE,
         PACKAGE,
@@ -68,6 +69,7 @@ public class SummaryAPIListBuilder {
         ENUM_CONSTANT,
         ANNOTATION_TYPE_MEMBER // no ElementKind mapping
     };
+
     /**
      * Constructor.
      *
@@ -175,9 +177,8 @@ public class SummaryAPIListBuilder {
     /**
      * Add the members into a single list of summary members.
      *
-     * @param rset set of elements summary for removal.
-     * @param sset set of summary elements.
-     * @param members members to be added in the list.
+     * @param sset set of summary elements
+     * @param members members to be added in the list
      */
     private void composeSummaryList(SortedSet<Element> sset, List<? extends Element> members) {
         for (Element member : members) {

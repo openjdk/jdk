@@ -1859,12 +1859,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   Handle threadObj(this, this->threadObj());
   assert(threadObj.not_null(), "Java thread object should be created");
 
-  // FIXIT: This code should be moved into else part, when reliable 1.2/1.3 check is in place
-  {
-    EXCEPTION_MARK;
-
-    CLEAR_PENDING_EXCEPTION;
-  }
   if (!destroy_vm) {
     if (uncaught_exception.not_null()) {
       EXCEPTION_MARK;
@@ -3023,7 +3017,7 @@ class PrintAndVerifyOopClosure: public OopClosure {
 // Print or validate the layout of stack frames
 void JavaThread::print_frame_layout(int depth, bool validate_only) {
   ResourceMark rm;
-  PRESERVE_EXCEPTION_MARK;
+  PreserveExceptionMark pm(this);
   FrameValues values;
   int frame_no = 0;
   for (StackFrameStream fst(this, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {

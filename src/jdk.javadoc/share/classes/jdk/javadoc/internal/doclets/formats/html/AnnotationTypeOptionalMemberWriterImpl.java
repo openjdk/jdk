@@ -77,7 +77,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.memberSummary,
-                SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY, summariesList, content);
+                HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY, summariesList, content);
     }
 
     @Override

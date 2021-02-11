@@ -26,7 +26,6 @@
 
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
-#include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
 
 class BoolObjectClosure;
@@ -38,6 +37,11 @@ class Metadata;
 class MetadataHandleBlock;
 class OopClosure;
 class OopStorage;
+
+template <size_t>
+class FormatStringEventLog;
+
+typedef FormatStringEventLog<256> StringEventLog;
 
 struct _jmetadata;
 typedef struct _jmetadata *jmetadata;

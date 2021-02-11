@@ -793,7 +793,7 @@ public abstract class Buffer {
 
                 @Override
                 public ByteBuffer newHeapByteBuffer(byte[] hb, int offset, int capacity, MemorySegmentProxy segment) {
-                    return new HeapByteBuffer(hb, offset, capacity, segment);
+                    return new HeapByteBuffer(hb, -1, 0, capacity, capacity, offset, segment);
                 }
 
                 @Override

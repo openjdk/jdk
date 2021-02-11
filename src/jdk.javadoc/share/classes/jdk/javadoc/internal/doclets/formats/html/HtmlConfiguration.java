@@ -134,6 +134,8 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     public DocPaths docPaths;
 
+    public HtmlIds htmlIds;
+
     public Map<Element, List<DocPath>> localStylesheetMap = new HashMap<>();
 
     private final HtmlOptions options;
@@ -208,6 +210,7 @@ public class HtmlConfiguration extends BaseConfiguration {
                                      Function<String, String> resourceKeyMapper) {
         super.initConfiguration(docEnv, resourceKeyMapper);
         contents = new Contents(this);
+        htmlIds = new HtmlIds(this);
     }
 
     private final Runtime.Version docletVersion;

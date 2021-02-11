@@ -37,6 +37,7 @@ import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -89,7 +90,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.methodSummary,
-                SectionName.METHOD_SUMMARY, summariesList, content);
+                HtmlIds.METHOD_SUMMARY, summariesList, content);
     }
 
     @Override
@@ -104,16 +105,16 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     public Content getMethodDocTreeHeader(ExecutableElement method) {
-        String erasureAnchor;
         Content methodDocTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(name(method)));
-        if ((erasureAnchor = getErasureAnchor(method)) != null) {
+        HtmlId erasureAnchor;
+        if ((erasureAnchor = htmlIds.forErasure(method)) != null) {
             heading.setId(erasureAnchor);
         }
         methodDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, methodDocTree)
-                .setId(links.getAnchor(method));
+                .setId(htmlIds.forMember(method));
     }
 
     /**
@@ -181,7 +182,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public Content getMethodDetails(Content methodDetailsTreeHeader, Content methodDetailsTree) {
         Content methodDetails = new ContentBuilder(methodDetailsTreeHeader, methodDetailsTree);
         return getMemberTree(HtmlTree.SECTION(HtmlStyle.methodDetails, methodDetails)
-                .setId(SectionName.METHOD_DETAIL.getName()));
+                .setId(HtmlIds.METHOD_DETAIL));
     }
 
     @Override
@@ -202,7 +203,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         return new Table(HtmlStyle.summaryTable)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
-                .setId("method-summary-table")
+                .setId(HtmlIds.METHOD_SUMMARY_TABLE)
                 .setDefaultTab(resources.getText("doclet.All_Methods"))
                 .addTab(resources.getText("doclet.Static_Methods"), utils::isStatic)
                 .addTab(resources.getText("doclet.Instance_Methods"), e -> !utils.isStatic(e))
@@ -230,8 +231,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         }
         HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
                 label);
-        labelHeading.setId(SectionName.METHODS_INHERITANCE.getName()
-                + links.getName(configuration.getClassName(typeElement)));
+        labelHeading.setId(htmlIds.forInheritedMethods(typeElement));
         labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         inheritedTree.add(labelHeading);
@@ -290,7 +290,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
             Content methlink = writer.getLink(
                     new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER, holder)
-                            .where(writer.links.getAnchor(method))
+                            .where(writer.htmlIds.forMember(method).name())
                             .label(method.getSimpleName()));
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);

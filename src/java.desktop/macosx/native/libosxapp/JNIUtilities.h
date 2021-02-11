@@ -29,11 +29,24 @@
 #include "jni.h"
 #include "jni_util.h"
 
+#import <Cocoa/Cocoa.h>
+
 /********        LOGGING SUPPORT    *********/
 
 #define LOG_NULL(dst_var, name) \
    if (dst_var == NULL) { \
        NSLog(@"Bad JNI lookup %s\n", name); \
+       NSLog(@"%@",[NSThread callStackSymbols]); \
+       if ([NSThread isMainThread] == NO) { \
+           if ((*env)->ExceptionOccurred(env) == NULL) { \
+              JNU_ThrowInternalError(env, "Bad JNI Lookup"); \
+           } \
+       } else { \
+              if ((*env)->ExceptionOccurred(env) != NULL) { \
+                  (*env)->ExceptionDescribe(env); \
+           } \
+       } \
+       [NSException raise:NSGenericException format:@"JNI Lookup Exception"];  \
     }
 
 /********        GET CLASS SUPPORT    *********/
@@ -147,9 +160,44 @@
 
 /*********       EXCEPTION_HANDLING    *********/
 
+/*
+ * Some explanation to set context of the bigger picture.
+ * Before returning to Java from JNI, NSExceptions are caught - so long as
+ * the body of the native method is wrapped in the ENTER/EXIT macros.
+ * So if we want to directly return to Java from some nested Objective-C
+ * function when detecting a Java exception, we just need to raise an
+ * NSException. Then clear that right before returning to Java,
+ * leaving the Java exception to be seen back in Java-land.
+ *
+ * But if the current thread is the Appkit thread we might as well clear
+ * the Java Exception right now since there's nothing to receive it.
+ * In such a case control will propagate back to the run loop which might
+ * terminate the application. One drawback of that is that the location of
+ * termination does not show where the NSException originated.
+ * And for whatever reason, something swallows that exception.
+ * So as a debugging aid, when on the AppKit thread we can provide a
+ * way (via an env. var.) to log the location.
+ * Additionally provide a similar way to prevent the NSException being
+ * raised and instead just clear the Java Exception.
+ * Together these provide alternate behaviours for more debugging info
+ * or maybe a way for the app to continue running depending on the exact
+ * nature of the problem that has been detected and how survivable it is.
+ */
 #define CHECK_EXCEPTION() \
     if ((*env)->ExceptionOccurred(env) != NULL) { \
-        (*env)->ExceptionClear(env); \
+        if ([NSThread isMainThread] == YES) { \
+            if (getenv("JNU_APPKIT_TRACE")) { \
+                (*env)->ExceptionDescribe(env); \
+                NSLog(@"%@",[NSThread callStackSymbols]); \
+              } else { \
+                  (*env)->ExceptionClear(env); \
+              } \
+         }  \
+        if (getenv("JNU_NO_COCOA_EXCEPTION") == NULL) { \
+            [NSException raise:NSGenericException format:@"Java Exception"]; \
+        } else { \
+            (*env)->ExceptionClear(env); \
+        } \
     };
 
 #define CHECK_EXCEPTION_NULL_RETURN(x, y) \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ bool JfrRecorderThread::start(JfrCheckpointManager* cp_manager, JfrPostBox* post
   remove_thread_args.set_signature(vmSymbols::thread_void_signature());
   remove_thread_args.set_receiver(Universe::system_thread_group());
   remove_thread_args.push_oop(h_thread_oop());
-  CautiouslyPreserveExceptionMark cpe(THREAD);
+  PreserveExceptionMark cpe(THREAD);
   JfrJavaSupport::call_special(&remove_thread_args, THREAD);
   return false;
 }

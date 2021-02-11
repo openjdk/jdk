@@ -77,6 +77,7 @@ import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclint.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -177,6 +178,8 @@ public class HtmlDocletWriter {
 
     protected final Comparators comparators;
 
+    protected final HtmlIds htmlIds;
+
     /**
      * To check whether annotation heading is printed or not.
      */
@@ -224,9 +227,10 @@ public class HtmlDocletWriter {
         this.contents = configuration.getContents();
         this.messages = configuration.messages;
         this.resources = configuration.docResources;
-        this.links = new Links(path, configuration.utils);
+        this.links = new Links(path);
         this.utils = configuration.utils;
         this.comparators = utils.comparators;
+        this.htmlIds = configuration.htmlIds;
         this.path = path;
         this.pathToRoot = path.parent().invert();
         this.filename = path.basename();
@@ -607,17 +611,6 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Given a package, return the name to be used in HTML anchor tag.
-     * @param packageElement the package.
-     * @return the name to be used in HTML anchor tag.
-     */
-    public String getPackageAnchorName(PackageElement packageElement) {
-        return packageElement == null || packageElement.isUnnamed()
-                ? SectionName.UNNAMED_PACKAGE_ANCHOR.getName()
-                : utils.getPackageName(packageElement);
-    }
-
-    /**
      * Return the link to the given package.
      *
      * @param packageElement the package to link to.
@@ -668,7 +661,7 @@ public class HtmlDocletWriter {
             if (flags.contains(ElementFlag.PREVIEW)) {
                 return new ContentBuilder(
                     links.createLink(targetLink, label),
-                    HtmlTree.SUP(links.createLink(targetLink.withFragment(getPreviewSectionAnchor(packageElement)),
+                    HtmlTree.SUP(links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(packageElement).name()),
                                                   contents.previewMark))
                 );
             }
@@ -701,7 +694,7 @@ public class HtmlDocletWriter {
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
                 link = new ContentBuilder(
                         link,
-                        HtmlTree.SUP(links.createLink(targetLink.withFragment(getPreviewSectionAnchor(mdle)),
+                        HtmlTree.SUP(links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(mdle).name()),
                                                       contents.previewMark))
                 );
             }
@@ -1007,9 +1000,10 @@ public class HtmlDocletWriter {
 
         if (utils.isExecutableElement(element)) {
             ExecutableElement ee = (ExecutableElement)element;
+            HtmlId id = isProperty ? htmlIds.forProperty(ee) : htmlIds.forMember(ee);
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(links.getAnchor(ee, isProperty))
+                .where(id.name())
                 .targetMember(element)
                 .strong(strong));
         }
@@ -1017,7 +1011,7 @@ public class HtmlDocletWriter {
         if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(links.getName(element.getSimpleName().toString()))
+                .where(element.getSimpleName().toString())
                 .targetMember(element)
                 .strong(strong));
         }
@@ -1038,17 +1032,19 @@ public class HtmlDocletWriter {
      */
     public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
             Content label) {
-        if (! (utils.isIncluded(element) || utils.isLinkable(typeElement))) {
+        if (!(utils.isIncluded(element) || utils.isLinkable(typeElement))) {
             return label;
         } else if (utils.isExecutableElement(element)) {
             ExecutableElement emd = (ExecutableElement) element;
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
-                .label(label)
-                .where(links.getAnchor(emd))
-                .targetMember(element));
+                    .label(label)
+                    .where(htmlIds.forMember(emd).name())
+                    .targetMember(element));
         } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
-                .label(label).where(links.getName(element.getSimpleName().toString())).targetMember(element));
+                    .label(label)
+                    .where(element.getSimpleName().toString())
+                    .targetMember(element));
         } else {
             return label;
         }
@@ -1102,8 +1098,8 @@ public class HtmlDocletWriter {
                                 : null;
                 if (elementCrossLink != null) {
                     // Element cross link found
-                    return links.createLink(elementCrossLink,
-                            (label.isEmpty() ? text : label), true);
+                    return links.createExternalLink(elementCrossLink,
+                            (label.isEmpty() ? text : label));
                 } else {
                     // No cross link found so print warning
                     messages.warning(ch.getDocTreePath(see),
@@ -2187,7 +2183,7 @@ public class HtmlDocletWriter {
         if (utils.isPreviewAPI(forWhat)) {
             //in Java platform:
             HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
-            previewDiv.setId(getPreviewSectionAnchor(forWhat));
+            previewDiv.setId(htmlIds.forPreviewSection(forWhat));
             String name = (switch (forWhat.getKind()) {
                 case PACKAGE, MODULE ->
                         ((QualifiedNameable) forWhat).getQualifiedName();
@@ -2218,7 +2214,7 @@ public class HtmlDocletWriter {
                 Name name = forWhat.getSimpleName();
                 Content nameCode = HtmlTree.CODE(new StringContent(name));
                 HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
-                previewDiv.setId(getPreviewSectionAnchor(forWhat));
+                previewDiv.setId(htmlIds.forPreviewSection(forWhat));
                 Content leadingNote = contents.getContent("doclet.PreviewLeadingNote", nameCode);
                 previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
                                              leadingNote));
@@ -2318,15 +2314,6 @@ public class HtmlDocletWriter {
         return contents.getContent(key,
                                    HtmlTree.CODE(new StringContent(className)),
                                    links);
-    }
-
-    public String getPreviewSectionAnchor(Element el) {
-        return "preview-" + switch (el.getKind()) {
-            case CONSTRUCTOR, METHOD ->
-                links.getAnchor((ExecutableElement) el);
-            case PACKAGE -> getPackageAnchorName((PackageElement) el);
-            default -> utils.getFullyQualifiedName(el, false);
-        };
     }
 
 }

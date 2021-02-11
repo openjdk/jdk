@@ -94,7 +94,7 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
             Table table =  new Table(HtmlStyle.summaryTable)
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                    .setId("all-packages-table")
+                    .setId(HtmlIds.ALL_PACKAGES_TABLE)
                     .setDefaultTab(resources.getText("doclet.All_Packages"));
 
             // add the tabs in command-line order

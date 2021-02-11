@@ -80,14 +80,14 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
 
     @Override
     protected void addExtraSection(DeprecatedAPIListBuilder list, Content content) {
-        addSummaryAPI(list.getForRemoval(), "forRemoval",
+        addSummaryAPI(list.getForRemoval(), HtmlIds.FOR_REMOVAL,
                     "doclet.For_Removal", "doclet.Element", content);
     }
 
     @Override
     protected void addExtraIndexLink(DeprecatedAPIListBuilder list, Content target) {
         if (!list.getForRemoval().isEmpty()) {
-            addIndexLink("forRemoval", "doclet.For_Removal", target);
+            addIndexLink(HtmlIds.FOR_REMOVAL, "doclet.For_Removal", target);
         }
     }
 

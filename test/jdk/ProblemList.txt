@@ -751,7 +751,6 @@ javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
 javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all,macosx-all
 javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
 javax/swing/JInternalFrame/Test6325652.java 8224977 macosx-all
-javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8225045 linux-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099,8208565 macosx-all,linux-all
 javax/swing/UIDefaults/6302464/bug6302464.java 8199079 macosx-all
@@ -835,6 +834,8 @@ jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/jmx/streaming/TestRotate.java                           8257215 generic-all
+jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
+jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 
 ############################################################################
 
@@ -853,7 +854,6 @@ tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java#id0    8248418 gene
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,8022539 generic-all
 java/awt/Modal/WsDisabledStyle/CloseBlocker/CloseBlocker.java 7187741 linux-all,macosx-all
-java/awt/Component/UpdatingBootTime/UpdatingBootTime.html 7194219 linux-all
 java/awt/xembed/server/TestXEmbedServerJava.java 8001150,8004031 generic-all
 javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
 javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
@@ -878,6 +878,7 @@ java/awt/FileDialog/RegexpFilterTest/RegexpFilterTest.html 7187728 macosx-all,li
 java/awt/print/PageFormat/Orient.java 8016055 macosx-all
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java 8024986 macosx-all,linux-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macosx-all
+java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 
 
 ############################################################################

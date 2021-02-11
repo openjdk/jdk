@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ class ObjectSynchronizer : AllStatic {
   static size_t in_use_list_ceiling();
   static void dec_in_use_list_ceiling();
   static void inc_in_use_list_ceiling();
+  static void set_in_use_list_ceiling(size_t new_value);
   static bool is_async_deflation_needed();
   static bool is_async_deflation_requested() { return _is_async_deflation_requested; }
   static bool is_final_audit() { return _is_final_audit; }

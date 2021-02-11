@@ -71,6 +71,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.HeapMemorySegmentImpl;
@@ -635,7 +636,8 @@ public class TestByteBuffer {
         }
     }
 
-    public void testIOOnClosedConfinedSegment() throws IOException {
+    @Test
+    public void testIOOnConfinedSegment() throws IOException {
         File tmp = File.createTempFile("tmp", "txt");
         tmp.deleteOnExit();
         try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
@@ -646,6 +648,40 @@ public class TestByteBuffer {
             ByteBuffer bb = segment.asByteBuffer();
             channel.write(bb);
         }
+    }
+
+    @Test(dataProvider="segments")
+    public void buffersAndArraysFromSlices(Supplier<MemorySegment> segmentSupplier) {
+        try (MemorySegment segment = segmentSupplier.get()) {
+            int newSize = 8;
+            var slice = segment.asSlice(4, newSize);
+
+            var bytes = slice.toByteArray();
+            assertEquals(newSize, bytes.length);
+
+            var buffer = slice.asByteBuffer();
+            // Fails for heap segments, but passes for native segments:
+            assertEquals(0, buffer.position());
+            assertEquals(newSize, buffer.limit());
+            assertEquals(newSize, buffer.capacity());
+        }
+    }
+
+    @Test(dataProvider="segments")
+    public void viewsFromSharedSegment(Supplier<MemorySegment> segmentSupplier) {
+        try (MemorySegment segment = segmentSupplier.get().share()) {
+            var byteBuffer = segment.asByteBuffer();
+            byteBuffer.asReadOnlyBuffer();
+            byteBuffer.slice(0, 8);
+        }
+    }
+
+    @DataProvider(name = "segments")
+    public static Object[][] segments() throws Throwable {
+        return new Object[][] {
+                { (Supplier<MemorySegment>) () -> MemorySegment.allocateNative(16) },
+                { (Supplier<MemorySegment>) () -> MemorySegment.ofArray(new byte[16]) }
+        };
     }
 
     @DataProvider(name = "bufferOps")

@@ -57,7 +57,6 @@ static const char decode_instructions_virtual_name[] = "decode_instructions_virt
 class decode_env {
  private:
   outputStream* _output;      // where the disassembly is directed to
-  CodeBuffer*   _codeBuffer;  // != NULL only when decoding a CodeBuffer
   CodeBlob*     _codeBlob;    // != NULL only when decoding a CodeBlob
   nmethod*      _nm;          // != NULL only when decoding a nmethod
 

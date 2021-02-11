@@ -34,6 +34,7 @@ import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -101,7 +102,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.constructorSummary,
-                SectionName.CONSTRUCTOR_SUMMARY, summariesList, content);
+                HtmlIds.CONSTRUCTOR_SUMMARY, summariesList, content);
     }
 
     @Override
@@ -116,16 +117,16 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     public Content getConstructorDocTreeHeader(ExecutableElement constructor) {
-        String erasureAnchor;
         Content constructorDocTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(name(constructor)));
-        if ((erasureAnchor = getErasureAnchor(constructor)) != null) {
+        HtmlId erasureAnchor = htmlIds.forErasure(constructor);
+        if (erasureAnchor != null) {
             heading.setId(erasureAnchor);
         }
         constructorDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, constructorDocTree)
-                .setId(links.getAnchor(constructor));
+                .setId(htmlIds.forMember(constructor));
     }
 
     @Override
@@ -161,7 +162,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public Content getConstructorDetails(Content constructorDetailsTreeHeader, Content constructorDetailsTree) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.constructorDetails)
-                        .setId(SectionName.CONSTRUCTOR_DETAIL.getName())
+                        .setId(HtmlIds.CONSTRUCTOR_DETAIL)
                         .add(constructorDetailsTreeHeader)
                         .add(constructorDetailsTree));
     }

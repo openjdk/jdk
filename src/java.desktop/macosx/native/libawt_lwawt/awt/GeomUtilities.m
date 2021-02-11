@@ -24,6 +24,7 @@
  */
 
 #import "GeomUtilities.h"
+#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 static jobject NewJavaRect(JNIEnv *env, jdouble x, jdouble y, jdouble w, jdouble h) {
     DECLARE_CLASS_RETURN(sjc_Rectangle2DDouble, "java/awt/geom/Rectangle2D$Double", NULL);
@@ -55,10 +56,11 @@ NSRect JavaToNSRect(JNIEnv *env, jobject rect) {
     DECLARE_METHOD_RETURN(jm_rect_getY, sjc_Rectangle2D, "getY", "()D", NSZeroRect);
     DECLARE_METHOD_RETURN(jm_rect_getWidth, sjc_Rectangle2D, "getWidth", "()D", NSZeroRect);
     DECLARE_METHOD_RETURN(jm_rect_getHeight, sjc_Rectangle2D, "getHeight", "()D", NSZeroRect);
-    return NSMakeRect((*env)->CallDoubleMethod(env, rect, jm_rect_getX),
-                      (*env)->CallDoubleMethod(env, rect, jm_rect_getY),
-                      (*env)->CallDoubleMethod(env, rect, jm_rect_getWidth),
-                      (*env)->CallDoubleMethod(env, rect, jm_rect_getHeight));
+    jdouble x = (*env)->CallDoubleMethod(env, rect, jm_rect_getX); CHECK_EXCEPTION();
+    jdouble y = (*env)->CallDoubleMethod(env, rect, jm_rect_getY); CHECK_EXCEPTION();
+    jdouble w = (*env)->CallDoubleMethod(env, rect, jm_rect_getWidth); CHECK_EXCEPTION();
+    jdouble h = (*env)->CallDoubleMethod(env, rect, jm_rect_getHeight); CHECK_EXCEPTION();
+    return NSMakeRect(x, y, w, h);
 }
 
 jobject NSToJavaPoint(JNIEnv *env, NSPoint point) {
@@ -73,9 +75,9 @@ NSPoint JavaToNSPoint(JNIEnv *env, jobject point) {
     DECLARE_CLASS_RETURN(sjc_Point2D, "java/awt/geom/Point2D", NSZeroPoint);
     DECLARE_METHOD_RETURN(jm_pt_getX, sjc_Point2D, "getX", "()D", NSZeroPoint);
     DECLARE_METHOD_RETURN(jm_pt_getY, sjc_Point2D, "getY", "()D", NSZeroPoint);
-
-    return NSMakePoint((*env)->CallDoubleMethod(env, point, jm_pt_getX),
-                       (*env)->CallDoubleMethod(env, point, jm_pt_getY));
+    jdouble x = (*env)->CallDoubleMethod(env, point, jm_pt_getX); CHECK_EXCEPTION();
+    jdouble y = (*env)->CallDoubleMethod(env, point, jm_pt_getY); CHECK_EXCEPTION();
+    return NSMakePoint(x, y);
 }
 
 jobject NSToJavaSize(JNIEnv *env, NSSize size) {
@@ -90,14 +92,15 @@ NSSize JavaToNSSize(JNIEnv *env, jobject dimension) {
     DECLARE_CLASS_RETURN(sjc_Dimension2D, "java/awt/geom/Dimension2D", NSZeroSize);
     DECLARE_METHOD_RETURN(jm_sz_getWidth, sjc_Dimension2D, "getWidth", "()D", NSZeroSize);
     DECLARE_METHOD_RETURN(jm_sz_getHeight, sjc_Dimension2D, "getHeight", "()D", NSZeroSize);
-
-    return NSMakeSize((*env)->CallDoubleMethod(env, dimension, jm_sz_getWidth),
-                      (*env)->CallDoubleMethod(env, dimension, jm_sz_getHeight));
+    jdouble w = (*env)->CallDoubleMethod(env, dimension, jm_sz_getWidth); CHECK_EXCEPTION();
+    jdouble h = (*env)->CallDoubleMethod(env, dimension, jm_sz_getHeight); CHECK_EXCEPTION();
+    return NSMakeSize(w, h);
 }
 
 static NSScreen *primaryScreen(JNIEnv *env) {
     NSScreen *primaryScreen = [[NSScreen screens] objectAtIndex:0];
     if (primaryScreen != nil) return primaryScreen;
+    if (env != NULL) [JNFException raise:env as:kRuntimeException reason:"Failed to convert, no screen."];
     return nil;
 }
 

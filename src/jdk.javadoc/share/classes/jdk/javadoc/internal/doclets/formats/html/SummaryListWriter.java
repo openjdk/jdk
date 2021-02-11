@@ -32,6 +32,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
@@ -46,36 +47,15 @@ import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryElementKind;
 
 /**
- * Generate File to list all the summary elements with the
- * appropriate links.
+ * Base class for generating a summary page that lists elements with a common characteristic,
+ * such as deprecated elements, preview elements, and so on.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @see java.util.List
  */
 public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
-
-    private String getAnchorName(SummaryElementKind kind) {
-        return switch (kind) {
-            case MODULE -> "module";
-            case PACKAGE -> "package";
-            case INTERFACE -> "interface";
-            case CLASS -> "class";
-            case ENUM -> "enum.class";
-            case EXCEPTION -> "exception";
-            case ERROR -> "error";
-            case ANNOTATION_TYPE -> "annotation.interface";
-            case FIELD -> "field";
-            case METHOD -> "method";
-            case CONSTRUCTOR -> "constructor";
-            case ENUM_CONSTANT -> "enum.constant";
-            case ANNOTATION_TYPE_MEMBER -> "annotation.interface.member";
-            case RECORD_CLASS -> "record.class";
-        };
-    }
 
     private String getHeadingKey(SummaryElementKind kind) {
         return switch (kind) {
@@ -155,7 +135,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
         addExtraSection(summaryapi, content);
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (summaryapi.hasDocumentation(kind)) {
-                addSummaryAPI(summaryapi.getSet(kind), getAnchorName(kind),
+                addSummaryAPI(summaryapi.getSet(kind), HtmlIds.forSummaryKind(kind),
                             getHeadingKey(kind), getHeaderKey(kind), content);
             }
         }
@@ -168,13 +148,12 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
     /**
      * Add the index link.
      *
-     * @param builder the summary list builder
-     * @param kind the kind of list being documented
+     * @param id the id for the link
+     * @param headingKey
      * @param contentTree the content tree to which the index link will be added
      */
-    protected void addIndexLink(String anchorName, String headingKey,
-                                Content contentTree) {
-        Content li = HtmlTree.LI(links.createLink(anchorName,
+    protected void addIndexLink(HtmlId id, String headingKey, Content contentTree) {
+        Content li = HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey)));
         contentTree.add(li);
     }
@@ -182,10 +161,10 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
     /**
      * Get the contents list.
      *
-     * @param apisummary the summary list builder
+     * @param apiSummary the summary list builder
      * @return a content tree for the contents list
      */
-    public Content getContentsList(L apisummary) {
+    public Content getContentsList(L apiSummary) {
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
@@ -193,10 +172,10 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
         div.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                 headingContent));
         Content ul = new HtmlTree(TagName.UL);
-        addExtraIndexLink(apisummary, ul);
+        addExtraIndexLink(apiSummary, ul);
         for (SummaryElementKind kind : SummaryElementKind.values()) {
-            if (apisummary.hasDocumentation(kind)) {
-                addIndexLink(getAnchorName(kind), getHeadingKey(kind), ul);
+            if (apiSummary.hasDocumentation(kind)) {
+                addIndexLink(HtmlIds.forSummaryKind(kind), getHeadingKey(kind), ul);
             }
         }
         div.add(ul);
@@ -224,7 +203,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
      * @param headerKey table header key for the summary table
      * @param contentTree the content tree to which the summary table will be added
      */
-    protected void addSummaryAPI(SortedSet<Element> apiList, String id,
+    protected void addSummaryAPI(SortedSet<Element> apiList, HtmlId id,
                                  String headingKey, String headerKey,
                                  Content contentTree) {
         if (apiList.size() > 0) {

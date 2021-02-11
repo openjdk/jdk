@@ -192,6 +192,7 @@ class ThreadInVMfromUnknown {
 
 
 class ThreadInVMfromNative : public ThreadStateTransition {
+  ResetNoHandleMark __rnhm;
  public:
   ThreadInVMfromNative(JavaThread* thread) : ThreadStateTransition(thread) {
     trans_from_native(_thread_in_vm);

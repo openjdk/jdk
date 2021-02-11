@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,8 @@ void ObjectSynchronizer::initialize() {
   for (int i = 0; i < NINFLATIONLOCKS; i++) {
     gInflationLocks[i] = new os::PlatformMutex();
   }
+  // Start the ceiling with the estimate for one thread.
+  set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);
 }
 
 static MonitorList _in_use_list;
@@ -249,10 +251,9 @@ static MonitorList _in_use_list;
 // of the thread count derived ceiling because we have used more
 // ObjectMonitors than the estimated average.
 //
-// Start the ceiling with the estimate for one thread.
-// This is a 'jint' because the range of AvgMonitorsPerThreadEstimate
-// is 0..max_jint:
-static jint _in_use_list_ceiling = AvgMonitorsPerThreadEstimate;
+// Start the ceiling with the estimate for one thread in initialize()
+// which is called after cmd line options are processed.
+static size_t _in_use_list_ceiling = 0;
 bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
@@ -1159,22 +1160,19 @@ static bool monitors_used_above_threshold(MonitorList* list) {
 }
 
 size_t ObjectSynchronizer::in_use_list_ceiling() {
-  // _in_use_list_ceiling is a jint so this cast could lose precision,
-  // but in reality the ceiling should never get that high.
-  return (size_t)_in_use_list_ceiling;
+  return _in_use_list_ceiling;
 }
 
 void ObjectSynchronizer::dec_in_use_list_ceiling() {
-  Atomic::add(&_in_use_list_ceiling, (jint)-AvgMonitorsPerThreadEstimate);
-#ifdef ASSERT
-  size_t l_in_use_list_ceiling = in_use_list_ceiling();
-#endif
-  assert(l_in_use_list_ceiling > 0, "in_use_list_ceiling=" SIZE_FORMAT
-         ": must be > 0", l_in_use_list_ceiling);
+  Atomic::add(&_in_use_list_ceiling, -AvgMonitorsPerThreadEstimate);
 }
 
 void ObjectSynchronizer::inc_in_use_list_ceiling() {
-  Atomic::add(&_in_use_list_ceiling, (jint)AvgMonitorsPerThreadEstimate);
+  Atomic::add(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate);
+}
+
+void ObjectSynchronizer::set_in_use_list_ceiling(size_t new_value) {
+  _in_use_list_ceiling = new_value;
 }
 
 bool ObjectSynchronizer::is_async_deflation_needed() {

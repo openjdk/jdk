@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@
 #include "runtime/vmThread.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class ShenandoahPretouchHeapTask : public AbstractGangTask {
@@ -2074,20 +2075,18 @@ public:
 
 void ShenandoahHeap::op_weak_refs() {
   // Concurrent weak refs processing
-  {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
-    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
-    ref_processor()->process_references(workers(), true /* concurrent */);
-  }
+  ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
+  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
+  ref_processor()->process_references(ShenandoahPhaseTimings::conc_weak_refs_work, workers(), true /* concurrent */);
 }
 
 void ShenandoahHeap::stw_weak_refs(bool full_gc) {
   // Weak refs processing
-  ShenandoahTimingsTracker t(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
-                                     : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
-  ShenandoahGCWorkerPhase worker_phase(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
-                                               : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
-  ref_processor()->process_references(workers(), false /* concurrent */);
+  ShenandoahPhaseTimings::Phase phase = full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs
+                                                : ShenandoahPhaseTimings::degen_gc_weakrefs;
+  ShenandoahTimingsTracker t(phase);
+  ShenandoahGCWorkerPhase worker_phase(phase);
+  ref_processor()->process_references(phase, workers(), false /* concurrent */);
 }
 
 void ShenandoahHeap::op_weak_roots() {

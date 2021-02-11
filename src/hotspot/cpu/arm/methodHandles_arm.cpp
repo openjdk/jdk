@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,14 +511,15 @@ void trace_method_handle_stub(const char* adaptername,
     {
       // dump last frame (from JavaThread::print_frame_layout)
 
-      // Note: code is robust but the dumped informationm may not be
+      // Note: code is robust but the dumped information may not be
       // 100% correct, particularly with respect to the dumped
       // "unextended_sp". Getting it right for all trace_method_handle
       // call paths is not worth the complexity/risk. The correct slot
       // will be identified by *Rsender_sp anyway in the dump.
       JavaThread* p = JavaThread::active();
 
-      PRESERVE_EXCEPTION_MARK;
+      // may not be needed by safer and unexpensive here
+      PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
       intptr_t* dump_fp = (intptr_t *) saved_bp;
