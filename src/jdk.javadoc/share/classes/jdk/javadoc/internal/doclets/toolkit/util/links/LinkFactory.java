@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor9;
+import jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -139,6 +140,7 @@ public abstract class LinkFactory {
                         Content label = newContent();
                         label.add(utils.getTypeName(type, false));
                         linkInfo.label = label;
+                        linkInfo.skipPreview = true;
                         link.add(getClassLink(linkInfo));
                     } else {
                         // No need to link method type parameters.
@@ -204,6 +206,7 @@ public abstract class LinkFactory {
         linkInfo.typeElement = null;
         linkInfo.label = null;
         linkInfo.type = bound;
+        linkInfo.skipPreview = false;
     }
 
     /**

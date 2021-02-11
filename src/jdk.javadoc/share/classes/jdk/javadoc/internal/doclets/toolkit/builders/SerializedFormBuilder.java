@@ -550,7 +550,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
             return false;
         }
         if (utils.isSerializable(te)) {
-            if (!utils.getSerialTrees(te).isEmpty()) {
+            if (utils.hasDocCommentTree(te) && !utils.getSerialTrees(te).isEmpty()) {
                 return serialDocInclude(utils, te);
             } else if (utils.isPublic(te) || utils.isProtected(te)) {
                 return true;

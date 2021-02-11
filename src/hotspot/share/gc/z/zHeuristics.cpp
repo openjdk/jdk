@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
@@ -45,7 +46,7 @@ void ZHeuristics::set_medium_page_size() {
   if (size > ZPageSizeSmall) {
     // Enable medium pages
     ZPageSizeMedium             = size;
-    ZPageSizeMediumShift        = log2_intptr(ZPageSizeMedium);
+    ZPageSizeMediumShift        = log2i_exact(ZPageSizeMedium);
     ZObjectSizeLimitMedium      = ZPageSizeMedium / 8;
     ZObjectAlignmentMediumShift = (int)ZPageSizeMediumShift - 13;
     ZObjectAlignmentMedium      = 1 << ZObjectAlignmentMediumShift;

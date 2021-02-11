@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,7 +631,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               return cmp2_t;
             case BoolTest::lt:
               lo = TypeInt::INT->_lo;
-              if (hi - 1 < hi) {
+              if (hi != min_jint) {
                 hi = hi - 1;
               }
               break;
@@ -639,7 +639,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               lo = TypeInt::INT->_lo;
               break;
             case BoolTest::gt:
-              if (lo + 1 > lo) {
+              if (lo != max_jint) {
                 lo = lo + 1;
               }
               hi = TypeInt::INT->_hi;
@@ -1477,14 +1477,16 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
     // Loop ends when projection has no more uses.
     for (DUIterator_Last jmin, j = ifp->last_outs(jmin); j >= jmin; --j) {
       Node* s = ifp->last_out(j);   // Get child of IfTrue/IfFalse
-      if( !s->depends_only_on_test() ) {
+      if (s->depends_only_on_test() && igvn->no_dependent_zero_check(s)) {
+        // For control producers.
+        // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
+        igvn->replace_input_of(s, 0, data_target); // Move child to data-target
+      } else {
         // Find the control input matching this def-use edge.
         // For Regions it may not be in slot 0.
         uint l;
-        for( l = 0; s->in(l) != ifp; l++ ) { }
+        for (l = 0; s->in(l) != ifp; l++) { }
         igvn->replace_input_of(s, l, ctrl_target);
-      } else {                      // Else, for control producers,
-        igvn->replace_input_of(s, 0, data_target); // Move child to data-target
       }
     } // End for each child of a projection
 

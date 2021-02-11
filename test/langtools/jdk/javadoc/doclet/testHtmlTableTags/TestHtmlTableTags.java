@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -672,12 +672,12 @@ public class TestHtmlTableTags extends JavadocTester {
         // Deprecated
         checkOutput("deprecated-list.html", true,
                 """
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg2/C2.html#dep_field">pkg2.C2.dep_field</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg2/C2.html#dep_field">pkg2.C2.dep_field</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">don't use this field anymore.</div>
                     </div>""",
                 """
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg1/C1.html#deprecatedMethod()">pkg1.C1.deprecatedMethod()</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg1/C1.html#deprecatedMethod()">pkg1.C1.deprecatedMethod()</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">don't use this anymore.</div>
                     </div>""");
@@ -803,10 +803,10 @@ public class TestHtmlTableTags extends JavadocTester {
         // Deprecated
         checkOutput("deprecated-list.html", true,
                 """
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg2/C2.html#dep_field">pkg2.C2.dep_field</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg2/C2.html#dep_field">pkg2.C2.dep_field</a></div>
                     <div class="col-last even-row-color"></div>""",
                 """
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg1/C1.html#deprecatedMethod()">pkg1.C1.deprecatedMethod()</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg1/C1.html#deprecatedMethod()">pkg1.C1.deprecatedMethod()</a></div>
                     <div class="col-last even-row-color"></div>""");
 
         // Constant values

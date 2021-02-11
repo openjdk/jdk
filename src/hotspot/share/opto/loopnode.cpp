@@ -4968,18 +4968,18 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
   if (n->is_Load() && LCA != early) {
     int load_alias_idx = C->get_alias_index(n->adr_type());
     if (C->alias_type(load_alias_idx)->is_rewritable()) {
+      Unique_Node_List worklist;
 
-      Node_List worklist;
-
-      Node *mem = n->in(MemNode::Memory);
+      Node* mem = n->in(MemNode::Memory);
       for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
         Node* s = mem->fast_out(i);
         worklist.push(s);
       }
-      while(worklist.size() != 0 && LCA != early) {
-        Node* s = worklist.pop();
+      for (uint i = 0; i < worklist.size() && LCA != early; i++) {
+        Node* s = worklist.at(i);
         if (s->is_Load() || s->Opcode() == Op_SafePoint ||
-            (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0)) {
+            (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0) ||
+            s->is_Phi()) {
           continue;
         } else if (s->is_MergeMem()) {
           for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
@@ -4987,7 +4987,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
             worklist.push(s1);
           }
         } else {
-          Node *sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
+          Node* sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
           assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
           if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
             const TypePtr* adr_type = s->adr_type();
@@ -5006,6 +5006,22 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
                 if (_igvn.type(s1) == Type::MEMORY) {
                   worklist.push(s1);
                 }
+              }
+            }
+          }
+        }
+      }
+      // For Phis only consider Region's inputs that were reached by following the memory edges
+      if (LCA != early) {
+        for (uint i = 0; i < worklist.size(); i++) {
+          Node* s = worklist.at(i);
+          if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
+            Node* r = s->in(0);
+            for (uint j = 1; j < s->req(); j++) {
+              Node* in = s->in(j);
+              Node* r_in = r->in(j);
+              if (worklist.member(in) && is_dominator(early, r_in)) {
+                LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
               }
             }
           }

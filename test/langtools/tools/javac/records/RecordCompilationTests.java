@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -342,6 +342,16 @@ public class RecordCompilationTests extends CompilationTestCase {
             assertOK("record R(int x, int y) { # }", goodCtor);
 
         assertOK("import java.util.*; record R(String x, String y) {  public R { Objects.requireNonNull(x); Objects.requireNonNull(y); } }");
+
+        // The lambda expressions in the constructor should be compiled successfully.
+        assertOK("""
+                import static java.util.Objects.*;
+                record R(String v) {
+                    R {
+                        requireNonNull(v, () -> "v must be provided");
+                        requireNonNullElseGet(v, () -> "w");
+                    }
+                }""");
 
         // Not OK to redeclare canonical without DA
         assertFail("compiler.err.var.might.not.have.been.initialized", "record R(int x, int y) { # }",

@@ -3,5 +3,5 @@
     static void [[TEST]]$vectorteststype$Shift(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb,
                                           IntFunction<boolean[]> fm) {
 [[KERNEL]]
-        assertShiftArraysEquals(a, b, r, mask, $vectorteststype$::[[TEST]]_unary);
+        assertShiftArraysEquals(r, a, b, mask, $vectorteststype$::[[TEST]]_unary);
     }

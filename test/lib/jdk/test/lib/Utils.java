@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
@@ -462,24 +463,17 @@ public final class Utils {
         return new String(Files.readAllBytes(filePath));
     }
 
-    private static final char[] hexArray = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
     /**
      * Returns hex view of byte array
      *
      * @param bytes byte array to process
      * @return space separated hexadecimal string representation of bytes
+     * @deprecated replaced by {@link java.util.HexFormat#ofDelimiter(String)
+     * HexFormat.ofDelimiter(" ").format (byte[], char)}.
      */
+     @Deprecated
      public static String toHexString(byte[] bytes) {
-         char[] hexView = new char[bytes.length * 3 - 1];
-         for (int i = 0; i < bytes.length - 1; i++) {
-             hexView[i * 3] = hexArray[(bytes[i] >> 4) & 0x0F];
-             hexView[i * 3 + 1] = hexArray[bytes[i] & 0x0F];
-             hexView[i * 3 + 2] = ' ';
-         }
-         hexView[hexView.length - 2] = hexArray[(bytes[bytes.length - 1] >> 4) & 0x0F];
-         hexView[hexView.length - 1] = hexArray[bytes[bytes.length - 1] & 0x0F];
-         return new String(hexView);
+         return HexFormat.ofDelimiter(" ").withUpperCase().formatHex(bytes);
      }
 
      /**
@@ -489,13 +483,7 @@ public final class Utils {
       * @return byte array
       */
      public static byte[] toByteArray(String hex) {
-         int length = hex.length();
-         byte[] bytes = new byte[length / 2];
-         for (int i = 0; i < length; i += 2) {
-             bytes[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                     + Character.digit(hex.charAt(i + 1), 16));
-         }
-         return bytes;
+         return HexFormat.of().parseHex(hex);
      }
 
     /**

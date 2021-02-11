@@ -762,8 +762,8 @@ class UnixPath implements Path {
 
     @Override
     public boolean equals(Object ob) {
-        if ((ob != null) && (ob instanceof UnixPath)) {
-            return compareTo((Path)ob) == 0;
+        if (ob instanceof UnixPath path) {
+            return compareTo(path) == 0;
         }
         return false;
     }

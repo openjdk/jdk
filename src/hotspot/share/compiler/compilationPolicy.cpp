@@ -251,7 +251,7 @@ void SimpleCompPolicy::initialize() {
     // Example: if CICompilerCountPerCPU is true, then we get
     // max(log2(8)-1,1) = 2 compiler threads on an 8-way machine.
     // May help big-app startup time.
-    _compiler_count = MAX2(log2_int(os::active_processor_count())-1,1);
+    _compiler_count = MAX2(log2i_graceful(os::active_processor_count()) - 1, 1);
     // Make sure there is enough space in the code cache to hold all the compiler buffers
     size_t buffer_size = 1;
 #ifdef COMPILER1

@@ -47,6 +47,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -464,13 +465,59 @@ public class TestByteBuffer {
         MemorySegment.mapFile(f.toPath(), -1, 1, FileChannel.MapMode.READ_WRITE);
     }
 
+    @Test
+    public void testMapOffset() throws IOException {
+        File f = new File("testMapOffset.out");
+        f.createNewFile();
+        f.deleteOnExit();
+
+        int SIZE = Byte.MAX_VALUE;
+
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0, SIZE, FileChannel.MapMode.READ_WRITE)) {
+            for (byte offset = 0; offset < SIZE; offset++) {
+                MemoryAccess.setByteAtOffset(segment, offset, offset);
+            }
+            MappedMemorySegments.force(segment);
+        }
+
+        for (int offset = 0 ; offset < SIZE ; offset++) {
+            try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), offset, SIZE - offset, FileChannel.MapMode.READ_ONLY)) {
+                assertEquals(MemoryAccess.getByte(segment), offset);
+            }
+        }
+    }
+
+    @Test
     public void testMapZeroSize() throws IOException {
         File f = new File("testPos1.out");
         f.createNewFile();
         f.deleteOnExit();
+        //RW
         try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, 0L, FileChannel.MapMode.READ_WRITE)) {
             assertEquals(segment.byteSize(), 0);
+            assertEquals(segment.isMapped(), true);
+            assertTrue((segment.accessModes() & (READ | WRITE)) == (READ | WRITE));
+            MappedMemorySegments.force(segment);
+            MappedMemorySegments.load(segment);
+            MappedMemorySegments.isLoaded(segment);
+            MappedMemorySegments.unload(segment);
         }
+        //RO
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, 0L, FileChannel.MapMode.READ_ONLY)) {
+            assertEquals(segment.byteSize(), 0);
+            assertEquals(segment.isMapped(), true);
+            assertTrue((segment.accessModes() & (READ | WRITE)) == READ);
+            MappedMemorySegments.force(segment);
+            MappedMemorySegments.load(segment);
+            MappedMemorySegments.isLoaded(segment);
+            MappedMemorySegments.unload(segment);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testMapCustomPath() throws IOException {
+        Path path = Path.of(URI.create("jrt:/"));
+        MemorySegment.mapFile(path, 0L, 0L, FileChannel.MapMode.READ_WRITE);
     }
 
     @Test(dataProvider="resizeOps")

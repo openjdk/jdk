@@ -119,9 +119,8 @@ public class InetSocketAddress
 
         @Override
         public final boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof InetSocketAddressHolder))
+            if (!(obj instanceof InetSocketAddressHolder that))
                 return false;
-            InetSocketAddressHolder that = (InetSocketAddressHolder)obj;
             boolean sameIP;
             if (addr != null)
                 sameIP = addr.equals(that.addr);
@@ -409,9 +408,10 @@ public class InetSocketAddress
      */
     @Override
     public final boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof InetSocketAddress))
-            return false;
-        return holder.equals(((InetSocketAddress) obj).holder);
+        if (obj instanceof InetSocketAddress addr) {
+            return holder.equals(addr.holder);
+        }
+        return false;
     }
 
     /**

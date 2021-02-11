@@ -111,6 +111,11 @@ public abstract class LinkInfo {
     public boolean linkToSelf = true;
 
     /**
+     * True iff the preview flags should be skipped for this link.
+     */
+    public boolean skipPreview;
+
+    /**
      * Return an empty instance of a content object.
      *
      * @return an empty instance of a content object.

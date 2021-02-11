@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -674,8 +674,7 @@ enum SSLExtension implements SSLStringizer {
         String extData;
         if (stringizer == null) {
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
-            String encoded = hexEncoder.encode(byteBuffer.duplicate());
-            extData = encoded;
+            extData = hexEncoder.encode(byteBuffer.duplicate());
         } else {
             extData = stringizer.toString(handshakeContext, byteBuffer);
         }

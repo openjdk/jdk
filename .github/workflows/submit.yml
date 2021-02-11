@@ -55,7 +55,7 @@ jobs:
 
       - name: Determine versions and locations to be used for dependencies
         id: check_deps
-        run: "echo ::set-output name=dependencies::`cat make/autoconf/version-numbers make/conf/test-dependencies | sed -e '1i {' -e 's/#.*//g' -e 's/\"//g' -e 's/\\(.*\\)=\\(.*\\)/\"\\1\": \"\\2\",/g' -e '$s/,\\s\\{0,\\}$/\\}/'`"
+        run: "echo ::set-output name=dependencies::`cat make/conf/version-numbers.conf make/conf/test-dependencies | sed -e '1i {' -e 's/#.*//g' -e 's/\"//g' -e 's/\\(.*\\)=\\(.*\\)/\"\\1\": \"\\2\",/g' -e '$s/,\\s\\{0,\\}$/\\}/'`"
         working-directory: jdk
         if: steps.check_submit.outputs.should_run != 'false'
 

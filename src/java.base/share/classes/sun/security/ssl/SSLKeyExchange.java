@@ -265,78 +265,78 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
     }
 
     private static class SSLKeyExRSA {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA), T12KeyAgreement.RSA);
     }
 
     private static class SSLKeyExRSAExport {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA), T12KeyAgreement.RSA_EXPORT);
     }
 
     private static class SSLKeyExDHEDSS {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.DSA), T12KeyAgreement.DHE);
     }
 
     private static class SSLKeyExDHEDSSExport {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.DSA), T12KeyAgreement.DHE_EXPORT);
     }
 
     private static class SSLKeyExDHERSA {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA), T12KeyAgreement.DHE);
     }
 
     private static class SSLKeyExDHERSAOrPSS {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA_OR_PSS), T12KeyAgreement.DHE);
     }
 
     private static class SSLKeyExDHERSAExport {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA), T12KeyAgreement.DHE_EXPORT);
     }
 
     private static class SSLKeyExDHANON {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 null, T12KeyAgreement.DHE);
     }
 
     private static class SSLKeyExDHANONExport {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 null, T12KeyAgreement.DHE_EXPORT);
     }
 
     private static class SSLKeyExECDHECDSA {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.EC), T12KeyAgreement.ECDH);
     }
 
     private static class SSLKeyExECDHRSA {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.EC), T12KeyAgreement.ECDH);
     }
 
     private static class SSLKeyExECDHEECDSA {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.EC, X509Authentication.EDDSA),
                 T12KeyAgreement.ECDHE);
     }
 
     private static class SSLKeyExECDHERSA {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA), T12KeyAgreement.ECDHE);
     }
 
     private static class SSLKeyExECDHERSAOrPSS {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA_OR_PSS), T12KeyAgreement.ECDHE);
     }
 
     private static class SSLKeyExECDHANON {
-        private static SSLKeyExchange KE = new SSLKeyExchange(
+        private static final SSLKeyExchange KE = new SSLKeyExchange(
                 null, T12KeyAgreement.ECDHE);
     }
 

@@ -149,10 +149,10 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   }
 
   // Compiler type queries.
-  const bool is_c1()                             { return _type == compiler_c1; }
-  const bool is_c2()                             { return _type == compiler_c2; }
-  const bool is_jvmci()                          { return _type == compiler_jvmci; }
-  const CompilerType type()                      { return _type; }
+  bool is_c1() const                     { return _type == compiler_c1; }
+  bool is_c2() const                     { return _type == compiler_c2; }
+  bool is_jvmci() const                  { return _type == compiler_jvmci; }
+  CompilerType type() const              { return _type; }
 
   // Customization
   virtual void initialize () = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2066,13 +2066,11 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked. Only true for non-native. For native, we only bang the last page.
-  if (UseStackBanging) {
-    const int page_size      = os::vm_page_size();
-    const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size()/page_size);
-    const int start_page_num = native_call ? n_shadow_pages : 1;
-    for (int pages = start_page_num; pages <= n_shadow_pages; pages++) {
-      __ bang_stack_with_offset(pages*page_size);
-    }
+  const int page_size      = os::vm_page_size();
+  const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size()/page_size);
+  const int start_page_num = native_call ? n_shadow_pages : 1;
+  for (int pages = start_page_num; pages <= n_shadow_pages; pages++) {
+    __ bang_stack_with_offset(pages*page_size);
   }
 }
 

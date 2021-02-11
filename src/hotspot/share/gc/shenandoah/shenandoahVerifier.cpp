@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"

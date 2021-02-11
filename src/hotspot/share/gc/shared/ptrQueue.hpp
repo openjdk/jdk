@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,14 +78,6 @@ protected:
   void** _buf;
 
   PtrQueueSet* qset() const { return _qset; }
-
-  // Process queue entries and release resources.
-  void flush_impl();
-
-  void allocate_buffer();
-
-  // Enqueue the current buffer in the qset and allocate a new buffer.
-  void enqueue_completed_buffer();
 
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
@@ -267,6 +259,10 @@ protected:
   // Create an empty ptr queue set.
   PtrQueueSet(BufferNode::Allocator* allocator);
   ~PtrQueueSet();
+
+  // If queue has any buffered enqueued data, transfer it to this qset.
+  // Otherwise, deallocate queue's buffer.
+  void flush_queue(PtrQueue& queue);
 
   // Add value to queue's buffer, returning true.  If buffer is full
   // or if queue doesn't have a buffer, does nothing and returns false.

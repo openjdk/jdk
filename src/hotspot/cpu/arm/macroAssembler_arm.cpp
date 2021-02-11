@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -977,28 +977,24 @@ void MacroAssembler::zero_memory(Register start, Register end, Register tmp) {
 
 void MacroAssembler::arm_stack_overflow_check(int frame_size_in_bytes, Register tmp) {
   // Version of AbstractAssembler::generate_stack_overflow_check optimized for ARM
-  if (UseStackBanging) {
-    const int page_size = os::vm_page_size();
+  const int page_size = os::vm_page_size();
 
-    sub_slow(tmp, SP, StackOverflow::stack_shadow_zone_size());
-    strb(R0, Address(tmp));
-    for (; frame_size_in_bytes >= page_size; frame_size_in_bytes -= 0xff0) {
-      strb(R0, Address(tmp, -0xff0, pre_indexed));
-    }
+  sub_slow(tmp, SP, StackOverflow::stack_shadow_zone_size());
+  strb(R0, Address(tmp));
+  for (; frame_size_in_bytes >= page_size; frame_size_in_bytes -= 0xff0) {
+    strb(R0, Address(tmp, -0xff0, pre_indexed));
   }
 }
 
 void MacroAssembler::arm_stack_overflow_check(Register Rsize, Register tmp) {
-  if (UseStackBanging) {
-    Label loop;
+  Label loop;
 
-    mov(tmp, SP);
-    add_slow(Rsize, Rsize, StackOverflow::stack_shadow_zone_size() - os::vm_page_size());
-    bind(loop);
-    subs(Rsize, Rsize, 0xff0);
-    strb(R0, Address(tmp, -0xff0, pre_indexed));
-    b(loop, hi);
-  }
+  mov(tmp, SP);
+  add_slow(Rsize, Rsize, StackOverflow::stack_shadow_zone_size() - os::vm_page_size());
+  bind(loop);
+  subs(Rsize, Rsize, 0xff0);
+  strb(R0, Address(tmp, -0xff0, pre_indexed));
+  b(loop, hi);
 }
 
 void MacroAssembler::stop(const char* msg) {

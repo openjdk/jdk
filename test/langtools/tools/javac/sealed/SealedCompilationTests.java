@@ -1247,6 +1247,17 @@ public class SealedCompilationTests extends CompilationTestCase {
                      a = (A)c;
                   }
                 }
+                """,
+                """
+                sealed interface A<T> {
+                    final class B implements A<Object> { }
+                }
+
+                class Test {
+                    void f(A.B a, A<Object> b) {
+                        a = (A.B)b;
+                    }
+                }
                 """
         )) {
             assertOK(s);

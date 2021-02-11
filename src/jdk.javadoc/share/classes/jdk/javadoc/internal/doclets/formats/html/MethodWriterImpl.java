@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -134,6 +136,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public void addDeprecated(ExecutableElement method, Content methodDocTree) {
         addDeprecatedInfo(method, methodDocTree);
+    }
+
+    @Override
+    public void addPreview(ExecutableElement method, Content methodDocTree) {
+        addPreviewInfo(method, methodDocTree);
     }
 
     @Override

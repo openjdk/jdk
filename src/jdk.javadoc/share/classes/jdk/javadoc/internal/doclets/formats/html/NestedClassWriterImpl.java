@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
-        return writer.getQualifiedClassLink(LinkInfoImpl.Kind.MEMBER, member);
+    protected Content getSummaryLink(Element member) {
+        return writer.getQualifiedClassLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member);
     }
 }

@@ -58,7 +58,7 @@ static jmethodID sjm_printerJob = NULL;
 
 #define GET_CPRINTERDIALOG_METHOD_RETURN(ret) \
    GET_CPRINTERDIALOG_CLASS_RETURN(ret); \
-   GET_METHOD_RETURN(sjm_printerJob, sjc_CPrinterDialog, "fPrinterJob", "Lsun/lwawt/macosx/CPrinterJob;", ret);
+   GET_FIELD_RETURN(sjm_printerJob, sjc_CPrinterDialog, "fPrinterJob", "Lsun/lwawt/macosx/CPrinterJob;", ret);
 
 static NSPrintInfo* createDefaultNSPrintInfo();
 

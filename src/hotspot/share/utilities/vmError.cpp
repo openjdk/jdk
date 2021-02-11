@@ -341,7 +341,7 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                 buf, jdk_debug_level, runtime_version);
 
    // This is the long version with some default settings added
-   st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s%s, %s, %s)",
+   st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s%s%s, %s, %s)",
                  VM_Version::vm_name(),
                 (*vendor_version != '\0') ? " " : "", vendor_version,
                  jdk_debug_level,
@@ -355,6 +355,7 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
+                 UseCompressedClassPointers ? ", compressed class ptrs" : "",
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
@@ -920,11 +921,15 @@ void VMError::report(outputStream* st, bool _verbose) {
 
      if (_verbose && UseCompressedOops) {
        CompressedOops::print_mode(st);
-       if (UseCompressedClassPointers) {
-         CDS_ONLY(MetaspaceShared::print_on(st);)
-         Metaspace::print_compressed_class_space(st);
-         CompressedKlassPointers::print_mode(st);
-       }
+       st->cr();
+     }
+
+  STEP("printing compressed klass pointers mode")
+
+     if (_verbose && UseCompressedClassPointers) {
+       CDS_ONLY(MetaspaceShared::print_on(st);)
+       Metaspace::print_compressed_class_space(st);
+       CompressedKlassPointers::print_mode(st);
        st->cr();
      }
 #endif
@@ -1131,11 +1136,14 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("printing compressed oops mode")
   if (UseCompressedOops) {
     CompressedOops::print_mode(st);
-    if (UseCompressedClassPointers) {
-      CDS_ONLY(MetaspaceShared::print_on(st);)
-      Metaspace::print_compressed_class_space(st);
-      CompressedKlassPointers::print_mode(st);
-    }
+    st->cr();
+  }
+
+  // STEP("printing compressed class ptrs mode")
+  if (UseCompressedClassPointers) {
+    CDS_ONLY(MetaspaceShared::print_on(st);)
+    Metaspace::print_compressed_class_space(st);
+    CompressedKlassPointers::print_mode(st);
     st->cr();
   }
 #endif

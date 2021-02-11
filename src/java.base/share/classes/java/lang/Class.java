@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4387,13 +4387,6 @@ public final class Class<T> implements java.io.Serializable,
     public native boolean isHidden();
 
     /**
-     * {@preview Associated with sealed classes, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>sealed classes</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns an array containing {@code Class} objects representing the
      * direct subinterfaces or subclasses permitted to extend or
      * implement this class or interface if it is sealed.  The order of such elements
@@ -4429,7 +4422,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 9.1 Interface Declarations
      * @since 15
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES, essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
     @CallerSensitive
     public Class<?>[] getPermittedSubclasses() {
         Class<?>[] subClasses;
@@ -4469,13 +4462,6 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * {@preview Associated with sealed classes, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>sealed classes</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns {@code true} if and only if this {@code Class} object represents
      * a sealed class or interface. If this {@code Class} object represents a
      * primitive type, {@code void}, or an array type, this method returns
@@ -4489,7 +4475,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 9.1 Interface Declarations
      * @since 15
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES, essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
     @SuppressWarnings("preview")
     public boolean isSealed() {
         if (isArray() || isPrimitive()) {

@@ -43,6 +43,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.Objects;
 
 /**
  * A {@link Future} that may be explicitly completed (setting its
@@ -438,7 +439,10 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     /** Fallback if ForkJoinPool.commonPool() cannot support parallelism */
     static final class ThreadPerTaskExecutor implements Executor {
-        public void execute(Runnable r) { new Thread(r).start(); }
+        public void execute(Runnable r) {
+            Objects.requireNonNull(r);
+            new Thread(r).start();
+        }
     }
 
     /**

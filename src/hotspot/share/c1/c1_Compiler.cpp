@@ -230,8 +230,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
     break;
   case vmIntrinsics::_getObjectSize:
     break;
-  case vmIntrinsics::_blackhole:
-    break;
   default:
     return false; // Intrinsics not on the previous list are not available.
   }

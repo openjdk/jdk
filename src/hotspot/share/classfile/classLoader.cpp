@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,9 @@ PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = NULL;
 GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = NULL;
 GrowableArray<ModuleClassPathList*>* ClassLoader::_exploded_entries = NULL;
 ClassPathEntry* ClassLoader::_jrt_entry = NULL;
-ClassPathEntry* ClassLoader::_first_append_entry = NULL;
-ClassPathEntry* ClassLoader::_last_append_entry  = NULL;
+
+ClassPathEntry* volatile ClassLoader::_first_append_entry_list = NULL;
+ClassPathEntry* volatile ClassLoader::_last_append_entry  = NULL;
 #if INCLUDE_CDS
 ClassPathEntry* ClassLoader::_app_classpath_entries = NULL;
 ClassPathEntry* ClassLoader::_last_app_classpath_entry = NULL;
@@ -815,7 +816,7 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bo
 
 // returns true if entry already on class path
 bool ClassLoader::contains_append_entry(const char* name) {
-  ClassPathEntry* e = _first_append_entry;
+  ClassPathEntry* e = first_append_entry();
   while (e != NULL) {
     // assume zip entries have been canonicalized
     if (strcmp(name, e->name()) == 0) {
@@ -826,11 +827,14 @@ bool ClassLoader::contains_append_entry(const char* name) {
   return false;
 }
 
+// The boot append entries are added with a lock, and read lock free.
 void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
   if (new_entry != NULL) {
+    MutexLocker ml(Bootclasspath_lock, Mutex::_no_safepoint_check_flag);
     if (_last_append_entry == NULL) {
-      assert(_first_append_entry == NULL, "boot loader's append class path entry list not empty");
-      _first_append_entry = _last_append_entry = new_entry;
+      _last_append_entry = new_entry;
+      assert(first_append_entry() == NULL, "boot loader's append class path entry list not empty");
+      Atomic::release_store(&_first_append_entry_list, new_entry);
     } else {
       _last_append_entry->set_next(new_entry);
       _last_append_entry = new_entry;
@@ -944,7 +948,7 @@ void ClassLoader::print_bootclasspath() {
   }
 
   // appended entries
-  e = _first_append_entry;
+  e = first_append_entry();
   while (e != NULL) {
     tty->print("%s ;", e->name());
     e = e->next();
@@ -1252,7 +1256,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     assert(classpath_index == 0, "The classpath_index has been incremented incorrectly");
     classpath_index = 1;
 
-    e = _first_append_entry;
+    e = first_append_entry();
     while (e != NULL) {
       stream = e->open_stream(file_name, CHECK_NULL);
       if (NULL != stream) {
@@ -1427,7 +1431,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
 // Initialize the class loader's access to methods in libzip.  Parse and
 // process the boot classpath into a list ClassPathEntry objects.  Once
 // this list has been created, it must not change order (see class PackageInfo)
-// it can be appended to and is by jvmti and the kernel vm.
+// it can be appended to and is by jvmti.
 
 void ClassLoader::initialize() {
   EXCEPTION_MARK;

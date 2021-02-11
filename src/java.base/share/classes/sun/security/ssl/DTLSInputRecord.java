@@ -1118,7 +1118,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             bufferedFragments.remove(rFrag);    // popup the fragment
 
             ByteBuffer fragment = ByteBuffer.wrap(rFrag.fragment);
-            ByteBuffer plaintextFragment = null;
+            ByteBuffer plaintextFragment;
             try {
                 Plaintext plaintext = readCipher.decrypt(
                         rFrag.contentType, fragment, rFrag.recordEnS);

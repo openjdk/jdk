@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,6 @@ public:
 
   bool is_active() const { return _active; }
   void set_active(bool value) { _active = value; }
-
-  // Process queue entries and free resources.
-  void flush();
 
   inline SATBMarkQueueSet* satb_qset() const;
 
@@ -149,6 +146,8 @@ public:
   // consists of applying the closure to the active range of the
   // buffer; the leading entries may be excluded due to filtering.
   bool apply_closure_to_completed_buffer(SATBBufferClosure* cl);
+
+  void flush_queue(SATBMarkQueue& queue);
 
   // When active, add obj to queue by calling enqueue_known_active.
   void enqueue(SATBMarkQueue& queue, oop obj) {

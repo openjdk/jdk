@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ else ifeq ($(call isTargetOs, macosx), true)
       -mstack-alignment=16 -fPIC
   LIBSA_EXTRA_SRC := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
 else ifeq ($(call isTargetOs, windows), true)
-  SA_CFLAGS := -D_WINDOWS -D_DEBUG -D_CONSOLE -D_MBCS -EHsc
+  SA_CFLAGS := -D_WINDOWS -D_DEBUG -D_CONSOLE -EHsc
   ifeq ($(call isTargetCpu, x86_64), true)
     SA_CXXFLAGS := -DWIN64
   else
@@ -65,12 +65,13 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     CFLAGS := $(CFLAGS_JDKLIB) $(SA_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_CFLAGS) $(SA_CXXFLAGS), \
     EXTRA_SRC := $(LIBSA_EXTRA_SRC), \
-    LDFLAGS := $(LDFLAGS_JDKLIB), \
+    LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBCXX), \
+    LIBS_unix := -ljava, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := -framework Foundation -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport -framework Security -framework CoreFoundation, \
-    LIBS_windows := dbgeng.lib, \
+    LIBS_windows := dbgeng.lib $(WIN_JAVA_LIB), \
 ))
 
 TARGETS += $(BUILD_LIBSA)

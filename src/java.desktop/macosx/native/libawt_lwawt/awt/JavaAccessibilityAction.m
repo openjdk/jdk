@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,8 @@
 {
     JNIEnv* env = [ThreadUtilities getJNIEnv];
     DECLARE_CLASS_RETURN(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility", nil);
-    DECLARE_METHOD_RETURN(jm_getAccessibleActionDescription, sjc_CAccessibility, "getAccessibleActionDescription",
+    DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleActionDescription, sjc_CAccessibility,
+                          "getAccessibleActionDescription",
                           "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)Ljava/lang/String;", nil);
 
     jobject fCompLocal = (*env)->NewLocalRef(env, fComponent);
@@ -86,7 +87,7 @@
 {
     JNIEnv* env = [ThreadUtilities getJNIEnv];
     DECLARE_CLASS(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility");
-    DECLARE_METHOD(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
+    DECLARE_STATIC_METHOD(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
                     "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V");
 
     (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,

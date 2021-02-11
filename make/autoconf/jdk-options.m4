@@ -640,7 +640,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     SOURCE_DATE=$($DATE +"%s")
     AC_MSG_RESULT([$SOURCE_DATE, from 'current'])
   elif test "x$with_source_date" = xversion; then
-    # Use the date from version-numbers
+    # Use the date from version-numbers.conf
     UTIL_GET_EPOCH_TIMESTAMP(SOURCE_DATE, $DEFAULT_VERSION_DATE)
     if test "x$SOURCE_DATE" = x; then
       AC_MSG_RESULT([unavailable])

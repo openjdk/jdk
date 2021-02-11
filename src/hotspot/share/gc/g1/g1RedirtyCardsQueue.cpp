@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,10 @@ void G1RedirtyCardsLocalQueueSet::flush() {
   _buffers = G1BufferNodeList();
 }
 
+void G1RedirtyCardsLocalQueueSet::flush_queue(G1RedirtyCardsQueue& queue) {
+  PtrQueueSet::flush_queue(queue);
+}
+
 // G1RedirtyCardsQueue
 
 G1RedirtyCardsQueue::G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset) :
@@ -76,13 +80,9 @@ G1RedirtyCardsQueue::G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset) :
 
 #ifdef ASSERT
 G1RedirtyCardsQueue::~G1RedirtyCardsQueue() {
-  assert(is_empty(), "unflushed queue");
+  assert(buffer() == nullptr, "unflushed queue");
 }
 #endif // ASSERT
-
-void G1RedirtyCardsQueue::flush() {
-  flush_impl();
-}
 
 // G1RedirtyCardsQueueSet
 

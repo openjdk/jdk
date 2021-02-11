@@ -1010,7 +1010,6 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
      * ant -Djsr166.expensiveTests=true -Djsr166.tckTestClass=ConcurrentLinkedDequeTest -Djsr166.methodFilter=testBug8189387 tck
      */
     public void testBug8189387() {
-        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
         Object x = new Object();
         for (int n = expensiveTests ? 100_000 : 10; n--> 0; ) {
             ConcurrentLinkedDeque<Object> d = new ConcurrentLinkedDeque<>();

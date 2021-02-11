@@ -1227,8 +1227,9 @@ public class JSR166TestCase extends TestCase {
         } catch (TimeoutException success) {
         } catch (Exception fail) {
             threadUnexpectedException(fail);
-        } finally { future.cancel(true); }
+        }
         assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
+        assertFalse(future.isDone());
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/utf8.hpp"
 
 // Complain every extra number of unplanned local refs
@@ -399,19 +400,16 @@ static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
   GuardedMemory guarded(carray);
   void* orig_result = guarded.get_tag();
   if (!guarded.verify_guards()) {
-    tty->print_cr("ReleasePrimitiveArrayCritical: release array failed bounds "
-        "check, incorrect pointer returned ? array: " PTR_FORMAT " carray: "
-        PTR_FORMAT, p2i(obj), p2i(carray));
-    guarded.print_on(tty);
-    NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
-        "failed bounds check");
+    tty->print_cr("%s: release array failed bounds check, incorrect pointer returned ? array: "
+                  PTR_FORMAT " carray: " PTR_FORMAT, fn_name, p2i(obj), p2i(carray));
+    DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
+    NativeReportJNIFatalError(thr, err_msg("%s: failed bounds check", fn_name));
   }
   if (orig_result == NULL) {
-    tty->print_cr("ReleasePrimitiveArrayCritical: unrecognized elements. array: "
-        PTR_FORMAT " carray: " PTR_FORMAT, p2i(obj), p2i(carray));
-    guarded.print_on(tty);
-    NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
-        "unrecognized elements");
+    tty->print_cr("%s: unrecognized elements. array: " PTR_FORMAT " carray: " PTR_FORMAT,
+                  fn_name, p2i(obj), p2i(carray));
+    DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
+    NativeReportJNIFatalError(thr, err_msg("%s: unrecognized elements", fn_name));
   }
   if (rsz != NULL) {
     *rsz = guarded.get_user_size();
@@ -420,24 +418,30 @@ static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
 }
 
 static void* check_wrapped_array_release(JavaThread* thr, const char* fn_name,
-    void* obj, void* carray, jint mode) {
+                                         void* obj, void* carray, jint mode, jboolean is_critical) {
   size_t sz;
   void* orig_result = check_wrapped_array(thr, fn_name, obj, carray, &sz);
   switch (mode) {
-  // As we never make copies, mode 0 and JNI_COMMIT are the same.
   case 0:
+    memcpy(orig_result, carray, sz);
+    GuardedMemory::free_copy(carray);
+    break;
   case JNI_COMMIT:
     memcpy(orig_result, carray, sz);
+    if (is_critical) {
+      // For ReleasePrimitiveArrayCritical we must free the internal buffer
+      // allocated through GuardedMemory.
+      GuardedMemory::free_copy(carray);
+    }
     break;
   case JNI_ABORT:
+    GuardedMemory::free_copy(carray);
     break;
   default:
     tty->print_cr("%s: Unrecognized mode %i releasing array "
-        PTR_FORMAT " elements " PTR_FORMAT, fn_name, mode, p2i(obj), p2i(carray));
+                  PTR_FORMAT " elements " PTR_FORMAT, fn_name, mode, p2i(obj), p2i(carray));
     NativeReportJNIFatalError(thr, "Unrecognized array release mode");
   }
-  // We always need to release the copy we made with GuardedMemory
-  GuardedMemory::free_copy(carray);
   return orig_result;
 }
 
@@ -1715,7 +1719,7 @@ JNI_ENTRY_CHECKED(void,  \
       typeArrayOop a = typeArrayOop(JNIHandles::resolve_non_null(array)); \
     ) \
     ElementType* orig_result = (ElementType *) check_wrapped_array_release( \
-        thr, "checked_jni_Release"#Result"ArrayElements", array, elems, mode); \
+        thr, "checked_jni_Release"#Result"ArrayElements", array, elems, mode, JNI_FALSE); \
     UNCHECKED()->Release##Result##ArrayElements(env, array, orig_result, mode); \
     functionExit(thr); \
 JNI_END
@@ -1884,7 +1888,8 @@ JNI_ENTRY_CHECKED(void,
       check_is_primitive_array(thr, array);
     )
     // Check the element array...
-    void* orig_result = check_wrapped_array_release(thr, "ReleasePrimitiveArrayCritical", array, carray, mode);
+    void* orig_result = check_wrapped_array_release(thr, "ReleasePrimitiveArrayCritical",
+                                                    array, carray, mode, JNI_TRUE);
     UNCHECKED()->ReleasePrimitiveArrayCritical(env, array, orig_result, mode);
     functionExit(thr);
 JNI_END

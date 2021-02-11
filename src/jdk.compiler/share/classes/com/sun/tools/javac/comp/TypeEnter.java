@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ public class TypeEnter implements Completer {
     private final Lint lint;
     private final TypeEnvs typeEnvs;
     private final Dependencies dependencies;
+    private final Preview preview;
 
     public static TypeEnter instance(Context context) {
         TypeEnter instance = context.get(typeEnterKey);
@@ -141,6 +142,7 @@ public class TypeEnter implements Completer {
         lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
+        preview = Preview.instance(context);
         Source source = Source.instance(context);
         allowTypeAnnos = Feature.TYPE_ANNOTATIONS.allowedInSource(source);
         allowDeprecationOnImport = Feature.DEPRECATION_ON_IMPORT.allowedInSource(source);
@@ -1462,7 +1464,7 @@ public class TypeEnter implements Completer {
                 setFlagIfAttributeTrue(a, sym, names.forRemoval, DEPRECATED_REMOVAL);
             } else if (a.annotationType.type == syms.previewFeatureType) {
                 sym.flags_field |= Flags.PREVIEW_API;
-                setFlagIfAttributeTrue(a, sym, names.essentialAPI, PREVIEW_ESSENTIAL_API);
+                setFlagIfAttributeTrue(a, sym, names.reflective, Flags.PREVIEW_REFLECTIVE);
             }
         }
     }
