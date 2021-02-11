@@ -32,23 +32,26 @@ import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
 
 @Category({"Java Development Kit", "Serialization"})
-@Label("Deserialization events")
+@Label("Deserialization")
 @Name("jdk.Deserialization")
 @Description("Results of deserialiation and ObjectInputFilter checks")
 @MirrorEvent(className = "jdk.internal.event.DeserializationEvent")
 public final class DeserializationEvent extends AbstractJDKEvent {
 
+    @Label("Filter configured")
+    public boolean filterConfigured;
+
     @Label("Filter Status")
     public String filterStatus;
 
-    @Label ("Class")
-    public String clazz;
+    @Label ("Type")
+    public Class<?> type;
 
     @Label ("Array Length")
     public int arrayLength;
 
-    @Label ("Reference count")
-    public long totalObjectRefs;
+    @Label ("Object References")
+    public long objectReferences;
 
     @Label ("Depth")
     public long depth;
@@ -56,6 +59,6 @@ public final class DeserializationEvent extends AbstractJDKEvent {
     @Label ("Bytes Read")
     public long bytesRead;
 
-    @Label ("Exception")
-    public String exception;
+    @Label ("Exception Message")
+    public String exceptionMessage;
 }

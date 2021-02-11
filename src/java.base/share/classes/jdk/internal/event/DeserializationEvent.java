@@ -30,11 +30,12 @@ package jdk.internal.event;
  */
 
 public final class DeserializationEvent extends Event {
+    public boolean filterConfigured;
     public String filterStatus;
-    public String clazz;
+    public Class<?> type;
     public int arrayLength;
-    public long totalObjectRefs;
+    public long objectReferences;
     public long depth;
     public long bytesRead;
-    public String exception;
+    public String exceptionMessage;
 }

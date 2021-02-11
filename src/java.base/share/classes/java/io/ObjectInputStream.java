@@ -1363,13 +1363,14 @@ public class ObjectInputStream
         }
         DeserializationEvent event = new DeserializationEvent();
         if (event.shouldCommit()) {
-            event.filterStatus = status == null ? "n/a" : status.name();
-            event.clazz = clazz == null ? "null" : clazz.getName();
+            event.filterConfigured = serialFilter != null;
+            event.filterStatus = status != null ? status.name() : null;
+            event.type = clazz;
             event.arrayLength = arrayLength;
-            event.totalObjectRefs = totalObjectRefs;
+            event.objectReferences = totalObjectRefs;
             event.depth = depth;
             event.bytesRead = bytesRead;
-            event.exception = Objects.toString(ex, "n/a");
+            event.exceptionMessage = ex != null ? ex.toString() : null;
             event.commit();
         }
         if (serialFilter != null && (status == null || status == ObjectInputFilter.Status.REJECTED)) {

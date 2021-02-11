@@ -35,9 +35,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
+import jdk.test.lib.serial.SerialObjectBuilder;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
@@ -69,62 +71,62 @@ public class TestDeserializationEvent {
                 (Runnable)() -> deserialize(ba1),
                 List.of(
                     Set.of(
-                        assertFilterStatus("n/a"),
-                        assertClass("jdk.jfr.event.io.TestDeserializationEvent$R"),
+                        assertFilterStatus(null),
+                        assertType(R.class),
                         assertArrayLength(-1),
-                        assertTotalObjectRefs(1),
+                        assertObjectReferences(1),
                         assertDepth(1),
                         assertHasBytesRead(),
-                        assertException("n/a"))) },
+                        assertExceptionMessage(null))) },
             {   2,  // primitive int array
                 (Runnable)() -> deserialize(ba2),
                 List.of(
                     Set.of(  // TC_CLASS, for array class int[]
-                        assertClass("[I"),
+                        assertType(int[].class),
                         assertArrayLength(-1)),
                     Set.of(  // TC_ARRAY, actual array
-                        assertClass("[I"),
+                        assertType(int[].class),
                         assertArrayLength(5))) },
             {   3,  // reference array, R
                 (Runnable)() -> deserialize(ba3),
                 List.of(
                     Set.of(  // TC_CLASS, for array class R[]
-                        assertClass("[Ljdk.jfr.event.io.TestDeserializationEvent$R;"),
+                        assertType(R[].class),
                         assertArrayLength(-1)),
                     Set.of(  // TC_ARRAY, actual array
-                        assertClass("[Ljdk.jfr.event.io.TestDeserializationEvent$R;"),
+                        assertType(R[].class),
                         assertArrayLength(2)),
                     Set.of(  // TC_CLASS, for R
-                        assertClass("jdk.jfr.event.io.TestDeserializationEvent$R"),
+                        assertType(R.class),
                         assertArrayLength(-1)),
                     Set.of(  // TC_REFERENCE, for TC_CLASS relating second stream obj
-                        assertClass("null"),
+                        assertType(null),
                         assertArrayLength(-1))) },
             {  4,  // multi-dimensional prim char array
                (Runnable)() -> deserialize(ba4),
                List.of(
                     Set.of(  // TC_CLASS, for array class char[][]
-                        assertClass("[[C"),
+                        assertType(char[][].class),
                         assertArrayLength(-1),
                         assertDepth(1)),
                     Set.of(  // TC_ARRAY, actual char[][] array
-                        assertClass("[[C"),
+                        assertType(char[][].class),
                         assertArrayLength(2),
                         assertDepth(1)),
                     Set.of(  // TC_CLASS, for array class char[]
-                        assertClass("[C"),
+                        assertType(char[].class),
                         assertArrayLength(-1),
                         assertDepth(2)),
                     Set.of(  // TC_ARRAY, first char[] array
-                        assertClass("[C"),
+                        assertType(char[].class),
                         assertArrayLength(2),
                         assertDepth(2)),
                     Set.of(  // TC_REFERENCE, for TC_CLASS relating to second stream array
-                        assertClass("null"),
+                        assertType(null),
                         assertArrayLength(-1),
                         assertDepth(2)),
                     Set.of(  // TC_ARRAY, second char[] array
-                        assertClass("[C"),
+                        assertType(char[].class),
                         assertArrayLength(1),
                         assertDepth(2))) }
         };
@@ -153,7 +155,7 @@ public class TestDeserializationEvent {
     public Object[][] filterDisallowedValues() {
         return new Object[][] {
                 { Status.REJECTED,   "REJECTED" },
-                { null,              "n/a"      }
+                { null,              null       }
         };
     }
 
@@ -173,6 +175,7 @@ public class TestDeserializationEvent {
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(events.size(), 1);
             assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
+            assertFilterConfigured(true).accept(events.get(0));
             assertFilterStatus(expectedValue).accept(events.get(0));
         }
     }
@@ -199,6 +202,7 @@ public class TestDeserializationEvent {
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(events.size(), 1);
             assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
+            assertFilterConfigured(true).accept(events.get(0));
             assertFilterStatus(expectedValue).accept(events.get(0));
         }
     }
@@ -215,11 +219,11 @@ public class TestDeserializationEvent {
             recording.start();
             InvalidClassException ice = expectThrows(ICE, () -> ois.readObject());
             recording.stop();
-            out.println("caught: " + ice);
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(events.size(), 1);
             assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
-            assertException("jdk.jfr.event.io.TestDeserializationEvent$XYZException").accept(events.get(0));
+            assertFilterConfigured(true).accept(events.get(0));
+            assertExceptionMessage("jdk.jfr.event.io.TestDeserializationEvent$XYZException").accept(events.get(0));
         }
     }
 
@@ -234,10 +238,23 @@ public class TestDeserializationEvent {
                 out.println("  checking:" + checker);
                 checker.accept(recordedEvent);
             }
-            assertException("n/a"); // no exception expected
+            assertFilterConfigured(false).accept(recordedEvent); // no filter expected
+            assertExceptionMessage(null).accept(recordedEvent);  // no exception expected
             found++;
         }
         assertEquals(found, expectedValuesChecker.size());
+    }
+
+    static Consumer<RecordedEvent> assertFilterConfigured(boolean expectedValue) {
+        return new Consumer<>() {
+            @Override public void accept(RecordedEvent recordedEvent) {
+                assertTrue(recordedEvent.hasField("filterConfigured"));
+                assertEquals((boolean)recordedEvent.getValue("filterConfigured"), expectedValue);
+            }
+            @Override public String toString() {
+                return "assertFilterConfigured, expectedValue=" + expectedValue;
+            }
+        };
     }
 
     static Consumer<RecordedEvent> assertFilterStatus(String expectedValue) {
@@ -252,14 +269,20 @@ public class TestDeserializationEvent {
         };
     }
 
-    static Consumer<RecordedEvent> assertClass(String expectedValue) {
+    static Consumer<RecordedEvent> assertType(Class expectedValue) {
         return new Consumer<>() {
             @Override public void accept(RecordedEvent recordedEvent) {
-                assertTrue(recordedEvent.hasField("clazz"));
-                assertEquals(recordedEvent.getValue("clazz"), expectedValue);
+                assertTrue(recordedEvent.hasField("type"));
+                if (expectedValue == null && recordedEvent.getValue("type") == null)
+                    return;
+
+                if (recordedEvent.getValue("type") instanceof RecordedClass recordedClass)
+                    assertEquals(recordedClass.getName(), expectedValue.getName());
+                else
+                    fail("Expected RecordedClass, got:" + recordedEvent.getValue("type") .getClass());
             }
             @Override public String toString() {
-                return "assertClass, expectedValue=" + expectedValue;
+                return "assertType, expectedValue=" + expectedValue;
             }
         };
     }
@@ -276,14 +299,14 @@ public class TestDeserializationEvent {
         };
     }
 
-    static Consumer<RecordedEvent> assertTotalObjectRefs(long expectedValue) {
+    static Consumer<RecordedEvent> assertObjectReferences(long expectedValue) {
         return new Consumer<>() {
             @Override public void accept(RecordedEvent recordedEvent) {
-                assertTrue(recordedEvent.hasField("totalObjectRefs"));
-                assertEquals((long)recordedEvent.getValue("totalObjectRefs"), expectedValue);
+                assertTrue(recordedEvent.hasField("objectReferences"));
+                assertEquals((long)recordedEvent.getValue("objectReferences"), expectedValue);
             }
             @Override public String toString() {
-                return "assertTotalObjectRefs, expectedValue=" + expectedValue;
+                return "assertObjectReferences, expectedValue=" + expectedValue;
             }
         };
     }
@@ -323,14 +346,14 @@ public class TestDeserializationEvent {
         };
     }
 
-    static Consumer<RecordedEvent> assertException(String expectedValue) {
+    static Consumer<RecordedEvent> assertExceptionMessage(String expectedValue) {
         return new Consumer<>() {
             @Override public void accept(RecordedEvent recordedEvent) {
-                assertHasBytesRead().accept(recordedEvent);
-                assertEquals(recordedEvent.getValue("exception"), expectedValue);
+                assertTrue(recordedEvent.hasField("exceptionMessage"));
+                assertEquals(recordedEvent.getValue("exceptionMessage"), expectedValue);
             }
             @Override public String toString() {
-                return "assertException, expectedValue=" + expectedValue;
+                return "assertExceptionMessage, expectedValue=" + expectedValue;
             }
         };
     }
@@ -351,6 +374,41 @@ public class TestDeserializationEvent {
             return (T) ois.readObject();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    // ---
+    static volatile boolean initializedFoo; // false
+    // Do not inadvertently initialize this class, Foo.
+    static class Foo implements Serializable {
+        static { TestDeserializationEvent.initializedFoo = true; }
+    }
+
+    /**
+     * Checks that the creation and recording of the Deserialization event does
+     * not inadvertently trigger initialization of the class of the stream
+     * object, when deserialization is rejected by the filter.
+     */
+    @Test
+    public void testRejectedClassNotInitialized() throws Exception {
+        byte[] bytes = SerialObjectBuilder.newBuilder("Foo").build();
+        assertFalse(initializedFoo);  // sanity
+
+        try (Recording recording = new Recording();
+             var bais = new ByteArrayInputStream(bytes);
+             var ois = new ObjectInputStream(bais)) {
+            ois.setObjectInputFilter(fv -> Status.REJECTED);
+            recording.enable(EventNames.Deserialization);
+            recording.start();
+            assertThrows(ICE, () -> ois.readObject());
+            recording.stop();
+            List<RecordedEvent> events = Events.fromRecording(recording);
+            assertEquals(events.size(), 1);
+            assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
+            assertFilterConfigured(true).accept(events.get(0));
+            assertFilterStatus("REJECTED").accept(events.get(0));
+            assertFalse(initializedFoo);
+            assertType(Foo.class);
         }
     }
 }
