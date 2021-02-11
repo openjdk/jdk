@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,12 @@ import sun.nio.cs.*;
 public class ISO2022_KR extends ISO2022
 implements HistoricallyNamedCharset
 {
-    private static Charset ksc5601_cs;
+    private static class Holder {
+        private static final Charset ksc5601_cs = new EUC_KR();
+    }
 
     public ISO2022_KR() {
         super("ISO-2022-KR", ExtendedCharsets.aliasesFor("ISO-2022-KR"));
-        ksc5601_cs = new EUC_KR();
     }
 
     public boolean contains(Charset cs) {
@@ -74,7 +75,7 @@ implements HistoricallyNamedCharset
             SODecoder = new CharsetDecoder[1];
 
             try {
-                SODecoder[0] = ksc5601_cs.newDecoder();
+                SODecoder[0] = Holder.ksc5601_cs.newDecoder();
             } catch (Exception e) {};
         }
     }
@@ -85,7 +86,7 @@ implements HistoricallyNamedCharset
             super(cs);
             SODesig = new byte[] {'$', ')', 'C' };
             try {
-                ISOEncoder = ksc5601_cs.newEncoder();
+                ISOEncoder = Holder.ksc5601_cs.newEncoder();
             } catch (Exception e) { }
         }
 

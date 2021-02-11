@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -56,7 +57,7 @@ JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
 
 // Initialization
 void JVMCICompiler::initialize() {
-  assert(!is_c1_or_interpreter_only(), "JVMCI is launched, it's not c1/interpreter only mode");
+  assert(!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci(), "JVMCI is launched, it's not c1/interpreter only mode");
   if (!UseCompiler || !EnableJVMCI || !UseJVMCICompiler || !should_perform_init()) {
     return;
   }
@@ -78,7 +79,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   }
   jlong start = os::javaTimeNanos();
 
-  Array<Method*>* objectMethods = SystemDictionary::Object_klass()->methods();
+  Array<Method*>* objectMethods = vmClasses::Object_klass()->methods();
   // Initialize compile queue with a selected set of methods.
   int len = objectMethods->length();
   for (int i = 0; i < len; i++) {

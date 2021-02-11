@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -30,6 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/copy.hpp"
@@ -250,7 +252,7 @@ void ThreadLocalAllocBuffer::startup_initialization() {
   // If the C2 compiler is not present, no space is reserved.
 
   // +1 for rounding up to next cache line, +1 to be safe
-  if (is_server_compilation_mode_vm()) {
+  if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
     int lines =  MAX2(AllocatePrefetchLines, AllocateInstancePrefetchLines) + 2;
     _reserve_for_allocation_prefetch = (AllocatePrefetchDistance + AllocatePrefetchStepSize * lines) /
                                        (int)HeapWordSize;

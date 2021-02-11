@@ -26,7 +26,6 @@
 #import "com_apple_laf_AquaNativeResources.h"
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 /*
  * Class:     com_apple_laf_AquaNativeResources

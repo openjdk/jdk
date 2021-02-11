@@ -34,7 +34,6 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB_PRE;
  * @test
  * @bug 7018932
  * @summary fix LoopPipe.getStrokedSpans() performance (clipping enabled by Marlin renderer)
- * @run main/othervm/timeout=10 -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine StrokedLinePerf
  * @run main/othervm/timeout=10 -Dsun.java2d.renderer=sun.java2d.marlin.DMarlinRenderingEngine StrokedLinePerf
  */
 public class StrokedLinePerf {

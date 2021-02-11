@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@
 
 class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
-  friend class PSPromotionManager; // Uses the cas_allocate methods
-  friend class ParallelScavengeHeap;
-  friend class AdjoiningGenerations;
 
  private:
   MemRegion                _reserved;          // Used for simple containment tests
@@ -72,22 +69,8 @@ class PSOldGen : public CHeapObj<mtGC> {
   }
 #endif
 
-  HeapWord* allocate_noexpand(size_t word_size) {
-    // We assume the heap lock is held here.
-    assert_locked_or_safepoint(Heap_lock);
-    HeapWord* res = object_space()->allocate(word_size);
-    if (res != NULL) {
-      DEBUG_ONLY(assert_block_in_covered_region(MemRegion(res, word_size)));
-      _start_array.allocate_block(res);
-    }
-    return res;
-  }
-
-  // Support for MT garbage collection. CAS allocation is lower overhead than grabbing
-  // and releasing the heap lock, which is held during gc's anyway. This method is not
-  // safe for use at the same time as allocate_noexpand()!
   HeapWord* cas_allocate_noexpand(size_t word_size) {
-    assert(SafepointSynchronize::is_at_safepoint(), "Must only be called at safepoint");
+    assert_locked_or_safepoint(Heap_lock);
     HeapWord* res = object_space()->cas_allocate(word_size);
     if (res != NULL) {
       DEBUG_ONLY(assert_block_in_covered_region(MemRegion(res, word_size)));
@@ -96,13 +79,6 @@ class PSOldGen : public CHeapObj<mtGC> {
     return res;
   }
 
-  // Support for MT garbage collection. See above comment.
-  HeapWord* cas_allocate(size_t word_size) {
-    HeapWord* res = cas_allocate_noexpand(word_size);
-    return (res == NULL) ? expand_and_cas_allocate(word_size) : res;
-  }
-
-  HeapWord* expand_and_allocate(size_t word_size);
   HeapWord* expand_and_cas_allocate(size_t word_size);
   void expand(size_t bytes);
   bool expand_by(size_t bytes);
@@ -158,9 +134,10 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Calculating new sizes
   void resize(size_t desired_free_space);
 
-  // Allocation. We report all successful allocations to the size policy
-  // Note that the perm gen does not use this method, and should not!
-  HeapWord* allocate(size_t word_size);
+  HeapWord* allocate(size_t word_size) {
+    HeapWord* res = cas_allocate_noexpand(word_size);
+    return (res == NULL) ? expand_and_cas_allocate(word_size) : res;
+  }
 
   // Iteration.
   void oop_iterate(OopIterateClosure* cl) { object_space()->oop_iterate(cl); }

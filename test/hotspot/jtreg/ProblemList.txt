@@ -99,8 +99,6 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
 
-serviceability/attach/RemovingUnixDomainSocketTest.java 8248162 linux-x64
-
 #############################################################################
 
 # :hotspot_misc
@@ -123,8 +121,6 @@ vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Deadlock/JavaDeadlock001/TestDescription.java 8060733 generic-all
 
 vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
-vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses021/TestDescription.java 8065773 generic-all
-vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses023/TestDescription.java 8065773 generic-all
 
 vmTestbase/nsk/jdb/eval/eval001/eval001.java 8221503 generic-all
 

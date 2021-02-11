@@ -35,8 +35,6 @@
 #import "sun_lwawt_macosx_CPrinterSurfaceData.h"
 #import "ImageSurfaceData.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import <AppKit/AppKit.h>
 #import "ThreadUtilities.h"
 

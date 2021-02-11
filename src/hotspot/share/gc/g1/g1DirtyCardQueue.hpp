@@ -49,8 +49,6 @@ public:
   // doing something else, with auto-flush on completion.
   ~G1DirtyCardQueue();
 
-  inline G1DirtyCardQueueSet* dirty_card_qset() const;
-
   G1ConcurrentRefineStats* refinement_stats() const {
     return _refinement_stats;
   }
@@ -350,9 +348,5 @@ public:
   // Discard artificial increase of mutator refinement threshold.
   void discard_max_cards_padding();
 };
-
-inline G1DirtyCardQueueSet* G1DirtyCardQueue::dirty_card_qset() const {
-  return static_cast<G1DirtyCardQueueSet*>(qset());
-}
 
 #endif // SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP

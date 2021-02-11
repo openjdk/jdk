@@ -53,10 +53,7 @@ class G1RootProcessor : public StackObj {
   OopStorageSetStrongParState<false, false> _oop_storage_set_strong_par_state;
 
   enum G1H_process_roots_tasks {
-    G1RP_PS_Universe_oops_do,
-    G1RP_PS_Management_oops_do,
     G1RP_PS_ClassLoaderDataGraph_oops_do,
-    G1RP_PS_jvmti_oops_do,
     G1RP_PS_CodeCache_oops_do,
     AOT_ONLY(G1RP_PS_aot_oops_do COMMA)
     G1RP_PS_refProcessor_oops_do,

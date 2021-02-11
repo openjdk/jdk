@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@
 // In the rare case of the non-nmethod code heap getting full, non-nmethod code
 // will be stored in the non-profiled code heap as a fallback solution.
 //
-// Depending on the availability of compilers and TieredCompilation there
+// Depending on the availability of compilers and compilation mode there
 // may be fewer heaps. The size of the code heaps depends on the values of
 // ReservedCodeCacheSize, NonProfiledCodeHeapSize and ProfiledCodeHeapSize
 // (see CodeCache::heap_available(..) and CodeCache::initialize_heaps(..)
@@ -60,7 +60,7 @@
 //
 // Code cache segmentation is controlled by the flag SegmentedCodeCache.
 // If turned off, all code types are stored in a single code heap. By default
-// code cache segmentation is turned on if TieredCompilation is enabled and
+// code cache segmentation is turned on if tiered mode is enabled and
 // ReservedCodeCacheSize >= 240 MB.
 //
 // All methods of the CodeCache accepting a CodeBlobType only apply to

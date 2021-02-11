@@ -1340,10 +1340,10 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ verify_oop(temp);
     } else {
-      __ ldrw(r16, Address(a, rscratch2, Address::lsl(exact_log2(size))));
+      __ ldrw(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ decode_heap_oop(temp); // calls verify_oop
     }
-    __ add(rscratch2, rscratch2, size);
+    __ add(rscratch2, rscratch2, 1);
     __ b(loop);
     __ bind(end);
   }

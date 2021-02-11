@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ void HeapRegion::hr_clear(bool clear_space) {
   if (clear_space) clear(SpaceDecorator::Mangle);
 
   _evacuation_failed = false;
-  _gc_efficiency = 0.0;
+  _gc_efficiency = -1.0;
 }
 
 void HeapRegion::clear_cardtable() {
@@ -255,7 +255,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
-  _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(0.0),
+  _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),

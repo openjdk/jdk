@@ -705,7 +705,8 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
     // Fill the memory below the allocated range with dummy object(s),
     // if the region bottom does not match the range start, or if the previous
     // range ended within the same G1 region, and there is a gap.
-    if (start_address != bottom_address) {
+    assert(start_address >= bottom_address, "bottom address should not be greater than start address");
+    if (start_address > bottom_address) {
       size_t fill_size = pointer_delta(start_address, bottom_address);
       G1CollectedHeap::fill_with_objects(bottom_address, fill_size);
       increase_used(fill_size * HeapWordSize);
@@ -2842,7 +2843,7 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
   if (expand_bytes > 0) {
     // No need for an ergo logging here,
     // expansion_amount() does this when it returns a value > 0.
-    double expand_ms;
+    double expand_ms = 0.0;
     if (!expand(expand_bytes, _workers, &expand_ms)) {
       // We failed to expand the heap. Cannot do anything about it.
     }
@@ -3713,7 +3714,9 @@ protected:
       p->record_or_add_time_secs(termination_phase, worker_id, cl.term_time());
       p->record_or_add_thread_work_item(termination_phase, worker_id, cl.term_attempts());
     }
-    assert(pss->trim_ticks().seconds() == 0.0, "Unexpected partial trimming during evacuation");
+    assert(pss->trim_ticks().value() == 0,
+           "Unexpected partial trimming during evacuation value " JLONG_FORMAT,
+           pss->trim_ticks().value());
   }
 
   virtual void start_work(uint worker_id) { }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ public class TestAbstractMethod extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 """
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab5 method-summary-table"><code>default void</code></div>""",
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab5"><code>default void</code></div>""",
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
                     <button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-cont\
@@ -93,8 +93,8 @@ public class TestAbstractMethod extends JavadocTester {
                     able-tab">Concrete Methods</button>\
                     </div>""",
                 """
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
-                    ble method-summary-table-tab3"><code>abstract void</code></div>""");
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab3"><code>abstract void</code></div>""");
 
         checkOutput("pkg/C.html", true,
                 """

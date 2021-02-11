@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ void ShenandoahPassiveMode::initialize_flags() const {
   // Disable known barriers by default.
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahLoadRefBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahSATBBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStoreValEnqueueBarrier);
+  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahIUBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCASBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
 

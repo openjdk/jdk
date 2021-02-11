@@ -30,8 +30,6 @@
 #import "sun_lwawt_macosx_CTextPipe.h"
 #import "sun_java2d_OSXSurfaceData.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "CoreTextSupport.h"
 #import "QuartzSurfaceData.h"
 #include "AWTStrike.h"
@@ -586,6 +584,9 @@ static inline void doDrawGlyphsPipe_applyFontTransforms
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTextPipe_doDrawString
 (JNIEnv *env, jobject jthis, jobject jsurfacedata, jlong awtStrikePtr, jstring str, jdouble x, jdouble y)
 {
+    if (str == NULL) {
+        return;
+    }
     QuartzSDOps *qsdo = (QuartzSDOps *)SurfaceData_GetOps(env, jsurfacedata);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
@@ -597,7 +598,7 @@ JNI_COCOA_ENTER(env);
     {
         jchar unichars[len];
         (*env)->GetStringRegion(env, str, 0, len, unichars);
-        JNF_CHECK_AND_RETHROW_EXCEPTION(env);
+        CHECK_EXCEPTION();
 
         // Draw the text context
         DrawTextContext(env, qsdo, awtStrike, unichars, len, x, y);
@@ -605,12 +606,16 @@ JNI_COCOA_ENTER(env);
     else
     {
         // Get string to draw and the length
-        const jchar *unichars = JNFGetStringUTF16UniChars(env, str);
+        const jchar *unichars = (*env)->GetStringChars(env, str, NULL);
+        if (unichars == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "Could not get string chars");
+            return;
+        }
 
         // Draw the text context
         DrawTextContext(env, qsdo, awtStrike, unichars, len, x, y);
 
-        JNFReleaseStringUTF16UniChars(env, str, unichars);
+        (*env)->ReleaseStringChars(env, str, unichars);
     }
 
 JNI_COCOA_RENDERER_EXIT(env);
@@ -635,7 +640,7 @@ JNI_COCOA_ENTER(env);
     {
         jchar copyUnichars[length];
         (*env)->GetCharArrayRegion(env, unicodes, offset, length, copyUnichars);
-        JNF_CHECK_AND_RETHROW_EXCEPTION(env);
+        CHECK_EXCEPTION();
         DrawTextContext(env, qsdo, awtStrike, copyUnichars, length, x, y);
     }
     else
@@ -648,7 +653,7 @@ JNI_COCOA_ENTER(env);
 
         @try {
             (*env)->GetCharArrayRegion(env, unicodes, offset, length, copyUnichars);
-            JNF_CHECK_AND_RETHROW_EXCEPTION(env);
+            CHECK_EXCEPTION();
             DrawTextContext(env, qsdo, awtStrike, copyUnichars, length, x, y);
         } @finally {
             free(copyUnichars);

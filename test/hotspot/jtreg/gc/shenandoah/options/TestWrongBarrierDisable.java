@@ -45,7 +45,7 @@ public class TestWrongBarrierDisable {
         };
         String[] iu = {
                 "ShenandoahLoadRefBarrier",
-                "ShenandoahStoreValEnqueueBarrier",
+                "ShenandoahIUBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
         };

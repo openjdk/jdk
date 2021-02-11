@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
 
-inline JfrVersionSystem::Node::Node() : _next(NULL), _version(0), _live(true) {}
-
-inline traceid JfrVersionSystem::Node::version() const {
-  return _version;
-}
-
-inline void JfrVersionSystem::Node::set(traceid version) {
-  Atomic::release_store_fence(&_version, version);
-}
-
-inline JfrVersionSystem::JfrVersionSystem() : _tip(), _head(NULL), _spinlock(0) {
+inline JfrVersionSystem::JfrVersionSystem() : _tip(), _head(NULL) {
   _tip._value = 1;
 }
 
@@ -62,7 +52,7 @@ inline JfrVersionSystem::Type JfrVersionSystem::tip() const {
   return Atomic::load(&_tip._value);
 }
 
-inline JfrVersionSystem::Type JfrVersionSystem::increment() {
+inline JfrVersionSystem::Type JfrVersionSystem::inc_tip() {
   traceid cmp;
   traceid xchg;
   do {
@@ -80,24 +70,59 @@ inline JfrVersionSystem::NodePtr JfrVersionSystem::acquire() {
       node = node->_next;
       continue;
     }
-    assert(node->_version == 0, "invariant");
+    DEBUG_ONLY(assert_state(node);)
     return node;
   }
   // new
-  node = new Node();
+  node = new Node(this);
   NodePtr next;
   do {
     next = _head;
     node->_next = next;
   } while (Atomic::cmpxchg(&_head, next, node) != next);
+  DEBUG_ONLY(assert_state(node);)
   return node;
 }
 
-inline void JfrVersionSystem::release(JfrVersionSystem::NodePtr node) {
-  assert(node != NULL, "invariant");
-  assert(node->_live, "invariant");
-  Atomic::release_store_fence(&node->_version, (traceid)0);
-  node->_live = false;
+inline JfrVersionSystem::Handle JfrVersionSystem::get() {
+  return Handle::make(acquire());
+}
+
+inline JfrVersionSystem::Node::Node(JfrVersionSystem* system) : _system(system), _next(NULL), _version(0), _live(true) {}
+
+inline traceid JfrVersionSystem::Node::version() const {
+  return _version;
+}
+
+inline void JfrVersionSystem::Node::set(traceid version) const {
+  Atomic::release_store_fence(&_version, version);
+}
+
+inline void JfrVersionSystem::Node::add_ref() const {
+  _ref_counter.inc();
+}
+
+inline void JfrVersionSystem::Node::remove_ref() const {
+  if (_ref_counter.dec()) {
+    assert(_live, "invariant");
+    set(0);
+    _live = false;
+  }
+}
+
+inline void JfrVersionSystem::Node::checkout() {
+  set(_system->tip());
+  assert(version() != 0, "invariant");
+}
+
+inline void JfrVersionSystem::Node::commit() {
+  assert(version() != 0, "invariant");
+  // A commit consist of an atomic increment of the tip.
+  const Type commit_version = _system->inc_tip();
+  // Release this checkout.
+  set(0);
+  // Await release of checkouts for earlier versions.
+  _system->await(commit_version);
 }
 
 inline JfrVersionSystem::NodePtr
@@ -113,7 +138,7 @@ JfrVersionSystem::synchronize_with(JfrVersionSystem::Type version, JfrVersionSys
   return NULL;
 }
 
-inline void JfrVersionSystem::await(JfrVersionSystem::Type  version) {
+inline void JfrVersionSystem::await(JfrVersionSystem::Type version) {
   assert(version > 0, "invariant");
   static const int backoff_unit_ns = 10;
   int backoff_factor = 1;
@@ -127,64 +152,12 @@ inline void JfrVersionSystem::await(JfrVersionSystem::Type  version) {
   }
 }
 
-inline JfrVersionSystem::Handle JfrVersionSystem::get_handle() {
-  return Handle(this);
-}
-
-inline JfrVersionSystem::Handle JfrVersionSystem::checkout_handle() {
-  Handle handle(this);
-  handle.checkout();
-  return handle;
-}
-
-inline JfrVersionSystem::Handle::Handle(JfrVersionSystem* system) : _system(system), _node(system->acquire()) {}
-
-inline JfrVersionSystem::Handle::Handle() : _system(NULL), _node(NULL) {}
-
-inline JfrVersionSystem::Handle::~Handle() {
-  if (_node != NULL) {
-    _system->release(_node);
-  }
-}
-
-inline void JfrVersionSystem::Handle::checkout() {
-  assert(_node != NULL, "invariant");
-  _node->set(_system->tip());
-}
-
-inline JfrVersionSystem::Type JfrVersionSystem::Handle::increment() {
-  assert(_node != NULL, "invariant");
-  const Type version = _system->increment();
-  assert(version > _node->version(), "invariant");
-  return version;
-}
-
-inline void JfrVersionSystem::Handle::release() {
-  assert(_node != NULL, "invariant");
-  _system->release(_node);
-  _node = NULL;
-}
-
-inline void JfrVersionSystem::Handle::await(JfrVersionSystem::Type  version) {
-  _system->await(version);
-}
-
 #ifdef ASSERT
-inline bool JfrVersionSystem::is_registered(JfrVersionSystem::Type version) const {
-  NodePtr node = _head;
-  while (node != NULL) {
-    if (Atomic::load_acquire(&node->_version) == version) {
-      return true;
-    }
-    node = node->_next;
-  }
-  return false;
-}
-
-inline bool JfrVersionSystem::Handle::is_tracked() const {
-  assert(_node != NULL, "invariant");
-  const Type current_version = _node->version();
-  return current_version != 0 && _system->is_registered(current_version);
+inline void JfrVersionSystem::assert_state(const JfrVersionSystem::Node* node) const {
+  assert(node != NULL, "invariant");
+  assert(node->_live, "invariant");
+  assert(node->_version == 0, "invariant");
+  assert(node->_ref_counter.current() == 0, "invariant");
 }
 #endif // ASSERT
 

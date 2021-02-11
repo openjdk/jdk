@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,30 @@
 #ifndef SHARE_GC_PARALLEL_MUTABLESPACE_HPP
 #define SHARE_GC_PARALLEL_MUTABLESPACE_HPP
 
-#include "gc/parallel/immutableSpace.hpp"
+#include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 class WorkGang;
 
-// A MutableSpace is a subtype of ImmutableSpace that supports the
-// concept of allocation. This includes the concepts that a space may
-// be only partially full, and the query methods that go with such
-// an assumption. MutableSpace is also responsible for minimizing the
+// A MutableSpace supports the concept of allocation. This includes the
+// concepts that a space may be only partially full, and the query methods
+// that go with such an assumption.
+//
+// MutableSpace is also responsible for minimizing the
 // page allocation time by having the memory pretouched (with
 // AlwaysPretouch) and for optimizing page placement on NUMA systems
 // by make the underlying region interleaved (with UseNUMA).
 //
-// Invariant: (ImmutableSpace +) bottom() <= top() <= end()
-// top() is inclusive and end() is exclusive.
+// Invariant: bottom() <= top() <= end()
+// top() and end() are exclusive.
 
 class MutableSpaceMangler;
 
-class MutableSpace: public ImmutableSpace {
+class MutableSpace: public CHeapObj<mtGC> {
   friend class VMStructs;
 
   // Helper for mangling unused space in debug builds
@@ -52,8 +56,9 @@ class MutableSpace: public ImmutableSpace {
   // The last region which page had been setup to be interleaved.
   MemRegion _last_setup_region;
   size_t _alignment;
- protected:
+  HeapWord* _bottom;
   HeapWord* volatile _top;
+  HeapWord* _end;
 
   MutableSpaceMangler* mangler() { return _mangler; }
 
@@ -67,16 +72,24 @@ class MutableSpace: public ImmutableSpace {
   MutableSpace(size_t page_size);
 
   // Accessors
+  HeapWord* bottom() const                 { return _bottom; }
   HeapWord* top() const                    { return _top;    }
+  HeapWord* end() const                    { return _end; }
+
+  void set_bottom(HeapWord* value)         { _bottom = value; }
   virtual void set_top(HeapWord* value)    { _top = value;   }
+  void set_end(HeapWord* value)            { _end = value; }
 
   HeapWord* volatile* top_addr()           { return &_top; }
   HeapWord** end_addr()                    { return &_end; }
 
-  virtual void set_bottom(HeapWord* value) { _bottom = value; }
-  virtual void set_end(HeapWord* value)    { _end = value; }
-
   size_t alignment()                       { return _alignment; }
+
+  MemRegion region() const { return MemRegion(bottom(), end()); }
+
+  size_t capacity_in_bytes() const { return capacity_in_words() * HeapWordSize; }
+  size_t capacity_in_words() const { return pointer_delta(end(), bottom()); }
+  virtual size_t capacity_in_words(Thread*) const { return capacity_in_words(); }
 
   // Returns a subregion containing all objects in this space.
   MemRegion used_region() { return MemRegion(bottom(), top()); }
@@ -92,10 +105,6 @@ class MutableSpace: public ImmutableSpace {
                           WorkGang* pretouch_gang = NULL);
 
   virtual void clear(bool mangle_space);
-  // Does the usual initialization but optionally resets top to bottom.
-#if 0  // MANGLE_SPACE
-  void initialize(MemRegion mr, bool clear_space, bool reset_top);
-#endif
   virtual void update() { }
   virtual void accumulate_statistics() { }
 
@@ -130,7 +139,6 @@ class MutableSpace: public ImmutableSpace {
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
 
   // Allocation (return NULL if full)
-  virtual HeapWord* allocate(size_t word_size);
   virtual HeapWord* cas_allocate(size_t word_size);
   // Optional deallocation. Used in NUMA-allocator.
   bool cas_deallocate(HeapWord *obj, size_t size);

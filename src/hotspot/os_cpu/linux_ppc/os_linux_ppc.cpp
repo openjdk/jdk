@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,9 +25,9 @@
 
 // no precompiled headers
 #include "jvm.h"
+#include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -50,6 +50,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -497,3 +498,9 @@ int os::extra_bang_size_in_bytes() {
   // PPC does not require the additional stack bang.
   return 0;
 }
+
+#ifdef HAVE_FUNCTION_DESCRIPTORS
+void* os::resolve_function_descriptor(void* p) {
+  return ((const FunctionDescriptor*)p)->entry();
+}
+#endif

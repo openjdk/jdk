@@ -25,7 +25,6 @@
 
 #import "JNIUtilities.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <ApplicationServices/ApplicationServices.h>
 
 #import "CRobotKeyCode.h"

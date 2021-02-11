@@ -1148,6 +1148,9 @@ public:
   virtual int cisc_operand() const { return AdlcVMDeps::Not_cisc_spillable; }
   bool is_cisc_alternate() const { return (_flags & Flag_is_cisc_alternate) != 0; }
 
+  // Whether this is a memory-writing machine node.
+  bool is_memory_writer() const { return is_Mach() && bottom_type()->has_memory(); }
+
 //----------------- Printing, etc
 #ifndef PRODUCT
  private:

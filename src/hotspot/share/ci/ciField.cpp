@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "oops/klass.inline.hpp"
@@ -270,8 +270,8 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       // not be constant is when the field is a *special* static & final field
       // whose value may change.  The three examples are java.lang.System.in,
       // java.lang.System.out, and java.lang.System.err.
-      assert(SystemDictionary::System_klass() != NULL, "Check once per vm");
-      if (k == SystemDictionary::System_klass()) {
+      assert(vmClasses::System_klass() != NULL, "Check once per vm");
+      if (k == vmClasses::System_klass()) {
         // Check offsets for case 2: System.in, System.out, or System.err
         if (_offset == java_lang_System::in_offset()  ||
             _offset == java_lang_System::out_offset() ||
@@ -289,8 +289,8 @@ void ciField::initialize_from(fieldDescriptor* fd) {
     }
   } else {
     // For CallSite objects treat the target field as a compile time constant.
-    assert(SystemDictionary::CallSite_klass() != NULL, "should be already initialized");
-    if (k == SystemDictionary::CallSite_klass() &&
+    assert(vmClasses::CallSite_klass() != NULL, "should be already initialized");
+    if (k == vmClasses::CallSite_klass() &&
         _offset == java_lang_invoke_CallSite::target_offset()) {
       assert(!has_initialized_final_update(), "CallSite is not supposed to have writes to final fields outside initializers");
       _is_constant = true;

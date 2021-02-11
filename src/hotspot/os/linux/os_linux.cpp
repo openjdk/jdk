@@ -25,7 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -1268,10 +1267,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
-#ifndef SUPPORTS_CLOCK_MONOTONIC
-#error "Build platform doesn't support clock_gettime and related functionality"
-#endif
-
 // Time since start-up in seconds to a fine granularity.
 // Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
@@ -1300,38 +1295,6 @@ double os::elapsedVTime() {
   }
 }
 
-jlong os::javaTimeMillis() {
-  if (os::Posix::supports_clock_gettime()) {
-    struct timespec ts;
-    int status = os::Posix::clock_gettime(CLOCK_REALTIME, &ts);
-    assert_status(status == 0, status, "gettime error");
-    return jlong(ts.tv_sec) * MILLIUNITS +
-           jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
-  } else {
-    timeval time;
-    int status = gettimeofday(&time, NULL);
-    assert(status != -1, "linux error");
-    return jlong(time.tv_sec) * MILLIUNITS  +
-           jlong(time.tv_usec) / (MICROUNITS / MILLIUNITS);
-  }
-}
-
-void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  if (os::Posix::supports_clock_gettime()) {
-    struct timespec ts;
-    int status = os::Posix::clock_gettime(CLOCK_REALTIME, &ts);
-    assert_status(status == 0, status, "gettime error");
-    seconds = jlong(ts.tv_sec);
-    nanos = jlong(ts.tv_nsec);
-  } else {
-    timeval time;
-    int status = gettimeofday(&time, NULL);
-    assert(status != -1, "linux error");
-    seconds = jlong(time.tv_sec);
-    nanos = jlong(time.tv_usec) * (NANOUNITS / MICROUNITS);
-  }
-}
-
 void os::Linux::fast_thread_clock_init() {
   if (!UseLinuxPosixThreadCPUClocks) {
     return;
@@ -1352,45 +1315,10 @@ void os::Linux::fast_thread_clock_init() {
 
   if (pthread_getcpuclockid_func &&
       pthread_getcpuclockid_func(_main_thread, &clockid) == 0 &&
-      os::Posix::clock_getres(clockid, &tp) == 0 && tp.tv_sec == 0) {
+      clock_getres(clockid, &tp) == 0 && tp.tv_sec == 0) {
     _supports_fast_thread_cpu_time = true;
     _pthread_getcpuclockid = pthread_getcpuclockid_func;
   }
-}
-
-jlong os::javaTimeNanos() {
-  if (os::supports_monotonic_clock()) {
-    struct timespec tp;
-    int status = os::Posix::clock_gettime(CLOCK_MONOTONIC, &tp);
-    assert(status == 0, "gettime error");
-    jlong result = jlong(tp.tv_sec) * (1000 * 1000 * 1000) + jlong(tp.tv_nsec);
-    return result;
-  } else {
-    timeval time;
-    int status = gettimeofday(&time, NULL);
-    assert(status != -1, "linux error");
-    jlong usecs = jlong(time.tv_sec) * (1000 * 1000) + jlong(time.tv_usec);
-    return 1000 * usecs;
-  }
-}
-
-void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  if (os::supports_monotonic_clock()) {
-    info_ptr->max_value = ALL_64_BITS;
-
-    // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
-    info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
-    info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
-  } else {
-    // gettimeofday - based on time in seconds since the Epoch thus does not wrap
-    info_ptr->max_value = ALL_64_BITS;
-
-    // gettimeofday is a real time clock so it skips
-    info_ptr->may_skip_backward = true;
-    info_ptr->may_skip_forward = true;
-  }
-
-  info_ptr->kind = JVMTI_TIMER_ELAPSED;                // elapsed not CPU time
 }
 
 // Return the real, user, and system times in seconds from an
@@ -2267,29 +2195,35 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   int num_found = 0;
   FILE* f = ::fopen("/proc/self/status", "r");
   char buf[256];
-  while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
-    if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
-         (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
-         (vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &vmswap) == 1) ||
-         (vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &vmhwm) == 1) ||
-         (vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &vmrss) == 1) ||
-         (rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &rssanon) == 1) ||
-         (rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &rssfile) == 1) ||
-         (rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &rssshmem) == 1)
-         )
-    {
-      num_found ++;
+  if (f != NULL) {
+    while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
+      if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
+           (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
+           (vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &vmswap) == 1) ||
+           (vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &vmhwm) == 1) ||
+           (vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &vmrss) == 1) ||
+           (rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &rssanon) == 1) ||
+           (rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &rssfile) == 1) ||
+           (rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &rssshmem) == 1)
+           )
+      {
+        num_found ++;
+      }
     }
-  }
-  st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmsize, vmpeak);
-  st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmrss, vmhwm);
-  if (rssanon != -1) { // requires kernel >= 4.5
-    st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
-                rssanon, rssfile, rssshmem);
-  }
-  st->cr();
-  if (vmswap != -1) { // requires kernel >= 2.6.34
-    st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
+    fclose(f);
+
+    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmsize, vmpeak);
+    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmrss, vmhwm);
+    if (rssanon != -1) { // requires kernel >= 4.5
+      st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
+                  rssanon, rssfile, rssshmem);
+    }
+    st->cr();
+    if (vmswap != -1) { // requires kernel >= 2.6.34
+      st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
+    }
+  } else {
+    st->print_cr("Could not open /proc/self/status to get process memory related information");
   }
 
   // Print glibc outstanding allocations.
@@ -2637,6 +2571,7 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   char dli_fname[MAXPATHLEN];
+  dli_fname[0] = '\0';
   bool ret = dll_address_to_library_name(
                                          CAST_FROM_FN_PTR(address, os::jvm_path),
                                          dli_fname, sizeof(dli_fname), NULL);
@@ -4343,10 +4278,40 @@ OSReturn os::get_native_priority(const Thread* const thread,
 
 jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   struct timespec tp;
-  int rc = os::Posix::clock_gettime(clockid, &tp);
-  assert(rc == 0, "clock_gettime is expected to return 0 code");
-
+  int status = clock_gettime(clockid, &tp);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
+}
+
+// Determine if the vmid is the parent pid for a child in a PID namespace.
+// Return the namespace pid if so, otherwise -1.
+int os::Linux::get_namespace_pid(int vmid) {
+  char fname[24];
+  int retpid = -1;
+
+  snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
+  FILE *fp = fopen(fname, "r");
+
+  if (fp) {
+    int pid, nspid;
+    int ret;
+    while (!feof(fp) && !ferror(fp)) {
+      ret = fscanf(fp, "NSpid: %d %d", &pid, &nspid);
+      if (ret == 1) {
+        break;
+      }
+      if (ret == 2) {
+        retpid = nspid;
+        break;
+      }
+      for (;;) {
+        int ch = fgetc(fp);
+        if (ch == EOF || ch == (int)'\n') break;
+      }
+    }
+    fclose(fp);
+  }
+  return retpid;
 }
 
 extern void report_error(char* file_name, int line_no, char* title,
@@ -4422,12 +4387,6 @@ void os::init(void) {
   os::Posix::init();
 
   initial_time_count = javaTimeNanos();
-
-  // Always warn if no monotonic clock available
-  if (!os::Posix::supports_monotonic_clock()) {
-    warning("No monotonic clock was available - timed services may "    \
-            "be adversely affected if the time-of-day clock changes");
-  }
 }
 
 // To install functions for atexit system call
@@ -4746,19 +4705,46 @@ int os::active_processor_count() {
   return active_cpus;
 }
 
+static bool should_warn_invalid_processor_id() {
+  if (os::processor_count() == 1) {
+    // Don't warn if we only have one processor
+    return false;
+  }
+
+  static volatile int warn_once = 1;
+
+  if (Atomic::load(&warn_once) == 0 ||
+      Atomic::xchg(&warn_once, 0) == 0) {
+    // Don't warn more than once
+    return false;
+  }
+
+  return true;
+}
+
 uint os::processor_id() {
   const int id = Linux::sched_getcpu();
 
-#ifndef PRODUCT
-  if (UseDebuggerErgo1 && id >= _processor_count) {
-    // Some debuggers limit the processor count without limiting
-    // the returned processor ids. Fake the processor id.
-    return 0;
+  if (id < processor_count()) {
+    return (uint)id;
   }
-#endif
 
-  assert(id >= 0 && id < _processor_count, "Invalid processor id [%d]", id);
-  return (uint)id;
+  // Some environments (e.g. openvz containers and the rr debugger) incorrectly
+  // report a processor id that is higher than the number of processors available.
+  // This is problematic, for example, when implementing CPU-local data structures,
+  // where the processor id is used to index into an array of length processor_count().
+  // If this happens we return 0 here. This is is safe since we always have at least
+  // one processor, but it's not optimal for performance if we're actually executing
+  // in an environment with more than one processor.
+  if (should_warn_invalid_processor_id()) {
+    log_warning(os)("Invalid processor id reported by the operating system "
+                    "(got processor id %d, valid processor id range is 0-%d)",
+                    id, processor_count() - 1);
+    log_warning(os)("Falling back to assuming processor id is 0. "
+                    "This could have a negative impact on performance.");
+  }
+
+  return 0;
 }
 
 void os::set_native_thread_name(const char *name) {

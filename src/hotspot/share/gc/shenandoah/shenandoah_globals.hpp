@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,9 +330,9 @@
           "Number of entries in an SATB log buffer.")                       \
           range(1, max_uintx)                                               \
                                                                             \
-  product(uintx, ShenandoahSATBBufferFlushInterval, 100, EXPERIMENTAL,      \
-          "Forcefully flush non-empty SATB buffers at this interval. "      \
-          "Time is in milliseconds.")                                       \
+  product(uintx, ShenandoahMaxSATBBufferFlushes, 5, EXPERIMENTAL,           \
+          "How many times to maximum attempt to flush SATB buffers at the " \
+          "end of concurrent marking.")                                     \
                                                                             \
   product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
           "Suspend concurrent GC worker threads at safepoints")             \
@@ -340,8 +340,8 @@
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \
-  product(bool, ShenandoahStoreValEnqueueBarrier, false, DIAGNOSTIC,        \
-          "Turn on/off enqueuing of oops for storeval barriers")            \
+  product(bool, ShenandoahIUBarrier, false, DIAGNOSTIC,                     \
+          "Turn on/off I-U barriers barriers in Shenandoah")                \
                                                                             \
   product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
           "Turn on/off CAS barriers in Shenandoah")                         \

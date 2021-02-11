@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ public class JdbOptions {
         // 'options' contains commas - values are quoted (double quotes)
         test("-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options=\"-client\" \"-XX:+PrintVMOptions\""
+                + " -XX:+IgnoreUnrecognizedVMOptions"
                 + " \"-XX:StartFlightRecording=dumponexit=true,maxsize=500M\" \"-XX:FlightRecorderOptions=repository=jfrrep\""
                 + ",main=" + targ)
             .expectedArg("-XX:StartFlightRecording=dumponexit=true,maxsize=500M")
@@ -104,6 +105,7 @@ public class JdbOptions {
         // 'options' contains commas - values are quoted (single quotes)
         test("-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-client' '-XX:+PrintVMOptions'"
+                        + " -XX:+IgnoreUnrecognizedVMOptions"
                         + " '-XX:StartFlightRecording=dumponexit=true,maxsize=500M' '-XX:FlightRecorderOptions=repository=jfrrep'"
                         + ",main=" + targ)
             .expectedArg("-XX:StartFlightRecording=dumponexit=true,maxsize=500M")
@@ -115,6 +117,7 @@ public class JdbOptions {
                 "-Dprop2=val 2",
                 "-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-Dprop3=val3 '-Dprop4=val 4'"
+                        + " -XX:+IgnoreUnrecognizedVMOptions"
                         + " \"-XX:StartFlightRecording=dumponexit=true,maxsize=500M\""
                         + " '-XX:FlightRecorderOptions=repository=jfrrep'"
                         + ",main=" + targ + " prop1 prop2 prop3 prop4")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,7 @@ public class EventNames {
     public final static String ZRelocationSetGroup = PREFIX + "ZRelocationSetGroup";
     public final static String ZUncommit = PREFIX + "ZUncommit";
     public final static String ZUnmap = PREFIX + "ZUnmap";
+    public final static String GCLocker = PREFIX + "GCLocker";
 
     // Compiler
     public final static String Compilation = PREFIX + "Compilation";

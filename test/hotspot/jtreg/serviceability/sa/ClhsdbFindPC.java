@@ -107,7 +107,7 @@ public class ClhsdbFindPC {
             if (withCore) {
                 String crashOutput = theApp.getOutput().getStdout();
                 // Get the core file name if we are debugging a core instead of live process
-                coreFileName = CoreUtils.getCoreFileLocation(crashOutput);
+                coreFileName = CoreUtils.getCoreFileLocation(crashOutput, theApp.getPid());
                 // Get the SEGV Address from the following line:
                 //  #  SIGSEGV (0xb) at pc=0x00007f20a897f7f4, pid=8561, tid=8562
                 String[] parts = crashOutput.split(" pc=");
