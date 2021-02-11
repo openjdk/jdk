@@ -1225,25 +1225,30 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       ciKlass* vbox_klass = vbox->box_type()->klass();
       const TypeVect* in_vt = vbox->vec_type();
       const TypeVect* out_vt = type()->is_vect();
-      assert(in_vt->length() == out_vt->length(), "mismatch on number of elements");
-      Node* value = vbox->in(VectorBoxNode::Value);
 
-      bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
-      bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
-      if (is_vector_mask) {
-        // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
-        value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
-        return new VectorLoadMaskNode(value, out_vt);
-      } else if (is_vector_shuffle) {
-        if (is_shuffle_to_vector()) {
-          // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
-          return new VectorCastB2XNode(value, out_vt);
+      if (in_vt->length() == out_vt->length()) {
+        Node* value = vbox->in(VectorBoxNode::Value);
+
+        bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+        bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+        if (is_vector_mask) {
+          // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
+          value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
+          return new VectorLoadMaskNode(value, out_vt);
+        } else if (is_vector_shuffle) {
+          if (is_shuffle_to_vector()) {
+            // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
+            return new VectorCastB2XNode(value, out_vt);
+          } else {
+            // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
+            return new VectorLoadShuffleNode(value, out_vt);
+          }
         } else {
-          // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
-          return new VectorLoadShuffleNode(value, out_vt);
+          // Vector type mismatch is only supported for masks and shuffles, but sometimes it happens in pathological cases.
         }
       } else {
-        assert(false, "type mismatch on vector: %s", vbox_klass->name()->as_utf8());
+        // Vector length mismatch.
+        // Sometimes happen in pathological cases (e.g., when unboxing happens in effectively dead code).
       }
     }
   }
