@@ -50,6 +50,8 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      */
     private byte[] bytearr = null;
 
+    private final byte[] writeBuffer = new byte[8];
+
     /**
      * Creates a new data output stream to write data to the specified
      * underlying output stream. The counter {@code written} is
@@ -206,8 +208,6 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         out.write(writeBuffer, 0, 4);
         incCount(4);
     }
-
-    private byte writeBuffer[] = new byte[8];
 
     /**
      * Writes a {@code long} to the underlying output stream as eight

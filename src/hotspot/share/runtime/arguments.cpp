@@ -1802,11 +1802,10 @@ void Arguments::set_heap_size() {
 
     if (InitialHeapSize == 0) {
       julong reasonable_initial = (julong)((phys_mem * InitialRAMPercentage) / 100);
+      reasonable_initial = limit_by_allocatable_memory(reasonable_initial);
 
       reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, (julong)MinHeapSize);
       reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
-
-      reasonable_initial = limit_by_allocatable_memory(reasonable_initial);
 
       FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
       log_trace(gc, heap)("  Initial heap size " SIZE_FORMAT, InitialHeapSize);

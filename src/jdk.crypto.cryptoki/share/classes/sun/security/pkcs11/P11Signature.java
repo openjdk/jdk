@@ -51,8 +51,15 @@ import sun.security.util.KeyUtil;
  * . DSA
  *   . NONEwithDSA (RawDSA)
  *   . SHA1withDSA
- *   . NONEwithDSAinP1363Format (RawDSAinP1363Format)
- *   . SHA1withDSAinP1363Format
+ *   . SHA224withDSA
+ *   . SHA256withDSA
+ *   . SHA384withDSA
+ *   . SHA512withDSA
+ *   . SHA3-224withDSA
+ *   . SHA3-256withDSA
+ *   . SHA3-384withDSA
+ *   . SHA3-512withDSA
+ *   . <any of above>inP1363Format
  * . RSA:
  *   . MD2withRSA
  *   . MD5withRSA
@@ -61,6 +68,10 @@ import sun.security.util.KeyUtil;
  *   . SHA256withRSA
  *   . SHA384withRSA
  *   . SHA512withRSA
+ *   . SHA3-224withRSA
+ *   . SHA3-256withRSA
+ *   . SHA3-384withRSA
+ *   . SHA3-512withRSA
  * . ECDSA
  *   . NONEwithECDSA
  *   . SHA1withECDSA
@@ -68,12 +79,11 @@ import sun.security.util.KeyUtil;
  *   . SHA256withECDSA
  *   . SHA384withECDSA
  *   . SHA512withECDSA
- *   . NONEwithECDSAinP1363Format
- *   . SHA1withECDSAinP1363Format
- *   . SHA224withECDSAinP1363Format
- *   . SHA256withECDSAinP1363Format
- *   . SHA384withECDSAinP1363Format
- *   . SHA512withECDSAinP1363Format
+ *   . SHA3_224withECDSA
+ *   . SHA3_256withECDSA
+ *   . SHA3_384withECDSA
+ *   . SHA3_512withECDSA
+ *   . <any of above>inP1363Format
  *
  * Note that the underlying PKCS#11 token may support complete signature
  * algorithm (e.g. CKM_DSA_SHA1, CKM_MD5_RSA_PKCS), or it may just
@@ -144,9 +154,10 @@ final class P11Signature extends SignatureSpi {
     // constant for type raw, used with RawDSA and NONEwithECDSA only
     private final static int T_RAW    = 3;
 
-    // XXX PKCS#11 v2.20 says "should not be longer than 1024 bits",
-    // but this is a little arbitrary
+    // PKCS#11 spec for CKM_ECDSA states that the length should not be longer
+    // than 1024 bits", but this is a little arbitrary
     private final static int RAW_ECDSA_MAX = 128;
+
 
     P11Signature(Token token, String algorithm, long mechanism)
             throws NoSuchAlgorithmException, PKCS11Exception {
@@ -165,16 +176,36 @@ final class P11Signature extends SignatureSpi {
         case (int)CKM_SHA256_RSA_PKCS:
         case (int)CKM_SHA384_RSA_PKCS:
         case (int)CKM_SHA512_RSA_PKCS:
+        case (int)CKM_SHA3_224_RSA_PKCS:
+        case (int)CKM_SHA3_256_RSA_PKCS:
+        case (int)CKM_SHA3_384_RSA_PKCS:
+        case (int)CKM_SHA3_512_RSA_PKCS:
             keyAlgorithm = "RSA";
             type = T_UPDATE;
             buffer = new byte[1];
             break;
         case (int)CKM_DSA_SHA1:
+        case (int)CKM_DSA_SHA224:
+        case (int)CKM_DSA_SHA256:
+        case (int)CKM_DSA_SHA384:
+        case (int)CKM_DSA_SHA512:
+        case (int)CKM_DSA_SHA3_224:
+        case (int)CKM_DSA_SHA3_256:
+        case (int)CKM_DSA_SHA3_384:
+        case (int)CKM_DSA_SHA3_512:
             keyAlgorithm = "DSA";
             type = T_UPDATE;
             buffer = new byte[1];
             break;
         case (int)CKM_ECDSA_SHA1:
+        case (int)CKM_ECDSA_SHA224:
+        case (int)CKM_ECDSA_SHA256:
+        case (int)CKM_ECDSA_SHA384:
+        case (int)CKM_ECDSA_SHA512:
+        case (int)CKM_ECDSA_SHA3_224:
+        case (int)CKM_ECDSA_SHA3_256:
+        case (int)CKM_ECDSA_SHA3_384:
+        case (int)CKM_ECDSA_SHA3_512:
             keyAlgorithm = "EC";
             type = T_UPDATE;
             buffer = new byte[1];
@@ -200,57 +231,18 @@ final class P11Signature extends SignatureSpi {
                 type = T_RAW;
                 buffer = new byte[RAW_ECDSA_MAX];
             } else {
-                String digestAlg;
-                if (algorithm.equals("SHA1withECDSA") ||
-                    algorithm.equals("SHA1withECDSAinP1363Format")) {
-                    digestAlg = "SHA-1";
-                } else if (algorithm.equals("SHA224withECDSA") ||
-                           algorithm.equals("SHA224withECDSAinP1363Format")) {
-                    digestAlg = "SHA-224";
-                } else if (algorithm.equals("SHA256withECDSA") ||
-                           algorithm.equals("SHA256withECDSAinP1363Format")) {
-                    digestAlg = "SHA-256";
-                } else if (algorithm.equals("SHA384withECDSA") ||
-                           algorithm.equals("SHA384withECDSAinP1363Format")) {
-                    digestAlg = "SHA-384";
-                } else if (algorithm.equals("SHA512withECDSA") ||
-                           algorithm.equals("SHA512withECDSAinP1363Format")) {
-                    digestAlg = "SHA-512";
-                } else {
-                    throw new ProviderException(algorithm);
-                }
                 type = T_DIGEST;
-                md = MessageDigest.getInstance(digestAlg);
+                md = MessageDigest.getInstance
+                        (getDigestEnum(algorithm).stdName());
             }
             break;
         case (int)CKM_RSA_PKCS:
         case (int)CKM_RSA_X_509:
             keyAlgorithm = "RSA";
             type = T_DIGEST;
-            if (algorithm.equals("MD5withRSA")) {
-                md = MessageDigest.getInstance("MD5");
-                digestOID = AlgorithmId.MD5_oid;
-            } else if (algorithm.equals("SHA1withRSA")) {
-                md = MessageDigest.getInstance("SHA-1");
-                digestOID = AlgorithmId.SHA_oid;
-            } else if (algorithm.equals("MD2withRSA")) {
-                md = MessageDigest.getInstance("MD2");
-                digestOID = AlgorithmId.MD2_oid;
-            } else if (algorithm.equals("SHA224withRSA")) {
-                md = MessageDigest.getInstance("SHA-224");
-                digestOID = AlgorithmId.SHA224_oid;
-            } else if (algorithm.equals("SHA256withRSA")) {
-                md = MessageDigest.getInstance("SHA-256");
-                digestOID = AlgorithmId.SHA256_oid;
-            } else if (algorithm.equals("SHA384withRSA")) {
-                md = MessageDigest.getInstance("SHA-384");
-                digestOID = AlgorithmId.SHA384_oid;
-            } else if (algorithm.equals("SHA512withRSA")) {
-                md = MessageDigest.getInstance("SHA-512");
-                digestOID = AlgorithmId.SHA512_oid;
-            } else {
-                throw new ProviderException("Unknown signature: " + algorithm);
-            }
+            KnownOIDs digestAlg = getDigestEnum(algorithm);
+            md = MessageDigest.getInstance(digestAlg.stdName());
+            digestOID = ObjectIdentifier.of(digestAlg);
             break;
         default:
             throw new ProviderException("Unknown mechanism: " + mechanism);
@@ -304,8 +296,8 @@ final class P11Signature extends SignatureSpi {
                 }
             } else { // M_VERIFY
                 byte[] signature;
-                if (keyAlgorithm.equals("DSA")) {
-                    signature = new byte[40];
+                if (mechanism == CKM_DSA) {
+                    signature = new byte[64]; // assume N = 256
                 } else {
                     signature = new byte[(p11Key.length() + 7) >> 3];
                 }
@@ -436,23 +428,17 @@ final class P11Signature extends SignatureSpi {
             throw new InvalidKeyException(iape.getMessage());
         }
         int maxDataSize = padding.getMaxDataSize();
-        int encodedLength;
-        if (algorithm.equals("MD5withRSA") ||
-            algorithm.equals("MD2withRSA")) {
-            encodedLength = 34;
-        } else if (algorithm.equals("SHA1withRSA")) {
-            encodedLength = 35;
-        } else if (algorithm.equals("SHA224withRSA")) {
-            encodedLength = 47;
-        } else if (algorithm.equals("SHA256withRSA")) {
-            encodedLength = 51;
-        } else if (algorithm.equals("SHA384withRSA")) {
-            encodedLength = 67;
-        } else if (algorithm.equals("SHA512withRSA")) {
-            encodedLength = 83;
-        } else {
-            throw new ProviderException("Unknown signature algo: " + algorithm);
-        }
+        int encodedLength = switch (algorithm) {
+            case "MD5withRSA", "MD2withRSA" -> 34;
+            case "SHA1withRSA" -> 35;
+            case "SHA224withRSA", "SHA3-224withRSA" -> 47;
+            case "SHA256withRSA", "SHA3-256withRSA" -> 51;
+            case "SHA384withRSA", "SHA3-384withRSA" -> 67;
+            case "SHA512withRSA", "SHA3-512withRSA" -> 83;
+            default ->
+                throw new ProviderException("Unknown signature algo: " +
+                        algorithm);
+        };
         if (encodedLength > maxDataSize) {
             throw new InvalidKeyException
                 ("Key is too short for this signature algorithm");
@@ -624,8 +610,7 @@ final class P11Signature extends SignatureSpi {
         try {
             byte[] signature;
             if (type == T_UPDATE) {
-                int len = keyAlgorithm.equals("DSA") ? 40 : 0;
-                signature = token.p11.C_SignFinal(session.id(), len);
+                signature = token.p11.C_SignFinal(session.id(), 0);
             } else {
                 byte[] digest;
                 if (type == T_DIGEST) {
@@ -766,6 +751,23 @@ final class P11Signature extends SignatureSpi {
             return RSASignature.encodeSignature(digestOID, digest);
         } catch (IOException e) {
             throw new SignatureException("Invalid encoding", e);
+        }
+    }
+
+    private static KnownOIDs getDigestEnum(String algorithm)
+            throws NoSuchAlgorithmException {
+        try {
+            String digAlg = SignatureUtil.extractDigestAlgFromDwithE(algorithm);
+            KnownOIDs k = KnownOIDs.findMatch(digAlg);
+            if (k == null) {
+                throw new NoSuchAlgorithmException
+                        ("Unsupported digest algorithm: " + digAlg);
+            }
+            return k;
+        } catch (IllegalArgumentException iae) {
+            // should never happen
+            throw new NoSuchAlgorithmException("Unknown signature: " +
+                    algorithm, iae);
         }
     }
 

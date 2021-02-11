@@ -44,6 +44,7 @@ class AllocateNode;
 class ArrayCopyNode;
 class BaseCountedLoopNode;
 class BaseCountedLoopEndNode;
+class BlackholeNode;
 class Block;
 class BoolNode;
 class BoxLockNode;

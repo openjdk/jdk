@@ -3180,8 +3180,6 @@ public final class SunGraphics2D
 
                         if (xform != null) {
                             assert dx1 == 0 && dy1 == 0;
-                            assert dx2 == img.getWidth(observer);
-                            assert dy2 == img.getHeight(observer);
                             AffineTransform renderTX = new AffineTransform(xform);
                             renderTX.scale(1 / widthScale, 1 / heightScale);
                             return transformImage(img, renderTX, observer);

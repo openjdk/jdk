@@ -2093,7 +2093,7 @@ void os::init(void) {
   if (Bsd::page_size() == -1) {
     fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
   }
-  init_page_sizes((size_t) Bsd::page_size());
+  _page_sizes.add(Bsd::page_size());
 
   Bsd::initialize_system_info();
 

@@ -337,7 +337,7 @@ public abstract class Reference<T> {
      *
      * @return   The object to which this reference refers, or
      *           {@code null} if this reference object has been cleared
-     * @see refersTo
+     * @see #refersTo
      */
     @IntrinsicCandidate
     public T get() {
