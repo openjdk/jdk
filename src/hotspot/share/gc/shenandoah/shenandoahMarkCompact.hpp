@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@
 
 class PreservedMarksSet;
 
-class ShenandoahMarkCompact : public CHeapObj<mtGC> {
+class ShenandoahMarkCompact : public StackObj {
   friend class ShenandoahPrepareForCompactionObjectClosure;
 private:
   GCTimer* _gc_timer;

@@ -246,10 +246,6 @@ public class LinkInfoImpl extends LinkInfo {
      */
     public Element targetMember;
 
-    /**
-     * The value of the target.
-     */
-    public String target = "";
     public  final Utils utils;
     /**
      * Construct a LinkInfo object.
@@ -320,15 +316,6 @@ public class LinkInfoImpl extends LinkInfo {
      */
     public LinkInfoImpl strong(boolean strong) {
         this.isStrong = strong;
-        return this;
-    }
-
-    /**
-     * Set the target to be used for the link.
-     * @param target the target name.
-     */
-    public LinkInfoImpl target(String target) {
-        this.target = target;
         return this;
     }
 
@@ -451,7 +438,6 @@ public class LinkInfoImpl extends LinkInfo {
         return "LinkInfoImpl{" +
                 "context=" + context +
                 ", where=" + where +
-                ", target=" + target +
                 super.toString() + '}';
     }
 }

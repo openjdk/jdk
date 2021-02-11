@@ -115,8 +115,7 @@ public class LinkFactoryImpl extends LinkFactory {
                                 filename.fragment(classLinkInfo.where),
                                 label,
                                 classLinkInfo.isStrong,
-                                title,
-                                classLinkInfo.target));
+                                title));
                         if (flags.contains(ElementFlag.PREVIEW)) {
                             link.add(HtmlTree.SUP(m_writer.links.createLink(
                                     filename.fragment(m_writer.htmlIds.forPreviewSection(target).name()),

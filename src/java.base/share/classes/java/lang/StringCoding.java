@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -523,16 +523,25 @@ class StringCoding {
     private static native void err(String msg);
 
      /* The cached Result for each thread */
-    private static final ThreadLocal<StringCoding.Result>
+    private static final ThreadLocal<SoftReference<Result>>
         resultCached = new ThreadLocal<>() {
-            protected StringCoding.Result initialValue() {
-                return new StringCoding.Result();
+            protected SoftReference<Result> initialValue() {
+                return new SoftReference<>(new Result());
             }};
+    private static Result resultCached() {
+        SoftReference<Result> sr = resultCached.get();
+        Result r;
+        if (sr == null || (r = sr.get()) == null) {
+            r = new Result();
+            resultCached.set(new SoftReference<>(r));
+        }
+        return r;
+    }
 
     ////////////////////////// ascii //////////////////////////////
 
     private static Result decodeASCII(byte[] ba, int off, int len) {
-        Result result = resultCached.get();
+        Result result = resultCached();
         if (COMPACT_STRINGS && !hasNegatives(ba, off, len)) {
             return result.with(Arrays.copyOfRange(ba, off, off + len),
                                LATIN1);
@@ -582,7 +591,7 @@ class StringCoding {
     ////////////////////////// latin1/8859_1 ///////////////////////////
 
     private static Result decodeLatin1(byte[] ba, int off, int len) {
-       Result result = resultCached.get();
+       Result result = resultCached();
        if (COMPACT_STRINGS) {
            return result.with(Arrays.copyOfRange(ba, off, off + len), LATIN1);
        } else {
@@ -720,13 +729,13 @@ class StringCoding {
     private static Result decodeUTF8(byte[] src, int sp, int len, boolean doReplace) {
         // ascii-bais, which has a relative impact to the non-ascii-only bytes
         if (COMPACT_STRINGS && !hasNegatives(src, sp, len))
-            return resultCached.get().with(Arrays.copyOfRange(src, sp, sp + len),
+            return resultCached().with(Arrays.copyOfRange(src, sp, sp + len),
                                            LATIN1);
         return decodeUTF8_0(src, sp, len, doReplace);
     }
 
     private static Result decodeUTF8_0(byte[] src, int sp, int len, boolean doReplace) {
-        Result ret = resultCached.get();
+        Result ret = resultCached();
 
         int sl = sp + len;
         int dp = 0;
@@ -1057,7 +1066,7 @@ class StringCoding {
         } catch (CharacterCodingException x) {
             throw new IllegalArgumentException(x);  // todo
         }
-        Result ret = resultCached.get().with(ca, 0, cb.position());
+        Result ret = resultCached().with(ca, 0, cb.position());
         return new String(ret.value, ret.coder);
     }
 

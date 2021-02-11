@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,90 +27,38 @@
 
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskTerminator.hpp"
+#include "gc/shenandoah/shenandoahMark.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 class ShenandoahStrDedupQueue;
 class ShenandoahReferenceProcessor;
 
-class ShenandoahConcurrentMark: public CHeapObj<mtGC> {
+class ShenandoahConcurrentMark: public ShenandoahMark {
+  friend class ShenandoahConcurrentMarkingTask;
+  friend class ShenandoahFinalMarkingTask;
+
+public:
+  ShenandoahConcurrentMark();
+
+  // When concurrent stack processing is not supported
+  void mark_stw_roots();
+  void mark_concurrent_roots();
+
+  // Concurrent mark
+  void concurrent_mark();
+  // Finish mark at a safepoint
+  void finish_mark();
+
+
+  static void cancel();
+
+  // TODO: where to put them
+  static void update_roots(ShenandoahPhaseTimings::Phase root_phase);
+  static void update_thread_roots(ShenandoahPhaseTimings::Phase root_phase);
+
 private:
-  GenerationMode const _generation_mode;
-  ShenandoahHeap* _heap;
-  ShenandoahObjToScanQueueSet* _task_queues;
-
-public:
-  ShenandoahConcurrentMark(GenerationMode generation_mode) : _generation_mode(generation_mode) { }
-
-  void initialize(uint workers);
-  void cancel();
-
-  GenerationMode generation_mode() const { return _generation_mode; }
-
-// ---------- Marking loop and tasks
-//
-private:
-  template <class T>
-  inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task);
-
-  template <class T>
-  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, bool weak);
-
-  template <class T>
-  inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow, bool weak);
-
-  inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
-
-  template <class T, GenerationMode GENERATION, bool CANCELLABLE>
-  void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
-
-  template <GenerationMode GENERATION, bool CANCELLABLE>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor* rp, bool strdedup);
-
-public:
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp, bool cancellable, bool strdedup) {
-    switch (generation_mode()) {
-      case YOUNG: {
-        if (cancellable) {
-          mark_loop_prework<YOUNG, true>(worker_id, terminator, rp, strdedup);
-        } else {
-          mark_loop_prework<YOUNG, false>(worker_id, terminator, rp, strdedup);
-        }
-        break;
-      }
-      case GLOBAL: {
-        if (cancellable) {
-          mark_loop_prework<GLOBAL, true>(worker_id, terminator, rp, strdedup);
-        } else {
-          mark_loop_prework<GLOBAL, false>(worker_id, terminator, rp, strdedup);
-        }
-        break;
-      }
-      default: {
-        ShouldNotReachHere();
-        break;
-      }
-    }
-  }
-
-  template<class T, GenerationMode GENERATION, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
-
-  void mark_from_roots();
-  void finish_mark_from_roots(bool full_gc);
-
-  void mark_roots(ShenandoahPhaseTimings::Phase root_phase);
-  void update_roots(ShenandoahPhaseTimings::Phase root_phase);
-  void update_thread_roots(ShenandoahPhaseTimings::Phase root_phase);
-
-// ---------- Helpers
-// Used from closures, need to be public
-//
-public:
-  ShenandoahObjToScanQueue* get_queue(uint worker_id);
-  ShenandoahObjToScanQueueSet* task_queues() { return _task_queues; }
-
+  void finish_mark_work();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP

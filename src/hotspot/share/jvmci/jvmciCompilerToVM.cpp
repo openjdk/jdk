@@ -132,7 +132,6 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 
 // Native method block that transitions current thread to '_thread_in_vm'.
 #define C2V_BLOCK(result_type, name, signature)      \
-  TRACE_CALL(result_type, jvmci_ ## name signature)  \
   JVMCI_VM_ENTRY_MARK;                               \
   ResourceMark rm;                                   \
   JNI_JVMCIENV(JVMCI::compilation_tick(thread), env);

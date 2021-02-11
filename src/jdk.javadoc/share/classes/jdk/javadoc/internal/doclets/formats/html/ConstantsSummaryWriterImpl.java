@@ -42,8 +42,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -110,13 +108,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content link;
         if (pkg.isUnnamed()) {
             link = links.createLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR,
-                    contents.defaultPackageLabel, "", "");
+                    contents.defaultPackageLabel, "");
         } else {
             String parsedPackageName = utils.parsePackageName(pkg);
             Content packageNameContent = getPackageLabel(parsedPackageName);
             packageNameContent.add(".*");
             link = links.createLink(DocLink.fragment(parsedPackageName),
-                    packageNameContent, "", "");
+                    packageNameContent, "");
             PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(pkg);
             printedPackageHeaders.add(abbrevPkg);
         }

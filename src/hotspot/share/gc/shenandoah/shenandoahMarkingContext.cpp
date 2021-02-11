@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,30 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "utilities/stack.inline.hpp"
 
-ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions) :
+ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions, uint max_queues) :
   _mark_bit_map(heap_region, bitmap_region),
   _top_bitmaps(NEW_C_HEAP_ARRAY(HeapWord*, num_regions, mtGC)),
   _top_at_mark_starts_base(NEW_C_HEAP_ARRAY(HeapWord*, num_regions, mtGC)),
   _top_at_mark_starts(_top_at_mark_starts_base -
-                      ((uintx) heap_region.start() >> ShenandoahHeapRegion::region_size_bytes_shift())) {
+                      ((uintx) heap_region.start() >> ShenandoahHeapRegion::region_size_bytes_shift())),
+  _task_queues(new ShenandoahObjToScanQueueSet(max_queues)) {
+  assert(max_queues > 0, "At least one queue");
+  for (uint i = 0; i < max_queues; ++i) {
+    ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
+    task_queue->initialize();
+    _task_queues->register_queue(i, task_queue);
+  }
+}
+
+ShenandoahMarkingContext::~ShenandoahMarkingContext() {
+  for (uint i = 0; i < _task_queues->size(); ++i) {
+    ShenandoahObjToScanQueue* q = _task_queues->queue(i);
+    delete q;
+  }
+  delete _task_queues;
 }
 
 bool ShenandoahMarkingContext::is_bitmap_clear() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.security.KeyStore;
 import java.security.cert.*;
 import java.util.*;
 
-public class CheckBlacklistedCerts {
+public class CheckBlockedCerts {
     public static void main(String[] args) throws Exception {
 
         String home = System.getProperty("java.home");
@@ -57,29 +57,30 @@ public class CheckBlacklistedCerts {
         }
 
         // All certs in the pem files
-        Set<Certificate> blacklisted = new HashSet<>();
+        Set<Certificate> blocked = new HashSet<>();
 
         // Assumes the full src is available
-        File blacklist = new File(System.getProperty("test.src"),
-                "../../../../../make/data/blacklistedcertsconverter/blacklisted.certs.pem");
+        File blockedCertsFile = new File(System.getProperty("test.src"),
+                "../../../../../make/data/blockedcertsconverter/blocked.certs.pem");
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        try (FileInputStream fis = new FileInputStream(blacklist)) {
+        try (FileInputStream fis = new FileInputStream(blockedCertsFile)) {
             Collection<? extends Certificate> certs
                     = cf.generateCertificates(fis);
             System.out.println(certs.size());
             for (Certificate c: certs) {
-                blacklisted.add(c);
+                blocked.add(c);
                 X509Certificate cert = ((X509Certificate)c);
                 if (!UntrustedCertificates.isUntrusted(cert)) {
-                    System.out.println(cert.getSubjectDN() + " is trusted");
+                    System.out.println(cert.getSubjectX500Principal() +
+                            " is trusted");
                     failed = true;
                 }
             }
         }
 
-        // Check the blacklisted.certs file itself
-        file = new File(home, "lib/security/blacklisted.certs");
+        // Check the blocked.certs file itself
+        file = new File(home, "lib/security/blocked.certs");
         System.out.print("Check for " + file + ": ");
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(file)))) {
@@ -100,11 +101,11 @@ public class CheckBlacklistedCerts {
                 failed = true;
             }
             // There are two unique fingerprints for each RSA certificate
-            if (ccount != blacklisted.size() * 2
-                    && !blacklisted.isEmpty()) {
-                System.out.println("Wrong blacklisted.certs size: "
+            if (ccount != blocked.size() * 2
+                    && !blocked.isEmpty()) {
+                System.out.println("Wrong blocked.certs size: "
                         + ccount + " fingerprints, "
-                        + blacklisted.size() + " certs");
+                        + blocked.size() + " certs");
                 failed = true;
             }
         }

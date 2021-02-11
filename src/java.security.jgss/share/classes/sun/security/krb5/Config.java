@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1330,7 +1330,7 @@ public class Config {
     /**
      * Locate KDC using DNS
      *
-     * @param realm the realm for which the master KDC is desired
+     * @param realm the realm for which the primary KDC is desired
      * @return the KDC
      */
     private String getKDCFromDNS(String realm) throws KrbException {

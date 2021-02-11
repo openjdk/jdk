@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,30 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_INLINE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
 
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
+#include "gc/shenandoah/shenandoahMark.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.hpp"
 
-template<class T, GenerationMode GENERATION, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-inline void ShenandoahMarkRefsSuperClosure::work(T *p) {
-  ShenandoahMark::mark_through_ref<T, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context, _weak);
-}
+class ShenandoahSTWMarkTask;
 
-template <class T>
-inline void ShenandoahUpdateHeapRefsClosure::do_oop_work(T* p) {
-  _heap->maybe_update_with_forwarded(p);
-}
+class ShenandoahSTWMark : public ShenandoahMark {
+  friend class ShenandoahSTWMarkTask;
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_INLINE_HPP
+private:
+  ShenandoahSTWRootScanner      _root_scanner;
+  TaskTerminator                _terminator;
+  bool                          _full_gc;
+public:
+ ShenandoahSTWMark(bool full_gc);
+ void mark();
+
+private:
+  void mark_roots(uint worker_id);
+  void finish_mark(uint worker_id);
+};
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
+
