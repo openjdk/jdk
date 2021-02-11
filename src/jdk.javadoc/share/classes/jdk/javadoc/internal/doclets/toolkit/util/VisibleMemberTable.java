@@ -126,7 +126,7 @@ public class VisibleMemberTable {
     private Map<ExecutableElement, PropertyMembers> propertyMap = new HashMap<>();
 
     // Keeps track of method overrides
-    Map<ExecutableElement, OverridingMethodInfo> overriddenMethodTable
+    Map<ExecutableElement, OverriddenMethodInfo> overriddenMethodTable
             = new LinkedHashMap<>();
 
     protected VisibleMemberTable(TypeElement typeElement, BaseConfiguration configuration,
@@ -240,7 +240,7 @@ public class VisibleMemberTable {
     public ExecutableElement getOverriddenMethod(ExecutableElement e) {
         ensureInitialized();
 
-        OverridingMethodInfo found = overriddenMethodTable.get(e);
+        OverriddenMethodInfo found = overriddenMethodTable.get(e);
         if (found != null
                 && (found.simpleOverride || utils.isUndocumentedEnclosure(utils.getEnclosingTypeElement(e)))) {
             return found.overridden;
@@ -256,7 +256,7 @@ public class VisibleMemberTable {
     public ExecutableElement getSimplyOverriddenMethod(ExecutableElement e) {
         ensureInitialized();
 
-        OverridingMethodInfo found = overriddenMethodTable.get(e);
+        OverriddenMethodInfo found = overriddenMethodTable.get(e);
         if (found != null && found.simpleOverride) {
             return found.overridden;
         }
@@ -475,7 +475,7 @@ public class VisibleMemberTable {
         for (VisibleMemberTable pvmt : parents) {
             // Merge the lineage overrides into local table
             pvmt.overriddenMethodTable.entrySet().forEach(e -> {
-                OverridingMethodInfo p = e.getValue();
+                OverriddenMethodInfo p = e.getValue();
                 if (!p.simpleOverride) { // consider only real overrides
                     List<ExecutableElement> list = overriddenByTable.computeIfAbsent(p.overridden,
                             k -> new ArrayList<>());
@@ -498,7 +498,7 @@ public class VisibleMemberTable {
         // overrides a super method, or those methods that should not
         // be visible.
         Predicate<ExecutableElement> isVisible = m -> {
-            OverridingMethodInfo p = overriddenMethodTable.getOrDefault(m, null);
+            OverriddenMethodInfo p = overriddenMethodTable.getOrDefault(m, null);
             return p == null || !p.simpleOverride;
         };
         List<Element> localList = lmt.getOrderedMembers(Kind.METHODS)
@@ -586,7 +586,7 @@ public class VisibleMemberTable {
                 TypeElement encl = utils.getEnclosingTypeElement(inheritedMethod);
                 if (utils.isUndocumentedEnclosure(encl)) {
                     overriddenMethodTable.computeIfAbsent(lMethod,
-                            l -> new OverridingMethodInfo(inheritedMethod, false));
+                            l -> new OverriddenMethodInfo(inheritedMethod, false));
                     return false;
                 }
 
@@ -598,7 +598,7 @@ public class VisibleMemberTable {
                         && !overridingSignatureChanged(lMethod, inheritedMethod)
                         && !overriddenByTable.containsKey(inheritedMethod);
                 overriddenMethodTable.computeIfAbsent(lMethod,
-                        l -> new OverridingMethodInfo(inheritedMethod, simpleOverride));
+                        l -> new OverriddenMethodInfo(inheritedMethod, simpleOverride));
                 return simpleOverride;
             }
         }
@@ -1034,21 +1034,21 @@ public class VisibleMemberTable {
     }
 
     /**
-     * A simple container to encapsulate an overriding method
+     * A simple container to encapsulate an overridden method
      * and the type of override.
      */
-    static class OverridingMethodInfo {
+    static class OverriddenMethodInfo {
         final ExecutableElement overridden;
         final boolean simpleOverride;
 
-        public OverridingMethodInfo(ExecutableElement overridden, boolean simpleOverride) {
+        public OverriddenMethodInfo(ExecutableElement overridden, boolean simpleOverride) {
             this.overridden = overridden;
             this.simpleOverride = simpleOverride;
         }
 
         @Override
         public String toString() {
-            return "OverridingMethodInfo[" + overridden + ",simple:" + simpleOverride + "]";
+            return "OverriddenMethodInfo[" + overridden + ",simple:" + simpleOverride + "]";
         }
     }
 }

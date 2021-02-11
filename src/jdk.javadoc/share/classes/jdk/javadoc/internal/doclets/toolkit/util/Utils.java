@@ -1562,10 +1562,11 @@ public class Utils {
      * @return true if it exists, false otherwise
      */
     public boolean hasHiddenTag(Element e) {
-        // prevent needless tests on elements which are neither included nor selected.
-        // Non-included members may still be visible via "transclusion" from undocumented enclusure
-        if (!isIncluded(e) && !configuration.docEnv.isSelected(e)) {
-            return false;
+        // Prevent needless tests on elements which are neither included nor selected.
+        if (!isIncluded(e)) {
+            // Non-included members may still be visible via "transclusion" from undocumented enclosures,
+            // but we don't want to run doclint on them, possibly causing warnings or errors.
+            return configuration.docEnv.isSelected(e) && hasBlockTagUnchecked(e, HIDDEN);
         }
         if (options.javafx() &&
                 hasBlockTag(e, DocTree.Kind.UNKNOWN_BLOCK_TAG, "treatAsPrivate")) {
@@ -2658,6 +2659,23 @@ public class Utils {
         return false;
     }
 
+    /*
+     * Tests whether an element's doc comment contains a block tag without caching it or
+     * running doclint on it. This is done by using getDocCommentInfo(Element) to retrieve
+     * the doc comment info.
+     */
+    boolean hasBlockTagUnchecked(Element element, DocTree.Kind kind) {
+        DocCommentInfo dcInfo = getDocCommentInfo(element);
+        if (dcInfo != null && dcInfo.dcTree != null) {
+            for (DocTree dt : getBlockTags(dcInfo.dcTree)) {
+                if (dt.getKind() == kind) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * Gets a TreePath for an Element. Note this method is called very
      * frequently, care must be taken to ensure this method is lithe
@@ -2726,9 +2744,7 @@ public class Utils {
                     }
                 }
                 // run doclint even if docCommentTree is null, to trigger checks for missing comments
-                if (shouldRunDocLint(element)) {
-                    configuration.runDocLint(path);
-                }
+                configuration.runDocLint(path);
             }
             dcTreeCache.put(element, info);
         }
@@ -2791,19 +2807,6 @@ public class Utils {
                 throw new UncheckedDocletException(new SimpleDocletException(text, jsf));
             }
         }
-    }
-
-    // Returns true if we should run doclint for an element, which is the case for
-    // included elements as well as non-included members of included types.
-    private boolean shouldRunDocLint(Element e) {
-        // isIncluded is not able to handle overview elements
-        if (isOverviewElement(e) || isIncluded(e)) {
-            return true;
-        }
-        // Run doclint on non-incuded members of included type elements.
-        // One case this is required for is serialization-related tags on private methods.
-        TypeElement te = getEnclosingTypeElement(e);
-        return te != null && isIncluded(te);
     }
 
     public DocCommentTree getDocCommentTree(Element element) {
