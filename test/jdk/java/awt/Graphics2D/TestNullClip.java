@@ -37,15 +37,15 @@ public class TestNullClip {
         BufferedImage bi = new BufferedImage(100, 100, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = (Graphics2D)bi.getGraphics();
 
+        g2d.setClip(0, 0, 100, 100);
+        Shape clip = g2d.getClip();
+        g2d.setClip(null);
+        Shape clip1 = g2d.getClip();
+        if (clip1 != null) {
+            throw new RuntimeException("Clip is not cleared");
+        }
+        g2d.setClip(0, 0, 100, 100);
         try {
-            g2d.setClip(0, 0, 100, 100);
-            Shape clip = g2d.getClip();
-            g2d.setClip(null);
-            Shape clip1 = g2d.getClip();
-            if (clip1 != null) {
-                throw new RuntimeException("Clip is not cleared");
-            }
-            g2d.setClip(0, 0, 100, 100);
             g2d.clip(null);
             throw new RuntimeException("NPE is expected");
         } catch (NullPointerException e) {

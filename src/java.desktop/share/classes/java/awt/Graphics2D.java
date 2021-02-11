@@ -1200,11 +1200,14 @@ public abstract class Graphics2D extends Graphics {
      * previously been set, or if the clip has been cleared using
      * {@link Graphics#setClip(Shape) setClip} with a {@code null}
      * argument, the specified {@code Shape} becomes the new
-     * user clip.
+     * user clip. Since this method intersects the specified shape
+     * with the current clip, it will throw NPE for a null shape
+     * unless the user clip is also null.
+     * So calling this method with a null argument is not recommended.
      * @param s the {@code Shape} to be intersected with the current
      *          {@code Clip}. This method updates the current {@code Clip}.
      * @throws NullPointerException if {@code s} is {@code null}
-     *         and clip is already set via {@code setClip}
+     *         and a user clip is currently set.
      */
      public abstract void clip(Shape s);
 
