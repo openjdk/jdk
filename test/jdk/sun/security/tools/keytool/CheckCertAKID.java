@@ -26,10 +26,19 @@
  * @bug 8257497
  * @summary Check if issuer's SKID is used to establish the AKID for the subject cert
  * @library /test/lib
+ * @modules java.base/sun.security.util
  */
 
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.OutputAnalyzer;
+
+import java.io.*;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import sun.security.util.DerValue;
+import sun.security.util.KnownOIDs;
+import static sun.security.util.KnownOIDs.*;
 
 public class CheckCertAKID {
 
@@ -60,13 +69,34 @@ public class CheckCertAKID {
         kt("-certreq -alias e1 -file tmp.req", "ks");
         kt("-gencert -alias ca -ext san=dns:e1 -infile tmp.req -outfile tmp.cert ",
                 "ks");
+        kt("-importcert -alias e1 -file tmp.cert", "ks");
 
-        SecurityTools.keytool("-keystore ks -storepass changeit " +
-                "-printcert -file tmp.cert")
-                .shouldContain("AuthorityKeyIdentifier")
-                .shouldContain("0000: 00 01 02 03 04 05 06 07   08 09 10 11 12 13 14 15")
-                .shouldContain("0010: 16 17 18 19")
-                .shouldHaveExitValue(0);
+        byte[] expectedId = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19};
 
+        KeyStore kstore = KeyStore.getInstance(new File("ks"),
+                "changeit".toCharArray());
+        X509Certificate cert = (X509Certificate)kstore.getCertificate("e1");
+        byte[] authorityKeyIdExt = cert.getExtensionValue(
+                KnownOIDs.AuthorityKeyID.value());
+
+        byte[] authorityKeyId = null;
+        if (authorityKeyIdExt == null) {
+            System.out.println("Failed to get AKID extension from the cert");
+            System.exit(1);
+        } else {
+            try {
+                authorityKeyId = new DerValue(authorityKeyIdExt).getOctetString();
+            } catch (IOException e) {
+                System.out.println("Failed to get AKID encoded OctetString in the cert");
+                System.exit(1);
+            }
+        }
+
+        authorityKeyId = Arrays.copyOfRange(authorityKeyId, 4, authorityKeyId.length);
+        if (!Arrays.equals(authorityKeyId, expectedId)) {
+            System.out.println("Failed due to AKID mismatch");
+            System.exit(1);
+        }
     }
 }
