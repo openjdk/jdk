@@ -248,8 +248,9 @@ void setOSNameAndVersion(java_props_t *sprops) {
 
         NSString *nsVerStr;
         // Copy out the char* if running on version other than 10.16 Mac OS (10.16 == 11.x)
-        if (!((long)osVer.majorVersion == 10 &&
-                   (long)osVer.minorVersion >= 16)) {
+        // or explicitly requesting version compatibility
+        if (!((long)osVer.majorVersion == 10 && (long)osVer.minorVersion >= 16) ||
+                (getenv("SYSTEM_VERSION_COMPAT") != NULL)) {
             if (osVer.patchVersion == 0) { // Omit trailing ".0"
                 nsVerStr = [NSString stringWithFormat:@"%ld.%ld",
                         (long)osVer.majorVersion, (long)osVer.minorVersion];
@@ -259,7 +260,7 @@ void setOSNameAndVersion(java_props_t *sprops) {
             }
             // Copy out the char*
             osVersionCStr = strdup([nsVerStr UTF8String]);
-        } else if (getenv("SYSTEM_VERSION_COMPAT") == NULL) {
+        } else {
             // Version 10.16, without explicit env setting of SYSTEM_VERSION_COMPAT
             // AKA 11.x; compute the version number from the letter in the ProductBuildVersion
             NSDictionary *version = [NSDictionary dictionaryWithContentsOfFile :
