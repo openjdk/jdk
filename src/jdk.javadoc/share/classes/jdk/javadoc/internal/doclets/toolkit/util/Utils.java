@@ -1562,11 +1562,10 @@ public class Utils {
      * @return true if it exists, false otherwise
      */
     public boolean hasHiddenTag(Element e) {
-        // Prevent needless tests on elements which are neither included nor selected.
+        // Non-included elements may still be visible via "transclusion" from undocumented enclosures,
+        // but we don't want to run doclint on them, possibly causing warnings or errors.
         if (!isIncluded(e)) {
-            // Non-included members may still be visible via "transclusion" from undocumented enclosures,
-            // but we don't want to run doclint on them, possibly causing warnings or errors.
-            return configuration.docEnv.isSelected(e) && hasBlockTagUnchecked(e, HIDDEN);
+            return hasBlockTagUnchecked(e, HIDDEN);
         }
         if (options.javafx() &&
                 hasBlockTag(e, DocTree.Kind.UNKNOWN_BLOCK_TAG, "treatAsPrivate")) {
