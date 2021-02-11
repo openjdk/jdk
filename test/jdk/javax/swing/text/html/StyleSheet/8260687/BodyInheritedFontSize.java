@@ -31,7 +31,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.AbstractDocument.AbstractElement;
 import javax.swing.text.Document;
-import javax.swing.text.StyleConstants;
+import javax.swing.text.GlyphView;
 import javax.swing.text.View;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -46,6 +46,7 @@ public class BodyInheritedFontSize {
     private static final String HTML_TEXT = """
             <html>
             <body>
+              <p style="font-size: 100%">100% from body</p>
               <p>16pt inherited from body</p>
               <p style="font-size: 16pt">16pt paragraph</p>
             </body>
@@ -125,27 +126,43 @@ public class BodyInheritedFontSize {
         final View boxView = rootView.getView(0);
         final View bodyView = boxView.getView(1);
 
-        int fontSizeInherited = getViewFontSize(bodyView.getView(0), debugPrint);
-        int fontSizeExplicit  = getViewFontSize(bodyView.getView(1), debugPrint);
+        int fontSizePrecentage = getViewFontSize(bodyView.getView(0), debugPrint);
+        int fontSizeInherited  = getViewFontSize(bodyView.getView(1), debugPrint);
+        int fontSizeExplicit   = getViewFontSize(bodyView.getView(2), debugPrint);
         if (debugPrint) {
             System.out.println("w3cUnits: " + w3cUnits + "\n"
+                    + "Percentage: " + fontSizePrecentage + "\n"
                     + "Inherited: " + fontSizeInherited + "\n"
                     + "Explicit: " + fontSizeExplicit + "\n");
         }
         if (fontSizeInherited != fontSizeExplicit) {
             throw new RuntimeException("The font size is different with "
                     + (w3cUnits ? "w3cUnits" : "stdUnits") + ": "
+                    + "Percentage: " + fontSizePrecentage + " vs. "
                     + "Inherited: " + fontSizeInherited + " vs. "
                     + "Explicit: " + fontSizeExplicit);
         }
     }
 
     private static int getViewFontSize(View paragraphView, boolean debugPrint) {
-        View inlineView = paragraphView.getView(0).getView(0);
-        int fontSize = StyleConstants.getFontSize(inlineView.getAttributes());
+        GlyphView inlineView = findFirstTextRun(paragraphView);
+        int fontSize = inlineView.getFont().getSize();
         if (debugPrint) {
             ((AbstractElement) inlineView.getElement()).dump(System.out, 1);
         }
         return fontSize;
+    }
+
+    private static GlyphView findFirstTextRun(View view) {
+        if (view instanceof GlyphView) {
+            return (GlyphView) view;
+        }
+        for (int i = 0; i < view.getViewCount(); i++) {
+            GlyphView textRun = findFirstTextRun(view.getView(i));
+            if (textRun != null) {
+                return textRun;
+            }
+        }
+        return null;
     }
 }
