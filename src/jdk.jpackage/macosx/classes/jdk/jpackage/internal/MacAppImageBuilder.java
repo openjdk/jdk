@@ -367,7 +367,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     static void prepareEntitlements(Map<String, ? super Object> params)
             throws IOException {
-        createResource("entitlements.plist", params)
+
+        String defaultEntitlements = (Optional.ofNullable(
+                APP_STORE.fetchFrom(params)).orElse(Boolean.FALSE)) ?
+                "sandbox.plist" : "entitlements.plist";
+        createResource(defaultEntitlements, params)
                 .setCategory(I18N.getString("resource.entitlements"))
                 .saveToFile(getConfig_Entitlements(params));
     }
