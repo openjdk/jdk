@@ -26,7 +26,7 @@
   <string>????</string>
   <!-- See https://developer.apple.com/app-store/categories/ for list of AppStore categories -->
   <key>LSApplicationCategoryType</key>
-  <string>Unknown</string>
+  <string>DEPLOY_APP_CATEGORY</string>
   <key>CFBundleVersion</key>
   <string>DEPLOY_BUNDLE_CFBUNDLE_VERSION</string>
   <key>NSHumanReadableCopyright</key>

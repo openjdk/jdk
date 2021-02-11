@@ -48,6 +48,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.MacAppImageBundler.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 
@@ -102,11 +103,12 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             "mac.signing-key-developer-id-installer",
             String.class,
             params -> {
-                    String result = MacBaseInstallerBundler.findKey(
-                            "Developer ID Installer: ",
+                    String prefix = APP_STORE.fetchFrom(params) ?
+                            "3rd Party Mac Developer Installer: " :
+                            "Developer ID Installer: ");
+                    String result = MacBaseInstallerBundler.findKey(prefix,
                             SIGNING_KEY_USER.fetchFrom(params),
-                            SIGNING_KEYCHAIN.fetchFrom(params),
-                            VERBOSE.fetchFrom(params));
+                            SIGNING_KEYCHAIN.fetchFrom(params));
                     if (result != null) {
                         MacCertificate certificate = new MacCertificate(result);
 

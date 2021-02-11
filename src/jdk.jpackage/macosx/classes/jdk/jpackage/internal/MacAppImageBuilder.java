@@ -102,6 +102,13 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     params -> null,
                     (s, p) -> s);
 
+    public static final BundlerParamInfo<String> APP_CATEGORY =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.MAC_APP_CATEGORY.getId(),
+                    String.class,
+                    params -> "utilities",
+                    (s, p) -> s);
+
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_IDENTIFIER =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.MAC_BUNDLE_IDENTIFIER.getId(),
@@ -137,6 +144,16 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     public static final StandardBundlerParam<Boolean> SIGN_BUNDLE  =
             new StandardBundlerParam<>(
             Arguments.CLIOptions.MAC_SIGN.getId(),
+            Boolean.class,
+            params -> false,
+            // valueOf(null) is false, we actually do want null in some cases
+            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                    null : Boolean.valueOf(s)
+        );
+
+    public static final StandardBundlerParam<Boolean> APP_STORE  =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.MAC_APP_STORE.getId(),
             Boolean.class,
             params -> false,
             // valueOf(null) is false, we actually do want null in some cases
@@ -441,6 +458,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         data.put("DEPLOY_LAUNCHER_NAME", getLauncherName(params));
         data.put("DEPLOY_BUNDLE_SHORT_VERSION", VERSION.fetchFrom(params));
         data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", VERSION.fetchFrom(params));
+        data.put("DEPLOY_APP_CATEGORY", "public.app-category." +
+                APP_CATEGORY.fetchFrom(params));
 
         StringBuilder bundleDocumentTypes = new StringBuilder();
         StringBuilder exportedTypes = new StringBuilder();

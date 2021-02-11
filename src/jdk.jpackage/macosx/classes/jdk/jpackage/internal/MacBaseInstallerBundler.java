@@ -152,14 +152,13 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         return "INSTALLER";
     }
 
-    public static String findKey(String keyPrefix, String teamName, String keychainName,
-            boolean verbose) {
-        String key = (teamName.startsWith(keyPrefix)
-                || teamName.startsWith("3rd Party Mac Developer"))
-                ? teamName : (keyPrefix + teamName);
-        if (Platform.getPlatform() != Platform.MAC) {
-            return null;
-        }
+    public static String findKey(String keyPrefix, String teamName, String keychainName) {
+
+        boolean useAsIs = teamName.startsWith(keyPrefix) 
+                || teamName.startsWith("Developer ID")
+                || teamName.startsWith("3rd Party Mac");
+
+        String key = (useAsIs) ? teamName : (keyPrefix + teamName);
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 PrintStream ps = new PrintStream(baos)) {

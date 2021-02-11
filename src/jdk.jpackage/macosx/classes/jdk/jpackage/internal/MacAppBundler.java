@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.MacAppImageBundler.APP_STORE;
 import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
@@ -62,11 +63,12 @@ public class MacAppBundler extends AppImageBundler {
             "mac.signing-key-developer-id-app",
             String.class,
             params -> {
-                    String result = MacBaseInstallerBundler.findKey(
-                            "Developer ID Application: ",
+                    String prefix = APP_STORE.fetchFrom(params) ?
+                            "3rd Party Mac Developer Application: " :
+                            "Developer ID Application: ");
+                    String result = MacBaseInstallerBundler.findKey(prefix,
                             SIGNING_KEY_USER.fetchFrom(params),
-                            SIGNING_KEYCHAIN.fetchFrom(params),
-                            VERBOSE.fetchFrom(params));
+                            SIGNING_KEYCHAIN.fetchFrom(params));
                     if (result != null) {
                         MacCertificate certificate = new MacCertificate(result);
 
