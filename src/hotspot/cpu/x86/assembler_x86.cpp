@@ -1649,6 +1649,7 @@ void Assembler::cmovl(Condition cc, Register dst, Register src) {
 
 
 void Assembler::cmovl(Condition cc, Register dst, Address src) {
+  InstructionMark im(this);
   NOT_LP64(guarantee(VM_Version::supports_cmov(), "illegal instruction"));
   prefix(src, dst);
   emit_int16(0x0F, (0x40 | cc));

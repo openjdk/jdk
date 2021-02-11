@@ -5386,17 +5386,6 @@ instruct leaP32(rRegP dst, indOffset32 mem)
   ins_pipe(ialu_reg_reg_fat);
 %}
 
-// instruct leaPIdx(rRegP dst, indIndex mem)
-// %{
-//   match(Set dst mem);
-
-//   ins_cost(110);
-//   format %{ "leaq    $dst, $mem\t# ptr idx" %}
-//   opcode(0x8D);
-//   ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
-//   ins_pipe(ialu_reg_reg_fat);
-// %}
-
 instruct leaPIdxOff(rRegP dst, indIndexOffset mem)
 %{
   match(Set dst mem);
@@ -5591,8 +5580,9 @@ instruct loadConI0(rRegI dst, immI_0 src, rFlagsReg cr)
 
   ins_cost(50);
   format %{ "xorl    $dst, $dst\t# int" %}
-  opcode(0x33); /* + rd */
-  ins_encode(REX_reg_reg(dst, dst), OpcP, reg_reg(dst, dst));
+  ins_encode %{
+    __ xorl($dst$$Register, $dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -5613,8 +5603,9 @@ instruct loadConL0(rRegL dst, immL0 src, rFlagsReg cr)
 
   ins_cost(50);
   format %{ "xorl    $dst, $dst\t# long" %}
-  opcode(0x33); /* + rd */
-  ins_encode(REX_reg_reg(dst, dst), OpcP, reg_reg(dst, dst));
+  ins_encode %{
+    __ xorl($dst$$Register, $dst$$Register);
+  %}
   ins_pipe(ialu_reg); // XXX
 %}
 
@@ -5653,8 +5644,9 @@ instruct loadConP0(rRegP dst, immP0 src, rFlagsReg cr)
 
   ins_cost(50);
   format %{ "xorl    $dst, $dst\t# ptr" %}
-  opcode(0x33); /* + rd */
-  ins_encode(REX_reg_reg(dst, dst), OpcP, reg_reg(dst, dst));
+  ins_encode %{
+    __ xorl($dst$$Register, $dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -5751,7 +5743,7 @@ instruct loadConD0(regD dst, immD0 src)
 
   format %{ "xorpd   $dst, $dst\t# double 0.0" %}
   ins_encode %{
-    __ xorpd ($dst$$XMMRegister, $dst$$XMMRegister);
+    __ xorpd($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -6047,8 +6039,9 @@ instruct storeImmI(memory mem, immI src)
 
   ins_cost(150);
   format %{ "movl    $mem, $src\t# int" %}
-  opcode(0xC7); /* C7 /0 */
-  ins_encode(REX_mem(mem), OpcP, RM_opc_mem(0x00, mem), Con32(src));
+  ins_encode %{
+    __ movl($mem$$Address, $src$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -6123,8 +6116,9 @@ instruct storeImmB(memory mem, immI8 src)
 
   ins_cost(150); // XXX
   format %{ "movb    $mem, $src\t# byte" %}
-  opcode(0xC6); /* C6 /0 */
-  ins_encode(REX_mem(mem), OpcP, RM_opc_mem(0x00, mem), Con8or32(src));
+  ins_encode %{
+    __ movb($mem$$Address, $src$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -6148,8 +6142,9 @@ instruct storeImmCM0(memory mem, immI_0 src)
 
   ins_cost(150); // XXX
   format %{ "movb    $mem, $src\t# CMS card-mark byte 0" %}
-  opcode(0xC6); /* C6 /0 */
-  ins_encode(REX_mem(mem), OpcP, RM_opc_mem(0x00, mem), Con8or32(src));
+  ins_encode %{
+    __ movb($mem$$Address, $src$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -6336,8 +6331,9 @@ instruct bytes_reverse_int(rRegI dst) %{
   match(Set dst (ReverseBytesI dst));
 
   format %{ "bswapl  $dst" %}
-  opcode(0x0F, 0xC8);  /*Opcode 0F /C8 */
-  ins_encode( REX_reg(dst), OpcP, opc2_reg(dst) );
+  ins_encode %{
+    __ bswapl($dst$$Register);
+  %}
   ins_pipe( ialu_reg );
 %}
 
@@ -6345,8 +6341,9 @@ instruct bytes_reverse_long(rRegL dst) %{
   match(Set dst (ReverseBytesL dst));
 
   format %{ "bswapq  $dst" %}
-  opcode(0x0F, 0xC8); /* Opcode 0F /C8 */
-  ins_encode( REX_reg_wide(dst), OpcP, opc2_reg(dst) );
+  ins_encode %{
+    __ bswapq($dst$$Register);
+  %}
   ins_pipe( ialu_reg);
 %}
 
@@ -6864,8 +6861,9 @@ instruct cmovI_reg(rRegI dst, rRegI src, rFlagsReg cr, cmpOp cop)
 
   ins_cost(200); // XXX
   format %{ "cmovl$cop $dst, $src\t# signed, int" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_reg(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_encode %{
+    __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
   ins_pipe(pipe_cmov_reg);
 %}
 
@@ -6874,8 +6872,9 @@ instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
 
   ins_cost(200); // XXX
   format %{ "cmovl$cop $dst, $src\t# unsigned, int" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_reg(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_encode %{
+    __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
   ins_pipe(pipe_cmov_reg);
 %}
 
@@ -6893,8 +6892,9 @@ instruct cmovI_mem(cmpOp cop, rFlagsReg cr, rRegI dst, memory src) %{
 
   ins_cost(250); // XXX
   format %{ "cmovl$cop $dst, $src\t# signed, int" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_mem(dst, src), enc_cmov(cop), reg_mem(dst, src));
+  ins_encode %{
+    __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Address);
+  %}
   ins_pipe(pipe_cmov_mem);
 %}
 
@@ -6905,8 +6905,9 @@ instruct cmovI_memU(cmpOpU cop, rFlagsRegU cr, rRegI dst, memory src)
 
   ins_cost(250); // XXX
   format %{ "cmovl$cop $dst, $src\t# unsigned, int" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_mem(dst, src), enc_cmov(cop), reg_mem(dst, src));
+  ins_encode %{
+    __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Address);
+  %}
   ins_pipe(pipe_cmov_mem);
 %}
 
@@ -6925,8 +6926,9 @@ instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
 
   ins_cost(200); // XXX
   format %{ "cmovl$cop $dst, $src\t# signed, compressed ptr" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_reg(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_encode %{
+    __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
   ins_pipe(pipe_cmov_reg);
 %}
 
@@ -6937,8 +6939,9 @@ instruct cmovN_regU(cmpOpU cop, rFlagsRegU cr, rRegN dst, rRegN src)
 
   ins_cost(200); // XXX
   format %{ "cmovl$cop $dst, $src\t# unsigned, compressed ptr" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_reg(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_encode %{
+    __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
   ins_pipe(pipe_cmov_reg);
 %}
 
@@ -6957,8 +6960,9 @@ instruct cmovP_reg(rRegP dst, rRegP src, rFlagsReg cr, cmpOp cop)
 
   ins_cost(200); // XXX
   format %{ "cmovq$cop $dst, $src\t# signed, ptr" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_reg_wide(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_encode %{
+    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
   ins_pipe(pipe_cmov_reg);  // XXX
 %}
 
@@ -6969,8 +6973,9 @@ instruct cmovP_regU(cmpOpU cop, rFlagsRegU cr, rRegP dst, rRegP src)
 
   ins_cost(200); // XXX
   format %{ "cmovq$cop $dst, $src\t# unsigned, ptr" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_reg_wide(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_encode %{
+    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
   ins_pipe(pipe_cmov_reg); // XXX
 %}
 
@@ -7015,8 +7020,9 @@ instruct cmovL_reg(cmpOp cop, rFlagsReg cr, rRegL dst, rRegL src)
 
   ins_cost(200); // XXX
   format %{ "cmovq$cop $dst, $src\t# signed, long" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_reg_wide(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_encode %{
+    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
   ins_pipe(pipe_cmov_reg);  // XXX
 %}
 
@@ -7026,8 +7032,9 @@ instruct cmovL_mem(cmpOp cop, rFlagsReg cr, rRegL dst, memory src)
 
   ins_cost(200); // XXX
   format %{ "cmovq$cop $dst, $src\t# signed, long" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_mem_wide(dst, src), enc_cmov(cop), reg_mem(dst, src));
+  ins_encode %{
+    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Address);
+  %}
   ins_pipe(pipe_cmov_mem);  // XXX
 %}
 
@@ -7037,8 +7044,9 @@ instruct cmovL_regU(cmpOpU cop, rFlagsRegU cr, rRegL dst, rRegL src)
 
   ins_cost(200); // XXX
   format %{ "cmovq$cop $dst, $src\t# unsigned, long" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_reg_wide(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_encode %{
+    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
   ins_pipe(pipe_cmov_reg); // XXX
 %}
 
@@ -7056,8 +7064,9 @@ instruct cmovL_memU(cmpOpU cop, rFlagsRegU cr, rRegL dst, memory src)
 
   ins_cost(200); // XXX
   format %{ "cmovq$cop $dst, $src\t# unsigned, long" %}
-  opcode(0x0F, 0x40);
-  ins_encode(REX_reg_mem_wide(dst, src), enc_cmov(cop), reg_mem(dst, src));
+  ins_encode %{
+    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Address);
+  %}
   ins_pipe(pipe_cmov_mem); // XXX
 %}
 
@@ -7190,8 +7199,9 @@ instruct addI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "addl    $dst, $src\t# int" %}
-  opcode(0x81, 0x00); /* /0 id */
-  ins_encode(OpcSErm(dst, src), Con8or32(src));
+  ins_encode %{
+    __ addl($dst$$Register, $src$$constant);
+  %}
   ins_pipe( ialu_reg );
 %}
 
@@ -7228,8 +7238,9 @@ instruct addI_mem_imm(memory dst, immI src, rFlagsReg cr)
 
   ins_cost(125); // XXX
   format %{ "addl    $dst, $src\t# int" %}
-  opcode(0x81); /* Opcode 81 /0 id */
-  ins_encode(REX_mem(dst), OpcSE(src), RM_opc_mem(0x00, dst), Con8or32(src));
+  ins_encode %{
+    __ addl($dst$$Address, $src$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -7240,8 +7251,9 @@ instruct incI_rReg(rRegI dst, immI_1 src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "incl    $dst\t# int" %}
-  opcode(0xFF, 0x00); // FF /0
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ incrementl($dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -7267,8 +7279,9 @@ instruct decI_rReg(rRegI dst, immI_M1 src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "decl    $dst\t# int" %}
-  opcode(0xFF, 0x01); // FF /1
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ decrementl($dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -7317,8 +7330,9 @@ instruct addL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "addq    $dst, $src\t# long" %}
-  opcode(0x81, 0x00); /* /0 id */
-  ins_encode(OpcSErm_wide(dst, src), Con8or32(src));
+  ins_encode %{
+    __ addq($dst$$Register, $src$$constant);
+  %}
   ins_pipe( ialu_reg );
 %}
 
@@ -7355,9 +7369,9 @@ instruct addL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
 
   ins_cost(125); // XXX
   format %{ "addq    $dst, $src\t# long" %}
-  opcode(0x81); /* Opcode 81 /0 id */
-  ins_encode(REX_mem_wide(dst),
-             OpcSE(src), RM_opc_mem(0x00, dst), Con8or32(src));
+  ins_encode %{
+    __ addq($dst$$Address, $src$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -7368,8 +7382,9 @@ instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "incq    $dst\t# long" %}
-  opcode(0xFF, 0x00); // FF /0
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ incrementq($dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -7446,8 +7461,9 @@ instruct addP_rReg_imm(rRegP dst, immL32 src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "addq    $dst, $src\t# ptr" %}
-  opcode(0x81, 0x00); /* /0 id */
-  ins_encode(OpcSErm_wide(dst, src), Con8or32(src));
+  ins_encode %{
+    __ addq($dst$$Register, $src$$constant);
+  %}
   ins_pipe( ialu_reg );
 %}
 
@@ -8295,8 +8311,9 @@ instruct mulL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
 
   ins_cost(300);
   format %{ "imulq   $dst, $src\t# long" %}
-  opcode(0x0F, 0xAF);
-  ins_encode(REX_reg_reg_wide(dst, src), OpcP, OpcS, reg_reg(dst, src));
+  ins_encode %{
+    __ imulq($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
@@ -8307,9 +8324,9 @@ instruct mulL_rReg_imm(rRegL dst, rRegL src, immL32 imm, rFlagsReg cr)
 
   ins_cost(300);
   format %{ "imulq   $dst, $src, $imm\t# long" %}
-  opcode(0x69); /* 69 /r id */
-  ins_encode(REX_reg_reg_wide(dst, src),
-             OpcSE(imm), reg_reg(dst, src), Con8or32(imm));
+  ins_encode %{
+    __ imulq($dst$$Register, $src$$Register, $imm$$constant);
+  %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
@@ -8320,8 +8337,9 @@ instruct mulL_mem(rRegL dst, memory src, rFlagsReg cr)
 
   ins_cost(350);
   format %{ "imulq   $dst, $src\t# long" %}
-  opcode(0x0F, 0xAF);
-  ins_encode(REX_reg_mem_wide(dst, src), OpcP, OpcS, reg_mem(dst, src));
+  ins_encode %{
+    __ imulq($dst$$Register, $src$$Address);
+  %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
 
@@ -8616,8 +8634,9 @@ instruct sarI_rReg_1(rRegI dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarl    $dst, $shift" %}
-  opcode(0xD1, 0x7); /* D1 /7 */
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ sarl($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8640,8 +8659,9 @@ instruct sarI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarl    $dst, $shift" %}
-  opcode(0xC1, 0x7); /* C1 /7 ib */
-  ins_encode(reg_opc_imm(dst, shift));
+  ins_encode %{
+    __ sarl($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8688,8 +8708,9 @@ instruct shrI_rReg_1(rRegI dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrl    $dst, $shift" %}
-  opcode(0xD1, 0x5); /* D1 /5 */
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ shrl($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8712,8 +8733,9 @@ instruct shrI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrl    $dst, $shift" %}
-  opcode(0xC1, 0x5); /* C1 /5 ib */
-  ins_encode(reg_opc_imm(dst, shift));
+  ins_encode %{
+    __ shrl($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8834,8 +8856,9 @@ instruct sarL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarq    $dst, $shift" %}
-  opcode(0xD1, 0x7); /* D1 /7 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ sarq($dst$$Register, $shift$$constant);
+  }
   ins_pipe(ialu_reg);
 %}
 
@@ -8858,8 +8881,9 @@ instruct sarL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarq    $dst, $shift" %}
-  opcode(0xC1, 0x7); /* C1 /7 ib */
-  ins_encode(reg_opc_imm_wide(dst, shift));
+  ins_encode %{
+    __ sarq($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8907,8 +8931,9 @@ instruct shrL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrq    $dst, $shift" %}
-  opcode(0xD1, 0x5); /* D1 /5 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst ));
+  ins_encode %{
+    __ shrq($dst$$Register, $shift$$constant);
+  }
   ins_pipe(ialu_reg);
 %}
 
@@ -8931,11 +8956,11 @@ instruct shrL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrq    $dst, $shift" %}
-  opcode(0xC1, 0x5); /* C1 /5 ib */
-  ins_encode(reg_opc_imm_wide(dst, shift));
+  ins_encode %{
+    __ shrq($dst$$Register, $shift$$constant);
+  }
   ins_pipe(ialu_reg);
 %}
-
 
 // Logical Shift Right by 8-bit immediate
 instruct shrL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
@@ -9464,8 +9489,9 @@ instruct xorI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "xorl    $dst, $src\t# int" %}
-  opcode(0x33);
-  ins_encode(REX_reg_reg(dst, src), OpcP, reg_reg(dst, src));
+  ins_encode %{
+    __ xorl($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -9500,8 +9526,9 @@ instruct xorI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 
   ins_cost(125);
   format %{ "xorl    $dst, $src\t# int" %}
-  opcode(0x33);
-  ins_encode(REX_reg_mem(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode %{
+    __ xorl($dst$$Register, $src$$Address);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -9874,8 +9901,9 @@ instruct xorL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "xorq    $dst, $src\t# long" %}
-  opcode(0x33);
-  ins_encode(REX_reg_reg_wide(dst, src), OpcP, reg_reg(dst, src));
+  ins_encode %{
+    __ xorq($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -9910,8 +9938,9 @@ instruct xorL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 
   ins_cost(125);
   format %{ "xorq    $dst, $src\t# long" %}
-  opcode(0x33);
-  ins_encode(REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode %{
+    __ xorq($dst$$Register, $src$$Address);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -11610,7 +11639,6 @@ instruct testP_reg(rFlagsReg cr, rRegP src, immP0 zero)
   match(Set cr (CmpP src zero));
 
   format %{ "testq   $src, $src\t# ptr" %}
-  opcode(0x85);
   ins_encode %{
     __ testq($src$$Register, $src$$Register);
   %}
@@ -11802,8 +11830,9 @@ instruct testL_reg_mem(rFlagsReg cr, rRegL src, memory mem, immL0 zero)
   match(Set cr (CmpL (AndL src (LoadL mem)) zero));
 
   format %{ "testq   $src, $mem" %}
-  opcode(0x85);
-  ins_encode(REX_reg_mem_wide(src, mem), OpcP, reg_mem(src, mem));
+  ins_encode %{
+    __ testq($src$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
@@ -11812,8 +11841,9 @@ instruct testL_reg_mem2(rFlagsReg cr, rRegP src, memory mem, immL0 zero)
   match(Set cr (CmpL (AndL (CastP2X src) (LoadL mem)) zero));
 
   format %{ "testq   $src, $mem" %}
-  opcode(0x85);
-  ins_encode(REX_reg_mem_wide(src, mem), OpcP, reg_mem(src, mem));
+  ins_encode %{
+    __ testq($src$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
@@ -11874,8 +11904,9 @@ instruct testUL_reg(rFlagsRegU cr, rRegL src, immL0 zero)
   match(Set cr (CmpUL src zero));
 
   format %{ "testq   $src, $src\t# unsigned" %}
-  opcode(0x85);
-  ins_encode(REX_reg_reg_wide(src, src), OpcP, reg_reg(src, src));
+  ins_encode %{
+    __ testq($src$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_cr_reg_imm);
 %}
 
@@ -12518,8 +12549,9 @@ instruct Ret()
   match(Return);
 
   format %{ "ret" %}
-  opcode(0xC3);
-  ins_encode(OpcP);
+  ins_encode %{
+    __ ret(0);
+  %}
   ins_pipe(pipe_jmp);
 %}
 
