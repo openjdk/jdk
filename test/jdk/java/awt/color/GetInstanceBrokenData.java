@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,22 @@
  * questions.
  */
 
-import static java.lang.ProcessBuilder.Redirect.*;
+import java.awt.color.ICC_Profile;
 
-class InheritIO {
+/**
+ * @test
+ * @bug 6211198
+ * @summary IllegalArgumentException in ICC_Profile.getInstance for broken data
+ */
+public final class GetInstanceBrokenData {
 
-    public static class TestInheritIO {
-        public static void main(String args[]) throws Throwable {
-            int err = new ProcessBuilder(args).inheritIO().start().waitFor();
-            System.err.print("exit value: " + err);
-            System.exit(err);
-        }
-    }
-
-    public static class TestRedirectInherit {
-        public static void main(String args[]) throws Throwable {
-            int err = new ProcessBuilder(args)
-                    .redirectInput(INHERIT)
-                    .redirectOutput(INHERIT)
-                    .redirectError(INHERIT)
-                    .start().waitFor();
-            System.err.print("exit value: " + err);
-            System.exit(err);
+    public static void main(String[] argv) {
+        byte b[] = {-21, -22, -23};
+        try {
+            ICC_Profile p = ICC_Profile.getInstance(b);
+            throw new RuntimeException("IllegalArgumentException is expected");
+        } catch (IllegalArgumentException ignored) {
+            // expected
         }
     }
 }

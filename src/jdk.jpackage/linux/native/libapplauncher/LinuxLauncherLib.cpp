@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
  * questions.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "kludge_c++11.h"
+
+#include <memory>
+#include "JvmLauncher.h"
 #include "AppLauncher.h"
 #include "FileUtils.h"
 #include "UnixSysInfo.h"
@@ -43,6 +45,8 @@ size_t hash(const std::string& str) {
     }
     return h;
 }
+
+Jvm* jvmLauncher;
 
 void launchApp() {
     const tstring launcherPath = SysInfo::getProcessModulePath();
@@ -116,14 +120,38 @@ void launchApp() {
     }
     JP_CATCH_ALL;
 
-    appLauncher.launch();
+    jvmLauncher = appLauncher.createJvmLauncher();
 }
 
 } // namespace
 
 
-int main(int argc, char *argv[]) {
+extern "C" {
+
+JNIEXPORT JvmlLauncherHandle jvmLauncherCreate(int argc, char *argv[]) {
     SysInfo::argc = argc;
     SysInfo::argv = argv;
-    return app::launch(std::nothrow, launchApp);
+    jvmLauncher = 0;
+    app::launch(std::nothrow, launchApp);
+
+    JvmlLauncherHandle jlh = 0;
+    if (jvmLauncher) {
+        jlh = jvmLauncher->exportLauncher();
+        const std::unique_ptr<Jvm> deleter(jvmLauncher);
+    }
+
+    return jlh;
 }
+
+} // extern "C"
+
+
+namespace {
+
+void dcon() __attribute__((destructor));
+
+void dcon() {
+   LOG_TRACE("unload");
+}
+
+} // namespace

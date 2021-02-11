@@ -341,11 +341,14 @@ public:
 #endif
 
   template <typename T>
-  static unsigned int hash_for_shared_dictionary(T* ptr) {
+  static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
+    assert(MetaspaceObj::is_shared((const MetaspaceObj*)ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
-    address p = address(ptr) - SharedBaseAddress;
-    return primitive_hash<address>(p);
+    uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
+    return primitive_hash<uintx>(offset);
   }
+
+  static unsigned int hash_for_shared_dictionary(address ptr);
 
 #if INCLUDE_CDS_JAVA_HEAP
 private:

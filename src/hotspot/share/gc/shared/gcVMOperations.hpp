@@ -30,7 +30,6 @@
 #include "memory/metaspace.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vmOperation.hpp"
 
