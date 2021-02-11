@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,11 +165,10 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // Make the call node.
-  CallRuntimeNode *call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM);
+  CallRuntimeNode* call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM, new (C) JVMState(0));
   //-----------------------------
 
   // Fix-up the debug info for the call.
-  call->set_jvms(new (C) JVMState(0));
   call->jvms()->set_bci(0);
   call->jvms()->set_offsets(cnt);
 

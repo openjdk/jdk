@@ -150,15 +150,10 @@ void Deoptimization::UnrollBlock::print() {
 
 
 // In order to make fetch_unroll_info work properly with escape
-// analysis, The method was changed from JRT_LEAF to JRT_BLOCK_ENTRY and
-// ResetNoHandleMark and HandleMark were removed from it. The actual reallocation
-// of previously eliminated objects occurs in realloc_objects, which is
-// called from the method fetch_unroll_info_helper below.
+// analysis, the method was changed from JRT_LEAF to JRT_BLOCK_ENTRY.
+// The actual reallocation of previously eliminated objects occurs in realloc_objects,
+// which is called from the method fetch_unroll_info_helper below.
 JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(JavaThread* thread, int exec_mode))
-  // It is actually ok to allocate handles in a leaf method. It causes no safepoints,
-  // but makes the entry a little slower. There is however a little dance we have to
-  // do in debug mode to get around the NoHandleMark code in the JRT_LEAF macro
-
   // fetch_unroll_info() is called at the beginning of the deoptimization
   // handler. Note this fact before we start generating temporary frames
   // that can confuse an asynchronous stack walker. This counter is
@@ -689,10 +684,13 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   // We are already active in the special DeoptResourceMark any ResourceObj's we
   // allocate will be freed at the end of the routine.
 
-  // It is actually ok to allocate handles in a leaf method. It causes no safepoints,
-  // but makes the entry a little slower. There is however a little dance we have to
-  // do in debug mode to get around the NoHandleMark code in the JRT_LEAF macro
-  ResetNoHandleMark rnhm; // No-op in release/product versions
+  // JRT_LEAF methods don't normally allocate handles and there is a
+  // NoHandleMark to enforce that. It is actually safe to use Handles
+  // in a JRT_LEAF method, and sometimes desirable, but to do so we
+  // must use ResetNoHandleMark to bypass the NoHandleMark, and
+  // then use a HandleMark to ensure any Handles we do create are
+  // cleaned up in this scope.
+  ResetNoHandleMark rnhm;
   HandleMark hm(thread);
 
   frame stub_frame = thread->last_frame();

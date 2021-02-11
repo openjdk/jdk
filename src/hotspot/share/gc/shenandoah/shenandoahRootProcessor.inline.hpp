@@ -112,6 +112,7 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do_impl(Cl
       _semaphore.claim_all();
     }
   } else {
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
     f(clds);
   }
 }

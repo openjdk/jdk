@@ -66,8 +66,6 @@ class JvmtiThreadState;
 class JvmtiVMObjectAllocEventCollector;
 class ThreadStatistics;
 class ConcurrentLocksDump;
-class ParkEvent;
-class Parker;
 class MonitorInfo;
 
 class BufferBlob;
@@ -1854,9 +1852,9 @@ class JavaThread: public Thread {
 
   // JSR166 per-thread parker
  private:
-  Parker*    _parker;
+  Parker _parker;
  public:
-  Parker*     parker() { return _parker; }
+  Parker* parker() { return &_parker; }
 
   // Biased locking support
  private:

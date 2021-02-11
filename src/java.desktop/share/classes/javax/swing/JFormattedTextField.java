@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.InputMethodEvent;
 import java.awt.im.InputContext;
 import java.beans.BeanProperty;
 import java.beans.JavaBean;
-import java.io.*;
-import java.text.*;
-import java.util.*;
-import javax.swing.event.*;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.text.AttributedCharacterIterator;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.Format;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Date;
+
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.plaf.UIResource;
-import javax.swing.text.*;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.DateFormatter;
+import javax.swing.text.DefaultFormatter;
+import javax.swing.text.DefaultFormatterFactory;
+import javax.swing.text.Document;
+import javax.swing.text.DocumentFilter;
+import javax.swing.text.InternationalFormatter;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.NavigationFilter;
+import javax.swing.text.NumberFormatter;
+import javax.swing.text.TextAction;
 
 /**
  * <code>JFormattedTextField</code> extends <code>JTextField</code> adding
@@ -725,6 +749,7 @@ public class JFormattedTextField extends JTextField {
      *
      * @param s Stream to write to
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

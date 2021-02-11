@@ -85,7 +85,7 @@ import javax.lang.model.util.ElementKindVisitor14;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleAnnotationValueVisitor14;
 import javax.lang.model.util.SimpleElementVisitor14;
-import javax.lang.model.util.SimpleTypeVisitor9;
+import javax.lang.model.util.SimpleTypeVisitor14;
 import javax.lang.model.util.TypeKindVisitor9;
 import javax.lang.model.util.Types;
 import javax.tools.FileObject;
@@ -628,7 +628,7 @@ public class Utils {
     }
 
     public boolean isPrimitive(TypeMirror t) {
-        return new SimpleTypeVisitor9<Boolean, Void>() {
+        return new SimpleTypeVisitor14<Boolean, Void>() {
 
             @Override
             public Boolean visitNoType(NoType t, Void p) {
@@ -733,7 +733,7 @@ public class Utils {
     }
 
     public String getTypeSignature(TypeMirror t, boolean qualifiedName, boolean noTypeParameters) {
-        return new SimpleTypeVisitor9<StringBuilder, Void>() {
+        return new SimpleTypeVisitor14<StringBuilder, Void>() {
             final StringBuilder sb = new StringBuilder();
 
             @Override
@@ -1211,7 +1211,7 @@ public class Utils {
      *         or null if it is a primitive type.
      */
     public TypeElement asTypeElement(TypeMirror t) {
-        return new SimpleTypeVisitor9<TypeElement, Void>() {
+        return new SimpleTypeVisitor14<TypeElement, Void>() {
 
             @Override
             public TypeElement visitDeclared(DeclaredType t, Void p) {
@@ -1267,7 +1267,7 @@ public class Utils {
      * @return the type's dimension information as a string.
      */
     public String getDimension(TypeMirror t) {
-        return new SimpleTypeVisitor9<String, Void>() {
+        return new SimpleTypeVisitor14<String, Void>() {
             StringBuilder dimension = new StringBuilder();
             @Override
             public String visitArray(ArrayType t, Void p) {
@@ -1379,7 +1379,7 @@ public class Utils {
     private final Map<String, String> kindNameMap = new HashMap<>();
 
     public String getTypeName(TypeMirror t, boolean fullyQualified) {
-        return new SimpleTypeVisitor9<String, Void>() {
+        return new SimpleTypeVisitor14<String, Void>() {
 
             @Override
             public String visitArray(ArrayType t, Void p) {
@@ -1764,7 +1764,7 @@ public class Utils {
      * @return the fully qualified name of Reference type or the primitive name
      */
     public String getQualifiedTypeName(TypeMirror t) {
-        return new SimpleTypeVisitor9<String, Void>() {
+        return new SimpleTypeVisitor14<String, Void>() {
             @Override
             public String visitDeclared(DeclaredType t, Void p) {
                 return getFullyQualifiedName(t.asElement());

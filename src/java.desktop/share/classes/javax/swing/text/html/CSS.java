@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.text.html;
 
 import java.awt.Color;
@@ -31,6 +32,7 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -2453,6 +2455,7 @@ public class CSS implements Serializable {
             return null;
         }
 
+        @Serial
         private void writeObject(java.io.ObjectOutputStream s)
                      throws IOException {
             s.defaultWriteObject();
@@ -2464,6 +2467,7 @@ public class CSS implements Serializable {
             }
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
                 throws ClassNotFoundException, IOException {
             s.defaultReadObject();
@@ -3563,6 +3567,7 @@ public class CSS implements Serializable {
     // Serialization support
     //
 
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws IOException
     {
@@ -3593,6 +3598,7 @@ public class CSS implements Serializable {
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {

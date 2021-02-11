@@ -26,7 +26,7 @@
 #import "CDataTransferer.h"
 #include "sun_lwawt_macosx_CDataTransferer.h"
 
-#import "jni_util.h"
+#import "JNIUtilities.h"
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
@@ -109,9 +109,9 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDataTransferer_registerFormatWith
 (JNIEnv *env, jobject jthis, jstring newformat)
 {
     jlong returnValue = -1;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     returnValue = registerFormatWithPasteboard(JNFJavaToNSString(env, newformat));
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return returnValue;
 }
 
@@ -124,9 +124,9 @@ JNIEXPORT jstring JNICALL Java_sun_lwawt_macosx_CDataTransferer_formatForIndex
   (JNIEnv *env, jobject jthis, jlong index)
 {
     jstring returnValue = NULL;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     returnValue = JNFNSToJavaString(env, formatForIndex(index));
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return returnValue;
 }
 
@@ -200,7 +200,7 @@ Java_sun_lwawt_macosx_CDataTransferer_nativeDragQueryFile
 
     jobjectArray jreturnArray = NULL;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // Get byte array elements:
     jboolean isCopy;
     jbyte* jbytes = (*env)->GetByteArrayElements(env, jbytearray, &isCopy);
@@ -250,6 +250,6 @@ JNF_COCOA_ENTER(env);
 
     // We're done with the jbytes (backing the plist/plistArray):
     (*env)->ReleaseByteArrayElements(env, jbytearray, jbytes, JNI_ABORT);
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return jreturnArray;
 }

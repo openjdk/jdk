@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,6 +50,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"

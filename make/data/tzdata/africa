@@ -409,36 +409,87 @@ Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 
 # Ghana
 
-# From Paul Eggert (2018-01-30):
-# Whitman says DST was observed from 1931 to "the present";
-# Shanks & Pottenger say 1936 to 1942 with 20 minutes of DST,
-# with transitions on 09-01 and 12-31 at 00:00.
-# Page 33 of Parish GCB, Colonial Reports - Annual. No. 1066. Gold
-# Coast. Report for 1919. (March 1921), OCLC 784024077
-# http://libsysdigi.library.illinois.edu/ilharvest/africana/books2011-05/5530214/5530214_1919/5530214_1919_opt.pdf
-# lists the Determination of the Time Ordinance, 1919, No. 18,
-# "to advance the time observed locally by the space of twenty minutes
-# during the last four months of each year; the object in view being
-# to extend during those months the period of daylight-time available
-# for evening recreation after office hours."
-# Vanessa Ogle, The Global Transformation of Time, 1870-1950 (2015), p 33,
-# writes "In 1919, the Gold Coast (Ghana as of 1957) made Greenwich
-# time its legal time and simultaneously legalized a summer time of
-# UTC - 00:20 minutes from March to October."; a footnote lists
-# the ordinance as being dated 1919-11-24.
-# The Crown Colonist, Volume 12 (1942), p 176, says "the Government
-# intend advancing Gold Coast time half an hour ahead of G.M.T.
-# The actual date of the alteration has not yet been announced."
-# These sources are incomplete and contradictory.  Possibly what is
-# now Ghana observed different DST regimes in different years.  For
-# lack of better info, use Shanks except treat the minus sign as a
-# typo, and assume DST started in 1920 not 1936.
+# From P Chan (2020-11-20):
+# Interpretation Amendment Ordinance, 1915 (No.24 of 1915) [1915-11-02]
+# Ordinances of the Gold Coast, Ashanti, Northern Territories 1915, p 69-71
+# https://books.google.com/books?id=ErA-AQAAIAAJ&pg=PA70
+# This Ordinance added "'Time' shall mean Greenwich Mean Time" to the
+# Interpretation Ordinance, 1876.
+#
+# Determination of the Time Ordinance, 1919 (No. 18 of 1919) [1919-11-24]
+# Ordinances of the Gold Coast, Ashanti, Northern Territories 1919, p 75-76
+# https://books.google.com/books?id=MbA-AQAAIAAJ&pg=PA75
+# This Ordinance removed the previous definition of time and introduced DST.
+#
+# Time Determination Ordinance (Cap. 214)
+# The Laws of the Gold Coast (including Togoland Under British Mandate)
+# Vol. II (1937), p 2328
+# https://books.google.com/books?id=Z7M-AQAAIAAJ&pg=PA2328
+# Revised edition of the 1919 Ordinance.
+#
+# Time Determination (Amendment) Ordinance, 1940 (No. 9 of 1940) [1940-04-06]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1940, p 22
+# https://books.google.com/books?id=1ao-AQAAIAAJ&pg=PA22
+# This Ordinance changed the forward transition from September to May.
+#
+# Defence (Time Determination Ordinance Amendment) Regulations, 1942
+# (Regulations No. 6 of 1942) [1942-01-31, commenced on 1942-02-08]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1942, p 48
+# https://books.google.com/books?id=Das-AQAAIAAJ&pg=PA48
+# These regulations advanced the [standard] time by thirty minutes.
+#
+# Defence (Time Determination Ordinance Amendment (No.2)) Regulations,
+# 1942 (Regulations No. 28 of 1942) [1942-04-25]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1942, p 87
+# https://books.google.com/books?id=Das-AQAAIAAJ&pg=PA87
+# These regulations abolished DST and changed the time to GMT+0:30.
+#
+# Defence (Revocation) (No.4) Regulations, 1945 (Regulations No. 45 of
+# 1945) [1945-10-24, commenced on 1946-01-06]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1945, p 256
+# https://books.google.com/books?id=9as-AQAAIAAJ&pg=PA256
+# These regulations revoked the previous two sets of Regulations.
+#
+# Time Determination (Amendment) Ordinance, 1945 (No. 18 of 1945) [1946-01-06]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1945, p 69
+# https://books.google.com/books?id=9as-AQAAIAAJ&pg=PA69
+# This Ordinance abolished DST.
+#
+# Time Determination (Amendment) Ordinance, 1950 (No. 26 of 1950) [1950-07-22]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1950, p 35
+# https://books.google.com/books?id=e60-AQAAIAAJ&pg=PA35
+# This Ordinance restored DST but with thirty minutes offset.
+#
+# Time Determination Ordinance (Cap. 264)
+# The Laws of the Gold Coast, Vol. V (1954), p 380
+# https://books.google.com/books?id=Mqc-AQAAIAAJ&pg=PA380
+# Revised edition of the Time Determination Ordinance.
+#
+# Time Determination (Amendment) Ordinance, 1956 (No. 21 of 1956) [1956-08-29]
+# Annual Volume of the Ordinances of the Gold Coast Enacted During the
+# Year 1956, p 83
+# https://books.google.com/books?id=VLE-AQAAIAAJ&pg=PA83
+# This Ordinance abolished DST.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Ghana	1920	1942	-	Sep	 1	0:00	0:20	-
-Rule	Ghana	1920	1942	-	Dec	31	0:00	0	-
+Rule	Ghana	1919	only	-	Nov	24	0:00	0:20	+0020
+Rule	Ghana	1920	1942	-	Jan	 1	2:00	0	GMT
+Rule	Ghana	1920	1939	-	Sep	 1	2:00	0:20	+0020
+Rule	Ghana	1940	1941	-	May	 1	2:00	0:20	+0020
+Rule	Ghana	1950	1955	-	Sep	 1	2:00	0:30	+0030
+Rule	Ghana	1951	1956	-	Jan	 1	2:00	0	GMT
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Accra	-0:00:52 -	LMT	1918
-			 0:00	Ghana	GMT/+0020
+Zone	Africa/Accra	-0:00:52 -	LMT	1915 Nov  2
+			 0:00	Ghana	%s	1942 Feb  8
+			 0:30	-	+0030	1946 Jan  6
+			 0:00	Ghana	%s
 
 # Guinea
 # See Africa/Abidjan.
@@ -456,11 +507,54 @@ Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
 			 0:00	-	GMT
 
 # Kenya
+
+# From P Chan (2020-10-24):
+#
+# The standard time of GMT+2:30 was adopted in the East Africa Protectorate....
+# [The Official Gazette, 1908-05-01, p 274]
+# https://books.google.com/books?id=e-cAC-sjPSEC&pg=PA274
+#
+# At midnight on 30 June 1928 the clocks throughout Kenya was put forward
+# half an hour by the Alteration of Time Ordinance, 1928.
+# https://gazettes.africa/archive/ke/1928/ke-government-gazette-dated-1928-05-11-no-28.pdf
+# [Ordinance No. 11 of 1928, The Offical Gazette, 1928-06-26, p 813]
+# https://books.google.com/books?id=2S0S6os32ZUC&pg=PA813
+#
+# The 1928 ordinance was repealed by the Alteration of Time (repeal) Ordinance,
+# 1929 and the time was restored to GMT+2:30 at midnight on 4 January 1930.
+# [Ordinance No. 97 of 1929, The Official Gazette, 1929-12-31, p 2701]
+# https://books.google.com/books?id=_g18jIZQlwwC&pg=PA2701
+#
+# The Alteration of Time Ordinance, 1936 changed the time to GMT+2:45
+# and repealed the previous ordinance at midnight on 31 December 1936.
+# [The Official Gazette, 1936-07-21, p 705]
+# https://books.google.com/books?id=K7j41z0aC5wC&pg=PA705
+#
+# The Defence (Amendment of Laws No. 120) Regulations changed the time
+# to GMT+3 at midnight on 31 July 1942.
+# [Kenya Official Gazette Supplement No. 32, 1942-07-21, p 331]
+# https://books.google.com/books?hl=zh-TW&id=c_E-AQAAIAAJ&pg=PA331
+# The provision of the 1936 ordinance was not repealed and was later
+# incorporated in the Interpretation and General Clauses Ordinance in 1948.
+# Although it was overridden by the 1942 regulations.
+# [The Laws of Kenya in force on 1948-09-21, Title I, Chapter 1, 31]
+# https://dds.crl.edu/item/217517 (p.101)
+# In 1950 the Interpretation and General Clauses Ordinance was amended to adopt
+# GMT+3 permanently as the 1942 regulations were due to expire on 10 December.
+# https://books.google.com/books?id=jvR8mUDAwR0C&pg=PA787
+# [Ordinance No. 44 of 1950, Kenya Ordinances 1950, Vol. XXIX, p 294]
+# https://books.google.com/books?id=-_dQAQAAMAAJ&pg=PA294
+
+# From Paul Eggert (2020-10-24):
+# The 1908-05-01 announcement does not give an effective date,
+# so just say "1908 May".
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Nairobi	2:27:16	-	LMT	1928 Jul
-			3:00	-	EAT	1930
-			2:30	-	+0230	1940
-			2:45	-	+0245	1960
+Zone	Africa/Nairobi	2:27:16	-	LMT	1908 May
+			2:30	-	+0230	1928 Jun 30 24:00
+			3:00	-	EAT	1930 Jan  4 24:00
+			2:30	-	+0230	1936 Dec 31 24:00
+			2:45	-	+0245	1942 Jul 31 24:00
 			3:00	-	EAT
 Link Africa/Nairobi Africa/Addis_Ababa	 # Ethiopia
 Link Africa/Nairobi Africa/Asmara	 # Eritrea
@@ -1247,8 +1341,69 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 # See Africa/Lagos.
 
 # Nigeria
+
+# From P Chan (2020-12-03):
+# GMT was adopted as the standard time of Lagos on 1905-07-01.
+# Lagos Weekly Record, 1905-06-24, p 3
+# http://ddsnext.crl.edu/titles/31558#?c=0&m=668&s=0&cv=2&r=0&xywh=1446%2C5221%2C1931%2C1235
+# says "It is officially notified that on and after the 1st of July 1905
+# Greenwich Mean Solar Time will be adopted thought the Colony and
+# Protectorate, and that it will be necessary to put all clocks 13 minutes and
+# 35 seconds back, recording local mean time."
+#
+# It seemed that Lagos returned to LMT on 1908-07-01.
+# [The Lagos Standard], 1908-07-01, p 5
+# http://ddsnext.crl.edu/titles/31556#?c=0&m=78&s=0&cv=4&r=0&xywh=-92%2C3590%2C3944%2C2523
+# says "Scarcely have the people become accustomed to this new time, when
+# another official notice has now appeared announcing that from and after the
+# 1st July next, return will be made to local mean time."
+#
+# From P Chan (2020-11-27):
+# On 1914-01-01, standard time of GMT+0:30 was adopted for the unified Nigeria.
+# Colonial Reports - Annual. No. 878. Nigeria. Report for 1914. (April 1916),
+# p 27
+# https://libsysdigi.library.illinois.edu/ilharvest/Africana/Books2011-05/3064634/3064634_1914/3064634_1914_opt.pdf#page=27
+# "On January 1st [1914], a universal standard time for Nigeria was adopted,
+# viz., half an hour fast on Greenwich mean time, corresponding to the meridian
+# 7 [degrees] 30' E. long."
+# Lloyd's Register of Shipping (1915) says "Hitherto the time observed in Lagos
+# was the local mean time. On 1st January, 1914, standard time for the whole of
+# Nigeria was introduced ... Lagos time has been advanced about 16 minutes
+# accordingly."
+#
+# In 1919, standard time was changed to GMT+1.
+# Interpretation Ordinance (Cap 2)
+# The Laws of Nigeria, Containing the Ordinances of Nigeria, in Force on the
+# 1st Day of January, 1923, Vol.I [p 16]
+# https://books.google.com/books?id=BOMrAQAAMAAJ&pg=PA16
+# "The expression 'Standard time' means standard time as used in Nigeria:
+# namely, 60 minutes in advance of Greenwich mean time.  (As amended by 18 of
+# 1919, s. 2.)"
+# From Tim Parenti (2020-12-10):
+# The Lagos Weekly Record, 1919-09-20, p 3 details discussion on the first
+# reading of this Bill by the Legislative Council of the Colony of Nigeria on
+# Thursday 1919-08-28:
+# http://ddsnext.crl.edu/titles/31558?terms&item_id=303484#?m=1118&c=1&s=0&cv=2&r=0&xywh=1261%2C3408%2C2994%2C1915
+# "The proposal is that the Globe should be divided into twelve zones East and
+# West of Greenwich, of one hour each, Nigeria falling into the zone with a
+# standard of one hour fast on Greenwich Mean Time.  Nigeria standard time is
+# now 30 minutes in advance of Greenwich Mean Time ... according to the new
+# proposal, standard time will be advanced another 30 minutes".  It was further
+# proposed that the firing of the time guns likewise be adjusted by 30 minutes
+# to compensate.
+# From Tim Parenti (2020-12-10), per P Chan (2020-12-11):
+# The text of Ordinance 18 of 1919, published in Nigeria Gazette, Vol 6, No 52,
+# shows that the change was assented to the following day and took effect "on
+# the 1st day of September, 1919."
+# Nigeria Gazette and Supplements 1919 Jan-Dec, Reference: 73266B-40,
+# img 245-246
+# https://microform.digital/boa/collections/77/volumes/539/nigeria-lagos-1887-1919
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Lagos	0:13:36 -	LMT	1919 Sep
+Zone	Africa/Lagos	0:13:35 -	LMT	1905 Jul  1
+			0:00	-	GMT	1908 Jul  1
+			0:13:35	-	LMT	1914 Jan  1
+			0:30	-	+0030	1919 Sep  1
 			1:00	-	WAT
 Link Africa/Lagos Africa/Bangui	     # Central African Republic
 Link Africa/Lagos Africa/Brazzaville # Rep. of the Congo
@@ -1321,8 +1476,21 @@ Zone	Africa/Sao_Tome	 0:26:56 -	LMT	1884
 # See Africa/Abidjan.
 
 # Seychelles
+
+# From P Chan (2020-11-27):
+# Standard Time was adopted on 1907-01-01.
+#
+# Standard Time Ordinance (Chapter 237)
+# The Laws of Seychelles in Force on the 31st December, 1971, Vol. 6, p 571
+# https://books.google.com/books?id=efE-AQAAIAAJ&pg=PA571
+#
+# From Tim Parenti (2020-12-05):
+# A footnote on https://books.google.com/books?id=DYdDAQAAMAAJ&pg=PA1689
+# confirms that Ordinance No. 9 of 1906 "was brought into force on the 1st
+# January, 1907."
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Indian/Mahe	3:41:48 -	LMT	1906 Jun # Victoria
+Zone	Indian/Mahe	3:41:48 -	LMT	1907 Jan  1 # Victoria
 			4:00	-	+04
 # From Paul Eggert (2001-05-30):
 # Aldabra, Farquhar, and Desroches, originally dependencies of the

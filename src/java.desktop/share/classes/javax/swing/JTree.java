@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,81 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.JavaBean;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.IllegalComponentStateException;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
 import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
+import java.beans.JavaBean;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.*;
-import java.util.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.swing.tree.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Set;
+import java.util.Stack;
+import java.util.Vector;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.accessibility.AccessibleText;
+import javax.accessibility.AccessibleValue;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.TreeWillExpandListener;
+import javax.swing.plaf.TreeUI;
 import javax.swing.text.Position;
-import javax.accessibility.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultTreeSelectionModel;
+import javax.swing.tree.ExpandVetoException;
+import javax.swing.tree.RowMapper;
+import javax.swing.tree.TreeCellEditor;
+import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
-import static sun.swing.SwingUtilities2.Section.*;
+
+import static sun.swing.SwingUtilities2.Section.LEADING;
+import static sun.swing.SwingUtilities2.Section.TRAILING;
 
 /**
  * A control that displays a set of hierarchical data as an outline.
@@ -3071,6 +3124,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
     }
 
     // Serialization support.
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Vector<Object> values = new Vector<Object>();
 
@@ -3113,6 +3167,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();

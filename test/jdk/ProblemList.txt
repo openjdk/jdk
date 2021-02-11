@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -754,7 +754,6 @@ javax/swing/JInternalFrame/Test6325652.java 8224977 macosx-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099,8208565 macosx-all,linux-all
 javax/swing/UIDefaults/6302464/bug6302464.java 8199079 macosx-all
-javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all

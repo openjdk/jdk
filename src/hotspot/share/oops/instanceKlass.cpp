@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -816,7 +816,7 @@ void InstanceKlass::eager_initialize_impl() {
   EXCEPTION_MARK;
   HandleMark hm(THREAD);
   Handle h_init_lock(THREAD, init_lock());
-  ObjectLocker ol(h_init_lock, THREAD, h_init_lock() != NULL);
+  ObjectLocker ol(h_init_lock, THREAD);
 
   // abort if someone beat us to the initialization
   if (!is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -952,7 +952,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   {
     HandleMark hm(THREAD);
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, THREAD, h_init_lock() != NULL);
+    ObjectLocker ol(h_init_lock, THREAD);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -1077,7 +1077,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 1
   {
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, THREAD, h_init_lock() != NULL);
+    ObjectLocker ol(h_init_lock, THREAD);
 
     // Step 2
     // If we were to use wait() instead of waitInterruptibly() then

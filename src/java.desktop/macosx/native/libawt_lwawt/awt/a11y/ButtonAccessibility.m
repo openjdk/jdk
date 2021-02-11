@@ -24,10 +24,6 @@
  */
 
 #import "ButtonAccessibility.h"
-#import "JNIUtilities.h"
-#import "ThreadUtilities.h"
-
-static jclass sjc_CAccessibility = NULL;
 
 /*
  * Implementation of the accessibility peer for the pushbutton role
@@ -40,17 +36,7 @@ static jclass sjc_CAccessibility = NULL;
 
 - (BOOL)accessibilityPerformPress
 {
-    AWT_ASSERT_APPKIT_THREAD;
-    JNIEnv* env = [ThreadUtilities getJNIEnv];
-
-    GET_CACCESSIBILITY_CLASS_RETURN(FALSE);
-    DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
-                     "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", FALSE);
-    (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
-                                 [self axContextWithEnv:(env)], 0, fComponent);
-    CHECK_EXCEPTION();
-
-    return TRUE;
+    return [self performAccessibleAction:0];
 }
 
 @end

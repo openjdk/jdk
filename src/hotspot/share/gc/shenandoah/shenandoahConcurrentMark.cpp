@@ -171,7 +171,7 @@ public:
       ShenandoahMarkRefsClosure<GENERATION> mark_cl(q, rp);
       MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
       ShenandoahSATBAndRemarkCodeRootsThreadsClosure<GENERATION> tc(&cl,
-                                                                    ShenandoahStoreValEnqueueBarrier ? &mark_cl : NULL,
+                                                                    ShenandoahIUBarrier ? &mark_cl : NULL,
                                                                     do_nmethods ? &blobsCl : NULL);
       Threads::threads_do(&tc);
     }

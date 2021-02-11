@@ -73,6 +73,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"

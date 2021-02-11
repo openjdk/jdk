@@ -130,7 +130,7 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
 }
 
 void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
-  if (_heap->has_forwarded_objects() || (ShenandoahStoreValEnqueueBarrier && _heap->is_concurrent_mark_in_progress())) {
+  if (_heap->has_forwarded_objects() || (ShenandoahIUBarrier && _heap->is_concurrent_mark_in_progress())) {
     clone_barrier(src);
   }
 }

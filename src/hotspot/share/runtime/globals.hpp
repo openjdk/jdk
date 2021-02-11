@@ -1805,6 +1805,9 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, UseDebuggerErgo2, false,                                 \
           "Debugging Only: Limit the number of spawned JVM threads")        \
                                                                             \
+  notproduct(bool, EnableJVMTIStackDepthAsserts, true,                      \
+          "Enable JVMTI asserts related to stack depth checks")             \
+                                                                            \
   /* flags for performance data collection */                               \
                                                                             \
   product(bool, UsePerfData, true,                                          \

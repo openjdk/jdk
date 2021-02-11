@@ -1196,14 +1196,14 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread* calling_thread = JavaThread::current();
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
@@ -1246,14 +1246,14 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread* calling_thread = JavaThread::current();
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.

@@ -29,6 +29,10 @@
 # NIST format leap-seconds.list file, which can be copied from
 # <ftp://ftp.nist.gov/pub/time/leap-seconds.list>
 # or <ftp://ftp.boulder.nist.gov/pub/time/leap-seconds.list>.
+# The NIST file is used instead of its IERS upstream counterpart
+# <https://hpiers.obspm.fr/iers/bul/bulc/ntp/leap-seconds.list>
+# because under US law the NIST file is public domain
+# whereas the IERS file's copyright and license status is unclear.
 # For more about leap-seconds.list, please see
 # The NTP Timescale and Leap Seconds
 # <https://www.eecis.udel.edu/~mills/leap.html>.

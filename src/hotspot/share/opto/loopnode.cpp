@@ -5020,7 +5020,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
             for (uint j = 1; j < s->req(); j++) {
               Node* in = s->in(j);
               Node* r_in = r->in(j);
-              if (worklist.member(in) && is_dominator(early, r_in)) {
+              if ((worklist.member(in) || in == mem) && is_dominator(early, r_in)) {
                 LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
               }
             }

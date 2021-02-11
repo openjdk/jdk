@@ -104,7 +104,7 @@ static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 };
     if (_fontThrowJavaException == YES) {                               \
         char s[512];                                                    \
         sprintf(s, "%s-%s:%d", __FILE__, __FUNCTION__, __LINE__);       \
-        [JNFException raise:env as:kRuntimeException reason:s];         \
+        JNU_ThrowByName(env, "java/lang/RuntimeException", s);          \
     }
 
 
@@ -144,7 +144,7 @@ Java_sun_font_CStrike_getNativeGlyphAdvance
     (JNIEnv *env, jclass clazz, jlong awtStrikePtr, jint glyphCode)
 {
     CGSize advance;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
     AWTFont *awtFont = awtStrike->fAWTFont;
 
@@ -159,7 +159,7 @@ JNF_COCOA_ENTER(env);
         advance.width = round(advance.width);
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return advance.width;
 }
 
@@ -174,7 +174,7 @@ Java_sun_font_CStrike_getNativeGlyphImageBounds
      jlong awtStrikePtr, jint glyphCode,
      jobject result /*Rectangle*/, jdouble x, jdouble y)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
     AWTFont *awtFont = awtStrike->fAWTFont;
@@ -203,7 +203,7 @@ JNF_COCOA_ENTER(env);
              (jfloat)bbox.origin.x, (jfloat)bbox.origin.y, (jfloat)bbox.size.width, (jfloat)bbox.size.height);
     CHECK_EXCEPTION();
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -218,7 +218,7 @@ Java_sun_font_CStrike_getNativeGlyphOutline
 {
     jobject generalPath = NULL;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTPathRef path = NULL;
     jfloatArray pointCoords = NULL;
@@ -290,7 +290,7 @@ cleanup:
     }
 
     AWT_FONT_CLEANUP_FINISH;
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return generalPath;
 }
 
@@ -305,7 +305,7 @@ Java_sun_font_CStrike_getGlyphImagePtrsNative
      jlong awtStrikePtr, jlongArray glyphInfoLongArray,
      jintArray glyphCodes, jint len)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
@@ -333,7 +333,7 @@ JNF_COCOA_ENTER(env);
         }
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -345,7 +345,7 @@ JNIEXPORT jlong JNICALL Java_sun_font_CStrike_createNativeStrikePtr
 (JNIEnv *env, jclass clazz, jlong nativeFontPtr, jdoubleArray glyphTxArray, jdoubleArray invDevTxArray, jint aaStyle, jint fmHint)
 {
     AWTStrike *awtStrike = nil;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTFont *awtFont = (AWTFont *)jlong_to_ptr(nativeFontPtr);
     JRSFontRenderingStyle style = JRSFontGetRenderingStyleForHints(fmHint, aaStyle);
@@ -360,7 +360,7 @@ JNF_COCOA_ENTER(env);
         CFRetain(awtStrike); // GC
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return ptr_to_jlong(awtStrike);
 }
 
@@ -373,13 +373,13 @@ JNIEXPORT void JNICALL
 Java_sun_font_CStrike_disposeNativeStrikePtr
     (JNIEnv *env, jclass clazz, jlong awtStrike)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     if (awtStrike) {
         CFRelease((AWTStrike *)jlong_to_ptr(awtStrike)); // GC
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -393,7 +393,7 @@ Java_sun_font_CStrike_getFontMetrics
 {
     jobject metrics = NULL;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     AWT_FONT_CLEANUP_SETUP;
 
     AWTFont *awtfont = ((AWTStrike *)jlong_to_ptr(awtStrikePtr))->fAWTFont;
@@ -436,7 +436,7 @@ JNF_COCOA_ENTER(env);
 
 cleanup:
     AWT_FONT_CLEANUP_FINISH;
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return metrics;
 }
@@ -450,9 +450,9 @@ extern void AccelGlyphCache_RemoveAllInfos(GlyphInfo* glyph);
 JNIEXPORT void JNICALL Java_sun_font_CStrikeDisposer_removeGlyphInfoFromCache
 (JNIEnv *env, jclass cls, jlong glyphInfo)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     AccelGlyphCache_RemoveAllCellInfos((GlyphInfo*)jlong_to_ptr(glyphInfo));
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }

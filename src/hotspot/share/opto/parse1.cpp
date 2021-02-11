@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -815,7 +815,7 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   int        arg_size = tf->domain()->cnt();
   int        max_size = MAX2(arg_size, (int)tf->range()->cnt());
   JVMState*  jvms     = new (this) JVMState(max_size - TypeFunc::Parms);
-  SafePointNode* map  = new SafePointNode(max_size, NULL);
+  SafePointNode* map  = new SafePointNode(max_size, jvms);
   record_for_igvn(map);
   assert(arg_size == TypeFunc::Parms + (is_osr_compilation() ? 1 : method()->arg_size()), "correct arg_size");
   Node_Notes* old_nn = default_node_notes();
@@ -839,7 +839,6 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   }
   assert(jvms->argoff() == TypeFunc::Parms, "parser gets arguments here");
   set_default_node_notes(old_nn);
-  map->set_jvms(jvms);
   jvms->set_map(map);
   return jvms;
 }
@@ -1074,8 +1073,7 @@ void Parse::do_exits() {
       // The exiting JVM state is otherwise a copy of the calling JVMS.
       JVMState* caller = kit.jvms();
       JVMState* ex_jvms = caller->clone_shallow(C);
-      ex_jvms->set_map(kit.clone_map());
-      ex_jvms->map()->set_jvms(ex_jvms);
+      ex_jvms->bind_map(kit.clone_map());
       ex_jvms->set_bci(   InvocationEntryBci);
       kit.set_jvms(ex_jvms);
       if (do_synch) {
@@ -1094,8 +1092,7 @@ void Parse::do_exits() {
       ex_map = kit.make_exception_state(ex_oop);
       assert(ex_jvms->same_calls_as(ex_map->jvms()), "sanity");
       // Pop the last vestige of this method:
-      ex_map->set_jvms(caller->clone_shallow(C));
-      ex_map->jvms()->set_map(ex_map);
+      caller->clone_shallow(C)->bind_map(ex_map);
       _exits.push_exception_state(ex_map);
     }
     assert(_exits.map() == normal_map, "keep the same return state");

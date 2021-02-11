@@ -40,7 +40,7 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   Register tmp2 = _tmp2->as_register();
   Register result = result_opr()->as_register();
 
-  ShenandoahBarrierSet::assembler()->storeval_barrier(masm->masm(), newval, rscratch2);
+  ShenandoahBarrierSet::assembler()->iu_barrier(masm->masm(), newval, rscratch2);
 
   if (UseCompressedOops) {
     __ encode_heap_oop(tmp1, cmpval);
@@ -102,7 +102,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   LIR_Opr value_opr = value.result();
 
   if (access.is_oop()) {
-    value_opr = storeval_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
+    value_opr = iu_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
   }
 
   assert(type == T_INT || is_reference_type(type) LP64_ONLY( || type == T_LONG ), "unexpected type");

@@ -198,7 +198,7 @@ Java_sun_lwawt_macosx_CFileDialog_nativeRunFileDialog
 {
     jobjectArray returnValue = NULL;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     NSString *dialogTitle = JNFJavaToNSString(env, title);
     if ([dialogTitle length] == 0) {
         dialogTitle = @" ";
@@ -235,6 +235,6 @@ JNF_COCOA_ENTER(env);
     }
 
     [dialogDelegate release];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return returnValue;
 }

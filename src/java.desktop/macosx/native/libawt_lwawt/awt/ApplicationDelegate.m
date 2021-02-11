@@ -570,12 +570,12 @@ AWT_ASSERT_APPKIT_THREAD;
 JNIEXPORT void JNICALL Java_com_apple_eawt_Application_nativeInitializeApplicationDelegate
 (JNIEnv *env, jclass clz)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // Force initialization to happen on AppKit thread!
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [ApplicationDelegate sharedDelegate];
     }];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -586,13 +586,13 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppEventHandler_nativeOpenCocoaAboutWindow
 (JNIEnv *env, jclass clz)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [NSApp orderFrontStandardAboutPanel:nil];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -603,13 +603,13 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppEventHandler_nativeReplyToAppShouldTerminate
 (JNIEnv *env, jclass clz, jboolean doTerminate)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [NSApp replyToApplicationShouldTerminate:doTerminate];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -620,12 +620,12 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppEventHandler_nativeRegisterForNotification
 (JNIEnv *env, jclass clz, jint notificationType)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(_registerForNotification:)
                                       on:[ApplicationDelegate class]
                               withObject:[NSNumber numberWithInt:notificationType]
                            waitUntilDone:NO]; // AWT_THREADING Safe (non-blocking)
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -636,14 +636,14 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppDockIconHandler_nativeSetDockMenu
 (JNIEnv *env, jclass clz, jlong nsMenuPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSMenu *menu = (NSMenu *)jlong_to_ptr(nsMenuPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         [ApplicationDelegate sharedDelegate].fDockMenu = menu;
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -654,7 +654,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppDockIconHandler_nativeSetDockIconImage
 (JNIEnv *env, jclass clz, jlong nsImagePtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSImage *_image = (NSImage *)jlong_to_ptr(nsImagePtr);
     [ThreadUtilities performOnMainThread:@selector(_setDockIconImage:)
@@ -662,7 +662,7 @@ JNF_COCOA_ENTER(env);
                               withObject:_image
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -673,14 +673,14 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppDockIconHandler_nativeSetDockIconProgress
   (JNIEnv *env, jclass clz, jint value)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
      [ThreadUtilities performOnMainThread:@selector(_setDockIconProgress:)
                                        on:[ApplicationDelegate class]
                                withObject:[NSNumber numberWithInt:value]
                             waitUntilDone:NO];
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -693,13 +693,13 @@ JNIEXPORT jlong JNICALL Java_com_apple_eawt__1AppDockIconHandler_nativeGetDockIc
 {
     __block NSImage *image = nil;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         image = [[ApplicationDelegate _dockIconImage] retain];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return ptr_to_jlong(image);
 }
@@ -712,7 +712,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppDockIconHandler_nativeSetDockIconBadge
 (JNIEnv *env, jclass clz, jstring badge)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSString *badgeString = JNFJavaToNSString(env, badge);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
@@ -721,7 +721,7 @@ JNF_COCOA_ENTER(env);
         [dockTile display];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -732,7 +732,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppMiscHandlers_nativeRequestActivation
 (JNIEnv *env, jclass clz, jboolean allWindows)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         NSApplicationActivationOptions options = allWindows ? NSApplicationActivateAllWindows : 0;
@@ -740,7 +740,7 @@ JNF_COCOA_ENTER(env);
         [[NSRunningApplication currentApplication] activateWithOptions:options];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -751,13 +751,13 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppMiscHandlers_nativeRequestUserAttention
 (JNIEnv *env, jclass clz, jboolean critical)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [NSApp requestUserAttention:critical ? NSCriticalRequest : NSInformationalRequest];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -768,14 +768,14 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppMiscHandlers_nativeOpenHelpViewer
 (JNIEnv *env, jclass clz)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThread:@selector(showHelp:)
                                       on:NSApp
                               withObject:nil
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -786,11 +786,11 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppMiscHandlers_nativeEnableSuddenTermination
 (JNIEnv *env, jclass clz)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [[NSProcessInfo processInfo] enableSuddenTermination]; // Foundation thread-safe
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -801,11 +801,11 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppMiscHandlers_nativeDisableSuddenTermination
 (JNIEnv *env, jclass clz)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [[NSProcessInfo processInfo] disableSuddenTermination]; // Foundation thread-safe
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -816,7 +816,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppMenuBarHandler_nativeSetMenuState
 (JNIEnv *env, jclass clz, jint menuID, jboolean visible, jboolean enabled)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         ApplicationDelegate *delegate = [ApplicationDelegate sharedDelegate];
@@ -830,7 +830,7 @@ JNF_COCOA_ENTER(env);
         }
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -841,14 +841,14 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppMenuBarHandler_nativeSetDefaultMenuBar
 (JNIEnv *env, jclass clz, jlong cMenuBarPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     CMenuBar *menu = (CMenuBar *)jlong_to_ptr(cMenuBarPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [ApplicationDelegate sharedDelegate].fDefaultMenuBar = menu;
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -859,7 +859,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_com_apple_eawt__1AppMenuBarHandler_nativeActivateDefaultMenuBar
 (JNIEnv *env, jclass clz, jlong cMenuBarPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     CMenuBar *menu = (CMenuBar *)jlong_to_ptr(cMenuBarPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
@@ -868,5 +868,5 @@ JNF_COCOA_ENTER(env);
         }
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }

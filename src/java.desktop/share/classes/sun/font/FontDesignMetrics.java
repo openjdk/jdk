@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
@@ -103,7 +104,11 @@ import sun.java2d.DisposerRecord;
 
 public final class FontDesignMetrics extends FontMetrics {
 
-    static final long serialVersionUID = 4480069578560887773L;
+    /**
+     * Use serialVersionUID from JDK 1.3 for interoperability.
+     */
+    @Serial
+    private static final long serialVersionUID = 4480069578560887773L;
 
     private static final float UNKNOWN_WIDTH = -1;
     private static final int CURRENT_VERSION = 1;
@@ -371,6 +376,7 @@ public final class FontDesignMetrics extends FontMetrics {
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException,
                                                   ClassNotFoundException {
 
@@ -396,6 +402,7 @@ public final class FontDesignMetrics extends FontMetrics {
         initAdvCache();
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
 
         cache = new int[256];

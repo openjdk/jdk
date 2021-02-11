@@ -170,7 +170,7 @@ Java_sun_java2d_opengl_CGLLayer_nativeCreateLayer
 {
     __block CGLLayer *layer = nil;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     JNFWeakJObjectWrapper *javaLayer = [JNFWeakJObjectWrapper wrapperWithJObject:obj withEnv:env];
 
@@ -180,7 +180,7 @@ JNF_COCOA_ENTER(env);
             layer = [[CGLLayer alloc] initWithJavaLayer: javaLayer];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return ptr_to_jlong(layer);
 }
@@ -217,7 +217,7 @@ JNIEXPORT void JNICALL
 Java_sun_java2d_opengl_CGLLayer_nativeSetScale
 (JNIEnv *env, jclass cls, jlong layerPtr, jdouble scale)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
     CGLLayer *layer = jlong_to_ptr(layerPtr);
     // We always call all setXX methods asynchronously, exception is only in
     // this method where we need to change native texture size and layer's scale
@@ -226,5 +226,5 @@ Java_sun_java2d_opengl_CGLLayer_nativeSetScale
     [ThreadUtilities performOnMainThreadWaiting:[NSThread isMainThread] block:^(){
         layer.contentsScale = scale;
     }];
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }

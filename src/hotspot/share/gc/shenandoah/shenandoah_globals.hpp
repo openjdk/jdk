@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,8 +341,8 @@
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \
-  product(bool, ShenandoahStoreValEnqueueBarrier, false, DIAGNOSTIC,        \
-          "Turn on/off enqueuing of oops for storeval barriers")            \
+  product(bool, ShenandoahIUBarrier, false, DIAGNOSTIC,                     \
+          "Turn on/off I-U barriers barriers in Shenandoah")                \
                                                                             \
   product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
           "Turn on/off CAS barriers in Shenandoah")                         \

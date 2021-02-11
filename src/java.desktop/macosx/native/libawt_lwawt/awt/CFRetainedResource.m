@@ -23,6 +23,8 @@
  * questions.
  */
 
+#import "JNIUtilities.h"
+
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
@@ -53,11 +55,11 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CFRetainedResource_nativeCFRelease
         }
     } else {
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
         CFRelease(jlong_to_ptr(ptr));
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     }
 }

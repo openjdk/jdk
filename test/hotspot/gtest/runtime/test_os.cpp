@@ -698,7 +698,7 @@ TEST_VM(os, pagesizes_test_print) {
   ASSERT_EQ(strcmp(expected, buffer), 0);
 }
 
-TEST_VM(os, DISABLED_dll_address_to_function_and_library_name) {
+TEST_VM(os, dll_address_to_function_and_library_name) {
   char tmp[1024];
   char output[1024];
   stringStream st(output, sizeof(output));
@@ -737,15 +737,6 @@ TEST_VM(os, DISABLED_dll_address_to_function_and_library_name) {
     EXPECT_CONTAINS(output, "Threads");
     EXPECT_CONTAINS(output, "create_vm");
     EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
-#ifndef _WIN32 // Demangler gives us no arguments on Windows
-    if (demangle) {
-      if (strip_arguments) {
-        EXPECT_DOES_NOT_CONTAIN(output, "(");
-      } else {
-        EXPECT_CONTAINS(output, "(");
-      }
-    }
-#endif // _WIN32
     LOG("%s", output);
 
     // Test truncation on scratch buffer
@@ -767,31 +758,5 @@ TEST_VM(os, DISABLED_dll_address_to_function_and_library_name) {
                                                     shorten_paths, demangle));
     EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
     LOG("%s", output);
-
-    // Pointer into system library
-#ifndef _WIN32
-    addr = CAST_FROM_FN_PTR(address, ::malloc);
-    st.reset();
-    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
-                                                    provide_scratch_buffer ? tmp : NULL,
-                                                    sizeof(tmp),
-                                                    shorten_paths, demangle));
-    EXPECT_CONTAINS(output, "malloc");
-    LINUX_ONLY(EXPECT_CONTAINS(output, "libc"));
-    MACOS_ONLY(EXPECT_CONTAINS(output, "libsystem"));
-    LOG("%s", output);
-#else
-    addr = CAST_FROM_FN_PTR(address, CreateFileA);
-    st.reset(); // this also zero-terminates start of output
-    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
-                                                    provide_scratch_buffer ? tmp : NULL,
-                                                    sizeof(tmp),
-                                                    shorten_paths, demangle));
-    for (char* p = output; *p; p++) {
-      *p = ::toupper(*p);
-    }
-    EXPECT_CONTAINS(output, "KERNEL32.DLL");
-    LOG("%s", output);
-#endif
   }
 }

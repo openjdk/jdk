@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 
 package java.awt.color;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.annotation.Native;
 
@@ -97,6 +98,7 @@ public abstract class ColorSpace implements Serializable {
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -409452704308689724L;
 
     /**

@@ -157,6 +157,10 @@ class WixSourcesBuilder {
         }
     }
 
+    static boolean is64Bit() {
+        return !("x86".equals(System.getProperty("os.arch")));
+    }
+
     private void normalizeFileAssociation(FileAssociation fa) {
         fa.launcherPath = addExeSuffixToPath(
                 installedAppImage.launchersDirectory().resolve(fa.launcherPath));
@@ -301,7 +305,7 @@ class WixSourcesBuilder {
         static void startElement(XMLStreamWriter xml, String componentId,
                 String componentGuid) throws XMLStreamException, IOException {
             xml.writeStartElement("Component");
-            xml.writeAttribute("Win64", "yes");
+            xml.writeAttribute("Win64", is64Bit() ? "yes" : "no");
             xml.writeAttribute("Id", componentId);
             xml.writeAttribute("Guid", componentGuid);
         }
@@ -823,7 +827,8 @@ class WixSourcesBuilder {
 
     private final static Path DESKTOP_PATH = TARGETDIR.resolve("DesktopFolder");
 
-    private final static Path PROGRAM_FILES = TARGETDIR.resolve("ProgramFiles64Folder");
+    private final static Path PROGRAM_FILES = TARGETDIR.resolve(
+            is64Bit() ? "ProgramFiles64Folder" : "ProgramFilesFolder");
 
     private final static Path LOCAL_PROGRAM_FILES = TARGETDIR.resolve("LocalAppDataFolder");
 

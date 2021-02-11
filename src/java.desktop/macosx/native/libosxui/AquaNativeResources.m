@@ -39,10 +39,10 @@ JNIEXPORT jlong JNICALL Java_com_apple_laf_AquaNativeResources_getWindowBackgrou
     // TODO(cpc): this code is currently disabled at the Java level
 #if 0
     NSColor* color = nil;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     color = [NSColor lightGrayColor];//[AWTColor getMagicBackgroundColor];
     if (color) CFRetain(color); // GC
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return ptr_to_jlong(color);
 #else
     return 0L;

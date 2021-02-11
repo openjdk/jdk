@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcUtil.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/vm_version.hpp"
 
 class ThreadLocalAllocStats;
 

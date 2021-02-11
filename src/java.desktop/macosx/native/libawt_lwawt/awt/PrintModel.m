@@ -127,7 +127,7 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob__1safePrintLoop
 (JNIEnv *env, jclass clz, jlong target, jlong view)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     PrintModel *model = (PrintModel *)jlong_to_ptr(target);
     PrinterView *arg = (PrinterView *)jlong_to_ptr(view);
@@ -138,6 +138,6 @@ JNF_COCOA_ENTER(env);
     [model release];
     [arg release];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 

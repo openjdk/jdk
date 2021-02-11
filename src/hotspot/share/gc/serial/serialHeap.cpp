@@ -98,10 +98,6 @@ void SerialHeap::young_process_roots(StrongRootsScope* scope,
   process_roots(scope, SO_ScavengeCodeCache, root_closure,
                 cld_closure, cld_closure, &mark_code_closure);
 
-  if (_process_strong_tasks->try_claim_task(GCH_PS_younger_gens)) {
-
-  }
-
   rem_set()->at_younger_refs_iterate();
   old_gen()->younger_refs_iterate(old_gen_closure, scope->n_threads());
 

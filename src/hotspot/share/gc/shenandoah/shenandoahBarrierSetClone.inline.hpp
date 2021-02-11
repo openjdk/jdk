@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public:
 
 void ShenandoahBarrierSet::clone_marking(oop obj) {
   assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
-  assert(ShenandoahStoreValEnqueueBarrier, "only with incremental-update");
+  assert(ShenandoahIUBarrier, "only with incremental-update");
   if (!_heap->marking_context()->allocated_after_mark_start(obj)) {
     ShenandoahUpdateRefsForOopClosure</* has_fwd = */ false, /* evac = */ false, /* enqueue */ true> cl;
     obj->oop_iterate(&cl);

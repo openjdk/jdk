@@ -23,6 +23,8 @@
  * questions.
  */
 
+#import "JNIUtilities.h"
+
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import "ThreadUtilities.h"
 #import "sun_lwawt_macosx_CWrapper_NSWindow.h"
@@ -36,7 +38,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_makeKeyAndOrderFront
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThread:@selector(makeKeyAndOrderFront:)
@@ -44,7 +46,7 @@ JNF_COCOA_ENTER(env);
                               withObject:nil
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -56,7 +58,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_makeKeyWindow
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThread:@selector(makeKeyWindow)
@@ -64,7 +66,7 @@ JNF_COCOA_ENTER(env);
                               withObject:nil
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -76,7 +78,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_makeMainWindow
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThread:@selector(makeMainWindow)
@@ -84,7 +86,7 @@ JNF_COCOA_ENTER(env);
                               withObject:nil
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -98,14 +100,14 @@ Java_sun_lwawt_macosx_CWrapper_00024NSWindow_canBecomeMainWindow
 {
     __block jboolean canBecomeMainWindow = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         canBecomeMainWindow = [window canBecomeMainWindow];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return canBecomeMainWindow;
 }
@@ -121,14 +123,14 @@ Java_sun_lwawt_macosx_CWrapper_00024NSWindow_isKeyWindow
 {
     __block jboolean isKeyWindow = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         isKeyWindow = [window isKeyWindow];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return isKeyWindow;
 }
@@ -142,7 +144,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_orderFront
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThread:@selector(orderFront:)
@@ -150,7 +152,7 @@ JNF_COCOA_ENTER(env);
                               withObject:window
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -162,7 +164,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_orderOut
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThread:@selector(orderOut:)
@@ -170,7 +172,7 @@ JNF_COCOA_ENTER(env);
                               withObject:window
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -182,12 +184,12 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_close
         (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [window close];
     }];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -199,7 +201,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_orderFrontRegardless
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThread:@selector(orderFrontRegardless)
@@ -207,7 +209,7 @@ JNF_COCOA_ENTER(env);
                               withObject:nil
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -219,7 +221,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_orderWindow
 (JNIEnv *env, jclass cls, jlong windowPtr, jint order, jlong relativeToPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     NSWindow *relativeTo = (NSWindow *)jlong_to_ptr(relativeToPtr);
@@ -227,7 +229,7 @@ JNF_COCOA_ENTER(env);
         [window orderWindow:(NSWindowOrderingMode)order relativeTo:[relativeTo windowNumber]];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 // Used for CWrapper.NSWindow.setLevel() (and level() which isn't implemented yet)
@@ -252,7 +254,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_setLevel
 (JNIEnv *env, jclass cls, jlong windowPtr, jint level)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     if (level >= 0 && level < sun_lwawt_macosx_CWrapper_NSWindow_MAX_WINDOW_LEVELS) {
         initLevels();
@@ -262,10 +264,10 @@ JNF_COCOA_ENTER(env);
             [window setLevel: LEVELS[level]];
         }];
     } else {
-        [JNFException raise:env as:kIllegalArgumentException reason:"unknown level"];
+        JNU_ThrowIllegalArgumentException(env, "unknown level");
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -277,7 +279,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_addChildWindow
 (JNIEnv *env, jclass cls, jlong parentPtr, jlong childPtr, jint order)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *parent = (NSWindow *)jlong_to_ptr(parentPtr);
     NSWindow *child = (NSWindow *)jlong_to_ptr(childPtr);
@@ -285,7 +287,7 @@ JNF_COCOA_ENTER(env);
         [parent addChildWindow:child ordered:order];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -297,7 +299,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_removeChildWindow
 (JNIEnv *env, jclass cls, jlong parentPtr, jlong childPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *parent = (NSWindow *)jlong_to_ptr(parentPtr);
     NSWindow *child = (NSWindow *)jlong_to_ptr(childPtr);
@@ -306,7 +308,7 @@ JNF_COCOA_ENTER(env);
                               withObject:child
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -318,14 +320,14 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_setAlphaValue
 (JNIEnv *env, jclass cls, jlong windowPtr, jfloat alpha)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [window setAlphaValue:(CGFloat)alpha];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -337,14 +339,14 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_setOpaque
 (JNIEnv *env, jclass cls, jlong windowPtr, jboolean opaque)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [window setOpaque:(BOOL)opaque];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -356,7 +358,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_setBackgroundColor
 (JNIEnv *env, jclass cls, jlong windowPtr, jint rgb)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     CGFloat alpha = (((rgb >> 24) & 0xff) / 255.0);
@@ -369,7 +371,7 @@ JNF_COCOA_ENTER(env);
         [window setBackgroundColor:color];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -381,7 +383,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_miniaturize
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThread:@selector(miniaturize:)
@@ -389,7 +391,7 @@ JNF_COCOA_ENTER(env);
                               withObject:nil
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -401,7 +403,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_deminiaturize
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThread:@selector(deminiaturize:)
@@ -409,7 +411,7 @@ JNF_COCOA_ENTER(env);
                               withObject:nil
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -423,14 +425,14 @@ Java_sun_lwawt_macosx_CWrapper_00024NSWindow_isZoomed
 {
     __block jboolean isZoomed = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         isZoomed = [window isZoomed];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return isZoomed;
 }
@@ -444,7 +446,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_zoom
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThread:@selector(zoom:)
@@ -452,7 +454,7 @@ JNF_COCOA_ENTER(env);
                               withObject:nil
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -464,7 +466,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_makeFirstResponder
 (JNIEnv *env, jclass cls, jlong windowPtr, jlong responderPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     NSResponder *responder = (NSResponder *)jlong_to_ptr(responderPtr);
@@ -473,7 +475,7 @@ JNF_COCOA_ENTER(env);
                               withObject:responder
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -485,7 +487,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSView_addSubview
 (JNIEnv *env, jclass cls, jlong viewPtr, jlong subviewPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
     NSView *subview = (NSView *)jlong_to_ptr(subviewPtr);
@@ -493,7 +495,7 @@ JNF_COCOA_ENTER(env);
         [view addSubview:subview];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -505,7 +507,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSView_removeFromSuperview
 (JNIEnv *env, jclass cls, jlong viewPtr)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
     [ThreadUtilities performOnMainThread:@selector(removeFromSuperview)
@@ -513,7 +515,7 @@ JNF_COCOA_ENTER(env);
                               withObject:nil
                            waitUntilDone:NO];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -525,14 +527,14 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSView_setFrame
 (JNIEnv *env, jclass cls, jlong viewPtr, jint x, jint y, jint w, jint h)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [view setFrame:NSMakeRect(x, y, w, h)];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -546,14 +548,14 @@ Java_sun_lwawt_macosx_CWrapper_00024NSView_window
 {
     __block jlong windowPtr = 0L;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         windowPtr = ptr_to_jlong([view window]);
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return windowPtr;
 }
@@ -567,14 +569,14 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSView_setHidden
 (JNIEnv *env, jclass cls, jlong viewPtr, jboolean toHide)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [view setHidden:(BOOL)toHide];
     }];
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -587,7 +589,7 @@ Java_sun_lwawt_macosx_CWrapper_00024NSView_setToolTip
 (JNIEnv *env, jclass cls, jlong viewPtr, jstring msg)
 {
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
     NSString* s = JNFJavaToNSString(env, msg);
@@ -595,5 +597,5 @@ JNF_COCOA_ENTER(env);
         [view setToolTip: s];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }

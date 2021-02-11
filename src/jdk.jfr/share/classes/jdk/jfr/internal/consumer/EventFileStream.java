@@ -28,6 +28,7 @@ package jdk.jfr.internal.consumer;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.AccessControlContext;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -87,7 +88,7 @@ public final class EventFileStream extends AbstractEventStream {
 
         currentParser = new ChunkParser(input, disp.parserConfiguration);
         while (!isClosed()) {
-            emitMetadataEvent(currentParser);
+            onMetadata(currentParser);
             if (currentParser.getStartNanos() > end) {
                 close();
                 return;
@@ -96,7 +97,6 @@ public final class EventFileStream extends AbstractEventStream {
             disp.parserConfiguration.filterStart = start;
             disp.parserConfiguration.filterEnd = end;
             currentParser.updateConfiguration(disp.parserConfiguration, true);
-            currentParser.setFlushOperation(getFlushOperation());
             if (disp.parserConfiguration.isOrdered()) {
                 processOrdered(disp);
             } else {
@@ -116,46 +116,42 @@ public final class EventFileStream extends AbstractEventStream {
         }
         RecordedEvent event;
         int index = 0;
-        while (true) {
-            event = currentParser.readEvent();
-            if (event == Dispatcher.FLUSH_MARKER) {
-                emitMetadataEvent(currentParser);
-                dispatchOrdered(c, index);
-                index = 0;
-                continue;
+        while (!currentParser.isChunkFinished()) {
+            while ((event = currentParser.readStreamingEvent()) != null) {
+                if (index == cacheSorted.length) {
+                    RecordedEvent[] tmp = cacheSorted;
+                    cacheSorted = new RecordedEvent[2 * tmp.length];
+                    System.arraycopy(tmp, 0, cacheSorted, 0, tmp.length);
+                }
+                cacheSorted[index++] = event;
             }
-
-            if (event == null) {
-                emitMetadataEvent(currentParser);
-                dispatchOrdered(c, index);
-                return;
-            }
-            if (index == cacheSorted.length) {
-                RecordedEvent[] tmp = cacheSorted;
-                cacheSorted = new RecordedEvent[2 * tmp.length];
-                System.arraycopy(tmp, 0, cacheSorted, 0, tmp.length);
-            }
-            cacheSorted[index++] = event;
+            dispatchOrdered(c, index);
+            index = 0;
         }
     }
 
     private void dispatchOrdered(Dispatcher c, int index) {
+        onMetadata(currentParser);
         Arrays.sort(cacheSorted, 0, index, EVENT_COMPARATOR);
         for (int i = 0; i < index; i++) {
             c.dispatch(cacheSorted[i]);
         }
+        onFlush();
     }
 
     private void processUnordered(Dispatcher c) throws IOException {
+        onMetadata(currentParser);
         while (!isClosed()) {
-            RecordedEvent event = currentParser.readEvent();
+            RecordedEvent event = currentParser.readStreamingEvent();
             if (event == null) {
-                emitMetadataEvent(currentParser);
-                return;
+                onFlush();
+                if (currentParser.isChunkFinished()) {
+                    return;
+                }
+                continue;
             }
-            if (event != Dispatcher.FLUSH_MARKER) {
-                c.dispatch(event);
-            }
+            onMetadata(currentParser);
+            c.dispatch(event);
         }
     }
 }

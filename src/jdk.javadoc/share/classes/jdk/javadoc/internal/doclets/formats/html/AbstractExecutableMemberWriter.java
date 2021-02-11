@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
 
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -38,7 +37,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import javax.lang.model.util.SimpleTypeVisitor9;
+import javax.lang.model.util.SimpleTypeVisitor14;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -152,24 +151,56 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     }
 
     /**
-     * Add the receiver annotations information.
+     * Add the receiver information.
+     *
+     * <p>Note: receivers can only have type-use annotations.</p>
      *
      * @param member the member to write receiver annotations for.
      * @param rcvrType the receiver type.
-     * @param annotationMirrors list of annotation descriptions.
      * @param tree the content tree to which the information will be added.
      */
-    protected void addReceiverAnnotations(ExecutableElement member, TypeMirror rcvrType,
-            List<? extends AnnotationMirror> annotationMirrors, Content tree) {
-        tree.add(writer.getAnnotationInfo(member.getReceiverType().getAnnotationMirrors(), false));
+    protected void addReceiver(ExecutableElement member, TypeMirror rcvrType, Content tree) {
+        var info = new LinkInfoImpl(configuration, RECEIVER_TYPE, rcvrType);
+        info.linkToSelf = false;
+        tree.add(writer.getLink(info));
         tree.add(Entity.NO_BREAK_SPACE);
-        tree.add(utils.getTypeName(rcvrType, false));
-        LinkInfoImpl linkInfo = new LinkInfoImpl(configuration, RECEIVER_TYPE, rcvrType);
-        tree.add(writer.getTypeParameterLinks(linkInfo));
-        tree.add(Entity.NO_BREAK_SPACE);
+        if (member.getKind() == ElementKind.CONSTRUCTOR) {
+            tree.add(utils.getTypeName(rcvrType, false));
+            tree.add(".");
+        }
         tree.add("this");
     }
 
+    /**
+     * Returns {@code true} if a receiver type is annotated anywhere in its type for
+     * inclusion in member details.
+     *
+     * @param receiverType the receiver type.
+     * @return {@code true} if the receiver is annotated
+     */
+    protected boolean isAnnotatedReceiver(TypeMirror receiverType) {
+        return new SimpleTypeVisitor14<Boolean, Void>() {
+            @Override
+            protected Boolean defaultAction(TypeMirror e, Void unused) {
+                return utils.isAnnotated(e);
+            }
+
+            @Override
+            public Boolean visitDeclared(DeclaredType t, Void unused) {
+                if (super.visitDeclared(t, unused) || visit(t.getEnclosingType())) {
+                    return true;
+                }
+
+                for (var e : t.getTypeArguments()) {
+                    if (visit(e)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }.visit(receiverType);
+    }
 
     /**
      * Add all the parameters for the executable member.
@@ -199,9 +230,8 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         String sep = "";
         List<? extends VariableElement> parameters = member.getParameters();
         TypeMirror rcvrType = member.getReceiverType();
-        if (includeAnnotations && rcvrType != null && utils.isAnnotated(rcvrType)) {
-            List<? extends AnnotationMirror> annotationMirrors = rcvrType.getAnnotationMirrors();
-            addReceiverAnnotations(member, rcvrType, annotationMirrors, paramTree);
+        if (includeAnnotations && rcvrType != null && isAnnotatedReceiver(rcvrType)) {
+            addReceiver(member, rcvrType, paramTree);
             sep = "," + DocletConstants.NL + " ";
         }
         int paramstart;

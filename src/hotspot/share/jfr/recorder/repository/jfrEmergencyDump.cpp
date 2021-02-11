@@ -524,7 +524,6 @@ class JavaThreadInVMAndNative : public StackObj {
 };
 
 static void post_events(bool exception_handler, Thread* thread) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   if (exception_handler) {
     EventShutdown e;
     e.set_reason("VM Error");

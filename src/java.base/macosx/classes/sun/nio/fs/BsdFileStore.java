@@ -25,9 +25,11 @@
 
 package sun.nio.fs;
 
-import java.nio.file.attribute.*;
-import java.util.*;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.io.IOException;
+import java.util.Arrays;
+import sun.security.action.GetPropertyAction;
 
 /**
  * Bsd implementation of FileStore
@@ -76,5 +78,73 @@ class BsdFileStore
         }
 
         throw new IOException("Mount point not found in fstab");
+    }
+
+    // returns true if extended attributes enabled on file system where given
+    // file resides, returns false if disabled or unable to determine.
+    private boolean isExtendedAttributesEnabled(UnixPath path) {
+        int fd = -1;
+        try {
+            fd = path.openForAttributeAccess(false);
+
+            // fgetxattr returns size if called with size==0
+            byte[] name = Util.toBytes("user.java");
+            BsdNativeDispatcher.fgetxattr(fd, name, 0L, 0);
+            return true;
+        } catch (UnixException e) {
+            // attribute does not exist
+            if (e.errno() == UnixConstants.ENOATTR)
+                return true;
+        } finally {
+            UnixNativeDispatcher.close(fd);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
+        // support UserDefinedAttributeView if extended attributes enabled
+        if (type == UserDefinedFileAttributeView.class) {
+            // lookup fstypes.properties
+            FeatureStatus status = checkIfFeaturePresent("user_xattr");
+            if (status == FeatureStatus.PRESENT)
+                return true;
+            if (status == FeatureStatus.NOT_PRESENT)
+                return false;
+
+            // typical macOS file system types that are known to support xattr
+            String fstype = entry().fstype();
+            if ("hfs".equals(fstype))
+                return true;
+            if ("apfs".equals(fstype)) {
+                // fgetxattr broken on APFS prior to 10.14
+                return isOsVersionGte(10, 14);
+            }
+
+            // probe file system capabilities
+            UnixPath dir = new UnixPath(file().getFileSystem(), entry().dir());
+            return isExtendedAttributesEnabled(dir);
+        }
+        return super.supportsFileAttributeView(type);
+    }
+
+    @Override
+    public boolean supportsFileAttributeView(String name) {
+        if (name.equals("user"))
+            return supportsFileAttributeView(UserDefinedFileAttributeView.class);
+        return super.supportsFileAttributeView(name);
+    }
+
+    /**
+     * Returns true if the OS major/minor version is greater than, or equal, to the
+     * given major/minor version.
+     */
+    private static boolean isOsVersionGte(int requiredMajor, int requiredMinor) {
+        String osVersion = GetPropertyAction.privilegedGetProperty("os.version");
+        String[] vers = Util.split(osVersion, '.');
+        int majorVersion = Integer.parseInt(vers[0]);
+        int minorVersion = Integer.parseInt(vers[1]);
+        return (majorVersion > requiredMajor)
+                || (majorVersion == requiredMajor && minorVersion >= requiredMinor);
     }
 }

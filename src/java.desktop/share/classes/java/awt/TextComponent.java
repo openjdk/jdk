@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.peer.TextComponentPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.text.BreakIterator;
 import java.util.EventListener;
 
@@ -123,9 +124,10 @@ public class TextComponent extends Component implements Accessible {
      */
     protected transient TextListener textListener;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -2214773872412987419L;
 
     /**
@@ -779,6 +781,7 @@ public class TextComponent extends Component implements Accessible {
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see java.awt.Component#textListenerK
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
       throws IOException
     {
@@ -814,6 +817,7 @@ public class TextComponent extends Component implements Accessible {
      * @see #addTextListener
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -871,9 +875,10 @@ public class TextComponent extends Component implements Accessible {
     protected class AccessibleAWTTextComponent extends AccessibleAWTComponent
         implements AccessibleText, TextListener
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 3631432373506317811L;
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1533,15 +1533,22 @@ void os::PlatformEvent::unpark() {
 
 // JSR166 support
 
- os::PlatformParker::PlatformParker() {
-  int status;
-  status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
+ os::PlatformParker::PlatformParker() : _counter(0), _cur_index(-1) {
+  int status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
   assert_status(status == 0, status, "cond_init rel");
   status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
   assert_status(status == 0, status, "cond_init abs");
   status = pthread_mutex_init(_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
-  _cur_index = -1; // mark as unused
+}
+
+os::PlatformParker::~PlatformParker() {
+  int status = pthread_cond_destroy(&_cond[REL_INDEX]);
+  assert_status(status == 0, status, "cond_destroy rel");
+  status = pthread_cond_destroy(&_cond[ABS_INDEX]);
+  assert_status(status == 0, status, "cond_destroy abs");
+  status = pthread_mutex_destroy(_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
 }
 
 // Parker::park decrements count if > 0, else does a condvar wait.  Unpark

@@ -112,7 +112,7 @@ public class WixPipeline {
                 "-nologo",
                 adjustPath.apply(wixSource.source).toString(),
                 "-ext", "WixUtilExtension",
-                "-arch", "x64",
+                "-arch", WixSourcesBuilder.is64Bit() ? "x64" : "x86",
                 "-out", wixObj.toAbsolutePath().toString()
         ));
 

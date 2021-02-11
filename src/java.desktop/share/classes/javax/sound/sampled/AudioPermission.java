@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.sound.sampled;
 
+import java.io.Serial;
 import java.security.BasicPermission;
 
 /**
@@ -80,6 +81,7 @@ public class AudioPermission extends BasicPermission {
     /**
      * Use serialVersionUID from JDK 1.3 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -5518053473477801126L;
 
     /**

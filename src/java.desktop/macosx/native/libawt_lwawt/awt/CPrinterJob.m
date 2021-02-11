@@ -507,12 +507,12 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_abortDoc
   (JNIEnv *env, jobject jthis)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // This is only called during the printLoop from the printLoop thread
     NSPrintOperation* printLoop = [NSPrintOperation currentOperation];
     NSPrintInfo* printInfo = [printLoop printInfo];
     [printInfo setJobDisposition:NSPrintCancelJob];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -523,13 +523,13 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_getDefaultPage
   (JNIEnv *env, jobject jthis, jobject page)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     NSPrintInfo* printInfo = createDefaultNSPrintInfo(env, NULL);
 
     nsPrintInfoToJavaPageFormat(env, printInfo, page);
 
     [printInfo release];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -540,7 +540,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_validatePaper
   (JNIEnv *env, jobject jthis, jobject origpaper, jobject newpaper)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
 
     NSPrintInfo* printInfo = createDefaultNSPrintInfo(env, NULL);
@@ -549,7 +549,7 @@ JNF_COCOA_ENTER(env);
     nsPrintInfoToJavaPaper(env, printInfo, newpaper);
     [printInfo release];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -561,7 +561,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CPrinterJob_createNSPrintInfo
   (JNIEnv *env, jobject jthis)
 {
     jlong result = -1;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // This is used to create the NSPrintInfo for this PrinterJob. Thread
     //  safety is assured by the java side of this call.
 
@@ -569,7 +569,7 @@ JNF_COCOA_ENTER(env);
 
     result = ptr_to_jlong(printInfo);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return result;
 }
 
@@ -581,13 +581,13 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_dispose
   (JNIEnv *env, jobject jthis, jlong nsPrintInfo)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     if (nsPrintInfo != -1)
     {
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr(nsPrintInfo);
         [printInfo release];
     }
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 
@@ -610,7 +610,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJob_printLoop
 
     jboolean retVal = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // Get the first page's PageFormat for setting things up (This introduces
     //  and is a facet of the same problem in Radar 2818593/2708932).
     jobject page = (*env)->CallObjectMethod(env, jthis, jm_getPageFormat, 0); // AWT_THREADING Safe (!appKit)
@@ -674,7 +674,7 @@ JNF_COCOA_ENTER(env);
             (*env)->DeleteLocalRef(env, pageFormatArea);
         }
     }
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return retVal;
 }
 
@@ -691,7 +691,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterPageDialog_showDialog
     DECLARE_FIELD_RETURN(jm_page, jc_CPrinterPageDialog, "fPage", "Ljava/awt/print/PageFormat;", NO);
 
     jboolean result = JNI_FALSE;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     GET_CPRINTERDIALOG_FIELD_RETURN(NO);
     GET_NSPRINTINFO_METHOD_RETURN(NO)
     jobject printerJob = (*env)->GetObjectField(env, jthis, sjm_printerJob);
@@ -725,7 +725,7 @@ JNF_COCOA_ENTER(env);
         (*env)->DeleteLocalRef(env, page);
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return result;
 }
 
@@ -741,7 +741,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJobDialog_showDialog
     DECLARE_FIELD_RETURN(jm_pageable, jc_CPrinterJobDialog, "fPageable", "Ljava/awt/print/Pageable;", NO);
 
     jboolean result = JNI_FALSE;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     GET_CPRINTERDIALOG_FIELD_RETURN(NO);
     jobject printerJob = (*env)->GetObjectField(env, jthis, sjm_printerJob);
     if (printerJob == NULL) return NO;
@@ -772,6 +772,6 @@ JNF_COCOA_ENTER(env);
         (*env)->DeleteLocalRef(env, pageable);
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return result;
 }

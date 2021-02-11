@@ -546,10 +546,12 @@ public:
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
   void work(uint worker_id) {
-    if (_do_lazy_roots && _subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
-      Tracer t("lazy partial thread root processing");
-      ParallelSPCleanupThreadClosure cl;
-      Threads::threads_do(&cl);
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
+      if (_do_lazy_roots) {
+        Tracer t("lazy partial thread root processing");
+        ParallelSPCleanupThreadClosure cl;
+        Threads::threads_do(&cl);
+      }
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {

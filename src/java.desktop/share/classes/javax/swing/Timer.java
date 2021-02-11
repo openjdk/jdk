@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,24 @@
  * questions.
  */
 
-
-
 package javax.swing;
 
-
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
-import java.io.*;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.EventListener;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import javax.swing.event.EventListenerList;
-
-
 
 /**
  * Fires one or more {@code ActionEvent}s at specified
@@ -623,6 +622,7 @@ public class Timer implements Serializable
         return lock;
     }
 
+    @Serial
     private void readObject(ObjectInputStream in)
         throws ClassNotFoundException, IOException
     {
@@ -653,6 +653,7 @@ public class Timer implements Serializable
      * We have to use readResolve because we can not initialize final
      * fields for deserialized object otherwise
      */
+    @Serial
     private Object readResolve() {
         Timer timer = new Timer(getDelay(), null);
         timer.listenerList = listenerList;

@@ -27,7 +27,7 @@
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
-#include "oops/access.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/atomic.hpp"

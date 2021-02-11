@@ -41,10 +41,10 @@ NSColor **appleColors = nil;
 
 + (void)initialize {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [CSystemColors reloadColors];
     [[NSNotificationCenter defaultCenter] addObserver:[CSystemColors class] selector:@selector(systemColorsDidChange:) name:NSSystemColorsDidChangeNotification object:nil];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 

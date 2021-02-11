@@ -589,7 +589,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTextPipe_doDrawString
     QuartzSDOps *qsdo = (QuartzSDOps *)SurfaceData_GetOps(env, jsurfacedata);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     jsize len = (*env)->GetStringLength(env, str);
 
@@ -613,7 +613,7 @@ JNF_COCOA_ENTER(env);
         JNFReleaseStringUTF16UniChars(env, str, unichars);
     }
 
-JNF_COCOA_RENDERER_EXIT(env);
+JNI_COCOA_RENDERER_EXIT(env);
 }
 
 
@@ -628,7 +628,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTextPipe_doUnicodes
     QuartzSDOps *qsdo = (QuartzSDOps *)SurfaceData_GetOps(env, jsurfacedata);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     // Setup the text context
     if (length < MAX_STACK_ALLOC_GLYPH_BUFFER_SIZE) // optimized for stack allocation
@@ -642,7 +642,8 @@ JNF_COCOA_ENTER(env);
     {
         jchar *copyUnichars = malloc(length * sizeof(jchar));
         if (!copyUnichars) {
-            [JNFException raise:env as:kOutOfMemoryError reason:"Failed to malloc memory to create the glyphs for string drawing"];
+            JNU_ThrowOutOfMemoryError(env, "Failed to malloc memory to create the glyphs for string drawing");
+            return;
         }
 
         @try {
@@ -654,7 +655,7 @@ JNF_COCOA_ENTER(env);
         }
     }
 
-JNF_COCOA_RENDERER_EXIT(env);
+JNI_COCOA_RENDERER_EXIT(env);
 }
 
 /*
@@ -668,11 +669,11 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTextPipe_doOneUnicode
     QuartzSDOps *qsdo = (QuartzSDOps *)SurfaceData_GetOps(env, jsurfacedata);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     DrawTextContext(env, qsdo, awtStrike, &aUnicode, 1, x, y);
 
-JNF_COCOA_RENDERER_EXIT(env);
+JNI_COCOA_RENDERER_EXIT(env);
 }
 
 /*
@@ -686,7 +687,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTextPipe_doDrawGlyphs
     QuartzSDOps *qsdo = (QuartzSDOps *)SurfaceData_GetOps(env, jsurfacedata);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     qsdo->BeginSurface(env, qsdo, SD_Text);
     if (qsdo->cgRef == NULL)
@@ -704,5 +705,5 @@ JNF_COCOA_ENTER(env);
 
     qsdo->FinishSurface(env, qsdo);
 
-JNF_COCOA_RENDERER_EXIT(env);
+JNI_COCOA_RENDERER_EXIT(env);
 }

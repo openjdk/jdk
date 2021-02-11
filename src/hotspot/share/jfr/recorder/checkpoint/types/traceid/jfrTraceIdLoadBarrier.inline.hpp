@@ -83,7 +83,7 @@ inline traceid JfrTraceIdLoadBarrier::load(const Method* method) {
 inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass, const Method* method) {
    assert(klass != NULL, "invariant");
    assert(method != NULL, "invariant");
-   if (METHOD_FLAG_NOT_USED_THIS_EPOCH(method)) {
+   if (should_tag(method)) {
      SET_METHOD_AND_CLASS_USED_THIS_EPOCH(klass);
      SET_METHOD_FLAG_USED_THIS_EPOCH(method);
      assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
@@ -112,7 +112,7 @@ inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Metho
   assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
   assert(method != NULL, "invariant");
   assert(klass == method->method_holder(), "invariant");
-  if (METHOD_FLAG_NOT_USED_THIS_EPOCH(method)) {
+  if (should_tag(method)) {
     // the method is already logically tagged, just like the klass,
     // but because of redefinition, the latest Method*
     // representation might not have a reified tag.
