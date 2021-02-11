@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,10 +226,14 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
             return Optional.empty();
         }
         ECOperations ops = opsOpt.get();
-        if (! (priv instanceof ECPrivateKeyImpl)) {
+        ECPrivateKeyImpl privImpl;
+        if (priv instanceof ECPrivateKeyImpl) {
+            privImpl = (ECPrivateKeyImpl) priv;
+        } else if (priv instanceof ECPrivateKey) {
+            privImpl = new ECPrivateKeyImpl(priv.getEncoded());
+        } else {
             return Optional.empty();
         }
-        ECPrivateKeyImpl privImpl = (ECPrivateKeyImpl) priv;
         byte[] sArr = privImpl.getArrayS();
 
         // to match the native implementation, validate the public key here
