@@ -479,7 +479,7 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 RenegoInfoExtension.rniStringizer),
 
-    // RFC 8446 PSK extension must be last
+    // TLS 1.3 (RFC 8446) PSK extension must be last
     CH_PRE_SHARED_KEY       (0x0029, "pre_shared_key",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_OF_13,
