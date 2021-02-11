@@ -135,7 +135,8 @@ public class BodyInheritedFontSize {
                     + "Inherited: " + fontSizeInherited + "\n"
                     + "Explicit: " + fontSizeExplicit + "\n");
         }
-        if (fontSizeInherited != fontSizeExplicit) {
+        if (fontSizeInherited != fontSizeExplicit
+                || fontSizePrecentage != fontSizeExplicit) {
             throw new RuntimeException("The font size is different with "
                     + (w3cUnits ? "w3cUnits" : "stdUnits") + ": "
                     + "Percentage: " + fontSizePrecentage + " vs. "
