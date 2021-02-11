@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,12 @@ class test4 extends test2 {
         Integer staticFcalls;
         if (staticFunctionDepth.intValue() > 0) {
             numFcalls = functionDepth;
-            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            staticFcalls = Integer.valueOf(staticFunctionDepth.intValue() - 1);
             methodCallStr = Globals.returnNextStaticMethod(MethodID[1]);
 
             Globals.addFunctionIDToVector(methodCallStr.id, ID);
         } else {
-            numFcalls = new Long(functionDepth.longValue() - 1);
+            numFcalls = Long.valueOf(functionDepth.longValue() - 1);
             staticFcalls = staticFunctionDepth;
             Globals.addFunctionIDToVector(MethodID[0], ID);
             super.callMe(summation, ID, numFcalls, staticFcalls);
@@ -89,11 +89,11 @@ class test4 extends test2 {
         Integer staticFcalls;
         if (staticFunctionDepth.intValue() > 0) {
             numFcalls = functionDepth;
-            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            staticFcalls = Integer.valueOf(staticFunctionDepth.intValue() - 1);
             methodCallStr = Globals.returnNextStaticMethod(MethodID[2]);
         } else {
             long temp = functionDepth.longValue() - 2;
-            numFcalls = new Long(temp / 2);
+            numFcalls = Long.valueOf(temp / 2);
             staticFcalls = staticFunctionDepth;
 
             if (Globals.VERBOSE) {
@@ -117,7 +117,7 @@ class test4 extends test2 {
             if (Globals.VERBOSE) {
                 System.out.println(" test4.callMe - Starting Branch 2");
             }
-            numFcalls = new Long(temp);
+            numFcalls = Long.valueOf(temp);
             methodCallStr = Globals.nextRandomMethod();
         }
         Globals.addFunctionIDToVector(methodCallStr.id, ID);

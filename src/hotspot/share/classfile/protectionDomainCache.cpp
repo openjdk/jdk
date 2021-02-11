@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -66,6 +67,9 @@ class CleanProtectionDomainEntries : public CLDClosure {
 };
 
 void ProtectionDomainCacheTable::unlink() {
+  // The dictionary entries _pd_set field should be null also, so nothing to do.
+  assert(java_lang_System::allow_security_manager(), "should not be called otherwise");
+
   {
     // First clean cached pd lists in loaded CLDs
     // It's unlikely, but some loaded classes in a dictionary might

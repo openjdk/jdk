@@ -80,7 +80,7 @@ bool CompilationModeFlag::initialize() {
 
   // Now that the flag is parsed, we can use any methods of CompilerConfig.
   if (normal()) {
-    if (CompilerConfig::is_c1_only()) {
+    if (CompilerConfig::is_c1_simple_only()) {
       _mode = Mode::QUICK_ONLY;
     } else if (CompilerConfig::is_c2_or_jvmci_compiler_only()) {
       _mode = Mode::HIGH_ONLY;
