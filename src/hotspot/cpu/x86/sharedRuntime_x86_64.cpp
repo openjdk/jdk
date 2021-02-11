@@ -3457,7 +3457,7 @@ public:
     }
     return 0;
   }
-  
+
   void spill_register() {
     if (_output_registers.length() == 0) {
       return;
@@ -3554,12 +3554,12 @@ void NativeInvokerGenerator::generate() {
 
   _framesize = align_up(framesize + ((_shadow_space_bytes + spill_size_in_bytes()) >> LogBytesPerInt), 4);
   assert(is_even(_framesize/2), "sp not 16-byte aligned");
-  
+
   _oop_maps  = new OopMapSet();
   MacroAssembler* masm = _masm;
 
   address start = __ pc();
-  
+
   __ enter();
 
   // return address and rbp are already in place

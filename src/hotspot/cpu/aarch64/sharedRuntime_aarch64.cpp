@@ -3120,7 +3120,7 @@ public:
     }
     return 0;
   }
-  
+
   void spill_register() {
     if (_output_registers.length() == 0) {
       return;
@@ -3290,7 +3290,7 @@ void NativeInvokerGenerator::generate() {
 
   // Need to save the native result registers around any runtime calls.
   spill_register();
-  
+
   __ mov(c_rarg0, rthread);
   assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
