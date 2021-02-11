@@ -160,19 +160,19 @@ TEST_VM(G1ServiceTaskQueue, add_ordered) {
 
 #ifdef ASSERT
 TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, pop_empty,
-    "Should never try to verify empty queue") {
+    ".*Should never try to verify empty queue") {
   G1ServiceTaskQueue queue;
   queue.pop();
 }
 
 TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, peek_empty,
-    "Should never try to verify empty queue") {
+    ".*Should never try to verify empty queue") {
   G1ServiceTaskQueue queue;
   queue.peek();
 }
 
 TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, set_time_in_queue,
-    "Not allowed to update time while in queue") {
+    ".*Not allowed to update time while in queue") {
   G1ServiceTaskQueue queue;
   TestTask a(100);
   queue.add_ordered(&a);

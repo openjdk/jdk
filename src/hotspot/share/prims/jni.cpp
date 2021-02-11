@@ -38,6 +38,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -3800,10 +3801,14 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
 #ifndef PRODUCT
     if (ReplayCompiles) ciReplay::replay(thread);
+#endif
 
+#ifdef ASSERT
     // Some platforms (like Win*) need a wrapper around these test
     // functions in order to properly handle error conditions.
-    VMError::test_error_handler();
+    if (ErrorHandlerTest != 0) {
+      VMError::controlled_crash(ErrorHandlerTest);
+    }
 #endif
 
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.

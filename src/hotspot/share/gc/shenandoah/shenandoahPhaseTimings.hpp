@@ -118,6 +118,8 @@ class outputStream;
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
   f(degen_gc_scan_conc_roots,                       "  Degen Mark Roots")              \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_conc_mark_,      "    DM: ", f)                     \
+  f(degen_gc_weakrefs,                               "    Weak References")             \
+  f(degen_gc_weakrefs_process,                       "      Process")                   \
   f(degen_gc_purge,                                  "   System Purge")                \
   f(degen_gc_purge_class_unload,                     "     Unload Classes")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_cu_par_,    "       DCU: ", f)                \

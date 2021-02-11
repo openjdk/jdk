@@ -110,18 +110,23 @@ public final class Scenario {
     public void execute() {
         List<OutputAnalyzer> outputList = executor.execute();
         // The first one contains output from the test VM
-        OutputAnalyzer mainOuput = outputList.get(0);
+        OutputAnalyzer mainOutput = outputList.get(0);
         if (isValid) {
-            mainOuput.shouldHaveExitValue(0);
-            processors.forEach(processor -> processor.accept(mainOuput));
+            mainOutput.shouldHaveExitValue(0);
+            processors.forEach(processor -> processor.accept(mainOutput));
             // only the last output contains directives got from print command
             List<OutputAnalyzer> last = new ArrayList<>();
             last.add(outputList.get(outputList.size() - 1));
             jcmdProcessor.accept(last);
         } else {
-            Asserts.assertNE(mainOuput.getExitValue(), 0, "VM should exit with "
-                    + "error for incorrect directives");
-            mainOuput.shouldContain("Parsing of compiler directives failed");
+            // two cases for invalid inputs.
+            if (mainOutput.getExitValue() == 0) {
+                mainOutput.shouldContain("CompileCommand: An error occurred during parsing");
+            } else {
+                Asserts.assertNE(mainOutput.getExitValue(), 0, "VM should exit with "
+                        + "error for incorrect directives");
+                mainOutput.shouldContain("Parsing of compiler directives failed");
+            }
         }
     }
 
@@ -164,8 +169,8 @@ public final class Scenario {
      * Type of the compile command
      */
     public static enum Type {
-        OPTION(""),
-        FILE("command_file"),
+        OPTION(""),               // CompilerOracle: -XX:CompileCommand=
+        FILE("command_file"),     // CompilerOracle: -XX:CompileCommandFile=
         DIRECTIVE("directives.json"),
         JCMD("jcmd_directives.json") {
             @Override
@@ -174,6 +179,13 @@ public final class Scenario {
                 return new JcmdCommand(command, md, compiler, this,
                         JcmdType.ADD);
             }
+
+            @Override
+            public CompileCommand createCompileCommand(Command command,
+                    MethodDescriptor md, Compiler compiler, String argument) {
+                return new JcmdCommand(command, md, compiler, this,
+                        JcmdType.ADD, argument);
+            }
         };
 
         public final String fileName;
@@ -181,6 +193,11 @@ public final class Scenario {
         public CompileCommand createCompileCommand(Command command,
                 MethodDescriptor md, Compiler compiler) {
             return new CompileCommand(command, md, compiler, this);
+        }
+
+        public CompileCommand createCompileCommand(Command command,
+                MethodDescriptor md, Compiler compiler, String argument) {
+            return new CompileCommand(command, md, compiler, this, argument);
         }
 
         private Type(String fileName) {

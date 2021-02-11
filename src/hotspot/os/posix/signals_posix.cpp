@@ -768,6 +768,17 @@ static void set_our_sigflags(int sig, int flags) {
   }
 }
 
+// Implementation may use the same storage for both the sa_sigaction field and the sa_handler field,
+// so check for "sigAct.sa_flags == SA_SIGINFO"
+static address get_signal_handler(const struct sigaction* action) {
+  bool siginfo_flag_set = (action->sa_flags & SA_SIGINFO) != 0;
+  if (siginfo_flag_set) {
+    return CAST_FROM_FN_PTR(address, action->sa_sigaction);
+  } else {
+    return CAST_FROM_FN_PTR(address, action->sa_handler);
+  }
+}
+
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
 
 static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
@@ -789,10 +800,7 @@ static void check_signal_handler(int sig) {
   // See comment for SA_RESTORER_FLAG_MASK
   LINUX_ONLY(act.sa_flags &= SA_RESTORER_FLAG_MASK;)
 
-  address thisHandler = (act.sa_flags & SA_SIGINFO)
-    ? CAST_FROM_FN_PTR(address, act.sa_sigaction)
-    : CAST_FROM_FN_PTR(address, act.sa_handler);
-
+  address thisHandler = get_signal_handler(&act);
 
   switch (sig) {
   case SIGSEGV:
@@ -1213,9 +1221,7 @@ void set_signal_handler(int sig) {
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
 
-  void* oldhand = oldAct.sa_sigaction
-                ? CAST_FROM_FN_PTR(void*,  oldAct.sa_sigaction)
-                : CAST_FROM_FN_PTR(void*,  oldAct.sa_handler);
+  void* oldhand = get_signal_handler(&oldAct);
   if (oldhand != CAST_FROM_FN_PTR(void*, SIG_DFL) &&
       oldhand != CAST_FROM_FN_PTR(void*, SIG_IGN) &&
       oldhand != CAST_FROM_FN_PTR(void*, (sa_sigaction_t)javaSignalHandler)) {
@@ -1258,9 +1264,7 @@ void set_signal_handler(int sig) {
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
 
-  void* oldhand2  = oldAct.sa_sigaction
-                  ? CAST_FROM_FN_PTR(void*, oldAct.sa_sigaction)
-                  : CAST_FROM_FN_PTR(void*, oldAct.sa_handler);
+  void* oldhand2  = get_signal_handler(&oldAct);
   assert(oldhand2 == oldhand, "no concurrent signal handler installation");
 }
 
@@ -1370,9 +1374,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
 
   st->print("%s: ", os::exception_name(sig, buf, buflen));
 
-  address handler = (sa.sa_flags & SA_SIGINFO)
-    ? CAST_FROM_FN_PTR(address, sa.sa_sigaction)
-    : CAST_FROM_FN_PTR(address, sa.sa_handler);
+  address handler = get_signal_handler(&sa);
 
   if (handler == CAST_FROM_FN_PTR(address, SIG_DFL)) {
     st->print("SIG_DFL");
@@ -1437,8 +1439,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 bool PosixSignals::is_sig_ignored(int sig) {
   struct sigaction oact;
   sigaction(sig, (struct sigaction*)NULL, &oact);
-  void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oact.sa_sigaction)
-                                 : CAST_FROM_FN_PTR(void*,  oact.sa_handler);
+  void* ohlr = get_signal_handler(&oact);
   if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN)) {
     return true;
   } else {

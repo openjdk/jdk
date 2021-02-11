@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
- * @run testng Short64VectorLoadStoreTests
+ * @run testng/othervm -XX:-TieredCompilation Short64VectorLoadStoreTests
  *
  */
 

@@ -339,7 +339,7 @@ jdk.dynalink_CLEAN += .properties
 
 ################################################################################
 
-jdk.javadoc_COPY += .xml .css .js .png .txt
+jdk.javadoc_COPY += .xml .css .js .js.template .png .txt
 
 ################################################################################
 

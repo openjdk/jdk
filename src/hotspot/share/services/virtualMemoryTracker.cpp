@@ -444,7 +444,7 @@ bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
   bool result = reserved_rgn->add_committed_region(addr, size, stack);
   log_debug(nmt)("Add committed region \'%s\'(" INTPTR_FORMAT ", " SIZE_FORMAT ") %s",
-                rgn.flag_name(),  p2i(rgn.base()), rgn.size(), (result ? "Succeeded" : "Failed"));
+                reserved_rgn->flag_name(),  p2i(rgn.base()), rgn.size(), (result ? "Succeeded" : "Failed"));
   return result;
 }
 
@@ -506,12 +506,26 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
     return false;
   }
 
-  if (reserved_rgn->flag() == mtClassShared &&
-      reserved_rgn->contain_region(addr, size)) {
-    // This is an unmapped CDS region, which is part of the reserved shared
-    // memory region.
-    // See special handling in VirtualMemoryTracker::add_reserved_region also.
-    return true;
+  if (reserved_rgn->flag() == mtClassShared) {
+    if (reserved_rgn->contain_region(addr, size)) {
+      // This is an unmapped CDS region, which is part of the reserved shared
+      // memory region.
+      // See special handling in VirtualMemoryTracker::add_reserved_region also.
+      return true;
+    }
+
+    if (size > reserved_rgn->size()) {
+      // This is from release the whole region spanning from archive space to class space,
+      // so we release them altogether.
+      ReservedMemoryRegion class_rgn(addr + reserved_rgn->size(),
+                                     (size - reserved_rgn->size()));
+      ReservedMemoryRegion* cls_rgn = _reserved_regions->find(class_rgn);
+      assert(cls_rgn != NULL, "Class space region  not recorded?");
+      assert(cls_rgn->flag() == mtClass, "Must be class type");
+      remove_released_region(reserved_rgn);
+      remove_released_region(cls_rgn);
+      return true;
+    }
   }
 
   VirtualMemorySummary::record_released_memory(size, reserved_rgn->flag());

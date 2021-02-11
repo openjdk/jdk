@@ -36,8 +36,11 @@
 
 #import "ThreadUtilities.h"
 #import "CMenuBar.h"
+#import "JNIUtilities.h"
 
-static JNF_CLASS_CACHE(sjc_ScreenMenu, "com/apple/laf/ScreenMenu");
+static jclass sjc_ScreenMenu = NULL;
+#define GET_SCREENMENU_CLASS() \
+     GET_CLASS(sjc_ScreenMenu, "com/apple/laf/ScreenMenu");
 
 static jint ns2awtModifiers(NSUInteger keyMods) {
     jint result = 0;
@@ -104,8 +107,10 @@ static jint ns2awtMouseButton(NSInteger mouseButton) {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 JNF_COCOA_ENTER(env);
     //NSLog(@"menuWillOpen %@", [menu title]);
-    static JNF_MEMBER_CACHE(jm_ScreenMenu_invokeOpenLater, sjc_ScreenMenu, "invokeOpenLater", "()V");
-    JNFCallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_invokeOpenLater); // AWT_THREADING Safe (AWTRunLoopMode)
+    GET_SCREENMENU_CLASS();
+    DECLARE_METHOD(jm_ScreenMenu_invokeOpenLater, sjc_ScreenMenu, "invokeOpenLater", "()V");
+    (*env)->CallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_invokeOpenLater); // AWT_THREADING Safe (AWTRunLoopMode)
+    CHECK_EXCEPTION();
 JNF_COCOA_EXIT(env);
 
 }
@@ -122,8 +127,10 @@ JNF_COCOA_EXIT(env);
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 JNF_COCOA_ENTER(env);
     //NSLog(@"menuDidClose %@", [menu title]);
-    static JNF_MEMBER_CACHE(jm_ScreenMenu_invokeMenuClosing, sjc_ScreenMenu, "invokeMenuClosing", "()V");
-    JNFCallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_invokeMenuClosing); // AWT_THREADING Safe (AWTRunLoopMode)
+    GET_SCREENMENU_CLASS();
+    DECLARE_METHOD(jm_ScreenMenu_invokeMenuClosing, sjc_ScreenMenu, "invokeMenuClosing", "()V");
+    (*env)->CallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_invokeMenuClosing); // AWT_THREADING Safe (AWTRunLoopMode)
+    CHECK_EXCEPTION();
 JNF_COCOA_EXIT(env);
 }
 
@@ -140,9 +147,11 @@ JNF_COCOA_EXIT(env);
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 JNF_COCOA_ENTER(env);
     // Send that to Java so we can test which item was hit.
-    static JNF_MEMBER_CACHE(jm_ScreenMenu_updateSelectedItem, sjc_ScreenMenu, "handleItemTargeted", "(IIIII)V");
-    JNFCallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_updateSelectedItem, menuIndex,
+    GET_SCREENMENU_CLASS();
+    DECLARE_METHOD(jm_ScreenMenu_updateSelectedItem, sjc_ScreenMenu, "handleItemTargeted", "(IIIII)V");
+    (*env)->CallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_updateSelectedItem, menuIndex,
                     NSMinY(rect), NSMinX(rect), NSMaxY(rect), NSMaxX(rect)); // AWT_THREADING Safe (AWTRunLoopMode)
+    CHECK_EXCEPTION();
 
 JNF_COCOA_EXIT(env);
 }
@@ -183,8 +192,11 @@ JNF_COCOA_EXIT(env);
     // Call the mouse event handler, which will generate Java mouse events.
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 JNF_COCOA_ENTER(env);
-    static JNF_MEMBER_CACHE(jm_ScreenMenu_handleMouseEvent, sjc_ScreenMenu, "handleMouseEvent", "(IIIIJ)V");
-    JNFCallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_handleMouseEvent, javaKind, javaX, javaY, javaModifiers, javaWhen); // AWT_THREADING Safe (AWTRunLoopMode)
+    GET_SCREENMENU_CLASS();
+    DECLARE_METHOD(jm_ScreenMenu_handleMouseEvent, sjc_ScreenMenu, "handleMouseEvent", "(IIIIJ)V");
+    (*env)->CallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_handleMouseEvent,
+             javaKind, javaX, javaY, javaModifiers, javaWhen); // AWT_THREADING Safe (AWTRunLoopMode)
+    CHECK_EXCEPTION();
 JNF_COCOA_EXIT(env);
 }
 

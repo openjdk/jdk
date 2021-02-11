@@ -24,6 +24,7 @@
  */
 
 #include "AppLauncher.h"
+#include "app.h"
 #include "FileUtils.h"
 #include "UnixSysInfo.h"
 #include "JvmLauncher.h"
@@ -74,10 +75,10 @@ int main(int argc, char *argv[]) {
         // Besides we should ignore main() arguments because these are the
         // arguments passed into JLI_Launch() call and not the arguments with
         // which the launcher was started.
-        return AppLauncher::launch(std::nothrow, launchJvm);
+        return app::launch(std::nothrow, launchJvm);
     }
 
     SysInfo::argc = argc;
     SysInfo::argv = argv;
-    return AppLauncher::launch(std::nothrow, initJvmLauncher);
+    return app::launch(std::nothrow, initJvmLauncher);
 }

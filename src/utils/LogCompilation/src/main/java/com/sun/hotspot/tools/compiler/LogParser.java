@@ -1000,44 +1000,49 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             }
             methods.put(id, m);
         } else if (qname.equals("call")) {
-            if (methodHandleSite != null) {
-                methodHandleSite = null;
-            }
-            Method m = method(search(atts, "method"));
-            if (lateInlining && scopes.size() == 0) {
-                // re-attempting already seen call site (late inlining for MH invokes)
-                if (m != site.getMethod()) {
-                    if (current_bci != site.getBci()) {
-                        System.err.println(m + " bci: " + current_bci);
-                        System.err.println(site.getMethod() +  " bci: " + site.getBci());
-                        reportInternalError("bci mismatch after late inlining");
-                    }
-                    site.setMethod(m);
-                }
-            } else {
-                // We're dealing with a new call site; the called method is
-                // likely to be parsed next.
-                site = new CallSite(current_bci, m);
-            }
-            site.setCount(Integer.parseInt(search(atts, "count", "0")));
-            String receiver = atts.getValue("receiver");
-            if (receiver != null) {
-                site.setReceiver(type(receiver));
-                site.setReceiver_count(Integer.parseInt(search(atts, "receiver_count")));
-            }
-            int methodHandle = Integer.parseInt(search(atts, "method_handle_intrinsic", "0"));
-            if (lateInlining && scopes.size() == 0) {
-                // The call was already added before this round of late
-                // inlining. Ignore.
-            } else if (methodHandle == 0) {
-                scopes.peek().add(site);
-            } else {
-                // method handle call site can be followed by another
-                // call (in case it is inlined). If that happens we
-                // discard the method handle call site. So we keep
-                // track of it but don't add it to the list yet.
-                methodHandleSite = site;
-            }
+          if (scopes.peek() == null) {
+              Phase p = phaseStack.peek();
+              assert p != null && p.getName().equals("optimizer") : "should not be in parse here";
+          } else {
+              if (methodHandleSite != null) {
+                  methodHandleSite = null;
+              }
+              Method m = method(search(atts, "method"));
+              if (lateInlining && scopes.size() == 0) {
+                  // re-attempting already seen call site (late inlining for MH invokes)
+                  if (m != site.getMethod()) {
+                      if (current_bci != site.getBci()) {
+                          System.err.println(m + " bci: " + current_bci);
+                          System.err.println(site.getMethod() +  " bci: " + site.getBci());
+                          reportInternalError("bci mismatch after late inlining");
+                      }
+                      site.setMethod(m);
+                  }
+              } else {
+                  // We're dealing with a new call site; the called method is
+                  // likely to be parsed next.
+                  site = new CallSite(current_bci, m);
+              }
+              site.setCount(Integer.parseInt(search(atts, "count", "0")));
+              String receiver = atts.getValue("receiver");
+              if (receiver != null) {
+                  site.setReceiver(type(receiver));
+                  site.setReceiver_count(Integer.parseInt(search(atts, "receiver_count")));
+              }
+              int methodHandle = Integer.parseInt(search(atts, "method_handle_intrinsic", "0"));
+              if (lateInlining && scopes.size() == 0) {
+                  // The call was already added before this round of late
+                  // inlining. Ignore.
+              } else if (methodHandle == 0) {
+                  scopes.peek().add(site);
+              } else {
+                  // method handle call site can be followed by another
+                  // call (in case it is inlined). If that happens we
+                  // discard the method handle call site. So we keep
+                  // track of it but don't add it to the list yet.
+                  methodHandleSite = site;
+              }
+          }
         } else if (qname.equals("intrinsic")) {
             String id = atts.getValue("id");
             assert id != null : "intrinsic id is null";
@@ -1049,15 +1054,20 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
         } else if (qname.equals("replace_string_concat")) {
             expectStringConcatTrap = true;
         } else if (qname.equals("inline_fail")) {
-            if (methodHandleSite != null) {
-                scopes.peek().add(methodHandleSite);
-                methodHandleSite = null;
-            }
-            if (lateInlining && scopes.size() == 0) {
-                site.setReason("fail: " + search(atts, "reason"));
-                lateInlining = false;
+            if (scopes.peek() == null) {
+                Phase p = phaseStack.peek();
+                assert p != null && p.getName().equals("optimizer") : "should not be in parse here";
             } else {
-                scopes.peek().last().setReason("fail: " + search(atts, "reason"));
+                if (methodHandleSite != null) {
+                    scopes.peek().add(methodHandleSite);
+                    methodHandleSite = null;
+                }
+                if (lateInlining && scopes.size() == 0) {
+                    site.setReason("fail: " + search(atts, "reason"));
+                    lateInlining = false;
+                } else {
+                    scopes.peek().last().setReason("fail: " + search(atts, "reason"));
+                }
             }
         } else if (qname.equals("inline_success")) {
             if (methodHandleSite != null) {
@@ -1100,10 +1110,11 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                     return;
                 }
                 try {
+                    String currBytecode = current_bytecode >= 0 ? bytecodes[current_bytecode] : "<unknown>";
                     UncommonTrap unc = new UncommonTrap(Integer.parseInt(search(atts, "bci")),
                             search(atts, "reason"),
                             search(atts, "action"),
-                            bytecodes[current_bytecode]);
+                            currBytecode);
                     if (scopes.size() == 0) {
                         // There may be a dangling site not yet in scopes after a late_inline
                         if (site != null) {
@@ -1292,8 +1303,9 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 if (scopes.size() == 0) {
                     lateInlining = false;
                 }
-                // Don't carry a stale site to the next parse
+                // Clear the bytecode and site from the last parse
                 site = null;
+                current_bytecode = -1;
             } else if (qname.equals("uncommon_trap")) {
                 currentTrap = null;
             } else if (qname.startsWith("eliminate_lock")) {

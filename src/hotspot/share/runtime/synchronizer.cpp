@@ -112,7 +112,8 @@ size_t MonitorList::unlink_deflated(Thread* self, LogStream* ls,
   ObjectMonitor* prev = NULL;
   ObjectMonitor* head = Atomic::load_acquire(&_head);
   ObjectMonitor* m = head;
-  do {
+  // The in-use list head can be NULL during the final audit.
+  while (m != NULL) {
     if (m->is_being_async_deflated()) {
       // Find next live ObjectMonitor.
       ObjectMonitor* next = m;
@@ -154,7 +155,7 @@ size_t MonitorList::unlink_deflated(Thread* self, LogStream* ls,
                                             "unlinked_count", unlinked_count,
                                             ls, timer_p);
     }
-  } while (m != NULL);
+  }
   Atomic::sub(&_count, unlinked_count);
   return unlinked_count;
 }

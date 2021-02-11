@@ -521,7 +521,7 @@ public class TypeEnter implements Completer {
             WriteableScope baseScope = WriteableScope.create(tree.sym);
             //import already entered local classes into base scope
             for (Symbol sym : env.outer.info.scope.getSymbols(NON_RECURSIVE)) {
-                if (sym.isLocal()) {
+                if (sym.isDirectlyOrIndirectlyLocal()) {
                     baseScope.enter(sym);
                 }
             }

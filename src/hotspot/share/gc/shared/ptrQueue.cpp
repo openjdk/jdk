@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,8 @@
 
 #include <new>
 
-PtrQueue::PtrQueue(PtrQueueSet* qset, bool active) :
+PtrQueue::PtrQueue(PtrQueueSet* qset) :
   _qset(qset),
-  _active(active),
   _index(0),
   _capacity_in_bytes(index_to_byte_index(qset->buffer_size())),
   _buf(NULL)
@@ -58,28 +57,6 @@ void PtrQueue::flush_impl() {
     }
     _buf = NULL;
     set_index(0);
-  }
-}
-
-void PtrQueue::enqueue_known_active(void* ptr) {
-  while (_index == 0) {
-    handle_zero_index();
-  }
-
-  assert(_buf != NULL, "postcondition");
-  assert(index() > 0, "postcondition");
-  assert(index() <= capacity(), "invariant");
-  _index -= _element_size;
-  _buf[index()] = ptr;
-}
-
-void PtrQueue::handle_zero_index() {
-  assert(index() == 0, "precondition");
-
-  if (_buf != NULL) {
-    handle_completed_buffer();
-  } else {
-    allocate_buffer();
   }
 }
 
@@ -243,11 +220,43 @@ size_t BufferNode::Allocator::reduce_free_list(size_t remove_goal) {
 }
 
 PtrQueueSet::PtrQueueSet(BufferNode::Allocator* allocator) :
-  _allocator(allocator),
-  _all_active(false)
+  _allocator(allocator)
 {}
 
 PtrQueueSet::~PtrQueueSet() {}
+
+bool PtrQueueSet::try_enqueue(PtrQueue& queue, void* value) {
+  size_t index = queue.index();
+  if (index == 0) return false;
+  void** buffer = queue.buffer();
+  assert(buffer != nullptr, "no buffer but non-zero index");
+  buffer[--index] = value;
+  queue.set_index(index);
+  return true;
+}
+
+void PtrQueueSet::retry_enqueue(PtrQueue& queue, void* value) {
+  assert(queue.index() != 0, "precondition");
+  assert(queue.buffer() != nullptr, "precondition");
+  size_t index = queue.index();
+  queue.buffer()[--index] = value;
+  queue.set_index(index);
+}
+
+BufferNode* PtrQueueSet::exchange_buffer_with_new(PtrQueue& queue) {
+  BufferNode* node = nullptr;
+  void** buffer = queue.buffer();
+  if (buffer != nullptr) {
+    node = BufferNode::make_node_from_buffer(buffer, queue.index());
+  }
+  install_new_buffer(queue);
+  return node;
+}
+
+void PtrQueueSet::install_new_buffer(PtrQueue& queue) {
+  queue.set_buffer(allocate_buffer());
+  queue.set_index(buffer_size());
+}
 
 void** PtrQueueSet::allocate_buffer() {
   BufferNode* node = _allocator->allocate();

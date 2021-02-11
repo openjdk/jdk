@@ -30,6 +30,7 @@
 
 #import "PrinterView.h"
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
 @implementation PrintModel
 
@@ -88,9 +89,10 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
         [self retain];
         [printerView retain];
 
-        static JNF_CLASS_CACHE(jc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
-        static JNF_STATIC_MEMBER_CACHE(jm_detachPrintLoop, jc_CPrinterJob, "detachPrintLoop", "(JJ)V");
-        JNFCallStaticVoidMethod(env, jm_detachPrintLoop, ptr_to_jlong(self), ptr_to_jlong(printerView)); // AWT_THREADING Safe (known object)
+        DECLARE_CLASS_RETURN(jc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob", NO);
+        DECLARE_STATIC_METHOD_RETURN(jm_detachPrintLoop, jc_CPrinterJob, "detachPrintLoop", "(JJ)V", NO);
+        (*env)->CallStaticVoidMethod(env, jc_CPrinterJob, jm_detachPrintLoop, ptr_to_jlong(self), ptr_to_jlong(printerView)); // AWT_THREADING Safe (known object)
+        CHECK_EXCEPTION();
     }
 
     return fResult;

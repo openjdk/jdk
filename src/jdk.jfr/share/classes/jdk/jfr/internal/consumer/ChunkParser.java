@@ -488,4 +488,16 @@ public final class ChunkParser {
     public boolean hasStaleMetadata() {
         return staleMetadata;
     }
+
+    public void resetCache() {
+        LongMap<Parser> ps = this.parsers;
+        if (ps != null) {
+            ps.forEach(p -> {
+                if (p instanceof EventParser) {
+                    EventParser ep = (EventParser) p;
+                    ep.resetCache();
+                }
+            });
+        }
+    }
 }

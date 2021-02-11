@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -1023,6 +1021,110 @@ public class RecordCompilationTests extends CompilationTestCase {
                             record B() { }
                         }
                     }
+                }
+                """);
+    }
+
+    public void testAnnoInsideLocalOrAnonymous() {
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        interface I {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        record R() {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        enum E {
+                            E1;
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local1 {
+                            class Local2 {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            interface I {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            record R() {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            enum E {
+                                E1;
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    Runnable run = new Runnable() {
+                        @interface A {}
+                        public void run() {}
+                    };
                 }
                 """);
     }

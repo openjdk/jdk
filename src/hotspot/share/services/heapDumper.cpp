@@ -1408,15 +1408,12 @@ class VM_HeapDumper;
 
 class HeapObjectDumper : public ObjectClosure {
  private:
-  VM_HeapDumper* _dumper;
   DumpWriter* _writer;
 
-  VM_HeapDumper* dumper()               { return _dumper; }
   DumpWriter* writer()                  { return _writer; }
 
  public:
-  HeapObjectDumper(VM_HeapDumper* dumper, DumpWriter* writer) {
-    _dumper = dumper;
+  HeapObjectDumper(DumpWriter* writer) {
     _writer = writer;
   }
 
@@ -1826,7 +1823,7 @@ void VM_HeapDumper::work(uint worker_id) {
   // segment is started.
   // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
   // of the heap dump.
-  HeapObjectDumper obj_dumper(this, writer());
+  HeapObjectDumper obj_dumper(writer());
   Universe::heap()->object_iterate(&obj_dumper);
 
   // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals

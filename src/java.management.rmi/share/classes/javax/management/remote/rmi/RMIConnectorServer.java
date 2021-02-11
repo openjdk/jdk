@@ -132,7 +132,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * the serial form of any deserialized object.
      * The pattern must be in same format as used in
      * {@link java.io.ObjectInputFilter.Config#createFilter}.
-     * It may define a white list of permitted classes, a black list of
+     * It may define an allow-list of permitted classes, a reject-list of
      * rejected classes, a maximum depth for the deserialized objects,
      * etc.
      * <p>
@@ -149,7 +149,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * classes they use in their serial form.
      * <p>
      * Care must be taken when defining such a filter, as defining
-     * a white list too restrictive or a too wide a black list may
+     * an allow-list that is too narrow or a reject-list that is too wide may
      * prevent legitimate clients from interoperating with the
      * {@code JMXConnectorServer}.
      */

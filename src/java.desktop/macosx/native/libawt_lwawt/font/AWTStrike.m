@@ -30,6 +30,7 @@
 #import "CGGlyphImages.h"
 #import "CGGlyphOutlines.h"
 #import "CoreTextSupport.h"
+#import "JNIUtilities.h"
 #include "fontscalerdefs.h"
 
 @implementation AWTStrike
@@ -196,9 +197,11 @@ JNF_COCOA_ENTER(env);
     bbox.origin.y = -bbox.size.height + decender;
 
     // Rectangle2D.Float.setRect(float x, float y, float width, float height);
-    static JNF_CLASS_CACHE(sjc_Rectangle2D_Float, "java/awt/geom/Rectangle2D$Float");    // cache class id for Rectangle
-    static JNF_MEMBER_CACHE(sjr_Rectangle2DFloat_setRect, sjc_Rectangle2D_Float, "setRect", "(FFFF)V");
-    JNFCallVoidMethod(env, result, sjr_Rectangle2DFloat_setRect, (jfloat)bbox.origin.x, (jfloat)bbox.origin.y, (jfloat)bbox.size.width, (jfloat)bbox.size.height);
+    DECLARE_CLASS(sjc_Rectangle2D_Float, "java/awt/geom/Rectangle2D$Float");    // cache class id for Rectangle
+    DECLARE_METHOD(sjr_Rectangle2DFloat_setRect, sjc_Rectangle2D_Float, "setRect", "(FFFF)V");
+    (*env)->CallVoidMethod(env, result, sjr_Rectangle2DFloat_setRect,
+             (jfloat)bbox.origin.x, (jfloat)bbox.origin.y, (jfloat)bbox.size.width, (jfloat)bbox.size.height);
+    CHECK_EXCEPTION();
 
 JNF_COCOA_EXIT(env);
 }
@@ -220,6 +223,9 @@ JNF_COCOA_ENTER(env);
     AWTPathRef path = NULL;
     jfloatArray pointCoords = NULL;
     jbyteArray pointTypes = NULL;
+
+    DECLARE_CLASS_RETURN(jc_GeneralPath, "java/awt/geom/GeneralPath", NULL);
+    DECLARE_METHOD_RETURN(jc_GeneralPath_ctor, jc_GeneralPath, "<init>", "(I[BI[FI)V", NULL);
 
 AWT_FONT_CLEANUP_SETUP;
 
@@ -263,9 +269,8 @@ AWT_FONT_CLEANUP_CHECK(pointTypes);
 
     (*env)->SetByteArrayRegion(env, pointTypes, 0, path->fNumberOfSegments, (jbyte*)path->fSegmentType);
 
-    static JNF_CLASS_CACHE(jc_GeneralPath, "java/awt/geom/GeneralPath");
-    static JNF_CTOR_CACHE(jc_GeneralPath_ctor, jc_GeneralPath, "(I[BI[FI)V");
-    generalPath = JNFNewObject(env, jc_GeneralPath_ctor, java_awt_geom_PathIterator_WIND_NON_ZERO, pointTypes, path->fNumberOfSegments, pointCoords, path->fNumberOfDataElements); // AWT_THREADING Safe (known object)
+    generalPath = (*env)->NewObject(env, jc_GeneralPath, jc_GeneralPath_ctor, java_awt_geom_PathIterator_WIND_NON_ZERO, pointTypes,
+                    path->fNumberOfSegments, pointCoords, path->fNumberOfDataElements); // AWT_THREADING Safe (known object)
 
     // Cleanup
 cleanup:
@@ -423,9 +428,9 @@ JNF_COCOA_ENTER(env);
      * advance:  no need to set yMaxLinearAdvanceWidth - it will be zero.
      */
 
-    JNF_CLASS_CACHE(sjc_StrikeMetrics, "sun/font/StrikeMetrics");
-    JNF_CTOR_CACHE(strikeMetricsCtr, sjc_StrikeMetrics, "(FFFFFFFFFF)V");
-    metrics = JNFNewObject(env, strikeMetricsCtr,
+    DECLARE_CLASS_RETURN(sjc_StrikeMetrics, "sun/font/StrikeMetrics", NULL);
+    DECLARE_METHOD_RETURN(strikeMetricsCtr, sjc_StrikeMetrics, "<init>", "(FFFFFFFFFF)V", NULL);
+    metrics = (*env)->NewObject(env, sjc_StrikeMetrics, strikeMetricsCtr,
                            0.0, ay, 0.0, dy, 1.0,
                            0.0, 0.0, ly, mx, 0.0);
 

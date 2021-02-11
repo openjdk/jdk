@@ -26,6 +26,7 @@
 #import "LWCToolkit.h"
 #import "ThreadUtilities.h"
 #include "GeomUtilities.h"
+#include "JNIUtilities.h"
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
@@ -159,9 +160,10 @@ static jobject createJavaDisplayMode(CGDisplayModeRef mode, JNIEnv *env) {
         w = CGDisplayModeGetWidth(mode);
         CFRelease(currentBPP);
     }
-    static JNF_CLASS_CACHE(jc_DisplayMode, "java/awt/DisplayMode");
-    static JNF_CTOR_CACHE(jc_DisplayMode_ctor, jc_DisplayMode, "(IIII)V");
-    ret = JNFNewObject(env, jc_DisplayMode_ctor, w, h, bpp, refrate);
+    DECLARE_CLASS_RETURN(jc_DisplayMode, "java/awt/DisplayMode", ret);
+    DECLARE_METHOD_RETURN(jc_DisplayMode_ctor, jc_DisplayMode, "<init>", "(IIII)V", ret);
+    ret = (*env)->NewObject(env, jc_DisplayMode, jc_DisplayMode_ctor, w, h, bpp, refrate);
+    CHECK_EXCEPTION();
     JNF_COCOA_EXIT(env);
     return ret;
 }
@@ -252,9 +254,9 @@ JNF_COCOA_ENTER(env);
     jint left = visibleFrame.origin.x - frame.origin.x;
     jint right = frame.size.width - visibleFrame.size.width - left;
 
-    static JNF_CLASS_CACHE(jc_Insets, "java/awt/Insets");
-    static JNF_CTOR_CACHE(jc_Insets_ctor, jc_Insets, "(IIII)V");
-    ret = JNFNewObject(env, jc_Insets_ctor, top, left, bottom, right);
+    DECLARE_CLASS_RETURN(jc_Insets, "java/awt/Insets", ret);
+    DECLARE_METHOD_RETURN(jc_Insets_ctor, jc_Insets, "<init>", "(IIII)V", ret);
+    ret = (*env)->NewObject(env, jc_Insets, jc_Insets_ctor, top, left, bottom, right);
 
 JNF_COCOA_EXIT(env);
 
@@ -327,9 +329,9 @@ Java_sun_awt_CGraphicsDevice_nativeGetDisplayModes
     CFArrayRef allModes = getAllValidDisplayModes(displayID);
 
     CFIndex numModes = allModes ? CFArrayGetCount(allModes): 0;
-    static JNF_CLASS_CACHE(jc_DisplayMode, "java/awt/DisplayMode");
+    DECLARE_CLASS_RETURN(jc_DisplayMode, "java/awt/DisplayMode", NULL);
 
-    jreturnArray = JNFNewObjectArray(env, &jc_DisplayMode, (jsize) numModes);
+    jreturnArray = (*env)->NewObjectArray(env, (jsize)numModes, jc_DisplayMode, NULL);
     if (!jreturnArray) {
         NSLog(@"CGraphicsDevice can't create java array of DisplayMode objects");
         return nil;

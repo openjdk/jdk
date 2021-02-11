@@ -1680,6 +1680,10 @@ char* FileMapInfo::map_bitmap_region() {
 
   si->set_mapped_base(bitmap_base);
   si->set_mapped_from_file(true);
+  log_info(cds)("Mapped %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
+                is_static() ? "static " : "dynamic",
+                MetaspaceShared::bm, p2i(si->mapped_base()), p2i(si->mapped_end()),
+                shared_region_name[MetaspaceShared::bm]);
   return bitmap_base;
 }
 

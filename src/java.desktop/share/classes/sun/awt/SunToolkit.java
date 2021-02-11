@@ -1368,17 +1368,15 @@ public abstract class SunToolkit extends Toolkit
 
         @Override
         public void modalityPushed(ModalityEvent ev) {
-            Iterator<ModalityListener> it = listeners.iterator();
-            while (it.hasNext()) {
-                it.next().modalityPushed(ev);
+            for (ModalityListener listener : listeners) {
+                listener.modalityPushed(ev);
             }
         }
 
         @Override
         public void modalityPopped(ModalityEvent ev) {
-            Iterator<ModalityListener> it = listeners.iterator();
-            while (it.hasNext()) {
-                it.next().modalityPopped(ev);
+            for (ModalityListener listener : listeners) {
+                listener.modalityPopped(ev);
             }
         }
     } // end of class ModalityListenerList

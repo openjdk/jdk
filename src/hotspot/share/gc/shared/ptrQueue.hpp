@@ -32,9 +32,6 @@
 #include "utilities/lockFreeStack.hpp"
 #include "utilities/sizes.hpp"
 
-class Mutex;
-class Monitor;
-
 // There are various techniques that require threads to be able to log
 // addresses.  For example, a generational write barrier might log
 // the addresses of modified old-generation objects.  This type supports
@@ -49,9 +46,6 @@ class PtrQueue {
 
   // The ptr queue set to which this queue belongs.
   PtrQueueSet* const _qset;
-
-  // Whether updates should be logged.
-  bool _active;
 
   // The (byte) index at which an object was last enqueued.  Starts at
   // capacity_in_bytes (indicating an empty buffer) and goes towards zero.
@@ -83,28 +77,10 @@ protected:
   // The buffer.
   void** _buf;
 
-  size_t index() const {
-    return byte_index_to_index(_index);
-  }
-
-  void set_index(size_t new_index) {
-    size_t byte_index = index_to_byte_index(new_index);
-    assert(byte_index <= capacity_in_bytes(), "precondition");
-    _index = byte_index;
-  }
-
-  size_t capacity() const {
-    return byte_index_to_index(capacity_in_bytes());
-  }
-
   PtrQueueSet* qset() const { return _qset; }
 
   // Process queue entries and release resources.
   void flush_impl();
-
-  // Process (some of) the buffer and leave it in place for further use,
-  // or enqueue the buffer and allocate a new one.
-  virtual void handle_completed_buffer() = 0;
 
   void allocate_buffer();
 
@@ -113,12 +89,37 @@ protected:
 
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
-  PtrQueue(PtrQueueSet* qset, bool active = false);
+  PtrQueue(PtrQueueSet* qset);
 
   // Requires queue flushed.
   ~PtrQueue();
 
 public:
+
+  void** buffer() const { return _buf; }
+  void set_buffer(void** buffer) { _buf = buffer; }
+
+  size_t index_in_bytes() const {
+    return _index;
+  }
+
+  void set_index_in_bytes(size_t new_index) {
+    assert(is_aligned(new_index, _element_size), "precondition");
+    assert(new_index <= capacity_in_bytes(), "precondition");
+    _index = new_index;
+  }
+
+  size_t index() const {
+    return byte_index_to_index(index_in_bytes());
+  }
+
+  void set_index(size_t new_index) {
+    set_index_in_bytes(index_to_byte_index(new_index));
+  }
+
+  size_t capacity() const {
+    return byte_index_to_index(capacity_in_bytes());
+  }
 
   // Forcibly set empty.
   void reset() {
@@ -126,20 +127,6 @@ public:
       _index = capacity_in_bytes();
     }
   }
-
-  void enqueue(volatile void* ptr) {
-    enqueue((void*)(ptr));
-  }
-
-  // Enqueues the given "obj".
-  void enqueue(void* ptr) {
-    if (!_active) return;
-    else enqueue_known_active(ptr);
-  }
-
-  void handle_zero_index();
-
-  void enqueue_known_active(void* ptr);
 
   // Return the size of the in-use region.
   size_t size() const {
@@ -154,21 +141,6 @@ public:
   bool is_empty() const {
     return _buf == NULL || capacity_in_bytes() == _index;
   }
-
-  // Set the "active" property of the queue to "b".  An enqueue to an
-  // inactive thread is a no-op.  Setting a queue to inactive resets its
-  // log to the empty state.
-  void set_active(bool b) {
-    _active = b;
-    if (!b && _buf != NULL) {
-      reset();
-    } else if (b && _buf != NULL) {
-      assert(index() == capacity(),
-             "invariant: queues are empty when activated.");
-    }
-  }
-
-  bool is_active() const { return _active; }
 
   // To support compiler.
 
@@ -186,14 +158,6 @@ protected:
   }
 
   static ByteSize byte_width_of_buf() { return in_ByteSize(_element_size); }
-
-  template<typename Derived>
-  static ByteSize byte_offset_of_active() {
-    return byte_offset_of(Derived, _active);
-  }
-
-  static ByteSize byte_width_of_active() { return in_ByteSize(sizeof(bool)); }
-
 };
 
 class BufferNode {
@@ -300,11 +264,24 @@ class PtrQueueSet {
   NONCOPYABLE(PtrQueueSet);
 
 protected:
-  bool _all_active;
-
   // Create an empty ptr queue set.
   PtrQueueSet(BufferNode::Allocator* allocator);
   ~PtrQueueSet();
+
+  // Add value to queue's buffer, returning true.  If buffer is full
+  // or if queue doesn't have a buffer, does nothing and returns false.
+  bool try_enqueue(PtrQueue& queue, void* value);
+
+  // Add value to queue's buffer.  The queue must have a non-full buffer.
+  // Used after an initial try_enqueue has failed and the situation resolved.
+  void retry_enqueue(PtrQueue& queue, void* value);
+
+  // Installs a new buffer into queue.
+  // Returns the old buffer, or null if queue didn't have a buffer.
+  BufferNode* exchange_buffer_with_new(PtrQueue& queue);
+
+  // Installs a new buffer into queue.
+  void install_new_buffer(PtrQueue& queue);
 
 public:
 
@@ -323,8 +300,6 @@ public:
 
   // Adds node to the completed buffer list.
   virtual void enqueue_completed_buffer(BufferNode* node) = 0;
-
-  bool is_active() { return _all_active; }
 
   size_t buffer_size() const {
     return _allocator->buffer_size();

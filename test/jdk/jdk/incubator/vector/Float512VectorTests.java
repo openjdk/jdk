@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch Float512VectorTests
+ * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation Float512VectorTests
  */
 
 // -- This file was mechanically generated: Do not edit! -- //

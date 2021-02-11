@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
  * @test
- * @bug 8167446
- * @summary Commandline options PermSize and MaxPermSize should be recognized but ignored.
+ * @summary Dumping of lambda proxy classes should not crash VM in case the caller class has failed verification.
+ * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver PermGenFlagsTest
+ * @compile test-classes/BadInvokeDynamic.jcod
+ * @run driver LambdaVerificationFailedDuringDump
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
-public class PermGenFlagsTest {
+public class LambdaVerificationFailedDuringDump {
+
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:PermSize=22k",
-                                                                  "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Ignoring option PermSize; support was removed in 8.0");
-        output.shouldHaveExitValue(0);
+        JarBuilder.build("badinvokedynamic", "BadInvokeDynamic");
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:MaxPermSize=22k",
-                                                   "-version");
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Ignoring option MaxPermSize; support was removed in 8.0");
-        output.shouldHaveExitValue(0);
+        String appJar = TestCommon.getTestJar("badinvokedynamic.jar");
+
+        OutputAnalyzer out = TestCommon.dump(appJar,
+        TestCommon.list("BadInvokeDynamic",
+                        "@lambda-proxy BadInvokeDynamic run ()Ljava/lang/Runnable; ()V REF_invokeStatic BadInvokeDynamic lambda$doTest$0 ()V ()V"));
+        out.shouldContain("Preload Warning: Verification failed for BadInvokeDynamic")
+           .shouldContain("Skipping BadInvokeDynamic: Failed verification")
+           .shouldHaveExitValue(0);
     }
 }

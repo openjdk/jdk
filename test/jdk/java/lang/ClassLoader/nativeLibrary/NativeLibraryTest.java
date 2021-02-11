@@ -60,6 +60,7 @@ public class NativeLibraryTest {
         setup();
 
         for (int count=1; count <= 5; count++) {
+            System.out.println("count: " + count);
             // create a class loader and load a native library
             runTest();
             // Unload the class loader and native library, and give the Cleaner

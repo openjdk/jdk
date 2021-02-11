@@ -29,6 +29,8 @@
 #include "WinSysInfo.h"
 
 
+class StringResource;
+
 /**
  * Classes for resource loading.
  * Common use cases:
@@ -37,6 +39,17 @@
  *      if (res.available()) {
  *          res.saveToFile(_T("c:\\temp\\my_resource.bin"));
  *      }
+ *
+ *  - get string resource:
+ *      1) if the resource is not available, exception is thrown:
+ *          tstring str = StringResource(MAKEINTRESOURCE(resID)).string();
+ *
+ *      2) nothrow method (returns default value if the resource is not available):
+ *          a) returns empty string on error:
+ *              tstring str = StringResource(MAKEINTRESOURCE(resID)).string(std::nothrow);
+ *
+ *          b) returns provided default value on error:
+ *              tstring str = StringResource(MAKEINTRESOURCE(resID)).string(std::nothrow, _T("defaultValue"));
  */
 
 class Resource {
@@ -62,6 +75,8 @@ public:
     // returns the resource as byte array
     ByteArray binary() const;
 
+    friend class StringResource;
+
 private:
     std::wstring nameStr;
     LPCWSTR namePtr;    // can be integer value or point to nameStr.c_str()
@@ -80,6 +95,42 @@ private:
     // disable copying
     Resource(const Resource&);
     Resource& operator = (const Resource&);
+};
+
+
+// Note: string resources are returned utf16 or utf8 encoded.
+// To get Windows-encoded string (utf16/ACP) use tstrings::toWinString().
+class StringResource {
+public:
+    // string resource is always identified by integer id
+    StringResource(UINT resourceId, HINSTANCE moduleHandle = SysInfo::getCurrentModuleHandle())
+        : impl(resourceId, RT_STRING, moduleHandle) {}
+
+    // returns the resource as string
+    tstring string() const;
+    // nothrow version (logs error)
+    tstring string(const std::nothrow_t &, const tstring &defValue = tstring()) const throw();
+
+    bool available() const throw() {
+        return impl.available();
+    }
+
+    unsigned size() const {
+        return impl.size();
+    }
+
+    static tstring load(UINT resourceId,
+                    HINSTANCE moduleHandle = SysInfo::getCurrentModuleHandle()) {
+        return StringResource(resourceId, moduleHandle).string();
+    }
+
+    static tstring load(const std::nothrow_t &, UINT resourceId,
+                    HINSTANCE moduleHandle = SysInfo::getCurrentModuleHandle()) throw () {
+        return StringResource(resourceId, moduleHandle).string(std::nothrow);
+    }
+
+private:
+    Resource impl;
 };
 
 #endif // RESOURCES_H

@@ -65,31 +65,31 @@ public class TestNewLanguageFeatures extends JavadocTester {
     void checkEnums() {
        checkOutput("pkg/Coin.html", true,
                 // Make sure enum header is correct.
-                "Enum Coin</h1>",
+                "Enum Class Coin</h1>",
                 // Make sure enum signature is correct.
                """
                    <div class="type-signature"><span class="modifiers">public enum </span><span clas\
                    s="element-name type-name-label">Coin</span>
                    <span class="extends-implements">extends java.lang.Enum&lt;<a href="Coin.html" ti\
-                   tle="enum in pkg">Coin</a>&gt;</span></div>""",
+                   tle="enum class in pkg">Coin</a>&gt;</span></div>""",
                 // Check for enum constant section
                 "<div class=\"caption\"><span>Enum Constants</span></div>",
                 // Detail for enum constant
                 """
                     <span class="member-name-link"><a href="#Dime">Dime</a></span>""",
                 // Automatically insert documentation for values() and valueOf().
-                "Returns an array containing the constants of this enum type,",
-                "Returns the enum constant of this type with the specified name",
+                "Returns an array containing the constants of this enum class,",
+                "Returns the enum constant of this class with the specified name",
                 "Overloaded valueOf() method has correct documentation.",
                 "Overloaded values method  has correct documentation.",
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="return-type"><a href="Coin.html" title="enum in pkg">Coin</a></span\
+                    <span class="return-type"><a href="Coin.html" title="enum class in pkg">Coin</a></span\
                     >&nbsp;<span class="element-name">valueOf</span>&#8203;<span class="parameters">(java.la\
                     ng.String&nbsp;name)</span></div>
-                    <div class="block">Returns the enum constant of this type with the specified name.
+                    <div class="block">Returns the enum constant of this class with the specified name.
                     The string must match <i>exactly</i> an identifier used to declare an
-                    enum constant in this type.  (Extraneous whitespace characters are\s
+                    enum constant in this class.  (Extraneous whitespace characters are\s
                     not permitted.)</div>
                     <dl class="notes">
                     <dt>Parameters:</dt>
@@ -97,7 +97,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <dt>Returns:</dt>
                     <dd>the enum constant with the specified name</dd>
                     <dt>Throws:</dt>
-                    <dd><code>java.lang.IllegalArgumentException</code> - if this enum type has no constant with the specified name</dd>
+                    <dd><code>java.lang.IllegalArgumentException</code> - if this enum class has no constant with the specified name</dd>
                     <dd><code>java.lang.NullPointerException</code> - if the argument is null</dd>""");
 
         // NO constructor section

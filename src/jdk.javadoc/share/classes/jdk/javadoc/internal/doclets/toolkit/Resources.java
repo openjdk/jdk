@@ -29,6 +29,7 @@ import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.function.Function;
 
 /**
  * Access to the localizable resources used by a doclet.
@@ -39,17 +40,10 @@ import java.util.ResourceBundle;
  * HTML doclet.
  */
 public class Resources {
-    public final String annotationTypeSummary;
-    public final String classSummary;
-    public final String enumSummary;
-    public final String errorSummary;
-    public final String exceptionSummary;
-    public final String interfaceSummary;
-    public final String packageSummary;
-    public final String recordSummary;
 
-    protected ResourceBundle commonBundle;
-    protected ResourceBundle docletBundle;
+    protected final ResourceBundle commonBundle;
+    protected final ResourceBundle docletBundle;
+    protected Function<String, String> mapper;
 
     /**
      * Creates a {@code Resources} object to provide access the resource
@@ -65,20 +59,17 @@ public class Resources {
     public Resources(Locale locale, String commonBundleName, String docletBundleName) {
         this.commonBundle = ResourceBundle.getBundle(commonBundleName, locale);
         this.docletBundle = ResourceBundle.getBundle(docletBundleName, locale);
+    }
 
-        this.annotationTypeSummary = getText("doclet.Annotation_Types_Summary");
-        this.classSummary = getText("doclet.Class_Summary");
-        this.enumSummary = getText("doclet.Enum_Summary");
-        this.errorSummary = getText("doclet.Error_Summary");
-        this.exceptionSummary = getText("doclet.Exception_Summary");
-        this.interfaceSummary = getText("doclet.Interface_Summary");
-        this.packageSummary = getText("doclet.Package_Summary");
-        this.recordSummary = getText("doclet.Record_Summary");
+    public void setKeyMapper(Function<String, String> mapper) {
+        this.mapper = mapper;
     }
 
     /**
      * Returns the string for the given key from one of the doclet's
-     * resource bundles.
+     * resource bundles. If the current {@code mapper} is not {@code null},
+     * it will be applied to the {@code key} before looking up the resulting
+     * key in the resource bundle(s).
      *
      * The more specific bundle is checked first;
      * if it is not there, the common bundle is then checked.
@@ -89,13 +80,17 @@ public class Resources {
      *                                  bundle.
      */
     public String getText(String key) throws MissingResourceException {
-        if (docletBundle.containsKey(key))
-            return docletBundle.getString(key);
+        String mKey = mapper == null ? key : mapper.apply(key);
 
-        return commonBundle.getString(key);
+        if (docletBundle.containsKey(mKey))
+            return docletBundle.getString(mKey);
+
+        return commonBundle.getString(mKey);
     }
+
     /**
-     * Returns the string for the given key from one of the doclet's
+     * Returns the string for the given key (after applying the current
+     * {@code mapper} if it is not {@code null}) from one of the doclet's
      * resource bundles, substituting additional arguments into
      * into the resulting string with {@link MessageFormat#format}.
      *

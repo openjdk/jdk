@@ -1,5 +1,5 @@
 /*
- * @test /nodynamiccopyright
+ * @test /nodynamiccopyright/
  * @bug 8066843
  * @summary Annotation processors should be able to print multiple errors at the same location.
  * @library /tools/javac/lib

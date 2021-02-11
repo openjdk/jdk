@@ -146,9 +146,9 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
         deltaY = [event scrollingDeltaY] * 0.1;
     }
 
-    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
-    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDDI)V");
-    jobject jEvent = JNFNewObject(env, jctor_NSEvent,
+    DECLARE_CLASS(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
+    DECLARE_METHOD(jctor_NSEvent, jc_NSEvent, "<init>", "(IIIIIIIIDDI)V");
+    jobject jEvent = (*env)->NewObject(env, jc_NSEvent, jctor_NSEvent,
                                   [event type],
                                   [event modifierFlags],
                                   clickCount,
@@ -160,9 +160,10 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
                                   [AWTToolkit scrollStateWithEvent: event]);
     CHECK_NULL(jEvent);
 
-    static JNF_CLASS_CACHE(jc_TrayIcon, "sun/lwawt/macosx/CTrayIcon");
-    static JNF_MEMBER_CACHE(jm_handleMouseEvent, jc_TrayIcon, "handleMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
-    JNFCallVoidMethod(env, peer, jm_handleMouseEvent, jEvent);
+    DECLARE_CLASS(jc_TrayIcon, "sun/lwawt/macosx/CTrayIcon");
+    DECLARE_METHOD(jm_handleMouseEvent, jc_TrayIcon, "handleMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
+    (*env)->CallVoidMethod(env, peer, jm_handleMouseEvent, jEvent);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jEvent);
 }
 
@@ -268,9 +269,10 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     if (([event modifierFlags] & NSControlKeyMask) == 0) {
         //find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
         JNIEnv *env = [ThreadUtilities getJNIEnv];
-        static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
-        static JNF_MEMBER_CACHE(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
-        jlong res = JNFCallLongMethod(env, trayIcon.peer, jm_getPopupMenuModel);
+        DECLARE_CLASS(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
+        DECLARE_METHOD(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
+        jlong res = (*env)->CallLongMethod(env, trayIcon.peer, jm_getPopupMenuModel);
+        CHECK_EXCEPTION();
 
         if (res != 0) {
             CPopupMenu *cmenu = jlong_to_ptr(res);

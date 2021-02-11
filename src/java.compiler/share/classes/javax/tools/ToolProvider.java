@@ -27,7 +27,7 @@ package javax.tools;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Iterator;
+import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
@@ -118,8 +118,7 @@ public class ToolProvider {
 
         try {
             ServiceLoader<T> sl = ServiceLoader.load(clazz, ClassLoader.getSystemClassLoader());
-            for (Iterator<T> iter = sl.iterator(); iter.hasNext(); ) {
-                T tool = iter.next();
+            for (T tool : sl) {
                 if (matches(tool, moduleName))
                     return tool;
             }
@@ -140,7 +139,7 @@ public class ToolProvider {
         PrivilegedAction<Boolean> pa = () -> {
             Module toolModule = tool.getClass().getModule();
             String toolModuleName = toolModule.getName();
-            return toolModuleName.equals(moduleName);
+            return Objects.equals(toolModuleName, moduleName);
         };
         return AccessController.doPrivileged(pa);
     }

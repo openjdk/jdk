@@ -144,7 +144,8 @@ inline void ShenandoahBarrierSet::enqueue(oop obj) {
   // filtering here helps to avoid wasteful SATB queueing work to begin with.
   if (!_heap->requires_marking(obj)) return;
 
-  ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).enqueue_known_active(obj);
+  SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(Thread::current());
+  _satb_mark_queue_set.enqueue_known_active(queue, obj);
 }
 
 template <DecoratorSet decorators, typename T>
@@ -372,7 +373,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         obj = fwd;
       }
       if (ENQUEUE && !ctx->is_marked_strong(obj)) {
-        queue.enqueue_known_active(obj);
+        _satb_mark_queue_set.enqueue_known_active(queue, obj);
       }
     }
   }

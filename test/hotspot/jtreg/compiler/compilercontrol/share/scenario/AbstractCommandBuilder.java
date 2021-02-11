@@ -63,8 +63,11 @@ public abstract class AbstractCommandBuilder
 
     @Override
     public boolean isValid() {
-        // -XX:CompileCommand(File) ignores invalid items
-        return true;
+        boolean isValid = true;
+        for (CompileCommand cmd : compileCommands) {
+            isValid &= cmd.isValid();
+        }
+        return isValid;
     }
 
     /*

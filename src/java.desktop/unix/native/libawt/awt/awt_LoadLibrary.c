@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,13 @@
 
 #ifdef DEBUG
 #define VERBOSE_AWT_DEBUG
+#endif
+
+#ifdef STATIC_BUILD
+extern void Java_sun_xawt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
+jobject frame, jstring jcommand);
+
+extern void Java_sun_xawt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jarray);
 #endif
 
 static void *awtHandle = NULL;
@@ -118,13 +125,13 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     }
 
     jvm = vm;
-
+#ifndef STATIC_BUILD
     /* Get address of this library and the directory containing it. */
     dladdr((void *)AWT_OnLoad, &dlinfo);
     realpath((char *)dlinfo.dli_fname, buf);
     len = strlen(buf);
     p = strrchr(buf, '/');
-
+#endif
     /*
      * The code below is responsible for:
      * 1. Loading appropriate awt library, i.e. libawt_xawt or libawt_headless
@@ -156,8 +163,10 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     }
 #endif
 
+#ifndef STATIC_BUILD
     /* Calculate library name to load */
     strncpy(p, tk, MAXPATHLEN-len-1);
+#endif
 
     if (fmProp) {
         (*env)->DeleteLocalRef(env, fmProp);
@@ -166,6 +175,8 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
         (*env)->DeleteLocalRef(env, fmanager);
     }
 
+
+#ifndef STATIC_BUILD
     jstring jbuf = JNU_NewStringPlatform(env, buf);
     CHECK_EXCEPTION_FATAL(env, "Could not allocate library name");
     JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "load",
@@ -173,7 +184,7 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
                                jbuf);
 
     awtHandle = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
-
+#endif
     return JNI_VERSION_1_2;
 }
 
@@ -198,14 +209,16 @@ Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
                                jobject frame, jstring jcommand);
 
     static XsessionWMcommand_type *XsessionWMcommand = NULL;
-
+#ifndef STATIC_BUILD
     if (XsessionWMcommand == NULL && awtHandle == NULL) {
         return;
     }
 
     XsessionWMcommand = (XsessionWMcommand_type *)
         dlsym(awtHandle, "Java_sun_awt_motif_XsessionWMcommand");
-
+#else
+    XsessionWMcommand = (XsessionWMcommand_type *)Java_sun_xawt_motif_XsessionWMcommand;
+#endif
     if (XsessionWMcommand == NULL)
         return;
 
@@ -225,16 +238,30 @@ Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jargv)
         XsessionWMcommand_New_type(JNIEnv *env, jobjectArray jargv);
 
     static XsessionWMcommand_New_type *XsessionWMcommand = NULL;
-
+#ifndef STATIC_BUILD
     if (XsessionWMcommand == NULL && awtHandle == NULL) {
         return;
     }
 
     XsessionWMcommand = (XsessionWMcommand_New_type *)
         dlsym(awtHandle, "Java_sun_awt_motif_XsessionWMcommand_New");
+#else
+    XsessionWMcommand = (XsessionWMcommand_New_type *)Java_sun_xawt_motif_XsessionWMcommand_New;
+#endif
 
     if (XsessionWMcommand == NULL)
         return;
 
     (*XsessionWMcommand)(env, jargv);
 }
+
+#ifdef STATIC_BUILD
+__attribute__((weak)) void Java_sun_xawt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jarray)
+{
+}
+
+__attribute__((weak)) void Java_sun_xawt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
+        jobject frame, jstring jcommand)
+{
+}
+#endif

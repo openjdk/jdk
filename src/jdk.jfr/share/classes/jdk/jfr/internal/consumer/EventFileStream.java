@@ -102,6 +102,7 @@ public final class EventFileStream extends AbstractEventStream {
             } else {
                 processUnordered(disp);
             }
+            currentParser.resetCache();
             if (isClosed() || currentParser.isLastChunk()) {
                 return;
             }

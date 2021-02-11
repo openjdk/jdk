@@ -139,7 +139,7 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
 
   {
     MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
-    SystemDictionary::add_to_hierarchy(result, THREAD);
+    SystemDictionary::add_to_hierarchy(result);
   }
   // new class not linked yet.
   MetaspaceShared::try_link_class(result, THREAD);

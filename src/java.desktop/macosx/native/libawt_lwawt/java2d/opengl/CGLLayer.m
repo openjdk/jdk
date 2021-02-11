@@ -28,6 +28,7 @@
 #import "ThreadUtilities.h"
 #import "LWCToolkit.h"
 #import "CGLSurfaceData.h"
+#import "JNIUtilities.h"
 
 
 extern NSOpenGLPixelFormat *sharedPixelFormat;
@@ -129,8 +130,8 @@ AWT_ASSERT_APPKIT_THREAD;
     AWT_ASSERT_APPKIT_THREAD;
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    static JNF_CLASS_CACHE(jc_JavaLayer, "sun/java2d/opengl/CGLLayer");
-    static JNF_MEMBER_CACHE(jm_drawInCGLContext, jc_JavaLayer, "drawInCGLContext", "()V");
+    DECLARE_CLASS(jc_JavaLayer, "sun/java2d/opengl/CGLLayer");
+    DECLARE_METHOD(jm_drawInCGLContext, jc_JavaLayer, "drawInCGLContext", "()V");
 
     jobject javaLayerLocalRef = [self.javaLayer jObjectWithEnv:env];
     if ((*env)->IsSameObject(env, javaLayerLocalRef, NULL)) {
@@ -146,7 +147,8 @@ AWT_ASSERT_APPKIT_THREAD;
 
     glViewport(0, 0, textureWidth, textureHeight);
 
-    JNFCallVoidMethod(env, javaLayerLocalRef, jm_drawInCGLContext);
+    (*env)->CallVoidMethod(env, javaLayerLocalRef, jm_drawInCGLContext);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, javaLayerLocalRef);
 
     // Call super to finalize the drawing. By default all it does is call glFlush().

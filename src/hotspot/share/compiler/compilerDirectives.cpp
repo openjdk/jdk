@@ -280,7 +280,7 @@ DirectiveSet::~DirectiveSet() {
 // 2) cloned() returns a pointer that points to the cloned DirectiveSet.
 // Users should only use cloned() when they need to update DirectiveSet.
 //
-// In the end, users need invoke commit() to finalize the pending changes.
+// In the end, users need to invoke commit() to finalize the pending changes.
 // If cloning happens, the smart pointer will return the new pointer after releasing the original
 // one on DirectivesStack. If cloning doesn't happen, it returns the original intact pointer.
 class DirectiveSetPtr {

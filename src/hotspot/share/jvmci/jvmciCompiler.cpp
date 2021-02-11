@@ -33,6 +33,7 @@
 
 JVMCICompiler* JVMCICompiler::_instance = NULL;
 elapsedTimer JVMCICompiler::_codeInstallTimer;
+elapsedTimer JVMCICompiler::_hostedCodeInstallTimer;
 
 JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _bootstrapping = false;
@@ -152,19 +153,19 @@ void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, 
   ShouldNotReachHere();
 }
 
-// Print compilation timers and statistics
+// Print CompileBroker compilation timers
 void JVMCICompiler::print_timers() {
-  tty->print_cr("    JVMCI Compile Time:      %7.3f s", stats()->total_time());
-  print_compilation_timers();
+  double code_install_time = _codeInstallTimer.seconds();
+  tty->print_cr("    JVMCI CompileBroker Time:");
+  tty->print_cr("       Compile:        %7.3f s", stats()->total_time());
+  tty->print_cr("       Install Code:   %7.3f s", code_install_time);
 }
 
-// Print compilation timers and statistics
-void JVMCICompiler::print_compilation_timers() {
-  double code_install_time = _codeInstallTimer.seconds();
-  if (code_install_time != 0.0) {
-    tty->cr();
-    tty->print_cr("    JVMCI code install time:        %6.3f s", code_install_time);
-  }
+// Print non-CompileBroker compilation timers
+void JVMCICompiler::print_hosted_timers() {
+  double code_install_time = _hostedCodeInstallTimer.seconds();
+  tty->print_cr("    JVMCI Hosted Time:");
+  tty->print_cr("       Install Code:   %7.3f s", code_install_time);
 }
 
 void JVMCICompiler::inc_methods_compiled() {

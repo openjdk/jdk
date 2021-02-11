@@ -511,12 +511,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
         void revokeAllDelegatedServicesNow() {
             if (serviceClasses == null) return;
 
-            Iterator<BCSSCServiceClassRef> serviceClassRefs  =
-                new HashSet<>(serviceClasses.values()).iterator();
-
-            while (serviceClassRefs.hasNext()) {
-                BCSSCServiceClassRef serviceClassRef = serviceClassRefs.next();
-
+            for (BCSSCServiceClassRef serviceClassRef : new HashSet<>(serviceClasses.values())) {
                 if (!serviceClassRef.isDelegated()) continue;
 
                 Iterator<Map.Entry<Object, BeanContextServiceRevokedListener>> i = serviceClassRef.cloneOfEntries();
@@ -702,11 +697,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
                 fireServiceAdded(bcssae);
 
                 synchronized(children) {
-                    Iterator<Object> i = children.keySet().iterator();
-
-                    while (i.hasNext()) {
-                        Object c = i.next();
-
+                    for (Object c : children.keySet()) {
                         if (c instanceof BeanContextServices) {
                             ((BeanContextServicesListener)c).serviceAvailable(bcssae);
                         }

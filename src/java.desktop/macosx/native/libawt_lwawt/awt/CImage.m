@@ -405,8 +405,8 @@ JNF_COCOA_ENTER(env);
     }
 
     count = [sortedPixelSizes count];
-    static JNF_CLASS_CACHE(jc_Dimension, "java/awt/Dimension");
-    jreturnArray = JNFNewObjectArray(env, &jc_Dimension, count);
+    DECLARE_CLASS_RETURN(jc_Dimension, "java/awt/Dimension", jreturnArray);
+    jreturnArray = (*env)->NewObjectArray(env, count, jc_Dimension, NULL);
     CHECK_NULL_RETURN(jreturnArray, NULL);
 
     for(i = 0; i < count; i++){

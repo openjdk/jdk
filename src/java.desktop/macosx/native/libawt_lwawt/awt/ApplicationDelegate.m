@@ -38,6 +38,7 @@
 #import "CMenuBar.h"
 #import "ThreadUtilities.h"
 #import "NSApplicationAWT.h"
+#import "JNIUtilities.h"
 
 #pragma mark App Menu helpers
 
@@ -243,9 +244,11 @@ AWT_ASSERT_APPKIT_THREAD;
     BOOL prefsEnabled = (prefsAvailable && [self.fPreferencesMenu isEnabled] && ([self.fPreferencesMenu target] != nil));
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    static JNF_CLASS_CACHE(sjc_AppMenuBarHandler, "com/apple/eawt/_AppMenuBarHandler");
-    static JNF_STATIC_MEMBER_CACHE(sjm_initMenuStates, sjc_AppMenuBarHandler, "initMenuStates", "(ZZZZ)V");
-    JNFCallStaticVoidMethod(env, sjm_initMenuStates, aboutAvailable, aboutEnabled, prefsAvailable, prefsEnabled);
+    DECLARE_CLASS_RETURN(sjc_AppMenuBarHandler, "com/apple/eawt/_AppMenuBarHandler", NULL);
+    DECLARE_STATIC_METHOD_RETURN(sjm_initMenuStates, sjc_AppMenuBarHandler, "initMenuStates", "(ZZZZ)V", NULL);
+    (*env)->CallStaticVoidMethod(env, sjc_AppMenuBarHandler, sjm_initMenuStates,
+                                 aboutAvailable, aboutEnabled, prefsAvailable, prefsEnabled);
+    CHECK_EXCEPTION();
 
     // register for the finish launching and system power off notifications by default
     NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
@@ -272,7 +275,12 @@ AWT_ASSERT_APPKIT_THREAD;
 
 #pragma mark Callbacks from AppKit
 
-static JNF_CLASS_CACHE(sjc_AppEventHandler, "com/apple/eawt/_AppEventHandler");
+static jclass sjc_AppEventHandler = NULL;
+#define GET_APPEVENTHANDLER_CLASS() \
+    GET_CLASS(sjc_AppEventHandler, "com/apple/eawt/_AppEventHandler");
+
+#define GET_APPEVENTHANDLER_CLASS_RETURN(ret) \
+    GET_CLASS_RETURN(sjc_AppEventHandler, "com/apple/eawt/_AppEventHandler", ret);
 
 - (void)_handleOpenURLEvent:(NSAppleEventDescriptor *)openURLEvent withReplyEvent:(NSAppleEventDescriptor *)replyEvent {
 AWT_ASSERT_APPKIT_THREAD;
@@ -283,8 +291,10 @@ AWT_ASSERT_APPKIT_THREAD;
     //fprintf(stderr,"jm_handleOpenURL\n");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jstring jURL = JNFNSToJavaString(env, url);
-    static JNF_STATIC_MEMBER_CACHE(jm_handleOpenURI, sjc_AppEventHandler, "handleOpenURI", "(Ljava/lang/String;)V");
-    JNFCallStaticVoidMethod(env, jm_handleOpenURI, jURL); // AWT_THREADING Safe (event)
+    GET_APPEVENTHANDLER_CLASS();
+    DECLARE_STATIC_METHOD(jm_handleOpenURI, sjc_AppEventHandler, "handleOpenURI", "(Ljava/lang/String;)V");
+    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleOpenURI, jURL); // AWT_THREADING Safe (event)
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jURL);
 
     [replyEvent insertDescriptor:[NSAppleEventDescriptor nullDescriptor] atIndex:0];
@@ -293,14 +303,22 @@ AWT_ASSERT_APPKIT_THREAD;
 // Helper for both open file and print file methods
 // Creates a Java list of files from a native list of files
 - (jobject)_createFilePathArrayFrom:(NSArray *)filenames withEnv:(JNIEnv *)env {
-    static JNF_CLASS_CACHE(sjc_ArrayList, "java/util/ArrayList");
-    static JNF_CTOR_CACHE(jm_ArrayList_ctor, sjc_ArrayList, "(I)V");
-    static JNF_MEMBER_CACHE(jm_ArrayList_add, sjc_ArrayList, "add", "(Ljava/lang/Object;)Z");
+    static jclass sjc_ArrayList = NULL;
+    if (sjc_ArrayList == NULL) {
+        sjc_ArrayList = (*env)->FindClass(env, "java/util/ArrayList");
+        if (sjc_ArrayList != NULL) sjc_ArrayList = (*env)->NewGlobalRef(env, sjc_ArrayList); \
+    }
+    CHECK_NULL_RETURN(sjc_ArrayList, NULL);
+    DECLARE_METHOD_RETURN(jm_ArrayList_ctor, sjc_ArrayList, "<init>", "(I)V", NULL);
+    DECLARE_METHOD_RETURN(jm_ArrayList_add, sjc_ArrayList, "add", "(Ljava/lang/Object;)Z", NULL);
 
-    jobject jFileNamesArray = JNFNewObject(env, jm_ArrayList_ctor, (jint)[filenames count]); // AWT_THREADING Safe (known object)
+    jobject jFileNamesArray = (*env)->NewObject(env, sjc_ArrayList, jm_ArrayList_ctor, (jint)[filenames count]); // AWT_THREADING Safe (known object)
+    CHECK_EXCEPTION_NULL_RETURN(jFileNamesArray, NULL);
+
     for (NSString *filename in filenames) {
         jstring jFileName = JNFNormalizedJavaStringForPath(env, filename);
-        JNFCallVoidMethod(env, jFileNamesArray, jm_ArrayList_add, jFileName);
+        (*env)->CallVoidMethod(env, jFileNamesArray, jm_ArrayList_add, jFileName);
+        CHECK_EXCEPTION();
     }
 
     return jFileNamesArray;
@@ -325,8 +343,11 @@ AWT_ASSERT_APPKIT_THREAD;
     // convert the file names array
     jobject jFileNamesArray = [self _createFilePathArrayFrom:fileNames withEnv:env];
 
-    static JNF_STATIC_MEMBER_CACHE(jm_handleOpenFiles, sjc_AppEventHandler, "handleOpenFiles", "(Ljava/util/List;Ljava/lang/String;)V");
-    JNFCallStaticVoidMethod(env, jm_handleOpenFiles, jFileNamesArray, jSearchString);
+    GET_APPEVENTHANDLER_CLASS();
+    DECLARE_STATIC_METHOD(jm_handleOpenFiles, sjc_AppEventHandler,
+                              "handleOpenFiles", "(Ljava/util/List;Ljava/lang/String;)V");
+    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleOpenFiles, jFileNamesArray, jSearchString);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jFileNamesArray);
     (*env)->DeleteLocalRef(env, jSearchString);
 
@@ -341,8 +362,11 @@ AWT_ASSERT_APPKIT_THREAD;
     //fprintf(stderr,"jm_handlePrintFile\n");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jobject jFileNamesArray = [self _createFilePathArrayFrom:fileNames withEnv:env];
-    static JNF_STATIC_MEMBER_CACHE(jm_handlePrintFile, sjc_AppEventHandler, "handlePrintFiles", "(Ljava/util/List;)V");
-    JNFCallStaticVoidMethod(env, jm_handlePrintFile, jFileNamesArray); // AWT_THREADING Safe (event)
+    GET_APPEVENTHANDLER_CLASS_RETURN(NSPrintingCancelled);
+    DECLARE_STATIC_METHOD_RETURN(jm_handlePrintFile, sjc_AppEventHandler,
+                              "handlePrintFiles", "(Ljava/util/List;)V", NSPrintingCancelled);
+    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handlePrintFile, jFileNamesArray); // AWT_THREADING Safe (event)
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jFileNamesArray);
 
     return NSPrintingSuccess;
@@ -354,8 +378,10 @@ AWT_ASSERT_APPKIT_THREAD;
 
     //fprintf(stderr,"jm_handleOpenApplication\n");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    static JNF_STATIC_MEMBER_CACHE(jm_handleNativeNotification, sjc_AppEventHandler, "handleNativeNotification", "(I)V");
-    JNFCallStaticVoidMethod(env, jm_handleNativeNotification, notificationType); // AWT_THREADING Safe (event)
+    GET_APPEVENTHANDLER_CLASS();
+    DECLARE_STATIC_METHOD(jm_handleNativeNotification, sjc_AppEventHandler, "handleNativeNotification", "(I)V");
+    (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleNativeNotification, notificationType); // AWT_THREADING Safe (event)
+    CHECK_EXCEPTION();
 }
 
 // About menu handler

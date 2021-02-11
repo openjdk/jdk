@@ -851,7 +851,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             } else {
                 // Use the customized TLS protocols.
                 candidates =
-                    refactored.toArray(new ProtocolVersion[refactored.size()]);
+                    refactored.toArray(new ProtocolVersion[0]);
             }
 
             return getAvailableProtocols(candidates);

@@ -25,7 +25,7 @@
 
 #import "AWT_debug.h"
 
-#import "jni_util.h"
+#import "JNIUtilities.h"
 #import "ThreadUtilities.h"
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
@@ -74,7 +74,8 @@ JNF_COCOA_ENTER(env);
     }
 
     /* Allocate a java array for display identifiers */
-    ret = JNFNewIntArray(env, displayActiveCount);
+    ret = (*env)->NewIntArray(env, displayActiveCount);
+    CHECK_NULL_RETURN(ret, NULL);
 
     /* Initialize and return the backing int array */
     assert(sizeof(jint) >= sizeof(CGDirectDisplayID));
@@ -122,12 +123,13 @@ static void displaycb_handle
 
             jobject graphicsEnv = [wrapper jObjectWithEnv:env];
             if (graphicsEnv == NULL) return; // ref already GC'd
-            static JNF_CLASS_CACHE(jc_CGraphicsEnvironment, "sun/awt/CGraphicsEnvironment");
-            static JNF_MEMBER_CACHE(jm_displayReconfiguration,
+            DECLARE_CLASS(jc_CGraphicsEnvironment, "sun/awt/CGraphicsEnvironment");
+            DECLARE_METHOD(jm_displayReconfiguration,
                     jc_CGraphicsEnvironment, "_displayReconfiguration","(IZ)V");
-            JNFCallVoidMethod(env, graphicsEnv, jm_displayReconfiguration,
+            (*env)->CallVoidMethod(env, graphicsEnv, jm_displayReconfiguration,
                     (jint) display, (jboolean) flags & kCGDisplayRemoveFlag);
             (*env)->DeleteLocalRef(env, graphicsEnv);
+            CHECK_EXCEPTION();
         });
     }];
 }

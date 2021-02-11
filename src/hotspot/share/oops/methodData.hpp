@@ -2148,6 +2148,7 @@ private:
 
   static bool profile_jsr292(const methodHandle& m, int bci);
   static bool profile_unsafe(const methodHandle& m, int bci);
+  static bool profile_memory_access(const methodHandle& m, int bci);
   static int profile_arguments_flag();
   static bool profile_all_arguments();
   static bool profile_arguments_for_invoke(const methodHandle& m, int bci);

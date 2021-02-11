@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
@@ -40,9 +41,6 @@ class Thread;
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class G1DirtyCardQueue: public PtrQueue {
   G1ConcurrentRefineStats* _refinement_stats;
-
-protected:
-  virtual void handle_completed_buffer();
 
 public:
   G1DirtyCardQueue(G1DirtyCardQueueSet* qset);
@@ -263,6 +261,19 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // if none available.
   BufferNode* get_completed_buffer();
 
+  // Called when queue is full or has no buffer.
+  void handle_zero_index(G1DirtyCardQueue& queue);
+
+  // Enqueue the buffer, and optionally perform refinement by the mutator.
+  // Mutator refinement is only done by Java threads, and only if there
+  // are more than max_cards (possibly padded) cards in the completed
+  // buffers.  Updates stats.
+  //
+  // Mutator refinement, if performed, stops processing a buffer if
+  // SuspendibleThreadSet::should_yield(), recording the incompletely
+  // processed buffer for later processing of the remainder.
+  void handle_completed_buffer(BufferNode* node, G1ConcurrentRefineStats* stats);
+
 public:
   G1DirtyCardQueueSet(BufferNode::Allocator* allocator);
   ~G1DirtyCardQueueSet();
@@ -302,16 +313,8 @@ public:
 
   G1BufferNodeList take_all_completed_buffers();
 
-  // Helper for G1DirtyCardQueue::handle_completed_buffer().
-  // Enqueue the buffer, and optionally perform refinement by the mutator.
-  // Mutator refinement is only done by Java threads, and only if there
-  // are more than max_cards (possibly padded) cards in the completed
-  // buffers.  Updates stats.
-  //
-  // Mutator refinement, if performed, stops processing a buffer if
-  // SuspendibleThreadSet::should_yield(), recording the incompletely
-  // processed buffer for later processing of the remainder.
-  void handle_completed_buffer(BufferNode* node, G1ConcurrentRefineStats* stats);
+  using CardValue = G1CardTable::CardValue;
+  void enqueue(G1DirtyCardQueue& queue, volatile CardValue* card_ptr);
 
   // If there are more than stop_at cards in the completed buffers, pop
   // a buffer, refine its contents, and return true.  Otherwise return

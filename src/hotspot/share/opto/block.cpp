@@ -1221,6 +1221,26 @@ void PhaseCFG::verify() const {
       if (j >= 1 && n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
         assert(j == 1 || block->get_node(j-1)->is_Phi(), "CreateEx must be first instruction in block");
       }
+      // Verify that memory-writing nodes (such as stores and calls) are placed
+      // in their original loop L (given by the control input) or in an ancestor
+      // of L. This is guaranteed by the freq. estimation model for reducible
+      // CFGs, and by special handling in PhaseCFG::schedule_late() otherwise.
+      if (n->is_Mach() && n->bottom_type()->has_memory() && n->in(0) != NULL) {
+        Block* original_block = find_block_for_node(n->in(0));
+        assert(original_block != NULL, "missing block for memory-writing node");
+        CFGLoop* original_or_ancestor = original_block->_loop;
+        assert(block->_loop != NULL && original_or_ancestor != NULL, "no loop");
+        bool found = false;
+        do {
+          if (block->_loop == original_or_ancestor) {
+            found = true;
+            break;
+          }
+          original_or_ancestor = original_or_ancestor->parent();
+        } while (original_or_ancestor != NULL);
+        assert(found, "memory-writing node is not placed in its original loop "
+                      "or an ancestor of it");
+      }
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
       }

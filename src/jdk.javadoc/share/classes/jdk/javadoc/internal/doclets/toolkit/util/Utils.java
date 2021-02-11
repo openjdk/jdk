@@ -1362,7 +1362,7 @@ public class Utils {
             case INTERFACE ->
                     "doclet.Interface";
             case RECORD ->
-                    "doclet.Record";
+                    "doclet.RecordClass";
             case CLASS ->
                     isException(te) ? "doclet.Exception"
                     : isError(te) ? "doclet.Error"

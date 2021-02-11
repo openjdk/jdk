@@ -1043,13 +1043,13 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       // Note: currently, find_or_load_shared_class is called only from
       // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
       // which are parallel-capable loaders, so this lock is NOT taken.
-      Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
-      check_loader_lock_contention(lockObject, THREAD);
+      Handle lockObject = compute_loader_lock_object(THREAD, class_loader);
+      check_loader_lock_contention(THREAD, lockObject);
       ObjectLocker ol(lockObject, THREAD, DoObjectLock);
 
       {
         MutexLocker mu(THREAD, SystemDictionary_lock);
-        InstanceKlass* check = find_class(d_hash, name, dictionary);
+        InstanceKlass* check = dictionary->find_class(d_hash, name);
         if (check != NULL) {
           return check;
         }
@@ -1216,7 +1216,7 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   _loaded_unregistered_classes->put_if_absent(name, true, &created);
   if (created) {
     MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
-    SystemDictionary::add_to_hierarchy(k, CHECK_false);
+    SystemDictionary::add_to_hierarchy(k);
   }
   return created;
 }
@@ -1719,9 +1719,8 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
   {
     MutexLocker mu_r(THREAD, Compile_lock);
 
-    // Add to class hierarchy, initialize vtables, and do possible
-    // deoptimizations.
-    SystemDictionary::add_to_hierarchy(loaded_lambda, CHECK_NULL); // No exception, but can block
+    // Add to class hierarchy, and do possible deoptimizations.
+    SystemDictionary::add_to_hierarchy(loaded_lambda);
     // But, do not add to dictionary.
   }
   loaded_lambda->link_class(CHECK_NULL);

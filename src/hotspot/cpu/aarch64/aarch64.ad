@@ -1772,8 +1772,13 @@ int MachCallRuntimeNode::ret_addr_offset() {
 }
 
 int MachCallNativeNode::ret_addr_offset() {
-  ShouldNotReachHere();
-  return -1;
+  // This is implemented using aarch64_enc_java_to_runtime as above.
+  CodeBlob *cb = CodeCache::find_blob(_entry_point);
+  if (cb) {
+    return 1 * NativeInstruction::instruction_size;
+  } else {
+    return 6 * NativeInstruction::instruction_size;
+  }
 }
 
 // Indicate if the safepoint node needs the polling page as an input
@@ -16038,6 +16043,21 @@ instruct CallLeafNoFPDirect(method meth)
   ins_cost(CALL_COST);
 
   format %{ "CALL, runtime leaf nofp $meth" %}
+
+  ins_encode( aarch64_enc_java_to_runtime(meth) );
+
+  ins_pipe(pipe_class_call);
+%}
+
+instruct CallNativeDirect(method meth)
+%{
+  match(CallNative);
+
+  effect(USE meth);
+
+  ins_cost(CALL_COST);
+
+  format %{ "CALL, native $meth" %}
 
   ins_encode( aarch64_enc_java_to_runtime(meth) );
 

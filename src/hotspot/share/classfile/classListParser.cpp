@@ -467,6 +467,10 @@ void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
   Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, THREAD); // FIXME should really be just a lookup
   if (klass != NULL && klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
+    if (SystemDictionaryShared::has_class_failed_verification(ik)) {
+      // don't attempt to resolve indy on classes that has previously failed verification
+      return;
+    }
     MetaspaceShared::try_link_class(ik, THREAD);
     assert(!HAS_PENDING_EXCEPTION, "unexpected exception");
 

@@ -33,6 +33,7 @@ public class CompileCommand {
     public final MethodDescriptor methodDescriptor;
     public final Scenario.Compiler compiler;
     public final Scenario.Type type;
+    public final String argument;
 
     public CompileCommand(Command command,
                           MethodDescriptor methodDescriptor,
@@ -42,7 +43,21 @@ public class CompileCommand {
         this.methodDescriptor = methodDescriptor;
         this.compiler = compiler;
         this.type = type;
+        this.argument = null;
     }
+
+    public CompileCommand(Command command,
+                          MethodDescriptor methodDescriptor,
+                          Scenario.Compiler compiler,
+                          Scenario.Type type,
+                          String argument) {
+        this.command = command;
+        this.methodDescriptor = methodDescriptor;
+        this.compiler = compiler;
+        this.type = type;
+        this.argument = argument;
+    }
+
 
     /**
      * Shows that this compile command is valid
@@ -53,6 +68,24 @@ public class CompileCommand {
         if (command == Command.NONEXISTENT) {
             return false;
         }
+        // -XX:CompileCommand(File) ignores invalid items
+        // Invalid intrinsic ids in CompilerDirectivesFile will force hotspot to exit with non-zero value.
+        if (command == Command.INTRINSIC && type == Scenario.Type.DIRECTIVE) {
+            if (argument != null) {
+                String[] ids = argument.split(",");
+                for (String id : ids) {
+                    char ch = id.charAt(0);
+
+                    // Not a strict check.
+                    // a valid ControlIntrinsic argument is separated by ",", each one starts with '+' or '-'.
+                    // intrinsicId starts with '_'
+                    if ((ch != '+' && ch != '-') || id.charAt(1) != '_') {
+                      return false;
+                    }
+                }
+            }
+        }
+
         return methodDescriptor.isValid();
     }
 

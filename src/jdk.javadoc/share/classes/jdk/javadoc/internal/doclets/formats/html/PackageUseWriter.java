@@ -61,7 +61,6 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
     final PackageElement packageElement;
     final SortedMap<String, Set<TypeElement>> usingPackageToUsedClasses = new TreeMap<>();
-    final String packageUseTableSummary;
 
     /**
      * Constructor.
@@ -96,9 +95,6 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 }
             }
         }
-
-        packageUseTableSummary = resources.getText("doclet.Use_Table_Summary",
-                resources.getText("doclet.packages"));
     }
 
     /**
@@ -193,8 +189,6 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
             HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail)
                     .setId(getPackageAnchorName(usingPackage));
-            String tableSummary = resources.getText("doclet.Use_Table_Summary",
-                                                        resources.getText("doclet.classes"));
             Content caption = contents.getContent(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
                     getPackageLink(packageElement, utils.getPackageName(packageElement)),

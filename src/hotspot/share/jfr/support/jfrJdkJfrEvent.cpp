@@ -70,7 +70,7 @@ static bool initialize(TRAPS) {
  * it is also filtered out so we don't accidentally
  * trigger initialization.
  */
-static bool is_whitelisted(const Klass* k) {
+static bool is_allowed(const Klass* k) {
   assert(k != NULL, "invariant");
   return !(k->is_abstract() || k->should_be_initialized());
 }
@@ -87,7 +87,7 @@ static void fill_klasses(GrowableArray<const void*>& event_subklasses, const Kla
     const Klass* const current = mark_stack.pop();
     assert(current != NULL, "null element in stack!");
 
-    if (is_whitelisted(current)) {
+    if (is_allowed(current)) {
       event_subklasses.append(current);
     }
 
@@ -112,7 +112,7 @@ static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& e
 
   for (int i = 0; i < event_subklasses.length(); ++i) {
     const InstanceKlass* k = static_cast<const InstanceKlass*>(event_subklasses.at(i));
-    assert(is_whitelisted(k), "invariant");
+    assert(is_allowed(k), "invariant");
     event_subklasses.at_put(i, JfrJavaSupport::local_jni_handle(k->java_mirror(), thread));
   }
 }

@@ -59,6 +59,7 @@ public class DeprecatedAPIListBuilder {
         ENUM,
         EXCEPTION,              // no ElementKind mapping
         ERROR,                  // no ElementKind mapping
+        RECORD_CLASS,
         ANNOTATION_TYPE,
         FIELD,
         METHOD,
@@ -142,6 +143,10 @@ public class DeprecatedAPIListBuilder {
                         break;
                     case ENUM:
                         eset = deprecatedMap.get(DeprElementKind.ENUM);
+                        eset.add(e);
+                        break;
+                    case RECORD:
+                        eset = deprecatedMap.get(DeprElementKind.RECORD_CLASS);
                         eset.add(e);
                         break;
                 }

@@ -518,6 +518,7 @@ public:
 private:
   void stw_unload_classes(bool full_gc);
   void stw_process_weak_roots(bool full_gc);
+  void stw_weak_refs(bool full_gc);
 
   // Prepare concurrent root processing
   void prepare_concurrent_roots();

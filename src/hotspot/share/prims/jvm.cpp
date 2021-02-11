@@ -1851,7 +1851,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 }
 JVM_END
 
-
 // A class is a record if and only if it is final and a direct subclass of
 // java.lang.Record and has a Record attribute; otherwise, it is not a record.
 JVM_ENTRY(jboolean, JVM_IsRecord(JNIEnv *env, jclass cls))
@@ -2127,10 +2126,16 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
   Klass* c = java_lang_Class::as_Klass(mirror);
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ik = InstanceKlass::cast(c);
+  ResourceMark rm(THREAD);
+  log_trace(class, sealed)("Calling GetPermittedSubclasses for %s type %s",
+                           ik->is_sealed() ? "sealed" : "non-sealed", ik->external_name());
   if (ik->is_sealed()) {
     JvmtiVMObjectAllocEventCollector oam;
     Array<u2>* subclasses = ik->permitted_subclasses();
     int length = subclasses->length();
+
+    log_trace(class, sealed)(" - sealed class has %d permitted subclasses", length);
+
     objArrayOop r = oopFactory::new_objArray(SystemDictionary::Class_klass(),
                                              length, CHECK_NULL);
     objArrayHandle result(THREAD, r);
@@ -2142,14 +2147,24 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
         if (PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass())) {
           return NULL; // propagate VMEs
         }
+        if (log_is_enabled(Trace, class, sealed)) {
+          stringStream ss;
+          char* permitted_subclass = ik->constants()->klass_name_at(cp_index)->as_C_string();
+          ss.print(" - resolution of permitted subclass %s failed: ", permitted_subclass);
+          java_lang_Throwable::print(PENDING_EXCEPTION, &ss);
+          log_trace(class, sealed)("%s", ss.as_string());
+        }
+
         CLEAR_PENDING_EXCEPTION;
         continue;
       }
       if (k->is_instance_klass()) {
         result->obj_at_put(count++, k->java_mirror());
+        log_trace(class, sealed)(" - [%d] = %s", count, k->external_name());
       }
     }
     if (count < length) {
+      // we had invalid entries so we need to compact the array
       objArrayOop r2 = oopFactory::new_objArray(SystemDictionary::Class_klass(),
                                                 count, CHECK_NULL);
       objArrayHandle result2(THREAD, r2);

@@ -1056,9 +1056,7 @@ public class Dialog extends Window {
                     // if this dialog is toolkit-modal, the filter should be added
                     // to all EDTs (for all AppContexts)
                     if (modalityType == ModalityType.TOOLKIT_MODAL) {
-                        Iterator<AppContext> it = AppContext.getAppContexts().iterator();
-                        while (it.hasNext()) {
-                            AppContext appContext = it.next();
+                        for (AppContext appContext : AppContext.getAppContexts()) {
                             if (appContext == showAppContext) {
                                 continue;
                             }
@@ -1086,9 +1084,7 @@ public class Dialog extends Window {
                     // if this dialog is toolkit-modal, its filter must be removed
                     // from all EDTs (for all AppContexts)
                     if (modalityType == ModalityType.TOOLKIT_MODAL) {
-                        Iterator<AppContext> it = AppContext.getAppContexts().iterator();
-                        while (it.hasNext()) {
-                            AppContext appContext = it.next();
+                        for (AppContext appContext : AppContext.getAppContexts()) {
                             if (appContext == showAppContext) {
                                 continue;
                             }

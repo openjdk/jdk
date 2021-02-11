@@ -288,10 +288,12 @@ private:
   static char* reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
                                                   FileMapInfo* dynamic_mapinfo,
                                                   bool use_archive_base_addr,
+                                                  ReservedSpace& total_space_rs,
                                                   ReservedSpace& archive_space_rs,
                                                   ReservedSpace& class_space_rs);
-  static void release_reserved_spaces(ReservedSpace& archive_space_rs,
-                                      ReservedSpace& class_space_rs);
+ static void release_reserved_spaces(ReservedSpace& total_space_rs,
+                                     ReservedSpace& archive_space_rs,
+                                     ReservedSpace& class_space_rs);
   static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs);
   static void unmap_archive(FileMapInfo* mapinfo);
 };

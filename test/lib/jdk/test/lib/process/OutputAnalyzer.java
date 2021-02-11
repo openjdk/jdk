@@ -40,6 +40,8 @@ public final class OutputAnalyzer {
 
     private static final String jvmwarningmsg = ".* VM warning:.*";
 
+    private static final String deprecatedmsg = ".* VM warning:.* deprecated.*";
+
     private final OutputBuffer buffer;
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
@@ -141,6 +143,21 @@ public final class OutputAnalyzer {
      */
     public OutputAnalyzer stderrShouldBeEmptyIgnoreVMWarnings() {
         if (!getStderr().replaceAll(jvmwarningmsg + "\\R", "").isEmpty()) {
+            reportDiagnosticSummary();
+            throw new RuntimeException("stderr was not empty");
+        }
+        return this;
+    }
+
+    /**
+     * Verify that the stderr contents of output buffer is empty,
+     * after filtering out the Hotspot deprecation warning messages
+     *
+     * @throws RuntimeException
+     *             If stderr was not empty
+     */
+    public OutputAnalyzer stderrShouldBeEmptyIgnoreDeprecatedWarnings() {
+        if (!getStderr().replaceAll(deprecatedmsg + "\\R", "").isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was not empty");
         }

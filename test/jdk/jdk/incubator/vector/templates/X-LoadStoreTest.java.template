@@ -26,9 +26,9 @@
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
 #if[MaxBit]
  * @run testng/othervm --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
- *      $vectorteststype$
+ *      -XX:-TieredCompilation $vectorteststype$
 #else[MaxBit]
- * @run testng $vectorteststype$
+ * @run testng/othervm -XX:-TieredCompilation $vectorteststype$
 #end[MaxBit]
  *
  */

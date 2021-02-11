@@ -93,7 +93,8 @@ class name com/sun/source/doctree/ReferenceTree
 header extends java/lang/Object implements com/sun/source/doctree/DocTree flags 601
 
 class name com/sun/source/doctree/ReturnTree
-header extends java/lang/Object implements com/sun/source/doctree/BlockTagTree flags 601
+header extends java/lang/Object implements com/sun/source/doctree/BlockTagTree,com/sun/source/doctree/InlineTagTree flags 601
+method name isInline descriptor ()Z flags 1
 
 class name com/sun/source/doctree/SeeTree
 header extends java/lang/Object implements com/sun/source/doctree/BlockTagTree flags 601
@@ -335,6 +336,7 @@ header extends java/lang/Object implements com/sun/source/util/SourcePositions f
 class name com/sun/source/util/DocTreeFactory
 header extends java/lang/Object flags 601
 innerclass innerClass com/sun/source/doctree/AttributeTree$ValueKind outerClass com/sun/source/doctree/AttributeTree innerClassName ValueKind flags 4019
+method name newReturnTree descriptor (ZLjava/util/List;)Lcom/sun/source/doctree/ReturnTree; flags 1 signature (ZLjava/util/List<+Lcom/sun/source/doctree/DocTree;>;)Lcom/sun/source/doctree/ReturnTree;
 
 class name com/sun/source/util/DocTreePathScanner
 header extends com/sun/source/util/DocTreeScanner flags 21 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Lcom/sun/source/util/DocTreeScanner<TR;TP;>;

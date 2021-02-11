@@ -527,7 +527,7 @@ final class StatusResponseManager {
     /**
      * Static nested class used as the data kept in the response cache.
      */
-    class ResponseCacheEntry {
+    static class ResponseCacheEntry {
         final OCSPResponse.ResponseStatus status;
         final byte[] ocspBytes;
         final Date nextUpdate;

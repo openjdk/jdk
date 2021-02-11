@@ -78,12 +78,7 @@
 
 
 address os::current_stack_pointer() {
-  intptr_t* csp;
-
-  // inline assembly `mr regno(csp), R1_SP':
-  __asm__ __volatile__ ("mr %0, 1":"=r"(csp):);
-
-  return (address) csp;
+  return (address)__builtin_frame_address(0);
 }
 
 char* os::non_memory_address_word() {
@@ -179,13 +174,9 @@ frame os::get_sender_for_C_frame(frame* fr) {
 
 
 frame os::current_frame() {
-  intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
-  // hack.
-  frame topframe(csp, (address)0x8);
-  // Return sender of sender of current topframe which hopefully
-  // both have pc != NULL.
-  frame tmp = os::get_sender_for_C_frame(&topframe);
-  return os::get_sender_for_C_frame(&tmp);
+  intptr_t* csp = *(intptr_t**) __builtin_frame_address(0);
+  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame));
+  return os::get_sender_for_C_frame(&topframe);
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,

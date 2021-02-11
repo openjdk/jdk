@@ -336,9 +336,9 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
 // Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
 // so on posix, unmap the section at the start and at the end of the chunk that we mapped
 // rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
-  char* extra_base = os::reserve_memory(extra_size);
+  char* extra_base = os::reserve_memory(extra_size, exec);
   if (extra_base == NULL) {
     return NULL;
   }
@@ -364,20 +364,6 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   }
   MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
   return aligned_base;
-}
-
-// On Posix platforms, reservations are done using mmap which can be released in parts. So splitting is a no-op.
-void os::split_reserved_memory(char *base, size_t size, size_t split) {
-  char* const split_address = base + split;
-  assert(size > 0, "Sanity");
-  assert(size > split, "Sanity");
-  assert(split > 0, "Sanity");
-  assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
-  assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
-
-  // NMT: tell NMT to track both parts individually from now on.
-  MemTracker::record_virtual_memory_split_reserved(base, size, split);
-
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {

@@ -59,6 +59,7 @@ import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -1085,17 +1086,6 @@ public final class Utils {
 
     // -- toAsciiString-like support to encode path and query URI segments
 
-    private static final char[] hexDigits = {
-            '0', '1', '2', '3', '4', '5', '6', '7',
-            '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-    };
-
-    private static void appendEscape(StringBuilder sb, byte b) {
-        sb.append('%');
-        sb.append(hexDigits[(b >> 4) & 0x0f]);
-        sb.append(hexDigits[(b >> 0) & 0x0f]);
-    }
-
     // Encodes all characters >= \u0080 into escaped, normalized UTF-8 octets,
     // assuming that s is otherwise legal
     //
@@ -1123,13 +1113,16 @@ public final class Utils {
             assert false : x;
         }
 
+        HexFormat format = HexFormat.of().withUpperCase();
         StringBuilder sb = new StringBuilder();
         while (bb.hasRemaining()) {
             int b = bb.get() & 0xff;
-            if (b >= 0x80)
-                appendEscape(sb, (byte)b);
-            else
-                sb.append((char)b);
+            if (b >= 0x80) {
+                sb.append('%');
+                format.toHexDigits(sb, (byte)b);
+            } else {
+                sb.append((char) b);
+            }
         }
         return sb.toString();
     }

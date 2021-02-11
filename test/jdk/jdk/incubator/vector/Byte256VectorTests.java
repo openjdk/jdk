@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch Byte256VectorTests
+ * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation Byte256VectorTests
  */
 
 // -- This file was mechanically generated: Do not edit! -- //

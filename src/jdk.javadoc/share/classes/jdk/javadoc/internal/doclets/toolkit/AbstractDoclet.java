@@ -25,8 +25,10 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.PackageElement;
@@ -99,7 +101,7 @@ public abstract class AbstractDoclet implements Doclet {
     @Override
     public boolean run(DocletEnvironment docEnv) {
         configuration = getConfiguration();
-        configuration.initConfiguration(docEnv);
+        configuration.initConfiguration(docEnv, getResourceKeyMapper(docEnv));
         utils = configuration.utils;
         messages = configuration.getMessages();
         BaseOptions options = configuration.getOptions();
@@ -147,6 +149,10 @@ public abstract class AbstractDoclet implements Doclet {
         }
 
         return false;
+    }
+
+    protected Function<String, String> getResourceKeyMapper(DocletEnvironment docEnv) {
+        return null;
     }
 
     private void reportInternalError(Throwable t) {

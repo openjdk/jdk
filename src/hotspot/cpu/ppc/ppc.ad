@@ -3583,7 +3583,6 @@ encode %{
     call->_method_handle_invoke = _method_handle_invoke;
     call->_vtable_index      = _vtable_index;
     call->_method            = _method;
-    call->_bci               = _bci;
     call->_optimized_virtual = _optimized_virtual;
     call->_tf                = _tf;
     call->_entry_point       = _entry_point;

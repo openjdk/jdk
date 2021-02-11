@@ -31,14 +31,22 @@
 #import "CDropTarget.h"
 #import "DnDUtilities.h"
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
-JNF_CLASS_CACHE(jc_CDropTargetContextPeer, "sun/lwawt/macosx/CDropTargetContextPeer");
+jclass jc_CDropTargetContextPeer = NULL;
+#define GET_DTCP_CLASS() \
+    GET_CLASS(jc_CDropTargetContextPeer, "sun/lwawt/macosx/CDropTargetContextPeer");
+
+#define GET_DTCP_CLASS_RETURN(ret) \
+    GET_CLASS_RETURN(jc_CDropTargetContextPeer, "sun/lwawt/macosx/CDropTargetContextPeer", ret);
 
 
 static void TransferFailed(JNIEnv *env, jobject jthis, jlong jdroptarget, jlong jdroptransfer, jlong jformat) {
     AWT_ASSERT_NOT_APPKIT_THREAD;
-    JNF_MEMBER_CACHE(transferFailedMethod, jc_CDropTargetContextPeer, "transferFailed", "(J)V");
-    JNFCallVoidMethod(env, jthis, transferFailedMethod, jformat); // AWT_THREADING Safe (!appKit)
+    GET_DTCP_CLASS();
+    DECLARE_METHOD(transferFailedMethod, jc_CDropTargetContextPeer, "transferFailed", "(J)V");
+    (*env)->CallVoidMethod(env, jthis, transferFailedMethod, jformat); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
 }
 
 static CDropTarget* GetCDropTarget(jlong jdroptarget) {
@@ -77,7 +85,8 @@ JNF_COCOA_ENTER(env);
         return result;
     }
 
-    JNF_MEMBER_CACHE(newDataMethod, jc_CDropTargetContextPeer, "newData", "(J[B)V");
+    GET_DTCP_CLASS_RETURN(result);
+    DECLARE_METHOD_RETURN(newDataMethod, jc_CDropTargetContextPeer, "newData", "(J[B)V", result);
     if ((*env)->ExceptionOccurred(env) || !newDataMethod) {
         DLog2(@"[CDropTargetContextPeer startTransfer]: couldn't get newData method for %d.\n", (NSInteger) jdroptarget);
         TransferFailed(env, jthis, jdroptarget, (jlong) 0L, jformat);
@@ -94,7 +103,7 @@ JNF_COCOA_ENTER(env);
 
     // Pass the data to drop target:
     @try {
-        JNFCallVoidMethod(env, jthis, newDataMethod, jformat, jdropdata); // AWT_THREADING Safe (!appKit)
+        (*env)->CallVoidMethod(env, jthis, newDataMethod, jformat, jdropdata); // AWT_THREADING Safe (!appKit)
     } @catch (NSException *ex) {
         DLog2(@"[CDropTargetContextPeer startTransfer]: exception in newData() for %d.\n", (NSInteger) jdroptarget);
         JNFDeleteGlobalRef(env, jdropdata);

@@ -495,17 +495,15 @@ void Thread::set_priority(Thread* thread, ThreadPriority priority) {
 void Thread::start(Thread* thread) {
   // Start is different from resume in that its safety is guaranteed by context or
   // being called from a Java method synchronized on the Thread object.
-  if (!DisableStartThread) {
-    if (thread->is_Java_thread()) {
-      // Initialize the thread state to RUNNABLE before starting this thread.
-      // Can not set it after the thread started because we do not know the
-      // exact thread state at that time. It could be in MONITOR_WAIT or
-      // in SLEEPING or some other state.
-      java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
-                                          JavaThreadStatus::RUNNABLE);
-    }
-    os::start_thread(thread);
+  if (thread->is_Java_thread()) {
+    // Initialize the thread state to RUNNABLE before starting this thread.
+    // Can not set it after the thread started because we do not know the
+    // exact thread state at that time. It could be in MONITOR_WAIT or
+    // in SLEEPING or some other state.
+    java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
+                                        JavaThreadStatus::RUNNABLE);
   }
+  os::start_thread(thread);
 }
 
 class InstallAsyncExceptionClosure : public HandshakeClosure {
@@ -1230,9 +1228,7 @@ WatcherThread::WatcherThread() : NonJavaThread() {
     // If the VMThread's priority is not lower than the WatcherThread profiling
     // will be inaccurate.
     os::set_priority(this, MaxPriority);
-    if (!DisableStartThread) {
-      os::start_thread(this);
-    }
+    os::start_thread(this);
   }
 }
 

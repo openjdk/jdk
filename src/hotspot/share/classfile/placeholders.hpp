@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class PlaceholderTable : public Hashtable<Symbol*, mtClass> {
 public:
   PlaceholderTable(int table_size);
 
-  PlaceholderEntry* new_entry(int hash, Symbol* name, ClassLoaderData* loader_data, bool havesupername, Symbol* supername);
+  PlaceholderEntry* new_entry(int hash, Symbol* name, ClassLoaderData* loader_data, Symbol* supername);
   void free_entry(PlaceholderEntry* entry);
 
   PlaceholderEntry* bucket(int i) const {
@@ -50,19 +50,16 @@ public:
     return (PlaceholderEntry**)Hashtable<Symbol*, mtClass>::bucket_addr(i);
   }
 
-  void add_entry(int index, PlaceholderEntry* new_entry) {
-    Hashtable<Symbol*, mtClass>::add_entry(index, (HashtableEntry<Symbol*, mtClass>*)new_entry);
-  }
-
-  void add_entry(int index, unsigned int hash, Symbol* name,
-                ClassLoaderData* loader_data, bool havesupername, Symbol* supername);
+  PlaceholderEntry* add_entry(unsigned int hash, Symbol* name,
+                              ClassLoaderData* loader_data,
+                              Symbol* supername);
 
   // This returns a Symbol* to match type for SystemDictionary
-  Symbol* find_entry(int index, unsigned int hash,
-                       Symbol* name, ClassLoaderData* loader_data);
+  Symbol* find_entry(unsigned int hash,
+                     Symbol* name, ClassLoaderData* loader_data);
 
-  PlaceholderEntry* get_entry(int index, unsigned int hash,
-                       Symbol* name, ClassLoaderData* loader_data);
+  PlaceholderEntry* get_entry(unsigned int hash,
+                              Symbol* name, ClassLoaderData* loader_data);
 
 // caller to create a placeholder entry must enumerate an action
 // caller claims ownership of that action
@@ -83,17 +80,17 @@ public:
   // find_and_add returns probe pointer - old or new
   // If no entry exists, add a placeholder entry and push SeenThread for classloadAction
   // If entry exists, reuse entry and push SeenThread for classloadAction
-  PlaceholderEntry* find_and_add(int index, unsigned int hash,
+  PlaceholderEntry* find_and_add(unsigned int hash,
                                  Symbol* name, ClassLoaderData* loader_data,
                                  classloadAction action, Symbol* supername,
                                  Thread* thread);
 
-  void remove_entry(int index, unsigned int hash,
+  void remove_entry(unsigned int hash,
                     Symbol* name, ClassLoaderData* loader_data);
 
   // find_and_remove first removes SeenThread for classloadAction
   // If all queues are empty and definer is null, remove the PlacheholderEntry completely
-  void find_and_remove(int index, unsigned int hash,
+  void find_and_remove(unsigned int hash,
                        Symbol* name, ClassLoaderData* loader_data,
                        classloadAction action, Thread* thread);
 
@@ -147,7 +144,6 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
 
  private:
   ClassLoaderData*  _loader_data;   // initiating loader
-  bool              _havesupername; // distinguish between null supername, and unknown
   Symbol*           _supername;
   Thread*           _definer;       // owner of define token
   InstanceKlass*    _instanceKlass; // InstanceKlass from successful define
@@ -167,9 +163,6 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
 
   ClassLoaderData*   loader_data()         const { return _loader_data; }
   void               set_loader_data(ClassLoaderData* loader_data) { _loader_data = loader_data; }
-
-  bool               havesupername()       const { return _havesupername; }
-  void               set_havesupername(bool havesupername) { _havesupername = havesupername; }
 
   Symbol*            supername()           const { return _supername; }
   void               set_supername(Symbol* supername) {

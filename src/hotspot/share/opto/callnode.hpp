@@ -671,14 +671,13 @@ protected:
   ciMethod* _method;               // Method being direct called
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
-  const int       _bci;         // Byte Code Index of call byte code
-  CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method, int bci)
+  CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method)
     : CallNode(tf, addr, TypePtr::BOTTOM),
       _optimized_virtual(false),
       _method_handle_invoke(false),
       _override_symbolic_info(false),
       _method(method),
-      _arg_escape(false), _bci(bci)
+      _arg_escape(false)
   {
     init_class_id(Class_CallJava);
   }
@@ -712,17 +711,16 @@ class CallStaticJavaNode : public CallJavaNode {
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
-  CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method, int bci)
-    : CallJavaNode(tf, addr, method, bci) {
+  CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
+    : CallJavaNode(tf, addr, method) {
     init_class_id(Class_CallStaticJava);
     if (C->eliminate_boxing() && (method != NULL) && method->is_boxing_method()) {
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
   }
-  CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, int bci,
-                     const TypePtr* adr_type)
-    : CallJavaNode(tf, addr, NULL, bci) {
+  CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* adr_type)
+    : CallJavaNode(tf, addr, NULL) {
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
@@ -760,7 +758,8 @@ class CallDynamicJavaNode : public CallJavaNode {
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
-  CallDynamicJavaNode( const TypeFunc *tf , address addr, ciMethod* method, int vtable_index, int bci ) : CallJavaNode(tf,addr,method,bci), _vtable_index(vtable_index) {
+  CallDynamicJavaNode(const TypeFunc* tf , address addr, ciMethod* method, int vtable_index)
+    : CallJavaNode(tf,addr,method), _vtable_index(vtable_index) {
     init_class_id(Class_CallDynamicJava);
   }
 

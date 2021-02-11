@@ -847,7 +847,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         else return VM.isBooted();
     }
 
-    // A bit of black magic. We try to find out the nature of the logging
+    // A bit of magic. We try to find out the nature of the logging
     // backend without actually loading it.
     private static enum LoggingBackend {
         // There is no LoggerFinder and JUL is not present

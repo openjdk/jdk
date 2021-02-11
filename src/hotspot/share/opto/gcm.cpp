@@ -152,14 +152,14 @@ bool PhaseCFG::is_CFG(Node* n) {
   return n->is_block_proj() || n->is_block_start() || is_control_proj_or_safepoint(n);
 }
 
-bool PhaseCFG::is_control_proj_or_safepoint(Node* n) {
+bool PhaseCFG::is_control_proj_or_safepoint(Node* n) const {
   bool result = (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) || (n->is_Proj() && n->as_Proj()->bottom_type() == Type::CONTROL);
   assert(!result || (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint)
           || (n->is_Proj() && n->as_Proj()->_con == 0), "If control projection, it must be projection 0");
   return result;
 }
 
-Block* PhaseCFG::find_block_for_node(Node* n) {
+Block* PhaseCFG::find_block_for_node(Node* n) const {
   if (n->is_block_start() || n->is_block_proj()) {
     return get_block_for_node(n);
   } else {
@@ -1273,6 +1273,46 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       }
       default:
         break;
+      }
+      if (C->has_irreducible_loop() && self->bottom_type()->has_memory()) {
+        // If the CFG is irreducible, keep memory-writing nodes as close as
+        // possible to their original block (given by the control input). This
+        // prevents PhaseCFG::hoist_to_cheaper_block() from placing such nodes
+        // into descendants of their original loop, as in the following example:
+        //
+        // Original placement of store in B1 (loop L1):
+        //
+        // B1 (L1):
+        //   m1 <- ..
+        //   m2 <- store m1, ..
+        // B2 (L2):
+        //   jump B2
+        // B3 (L1):
+        //   .. <- .. m2, ..
+        //
+        // Wrong "hoisting" of store to B2 (in loop L2, child of L1):
+        //
+        // B1 (L1):
+        //   m1 <- ..
+        // B2 (L2):
+        //   m2 <- store m1, ..
+        //   # Wrong: m1 and m2 interfere at this point.
+        //   jump B2
+        // B3 (L1):
+        //   .. <- .. m2, ..
+        //
+        // This "hoist inversion" can happen due to CFGLoop::compute_freq()'s
+        // inaccurate estimation of frequencies for irreducible CFGs, which can
+        // lead to for example assigning B1 and B3 a higher frequency than B2.
+#ifndef PRODUCT
+        if (trace_opto_pipelining()) {
+          tty->print_cr("# Irreducible loops: schedule in earliest block B%d:",
+                        early->_pre_order);
+          self->dump();
+        }
+#endif
+        schedule_node_into_block(self, early);
+        continue;
       }
     }
 

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -105,7 +106,6 @@ bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
       }
     }
 
-    bool in_signature = false;
     char* pos = line;
     if (pos != NULL) {
       for (char* lp = pos + 1; *lp != '\0'; lp++) {
@@ -269,11 +269,25 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
     c_match = check_mode(class_name, error_msg);
     m_match = check_mode(method_name, error_msg);
 
+    // Over-consumption
+    // method_name points to an option type or option name because the method name is not specified by users.
+    // In very rare case, the method name happens to be same as option type/name, so look ahead to make sure
+    // it doesn't show up again.
+    if ((OptionType::Unknown != CompilerOracle::parse_option_type(method_name) ||
+        CompileCommand::Unknown != CompilerOracle::parse_option_name(method_name)) &&
+        *(line + bytes_read) != '\0' &&
+        strstr(line + bytes_read, method_name) == NULL) {
+      error_msg = "Did not specify any method name";
+      method_name[0] = '\0';
+      return;
+    }
+
     if ((strchr(class_name, JVM_SIGNATURE_SPECIAL) != NULL) ||
         (strchr(class_name, JVM_SIGNATURE_ENDSPECIAL) != NULL)) {
       error_msg = "Chars '<' and '>' not allowed in class name";
       return;
     }
+
     if ((strchr(method_name, JVM_SIGNATURE_SPECIAL) != NULL) ||
         (strchr(method_name, JVM_SIGNATURE_ENDSPECIAL) != NULL)) {
       if (!vmSymbols::object_initializer_name()->equals(method_name) &&
@@ -359,7 +373,7 @@ void MethodMatcher::print_base(outputStream* st) {
 
 BasicMatcher* BasicMatcher::parse_method_pattern(char* line, const char*& error_msg, bool expect_trailing_chars) {
   assert(error_msg == NULL, "Don't call here with error_msg already set");
-  BasicMatcher *bm = new BasicMatcher();
+  BasicMatcher* bm = new BasicMatcher();
   MethodMatcher::parse_method_pattern(line, error_msg, bm);
   if (error_msg != NULL) {
     delete bm;

@@ -24,6 +24,7 @@
  */
 package javax.swing.text;
 
+import java.util.Arrays;
 import java.util.Vector;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -103,6 +104,12 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         return carray.length;
     }
 
+    @Override
+    void resize(int nsize) {
+        char[] carray = (char[]) getArray();
+        super.resize(nsize);
+        Arrays.fill(carray, '\u0000');
+    }
     // --- AbstractDocument.Content methods -------------------------
 
     /**
@@ -195,10 +202,12 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         if ((where + len) <= g0) {
             // below gap
             chars.array = array;
+            chars.copy = false;
             chars.offset = where;
         } else if (where >= g0) {
             // above gap
             chars.array = array;
+            chars.copy = false;
             chars.offset = g1 + where - g0;
         } else {
             // spans the gap
@@ -206,12 +215,14 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
             if (chars.isPartialReturn()) {
                 // partial return allowed, return amount before the gap
                 chars.array = array;
+                chars.copy = false;
                 chars.offset = where;
                 chars.count = before;
                 return;
             }
             // partial return not allowed, must copy
             chars.array = new char[len];
+            chars.copy = true;
             chars.offset = 0;
             System.arraycopy(array, where, chars.array, 0, before);
             System.arraycopy(array, g1, chars.array, before, len - before);

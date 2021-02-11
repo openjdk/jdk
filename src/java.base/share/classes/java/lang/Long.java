@@ -299,11 +299,19 @@ public final class Long extends Number
      * <blockquote>
      *  {@code Long.toHexString(n).toUpperCase()}
      * </blockquote>
+     * <p>
+     * @apiNote
+     * The {@link java.util.HexFormat} class provides formatting and parsing
+     * of byte arrays and primitives to return a string or adding to an {@link Appendable}.
+     * {@code HexFormat} formats and parses uppercase or lowercase hexadecimal characters,
+     * with leading zeros and for byte arrays includes for each byte
+     * a delimiter, prefix, and suffix.
      *
      * @param   i   a {@code long} to be converted to a string.
      * @return  the string representation of the unsigned {@code long}
      *          value represented by the argument in hexadecimal
      *          (base&nbsp;16).
+     * @see java.util.HexFormat
      * @see #parseUnsignedLong(String, int)
      * @see #toUnsignedString(long, int)
      * @since   1.0.2

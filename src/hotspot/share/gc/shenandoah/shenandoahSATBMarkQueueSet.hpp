@@ -30,19 +30,15 @@
 #include "runtime/mutex.hpp"
 #include "runtime/thread.hpp"
 
-class ShenandoahSATBMarkQueue: public SATBMarkQueue {
-protected:
-  virtual void handle_completed_buffer();
-public:
-  ShenandoahSATBMarkQueue(SATBMarkQueueSet* qset) : SATBMarkQueue(qset) {}
-};
-
 class ShenandoahSATBMarkQueueSet : public SATBMarkQueueSet {
+protected:
+  virtual bool should_enqueue_buffer(SATBMarkQueue& queue);
+
 public:
   ShenandoahSATBMarkQueueSet(BufferNode::Allocator* allocator);
 
   virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const;
-  virtual void filter(SATBMarkQueue* queue);
+  virtual void filter(SATBMarkQueue& queue);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP

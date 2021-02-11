@@ -4016,6 +4016,422 @@ class StubGenerator: public StubCodeGenerator {
 #undef SLS
 #undef US
 
+// This algorithm is based on the methods described in this paper:
+// http://0x80.pl/notesen/2016-01-12-sse-base64-encoding.html
+//
+// The details of this implementation vary from the paper due to the
+// difference in the ISA between SSE and AltiVec, especially in the
+// splitting bytes section where there is no need on Power to mask after
+// the shift because the shift is byte-wise rather than an entire an entire
+// 128-bit word.
+//
+// For the lookup part of the algorithm, different logic is used than
+// described in the paper because of the availability of vperm, which can
+// do a 64-byte table lookup in four instructions, while preserving the
+// branchless nature.
+//
+// Description of the ENCODE_CORE macro
+//
+// Expand first 12 x 8-bit data bytes into 16 x 6-bit bytes (upper 2
+// bits of each byte are zeros)
+//
+// (Note: e7..e0 are not shown because they follow the same pattern as
+// e8..e15)
+//
+// In the table below, b0, b1, .. b15 are the bytes of unencoded
+// binary data, the first line of each of the cells (except for
+// the constants) uses the bit-field nomenclature from the
+// above-linked paper, whereas the second line is more specific
+// about which exact bits are present, and is constructed using the
+// Power ISA 3.x document style, where:
+//
+// * The specifier after the colon depicts which bits are there.
+// * The bit numbering is big endian style (bit 0 is the most
+//   significant).
+// * || is a concatenate operator.
+// * Strings of 0's are a field of zeros with the shown length, and
+//   likewise for strings of 1's.
+//
+// +==========================+=============+======================+======================+=============+=============+======================+======================+=============+
+// |          Vector          |     e8      |          e9          |         e10          |     e11     |     e12     |         e13          |         e14          |     e15     |
+// |         Element          |             |                      |                      |             |             |                      |                      |             |
+// +==========================+=============+======================+======================+=============+=============+======================+======================+=============+
+// |        after lxv         |  jjjjkkkk   |       iiiiiijj       |       gghhhhhh       |  ffffgggg   |  eeeeeeff   |       ccdddddd       |       bbbbcccc       |  aaaaaabb   |
+// |                          |     b7      |          b6          |          b5          |     b4      |     b3      |          b2          |          b1          |     b0      |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |      xxperm indexes      |      0      |          10          |          11          |     12      |      0      |          13          |          14          |     15      |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |     (1) after xxperm     |             |       gghhhhhh       |       ffffgggg       |  eeeeeeff   |             |       ccdddddd       |       bbbbcccc       |  aaaaaabb   |
+// |                          |    (b15)    |          b5          |          b4          |     b3      |    (b15)    |          b2          |          b1          |     b0      |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |      rshift_amount       |      0      |          6           |          4           |      2      |      0      |          6           |          4           |      2      |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |        after vsrb        |             |       000000gg       |       0000ffff       |  00eeeeee   |             |       000000cc       |       0000bbbb       |  00aaaaaa   |
+// |                          |    (b15)    |   000000||b5:0..1    |    0000||b4:0..3     | 00||b3:0..5 |    (b15)    |   000000||b2:0..1    |    0000||b1:0..3     | 00||b0:0..5 |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |       rshift_mask        |  00000000   |      000000||11      |      0000||1111      | 00||111111  |  00000000   |      000000||11      |      0000||1111      | 00||111111  |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |    rshift after vand     |  00000000   |       000000gg       |       0000ffff       |  00eeeeee   |  00000000   |       000000cc       |       0000bbbb       |  00aaaaaa   |
+// |                          |  00000000   |   000000||b5:0..1    |    0000||b4:0..3     | 00||b3:0..5 |  00000000   |   000000||b2:0..1    |    0000||b1:0..3     | 00||b0:0..5 |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |    1 octet lshift (1)    |  gghhhhhh   |       ffffgggg       |       eeeeeeff       |             |  ccdddddd   |       bbbbcccc       |       aaaaaabb       |  00000000   |
+// |                          |     b5      |          b4          |          b3          |    (b15)    |     b2      |          b1          |          b0          |  00000000   |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |      lshift_amount       |      0      |          2           |          4           |      0      |      0      |          2           |          4           |      0      |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |        after vslb        |  gghhhhhh   |       ffgggg00       |       eeff0000       |             |  ccdddddd   |       bbcccc00       |       aabb0000       |  00000000   |
+// |                          |     b5      |     b4:2..7||00      |    b3:4..7||0000     |    (b15)    |   b2:0..7   |     b1:2..7||00      |    b0:4..7||0000     |  00000000   |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |       lshift_mask        | 00||111111  |     00||1111||00     |     00||11||0000     |  00000000   | 00||111111  |     00||1111||00     |     00||11||0000     |  00000000   |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// |    lshift after vand     |  00hhhhhh   |       00gggg00       |       00ff0000       |  00000000   |  00dddddd   |       00cccc00       |       00bb0000       |  00000000   |
+// |                          | 00||b5:2..7 |   00||b4:4..7||00    |  00||b3:6..7||0000   |  00000000   | 00||b2:2..7 |   00||b1:4..7||00    |  00||b0:6..7||0000   |  00000000   |
+// +--------------------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+// | after vor lshift, rshift |  00hhhhhh   |       00gggggg       |       00ffffff       |  00eeeeee   |  00dddddd   |       00cccccc       |       00bbbbbb       |  00aaaaaa   |
+// |                          | 00||b5:2..7 | 00||b4:4..7||b5:0..1 | 00||b3:6..7||b4:0..3 | 00||b3:0..5 | 00||b2:2..7 | 00||b1:4..7||b2:0..1 | 00||b0:6..7||b1:0..3 | 00||b0:0..5 |
+// +==========================+=============+======================+======================+=============+=============+======================+======================+=============+
+//
+// Expand the first 12 bytes into 16 bytes, leaving every 4th byte
+// blank for now.
+// __ xxperm(input->to_vsr(), input->to_vsr(), expand_permute);
+//
+// Generate two bit-shifted pieces - rshift and lshift - that will
+// later be OR'd together.
+//
+// First the right-shifted piece
+// __ vsrb(rshift, input, expand_rshift);
+// __ vand(rshift, rshift, expand_rshift_mask);
+//
+// Now the left-shifted piece, which is done by octet shifting
+// the input one byte to the left, then doing a variable shift,
+// followed by a mask operation.
+//
+// __ vslo(lshift, input, vec_8s);
+// __ vslb(lshift, lshift, expand_lshift);
+// __ vand(lshift, lshift, expand_lshift_mask);
+//
+// Combine the two pieces by OR'ing
+// __ vor(expanded, rshift, lshift);
+//
+// At this point, expanded is a vector containing a 6-bit value in each
+// byte.  These values are used as indexes into a 64-byte lookup table that
+// is contained in four vector registers.  The lookup operation is done
+// using vperm instructions with the same indexes for the lower 32 and
+// upper 32 bytes.  To figure out which of the two looked-up bytes to use
+// at each location, all values in expanded are compared to 31.  Using
+// vsel, values higher than 31 use the results from the upper 32 bytes of
+// the lookup operation, while values less than or equal to 31 use the
+// lower 32 bytes of the lookup operation.  Power10 and beyond can save the
+// compare instruction, because the comparison is done within xxpermx
+// itself. TODO: use xxpermx,xxpermx,vor on P10 when instruction prefixes are
+// available in assembler_ppc.*
+
+#define ENCODE_CORE                                                        \
+    __ xxperm(input->to_vsr(), input->to_vsr(), expand_permute);           \
+    __ vsrb(rshift, input, expand_rshift);                                 \
+    __ vand(rshift, rshift, expand_rshift_mask);                           \
+    __ vslo(lshift, input, vec_8s);                                        \
+    __ vslb(lshift, lshift, expand_lshift);                                \
+    __ vand(lshift, lshift, expand_lshift_mask);                           \
+    __ vor(expanded, rshift, lshift);                                      \
+    __ vperm(encoded_00_31, vec_base64_00_15, vec_base64_16_31, expanded); \
+    __ vperm(encoded_32_63, vec_base64_32_47, vec_base64_48_63, expanded); \
+    __ vcmpgtub(gt_31, expanded, vec_31s);                                 \
+    __ vsel(expanded, encoded_00_31, encoded_32_63, gt_31);
+
+// Intrinsic function prototype in Base64.java:
+// private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
+
+  address generate_base64_encodeBlock() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "base64_encodeBlock");
+    address start   = __ function_entry();
+
+    typedef struct {
+      unsigned char expand_permute_val[16];
+      unsigned char expand_rshift_val[16];
+      unsigned char expand_rshift_mask_val[16];
+      unsigned char expand_lshift_val[16];
+      unsigned char expand_lshift_mask_val[16];
+      unsigned char base64_00_15_val[16];
+      unsigned char base64_16_31_val[16];
+      unsigned char base64_32_47_val[16];
+      unsigned char base64_48_63_val[16];
+      unsigned char base64_48_63_URL_val[16];
+    } constant_block;
+
+    static const constant_block VEC_ALIGN const_block = {
+      .expand_permute_val = {
+        ARRAY_TO_LXV_ORDER(
+        0,  4,  5,  6,
+        0,  7,  8,  9,
+        0, 10, 11, 12,
+        0, 13, 14, 15 ) },
+
+      .expand_rshift_val = {
+        ARRAY_TO_LXV_ORDER(
+        0, 6, 4, 2,
+        0, 6, 4, 2,
+        0, 6, 4, 2,
+        0, 6, 4, 2 ) },
+
+      .expand_rshift_mask_val = {
+        ARRAY_TO_LXV_ORDER(
+        0b00000000, 0b00000011, 0b00001111, 0b00111111,
+        0b00000000, 0b00000011, 0b00001111, 0b00111111,
+        0b00000000, 0b00000011, 0b00001111, 0b00111111,
+        0b00000000, 0b00000011, 0b00001111, 0b00111111 ) },
+
+      .expand_lshift_val = {
+        ARRAY_TO_LXV_ORDER(
+        0, 2, 4, 0,
+        0, 2, 4, 0,
+        0, 2, 4, 0,
+        0, 2, 4, 0 ) },
+
+      .expand_lshift_mask_val = {
+        ARRAY_TO_LXV_ORDER(
+        0b00111111, 0b00111100, 0b00110000, 0b00000000,
+        0b00111111, 0b00111100, 0b00110000, 0b00000000,
+        0b00111111, 0b00111100, 0b00110000, 0b00000000,
+        0b00111111, 0b00111100, 0b00110000, 0b00000000 ) },
+
+      .base64_00_15_val = {
+        ARRAY_TO_LXV_ORDER(
+        'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P' ) },
+
+      .base64_16_31_val = {
+        ARRAY_TO_LXV_ORDER(
+        'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f' ) },
+
+      .base64_32_47_val = {
+        ARRAY_TO_LXV_ORDER(
+        'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v' ) },
+
+      .base64_48_63_val = {
+        ARRAY_TO_LXV_ORDER(
+        'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/' ) },
+
+      .base64_48_63_URL_val = {
+        ARRAY_TO_LXV_ORDER(
+        'w','x','y','z','0','1','2','3','4','5','6','7','8','9','-','_' ) }
+    };
+    #define BLK_OFFSETOF(x) (offsetof(constant_block, x))
+
+    // Number of bytes to process in each pass through the main loop.
+    // 12 of the 16 bytes from each lxv are encoded to 16 Base64 bytes.
+    const unsigned block_size = 12;
+
+    // According to the ELF V2 ABI, registers r3-r12 are volatile and available for use without save/restore
+    Register src       = R3_ARG1; // source starting address of Base64 characters
+    Register sp        = R4_ARG2; // source starting position
+    Register sl        = R5_ARG3; // total source length of the Base64 characters to be processed
+    Register dst       = R6_ARG4; // destination address
+    Register dp        = R7_ARG5; // destination starting position
+    Register isURL     = R8_ARG6; // boolean, if non-zero indicates use of RFC 4648 base64url encoding
+
+    // Local variables
+    Register const_ptr     = R12; // used for loading constants (reuses isURL's register)
+    Register tmp_reg       = R9;  // used for speeding up load_constant()
+
+    Register size           = R9;  // number of bytes to process (reuses tmp_reg's register)
+    Register blocked_size   = R10; // number of bytes to process a block at a time
+    Register block_modulo   = R12; // == block_size (reuse const_ptr)
+    Register remaining      = R12; // bytes remaining to process after the blocks are completed (reuse block_modulo's reg)
+    Register in             = R4;  // current input (source) pointer (reuse sp's register)
+    Register num_blocks     = R11; // number of blocks to be processed by the unrolled loop
+    Register out            = R8;  // current output (destination) pointer (reuse const_ptr's register)
+    Register three          = R9;  // constant divisor (reuse size's register)
+    Register bytes_to_write = R10; // number of bytes to write with the stxvl instr (reused blocked_size's register)
+    Register tmp1           = R7;  // temp register for lxvl length (reuse dp's register)
+    Register modulo_chars   = R7;  // number of bytes written during the final write % 4 (reuse tmp1's register)
+    Register pad_char       = R6;  // literal '=' (reuse dst's register)
+
+    // Volatile VSRS are 0..13, 32..51 (VR0..VR13)
+    // VR Constants
+    VectorRegister  vec_8s             = VR0;
+    VectorRegister  vec_31s            = VR1;
+    VectorRegister  vec_base64_00_15   = VR2;
+    VectorRegister  vec_base64_16_31   = VR3;
+    VectorRegister  vec_base64_32_47   = VR4;
+    VectorRegister  vec_base64_48_63   = VR5;
+    VectorRegister  expand_rshift      = VR6;
+    VectorRegister  expand_rshift_mask = VR7;
+    VectorRegister  expand_lshift      = VR8;
+    VectorRegister  expand_lshift_mask = VR9;
+
+    // VR variables for expand
+    VectorRegister  input              = VR10;
+    VectorRegister  rshift             = VR11;
+    VectorRegister  lshift             = VR12;
+    VectorRegister  expanded           = VR13;
+
+    // VR variables for lookup
+    VectorRegister  encoded_00_31      = VR10; // (reuse input)
+    VectorRegister  encoded_32_63      = VR11; // (reuse rshift)
+    VectorRegister  gt_31              = VR12; // (reuse lshift)
+
+    // VSR Constants
+    VectorSRegister expand_permute     = VSR0;
+
+    Label not_URL, calculate_size, calculate_blocked_size, skip_loop;
+    Label loop_start, le_16_to_write, no_pad, one_pad_char;
+
+    // The upper 32 bits of the non-pointer parameter registers are not
+    // guaranteed to be zero, so mask off those upper bits.
+    __ clrldi(sp, sp, 32);
+    __ clrldi(sl, sl, 32);
+    __ clrldi(dp, dp, 32);
+    __ clrldi(isURL, isURL, 32);
+
+    // load up the constants
+    __ load_const_optimized(const_ptr, (address)&const_block, tmp_reg);
+    __ lxv(expand_permute,               BLK_OFFSETOF(expand_permute_val),     const_ptr);
+    __ lxv(expand_rshift->to_vsr(),      BLK_OFFSETOF(expand_rshift_val),      const_ptr);
+    __ lxv(expand_rshift_mask->to_vsr(), BLK_OFFSETOF(expand_rshift_mask_val), const_ptr);
+    __ lxv(expand_lshift->to_vsr(),      BLK_OFFSETOF(expand_lshift_val),      const_ptr);
+    __ lxv(expand_lshift_mask->to_vsr(), BLK_OFFSETOF(expand_lshift_mask_val), const_ptr);
+    __ lxv(vec_base64_00_15->to_vsr(),   BLK_OFFSETOF(base64_00_15_val),       const_ptr);
+    __ lxv(vec_base64_16_31->to_vsr(),   BLK_OFFSETOF(base64_16_31_val),       const_ptr);
+    __ lxv(vec_base64_32_47->to_vsr(),   BLK_OFFSETOF(base64_32_47_val),       const_ptr);
+
+    // Splat the constants that can use xxspltib
+    __ xxspltib(vec_8s->to_vsr(), 8);
+    __ xxspltib(vec_31s->to_vsr(), 31);
+
+
+    // Use a different translation lookup table depending on the
+    // setting of isURL
+    __ cmpdi(CCR0, isURL, 0);
+    __ beq(CCR0, not_URL);
+    __ lxv(vec_base64_48_63->to_vsr(), BLK_OFFSETOF(base64_48_63_URL_val), const_ptr);
+    __ b(calculate_size);
+
+    __ bind(not_URL);
+    __ lxv(vec_base64_48_63->to_vsr(), BLK_OFFSETOF(base64_48_63_val), const_ptr);
+
+    __ bind(calculate_size);
+
+    // size = sl - sp - 4 (*)
+    // (*) Don't process the last four bytes in the main loop because
+    // we don't want the lxv instruction to read past the end of the src
+    // data, in case those four bytes are on the start of an unmapped or
+    // otherwise inaccessible page.
+    //
+    __ sub(size, sl, sp);
+    __ subi(size, size, 4);
+    __ cmpdi(CCR7, size, block_size);
+    __ bgt(CCR7, calculate_blocked_size);
+    __ mr(remaining, size);
+    // Add the 4 back into remaining again
+    __ addi(remaining, remaining, 4);
+    // make "in" point to the beginning of the source data: in = src + sp
+    __ add(in, src, sp);
+    // out = dst + dp
+    __ add(out, dst, dp);
+    __ b(skip_loop);
+
+    __ bind(calculate_blocked_size);
+    __ li(block_modulo, block_size);
+    // num_blocks = size / block_modulo
+    __ divwu(num_blocks, size, block_modulo);
+    // blocked_size = num_blocks * size
+    __ mullw(blocked_size, num_blocks, block_modulo);
+    // remaining = size - blocked_size
+    __ sub(remaining, size, blocked_size);
+    __ mtctr(num_blocks);
+
+    // Add the 4 back in to remaining again
+    __ addi(remaining, remaining, 4);
+
+    // make "in" point to the beginning of the source data: in = src + sp
+    __ add(in, src, sp);
+
+    // out = dst + dp
+    __ add(out, dst, dp);
+
+    __ align(32);
+    __ bind(loop_start);
+
+    __ lxv(input->to_vsr(), 0, in);
+
+    ENCODE_CORE
+
+    __ stxv(expanded->to_vsr(), 0, out);
+    __ addi(in, in, 12);
+    __ addi(out, out, 16);
+    __ bdnz(loop_start);
+
+    __ bind(skip_loop);
+
+    // When there are less than 16 bytes left, we need to be careful not to
+    // read beyond the end of the src buffer, which might be in an unmapped
+    // page.
+    // Load the remaining bytes using lxvl.
+    __ rldicr(tmp1, remaining, 56, 7);
+    __ lxvl(input->to_vsr(), in, tmp1);
+
+    ENCODE_CORE
+
+    // bytes_to_write = ((remaining * 4) + 2) / 3
+    __ li(three, 3);
+    __ rlwinm(bytes_to_write, remaining, 2, 0, 29); // remaining * 4
+    __ addi(bytes_to_write, bytes_to_write, 2);
+    __ divwu(bytes_to_write, bytes_to_write, three);
+
+    __ cmpwi(CCR7, bytes_to_write, 16);
+    __ ble_predict_taken(CCR7, le_16_to_write);
+    __ stxv(expanded->to_vsr(), 0, out);
+
+    // We've processed 12 of the 13-15 data bytes, so advance the pointers,
+    // and do one final pass for the remaining 1-3 bytes.
+    __ addi(in, in, 12);
+    __ addi(out, out, 16);
+    __ subi(remaining, remaining, 12);
+    __ subi(bytes_to_write, bytes_to_write, 16);
+    __ rldicr(tmp1, bytes_to_write, 56, 7);
+    __ lxvl(input->to_vsr(), in, tmp1);
+
+    ENCODE_CORE
+
+    __ bind(le_16_to_write);
+    // shift bytes_to_write into the upper 8 bits of t1 for use by stxvl
+    __ rldicr(tmp1, bytes_to_write, 56, 7);
+    __ stxvl(expanded->to_vsr(), out, tmp1);
+    __ add(out, out, bytes_to_write);
+
+    __ li(pad_char, '=');
+    __ rlwinm_(modulo_chars, bytes_to_write, 0, 30, 31); // bytes_to_write % 4, set CCR0
+    // Examples:
+    //    remaining  bytes_to_write  modulo_chars  num pad chars
+    //        0            0               0            0
+    //        1            2               2            2
+    //        2            3               3            1
+    //        3            4               0            0
+    //        4            6               2            2
+    //        5            7               3            1
+    //        ...
+    //       12           16               0            0
+    //       13           18               2            2
+    //       14           19               3            1
+    //       15           20               0            0
+    __ beq(CCR0, no_pad);
+    __ cmpwi(CCR7, modulo_chars, 3);
+    __ beq(CCR7, one_pad_char);
+
+    // two pad chars
+    __ stb(pad_char, out);
+    __ addi(out, out, 1);
+
+    __ bind(one_pad_char);
+    __ stb(pad_char, out);
+
+    __ bind(no_pad);
+
+    __ blr();
+    return start;
+  }
+
 #endif // VM_LITTLE_ENDIAN
 
   // Initialization
@@ -4121,6 +4537,7 @@ class StubGenerator: public StubCodeGenerator {
     // Currently supported on PPC64LE only
     if (UseBASE64Intrinsics) {
       StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
+      StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
     }
 #endif
   }

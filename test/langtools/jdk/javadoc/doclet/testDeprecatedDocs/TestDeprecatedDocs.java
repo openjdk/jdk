@@ -216,7 +216,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="type-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     </span><span class="modifiers">public enum </span><span class="element-name type-name-label">TestEnum</span>
                     <span class="extends-implements">extends java.lang.Enum&lt;<a href="TestEnum.htm\
-                    l" title="enum in pkg">TestEnum</a>&gt;</span></div>
+                    l" title="enum class in pkg">TestEnum</a>&gt;</span></div>
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated, for re\
                     moval: This API element is subject to removal in a future version.</span>
                     <div class="deprecation-comment">enum_test1 passes.</div>
@@ -224,7 +224,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 """
                     <div class="member-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     </span><span class="modifiers">public static final</span>&nbsp;<span class="retu\
-                    rn-type"><a href="TestEnum.html" title="enum in pkg">TestEnum</a></span>&nbsp;<s\
+                    rn-type"><a href="TestEnum.html" title="enum class in pkg">TestEnum</a></span>&nbsp;<s\
                     pan class="element-name">FOR_REMOVAL</span></div>
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated, for re\
                     moval: This API element is subject to removal in a future version.</span>
@@ -269,15 +269,15 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <ul>
                     <li><a href="#forRemoval">For Removal</a></li>
                     <li><a href="#class">Classes</a></li>
-                    <li><a href="#enum">Enums</a></li>
+                    <li><a href="#enum.class">Enum Classes</a></li>
                     <li><a href="#exception">Exceptions</a></li>
                     <li><a href="#error">Errors</a></li>
-                    <li><a href="#annotation.type">Annotation Types</a></li>
+                    <li><a href="#annotation.interface">Annotation Interfaces</a></li>
                     <li><a href="#field">Fields</a></li>
                     <li><a href="#method">Methods</a></li>
                     <li><a href="#constructor">Constructors</a></li>
                     <li><a href="#enum.constant">Enum Constants</a></li>
-                    <li><a href="#annotation.type.member">Annotation Type Elements</a></li>
+                    <li><a href="#annotation.interface.member">Annotation Interface Elements</a></li>
                     </ul>""",
                 """
                     <div id="forRemoval">
@@ -286,12 +286,12 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="table-header col-first">Element</div>
                     <div class="table-header col-last">Description</div>""",
                 """
-                    <div id="enum">
-                    <div class="caption"><span>Enums</span></div>
+                    <div id="enum.class">
+                    <div class="caption"><span>Enum Classes</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="table-header col-first">Enum</div>
+                    <div class="table-header col-first">Enum Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/TestEnum.html" title="enum in pkg">pkg.TestEnum</a></div>
+                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/TestEnum.html" title="enum class in pkg">pkg.TestEnum</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">enum_test1 passes.</div>
                     </div>""",

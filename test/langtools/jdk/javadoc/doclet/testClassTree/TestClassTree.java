@@ -57,21 +57,21 @@ public class TestClassTree extends JavadocTester {
                     <li class="circle">pkg.<a href="ParentClass.html" title="class in pkg"><span cla\
                     ss="type-name-link">ParentClass</span></a>""",
                 """
-                    <h2 title="Annotation Type Hierarchy">Annotation Type Hierarchy</h2>
+                    <h2 title="Annotation Interface Hierarchy">Annotation Interface Hierarchy</h2>
                     <ul>
                     <li class="circle">pkg.<a href="AnnotationType.html" title="annotation in pkg"><\
                     span class="type-name-link">AnnotationType</span></a> (implements java.lang.anno\
                     tation.Annotation)</li>
                     </ul>""",
                 """
-                    <h2 title="Enum Hierarchy">Enum Hierarchy</h2>
+                    <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>
                     <ul>
                     <li class="circle">java.lang.Object
                     <ul>
                     <li class="circle">java.lang.Enum&lt;E&gt; (implements java.lang.Comparable&lt;T\
                     &gt;, java.lang.constant.Constable, java.io.Serializable)
                     <ul>
-                    <li class="circle">pkg.<a href="Coin.html" title="enum in pkg"><span class="type-name-link">Coin</span></a></li>
+                    <li class="circle">pkg.<a href="Coin.html" title="enum class in pkg"><span class="type-name-link">Coin</span></a></li>
                     </ul>
                     </li>
                     </ul>

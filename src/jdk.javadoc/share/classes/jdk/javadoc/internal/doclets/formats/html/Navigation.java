@@ -116,7 +116,7 @@ public class Navigation {
         this.configuration = configuration;
         this.options = configuration.getOptions();
         this.element = element;
-        this.contents = configuration.contents;
+        this.contents = configuration.getContents();
         this.documentedPage = page;
         this.path = path;
         this.pathToRoot = path.parent().invert();

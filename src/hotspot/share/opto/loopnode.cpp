@@ -568,7 +568,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
     const TypePtr* no_memory_effects = NULL;
     JVMState* jvms = sfpt->jvms();
     CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap",
-                                           jvms->bci(), no_memory_effects);
+                                           no_memory_effects);
 
     Node* mem = NULL;
     Node* i_o = NULL;

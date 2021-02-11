@@ -412,9 +412,13 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @return a content tree representing the class use header
      */
     protected HtmlTree getClassUseHeader() {
-        String cltype = resources.getText(utils.isInterface(typeElement)
-                ? "doclet.Interface"
-                : "doclet.Class");
+        String cltype = resources.getText(switch (typeElement.getKind()) {
+            case ANNOTATION_TYPE -> "doclet.AnnotationType";
+            case INTERFACE -> "doclet.Interface";
+            case RECORD -> "doclet.RecordClass";
+            case ENUM -> "doclet.Enum";
+            default -> "doclet.Class";
+        });
         String clname = utils.getFullyQualifiedName(typeElement);
         String title = resources.getText("doclet.Window_ClassUse_Header",
                 cltype, clname);

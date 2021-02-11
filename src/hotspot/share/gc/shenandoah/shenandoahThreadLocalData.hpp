@@ -43,7 +43,7 @@ private:
   // Evacuation OOM state
   uint8_t                 _oom_scope_nesting_level;
   bool                    _oom_during_evac;
-  ShenandoahSATBMarkQueue _satb_mark_queue;
+  SATBMarkQueue           _satb_mark_queue;
   PLAB* _gclab;
   size_t _gclab_size;
   uint  _worker_id;
