@@ -302,7 +302,7 @@ public:
 // enumeration type.
 
 class SubTasksDone: public CHeapObj<mtInternal> {
-  volatile uint* _tasks;
+  volatile bool* _tasks;
   uint _n_tasks;
   volatile uint _threads_completed;
 

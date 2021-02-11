@@ -54,10 +54,6 @@ public:
 
   static void cancel();
 
-  // TODO: where to put them
-  static void update_roots(ShenandoahPhaseTimings::Phase root_phase);
-  static void update_thread_roots(ShenandoahPhaseTimings::Phase root_phase);
-
 private:
   void finish_mark_work(ShenandoahGeneration* generation);
 };

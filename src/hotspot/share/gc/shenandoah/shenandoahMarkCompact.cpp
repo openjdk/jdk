@@ -28,7 +28,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentMark.hpp"
+#include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -36,6 +36,7 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
+#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -43,7 +44,6 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
@@ -56,16 +56,60 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "gc/shared/workgroup.hpp"
 
 ShenandoahMarkCompact::ShenandoahMarkCompact() :
-  _gc_timer(NULL),
+  _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
 
-void ShenandoahMarkCompact::initialize(GCTimer* gc_timer) {
-  _gc_timer = gc_timer;
+bool ShenandoahMarkCompact::collect(GCCause::Cause cause) {
+  vmop_entry_full(cause);
+  // Always success
+  return true;
+}
+
+void ShenandoahMarkCompact::vmop_entry_full(GCCause::Cause cause) {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->full_stw_collection_counters());
+  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_gross);
+
+  heap->try_inject_alloc_failure();
+  VM_ShenandoahFullGC op(cause, this);
+  VMThread::execute(&op);
+}
+
+void ShenandoahMarkCompact::entry_full(GCCause::Cause cause) {
+  static const char* msg = "Pause Full";
+  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::full_gc, true /* log_heap_usage */);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_fullgc(),
+                              "full gc");
+
+  op_full(cause);
+}
+
+void ShenandoahMarkCompact::op_full(GCCause::Cause cause) {
+  ShenandoahMetricsSnapshot metrics;
+  metrics.snap_before();
+
+  // Perform full GC
+  do_it(cause);
+
+  metrics.snap_after();
+
+  if (metrics.is_good_progress()) {
+    ShenandoahHeap::heap()->notify_gc_progress();
+  } else {
+    // Nothing to do. Tell the allocation path that we have failed to make
+    // progress, and it can finally fail.
+    ShenandoahHeap::heap()->notify_gc_no_progress();
+  }
 }
 
 void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
@@ -117,14 +161,14 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
     // b. Cancel concurrent mark, if in progress
     if (heap->is_concurrent_mark_in_progress()) {
-      ShenandoahConcurrentMark::cancel();
+      ShenandoahConcurrentGC::cancel();
       heap->set_concurrent_mark_in_progress(false);
     }
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
     // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
     if (has_forwarded_objects) {
-      ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::full_gc_update_roots);
+      update_roots(true /*full_gc*/);
     }
 
     // d. Reset the bitmaps for new marking
