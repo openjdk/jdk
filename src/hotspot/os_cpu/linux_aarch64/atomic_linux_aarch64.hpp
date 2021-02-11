@@ -36,7 +36,7 @@
 
 // Call one of the stubs from C++. This uses the C calling convention,
 // but this asm definition is used in order only to clobber the
-// resisters we use. If we called the stubs via an ABI call we'd have
+// registers we use. If we called the stubs via an ABI call we'd have
 // to save X0 - X18 and most of the vectors.
 //
 // This really ought to be a template definition, but see GCC Bug
