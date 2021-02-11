@@ -112,11 +112,10 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                 writer.addInlineComment(property, propertyDocTree);
             } else {
                 Content link =
-                        writer.getDocLink(LinkInfoImpl.Kind.PROPERTY_COPY,
+                        writer.getDocLink(HtmlLinkInfo.Kind.PROPERTY_COPY,
                         holder, property,
                         utils.isIncluded(holder)
-                                ? holder.getSimpleName() : holder.getQualifiedName(),
-                        null);
+                                ? holder.getSimpleName() : holder.getQualifiedName());
                 Content codeLink = HtmlTree.CODE(link);
                 Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel,
                         utils.isClass(holder)
@@ -168,7 +167,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
         Content classLink = writer.getPreQualifiedClassLink(
-                LinkInfoImpl.Kind.MEMBER, typeElement);
+                HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = new StringContent(utils.isClass(typeElement)
@@ -188,8 +187,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected void addSummaryLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element member,
-            Content tdSummary) {
+    protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element member,
+                                  Content tdSummary) {
         Content memberLink = writer.getDocLink(context, typeElement,
                 member,
                 new StringContent(utils.getPropertyLabel(name(member))),
@@ -203,7 +202,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     protected void addInheritedSummaryLink(TypeElement typeElement, Element member, Content linksTree) {
         String mname = name(member);
-        Content content = writer.getDocLink(LinkInfoImpl.Kind.MEMBER, typeElement, member,
+        Content content = writer.getDocLink(HtmlLinkInfo.Kind.MEMBER, typeElement, member,
                 utils.isProperty(mname) ? utils.getPropertyName(mname) : mname, true);
         linksTree.add(content);
     }
@@ -215,7 +214,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
 
     @Override
     protected Content getSummaryLink(Element member) {
-        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member,
+        return writer.getDocLink(HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW, member,
                 utils.getFullyQualifiedName(member));
     }
 

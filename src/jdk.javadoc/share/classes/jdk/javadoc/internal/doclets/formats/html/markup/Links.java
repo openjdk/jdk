@@ -101,12 +101,11 @@ public class Links {
 
     /**
      * Creates a link of the form {@code <a href="path" title="title">label</a>}.
-     * If {@code strong} is set, the label will be wrapped in
-     *      {@code <span style="typeNameLink">...</span>}.
+     * If {@code style} is not null, it will be added as {@code class="style"} to the link.
      *
      * @param path      the path for the link
      * @param label     the content for the link
-     * @param style     optional style for the link
+     * @param style     the style for the link, or null
      * @param title     the title for the link
      * @return a content tree for the link
      */
@@ -155,12 +154,11 @@ public class Links {
 
     /**
      * Creates a link of the form {@code <a href="link" title="title" >label</a>}.
-     * If {@code strong} is set, the label will be wrapped in
-     *      {@code <span style="typeNameLink">...</span>}.
+     * If {@code style} is not null, it will be added as {@code class="style"} to the link.
      *
      * @param link      the details for the link
      * @param label     the content for the link
-     * @param style    whether to wrap the {@code label} in a SPAN element
+     * @param style     the style for the link, or null
      * @param title     the title for the link
      * @return a content tree for the link
      */
@@ -171,12 +169,11 @@ public class Links {
 
     /**
      * Creates a link of the form {@code <a href="link" title="title">label</a>}.
-     * If {@code strong} is set, the label will be wrapped in
-     *      {@code <span style="typeNameLink">...</span>}.
+     * If {@code style} is not null, it will be added as {@code class="style"} to the link.
      *
      * @param link       the details for the link
      * @param label      the content for the link
-     * @param style      optional style for the link
+     * @param style      the style for the link, or null
      * @param title      the title for the link
      * @param isExternal is the link external to the generated documentation
      * @return a content tree for the link

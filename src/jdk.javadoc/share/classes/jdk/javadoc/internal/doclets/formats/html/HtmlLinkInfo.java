@@ -44,7 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class LinkInfoImpl extends LinkInfo {
+public class HtmlLinkInfo extends LinkInfo {
 
     public enum Kind {
         DEFAULT,
@@ -256,7 +256,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param context    the context of the link.
      * @param ee   the member to link to.
      */
-    public LinkInfoImpl(HtmlConfiguration configuration, Kind context, ExecutableElement ee) {
+    public HtmlLinkInfo(HtmlConfiguration configuration, Kind context, ExecutableElement ee) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         this.executableElement = ee;
@@ -275,7 +275,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param context    the context of the link.
      * @param typeElement   the class to link to.
      */
-    public LinkInfoImpl(HtmlConfiguration configuration, Kind context, TypeElement typeElement) {
+    public HtmlLinkInfo(HtmlConfiguration configuration, Kind context, TypeElement typeElement) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         this.typeElement = typeElement;
@@ -289,7 +289,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param context    the context of the link.
      * @param type       the class to link to.
      */
-    public LinkInfoImpl(HtmlConfiguration configuration, Kind context, TypeMirror type) {
+    public HtmlLinkInfo(HtmlConfiguration configuration, Kind context, TypeMirror type) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         this.type = type;
@@ -300,7 +300,7 @@ public class LinkInfoImpl extends LinkInfo {
      * Set the label for the link.
      * @param label plain-text label for the link
      */
-    public LinkInfoImpl label(CharSequence label) {
+    public HtmlLinkInfo label(CharSequence label) {
         this.label = new StringContent(label);
         return this;
     }
@@ -308,7 +308,7 @@ public class LinkInfoImpl extends LinkInfo {
     /**
      * Set the label for the link.
      */
-    public LinkInfoImpl label(Content label) {
+    public HtmlLinkInfo label(Content label) {
         this.label = label;
         return this;
     }
@@ -316,7 +316,7 @@ public class LinkInfoImpl extends LinkInfo {
     /**
      * Sets the style to be used for the link.
      */
-    public LinkInfoImpl style(HtmlStyle style) {
+    public HtmlLinkInfo style(HtmlStyle style) {
         this.style = style;
         return this;
     }
@@ -324,7 +324,7 @@ public class LinkInfoImpl extends LinkInfo {
     /**
      * Set whether or not this is a link to a varargs parameter.
      */
-    public LinkInfoImpl varargs(boolean varargs) {
+    public HtmlLinkInfo varargs(boolean varargs) {
         this.isVarArg = varargs;
         return this;
     }
@@ -332,7 +332,7 @@ public class LinkInfoImpl extends LinkInfo {
     /**
      * Set the fragment specifier for the link.
      */
-    public LinkInfoImpl where(String where) {
+    public HtmlLinkInfo where(String where) {
         this.where = where;
         return this;
     }
@@ -340,7 +340,7 @@ public class LinkInfoImpl extends LinkInfo {
     /**
      * Set the member this link points to (if any).
      */
-    public LinkInfoImpl targetMember(Element el) {
+    public HtmlLinkInfo targetMember(Element el) {
         this.targetMember = el;
         return this;
     }
@@ -348,7 +348,7 @@ public class LinkInfoImpl extends LinkInfo {
     /**
      * Set whether or not the preview flags should be skipped for this link.
      */
-    public LinkInfoImpl skipPreview(boolean skipPreview) {
+    public HtmlLinkInfo skipPreview(boolean skipPreview) {
         this.skipPreview = skipPreview;
         return this;
     }
@@ -436,7 +436,7 @@ public class LinkInfoImpl extends LinkInfo {
 
     @Override
     public String toString() {
-        return "LinkInfoImpl{" +
+        return "HtmlLinkInfo{" +
                 "context=" + context +
                 ", where=" + where +
                 ", style=" + style +
