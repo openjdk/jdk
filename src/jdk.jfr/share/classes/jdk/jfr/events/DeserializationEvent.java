@@ -38,7 +38,7 @@ import jdk.jfr.internal.MirrorEvent;
 @MirrorEvent(className = "jdk.internal.event.DeserializationEvent")
 public final class DeserializationEvent extends AbstractJDKEvent {
 
-    @Label("Filter configured")
+    @Label("Filter Configured")
     public boolean filterConfigured;
 
     @Label("Filter Status")
