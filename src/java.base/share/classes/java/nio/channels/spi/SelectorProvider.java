@@ -52,11 +52,11 @@ import java.util.ServiceConfigurationError;
  *
  * <p> The system-wide default provider is used by the static {@code open}
  * methods of the {@link java.nio.channels.DatagramChannel#open()
- * DatagramChannel}, {@link java.nio.channels.Pipe#open() Pipe}, {@link
- * java.nio.channels.Selector#open() Selector}, {@link
+ * DatagramChannel}, {@link java.nio.channels.Pipe#open Pipe}, {@link
+ * java.nio.channels.Selector#open Selector}, {@link
  * java.nio.channels.ServerSocketChannel#open() ServerSocketChannel}, and {@link
  * java.nio.channels.SocketChannel#open() SocketChannel} classes.  It is also
- * used by the {@link java.lang.System#inheritedChannel() System.inheritedChannel()}
+ * used by the {@link java.lang.System#inheritedChannel System.inheritedChannel()}
  * method. A program may make use of a provider other than the default provider
  * by instantiating that provider and then directly invoking the {@code open}
  * methods defined in this class.
