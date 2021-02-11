@@ -1974,7 +1974,6 @@ public:
     friend class VMStructs;
     friend class JVMCIVMStructs;
 
-    int  _creation_mileage;           // method mileage at MDO creation
     uint _nof_decompiles;             // count of all nmethod removals
     uint _nof_overflow_recompiles;    // recompile count, excluding recomp. bits
     uint _nof_overflow_traps;         // trap count, excluding _trap_hist
@@ -1983,16 +1982,12 @@ public:
       u1 _array[JVMCI_ONLY(2 *) MethodData::_trap_hist_limit];
     } _trap_hist;
 
-    CompilerCounters(int current_mileage) : _creation_mileage(current_mileage), _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
+  public:
+    CompilerCounters() : _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
       static_assert(sizeof(_trap_hist) % HeapWordSize == 0, "align");
       uint size_in_words = sizeof(_trap_hist) / HeapWordSize;
       Copy::zero_to_words((HeapWord*) &_trap_hist, size_in_words);
     }
-  public:
-    CompilerCounters(Method* m) : CompilerCounters(MethodData::mileage_of(m)) {}
-    CompilerCounters() : CompilerCounters(0) {} // for ciMethodData
-
-    int      creation_mileage() const { return _creation_mileage; }
 
     // Return (uint)-1 for overflow.
     uint trap_count(int reason) const {
@@ -2043,6 +2038,8 @@ private:
   intx              _arg_local;       // bit set of non-escaping arguments
   intx              _arg_stack;       // bit set of stack-allocatable arguments
   intx              _arg_returned;    // bit set of returned arguments
+
+  int               _creation_mileage; // method mileage at MDO creation
 
   // How many invocations has this MDO seen?
   // These counters are used to determine the exact age of MDO.
@@ -2188,7 +2185,8 @@ public:
   int size_in_bytes() const { return _size; }
   int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
 
-  int      creation_mileage() const { return _compiler_counters.creation_mileage(); }
+  int      creation_mileage() const { return _creation_mileage; }
+  void set_creation_mileage(int x)  { _creation_mileage = x; }
 
   int invocation_count() {
     if (invocation_counter()->carry()) {

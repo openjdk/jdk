@@ -109,7 +109,7 @@ public interface RoundEnvironment {
      * annotation types, or an empty set if there are none
      * @throws IllegalArgumentException if the any elements of the
      * argument set do not represent an annotation type
-     * @jls 9.6.3 Repeatable Annotation Types
+     * @jls 9.6.3 Repeatable Annotation Interfaces
      * @since 9
      */
     default Set<? extends Element> getElementsAnnotatedWithAny(TypeElement... annotations){
@@ -191,7 +191,7 @@ public interface RoundEnvironment {
      * annotation types, or an empty set if there are none
      * @throws IllegalArgumentException if the any elements of the
      * argument set do not represent an annotation type
-     * @jls 9.6.3 Repeatable Annotation Types
+     * @jls 9.6.3 Repeatable Annotation Interfaces
      *
      * @see javax.lang.model.AnnotatedConstruct#getAnnotation(Class)
      * @see javax.lang.model.AnnotatedConstruct#getAnnotationsByType(Class)

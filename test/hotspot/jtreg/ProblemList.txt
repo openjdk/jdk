@@ -44,8 +44,6 @@ compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/codecache/jmx/PoolsIndependenceTest.java 8167015 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 compiler/jvmci/compilerToVM/GetFlagValueTest.java 8204459 generic-all
-compiler/jvmci/compilerToVM/IsMatureVsReprofileTest.java 8257919 generic-all
-compiler/jvmci/compilerToVM/ReprofileTest.java 8257919 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all

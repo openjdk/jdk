@@ -233,15 +233,15 @@ void JfrGTestAdaptiveSampling::test(JfrGTestAdaptiveSampling::incoming inc, size
   assertDistributionProperties(100, population, sample, population_size, sample_size, output);
 }
 
-TEST_VM_F(JfrGTestAdaptiveSampling, uniform_rate) {
+TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_uniform_rate) {
   test(&JfrGTestAdaptiveSampling::incoming_uniform, expected_sample_points_per_window, 0.05, "random uniform, all samples");
 }
 
-TEST_VM_F(JfrGTestAdaptiveSampling, low_rate) {
+TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_low_rate) {
   test(&JfrGTestAdaptiveSampling::incoming_low_rate, min_population_per_window, 0.05, "low rate");
 }
 
-TEST_VM_F(JfrGTestAdaptiveSampling, high_rate) {
+TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_high_rate) {
   test(&JfrGTestAdaptiveSampling::incoming_high_rate, expected_sample_points_per_window, 0.02, "high rate");
 }
 
@@ -259,23 +259,23 @@ TEST_VM_F(JfrGTestAdaptiveSampling, high_rate) {
 // - late end of the second -> each second will have sampled the window set point + accumulated debt for the first 9 windows (i.e. it will have sampled all)
 //
 
-TEST_VM_F(JfrGTestAdaptiveSampling, early_burst) {
+TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_early_burst) {
   test(&JfrGTestAdaptiveSampling::incoming_early_burst, expected_sample_points_per_window, 0.9, "early burst");
 }
 
-TEST_VM_F(JfrGTestAdaptiveSampling, mid_burst) {
+TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_mid_burst) {
   test(&JfrGTestAdaptiveSampling::incoming_mid_burst, expected_sample_points_per_window, 0.5, "mid burst");
 }
 
-TEST_VM_F(JfrGTestAdaptiveSampling, late_burst) {
+TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_late_burst) {
   test(&JfrGTestAdaptiveSampling::incoming_late_burst, expected_sample_points_per_window, 0.0, "late burst");
 }
 
 // These are randomized burst tests
-TEST_VM_F(JfrGTestAdaptiveSampling, bursty_rate_10_percent) {
+TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_bursty_rate_10_percent) {
   test(&JfrGTestAdaptiveSampling::incoming_bursty_10_percent, expected_sample_points_per_window, 0.96, "bursty 10%");
 }
 
-TEST_VM_F(JfrGTestAdaptiveSampling, bursty_rate_90_percent) {
+TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_bursty_rate_90_percent) {
   test(&JfrGTestAdaptiveSampling::incoming_bursty_10_percent, expected_sample_points_per_window, 0.96, "bursty 90%");
 }

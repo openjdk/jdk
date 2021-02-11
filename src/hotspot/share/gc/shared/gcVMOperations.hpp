@@ -39,17 +39,27 @@
 // a set of operations (VM_Operation) related to GC.
 //
 //  VM_Operation
+//    VM_GC_Sync_Operation
 //      VM_GC_Operation
-//          VM_GC_HeapInspection
-//          VM_GenCollectFull
-//          VM_GenCollectFullConcurrent
-//          VM_ParallelGCSystemGC
-//          VM_CollectForAllocation
-//              VM_GenCollectForAllocation
-//              VM_ParallelGCFailedAllocation
+//        VM_GC_HeapInspection
+//        VM_PopulateDynamicDumpSharedSpace
+//        VM_GenCollectFull
+//        VM_GenCollectFullConcurrent
+//        VM_ParallelGCSystemGC
+//        VM_CollectForAllocation
+//          VM_GenCollectForAllocation
+//          VM_ParallelGCFailedAllocation
+//      VM_Verify
+//      VM_PopulateDumpSharedSpace
+//
+//  VM_GC_Sync_Operation
+//   - implements only synchronization with other VM operations of the
+//     same kind using the Heap_lock, not actually doing a GC.
+//
 //  VM_GC_Operation
-//   - implements methods common to all classes in the hierarchy:
-//     prevents multiple gc requests and manages lock on heap;
+//   - implements methods common to all operations that perform garbage collections,
+//     checking that the VM is in a state to do GC and preventing multiple GC
+//     requests.
 //
 //  VM_GC_HeapInspection
 //   - prints class histogram on SIGBREAK if PrintClassHistogram
@@ -68,11 +78,37 @@
 //   - these operations preform full collection of heaps of
 //     different kind
 //
+//  VM_Verify
+//   - verifies the heap
+//
+//  VM_PopulateDynamicDumpSharedSpace
+//   - populates the CDS archive area with the information from the archive file.
+//
+//  VM_PopulateDumpSharedSpace
+//   - creates the CDS archive
+//
 
-class VM_GC_Operation: public VM_Operation {
+class VM_GC_Sync_Operation : public VM_Operation {
+public:
+
+  VM_GC_Sync_Operation() : VM_Operation() { }
+
+  // Acquires the Heap_lock.
+  virtual bool doit_prologue();
+  // Releases the Heap_lock.
+  virtual void doit_epilogue();
+};
+
+class VM_Verify : public VM_GC_Sync_Operation {
+ public:
+  VMOp_Type type() const { return VMOp_Verify; }
+  void doit();
+};
+
+class VM_GC_Operation: public VM_GC_Sync_Operation {
  protected:
-  uint           _gc_count_before;         // gc count before acquiring PLL
-  uint           _full_gc_count_before;    // full gc count before acquiring PLL
+  uint           _gc_count_before;         // gc count before acquiring the Heap_lock
+  uint           _full_gc_count_before;    // full gc count before acquiring the Heap_lock
   bool           _full;                    // whether a "full" collection
   bool           _prologue_succeeded;      // whether doit_prologue succeeded
   GCCause::Cause _gc_cause;                // the putative cause for this gc op
@@ -84,7 +120,7 @@ class VM_GC_Operation: public VM_Operation {
   VM_GC_Operation(uint gc_count_before,
                   GCCause::Cause _cause,
                   uint full_gc_count_before = 0,
-                  bool full = false) {
+                  bool full = false) : VM_GC_Sync_Operation() {
     _full = full;
     _prologue_succeeded = false;
     _gc_count_before    = gc_count_before;
@@ -106,9 +142,10 @@ class VM_GC_Operation: public VM_Operation {
   }
   ~VM_GC_Operation();
 
-  // Acquire the reference synchronization lock
+  // Acquire the Heap_lock and determine if this VM operation should be executed
+  // (i.e. not skipped). Return this result, and also store it in _prologue_succeeded.
   virtual bool doit_prologue();
-  // Do notifyAll (if needed) and release held lock
+  // Notify the Heap_lock if needed and release it.
   virtual void doit_epilogue();
 
   virtual bool allow_nested_vm_operations() const  { return true; }

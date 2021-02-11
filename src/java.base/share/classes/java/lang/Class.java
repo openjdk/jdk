@@ -2383,11 +2383,7 @@ public final class Class<T> implements java.io.Serializable,
         if (!isRecord()) {
             return null;
         }
-        RecordComponent[] recordComponents = getRecordComponents0();
-        if (recordComponents == null) {
-            return new RecordComponent[0];
-        }
-        return recordComponents;
+        return getRecordComponents0();
     }
 
     /**
@@ -3577,9 +3573,17 @@ public final class Class<T> implements java.io.Serializable,
     private native Field[]       getDeclaredFields0(boolean publicOnly);
     private native Method[]      getDeclaredMethods0(boolean publicOnly);
     private native Constructor<T>[] getDeclaredConstructors0(boolean publicOnly);
-    private native Class<?>[]   getDeclaredClasses0();
+    private native Class<?>[]    getDeclaredClasses0();
+
+    /*
+     * Returns an array containing the components of the Record attribute,
+     * or null if the attribute is not present.
+     *
+     * Note that this method returns non-null array on a class with
+     * the Record attribute even if this class is not a record.
+     */
     private native RecordComponent[] getRecordComponents0();
-    private native boolean      isRecord0();
+    private native boolean       isRecord0();
 
     /**
      * Helper method to get the method name from arguments.
@@ -3706,6 +3710,8 @@ public final class Class<T> implements java.io.Serializable,
      * @since 16
      */
     public boolean isRecord() {
+        // this superclass and final modifier check is not strictly necessary
+        // they are intrinsified and serve as a fast-path check
         return getSuperclass() == java.lang.Record.class &&
                 (this.getModifiers() & Modifier.FINAL) != 0 &&
                 isRecord0();

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,17 @@
 *
 */
 
-#include "precompiled.hpp"
-#include "jfr/leakprofiler/leakProfiler.hpp"
-#include "jfr/support/jfrAllocationTracer.hpp"
-#include "jfr/support/jfrObjectAllocationSample.hpp"
-#include "jfr/support/jfrThreadLocal.hpp"
-#include "runtime/thread.hpp"
+#ifndef SHARE_JFR_SUPPORT_JFROBJECTALLOCATIONSAMPLE_HPP
+#define SHARE_JFR_SUPPORT_JFROBJECTALLOCATIONSAMPLE_HPP
 
-JfrAllocationTracer::JfrAllocationTracer(const Klass* klass, HeapWord* obj, size_t alloc_size, bool outside_tlab, Thread* thread) : _tl(NULL) {
-  JfrObjectAllocationSample::send_event(klass, alloc_size, outside_tlab, thread);
-  if (LeakProfiler::is_running()) {
-    _tl = thread->jfr_thread_local();
-    LeakProfiler::sample(obj, alloc_size, thread->as_Java_thread());
-  }
-}
+#include "memory/allocation.hpp"
 
-JfrAllocationTracer::~JfrAllocationTracer() {
-  if (_tl != NULL) {
-    _tl->clear_cached_stack_trace();
-  }
-}
+class Klass;
+class Thread;
+
+class JfrObjectAllocationSample : AllStatic {
+  friend class JfrAllocationTracer;
+  static void send_event(const Klass* klass, size_t alloc_size, bool outside_tlab, Thread* thread);
+};
+
+#endif // SHARE_JFR_SUPPORT_JFROBJECTALLOCATIONSAMPLE_HPP

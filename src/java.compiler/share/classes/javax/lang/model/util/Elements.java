@@ -354,7 +354,7 @@ public interface Elements {
      * @param c the construct the annotation mirror modifies
      * @param a the annotation mirror being examined
      * @jls 9.6.3 Repeatable Annotation Types
-     * @jls 9.7.5 Multiple Annotations of the Same Type
+     * @jls 9.7.5 Multiple Annotations of the Same Interface
      * @since 9
      */
     default Origin getOrigin(AnnotatedConstruct c,
@@ -428,7 +428,7 @@ public interface Elements {
          * @jls 8.8.9 Default Constructor
          * @jls 8.9.3 Enum Members
          * @jls 9.6.3 Repeatable Annotation Types
-         * @jls 9.7.5 Multiple Annotations of the Same Type
+         * @jls 9.7.5 Multiple Annotations of the Same Interface
          */
         MANDATED,
 

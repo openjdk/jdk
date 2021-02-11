@@ -599,6 +599,28 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, Handle h_
     address bcp = method()->bcp_from(vfst.bci());
     JvmtiExport::post_exception_throw(thread, method(), bcp, h_exception());
   }
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI && UseJVMCICompiler) {
+    vframeStream vfst(thread, true);
+    methodHandle method = methodHandle(thread, vfst.method());
+    int bci = vfst.bci();
+    MethodData* trap_mdo = method->method_data();
+    if (trap_mdo != NULL) {
+      // Set exception_seen if the exceptional bytecode is an invoke
+      Bytecode_invoke call = Bytecode_invoke_check(method, bci);
+      if (call.is_valid()) {
+        ResourceMark rm(thread);
+        ProfileData* pdata = trap_mdo->allocate_bci_to_data(bci, NULL);
+        if (pdata != NULL && pdata->is_BitData()) {
+          BitData* bit_data = (BitData*) pdata;
+          bit_data->set_exception_seen();
+        }
+      }
+    }
+  }
+#endif
+
   Exceptions::_throw(thread, __FILE__, __LINE__, h_exception);
 }
 

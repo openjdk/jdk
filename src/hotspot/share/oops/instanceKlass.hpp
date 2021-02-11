@@ -473,7 +473,7 @@ class InstanceKlass: public Klass {
   void set_record_components(Array<RecordComponent*>* record_components) {
     _record_components = record_components;
   }
-  bool is_record() const { return _record_components != NULL; }
+  bool is_record() const;
 
   // permitted subclasses
   Array<u2>* permitted_subclasses() const     { return _permitted_subclasses; }

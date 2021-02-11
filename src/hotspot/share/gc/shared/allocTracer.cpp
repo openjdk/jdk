@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/allocTracer.hpp"
-#include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -32,91 +31,18 @@
 #include "jfr/support/jfrAllocationTracer.hpp"
 #endif
 
-static THREAD_LOCAL int64_t _last_allocated_bytes = 0;
-
-inline void send_allocation_sample(const Klass* klass, int64_t allocated_bytes) {
-  assert(allocated_bytes > 0, "invariant");
-  EventObjectAllocationSample event;
-  if (event.should_commit()) {
-    const size_t weight = allocated_bytes - _last_allocated_bytes;
-    assert(weight > 0, "invariant");
-    event.set_objectClass(klass);
-    event.set_weight(weight);
-    event.commit();
-    _last_allocated_bytes = allocated_bytes;
-  }
-}
-
-inline bool send_allocation_sample_with_result(const Klass* klass, int64_t allocated_bytes) {
-  assert(allocated_bytes > 0, "invariant");
-  EventObjectAllocationSample event;
-  if (event.should_commit()) {
-    const size_t weight = allocated_bytes - _last_allocated_bytes;
-    assert(weight > 0, "invariant");
-    event.set_objectClass(klass);
-    event.set_weight(weight);
-    event.commit();
-    _last_allocated_bytes = allocated_bytes;
-    return true;
-  }
-  return false;
-}
-
-inline intptr_t estimate_tlab_size_bytes(Thread* thread) {
-  assert(thread != NULL, "invariant");
-  const size_t desired_tlab_size_bytes = thread->tlab().desired_size() * HeapWordSize;
-  const size_t alignment_reserve_bytes = thread->tlab().alignment_reserve_in_bytes();
-  assert(desired_tlab_size_bytes > alignment_reserve_bytes, "invariant");
-  return static_cast<intptr_t>(desired_tlab_size_bytes - alignment_reserve_bytes);
-}
-
-inline int64_t load_allocated_bytes(Thread* thread) {
-  const int64_t allocated_bytes = thread->allocated_bytes();
-  if (allocated_bytes < _last_allocated_bytes) {
-    // A hw thread can detach and reattach to the VM, and when it does,
-    // it gets a new JavaThread representation. The thread local variable
-    // tracking _last_allocated_bytes is mapped to the existing hw thread,
-    // so it needs to be reset.
-    _last_allocated_bytes = 0;
-  }
-  return allocated_bytes == _last_allocated_bytes ? 0 : allocated_bytes;
-}
-
-// To avoid large objects from being undersampled compared to the regular TLAB samples,
-// the data amount is normalized as if it was a TLAB, giving a number of TLAB sampling attempts to the large object.
-static void normalize_as_tlab_and_send_allocation_samples(Klass* klass, intptr_t obj_alloc_size_bytes, Thread* thread) {
-  const int64_t allocated_bytes = load_allocated_bytes(thread);
-  assert(allocated_bytes > 0, "invariant"); // obj_alloc_size_bytes is already attributed to allocated_bytes at this point.
-  if (!UseTLAB) {
-    send_allocation_sample(klass, allocated_bytes);
-    return;
-  }
-  const intptr_t tlab_size_bytes = estimate_tlab_size_bytes(thread);
-  if (allocated_bytes - _last_allocated_bytes < tlab_size_bytes) {
-    return;
-  }
-  assert(obj_alloc_size_bytes > 0, "invariant");
-  do {
-    if (send_allocation_sample_with_result(klass, allocated_bytes)) {
-      return;
-    }
-    obj_alloc_size_bytes -= tlab_size_bytes;
-  } while (obj_alloc_size_bytes > 0);
-}
-
 void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, Thread* thread) {
-  JFR_ONLY(JfrAllocationTracer tracer(obj, alloc_size, thread);)
+  JFR_ONLY(JfrAllocationTracer tracer(klass, obj, alloc_size, true, thread);)
   EventObjectAllocationOutsideTLAB event;
   if (event.should_commit()) {
     event.set_objectClass(klass);
     event.set_allocationSize(alloc_size);
     event.commit();
   }
-  normalize_as_tlab_and_send_allocation_samples(klass, static_cast<intptr_t>(alloc_size), thread);
 }
 
 void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, Thread* thread) {
-  JFR_ONLY(JfrAllocationTracer tracer(obj, alloc_size, thread);)
+  JFR_ONLY(JfrAllocationTracer tracer(klass, obj, alloc_size, false, thread);)
   EventObjectAllocationInNewTLAB event;
   if (event.should_commit()) {
     event.set_objectClass(klass);
@@ -124,11 +50,6 @@ void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_
     event.set_tlabSize(tlab_size);
     event.commit();
   }
-  const int64_t allocated_bytes = load_allocated_bytes(thread);
-  if (allocated_bytes == 0) {
-    return;
-  }
-  send_allocation_sample(klass, allocated_bytes);
 }
 
 void AllocTracer::send_allocation_requiring_gc_event(size_t size, uint gcId) {

@@ -395,6 +395,8 @@ private:
   intx _arg_stack;    // bit set of stack-allocatable arguments
   intx _arg_returned; // bit set of returned arguments
 
+  int _creation_mileage; // method mileage at MDO creation
+
   // Maturity of the oop when the snapshot is taken.
   int _current_mileage;
 
@@ -475,7 +477,7 @@ public:
   bool is_empty()  { return _state == empty_state; }
   bool is_mature() { return _state == mature_state; }
 
-  int creation_mileage() { return _orig.creation_mileage(); }
+  int creation_mileage() { return _creation_mileage; }
   int current_mileage()  { return _current_mileage; }
 
   int invocation_count() { return _invocation_counter; }

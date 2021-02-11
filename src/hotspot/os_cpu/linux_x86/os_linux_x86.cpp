@@ -221,11 +221,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-    if (StubRoutines::is_safefetch_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
-
 #ifndef AMD64
     // Halt if SI_KERNEL before more crashes get misdiagnosed as Java bugs
     // This can happen in any running code (currently more frequently in

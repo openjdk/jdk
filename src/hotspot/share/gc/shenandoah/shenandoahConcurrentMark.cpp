@@ -52,7 +52,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-template<GenerationMode GENERATION, UpdateRefsMode UPDATE_REFS>
+template<GenerationMode GENERATION>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
@@ -61,7 +61,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahConcurrentMark::mark_through_ref<T, GENERATION, UPDATE_REFS, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
+    ShenandoahConcurrentMark::mark_through_ref<T, GENERATION, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
   }
 
 public:
@@ -82,7 +82,6 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
   _weak(false)
 { }
 
-template<UpdateRefsMode UPDATE_REFS>
 class ShenandoahInitMarkRootsTask : public AbstractGangTask {
 private:
   ShenandoahConcurrentMark* const _scm;
@@ -109,7 +108,7 @@ public:
 
     switch (_scm->generation_mode()) {
       case YOUNG: {
-        ShenandoahInitMarkRootsClosure<YOUNG, UPDATE_REFS> mark_cl(q);
+        ShenandoahInitMarkRootsClosure<YOUNG> mark_cl(q);
 
         // Do the remembered set scanning before the root scanning as the current implementation of remembered set scanning
         // does not do workload balancing.  If certain worker threads end up with disproportionate amounts of remembered set
@@ -131,7 +130,7 @@ public:
             //   beyond region->top() should not be scanned as that memory does not hold valid objects.
             HeapWord *end_of_range = region->top();
             uint32_t stop_cluster_no  = rs->cluster_for_addr(end_of_range);
-            rs->process_clusters<ShenandoahInitMarkRootsClosure<YOUNG, UPDATE_REFS>>(worker_id, rp, _scm, start_cluster_no,
+            rs->process_clusters<ShenandoahInitMarkRootsClosure<YOUNG>>(worker_id, rp, _scm, start_cluster_no,
                                                                                      stop_cluster_no + 1 - start_cluster_no,
                                                                                      end_of_range, &mark_cl);
           }
@@ -140,7 +139,7 @@ public:
         break;
       }
       case GLOBAL: {
-        ShenandoahInitMarkRootsClosure<GLOBAL, UPDATE_REFS> mark_cl(q);
+        ShenandoahInitMarkRootsClosure<GLOBAL> mark_cl(q);
         do_work(heap, &mark_cl, worker_id);
         break;
       }
@@ -350,12 +349,12 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
   task_queues()->reserve(nworkers);
 
   if (heap->has_forwarded_objects()) {
-    ShenandoahInitMarkRootsTask<RESOLVE> mark_roots(this, &root_proc, nworkers);
+    ShenandoahInitMarkRootsTask mark_roots(this, &root_proc, nworkers);
     workers->run_task(&mark_roots);
   } else {
     // No need to update references, which means the heap is stable.
     // Can save time not walking through forwarding pointers.
-    ShenandoahInitMarkRootsTask<NONE> mark_roots(this, &root_proc, nworkers);
+    ShenandoahInitMarkRootsTask mark_roots(this, &root_proc, nworkers);
     workers->run_task(&mark_roots);
   }
 }
@@ -531,23 +530,13 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
       ShenandoahGCPhase gc_phase(phase);
       switch (generation_mode()) {
          case YOUNG: {
-           if (_heap->has_forwarded_objects()) {
-             ShenandoahProcessConcurrentRootsTask<ShenandoahMarkResolveRefsClosure<YOUNG>> task(this, phase, nworkers);
-             _heap->workers()->run_task(&task);
-           } else {
-             ShenandoahProcessConcurrentRootsTask<ShenandoahMarkRefsClosure<YOUNG>> task(this, phase, nworkers);
-             _heap->workers()->run_task(&task);
-           }
+           ShenandoahProcessConcurrentRootsTask<ShenandoahMarkRefsClosure<YOUNG>> task(this, phase, nworkers);
+           _heap->workers()->run_task(&task);
            break;
          }
          case GLOBAL: {
-           if (_heap->has_forwarded_objects()) {
-             ShenandoahProcessConcurrentRootsTask<ShenandoahMarkResolveRefsClosure<GLOBAL>> task(this, phase, nworkers);
-             _heap->workers()->run_task(&task);
-           } else {
-             ShenandoahProcessConcurrentRootsTask<ShenandoahMarkRefsClosure<GLOBAL>> task(this, phase, nworkers);
-             _heap->workers()->run_task(&task);
-           }
+           ShenandoahProcessConcurrentRootsTask<ShenandoahMarkRefsClosure<GLOBAL>> task(this, phase, nworkers);
+           _heap->workers()->run_task(&task);
            break;
          }
          default: {

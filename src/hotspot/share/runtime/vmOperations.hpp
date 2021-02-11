@@ -277,13 +277,6 @@ class VM_ZombieAll: public VM_Operation {
 };
 #endif // PRODUCT
 
-class VM_Verify: public VM_Operation {
- public:
-  VMOp_Type type() const { return VMOp_Verify; }
-  void doit();
-};
-
-
 class VM_PrintThreads: public VM_Operation {
  private:
   outputStream* _out;

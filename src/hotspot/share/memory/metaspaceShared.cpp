@@ -37,6 +37,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -577,7 +578,7 @@ void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread
   }
 }
 
-class VM_PopulateDumpSharedSpace: public VM_Operation {
+class VM_PopulateDumpSharedSpace : public VM_GC_Operation {
 private:
   GrowableArray<MemRegion> *_closed_archive_heap_regions;
   GrowableArray<MemRegion> *_open_archive_heap_regions;
@@ -601,6 +602,12 @@ private:
   void relocate_to_requested_base_address(CHeapBitMap* ptrmap);
 
 public:
+
+  VM_PopulateDumpSharedSpace() : VM_GC_Operation(0, /* total collections, ignored */
+                                                 GCCause::_archive_time_gc)
+  { }
+
+  bool skip_operation() const { return false; }
 
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit();   // outline because gdb sucks
@@ -1085,8 +1092,6 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
 #endif
 
     VM_PopulateDumpSharedSpace op;
-    MutexLocker ml(THREAD, HeapShared::is_heap_object_archiving_allowed() ?
-                   Heap_lock : NULL);     // needed by HeapShared::run_gc()
     VMThread::execute(&op);
   }
 }

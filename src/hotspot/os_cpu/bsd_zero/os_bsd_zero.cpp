@@ -57,10 +57,6 @@
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
-// See stubGenerator_zero.cpp
-#include <setjmp.h>
-extern sigjmp_buf* get_jmp_buf_for_continuation();
-
 address os::current_stack_pointer() {
   address dummy = (address) &dummy;
   return dummy;
@@ -117,14 +113,6 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-
-  // handle SafeFetch faults the zero way
-  if (sig == SIGSEGV || sig == SIGBUS) {
-    sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
-    if (pjb) {
-      siglongjmp(*pjb, 1);
-    }
-  }
 
   if (info != NULL && thread != NULL) {
     // Handle ALL stack overflow variations here

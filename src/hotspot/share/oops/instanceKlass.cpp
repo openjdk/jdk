@@ -739,6 +739,12 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
 }
 
+bool InstanceKlass::is_record() const {
+  return _record_components != NULL &&
+         is_final() &&
+         java_super() == SystemDictionary::Record_klass();
+}
+
 bool InstanceKlass::is_sealed() const {
   return _permitted_subclasses != NULL &&
          _permitted_subclasses != Universe::the_empty_short_array();
