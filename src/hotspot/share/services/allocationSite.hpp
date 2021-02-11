@@ -30,29 +30,34 @@
 
 // Allocation site represents a code path that makes a memory
 // allocation
-template <class E> class AllocationSite {
+class AllocationSite {
  private:
-  NativeCallStack  _call_stack;
-  E                e;
-  MEMFLAGS         _flag;
+  const NativeCallStack  _call_stack;
+  const MEMFLAGS         _flag;
  public:
   AllocationSite(const NativeCallStack& stack, MEMFLAGS flag) : _call_stack(stack), _flag(flag) { }
   int hash() const { return _call_stack.hash(); }
-  bool equals(const NativeCallStack& stack) const {
-    return _call_stack.equals(stack);
+
+  bool equals(const NativeCallStack& stack, MEMFLAGS flag) const {
+    bool samestack = _call_stack.equals(stack);
+    // Note: in theory, if two callstacks end with the same lowest frame, they should always
+    // reference the same single allocation call site and therefore share the same MEMFLAGS
+    // value.
+    // But if the call stack capturing was not precise enough (eg skipping too many
+    // frames at the low end) we could accidentally lump several allocation sites together,
+    // potentially with different flags. Lets assert that.
+    assert(!samestack || _flag == flag,
+           "same stack different flags (%d vs %d)?", (int)_flag, (int)flag);
+    return samestack;
   }
 
-  bool equals(const AllocationSite<E>& other) const {
-    return other.equals(_call_stack);
+  bool equals(const AllocationSite& other) const {
+    return equals(other._call_stack, other._flag);
   }
 
   const NativeCallStack* call_stack() const {
     return &_call_stack;
   }
-
-  // Information regarding this allocation
-  E* data()             { return &e; }
-  const E* peek() const { return &e; }
 
   MEMFLAGS flag() const { return _flag; }
 };
