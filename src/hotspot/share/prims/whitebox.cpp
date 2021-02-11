@@ -257,13 +257,11 @@ WB_END
 #ifndef PRODUCT
 // Forward declaration
 void TestReserveMemorySpecial_test();
-void TestVirtualSpace_test();
 #endif
 
 WB_ENTRY(void, WB_RunMemoryUnitTests(JNIEnv* env, jobject o))
 #ifndef PRODUCT
   TestReserveMemorySpecial_test();
-  TestVirtualSpace_test();
 #endif
 WB_END
 
