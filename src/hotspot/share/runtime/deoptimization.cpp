@@ -2465,6 +2465,7 @@ Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, j
     // This enters VM and may safepoint
     uncommon_trap_inner(thread, trap_request);
   }
+  HandleMark hm(thread);
   return fetch_unroll_info_helper(thread, exec_mode);
 }
 
