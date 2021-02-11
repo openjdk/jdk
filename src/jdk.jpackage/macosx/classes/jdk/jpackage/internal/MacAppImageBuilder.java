@@ -104,7 +104,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static final BundlerParamInfo<String> APP_CATEGORY =
             new StandardBundlerParam<>(
-                    Arguments.CLIOptions.MAC_APP_CATEGORY.getId(),
+                    Arguments.CLIOptions.MAC_CATEGORY.getId(),
                     String.class,
                     params -> "utilities",
                     (s, p) -> s);
