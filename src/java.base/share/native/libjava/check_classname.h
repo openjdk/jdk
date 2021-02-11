@@ -28,7 +28,5 @@
 /*
  * Class name checking methods
  */
-
-jboolean verifyClassname(char *name, jboolean allowArrayClass);
-jboolean verifyFixClassname(char *name);
+jboolean verifyFixClassname(char *name, jboolean allowArrayClass);
 void fixClassname(char *name);

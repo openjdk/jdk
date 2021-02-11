@@ -38,10 +38,6 @@
 #include "check_classname.h"
 #include "java_lang_Class.h"
 
-/* defined in libverify.so/verify.dll (src file common/check_format.c) */
-extern jboolean VerifyClassname(char *utf_name, jboolean arrayAllowed);
-extern jboolean VerifyFixClassname(char *utf_name);
-
 #define OBJ "Ljava/lang/Object;"
 #define CLS "Ljava/lang/Class;"
 #define CPL "Ljdk/internal/reflect/ConstantPool;"
@@ -128,14 +124,10 @@ Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
     }
     (*env)->GetStringUTFRegion(env, classname, 0, unicode_len, clname);
 
-    if (verifyFixClassname(clname) == JNI_TRUE) {
-        /* slashes present in clname, use name b4 translation for exception */
+    if (!verifyFixClassname(clname, JNI_TRUE)) {
+        // invalid UTF-8 or slashes present in clname,
+        // use name before translation for exception
         (*env)->GetStringUTFRegion(env, classname, 0, unicode_len, clname);
-        JNU_ThrowClassNotFoundException(env, clname);
-        goto done;
-    }
-
-    if (!verifyClassname(clname, JNI_TRUE)) {  /* expects slashed name */
         JNU_ThrowClassNotFoundException(env, clname);
         goto done;
     }

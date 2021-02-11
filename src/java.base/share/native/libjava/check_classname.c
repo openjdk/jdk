@@ -224,18 +224,29 @@ skip_over_field_signature(char *name, jboolean void_okay,
     return 0;
 }
 
-/* Determine if the specified name is legal
+/* Translates '.' to '/', then determines if the specified name is a legal
  * UTF name for a classname.
  *
- * Note that this routine expects the internal form of qualified classes:
- * the dots should have been replaced by slashes.
+ * Returns JNI_FALSE if any / were present before translation,
  */
-jboolean verifyClassname(char *name, jboolean allowArrayClass)
+jboolean verifyFixClassname(char *name, jboolean allowArrayClass)
 {
+    char *p = name;
+    jboolean slashesFound = JNI_FALSE;
+    int valid = 1;
+
     size_t s = strlen(name);
     assert(s <= UINT_MAX);
     unsigned int length = (unsigned int)s;
-    char *p;
+
+    // check for slashes, converting any '.'s to '/'
+    for (unsigned int i = 0; i < length; i++) {
+        if (p[i] == '/') {
+            return JNI_FALSE;
+        } else if (p[i] == '.') {
+            p[i] = '/';
+        }
+    }
 
     if (length > 0 && name[0] == JVM_SIGNATURE_ARRAY) {
         if (!allowArrayClass) {
@@ -249,29 +260,6 @@ jboolean verifyClassname(char *name, jboolean allowArrayClass)
         p = skip_over_fieldname(name, JNI_TRUE, length);
     }
     return (p != 0 && p - name == (ptrdiff_t)length);
-}
-
-/*
- * Translates '.' to '/'.  Returns JNI_TRUE if any / were present.
- */
-jboolean verifyFixClassname(char *name)
-{
-    char *p = name;
-    jboolean slashesFound = JNI_FALSE;
-    int valid = 1;
-
-    while (valid != 0 && *p != '\0') {
-        if (*p == '/') {
-            slashesFound = JNI_TRUE;
-            p++;
-        } else if (*p == '.') {
-            *p++ = '/';
-        } else {
-            next_utf2unicode(&p, &valid);
-        }
-    }
-
-    return slashesFound && valid != 0;
 }
 
 /*

@@ -80,7 +80,7 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
                                         jstring source)
 {
     jbyte *body;
-    char *utfName;
+    char *utfName = NULL;
     jclass result = 0;
     char buf[128];
     char* utfSource;
@@ -109,12 +109,12 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
     (*env)->GetByteArrayRegion(env, data, offset, length, body);
 
     if ((*env)->ExceptionOccurred(env))
-        goto free_body;
+        goto done;
 
     if (name != NULL) {
         utfName = getUTF(env, name, buf, sizeof(buf));
         if (utfName == NULL) {
-            goto free_body;
+            goto done;
         }
         fixClassname(utfName);
     } else {
@@ -124,21 +124,20 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
     if (source != NULL) {
         utfSource = getUTF(env, source, sourceBuf, sizeof(sourceBuf));
         if (utfSource == NULL) {
-            goto free_utfName;
+            goto done;
         }
     } else {
         utfSource = NULL;
     }
     result = JVM_DefineClassWithSource(env, utfName, loader, body, length, pd, utfSource);
 
-    if (utfSource && utfSource != sourceBuf)
+    if (utfSource != sourceBuf)
         free(utfSource);
 
- free_utfName:
-    if (utfName && utfName != buf)
+ done:
+    if (utfName != buf)
         free(utfName);
 
- free_body:
     free(body);
     return result;
 }
@@ -190,18 +189,18 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
         utfSource = getUTF(env, source, sourceBuf, sizeof(sourceBuf));
         if (utfSource == NULL) {
             JNU_ThrowOutOfMemoryError(env, NULL);
-            goto free_utfName;
+            goto done;
         }
     } else {
         utfSource = NULL;
     }
     result = JVM_DefineClassWithSource(env, utfName, loader, body, length, pd, utfSource);
 
-    if (utfSource && utfSource != sourceBuf)
+    if (utfSource != sourceBuf)
         free(utfSource);
 
- free_utfName:
-    if (utfName && utfName != buf)
+ done:
+    if (utfName != buf)
         free(utfName);
 
     return result;
@@ -248,12 +247,12 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
     (*env)->GetByteArrayRegion(env, data, offset, length, body);
 
     if ((*env)->ExceptionOccurred(env))
-        goto free_body;
+        goto done;
 
     if (name != NULL) {
         utfName = getUTF(env, name, buf, sizeof(buf));
         if (utfName == NULL) {
-            goto free_body;
+            goto done;
         }
         fixClassname(utfName);
     } else {
@@ -262,10 +261,10 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
 
     result = JVM_LookupDefineClass(env, lookup, utfName, body, length, pd, initialize, flags, classData);
 
-    if (utfName && utfName != buf)
+    if (utfName != buf)
         free(utfName);
 
- free_body:
+ done:
     free(body);
     return result;
 }
@@ -290,12 +289,8 @@ Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jobject loader,
         JNU_ThrowOutOfMemoryError(env, NULL);
         return NULL;
     }
-    // disallow slashes in input, change '.' to '/'
-    if (verifyFixClassname(clname)) {
-        goto done;
-    }
-    // expect slashed name, disallow array names
-    if (!verifyClassname(clname, JNI_FALSE)) {
+    // disallow array classes and slashes in input, change '.' to '/'
+    if (!verifyFixClassname(clname, JNI_FALSE)) {
         goto done;
     }
 
