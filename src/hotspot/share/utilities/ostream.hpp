@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ class outputStream : public ResourceObj {
    int _width;       // width of the page
    int _position;    // position on the current line
    int _newlines;    // number of '\n' output so far
-   bool _suppress_cr;// suppress all CRs
    julong _precount; // number of chars output, less _position
    TimeStamp _stamp; // for time stamps
    char* _scratch;   // internal scratch buffer for printf
@@ -89,11 +88,9 @@ class outputStream : public ResourceObj {
    int width()    const { return _width;    }
    int position() const { return _position; }
    int newlines() const { return _newlines; }
-   bool is_suppress_cr() const { return _suppress_cr; }
    julong count() const { return _precount + _position; }
    void set_count(julong count) { _precount = count - _position; }
    void set_position(int pos)   { _position = pos; }
-   void set_suppress_cr(bool suppress) { _suppress_cr = suppress; }
 
    // printing
    void print(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);

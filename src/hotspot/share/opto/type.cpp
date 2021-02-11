@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4037,20 +4037,15 @@ int TypeInstPtr::hash(void) const {
 // Dump oop Type
 #ifndef PRODUCT
 void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
-
-  if (_ptr == Constant && (WizardMode || Verbose)) {
-    bool saved = st->is_suppress_cr();
-    st->set_suppress_cr(true);
-    const_oop()->print_oop(st);
-    st->set_suppress_cr(saved);
-  }
-  else {
-    // Print the name of the klass.
-    klass()->print_name_on(st);
-  }
+  // Print the name of the klass.
+  klass()->print_name_on(st);
 
   switch( _ptr ) {
-  case Constant: /* fall-through */
+  case Constant:
+    // TO DO: Make CI print the hex address of the underlying oop.
+    if (WizardMode || Verbose) {
+      const_oop()->print_oop(st);
+    }
   case BotPTR:
     if (!WizardMode && !Verbose) {
       if( _klass_is_exact ) st->print(":exact");
