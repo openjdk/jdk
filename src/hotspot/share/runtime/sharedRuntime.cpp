@@ -45,7 +45,6 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.hpp"
