@@ -126,20 +126,20 @@ public class BodyInheritedFontSize {
         final View boxView = rootView.getView(0);
         final View bodyView = boxView.getView(1);
 
-        int fontSizePrecentage = getViewFontSize(bodyView.getView(0), debugPrint);
+        int fontSizePercentage = getViewFontSize(bodyView.getView(0), debugPrint);
         int fontSizeInherited  = getViewFontSize(bodyView.getView(1), debugPrint);
         int fontSizeExplicit   = getViewFontSize(bodyView.getView(2), debugPrint);
         if (debugPrint) {
             System.out.println("w3cUnits: " + w3cUnits + "\n"
-                    + "Percentage: " + fontSizePrecentage + "\n"
+                    + "Percentage: " + fontSizePercentage + "\n"
                     + "Inherited: " + fontSizeInherited + "\n"
                     + "Explicit: " + fontSizeExplicit + "\n");
         }
         if (fontSizeInherited != fontSizeExplicit
-                || fontSizePrecentage != fontSizeExplicit) {
+                || fontSizePercentage != fontSizeExplicit) {
             throw new RuntimeException("The font size is different with "
                     + (w3cUnits ? "w3cUnits" : "stdUnits") + ": "
-                    + "Percentage: " + fontSizePrecentage + " vs. "
+                    + "Percentage: " + fontSizePercentage + " vs. "
                     + "Inherited: " + fontSizeInherited + " vs. "
                     + "Explicit: " + fontSizeExplicit);
         }
