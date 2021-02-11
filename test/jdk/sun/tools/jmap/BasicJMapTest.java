@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,9 +109,11 @@ public class BasicJMapTest {
         testHisto();
         testHistoLive();
         testHistoAll();
+        testHistoNonParallel();
         testHistoToFile();
         testHistoLiveToFile();
         testHistoAllToFile();
+        testHistoToFileNonParallel();
         testFinalizerInfo();
         testClstats();
         testDump();
@@ -137,47 +139,38 @@ public class BasicJMapTest {
         output.shouldHaveExitValue(0);
     }
 
-    private static void testHistoParallelZero() throws Exception {
-        OutputAnalyzer output = jmap("-histo:parallel=0");
-        output.shouldHaveExitValue(0);
-    }
-
-    private static void testHistoParallel() throws Exception {
-        OutputAnalyzer output = jmap("-histo:parallel=2");
-        output.shouldHaveExitValue(0);
-    }
-
     private static void testHistoNonParallel() throws Exception {
-        OutputAnalyzer output = jmap("-histo:parallel=1");
+        OutputAnalyzer output = jmap("-histo:noparallel");
         output.shouldHaveExitValue(0);
     }
 
     private static void testHistoToFile() throws Exception {
-        histoToFile(false, false, 1);
+        histoToFile(false, false);
     }
 
     private static void testHistoLiveToFile() throws Exception {
-        histoToFile(true, false, 1);
+        histoToFile(true, false);
     }
 
     private static void testHistoAllToFile() throws Exception {
-        histoToFile(false, true, 1);
+        histoToFile(false, true);
     }
 
-    private static void testHistoFileParallelZero() throws Exception {
-        histoToFile(false, false, 0);
+    private static void testHistoToFileNonParallel() throws Exception {
+        histoToFile(false, false, true);
     }
 
-    private static void testHistoFileParallel() throws Exception {
-        histoToFile(false, false, 2);
+    private static void histoToFile(boolean live,
+                                    boolean explicitAll) throws Exception {
+        histoToFile(live, explicitAll, false);
     }
 
     private static void histoToFile(boolean live,
                                     boolean explicitAll,
-                                    int parallelThreadNum) throws Exception {
+                                    boolean noParallel) throws Exception {
         String liveArg = "";
         String fileArg = "";
-        String parArg = "parallel=" + parallelThreadNum;
+        String parArg = "";
         String allArgs = "-histo:";
 
         if (live && explicitAll) {
@@ -188,6 +181,9 @@ public class BasicJMapTest {
         }
         if (explicitAll) {
             liveArg = "all,";
+        }
+        if (noParallel) {
+            parArg="noparallel";
         }
 
         File file = new File("jmap.histo.file" + System.currentTimeMillis() + ".histo");

@@ -628,6 +628,7 @@ void HeapInspection::heap_inspection(outputStream* st, uint parallel_thread_num)
 
     histo.sort();
     histo.print_histo_on(st);
+    st->print_cr("Create histogram with %u threads", parallel_thread_num);
   } else {
     st->print_cr("ERROR: Ran out of C-heap; histogram not generated");
   }

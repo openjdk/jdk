@@ -261,7 +261,7 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
 // Input arguments :-
 //   arg0: "-live" or "-all"
 //   arg1: Name of the dump file or NULL
-//   arg2: parallel thread number
+//   arg2: Parallel "true" or "false"
 static jint heap_inspection(AttachOperation* op, outputStream* out) {
   bool live_objects_only = true;   // default is true to retain the behavior before this change is made
   outputStream* os = out;   // if path not specified or path is NULL, use out
@@ -286,14 +286,9 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
     os = fs;
   }
 
-  const char* num_str = op->arg(2);
-  if (num_str != NULL && num_str[0] != '\0') {
-    uintx num;
-    if (!Arguments::parse_uintx(num_str, &num, 0)) {
-      out->print_cr("Invalid parallel thread number: [%s]", num_str);
-      return JNI_ERR;
-    }
-    parallel_thread_num = num == 0 ? parallel_thread_num : (uint)num;
+  const char* parallel = op->arg(2);
+  if (strcmp(parallel, "false") == 0) {
+    parallel_thread_num = 1;
   }
 
   VM_GC_HeapInspection heapop(os, live_objects_only /* request full gc */, parallel_thread_num);
