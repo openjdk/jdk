@@ -286,13 +286,10 @@ class MemTracker : AllStatic {
     return NMTQuery_lock;
   }
 
-  // Make a final report or report for hs_err file.
-  static void error_report(outputStream* output) {
-    if (tracking_level() >= NMT_summary) {
-      report(true, output);  // just print summary for error case.
-    }
-   }
+  // Report during error reporting.
+  static void error_report(outputStream* output);
 
+  // Report when handling PrintNMTStatistics before VM shutdown.
   static void final_report(outputStream* output);
 
   // Stored baseline
@@ -308,7 +305,7 @@ class MemTracker : AllStatic {
 
  private:
   static NMT_TrackingLevel init_tracking_level();
-  static void report(bool summary_only, outputStream* output);
+  static void report(bool summary_only, outputStream* output, size_t scale);
 
  private:
   // Tracking level
