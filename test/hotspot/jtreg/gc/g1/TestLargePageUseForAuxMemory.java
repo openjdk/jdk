@@ -49,16 +49,31 @@ public class TestLargePageUseForAuxMemory {
     static long smallPageSize;
     static long allocGranularity;
 
-    static boolean checkLargePagesEnabled(OutputAnalyzer output) {
+    static boolean largePagesEnabled(OutputAnalyzer output) {
+        // The gc+init logging includes information about large pages.
         String lp = output.firstMatch("Large Page Support: (\\w*)", 1);
         return lp != null && lp.equals("Enabled");
     }
 
-    static void checkSize(OutputAnalyzer output, long expectedSize, String pattern) {
-        // First check if there is a large page failure associated with
-        // the data structure being checked.
+    static boolean largePagesAllocationFailure(OutputAnalyzer output, String pattern) {
+        // Check if there is a large page failure associated with the data  structure
+        // being checked. In case of a large page allocation failure the output will
+        // include logs like this for the affected data structure:
+        // [0.048s][debug][gc,heap,coops] Reserve regular memory without large pages
+        // [0.048s][info ][pagesize     ] Next Bitmap: ... page_size=4K ...
+        //
+        // The pattern passed in should match the second line.
         String failureMatch = output.firstMatch("Reserve regular memory without large pages\\n.*" + pattern, 1);
         if (failureMatch != null) {
+            return true;
+        }
+        return false;
+    }
+
+    static void checkSize(OutputAnalyzer output, long expectedSize, String pattern) {
+        // First check the output for any large page allocation failure associated with
+        // the checked data structure. If we detect a failure then expect small pages.
+        if (largePagesAllocationFailure(output, pattern)) {
             // This should only happen when we are expecting large pages
             if (expectedSize == smallPageSize) {
                 throw new RuntimeException("Expected small page size when large page failure was detected");
@@ -105,9 +120,8 @@ public class TestLargePageUseForAuxMemory {
                                                    "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        // Only expect large page size if no large page allocation failures
-        // are present in the log.
-        if (checkLargePagesEnabled(output)) {
+        // Only expect large page size if large pages are enabled.
+        if (largePagesEnabled(output)) {
             checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
             checkBitmaps(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
         } else {
