@@ -47,12 +47,14 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
  * This is a factory class for generating multiple random number generators
- * of a specific algorithm. {@link RandomGeneratorFactory} also provides
+ * of a specific <a href="package-summary.html#algorithms">algorithm</a>.
+ * {@link RandomGeneratorFactory} also provides
  * methods for selecting random number generator algorithms.
  *
  * A specific {@link RandomGeneratorFactory} can be located by using the
  * {@link RandomGenerator#factoryOf(String)} method, where the argument string
- * is the name of the algorithm required. The method
+ * is the name of the <a href="package-summary.html#algorithms">algorithm</a>
+ * required. The method
  * {@link RandomGenerator#all()} produces a {@link Stream} of all available
  * {@link RandomGenerator RandomGenerators} that can be searched to locate a
  * {@link RandomGeneratorFactory} suitable to the task.
@@ -78,7 +80,8 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * }</pre>
  *
  * RandomGeneratorFactory also provides methods describing the attributes (or properties)
- * of a generator and can be used to select random number generator algorithms.
+ * of a generator and can be used to select random number generator
+ * <a href="package-summary.html#algorithms">algorithms</a>.
  * These methods are typically used in
  * conjunction with {@link RandomGenerator#all()}. In this example, the code locates the
  * {@link RandomGeneratorFactory} that produces {@link RandomGenerator RandomGenerators}
@@ -247,7 +250,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Returns a {@link RandomGenerator} that utilizes the {@code name} algorithm.
+     * Returns a {@link RandomGenerator} that utilizes the {@code name}
+     * <a href="package-summary.html#algorithms">algorithm</a>.
      *
      * @param name      Name of random number algorithm to use
      * @param category  Sub-interface of {@link RandomGenerator} to type check
@@ -343,12 +347,14 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
 
     /**
      * Returns a {@link RandomGeneratorFactory} that can produce instances of
-     * {@link RandomGenerator} that utilize the {@code name} algorithm.
+     * {@link RandomGenerator} that utilize the {@code name}
+     * <a href="package-summary.html#algorithms">algorithm</a>.
      *
      * @implNote Availability is determined by RandomGeneratorFactory using the
      * service provider API to locate implementations of the RandomGenerator interface.
      *
-     * @param name  Name of random number generator algorithm
+     * @param name  Name of random number generator
+     * <a href="package-summary.html#algorithms">algorithm</a>
      *
      * @return {@link RandomGeneratorFactory} of {@link RandomGenerator}
      *
@@ -387,27 +393,31 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Return the name of the algorithm used by the random number generator.
+     * Return the name of the <a href="package-summary.html#algorithms">algorithm</a>
+     * used by the random number generator.
      *
-     * @return Name of the algorithm.
+     * @return Name of the <a href="package-summary.html#algorithms">algorithm</a>.
      */
     public String name() {
         return provider.type().getSimpleName();
     }
 
     /**
-     * Return the group name of the algorithm used by the random number generator.
+     * Return the group name of the <a href="package-summary.html#algorithms">algorithm</a>
+     * used by the random number generator.
      *
-     * @return Group name of the algorithm.
+     * @return Group name of the <a href="package-summary.html#algorithms">algorithm</a>.
      */
     public String group() {
         return getProperties().group();
     }
 
     /**
-     * Returns number of bits used to maintain state of seed.
+     * Returns number of bits used by the <a href="package-summary.html#algorithms">algorithm</a>
+     * to maintain state of seed.
      *
-     * @return number of bits used to maintain state of seed.
+     * @return number of bits used by the <a href="package-summary.html#algorithms">algorithm</a>
+     *         to maintain state of seed.
      */
     public int stateBits() {
         RandomGeneratorProperties properties = getProperties();
@@ -418,16 +428,17 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Returns the equidistribution of the algorithm.
+     * Returns the equidistribution of the <a href="package-summary.html#algorithms">algorithm</a>.
      *
-     * @return the equidistribution of the algorithm.
+     * @return the equidistribution of the <a href="package-summary.html#algorithms">algorithm</a>.
      */
     public int equidistribution() {
         return getProperties().equidistribution();
     }
 
     /**
-     * Return the period of the algorithm used by the random number generator.
+     * Return the period of the <a href="package-summary.html#algorithms">algorithm</a>
+     * used by the random number generator.
      * Returns BigInteger.ZERO if period is not determinable.
      *
      * @return BigInteger period.
@@ -446,7 +457,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Return true if random generator is computed using an arithmetic algorithm
+     * Return true if random generator is computed using an arithmetic
+     * <a href="package-summary.html#algorithms">algorithm</a>
      * and is statistically deterministic.
      *
      * @return true if random generator is statistical.
@@ -526,7 +538,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Create an instance of {@link RandomGenerator} based on algorithm chosen.
+     * Create an instance of {@link RandomGenerator} based on
+     * <a href="package-summary.html#algorithms">algorithm</a> chosen.
      *
      * @return new in instance of {@link RandomGenerator}.
      *
@@ -542,7 +555,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Create an instance of {@link RandomGenerator} based on algorithm chosen
+     * Create an instance of {@link RandomGenerator} based on
+     * <a href="package-summary.html#algorithms">algorithm</a> chosen
      * providing a starting long seed. If long seed is not supported by an
      * algorithm then the no argument form of create is used.
      *
@@ -560,9 +574,11 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Create an instance of {@link RandomGenerator} based on algorithm chosen
+     * Create an instance of {@link RandomGenerator} based on
+     * <a href="package-summary.html#algorithms">algorithm</a> chosen
      * providing a starting byte[] seed. If byte[] seed is not supported by an
-     * algorithm then the no argument form of create is used.
+     * <a href="package-summary.html#algorithms">algorithm</a> then the no
+     * argument form of create is used.
      *
      * @param seed byte array random seed value.
      *

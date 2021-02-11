@@ -190,6 +190,114 @@
  * permutations.)
  *
  *
+ * <h2><a id="algorithms">Random Number Generator Algorithms Available in Java SE</a></h2>
+ *
+ * <table style="padding:0px 20px 0px 0px">
+ * 	<thead>
+ * 	<tr>
+ * 		<th style="text-align:left">Algorithm</th>
+ * 		<th style="text-align:left">Group</th>
+ * 		<th style="text-align:left">Period</th>
+ * 		<th style="text-align:right">StateBits</th>
+ * 		<th style="text-align:right">Equidistribution</th>
+ * 	</tr>
+ * 	</thead>
+ * 	<tbody>
+ * 	<tr>
+ * 		<td style="text-align:left">L128X1024MixRandom</td>
+ * 		<td style="text-align:left">LMX</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(N*64).subtract(BigInteger.ONE).shiftLeft(128)</td>
+ * 		<td style="text-align:right">1152</td>
+ * 		<td style="text-align:right">1</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">L128X128MixRandom</td>
+ * 		<td style="text-align:left">LMX</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(128)</td>
+ * 		<td style="text-align:right">256</td>
+ * 		<td style="text-align:right">1</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">L128X256MixRandom</td>
+ * 		<td style="text-align:left">LMX</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(128)</td>
+ * 		<td style="text-align:right">384</td>
+ * 		<td style="text-align:right">1</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">L32X64StarStarRandom</td>
+ * 		<td style="text-align:left">LMX</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE).shiftLeft(32)</td>
+ * 		<td style="text-align:right">96</td>
+ * 		<td style="text-align:right">1</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">L64X1024MixRandom</td>
+ * 		<td style="text-align:left">LMX</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(N*64).subtract(BigInteger.ONE).shiftLeft(64)</td>
+ * 		<td style="text-align:right">1088</td>
+ * 		<td style="text-align:right">16</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">L64X128MixRandom</td>
+ * 		<td style="text-align:left">LMX</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
+ * 		<td style="text-align:right">192</td>
+ * 		<td style="text-align:right">1</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">L64X128StarStarRandom</td>
+ * 		<td style="text-align:left">LMX</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
+ * 		<td style="text-align:right">192</td>
+ * 		<td style="text-align:right">1</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">L64X256MixRandom</td>
+ * 		<td style="text-align:left">LMX</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(64)</td>
+ * 		<td style="text-align:right">320</td>
+ * 		<td style="text-align:right">4</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">Random</td>
+ * 		<td style="text-align:left">Legacy</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(48)</td>
+ * 		<td style="text-align:right">48</td>
+ * 		<td style="text-align:right">0</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">SplittableRandom</td>
+ * 		<td style="text-align:left">Legacy</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
+ * 		<td style="text-align:right">64</td>
+ * 		<td style="text-align:right">1</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">ThreadLocalRandom</td>
+ * 		<td style="text-align:left">Legacy</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
+ * 		<td style="text-align:right">64</td>
+ * 		<td style="text-align:right">1</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">Xoroshiro128PlusPlus</td>
+ * 		<td style="text-align:left">Xoroshiro</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE)</td>
+ * 		<td style="text-align:right">128</td>
+ * 		<td style="text-align:right">2</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td style="text-align:left">Xoshiro256PlusPlus</td>
+ * 		<td style="text-align:left">Xoshiro</td>
+ * 		<td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE)</td>
+ * 		<td style="text-align:right">256</td>
+ * 		<td style="text-align:right">4</td>
+ * 	</tr>
+ * 	</tbody>
+ * </table>
+ *
+ *
  * <h2>Categories of Random Number Generator Algorithms</h2>
  *
  * Historically, most pseudorandom generator algorithms have been based on some

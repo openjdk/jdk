@@ -107,9 +107,10 @@ import java.util.stream.Stream;
 public interface RandomGenerator {
      /**
      * Returns an instance of {@link RandomGenerator} that utilizes the
-     * {@code name} algorithm.
+     * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
      *
-     * @param name  Name of random number generator algorithm
+     * @param name  Name of random number generator
+     *              <a href="package-summary.html#algorithms">algorithm</a>
      *
      * @return An instance of {@link RandomGenerator}
      *
@@ -124,7 +125,8 @@ public interface RandomGenerator {
 
     /**
      * Returns a {@link RandomGenerator} meeting the minimal requirement
-     * of having an algorithm whose state bits are greater than or equal 64.
+     * of having an <a href="package-summary.html#algorithms">algorithm</a>
+     * whose state bits are greater than or equal 64.
      *
      * @implSpec  Since algorithms will improve over time, there is no
      * guarantee that this method will return the same algorithm over time.
@@ -783,9 +785,10 @@ public interface RandomGenerator {
 
         /**
          * Returns an instance of {@link StreamableGenerator} that utilizes the
-         * {@code name} algorithm.
+         * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
          *
-         * @param name  Name of random number generator algorithm
+         * @param name  Name of random number generator
+         *              <a href="package-summary.html#algorithms">algorithm</a>
          *
          * @return An instance of {@link StreamableGenerator}
          *
@@ -802,7 +805,8 @@ public interface RandomGenerator {
          * Returns an effectively unlimited stream of objects, each of which
          * implements the {@link RandomGenerator} interface. Ideally the
          * generators in the stream will appear to be statistically independent.
-         * The new generators are of the same algorithm as this generator.
+         * The new generators are of the same
+         * <a href="package-summary.html#algorithms">algorithm</a> as this generator.
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
@@ -816,7 +820,8 @@ public interface RandomGenerator {
          * Returns an effectively unlimited stream of objects, each of which
          * implements the {@link RandomGenerator} interface. Ideally the
          * generators in the stream will appear to be statistically independent.
-         * The new generators are of the same algorithm as this generator.
+         * The new generators are of the same
+         * <a href="package-summary.html#algorithms">algorithm</a> as this generator.
          *
          * @param streamSize the number of generators to generate
          *
@@ -875,13 +880,14 @@ public interface RandomGenerator {
 
         /**
          * Returns an instance of {@link SplittableGenerator} that utilizes the
-         * {@code name} algorithm.
+         * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
          *
          * @implNote Availability is determined by RandomGeneratorFactory using the
          * service provider API to locate implementations of the RandomGenerator
          * interface and filtering on the SplittableGenerator interface.
          *
-         * @param name  Name of random number generator algorithm
+         * @param name  Name of random number generator
+         *              <a href="package-summary.html#algorithms">algorithm</a>
          *
          * @return An instance of {@link SplittableGenerator}
          *
@@ -1082,9 +1088,10 @@ public interface RandomGenerator {
 
         /**
          * Returns an instance of {@link JumpableGenerator} that utilizes the
-         * {@code name} algorithm.
+         * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
          *
-         * @param name  Name of random number generator algorithm
+         * @param name  Name of random number generator
+         *              <a href="package-summary.html#algorithms">algorithm</a>
          *
          * @return An instance of {@link JumpableGenerator}
          *
@@ -1266,9 +1273,10 @@ public interface RandomGenerator {
 
         /**
          * Returns an instance of {@link LeapableGenerator} that utilizes the
-         * {@code name} algorithm.
+         * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
          *
-         * @param name  Name of random number generator algorithm
+         * @param name  Name of random number generator
+         *              <a href="package-summary.html#algorithms">algorithm</a>
          *
          * @return An instance of {@link LeapableGenerator}
          *
@@ -1418,9 +1426,10 @@ public interface RandomGenerator {
 
         /**
          * Returns an instance of {@link ArbitrarilyJumpableGenerator} that
-         * utilizes the {@code name} algorithm.
+         * utilizes the {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
          *
-         * @param name  Name of random number generator algorithm
+         * @param name  Name of random number generator
+         *              <a href="package-summary.html#algorithms">algorithm</a>
          *
          * @return An instance of {@link ArbitrarilyJumpableGenerator}
          *
@@ -1450,9 +1459,9 @@ public interface RandomGenerator {
          * @param logDistance the base-2 logarithm of the distance to jump forward within the state
          *                    cycle
          *
-         * @throws IllegalArgumentException if {@code logDistance} is NaN or negative, or if
-         *                                  2<sup>{@code logDistance}</sup> is greater than the period
-         *                                  of this generator
+         * @throws IllegalArgumentException if {@code logDistance} is
+         *                                  2<sup>{@code logDistance}</sup> is
+         *                                  greater than the period of this generator
          */
         void jumpPowerOfTwo(int logDistance);
 
@@ -1462,7 +1471,8 @@ public interface RandomGenerator {
          *
          * @param distance the distance to jump forward within the state cycle
          *
-         * @throws IllegalArgumentException if {@code distance} is NaN, negative, or greater than the
+         * @throws IllegalArgumentException if {@code distance} is not greater than
+         *                                  or equal to 0.0, or is greater than the
          *                                  period of this generator
          */
         void jump(double distance);
@@ -1486,7 +1496,8 @@ public interface RandomGenerator {
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
-         * @throws IllegalArgumentException if {@code distance} is Nan, negative, or greater than the
+         * @throws IllegalArgumentException if {@code distance} is not greater than
+         *                                  or equal to 0.0, or is greater than the
          *                                  period of this generator
          *
          * @implNote This method is implemented to be equivalent to
@@ -1510,7 +1521,8 @@ public interface RandomGenerator {
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero or if
-         *                                  {@code distance} is Nan, negative, or greater than the
+         *                                  {@code distance} is not greater than
+         *                                  or equal to 0.0, or is greater than the
          *                                  period of this generator
          */
         default Stream<ArbitrarilyJumpableGenerator> jumps(long streamSize, double distance) {
@@ -1533,6 +1545,10 @@ public interface RandomGenerator {
          * @param distance a distance to jump forward within the state cycle
          *
          * @return a copy of this generator object before the jump occurred
+         *
+         * @throws IllegalArgumentException if {@code distance} is not greater than
+         *                                  or equal to 0.0, or is greater than the
+         *                                  period of this generator
          */
         default ArbitrarilyJumpableGenerator copyAndJump(double distance) {
             ArbitrarilyJumpableGenerator result = copy();
