@@ -3225,12 +3225,6 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   return strlen(buffer);
 }
 
-#ifndef PRODUCT
-void TestReserveMemorySpecial_test() {
-  // No tests available for this platform
-}
-#endif
-
 bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);
   char *p = &buf[len];

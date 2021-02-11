@@ -2719,12 +2719,6 @@ bool os::supports_map_sync() {
   return false;
 }
 
-#ifndef PRODUCT
-void TestReserveMemorySpecial_test() {
-  // No tests available for this platform
-}
-#endif
-
 bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);
   char *p = &buf[len];
