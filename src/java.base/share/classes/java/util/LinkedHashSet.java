@@ -117,7 +117,7 @@ package java.util;
 
 public class LinkedHashSet<E>
     extends HashSet<E>
-    implements Set<E>, Cloneable, java.io.Serializable {
+    implements OrderedSet<E>, Cloneable, java.io.Serializable {
 
     @java.io.Serial
     private static final long serialVersionUID = -2851667679971038690L;
@@ -192,5 +192,68 @@ public class LinkedHashSet<E>
     @Override
     public Spliterator<E> spliterator() {
         return Spliterators.spliterator(this, Spliterator.DISTINCT | Spliterator.ORDERED);
+    }
+
+    @SuppressWarnings("unchecked")
+    LinkedHashMap<E, Object> map() {
+        return (LinkedHashMap<E, Object>) map;
+    }
+
+    /**
+     * Gets the element at the front of this collection.
+     * @return the retrieved element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    public E getFirst() {
+        return map().keySetOrdered().getFirst();
+    }
+
+    /**
+     * Gets the element at the end of this collection.
+     * @return the retrieved element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    public E getLast() {
+        return map().keySetOrdered().getLast();
+    }
+
+    /**
+     * Removes and returns the first element of this collection.
+     * @return the removed element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    public E removeFirst() {
+        return map().keySetOrdered().removeFirst();
+    }
+
+    /**
+     * Removes and returns the last element of this collection.
+     * @return the removed element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    public E removeLast() {
+        return map().keySetOrdered().removeLast();
+    }
+
+    /**
+     * Returns a reversed-order view of this collection. If the implementation
+     * permits modifications to this view, the modifications "write through"
+     * to the underlying collection. Depending upon the implementation's
+     * concurrent modification policy, changes to the underlying collection
+     * may be visible in this reversed view.
+     * @return a reversed-order view
+     */
+    public OrderedSet<E> reversed() {
+        class ReverseLinkedHashSetView extends AbstractSet<E> implements OrderedSet<E> {
+            public int size()               { return LinkedHashSet.this.size(); }
+            public Iterator<E> iterator()   { return map().keySetOrdered().reversed().iterator(); }
+            public E getFirst()             { return LinkedHashSet.this.getLast(); }
+            public E getLast()              { return LinkedHashSet.this.getFirst(); }
+            public E removeFirst()          { return LinkedHashSet.this.removeLast(); }
+            public E removeLast()           { return LinkedHashSet.this.removeFirst(); }
+            public OrderedSet<E> reversed() { return LinkedHashSet.this; }
+        }
+
+        return new ReverseLinkedHashSetView();
     }
 }

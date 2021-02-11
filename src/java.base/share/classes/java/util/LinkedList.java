@@ -1177,6 +1177,10 @@ public class LinkedList<E>
         return new LLSpliterator<>(this, -1, 0);
     }
 
+    public OrderedCollection<E> reversed() {
+        return reversedList();
+    }
+
     /** A customized variant of Spliterators.IteratorSpliterator */
     static final class LLSpliterator<E> implements Spliterator<E> {
         static final int BATCH_UNIT = 1 << 10;  // batch array size increment

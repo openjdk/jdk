@@ -529,39 +529,66 @@ public class LinkedHashMap<K,V>
      * @return a set view of the keys contained in this map
      */
     public Set<K> keySet() {
+        return keySetOrdered();
+    }
+
+    /**
+     * Returns an {@link OrderedSet} view of the keys contained in this map.
+     * @return a OrderedSet view of the keys contained in this map
+     */
+    public OrderedSet<K> keySetOrdered() {
         Set<K> ks = keySet;
         if (ks == null) {
-            ks = new LinkedKeySet();
+            ks = new LinkedKeySet(false);
             keySet = ks;
         }
-        return ks;
+        return (OrderedSet<K>) ks; // TODO
     }
 
-    @Override
-    final <T> T[] keysToArray(T[] a) {
+    static <K1,V1> Node<K1,V1> nsee(Node<K1,V1> node) {
+        if (node == null)
+            throw new NoSuchElementException();
+        else
+            return node;
+    }
+
+    final <T> T[] keysToArray(T[] a, boolean reversed) {
         Object[] r = a;
         int idx = 0;
-        for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
-            r[idx++] = e.key;
+        if (reversed) {
+            for (LinkedHashMap.Entry<K,V> e = tail; e != null; e = e.before) {
+                r[idx++] = e.key;
+            }
+        } else {
+            for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
+                r[idx++] = e.key;
+            }
         }
         return a;
     }
 
-    @Override
-    final <T> T[] valuesToArray(T[] a) {
+    final <T> T[] valuesToArray(T[] a, boolean reversed) {
         Object[] r = a;
         int idx = 0;
-        for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
-            r[idx++] = e.value;
+        if (reversed) {
+            for (LinkedHashMap.Entry<K,V> e = tail; e != null; e = e.before) {
+                r[idx++] = e.value;
+            }
+        } else {
+            for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
+                r[idx++] = e.value;
+            }
         }
         return a;
     }
 
-    final class LinkedKeySet extends AbstractSet<K> {
+    final class LinkedKeySet extends AbstractSet<K> implements OrderedSet<K> {
+        final boolean reversed;
+        LinkedKeySet(boolean reversed)          { this.reversed = reversed; }
         public final int size()                 { return size; }
         public final void clear()               { LinkedHashMap.this.clear(); }
         public final Iterator<K> iterator() {
-            return new LinkedKeyIterator();
+            return new LinkedKeyIterator(reversed);
         }
         public final boolean contains(Object o) { return containsKey(o); }
         public final boolean remove(Object key) {
@@ -574,21 +601,45 @@ public class LinkedHashMap<K,V>
         }
 
         public Object[] toArray() {
-            return keysToArray(new Object[size]);
+            return keysToArray(new Object[size], reversed);
         }
 
         public <T> T[] toArray(T[] a) {
-            return keysToArray(prepareArray(a));
+            return keysToArray(prepareArray(a), reversed);
         }
 
         public final void forEach(Consumer<? super K> action) {
             if (action == null)
                 throw new NullPointerException();
             int mc = modCount;
-            for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
-                action.accept(e.key);
+            if (reversed) {
+                for (LinkedHashMap.Entry<K,V> e = tail; e != null; e = e.before)
+                    action.accept(e.key);
+            } else {
+                for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
+                    action.accept(e.key);
+            }
             if (modCount != mc)
                 throw new ConcurrentModificationException();
+        }
+        public final K getFirst() { return nsee(reversed ? tail : head).key; }
+        public final K getLast() { return nsee(reversed ? head : tail).key; }
+        public final K removeFirst() {
+            var node = nsee(reversed ? tail : head);
+            removeNode(node.hash, node.key, null, false, false);
+            return node.key;
+        }
+        public final K removeLast() {
+            var node = nsee(reversed ? head : tail);
+            removeNode(node.hash, node.key, null, false, false);
+            return node.key;
+        }
+        public OrderedSet<K> reversed() {
+            if (reversed) {
+                return LinkedHashMap.this.keySetOrdered();
+            } else {
+                return new LinkedKeySet(true);
+            }
         }
     }
 
@@ -611,19 +662,29 @@ public class LinkedHashMap<K,V>
      * @return a view of the values contained in this map
      */
     public Collection<V> values() {
-        Collection<V> vs = values;
-        if (vs == null) {
-            vs = new LinkedValues();
-            values = vs;
-        }
-        return vs;
+        return valuesOrdered();
     }
 
-    final class LinkedValues extends AbstractCollection<V> {
+    /**
+     * Returns an {@link OrderedCollection} view of the values contained in this map.
+     * @return an OrderedCollection view of the values contained in this map
+     */
+    public OrderedCollection<V> valuesOrdered() {
+        Collection<V> vs = values;
+        if (vs == null) {
+            vs = new LinkedValues(false);
+            values = vs;
+        }
+        return (OrderedCollection<V>) vs; // TODO
+    }
+
+    final class LinkedValues extends AbstractCollection<V> implements OrderedCollection<V> {
+        final boolean reversed;
+        LinkedValues(boolean reversed)          { this.reversed = reversed; }
         public final int size()                 { return size; }
         public final void clear()               { LinkedHashMap.this.clear(); }
         public final Iterator<V> iterator() {
-            return new LinkedValueIterator();
+            return new LinkedValueIterator(reversed);
         }
         public final boolean contains(Object o) { return containsValue(o); }
         public final Spliterator<V> spliterator() {
@@ -632,21 +693,47 @@ public class LinkedHashMap<K,V>
         }
 
         public Object[] toArray() {
-            return valuesToArray(new Object[size]);
+            return valuesToArray(new Object[size], reversed);
         }
 
         public <T> T[] toArray(T[] a) {
-            return valuesToArray(prepareArray(a));
+            return valuesToArray(prepareArray(a), reversed);
         }
 
         public final void forEach(Consumer<? super V> action) {
             if (action == null)
                 throw new NullPointerException();
             int mc = modCount;
-            for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
-                action.accept(e.value);
+            if (reversed) {
+                for (LinkedHashMap.Entry<K,V> e = tail; e != null; e = e.before)
+                    action.accept(e.value);
+            } else {
+                for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
+                    action.accept(e.value);
+            }
             if (modCount != mc)
                 throw new ConcurrentModificationException();
+        }
+        public final void addFirst(V v) { throw new UnsupportedOperationException(); }
+        public final void addLast(V v) { throw new UnsupportedOperationException(); }
+        public final V getFirst() { return nsee(reversed ? tail : head).value; }
+        public final V getLast() { return nsee(reversed ? head : tail).value; }
+        public final V removeFirst() {
+            var node = nsee(reversed ? tail : head);
+            removeNode(node.hash, node.key, null, false, false);
+            return node.value;
+        }
+        public final V removeLast() {
+            var node = nsee(reversed ? head : tail);
+            removeNode(node.hash, node.key, null, false, false);
+            return node.value;
+        }
+        public OrderedCollection<V> reversed() {
+            if (reversed) {
+                return LinkedHashMap.this.valuesOrdered();
+            } else {
+                return new LinkedValues(true);
+            }
         }
     }
 
@@ -671,14 +758,30 @@ public class LinkedHashMap<K,V>
      */
     public Set<Map.Entry<K,V>> entrySet() {
         Set<Map.Entry<K,V>> es;
-        return (es = entrySet) == null ? (entrySet = new LinkedEntrySet()) : es;
+        return (es = entrySet) == null ? (entrySet = new LinkedEntrySet(false)) : es;
     }
 
-    final class LinkedEntrySet extends AbstractSet<Map.Entry<K,V>> {
+    /**
+     * Returns an {@link OrderedSet} view of the mappings contained in this map.
+     * @return an OrderedSet view of the mappings contained in this map
+     */
+    public OrderedSet<Map.Entry<K,V>> entrySetOrdered() {
+        Set<Map.Entry<K,V>> es = entrySet;
+        if (es == null) {
+            es = new LinkedEntrySet(false);
+            entrySet = es;
+        }
+        return (OrderedSet<Map.Entry<K,V>>) es;
+    }
+
+    final class LinkedEntrySet extends AbstractSet<Map.Entry<K,V>>
+        implements OrderedSet<Map.Entry<K,V>> {
+        final boolean reversed;
+        LinkedEntrySet(boolean reversed)        { this.reversed = reversed; }
         public final int size()                 { return size; }
         public final void clear()               { LinkedHashMap.this.clear(); }
         public final Iterator<Map.Entry<K,V>> iterator() {
-            return new LinkedEntryIterator();
+            return new LinkedEntryIterator(reversed);
         }
         public final boolean contains(Object o) {
             if (!(o instanceof Map.Entry))
@@ -706,10 +809,40 @@ public class LinkedHashMap<K,V>
             if (action == null)
                 throw new NullPointerException();
             int mc = modCount;
-            for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
-                action.accept(e);
+            if (reversed) {
+                for (LinkedHashMap.Entry<K,V> e = tail; e != null; e = e.before)
+                    action.accept(e);
+            } else {
+                for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
+                    action.accept(e);
+            }
             if (modCount != mc)
                 throw new ConcurrentModificationException();
+        }
+        final Node<K,V> nsee(Node<K,V> e) {
+            if (e == null)
+                throw new NoSuchElementException();
+            else
+                return e;
+        }
+        public final Map.Entry<K,V> getFirst() { return nsee(reversed ? tail : head); }
+        public final Map.Entry<K,V> getLast() { return nsee(reversed ? head : tail); }
+        public final Map.Entry<K,V> removeFirst() {
+            var node = nsee(reversed ? tail : head);
+            removeNode(node.hash, node.key, null, false, false);
+            return node;
+        }
+        public final Map.Entry<K,V> removeLast() {
+            var node = nsee(reversed ? head : tail);
+            removeNode(node.hash, node.key, null, false, false);
+            return node;
+        }
+        public OrderedSet<Map.Entry<K,V>> reversed() {
+            if (reversed) {
+                return LinkedHashMap.this.entrySetOrdered();
+            } else {
+                return new LinkedEntrySet(true);
+            }
         }
     }
 
@@ -741,9 +874,11 @@ public class LinkedHashMap<K,V>
         LinkedHashMap.Entry<K,V> next;
         LinkedHashMap.Entry<K,V> current;
         int expectedModCount;
+        boolean reversed;
 
-        LinkedHashIterator() {
-            next = head;
+        LinkedHashIterator(boolean reversed) {
+            this.reversed = reversed;
+            next = reversed ? tail : head;
             expectedModCount = modCount;
             current = null;
         }
@@ -759,7 +894,7 @@ public class LinkedHashMap<K,V>
             if (e == null)
                 throw new NoSuchElementException();
             current = e;
-            next = e.after;
+            next = reversed ? e.before : e.after;
             return e;
         }
 
@@ -777,16 +912,19 @@ public class LinkedHashMap<K,V>
 
     final class LinkedKeyIterator extends LinkedHashIterator
         implements Iterator<K> {
+        LinkedKeyIterator(boolean reversed) { super(reversed); }
         public final K next() { return nextNode().getKey(); }
     }
 
     final class LinkedValueIterator extends LinkedHashIterator
         implements Iterator<V> {
+        LinkedValueIterator(boolean reversed) { super(reversed); }
         public final V next() { return nextNode().value; }
     }
 
     final class LinkedEntryIterator extends LinkedHashIterator
         implements Iterator<Map.Entry<K,V>> {
+        LinkedEntryIterator(boolean reversed) { super(reversed); }
         public final Map.Entry<K,V> next() { return nextNode(); }
     }
 
