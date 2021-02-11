@@ -1608,6 +1608,8 @@ public:
   void check_long_counted_loop(IdealLoopTree* loop, Node* x) NOT_DEBUG_RETURN;
 
   LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
+
+  bool is_safe_load_ctrl(Node* ctrl);
 };
 
 

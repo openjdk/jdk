@@ -758,12 +758,13 @@ public class ICC_Profile implements Serializable {
 
     /**
      * Constructs an {@code ICC_Profile} object corresponding to the data in a
-     * byte array. Throws an {@code IllegalArgumentException} if the data does
-     * not correspond to a valid ICC Profile.
+     * byte array.
      *
      * @param  data the specified ICC Profile data
      * @return an {@code ICC_Profile} object corresponding to the data in the
      *         specified {@code data} array
+     * @throws IllegalArgumentException If the byte array does not contain valid
+     *         ICC Profile data
      */
     public static ICC_Profile getInstance(byte[] data) {
     ICC_Profile thisProfile;
@@ -927,10 +928,7 @@ public class ICC_Profile implements Serializable {
      *         not permit read access to the given file
      */
     public static ICC_Profile getInstance(String fileName) throws IOException {
-        ICC_Profile thisProfile;
-        InputStream is = null;
-
-
+        InputStream is;
         File f = getProfileFile(fileName);
         if (f != null) {
             is = new FileInputStream(f);
@@ -940,12 +938,9 @@ public class ICC_Profile implements Serializable {
         if (is == null) {
             throw new IOException("Cannot open file " + fileName);
         }
-
-        thisProfile = getInstance(is);
-
-        is.close();    /* close the file */
-
-        return thisProfile;
+        try (is) {
+            return getInstance(is);
+        }
     }
 
     /**
@@ -963,12 +958,7 @@ public class ICC_Profile implements Serializable {
      *         Profile data
      */
     public static ICC_Profile getInstance(InputStream s) throws IOException {
-        byte[] profileData;
-        if ((profileData = getProfileDataFromStream(s)) == null) {
-            throw new IllegalArgumentException("Invalid ICC Profile Data");
-        }
-
-        return getInstance(profileData);
+        return getInstance(getProfileDataFromStream(s));
     }
 
 
@@ -1010,14 +1000,13 @@ public class ICC_Profile implements Serializable {
                 if (is == null) {
                     return;
                 }
-                try {
+                try (is) {
                     byte[] data = getProfileDataFromStream(is);
                     if (data != null) {
                         cmmProfile = CMSManager.getModule().loadProfile(data);
                         // from now we cannot use the deferred value, drop it
                         deferralInfo = null;
                     }
-                    is.close();    /* close the stream */
                 } catch (CMMException | IOException ignore) {
                 }
             }
@@ -1174,14 +1163,9 @@ public class ICC_Profile implements Serializable {
      *         error occurs while writing to the file
      */
     public void write(String fileName) throws IOException {
-    FileOutputStream outputFile;
-    byte[] profileData;
-
-        profileData = getData(); /* this will activate deferred
-                                    profiles if necessary */
-        outputFile = new FileOutputStream(fileName);
-        outputFile.write(profileData);
-        outputFile.close ();
+        try (OutputStream out = new FileOutputStream(fileName)) {
+            write(out);
+        }
     }
 
     /**
@@ -1191,11 +1175,7 @@ public class ICC_Profile implements Serializable {
      * @throws IOException If an I/O error occurs while writing to the stream
      */
     public void write(OutputStream s) throws IOException {
-    byte[] profileData;
-
-        profileData = getData(); /* this will activate deferred
-                                    profiles if necessary */
-        s.write(profileData);
+        s.write(getData());
     }
 
     /**

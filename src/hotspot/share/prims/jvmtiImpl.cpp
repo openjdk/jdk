@@ -45,6 +45,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/signature.hpp"

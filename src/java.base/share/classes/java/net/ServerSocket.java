@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,7 @@ import sun.net.PlatformSocketImpl;
  * based on that request, and then possibly returns a result to the requester.
  * <p>
  * The actual work of the server socket is performed by an instance
- * of the {@code SocketImpl} class. An application can
- * change the socket factory that creates the socket
- * implementation to configure itself to create sockets
- * appropriate to the local firewall.
+ * of the {@code SocketImpl} class.
  *
  * <p> The {@code ServerSocket} class defines convenience
  * methods to set and get several socket options. This class also
@@ -76,7 +73,6 @@ import sun.net.PlatformSocketImpl;
  * Additional (implementation specific) options may also be supported.
  *
  * @see     java.net.SocketImpl
- * @see     java.net.ServerSocket#setSocketFactory(java.net.SocketImplFactory)
  * @see     java.nio.channels.ServerSocketChannel
  * @since   1.0
  */
@@ -164,8 +160,6 @@ public class ServerSocket implements java.io.Closeable {
      *             0 and 65535, inclusive.
      *
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
-     * @see        java.net.ServerSocket#setSocketFactory(java.net.SocketImplFactory)
      * @see        SecurityManager#checkListen
      */
     public ServerSocket(int port) throws IOException {
@@ -217,8 +211,6 @@ public class ServerSocket implements java.io.Closeable {
      *             0 and 65535, inclusive.
      *
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
-     * @see        java.net.ServerSocket#setSocketFactory(java.net.SocketImplFactory)
      * @see        SecurityManager#checkListen
      */
     public ServerSocket(int port, int backlog) throws IOException {
@@ -929,7 +921,17 @@ public class ServerSocket implements java.io.Closeable {
      *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkSetFactory
+     * @deprecated Use a {@link javax.net.ServerSocketFactory} and subclass {@code ServerSocket}
+     *    directly.
+     *    <br> This method provided a way in early JDK releases to replace the
+     *    system wide implementation of {@code ServerSocket}. It has been mostly
+     *    obsolete since Java 1.4. If required, a {@code ServerSocket} can be
+     *    created to use a custom implementation by extending {@code ServerSocket}
+     *    and using the {@linkplain #ServerSocket(SocketImpl) protected
+     *    constructor} that takes an {@linkplain SocketImpl implementation}
+     *    as a parameter.
      */
+    @Deprecated(since = "17")
     public static synchronized void setSocketFactory(SocketImplFactory fac) throws IOException {
         if (factory != null) {
             throw new SocketException("factory already defined");

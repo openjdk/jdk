@@ -155,8 +155,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                                     holder, method,
                                     utils.isIncluded(holder)
                                             ? utils.getSimpleName(holder)
-                                            : utils.getFullyQualifiedName(holder),
-                                    false);
+                                            : utils.getFullyQualifiedName(holder));
                     Content codeLink = HtmlTree.CODE(link);
                     Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel,
                             utils.isClass(holder)
@@ -216,7 +215,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
         Content classLink = writer.getPreQualifiedClassLink(
-                LinkInfoImpl.Kind.MEMBER, typeElement, false);
+                LinkInfoImpl.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = new StringContent(utils.isClass(typeElement)
@@ -331,7 +330,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             dl.add(HtmlTree.DT(contents.specifiedByLabel));
             Content methlink = writer.getDocLink(
                     LinkInfoImpl.Kind.MEMBER, implementedMeth,
-                    implementedMeth.getSimpleName(), false);
+                    implementedMeth.getSimpleName());
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.add(Entity.NO_BREAK_SPACE);

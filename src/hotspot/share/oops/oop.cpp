@@ -143,6 +143,14 @@ bool oopDesc::has_klass_gap() {
   return UseCompressedClassPointers;
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+void oopDesc::set_narrow_klass(narrowKlass nk) {
+  assert(DumpSharedSpaces, "Used by CDS only. Do not abuse!");
+  assert(UseCompressedClassPointers, "must be");
+  _metadata._compressed_klass = nk;
+}
+#endif
+
 void* oopDesc::load_klass_raw(oop obj) {
   if (UseCompressedClassPointers) {
     narrowKlass narrow_klass = obj->_metadata._compressed_klass;

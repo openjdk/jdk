@@ -2195,29 +2195,35 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   int num_found = 0;
   FILE* f = ::fopen("/proc/self/status", "r");
   char buf[256];
-  while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
-    if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
-         (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
-         (vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &vmswap) == 1) ||
-         (vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &vmhwm) == 1) ||
-         (vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &vmrss) == 1) ||
-         (rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &rssanon) == 1) ||
-         (rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &rssfile) == 1) ||
-         (rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &rssshmem) == 1)
-         )
-    {
-      num_found ++;
+  if (f != NULL) {
+    while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
+      if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
+           (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
+           (vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &vmswap) == 1) ||
+           (vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &vmhwm) == 1) ||
+           (vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &vmrss) == 1) ||
+           (rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &rssanon) == 1) ||
+           (rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &rssfile) == 1) ||
+           (rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &rssshmem) == 1)
+           )
+      {
+        num_found ++;
+      }
     }
-  }
-  st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmsize, vmpeak);
-  st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmrss, vmhwm);
-  if (rssanon != -1) { // requires kernel >= 4.5
-    st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
-                rssanon, rssfile, rssshmem);
-  }
-  st->cr();
-  if (vmswap != -1) { // requires kernel >= 2.6.34
-    st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
+    fclose(f);
+
+    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmsize, vmpeak);
+    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmrss, vmhwm);
+    if (rssanon != -1) { // requires kernel >= 4.5
+      st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
+                  rssanon, rssfile, rssshmem);
+    }
+    st->cr();
+    if (vmswap != -1) { // requires kernel >= 2.6.34
+      st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
+    }
+  } else {
+    st->print_cr("Could not open /proc/self/status to get process memory related information");
   }
 
   // Print glibc outstanding allocations.

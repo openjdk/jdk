@@ -477,33 +477,34 @@ void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
 // Load object from cpool->resolved_references(index).
 // Kills:
 //   - index
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Register tmp1,
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index,
+                                                                 Register tmp1, Register tmp2,
                                                                  Label *L_handle_null) {
-  assert_different_registers(result, index);
+  assert_different_registers(result, index, tmp1, tmp2);
+  assert(index->is_nonvolatile(), "needs to survive C-call in resolve_oop_handle");
   get_constant_pool(result);
 
   // Convert from field index to resolved_references() index and from
   // word index to byte offset. Since this is a java object, it can be compressed.
-  Register tmp2 = index;  // reuse
-  sldi(tmp1, index, LogBytesPerHeapOop);
+  sldi(index, index, LogBytesPerHeapOop);
   // Load pointer for resolved_references[] objArray.
   ld(result, ConstantPool::cache_offset_in_bytes(), result);
   ld(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
-  resolve_oop_handle(result);
+  resolve_oop_handle(result, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
 #ifdef ASSERT
   Label index_ok;
   lwa(R0, arrayOopDesc::length_offset_in_bytes(), result);
   sldi(R0, R0, LogBytesPerHeapOop);
-  cmpd(CCR0, tmp1, R0);
+  cmpd(CCR0, index, R0);
   blt(CCR0, index_ok);
   stop("resolved reference index out of bounds");
   bind(index_ok);
 #endif
   // Add in the index.
-  add(result, tmp1, result);
+  add(result, index, result);
   load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result,
                 tmp1, tmp2,
-                MacroAssembler::PRESERVATION_FRAME_LR,
+                MacroAssembler::PRESERVATION_NONE,
                 0, L_handle_null);
 }
 
