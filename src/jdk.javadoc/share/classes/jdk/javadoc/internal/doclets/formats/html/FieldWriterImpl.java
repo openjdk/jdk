@@ -161,7 +161,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
         Content classLink = writer.getPreQualifiedClassLink(
-                LinkInfoImpl.Kind.MEMBER, typeElement, false);
+                LinkInfoImpl.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = new StringContent(utils.isClass(typeElement)
@@ -184,7 +184,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     protected void addSummaryLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element member,
             Content tdSummary) {
         Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                writer.getDocLink(context, typeElement , member, name(member), false));
+                writer.getDocLink(context, typeElement , member, name(member)));
         Content code = HtmlTree.CODE(memberLink);
         tdSummary.add(code);
     }
@@ -192,8 +192,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     protected void addInheritedSummaryLink(TypeElement typeElement, Element member, Content linksTree) {
         linksTree.add(
-                writer.getDocLink(LinkInfoImpl.Kind.MEMBER, typeElement, member,
-                name(member), false));
+                writer.getDocLink(LinkInfoImpl.Kind.MEMBER, typeElement, member, name(member)));
     }
 
     @Override

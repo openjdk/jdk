@@ -109,11 +109,6 @@ public class LinkInfoImpl extends LinkInfo {
         TREE,
 
         /**
-         * Indicate that the link appears in a class list.
-         */
-        PACKAGE_FRAME,
-
-        /**
          * The header in the class documentation.
          */
         CLASS_HEADER,
@@ -246,7 +241,8 @@ public class LinkInfoImpl extends LinkInfo {
      */
     public Element targetMember;
 
-    public  final Utils utils;
+    public final Utils utils;
+
     /**
      * Construct a LinkInfo object.
      *
@@ -362,22 +358,8 @@ public class LinkInfoImpl extends LinkInfo {
      * @param c the context id to set.
      */
     public final void setContext(Kind c) {
-        //NOTE:  Put context specific link code here.
         switch (c) {
-            case PACKAGE_FRAME:
-            case IMPLEMENTED_CLASSES:
-            case SUBCLASSES:
-            case EXECUTABLE_ELEMENT_COPY:
-            case PROPERTY_COPY:
-            case CLASS_USE_HEADER:
-                includeTypeInClassLinkLabel = false;
-                break;
-
             case ANNOTATION:
-                excludeTypeParameterLinks = true;
-                excludeTypeBounds = true;
-                break;
-
             case IMPLEMENTED_INTERFACES:
             case SUPER_INTERFACES:
             case SUBINTERFACES:
@@ -387,8 +369,6 @@ public class LinkInfoImpl extends LinkInfo {
             case PERMITTED_SUBCLASSES:
                 excludeTypeParameterLinks = true;
                 excludeTypeBounds = true;
-                includeTypeInClassLinkLabel = false;
-                includeTypeAsSepLink = true;
                 break;
 
             case PACKAGE:
@@ -397,13 +377,6 @@ public class LinkInfoImpl extends LinkInfo {
             case CLASS_SIGNATURE:
             case RECEIVER_TYPE:
                 excludeTypeParameterLinks = true;
-                includeTypeAsSepLink = true;
-                includeTypeInClassLinkLabel = false;
-                break;
-
-            case MEMBER_TYPE_PARAMS:
-                includeTypeAsSepLink = true;
-                includeTypeInClassLinkLabel = false;
                 break;
 
             case RETURN_TYPE:
@@ -414,11 +387,6 @@ public class LinkInfoImpl extends LinkInfo {
                 break;
         }
         context = c;
-        if (type != null &&
-            utils.isTypeVariable(type) &&
-            utils.isExecutableElement(utils.asTypeElement(type).getEnclosingElement())) {
-                excludeTypeParameterLinks = true;
-        }
     }
 
     /**
@@ -431,6 +399,33 @@ public class LinkInfoImpl extends LinkInfo {
     @Override
     public boolean isLinkable() {
         return configuration.utils.isLinkable(typeElement);
+    }
+
+    @Override
+    public boolean includeTypeParameterLinks() {
+        return switch (context) {
+            case IMPLEMENTED_INTERFACES,
+                 SUPER_INTERFACES,
+                 SUBINTERFACES,
+                 CLASS_TREE_PARENT,
+                 TREE,
+                 CLASS_SIGNATURE_PARENT_NAME,
+                 PERMITTED_SUBCLASSES,
+                 PACKAGE,
+                 CLASS_USE,
+                 CLASS_HEADER,
+                 CLASS_SIGNATURE,
+                 RECEIVER_TYPE,
+                 MEMBER_TYPE_PARAMS -> true;
+
+            case IMPLEMENTED_CLASSES,
+                 SUBCLASSES,
+                 EXECUTABLE_ELEMENT_COPY,
+                 PROPERTY_COPY,
+                 CLASS_USE_HEADER -> false;
+
+            default -> label == null || label.isEmpty();
+        };
     }
 
     @Override
