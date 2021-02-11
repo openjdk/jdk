@@ -155,7 +155,7 @@ public interface Comparator<T> {
      * {@link Object#equals(Object)}.  Additionally, this method can return
      * {@code true} <i>only</i> if the specified object is also a comparator
      * and it imposes the same ordering as this comparator.  Thus,
-     * {@code comp1.equals(comp2)} implies that {@code signum(comp1.compare(o1,
+     * {@code comp1.equals(comp2)} implies that {@link Integer#signum signum}{@code (comp1.compare(o1,
      * o2))==signum(comp2.compare(o1, o2))} for every object reference
      * {@code o1} and {@code o2}.<p>
      *

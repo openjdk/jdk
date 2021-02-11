@@ -107,7 +107,7 @@ public interface Comparable<T> {
      * <p>The implementor must ensure
      * {@link Integer#signum signum}{@code (x.compareTo(y)) == -signum(y.compareTo(x))}
      * for all {@code x} and {@code y}.  (This
-     * implies that {@code x.compareTo(y)} must throw an exception iff
+     * implies that {@code x.compareTo(y)} must throw an exception if and only if
      * {@code y.compareTo(x)} throws an exception.)
      *
      * <p>The implementor must also ensure that the relation is transitive:
