@@ -138,7 +138,10 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             }
         } catch (SSLException ssle) {
             // The server side may have closed the socket.
-            if (!isConnectionReset(ssle)) {
+            if (isConnectionReset(ssle)) {
+                System.out.println("Client SSLException:");
+                ssle.printStackTrace(System.out);
+            } else {
                 failTest(ssle, "Client got UNEXPECTED SSLException:");
             }
 
@@ -149,13 +152,8 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
 
     private boolean isConnectionReset(SSLException ssle) {
         Throwable cause = ssle.getCause();
-        if (cause instanceof SocketException
-                && "Connection reset".equals(cause.getMessage())) {
-            System.out.println("Client SSLException:");
-            ssle.printStackTrace(System.out);
-            return true;
-        }
-        return false;
+        return cause instanceof SocketException
+                && "Connection reset".equals(cause.getMessage());
     }
 
     private void failTest(Exception e, String message) {
