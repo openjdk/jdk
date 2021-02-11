@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,7 +524,7 @@ public:
   // packages returned by get_system_packages().
   // For packages whose classes are loaded from the boot loader class path, the
   // classpath_index indicates which entry on the boot loader class path.
-  void set_classpath_index(s2 path_index, TRAPS);
+  void set_classpath_index(s2 path_index);
   bool is_same_class_package(const Klass* class2) const;
   bool is_same_class_package(oop other_class_loader, const Symbol* other_class_name) const;
 
