@@ -53,6 +53,9 @@ import vm.mlvm.meth.share.transform.v2.MHThrowCatchTFPair;
 import vm.mlvm.meth.share.transform.v2.MHVarargsCollectSpreadTF;
 import vm.mlvm.share.Env;
 
+import sun.hotspot.WhiteBox;
+import sun.hotspot.code.BlobType;
+
 public class MHTransformationGen {
 
     public static final int MAX_CYCLES = 1000;
@@ -62,6 +65,8 @@ public class MHTransformationGen {
     private static final boolean FILTER_OUT_KNOWN_BUGS = false;
 
     private static final boolean USE_THROW_CATCH = false; // Test bugs
+
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     public static class ThrowCatchTestException extends Throwable {
         private static final long serialVersionUID = -6749961303738648241L;
@@ -88,6 +93,12 @@ public class MHTransformationGen {
         List<MHTFPair> pendingPWTFs = new LinkedList<MHTFPair>();
 
         for ( int i = nextInt(MAX_CYCLES); i > 0; i-- ) {
+            if (WHITE_BOX.isCodeCacheEffectivelyFull(BlobType.All.id)) {
+                Env.traceNormal("Not enought code cache to build up MH sequences anymore. " +
+                        " Has only been able to achieve " + (MAX_CYCLES - i) + " out of " + MAX_CYCLES);
+                break;
+            }
+
             MHCall lastCall = graph.computeInboundCall();
             Argument[] lastArgs = lastCall.getArgs();
             MethodType type = lastCall.getTargetMH().type();

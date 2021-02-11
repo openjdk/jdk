@@ -42,10 +42,16 @@
  *          /test/lib
  *
  * @comment build test class and indify classes
+ * @build sun.hotspot.WhiteBox
  * @build vm.mlvm.meth.stress.gc.callSequencesDuringGC.Test
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm vm.mlvm.meth.stress.gc.callSequencesDuringGC.Test -stressIterationsFactor 1000
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
+ *       vm.mlvm.meth.stress.gc.callSequencesDuringGC.Test -stressIterationsFactor 1000
  */
 
 package vm.mlvm.meth.stress.gc.callSequencesDuringGC;

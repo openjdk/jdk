@@ -39,12 +39,17 @@
  *          /test/lib
  *
  * @comment build test class and indify classes
+ * @build sun.hotspot.WhiteBox
  * @build vm.mlvm.meth.stress.compiler.deoptimize.Test
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
  * @requires vm.debug != true
  *
  * @run main/othervm/timeout=300
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
  *      -XX:ReservedCodeCacheSize=100m
  *      vm.mlvm.meth.stress.compiler.deoptimize.Test
  *      -threadsPerCpu 4
@@ -60,12 +65,17 @@
  *          /test/lib
  *
  * @comment build test class and indify classes
+ * @build sun.hotspot.WhiteBox
  * @build vm.mlvm.meth.stress.compiler.deoptimize.Test
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
  * @requires vm.debug == true
  *
  * @run main/othervm/timeout=300
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
  *      -XX:ReservedCodeCacheSize=100m
  *      vm.mlvm.meth.stress.compiler.deoptimize.Test
  *      -threadsPerCpu 2

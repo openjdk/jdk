@@ -40,10 +40,15 @@
  * @build vm.mlvm.share.jdi.MHDebuggee
  *
  * @comment build test class and indify classes
+ * @build sun.hotspot.WhiteBox
  * @build vm.mlvm.meth.stress.jdi.breakpointInCompiledCode.Test
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
  * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
  *      vm.mlvm.meth.stress.jdi.breakpointInCompiledCode.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -52,7 +57,7 @@
  *      -transport.address=dynamic
  *      -debugger.debuggeeClass vm.mlvm.share.jdi.MHDebuggee
  *      -debuggee.iterations 2000
- *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys=" -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  */
 
 package vm.mlvm.meth.stress.jdi.breakpointInCompiledCode;
