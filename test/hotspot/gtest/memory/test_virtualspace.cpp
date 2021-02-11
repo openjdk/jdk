@@ -21,12 +21,13 @@
  * questions.
  */
 
+// TODO: organize headers
 #include "precompiled.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/os.hpp"
 #include "oops/oop.hpp"
-#include "threadHelper.inline.hpp"
 #include "utilities/align.hpp"
+#include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
 namespace {
@@ -654,65 +655,6 @@ class TestVirtualSpace : AllStatic {
 };
 
 
-class TestRunnable {
-public:
-  virtual void runUnitTest() {
-    tty->print_cr("ERROR: Should not be here !!!");
-  };
-};
-
-class UnitTestThread : public JavaTestThread {
-public:
-  long testDuration;
-  TestRunnable* runnable;
-
-  UnitTestThread(TestRunnable* runnableArg, Semaphore* doneArg, long testDurationArg) : JavaTestThread(doneArg) {
-    runnable = runnableArg;
-    testDuration = testDurationArg;
-  }
-  virtual ~UnitTestThread() {}
-
-  void main_run() {
-    tty->print_cr("Starting test thread");
-    long stopTime = os::javaTimeMillis() + testDuration;
-    while (os::javaTimeMillis() < stopTime) {
-      runnable->runUnitTest();
-    }
-    tty->print_cr("Leaving test thread");
-  }
-};
-
-class ConcurrentTestRunner {
-public:
-  long testDurationMillis;
-  int nrOfThreads;
-  TestRunnable* unitTestRunnable;
-
-  ConcurrentTestRunner(TestRunnable* runnableArg, int nrOfThreadsArg, long testDurationMillisArg) {
-    unitTestRunnable = runnableArg;
-    nrOfThreads = nrOfThreadsArg;
-    testDurationMillis = testDurationMillisArg;
-  }
-
-  virtual ~ConcurrentTestRunner() {}
-
-  void run() {
-    Semaphore done(0);
-
-    UnitTestThread* t[nrOfThreads];
-    for (int i = 0; i < nrOfThreads; i++) {
-      t[i] = new UnitTestThread(unitTestRunnable, &done, testDurationMillis);
-    }
-
-    for (int i = 0; i < nrOfThreads; i++) {
-      t[i]->doit();
-    }
-
-    for (int i = 0; i < nrOfThreads; i++) {
-      done.wait();
-    }
-  }
-};
 
 
 class ReservedSpaceRunnable : public TestRunnable {
