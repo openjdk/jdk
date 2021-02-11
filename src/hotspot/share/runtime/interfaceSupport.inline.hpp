@@ -33,6 +33,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
