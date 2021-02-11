@@ -96,9 +96,10 @@
 GrowableArray<Method*>* collected_profiled_methods;
 
 int compare_methods(Method** a, Method** b) {
-  // %%% there can be 32-bit overflow here
-  return ((*b)->invocation_count() + (*b)->compiled_invocation_count())
-       - ((*a)->invocation_count() + (*a)->compiled_invocation_count());
+  // invocation_count() may have overflowed already. Interpret it's result
+  // as unsigned int to shift the limit of meaningles results by a factor of 2.
+  return ((uint32_t)(*b)->invocation_count() + (*b)->compiled_invocation_count64())
+       - ((uint32_t)(*a)->invocation_count() + (*a)->compiled_invocation_count64());
 }
 
 void collect_profiled_methods(Method* m) {
@@ -150,7 +151,7 @@ void print_method_profiling_data() {
 GrowableArray<Method*>* collected_invoked_methods;
 
 void collect_invoked_methods(Method* m) {
-  if (m->invocation_count() + m->compiled_invocation_count() >= 1 ) {
+  if ((uint32_t)m->invocation_count() + m->compiled_invocation_count64() >= 1 ) {
     collected_invoked_methods->push(m);
   }
 }

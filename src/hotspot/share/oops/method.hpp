@@ -451,12 +451,10 @@ class Method : public Metadata {
   int interpreter_invocation_count()            { return invocation_count();          }
 
 #ifndef PRODUCT
-  int      compiled_invocation_count() const    { return _compiled_invocation_count;  }
   int64_t  compiled_invocation_count64() const  { return _compiled_invocation_count64;}
   void set_compiled_invocation_count(int count) { _compiled_invocation_count64 = (int64_t)count; }
 #else
   // for PrintMethodData in a product build
-  int      compiled_invocation_count() const    { return 0; }
   int64_t  compiled_invocation_count64() const  { return 0; }
 #endif // not PRODUCT
 
@@ -724,7 +722,6 @@ public:
     return byte_offset_of(Method, _method_counters);
   }
 #ifndef PRODUCT
-  static ByteSize compiled_invocation_counter_offset() { return byte_offset_of(Method, _compiled_invocation_count); }
   static ByteSize compiled_invocation_counter_offset64() { return byte_offset_of(Method, _compiled_invocation_count64); }
 #endif // not PRODUCT
   static ByteSize native_function_offset()       { return in_ByteSize(sizeof(Method));                 }
