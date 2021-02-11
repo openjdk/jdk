@@ -3778,7 +3778,9 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
     UseSHM = false;
   }
 
-  log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
+  if (!FLAG_IS_DEFAULT(UseLargePages)) {
+    log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
+  }
   return false;
 }
 
