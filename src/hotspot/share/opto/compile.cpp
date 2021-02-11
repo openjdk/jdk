@@ -254,7 +254,6 @@ void Compile::print_statistics() {
     PhaseOutput::print_statistics();
     PhasePeephole::print_statistics();
     PhaseIdealLoop::print_statistics();
-    PhaseStringOpts::print_statistics();
     if (xtty != NULL)  xtty->tail("statistics");
   }
   if (_intrinsic_hist_flags[as_int(vmIntrinsics::_none)] != 0) {
@@ -579,11 +578,10 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _initial_gvn(NULL),
                   _for_igvn(NULL),
                   _warm_calls(NULL),
-                  _string_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines(comp_arena(), 2, 0, NULL),
+                  _string_late_inlines(comp_arena(), 2, 0, NULL),
                   _boxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
-                  _afterea_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
                   _native_invokers(comp_arena(), 1, 0, NULL),
@@ -2205,28 +2203,11 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
+    // Optimize out fields loads from scalar replaceable allocations.
     igvn.optimize();
     print_method(PHASE_ITER_GVN_AFTER_EA, 2);
+
     if (failing())  return;
-
-    // Inlining afterea_inliner should happen after EA but before AllocationElimination
-    // The reason is some new SafePointNodes may be introduced from inlining callees.
-    // If we do scalar replacement before inlining, SafePointScalarObjectNodes may need to adjust.
-    if (_afterea_late_inlines.length() > 0) {
-      set_inlining_incrementally(true);
-
-      for_igvn()->clear();
-      initial_gvn()->replace_with(&igvn);
-      while (_afterea_late_inlines.length() > 0) {
-        CallGenerator* cg = _afterea_late_inlines.pop();
-        cg->do_late_inline();
-        if (failing())  return;
-      }
-      inline_incrementally_cleanup(igvn);
-
-      set_inlining_incrementally(false);
-      if (failing())  return;
-    }
 
     if (congraph() != NULL && macro_count() > 0) {
       TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);

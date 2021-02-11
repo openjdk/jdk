@@ -780,34 +780,6 @@ class LateInlineVectorReboxingCallGenerator : public LateInlineCallGenerator {
 CallGenerator* CallGenerator::for_vector_reboxing_late_inline(ciMethod* method, CallGenerator* inline_cg) {
   return new LateInlineVectorReboxingCallGenerator(method, inline_cg);
 }
-
-class LateInlineAfterEACallGenerator : public LateInlineCallGenerator {
- protected:
-  bool non_escaped;
-
- public:
-  LateInlineAfterEACallGenerator(ciMethod* method, CallGenerator* inline_cg, bool is_pure_call)
-    : LateInlineCallGenerator(method, inline_cg, is_pure_call) {}
-
-  virtual JVMState* generate(JVMState* jvms) {
-    Compile *C = Compile::current();
-
-    C->log_inline_id(this);
-
-    C->add_afterea_late_inline(this);
-
-    JVMState* new_jvms = DirectCallGenerator::generate(jvms);
-    return new_jvms;
-  }
-  void set_non_escaped() { non_escaped = true; }
-};
-
-CallGenerator* CallGenerator::for_afterea_late_inline(ciMethod* method, CallGenerator* inline_cg) {
-  // so far, only String.substring is in  after_ea late_inline bucket
-  return new LateInlineAfterEACallGenerator(method, inline_cg, true/*pure*/);
-}
-
-
 //---------------------------WarmCallGenerator--------------------------------
 // Internal class which handles initial deferral of inlining decisions.
 class WarmCallGenerator : public CallGenerator {

@@ -959,9 +959,6 @@ class methodHandle;
                                                                                                                           \
   do_intrinsic(_String_String, java_lang_String, object_initializer_name, string_void_signature,                   F_R)   \
                                                                                                                           \
-  do_intrinsic(_String_substring, java_lang_String, substring_name, int_int_string_signature,                      F_R)   \
-   do_name(    substring_name,    "substring")                                                                            \
-                                                                                                                          \
   do_intrinsic(_Object_init,              java_lang_Object, object_initializer_name, void_method_signature,        F_R)   \
   /*    (symbol object_initializer_name defined above) */                                                                 \
                                                                                                                           \

@@ -1489,9 +1489,6 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
     return false;
   }
 
-  if (boxing->is_substring_method()) {
-    return false;
-  }
   assert(boxing->result_cast() == NULL, "unexpected boxing node result");
 
   extract_call_projections(boxing);
@@ -3004,7 +3001,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
                "unknown node type in macro list");
       }
-      //assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
+      assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
     }
   }

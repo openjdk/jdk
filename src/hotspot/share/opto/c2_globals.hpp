@@ -555,9 +555,6 @@
   product(bool, OptimizeStringConcat, true,                                 \
           "Optimize the construction of Strings by StringBuilder")          \
                                                                             \
-  product(bool, OptimizeSubstring, false,                                   \
-          "Optimize the construction of Strings by StringBuilder")          \
-                                                                            \
   product(bool, OptimizeTempArray, false,                                   \
           "Optimize temporary Array if it's not escaped")                   \
                                                                             \

@@ -113,13 +113,6 @@ class PhaseStringOpts : public Phase {
 
  public:
   PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List* worklist);
-#ifndef PRODUCT
-  static int substring_occurances;
-  static int substring_inlined;
-  static int substring_not_escaped;
-  static int substring_not_used;
-  static void print_statistics();
-#endif /*PRODUCT*/
 };
 
 #endif // SHARE_OPTO_STRINGOPTS_HPP

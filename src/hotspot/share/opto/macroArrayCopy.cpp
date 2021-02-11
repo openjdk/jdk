@@ -30,7 +30,6 @@
 #include "opto/vectornode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/macro.hpp"
-#include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"

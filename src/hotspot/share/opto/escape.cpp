@@ -67,15 +67,11 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn) :
   _pcmp_eq  = NULL;
 }
 
-bool ConnectionGraph::has_candidates(Compile* C) {
- if (C->_boxing_late_inlines.length() > 0 ||
-     C->_afterea_late_inlines.length() > 0) {
-    return true;
-  }
-
+bool ConnectionGraph::has_candidates(Compile *C) {
   // EA brings benefits only when the code has allocations and/or locks which
   // are represented by ideal Macro nodes.
-  for (int i = 0; i < C->macro_count(); i++) {
+  int cnt = C->macro_count();
+  for (int i = 0; i < cnt; i++) {
     Node *n = C->macro_node(i);
     if (n->is_Allocate())
       return true;
@@ -85,9 +81,8 @@ bool ConnectionGraph::has_candidates(Compile* C) {
         return true;
     }
 
-    if (n->is_CallStaticJava()) {
-      assert(n->as_CallStaticJava()->is_boxing_method(),
-             "only CallStaticJavaNode of a boxing method is macro node");
+    if (n->is_CallStaticJava() &&
+        n->as_CallStaticJava()->is_boxing_method()) {
       return true;
     }
   }
@@ -190,7 +185,6 @@ bool ConnectionGraph::compute_escape() {
       // Keep a list of ArrayCopy nodes so if one of its input is non
       // escaping, we can record a unique type
       arraycopy_worklist.append(n->as_ArrayCopy());
-      record_for_optimizer(n);
     }
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* m = n->fast_out(i);   // Get user
@@ -465,9 +459,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       if ((n->as_Call()->returns_pointer() &&
            n->as_Call()->proj_out_or_null(TypeFunc::Parms) != NULL) ||
           (n->is_CallStaticJava() &&
-          //TODO: we should support query in afterea_late_inlines
-          //it's a hack here because only String.substring(int, int) is in the bucket.
-          (n->as_CallStaticJava()->is_substring_method() || n->as_CallStaticJava()->is_boxing_method()))) {
+           n->as_CallStaticJava()->is_boxing_method())) {
         add_call_node(n->as_Call());
       }
     }
@@ -970,10 +962,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         es = PointsToNode::GlobalEscape;
       }
       add_java_object(call, es);
-    } else if (meth->is_string_substring()) {
-      add_java_object(call, PointsToNode::NoEscape);
-    }
-    else {
+    } else {
       BCEscapeAnalyzer* call_analyzer = meth->get_bcea();
       call_analyzer->copy_dependencies(_compile->dependencies());
       if (call_analyzer->is_return_allocated()) {
@@ -1164,9 +1153,6 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
       ciMethod* meth = call->as_CallJava()->method();
       if ((meth != NULL) && meth->is_boxing_method()) {
         break; // Boxing methods do not modify any oops.
-      }
-      if ((meth != NULL) && meth->is_string_substring()) {
-        break;
       }
       BCEscapeAnalyzer* call_analyzer = (meth !=NULL) ? meth->get_bcea() : NULL;
       // fall-through if not a Java method or no analyzer information
@@ -3661,11 +3647,12 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
       continue;
     }
     Node* n = ptn->ideal_node();
-    if (n->is_Allocate() || n->is_CallStaticJava()) {
+    if (n->is_Allocate() || (n->is_CallStaticJava() &&
+                             n->as_CallStaticJava()->is_boxing_method())) {
       if (first) {
         tty->cr();
         tty->print("======== Connection graph for ");
-        _compile->method()->print_short_name(tty);
+        _compile->method()->print_short_name();
         tty->cr();
         first = false;
       }

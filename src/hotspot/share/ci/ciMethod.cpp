@@ -1272,13 +1272,6 @@ bool ciMethod::is_vector_method() const {
          (intrinsic_id() != vmIntrinsics::_none);
 }
 
-bool ciMethod::is_string_substring() const {
-  if (holder() == CURRENT_ENV->String_klass()) {
-    return intrinsic_id() == vmIntrinsics::_String_substring;
-  }
-  return false;
-}
-
 BCEscapeAnalyzer  *ciMethod::get_bcea() {
 #ifdef COMPILER2
   if (_bcea == NULL) {

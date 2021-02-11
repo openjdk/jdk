@@ -1359,7 +1359,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
   Node *top = igvn->C->top();
   nstack.push(dead);
   bool has_irreducible_loop = igvn->C->has_irreducible_loop();
-  //tty->print_cr("-----------------------------------");
+
   while (nstack.size() > 0) {
     dead = nstack.pop();
     if (dead->Opcode() == Op_SafePoint) {
@@ -1406,8 +1406,6 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
         k = dead->last_outs(kmin);
       }
     } else { // (dead->outcnt() == 0)
-      //tty->print("kill ->");
-      //dead->dump();
       // Done with outputs.
       igvn->hash_delete(dead);
       igvn->_worklist.remove(dead);

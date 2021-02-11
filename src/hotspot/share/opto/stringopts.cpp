@@ -1992,15 +1992,3 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   string_sizes->disconnect_inputs(C);
   sc->cleanup();
 }
-
-#ifndef PRODUCT
-int PhaseStringOpts::substring_occurances  = 0;
-int PhaseStringOpts::substring_inlined     = 0;
-int PhaseStringOpts::substring_not_escaped = 0;
-int PhaseStringOpts::substring_not_used    = 0;
-
-void PhaseStringOpts::print_statistics() {
-  tty->print_cr("StringOpts: substring_occurances = %d inlined = %d, not_escaped = %d",
-          substring_occurances, substring_inlined, substring_not_escaped);
-}
-#endif /*PRODUCT*/

@@ -746,9 +746,6 @@ public:
   virtual int         Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
-  bool is_substring_method() const {
-    return (method() != NULL) && method()->is_string_substring();
-  }
 #ifndef PRODUCT
   virtual void        dump_spec(outputStream *st) const;
   virtual void        dump_compact_spec(outputStream *st) const;
