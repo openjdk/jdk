@@ -4718,33 +4718,6 @@ ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   return result ? nread : 0;
 }
 
-bool os::is_absolute_path(const char* path) {
-  char slash = *os::file_separator();
-  size_t len = strlen(path);
-  if (len == 0) return false;
-  char c0 = path[0];
-  char c1 = (len > 1) ? path[1] : 0;
-  if (c0 == slash) {
-    if (c1 == slash) {
-      // Absolute UNC pathname "\\\\foo"
-      return true;
-    } else {
-      // Drive-relative "\\foo"
-      return false;
-    }
-  }
-  if (isalpha(c0) && c1 == ':') {
-    if (len > 2 && path[2] == slash) {
-      // Absolute local pathname "z:\\foo"
-      return true;
-    } else {
-      // Directory-relative "z:foo"
-      return false;
-    }
-  }
-  // Completely relative
-  return false;
-}
 
 // This method is a slightly reworked copy of JDK's sysNativePath
 // from src/windows/hpi/src/path_md.c

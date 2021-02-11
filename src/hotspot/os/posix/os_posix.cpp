@@ -754,14 +754,6 @@ int os::stat(const char *path, struct stat *sbuf) {
   return ::stat(path, sbuf);
 }
 
-bool os::is_absolute_path(const char* path) {
-  if (strlen(path) > 1 && path[0] == *os::file_separator()) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 char * os::native_path(char *path) {
   return path;
 }
