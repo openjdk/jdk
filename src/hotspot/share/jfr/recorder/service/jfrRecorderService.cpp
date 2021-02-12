@@ -264,6 +264,42 @@ static u4 invoke_with_flush_event(Functor& f) {
   return elements;
 }
 
+class ObjectSamplerStackTraceRepository : public StackObj {
+ private:
+  JfrStackTraceRepository& _repo;
+  const ObjectSampler* _sampler;
+  JfrChunkWriter& _cw;
+  size_t _elements;
+  bool _clear;
+
+ public:
+  ObjectSamplerStackTraceRepository(JfrStackTraceRepository& repo, ObjectSampler* sampler, JfrChunkWriter& cw, bool clear) :
+    _repo(repo), _sampler(sampler), _cw(cw), _elements(0), _clear(clear) {}
+  bool process() {
+    _elements = ObjectSampleCheckpoint::write_objectsampler_stacktraces(_sampler, _repo, _cw);
+    if (_clear) {
+      _repo.clear();
+    }
+    return true;
+  }
+  size_t elements() const { return _elements; }
+  void reset() { _elements = 0; }
+};
+
+typedef WriteCheckpointEvent<ObjectSamplerStackTraceRepository> WriteObjectSamplerStackTrace;
+
+static u4 flush_object_sampler_stacktrace(JfrStackTraceRepository& stack_trace_repo, ObjectSampler* sampler, JfrChunkWriter& chunkwriter) {
+  ObjectSamplerStackTraceRepository str(stack_trace_repo, sampler, chunkwriter, false);
+  WriteObjectSamplerStackTrace wst(chunkwriter, str, TYPE_STACKTRACE);
+  return invoke(wst);
+}
+
+static u4 write_object_sampler_stacktrace(JfrStackTraceRepository& stack_trace_repo, ObjectSampler* sampler, JfrChunkWriter& chunkwriter, bool clear) {
+  ObjectSamplerStackTraceRepository str(stack_trace_repo, sampler, chunkwriter, clear);
+  WriteObjectSamplerStackTrace wst(chunkwriter, str, TYPE_STACKTRACE);
+  return invoke(wst);
+}
+
 class StackTraceRepository : public StackObj {
  private:
   JfrStackTraceRepository& _repo;
@@ -555,6 +591,11 @@ void JfrRecorderService::pre_safepoint_write() {
   if (_stack_trace_repository.is_modified()) {
     write_stacktrace(_stack_trace_repository, _chunkwriter, false);
   }
+  if (LeakProfiler::is_running()) {
+    if (_leak_profiler_stack_trace_repository.is_modified()) {
+      write_object_sampler_stacktrace(_leak_profiler_stack_trace_repository, ObjectSampler::sampler(), _chunkwriter, false);
+    }
+  }
 }
 
 void JfrRecorderService::invoke_safepoint_write() {
@@ -574,6 +615,10 @@ void JfrRecorderService::safepoint_write() {
   _storage.write_at_safepoint();
   _chunkwriter.set_time_stamp();
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
+  if (LeakProfiler::is_running()) {
+    // The object sampler instance was exclusively acquired and locked in pre_safepoint_write.
+    write_object_sampler_stacktrace(_leak_profiler_stack_trace_repository, ObjectSampler::sampler(), _chunkwriter, true);
+  }
   _checkpoint_manager.end_epoch_shift();
 }
 
@@ -630,6 +675,12 @@ size_t JfrRecorderService::flush() {
   }
   if (_stack_trace_repository.is_modified()) {
     total_elements += flush_stacktrace(_stack_trace_repository, _chunkwriter);
+  }
+  if (LeakProfiler::is_running()) {
+    if (_leak_profiler_stack_trace_repository.is_modified()) {
+      total_elements += flush_object_sampler_stacktrace(_leak_profiler_stack_trace_repository, ObjectSampler::acquire(), _chunkwriter);
+      ObjectSampler::release();
+    }
   }
   return flush_typeset(_checkpoint_manager, _chunkwriter) + total_elements;
 }
