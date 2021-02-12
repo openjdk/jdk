@@ -41,6 +41,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   friend class ObjectSampler;
   friend class StackTraceBlobInstaller;
   friend class StackTraceChunkWriter;
+  friend class ObjectSamplerStackTraceRepository;
   friend class StackTraceRepository;
 
  private:

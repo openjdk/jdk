@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jfr/leakprofiler/sampling/objectSample.hpp"
+#include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
