@@ -313,7 +313,7 @@ public class HtmlDocletWriter {
         // printed. If no overridden or implementation info needs to be
         // printed, do not print this section.
         if ((!intfacs.isEmpty()
-                && vmt.getImplementedMethods(method).isEmpty() == false)
+                && !vmt.getImplementedMethods(method).isEmpty())
                 || overriddenMethod != null) {
             MethodWriterImpl.addImplementsInfo(this, method, dl);
             if (overriddenMethod != null) {
@@ -804,13 +804,6 @@ public class HtmlDocletWriter {
             }
         }
         return null;
-    }
-
-    public boolean isClassLinkable(TypeElement typeElement) {
-        if (utils.isIncluded(typeElement)) {
-            return configuration.isGeneratedDoc(typeElement);
-        }
-        return configuration.extern.isExternal(typeElement);
     }
 
     public DocLink getCrossPackageLink(PackageElement element) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,57 +21,36 @@
  * questions.
  */
 
-package pkg1;
+package pkg2;
 
-public class A {
+import pkg1.InvisibleParent;
+
+/**
+ * @hidden
+ * @param <T>
+ */
+public class UndocumentedParent<T extends InvisibleParent> extends InvisibleParent<T> {
+
     /**
      * A visible field.
      */
-    public A visibleField;
+    public InvisibleParent visibleField;
 
     /**
      * An invisible field.
      * @hidden
      */
-    public A invisibleField;
+    public InvisibleParent invisibleField;
 
     /**
-     * A visible method.
+     * A visible method with an invisible parameter type.
      */
-    public void visibleMethod() {}
+    public void visibleMethod(InvisibleParent<? extends InvisibleParent> p)  {}
 
     /**
      * An invisible method.
      * @hidden
      */
     public void invisibleMethod() {}
-
-    /**
-     * A visible inner class.
-     */
-    public static class VisibleInner extends A {
-        /**
-         * An invisible constructor
-         * @hidden invisible
-         */
-        public VisibleInner() {}
-    }
-
-    /**
-     * An invisible inner class.
-     * @hidden
-     */
-    public static class InvisibleInner extends A {}
-
-    /**
-     * A visible inner class, extending an invisible class.
-     */
-    public static class VisibleInnerExtendsInvisibleInner extends InvisibleInner {}
-
-    /**
-     * An invisible inner class extending a visible class.
-     * @hidden
-     */
-    public static class InvisibleInnerExtendsVisibleInner extends InvisibleInner {}
 
 }

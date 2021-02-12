@@ -111,19 +111,21 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                     (!utils.isPublic(holder) || utils.isLinkable(holder))) {
                 writer.addInlineComment(property, propertyDocTree);
             } else {
-                Content link =
-                        writer.getDocLink(HtmlLinkInfo.Kind.PROPERTY_COPY,
-                        holder, property,
-                        utils.isIncluded(holder)
-                                ? holder.getSimpleName() : holder.getQualifiedName());
-                Content codeLink = HtmlTree.CODE(link);
-                Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel,
-                        utils.isClass(holder)
-                                ? contents.descfrmClassLabel
-                                : contents.descfrmInterfaceLabel);
-                descfrmLabel.add(Entity.NO_BREAK_SPACE);
-                descfrmLabel.add(codeLink);
-                propertyDocTree.add(HtmlTree.DIV(HtmlStyle.block, descfrmLabel));
+                if (!utils.hasHiddenTag(holder) && !utils.hasHiddenTag(property)) {
+                    Content link =
+                            writer.getDocLink(HtmlLinkInfo.Kind.PROPERTY_COPY,
+                                    holder, property,
+                                    utils.isIncluded(holder)
+                                            ? holder.getSimpleName() : holder.getQualifiedName());
+                    Content codeLink = HtmlTree.CODE(link);
+                    Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel,
+                            utils.isClass(holder)
+                                    ? contents.descfrmClassLabel
+                                    : contents.descfrmInterfaceLabel);
+                    descfrmLabel.add(Entity.NO_BREAK_SPACE);
+                    descfrmLabel.add(codeLink);
+                    propertyDocTree.add(HtmlTree.DIV(HtmlStyle.block, descfrmLabel));
+                }
                 writer.addInlineComment(property, propertyDocTree);
             }
         }
