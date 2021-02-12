@@ -30,7 +30,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
@@ -116,7 +116,7 @@ public class Signatures {
             content.add(HtmlTree.SPAN(HtmlStyle.modifiers, modifiers));
 
             HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
-            Content className = new StringContent(utils.getSimpleName(typeElement));
+            Content className = Text.of(utils.getSimpleName(typeElement));
             if (classWriter.options.linkSource()) {
                 classWriter.addSrcLink(typeElement, className, nameSpan);
             } else {
@@ -197,7 +197,7 @@ public class Signatures {
                     permitsSpan.add(link);
                 }
                 if (linkablePermits.size() < permits.size()) {
-                    Content c = new StringContent(classWriter.resources.getText("doclet.not.exhaustive"));
+                    Content c = Text.of(classWriter.resources.getText("doclet.not.exhaustive"));
                     permitsSpan.add(" ");
                     permitsSpan.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
                 }
@@ -360,7 +360,7 @@ public class Signatures {
             // Name
             HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
             if (memberWriter.options.linkSource()) {
-                Content name = new StringContent(memberWriter.name(element));
+                Content name = Text.of(memberWriter.name(element));
                 memberWriter.writer.addSrcLink(element, name, nameSpan);
             } else {
                 nameSpan.add(memberWriter.name(element));
@@ -403,7 +403,7 @@ public class Signatures {
             }
             if (!set.isEmpty()) {
                 String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
-                htmlTree.add(HtmlTree.SPAN(HtmlStyle.modifiers, new StringContent(mods)))
+                htmlTree.add(HtmlTree.SPAN(HtmlStyle.modifiers, Text.of(mods)))
                         .add(Entity.NO_BREAK_SPACE);
             }
         }

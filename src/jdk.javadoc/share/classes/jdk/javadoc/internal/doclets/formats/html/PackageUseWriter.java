@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -161,7 +161,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         for (String pkgname: usingPackageToUsedClasses.keySet()) {
             PackageElement pkg = utils.elementUtils.getPackageElement(pkgname);
             Content packageLink = links.createLink(htmlIds.forPackage(pkg),
-                    new StringContent(utils.getPackageName(pkg)));
+                    Text.of(utils.getPackageName(pkg)));
             Content summary = new ContentBuilder();
             if (pkg != null && !pkg.isUnnamed()) {
                 addSummaryComment(pkg, summary);
@@ -198,7 +198,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             for (TypeElement te : usingPackageToUsedClasses.get(packageName)) {
                 DocPath dp = pathString(te,
                         DocPaths.CLASS_USE.resolve(docPaths.forName(te)));
-                Content stringContent = new StringContent(utils.getSimpleName(te));
+                Content stringContent = Text.of(utils.getSimpleName(te));
                 Content typeContent = links.createLink(dp.fragment(htmlIds.forPackage(usingPackage).name()),
                         stringContent);
                 Content summary = new ContentBuilder();

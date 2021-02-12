@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,65 +32,56 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
- * Class for generating string content for HTML tags of javadoc output.
+ * Class for containing immutable string content for HTML tags of javadoc output.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class StringContent extends Content {
+public class Text extends Content {
+    private final String string;
 
-    private final StringBuilder stringContent;
+    public static final Text EMPTY = Text.of("");
 
     /**
-     * Constructor to construct StringContent object.
+     * Creates a new object containing immutable text.
+     *
+     * @param content the text content
+     * @return the object
      */
-    public StringContent() {
-        stringContent = new StringBuilder();
+    public static Text of(CharSequence content) {
+        return new Text(content);
     }
 
     /**
-     * Constructor to construct StringContent object with some initial content.
+     * Constructor to construct FixedStringContent object.
      *
-     * @param initialContent initial content for the object
+     * @param content content for the object
      */
-    public StringContent(CharSequence initialContent) {
-        stringContent = new StringBuilder();
-        Entity.escapeHtmlChars(initialContent, stringContent);
-    }
-
-    /**
-     * Adds content for the StringContent object.  The method escapes
-     * HTML characters for the string content that is added.
-     *
-     * @param strContent string content to be added
-     */
-    @Override
-    public StringContent add(CharSequence strContent) {
-        Entity.escapeHtmlChars(strContent, stringContent);
-        return this;
+    private Text(CharSequence content) {
+        string = Entity.escapeHtmlChars(content);
     }
 
     @Override
     public boolean isEmpty() {
-        return (stringContent.length() == 0);
+        return string.isEmpty();
     }
 
     @Override
     public int charCount() {
-        return RawHtml.charCount(stringContent.toString());
+        return RawHtml.charCount(string);
     }
 
     @Override
     public String toString() {
-        return stringContent.toString();
+        return string;
     }
 
     @Override
     public boolean write(Writer out, boolean atNewline) throws IOException {
-        String s = stringContent.toString();
-        out.write(s);
-        return s.endsWith(DocletConstants.NL);
+        out.write(string);
+        return string.endsWith(DocletConstants.NL);
     }
+
 }

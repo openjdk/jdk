@@ -44,7 +44,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
@@ -324,7 +324,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageElement pkg, Table table) {
         Content pkgLink =
-                links.createLink(htmlIds.forPackage(pkg), new StringContent(utils.getPackageName(pkg)));
+                links.createLink(htmlIds.forPackage(pkg), Text.of(utils.getPackageName(pkg)));
         Content summary = new ContentBuilder();
         addSummaryComment(pkg, summary);
         table.addRow(pkgLink, summary);
