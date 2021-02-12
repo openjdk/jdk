@@ -369,9 +369,10 @@ static void write_emergency_dump_file(const RepositoryIterator& iterator) {
   if (copy_block == NULL) {
     log_error(jfr, system)("Unable to malloc memory during jfr emergency dump");
     log_error(jfr, system)("Unable to write jfr emergency dump file");
+  } else {
+    write_repository_files(iterator, copy_block, block_size);
+    os::free(copy_block);
   }
-  write_repository_files(iterator, copy_block, block_size);
-  os::free(copy_block);
 }
 
 void JfrEmergencyDump::on_vm_error(const char* repository_path) {
