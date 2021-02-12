@@ -105,7 +105,8 @@ public class StringReader extends Reader {
     }
 
     /**
-     * {@inheritDoc}
+     * Skips characters. If the stream is already at its end before this method
+     * is invoked, then no characters are skipped and zero is returned.
      *
      * <p>The {@code n} parameter may be negative, even though the
      * {@code skip} method of the {@link Reader} superclass throws
@@ -116,6 +117,12 @@ public class StringReader extends Reader {
      *
      * <p>If the entire string has been read or skipped, then this method has
      * no effect and always returns {@code 0}.
+     *
+     * @param n {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     *
+     * @throws IOException {@inheritDoc}
      */
     public long skip(long n) throws IOException {
         synchronized (lock) {
