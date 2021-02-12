@@ -47,8 +47,6 @@ import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.DocumentationTool;
 
-import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -575,7 +573,7 @@ public class Extern {
                 return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
                 // suppress the warning message in the case of automatic modules
-                if (!isAutomaticModule(me) && issueWarning) {
+                if (!configuration.workArounds.isAutomaticModule(me) && issueWarning) {
                     configuration.getReporter().print(Kind.WARNING,
                             resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
                 }
@@ -584,16 +582,6 @@ public class Extern {
             }
         }
         return moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName;
-    }
-
-    // The following should be replaced by a new method such as Elements.isAutomaticModule
-    private boolean isAutomaticModule(ModuleElement me) {
-        if (me == null) {
-            return false;
-        } else {
-            ModuleSymbol msym = (ModuleSymbol) me;
-            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
-        }
     }
 
     public boolean isUrl (String urlCandidate) {
