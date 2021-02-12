@@ -165,7 +165,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _current_dump_space(NULL),
   _buffer_bottom(NULL),
   _last_verified_top(NULL),
-  _num_dump_regions_used(0),    
+  _num_dump_regions_used(0),
   _other_region_used_bytes(0),
   _requested_static_archive_bottom(NULL),
   _requested_static_archive_top(NULL),
