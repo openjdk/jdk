@@ -107,9 +107,9 @@ public class StringReader extends Reader {
     /**
      * {@inheritDoc}
      *
-     * <p>The {@code ns} parameter may be negative, even though the
+     * <p>The {@code n} parameter may be negative, even though the
      * {@code skip} method of the {@link Reader} superclass throws
-     * an exception in this case. Negative values of {@code ns} cause the
+     * an exception in this case. Negative values of {@code n} cause the
      * stream to skip backwards. Negative return values indicate a skip
      * backwards. It is not possible to skip backwards past the beginning of
      * the string.
