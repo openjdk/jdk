@@ -320,7 +320,7 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
   // Always clear the pc because it could have been set by make_walkable()
   str(zr, Address(rthread, JavaThread::last_Java_pc_offset()));
 
-  str(zr, Address(rthread, JavaFrameAnchor::saved_fp_address_offset()));
+  str(zr, Address(rthread, JavaThread::saved_fp_address_offset()));
 }
 
 // Calls to C land
