@@ -155,7 +155,6 @@ public class ExtOptionCamelCase {
                 CertificateExtensions.class,
                 List.class,
                 PublicKey.class,
-                PublicKey.class,
                 KeyIdentifier.class);
         createV3Extensions.setAccessible(true);
         ctor = Main.class.getDeclaredConstructor();
@@ -199,7 +198,7 @@ public class ExtOptionCamelCase {
         try {
             CertificateExtensions exts = (CertificateExtensions)
                     createV3Extensions.invoke(ctor.newInstance(),
-                            null, null, List.of(option), pk, null, null);
+                            null, null, List.of(option), pk, null);
 
             // ATTENTION: the extensions created above might contain raw
             // extensions (not of a subtype) and we need to store and reload

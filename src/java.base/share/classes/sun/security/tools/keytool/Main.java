@@ -1477,20 +1477,37 @@ public final class Main {
             }
         }
 
-        X509CertImpl certImpl;
-        if (signerCert instanceof X509CertImpl) {
-            certImpl = (X509CertImpl) signerCert;
+        PublicKey subjectPubKey = req.getSubjectPublicKeyInfo();
+        PublicKey issuerPubKey = signerCert.getPublicKey();
+
+        KeyIdentifier signerSubjectKeyId;
+        if (subjectPubKey.equals(issuerPubKey)) {
+            // No AKID for self-signed cert
+            signerSubjectKeyId = null;
         } else {
-            certImpl = new X509CertImpl(signerCert.getEncoded());
+            X509CertImpl certImpl;
+            if (signerCert instanceof X509CertImpl) {
+                certImpl = (X509CertImpl) signerCert;
+            } else {
+                certImpl = new X509CertImpl(signerCert.getEncoded());
+            }
+
+            // To enforce compliance with RFC 5280 section 4.2.1.1: "Where a key
+            // identifier has been previously established, the CA SHOULD use the
+            // previously established identifier."
+            // Use issuer's SKID to establish the AKID in createV3Extensions() method.
+            signerSubjectKeyId = certImpl.getSubjectKeyId();
+
+            if (signerSubjectKeyId == null) {
+                signerSubjectKeyId = new KeyIdentifier(issuerPubKey);
+            }
         }
-        KeyIdentifier signerSubjectKeyId = certImpl.getSubjectKeyId();
 
         CertificateExtensions ext = createV3Extensions(
                 reqex,
                 null,
                 v3ext,
-                req.getSubjectPublicKeyInfo(),
-                signerCert.getPublicKey(),
+                subjectPubKey,
                 signerSubjectKeyId);
         info.set(X509CertInfo.EXTENSIONS, ext);
         X509CertImpl cert = new X509CertImpl(info);
@@ -1585,7 +1602,7 @@ public final class Main {
             throw new Exception(form.format(source));
         }
         PKCS10 request = new PKCS10(cert.getPublicKey());
-        CertificateExtensions ext = createV3Extensions(null, null, v3ext, cert.getPublicKey(), null, null);
+        CertificateExtensions ext = createV3Extensions(null, null, v3ext, cert.getPublicKey(), null);
         // Attribute name is not significant
         request.getAttributes().setAttribute(X509CertInfo.EXTENSIONS,
                 new PKCS10Attribute(PKCS9Attribute.EXTENSION_REQUEST_OID, ext));
@@ -1911,7 +1928,6 @@ public final class Main {
                 null,
                 v3ext,
                 keypair.getPublicKeyAnyway(),
-                null,
                 null);
 
         X509Certificate[] chain = new X509Certificate[1];
@@ -2974,7 +2990,6 @@ public final class Main {
                 (CertificateExtensions)certInfo.get(X509CertInfo.EXTENSIONS),
                 v3ext,
                 oldCert.getPublicKey(),
-                null,
                 null);
         certInfo.set(X509CertInfo.EXTENSIONS, ext);
         // Sign the new certificate
@@ -4244,7 +4259,6 @@ public final class Main {
             CertificateExtensions existingEx,
             List <String> extstrs,
             PublicKey pkey,
-            PublicKey akey,
             KeyIdentifier aSubjectKeyId) throws Exception {
 
         // By design, inside a CertificateExtensions object, all known
@@ -4273,17 +4287,9 @@ public final class Main {
             // always non-critical
             setExt(result, new SubjectKeyIdentifierExtension(
                     new KeyIdentifier(pkey).getIdentifier()));
-            if (akey != null && !pkey.equals(akey)) {
-                if (aSubjectKeyId == null) {
-                    setExt(result, new AuthorityKeyIdentifierExtension(
-                            new KeyIdentifier(akey), null, null));
-                } else {
-                    // To enforce compliance with RFC 5280 section 4.2.1.1: "Where a key
-                    // identifier has been previously established, the CA SHOULD use the
-                    // previously established identifier."
-                    setExt(result, new AuthorityKeyIdentifierExtension(
-                            aSubjectKeyId, null, null));
-                }
+            if (aSubjectKeyId != null) {
+                setExt(result, new AuthorityKeyIdentifierExtension(aSubjectKeyId,
+                        null, null));
             }
 
             // name{:critical}{=value}
