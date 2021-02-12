@@ -39,15 +39,10 @@
  * @build vm.mlvm.share.jdi.MHDebuggee
  *
  * @comment build test class and indify classes
- * @build sun.hotspot.WhiteBox
  * @build vm.mlvm.meth.func.jdi.breakpoint.Test
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
  * @run main/othervm
- *      -Xbootclasspath/a:.
- *      -XX:+UnlockDiagnosticVMOptions
- *      -XX:+WhiteBoxAPI
  *      vm.mlvm.meth.func.jdi.breakpoint.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -55,7 +50,6 @@
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -debugger.debuggeeClass vm.mlvm.share.jdi.MHDebuggee
- *      -debugee.vmkeys=" -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  */
 
 package vm.mlvm.meth.func.jdi.breakpoint;

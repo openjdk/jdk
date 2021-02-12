@@ -25,6 +25,9 @@ package vm.mlvm.meth.share;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.management.MemoryUsage;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -53,9 +56,6 @@ import vm.mlvm.meth.share.transform.v2.MHThrowCatchTFPair;
 import vm.mlvm.meth.share.transform.v2.MHVarargsCollectSpreadTF;
 import vm.mlvm.share.Env;
 
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.BlobType;
-
 public class MHTransformationGen {
 
     public static final int MAX_CYCLES = 1000;
@@ -66,10 +66,19 @@ public class MHTransformationGen {
 
     private static final boolean USE_THROW_CATCH = false; // Test bugs
 
-    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    private static final MemoryPoolMXBean CODE_CACHE_MX_BEAN = ManagementFactory
+        .getMemoryPoolMXBeans().stream()
+        .filter(pool -> pool.getName().equals("CodeCache")).findFirst().get();
 
     public static class ThrowCatchTestException extends Throwable {
         private static final long serialVersionUID = -6749961303738648241L;
+    }
+
+    private static final boolean isCodeCacheEffectivelyFull() {
+        MemoryUsage usage = CODE_CACHE_MX_BEAN.getUsage();
+
+        // Number 2M is arbitrary, can be changed if need arises
+        return usage.getMax() - usage.getUsed() < 2000000;
     }
 
     @SuppressWarnings("unused")
@@ -93,7 +102,7 @@ public class MHTransformationGen {
         List<MHTFPair> pendingPWTFs = new LinkedList<MHTFPair>();
 
         for ( int i = nextInt(MAX_CYCLES); i > 0; i-- ) {
-            if (WHITE_BOX.isCodeCacheEffectivelyFull(BlobType.All.id)) {
+            if (isCodeCacheEffectivelyFull()) {
                 Env.traceNormal("Not enought code cache to build up MH sequences anymore. " +
                         " Has only been able to achieve " + (MAX_CYCLES - i) + " out of " + MAX_CYCLES);
                 break;

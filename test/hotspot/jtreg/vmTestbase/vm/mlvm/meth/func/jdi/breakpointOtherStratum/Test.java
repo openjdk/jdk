@@ -40,9 +40,7 @@
  * @build vm.mlvm.share.jdi.MHDebuggee
  *
  * @comment build test class and indify classes
- * @build sun.hotspot.WhiteBox
  * @build vm.mlvm.meth.func.jdi.breakpointOtherStratum.Test
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
  * @comment recompile SDE_MHDebuggeeBase with Stratum annotation processor
@@ -52,15 +50,12 @@
  *      vmTestbase/vm/mlvm/share/jpda/SDE_MHDebuggeeBase.java
  *
  * @run main/othervm
- *      -Xbootclasspath/a:.
- *      -XX:+UnlockDiagnosticVMOptions
- *      -XX:+WhiteBoxAPI
  *      vm.mlvm.meth.func.jdi.breakpointOtherStratum.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
- *      -debugee.vmkeys="-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -cp ./bin/classes${path.separator}${test.class.path} "
+ *      -debugee.vmkeys="-cp ./bin/classes${path.separator}${test.class.path}"
  *      -transport.address=dynamic
  *      -debugger.debuggeeClass vm.mlvm.share.jdi.MHDebuggee
  */

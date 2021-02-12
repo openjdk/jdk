@@ -1423,16 +1423,6 @@ WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
   return features_string;
 WB_END
 
-WB_ENTRY(jlong, WB_CodeCacheTotalSize(JNIEnv* env, jobject o, jint blob_type))
-  CodeHeap* heap = WhiteBox::get_code_heap(blob_type);
-  return (heap == NULL) ? -1 : (jlong) (heap->high_boundary() - heap->low_boundary());
-WB_END
-
-WB_ENTRY(jlong, WB_GetCodeCacheUnallocatedCapacity(JNIEnv* env, jobject o, jint blob_type))
-  CodeHeap* heap = WhiteBox::get_code_heap(blob_type);
-  return (heap == NULL) ? -1 : (jlong)heap->unallocated_capacity();
-WB_END
-
 int WhiteBox::get_blob_type(const CodeBlob* code) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   if (code->is_aot()) {
@@ -2487,8 +2477,6 @@ static JNINativeMethod methods[] = {
   {CC"metaspaceCapacityUntilGC", CC"()J",             (void*)&WB_MetaspaceCapacityUntilGC },
   {CC"metaspaceReserveAlignment", CC"()J",            (void*)&WB_MetaspaceReserveAlignment },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
-  {CC"getCodeCacheTotalSize", CC"(I)J",               (void*)&WB_CodeCacheTotalSize},
-  {CC"getCodeCacheUnallocatedCapacity",  CC"(I)J",    (void*)&WB_GetCodeCacheUnallocatedCapacity},
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
   {CC"forceNMethodSweep",  CC"()V",                   (void*)&WB_ForceNMethodSweep  },
