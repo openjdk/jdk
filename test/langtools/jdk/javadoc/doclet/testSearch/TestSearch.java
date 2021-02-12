@@ -433,68 +433,69 @@ public class TestSearch extends JavadocTester {
         // Test for search tags markup in index file.
         checkOutput("index-all.html", expectedOutput,
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#phrasewithsp\
-                    aces">phrase with spaces</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#phrasewithspaces" class="search-tag-link">\
+                    phrase with spaces</a> - Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#pkg">pkg</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#pkg" class="search-tag-link">pkg</a> - Sea\
+                    rch tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#pkg2.5">pkg2\
-                    .5</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#pkg2.5" class="search-tag-link">pkg2.5</a>\
+                     - Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#r">r</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#r" class="search-tag-link">r</a> - Search \
+                    tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg1/RegClass.html#searchphrase">sear\
-                    ch phrase</a></span> - Search tag in class pkg1.RegClass</dt>""",
+                    <dt><a href="pkg1/RegClass.html#searchphrase" class="search-tag-link">search phr\
+                    ase</a> - Search tag in class pkg1.RegClass</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg1/RegClass.html#SearchWordWithDesc\
-                    ription">SearchWordWithDescription</a></span> - Search tag in pkg1.RegClass.CONS\
-                    TANT_FIELD_1</dt>""",
+                    <dt><a href="pkg1/RegClass.html#SearchWordWithDescription" class="search-tag-lin\
+                    k">SearchWordWithDescription</a> - Search tag in pkg1.RegClass.CONSTANT_FIELD_1<\
+                    /dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestAnnotationType.html#searchph\
-                    rasewithdescdeprecated">search phrase with desc deprecated</a></span> - Search t\
-                    ag in annotation interface pkg2.TestAnnotationType</dt>""",
+                    <dt><a href="pkg2/TestAnnotationType.html#searchph\
+                    rasewithdescdeprecated" class="search-tag-link">search phrase with desc deprecat\
+                    ed</a> - Search tag in annotation interface pkg2.TestAnnotationType</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestClass.html#SearchTagDeprecat\
-                    edClass">SearchTagDeprecatedClass</a></span> - Search tag in class pkg2.TestClas\
-                    s</dt>""",
+                    <dt><a href="pkg2/TestClass.html#SearchTagDeprecatedClass" class="search-tag-lin\
+                    k">SearchTagDeprecatedClass</a> - Search tag in class pkg2.TestClass</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestEnum.html#searchphrasedeprec\
-                    ated">search phrase deprecated</a></span> - Search tag in pkg2.TestEnum.ONE</dt>""",
+                    <dt><a href="pkg2/TestEnum.html#searchphrasedeprecated" class="search-tag-link">\
+                    search phrase deprecated</a> - Search tag in pkg2.TestEnum.ONE</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestEnum.html#searchphrasedeprec\
-                    ated">search phrase deprecated</a></span> - Search tag in pkg2.TestEnum.ONE</dt>""",
+                    <dt><a href="pkg2/TestEnum.html#searchphrasedeprecated" class="search-tag-link">\
+                    search phrase deprecated</a> - Search tag in pkg2.TestEnum.ONE</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestError.html#SearchTagDeprecat\
-                    edMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError.Te\
-                    stError()</dt>""",
+                    <dt><a href="pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag-li\
+                    nk">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestError.html#SearchTagDeprecat\
-                    edMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError.Te\
-                    stError()</dt>""",
+                    <dt><a href="pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag-li\
+                    nk">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#SingleWord">\
-                    SingleWord</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#SingleWord" class="search-tag-link">Single\
+                    Word</a> - Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/AnotherClass.ModalExclusionType.h\
-                    tml#nested%7B@indexnested_tag_test%7D">nested {@index nested_tag_test}</a></span\
-                    > - Search tag in pkg.AnotherClass.ModalExclusionType.NO_EXCLUDE</dt>""",
+                    <dt><a href="pkg/AnotherClass.ModalExclusionType.html#nested%7B@indexnested_tag_\
+                    test%7D" class="search-tag-link">nested {@index nested_tag_test}</a> - Search ta\
+                    g in pkg.AnotherClass.ModalExclusionType.NO_EXCLUDE</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/AnotherClass.ModalExclusionType.html#""" + html_span_see_span + """
-                    ">html &lt;span&gt; see &lt;/span&gt;</a></span> - Search tag in pkg.AnotherClas\
-                    s.ModalExclusionType.APPLICATION_EXCLUDE</dt>""",
+                    <dt><a href="pkg/AnotherClass.ModalExclusionType.html#""" + html_span_see_span + """
+                    " class="search-tag-link">html &lt;span&gt; see &lt;/span&gt;</a> - Search tag i\
+                    n pkg.AnotherClass.ModalExclusionType.APPLICATION_EXCLUDE</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/AnotherClass.html#quoted">quoted<\
-                    /a></span> - Search tag in pkg.AnotherClass.CONSTANT1</dt>""",
+                    <dt><a href="pkg/AnotherClass.html#quoted" class="search-tag-link">quoted</a> - \
+                    Search tag in pkg.AnotherClass.CONSTANT1</dt>""",
                 """
-                    <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#ONE">ONE</a></spa\
-                    n> - Enum constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></dt>""",
+                    <dt><a href="pkg2/TestEnum.html#ONE" class="member-name-link">ONE</a> - Enum con\
+                    stant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2"\
+                    >TestEnum</a></dt>""",
                 """
-                    <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#THREE">THREE</a><\
-                    /span> - Enum constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></dt\
-                    >""",
+                    <dt><a href="pkg2/TestEnum.html#THREE" class="member-name-link">THREE</a> - Enum\
+                     constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in p\
+                    kg2">TestEnum</a></dt>""",
                 """
-                    <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#TWO">TWO</a></spa\
-                    n> - Enum constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></dt>""");
+                    <dt><a href="pkg2/TestEnum.html#TWO" class="member-name-link">TWO</a> - Enum con\
+                    stant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2"\
+                    >TestEnum</a></dt>""");
         checkOutput("index-all.html", true,
                 """
                     <div class="deprecation-comment">class_test1 passes. Search tag <span id="Search\
@@ -509,164 +510,154 @@ public class TestSearch extends JavadocTester {
         // Test for search tags markup in split index file.
         checkOutput("index-files/index-13.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg1/RegClass.html#searchphrase">s\
-                    earch phrase</a></span> - Search tag in class pkg1.RegClass</dt>""",
+                    <dt><a href="../pkg1/RegClass.html#searchphrase" class="search-tag-link">search \
+                    phrase</a> - Search tag in class pkg1.RegClass</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg1/RegClass.html#SearchWordWithD\
-                    escription">SearchWordWithDescription</a></span> - Search tag in pkg1.RegClass.C\
-                    ONSTANT_FIELD_1</dt>""",
+                    <dt><a href="../pkg1/RegClass.html#SearchWordWithDescription" class="search-tag-\
+                    link">SearchWordWithDescription</a> - Search tag in pkg1.RegClass.CONSTANT_FIELD\
+                    _1</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg2/TestAnnotationType.html#searc\
-                    hphrasewithdescdeprecated">search phrase with desc deprecated</a></span> - Searc\
-                    h tag in annotation interface pkg2.TestAnnotationType</dt>""",
+                    <dt><a href="../pkg2/TestAnnotationType.html#searchphrasewithdescdeprecated" cla\
+                    ss="search-tag-link">search phrase with desc deprecated</a> - Search tag in anno\
+                    tation interface pkg2.TestAnnotationType</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg2/TestClass.html#SearchTagDepre\
-                    catedClass">SearchTagDeprecatedClass</a></span> - Search tag in class pkg2.TestC\
-                    lass</dt>""",
+                    <dt><a href="../pkg2/TestClass.html#SearchTagDeprecatedClass" class="search-tag-\
+                    link">SearchTagDeprecatedClass</a> - Search tag in class pkg2.TestClass</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg2/TestEnum.html#searchphrasedep\
-                    recated">search phrase deprecated</a></span> - Search tag in pkg2.TestEnum.ONE</\
-                    dt>""",
+                    <dt><a href="../pkg2/TestEnum.html#searchphrasedeprecated" class="search-tag-lin\
+                    k">search phrase deprecated</a> - Search tag in pkg2.TestEnum.ONE</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg2/TestEnum.html#searchphrasedep\
-                    recated">search phrase deprecated</a></span> - Search tag in pkg2.TestEnum.ONE</\
-                    dt>""",
+                    <dt><a href="../pkg2/TestEnum.html#searchphrasedeprecated" class="search-tag-lin\
+                    k">search phrase deprecated</a> - Search tag in pkg2.TestEnum.ONE</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg2/TestError.html#SearchTagDepre\
-                    catedMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError\
-                    .TestError()</dt>""",
+                    <dt><a href="../pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag\
+                    -link">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg2/TestError.html#SearchTagDepre\
-                    catedMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError\
-                    .TestError()</dt>""",
+                    <dt><a href="../pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag\
+                    -link">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg/package-summary.html#SingleWor\
-                    d">SingleWord</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="../pkg/package-summary.html#SingleWord" class="search-tag-link">Sin\
+                    gleWord</a> - Search tag in package pkg</dt>""",
                 """
                     <br><a href="../allclasses-index.html">All&nbsp;Classes</a><span class="vertical\
                     -separator">|</span><a href="../allpackages-index.html">All&nbsp;Packages</a>""");
         checkOutput("index-files/index-10.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg/package-summary.html#phrasewit\
-                    hspaces">phrase with spaces</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="../pkg/package-summary.html#phrasewithspaces" class="search-tag-lin\
+                    k">phrase with spaces</a> - Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg/package-summary.html#pkg">pkg<\
-                    /a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="../pkg/package-summary.html#pkg" class="search-tag-link">pkg</a> - \
+                    Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg/package-summary.html#pkg2.5">p\
-                    kg2.5</a></span> - Search tag in package pkg</dt>""");
+                    <dt><a href="../pkg/package-summary.html#pkg2.5" class="search-tag-link">pkg2.5<\
+                    /a> - Search tag in package pkg</dt>""");
         checkOutput("index-files/index-12.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg/package-summary.html#r">r</a></span> - Search tag in package pkg</dt>""");
+                    <dt><a href="../pkg/package-summary.html#r" class="search-tag-link">r</a> - Sear\
+                    ch tag in package pkg</dt>""");
         checkOutput("index-files/index-8.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg/AnotherClass.ModalExclusionTyp\
-                    e.html#nested%7B@indexnested_tag_test%7D">nested {@index nested_tag_test}</a></s\
-                    pan> - Search tag in pkg.AnotherClass.ModalExclusionType.NO_EXCLUDE</dt>""");
+                    <dt><a href="../pkg/AnotherClass.ModalExclusionType.html#nested%7B@indexnested_t\
+                    ag_test%7D" class="search-tag-link">nested {@index nested_tag_test}</a> - Search\
+                     tag in pkg.AnotherClass.ModalExclusionType.NO_EXCLUDE</dt>""");
         checkOutput("index-files/index-5.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg/AnotherClass.ModalExclusionTyp\
-                    e.html#html%3Cspan%3Esee%3C/span%3E">html &lt;span&gt; see &lt;/span&gt;</a></sp\
-                    an> - Search tag in pkg.AnotherClass.ModalExclusionType.APPLICATION_EXCLUDE</dt>""");
+                    <dt><a href="../pkg/AnotherClass.ModalExclusionType.html#html%3Cspan%3Esee%3C/sp\
+                    an%3E" class="search-tag-link">html &lt;span&gt; see &lt;/span&gt;</a> - Search \
+                    tag in pkg.AnotherClass.ModalExclusionType.APPLICATION_EXCLUDE</dt>""");
         checkOutput("index-files/index-11.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg/AnotherClass.html#quoted">quot\
-                    ed</a></span> - Search tag in pkg.AnotherClass.CONSTANT1</dt>""");
+                    <dt><a href="../pkg/AnotherClass.html#quoted" class="search-tag-link">quoted</a>\
+                     - Search tag in pkg.AnotherClass.CONSTANT1</dt>""");
         checkOutput("index-files/index-9.html", true,
                 """
-                    <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#ONE">ONE</a></\
-                    span> - Enum constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></\
-                    dt>""");
+                    <dt><a href="../pkg2/TestEnum.html#ONE" class="member-name-link">ONE</a> - Enum \
+                    constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in\
+                     pkg2">TestEnum</a></dt>""");
         checkOutput("index-files/index-14.html", true,
                 """
-                    <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#THREE">THREE</\
-                    a></span> - Enum constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</\
-                    a></dt>""",
+                    <dt><a href="../pkg2/TestEnum.html#THREE" class="member-name-link">THREE</a> - E\
+                    num constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum clas\
+                    s in pkg2">TestEnum</a></dt>""",
                 """
-                    <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#TWO">TWO</a></\
-                    span> - Enum constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></\
-                    dt>""");
+                    <dt><a href="../pkg2/TestEnum.html#TWO" class="member-name-link">TWO</a> - Enum \
+                    constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in\
+                     pkg2">TestEnum</a></dt>""");
     }
 
     void checkIndexNoComment() {
         // Test for search tags markup in index file when javadoc is executed with -nocomment.
         checkOutput("index-all.html", false,
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#phrasewithsp\
-                    aces">phrase with spaces</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#phrasewithspaces" class="search-tag-link">\
+                    phrase with spaces</a> - Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#pkg">pkg</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#pkg" class="search-tag-link">pkg</a> - Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#pkg2.5">pkg2\
-                    .5</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#pkg2.5" class="search-tag-link">pkg2.5</a>\
+                     - Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#r">r</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#r" class="search-tag-link">r</a> - Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg1/RegClass.html#searchphrase">sear\
-                    ch phrase</a></span> - Search tag in class pkg1.RegClass</dt>""",
+                    <dt><a href="pkg1/RegClass.html#searchphrase" class="search-tag-link">search phr\
+                    ase</a> - Search tag in class pkg1.RegClass</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg1/RegClass.html#SearchWordWithDesc\
-                    ription">SearchWordWithDescription</a></span> - Search tag in pkg1.RegClass.CONS\
-                    TANT_FIELD_1</dt>""",
+                    <dt><a href="pkg1/RegClass.html#SearchWordWithDescription" class="search-tag-lin\
+                    k">SearchWordWithDescription</a> - Search tag in pkg1.RegClass.CONSTANT_FIELD_1</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestAnnotationType.html#searchph\
-                    rasewithdescdeprecated">search phrase with desc deprecated</a></span> - Search t\
-                    ag in annotation interface pkg2.TestAnnotationType</dt>""",
+                    <dt><a href="pkg2/TestAnnotationType.html#searchphrasewithdescdeprecated" class=\
+                    "search-tag-link">search phrase with desc deprecated</a> - Search tag in annotat\
+                    ion interface pkg2.TestAnnotationType</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestClass.html#SearchTagDeprecat\
-                    edClass">SearchTagDeprecatedClass</a></span> - Search tag in class pkg2.TestClas\
-                    s</dt>""",
+                    <dt><a href="pkg2/TestClass.html#SearchTagDeprecatedClass" class="search-tag-lin\
+                    k">SearchTagDeprecatedClass</a> - Search tag in class pkg2.TestClass</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#SingleWord">\
-                    SingleWord</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#SingleWord" class="search-tag-link">Single\
+                    Word</a> - Search tag in package pkg</dt>""",
                 """
                     <div class="deprecation-comment">class_test1 passes. Search tag <span id="Search\
-                    TagDeprecatedClass">SearchTagDeprecatedClass</span></div>""",
+                    TagDeprecatedClass">SearchTagDeprecatedClass</div>""",
                 """
                     <div class="deprecation-comment">error_test3 passes. Search tag for
                      method <span id="SearchTagDeprecatedMethod">SearchTagDeprecatedMethod</span></div>""");
         checkOutput("index-all.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestEnum.html#searchphrasedeprec\
-                    ated">search phrase deprecated</a></span> - Search tag in pkg2.TestEnum.ONE</dt>""",
+                    <dt><a href="pkg2/TestEnum.html#searchphrasedeprecated" class="search-tag-link">\
+                    search phrase deprecated</a> - Search tag in pkg2.TestEnum.ONE</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestError.html#SearchTagDeprecat\
-                    edMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError.Te\
-                    stError()</dt>""");
+                    <dt><a href="pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag-li\
+                    nk">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>""");
     }
 
     void checkIndexNoDeprecated() {
         // Test for search tags markup in index file when javadoc is executed using -nodeprecated.
         checkOutput("index-all.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#phrasewithsp\
-                    aces">phrase with spaces</a></span> - Search tag in package pkg</dt>""",
+                    <dt><a href="pkg/package-summary.html#phrasewithspaces" class="search-tag-link">\
+                    phrase with spaces</a> - Search tag in package pkg</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg1/RegClass.html#searchphrase">sear\
-                    ch phrase</a></span> - Search tag in class pkg1.RegClass</dt>""",
+                    <dt><a href="pkg1/RegClass.html#searchphrase" class="search-tag-link">search phr\
+                    ase</a> - Search tag in class pkg1.RegClass</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg1/RegClass.html#SearchWordWithDesc\
-                    ription">SearchWordWithDescription</a></span> - Search tag in pkg1.RegClass.CONS\
-                    TANT_FIELD_1</dt>""",
+                    <dt><a href="pkg1/RegClass.html#SearchWordWithDescription" class="search-tag-lin\
+                    k">SearchWordWithDescription</a> - Search tag in pkg1.RegClass.CONSTANT_FIELD_1</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/package-summary.html#SingleWord">\
-                    SingleWord</a></span> - Search tag in package pkg</dt>""");
+                    <dt><a href="pkg/package-summary.html#SingleWord" class="search-tag-link">Single\
+                    Word</a> - Search tag in package pkg</dt>""");
         checkOutput("index-all.html", false,
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestAnnotationType.html#searchph\
-                    rasewithdescdeprecated">search phrase with desc deprecated</a></span> - Search t\
-                    ag in annotation interface pkg2.TestAnnotationType</dt>""",
+                    <dt><a href="pkg2/TestAnnotationType.html#searchphrasewithdescdeprecated" class=\
+                    "search-tag-link">search phrase with desc deprecated</a> - Search tag in annotat\
+                    ion interface pkg2.TestAnnotationType</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestClass.html#SearchTagDeprecat\
-                    edClass">SearchTagDeprecatedClass</a></span> - Search tag in class pkg2.TestClas\
-                    s</dt>""",
+                    <dt><a href="pkg2/TestClass.html#SearchTagDeprecatedClass" class="search-tag-lin\
+                    k">SearchTagDeprecatedClass</a> - Search tag in class pkg2.TestClass</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestEnum.html#searchphrasedeprec\
-                    ated">search phrase deprecated</a></span> - Search tag in pkg2.TestEnum.ONE</dt>""",
+                    <dt><a href="pkg2/TestEnum.html#searchphrasedeprecated" class="search-tag-link">\
+                    search phrase deprecated</a> - Search tag in pkg2.TestEnum.ONE</dt>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestError.html#SearchTagDeprecat\
-                    edMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError.Te\
-                    stError()</dt>""",
+                    <dt><a href="pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag-li\
+                    nk">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>""",
                 """
                     <div class="deprecation-comment">class_test1 passes. Search tag <span id="Search\
                     TagDeprecatedClass">SearchTagDeprecatedClass</span></div>""",
@@ -777,19 +768,16 @@ public class TestSearch extends JavadocTester {
         // Test for search tags duplication in index file.
         checkOutput("index-all.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestError.html#SearchTagDeprecat\
-                    edMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError.Te\
-                    stError()</dt>
+                    <dt><a href="pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag-li\
+                    nk">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>
                     <dd>with description</dd>""");
         checkOutput("index-all.html", false,
                 """
-                    <dt><span class="search-tag-link"><a href="pkg2/TestError.html#SearchTagDeprecat\
-                    edMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError.Te\
-                    stError()</dt>
+                    <dt><a href="pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag-li\
+                    nk">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>
                     <dd>with description</dd>
-                    <dt><span class="search-tag-link"><a href="pkg2/TestError.html#SearchTagDeprecat\
-                    edMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError.Te\
-                    stError()</dt>
+                    <dt><a href="pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag-li\
+                    nk">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>
                     <dd>with description</dd>""");
     }
 
@@ -797,19 +785,16 @@ public class TestSearch extends JavadocTester {
         // Test for search tags duplication in index file.
         checkOutput("index-files/index-13.html", true,
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg2/TestError.html#SearchTagDepre\
-                    catedMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError\
-                    .TestError()</dt>
+                    <dt><a href="../pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag\
+                    -link">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>
                     <dd>with description</dd>""");
         checkOutput("index-files/index-13.html", false,
                 """
-                    <dt><span class="search-tag-link"><a href="../pkg2/TestError.html#SearchTagDepre\
-                    catedMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError\
-                    .TestError()</dt>
+                    <dt><a href="../pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag\
+                    -link">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>
                     <dd>with description</dd>
-                    <dt><span class="search-tag-link"><a href="../pkg2/TestError.html#SearchTagDepre\
-                    catedMethod">SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError\
-                    .TestError()</dt>
+                    <dt><a href="../pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag\
+                    -link">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>
                     <dd>with description</dd>""");
     }
 
