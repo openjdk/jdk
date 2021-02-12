@@ -197,6 +197,57 @@ static bool stack_trace_precondition(const ObjectSample* sample) {
   return sample->has_stack_trace_id() && !sample->is_dead();
 }
 
+class StackTraceChunkWriter {
+ private:
+  const JfrStackTraceRepository& _stack_trace_repo;
+  JfrChunkWriter& _chunkwriter;
+  int _count;
+  const JfrStackTrace* resolve(const ObjectSample* sample);
+ public:
+  StackTraceChunkWriter(const JfrStackTraceRepository& stack_trace_repo, JfrChunkWriter& chunkwriter);
+  void sample_do(ObjectSample* sample) {
+    if (stack_trace_precondition(sample)) {
+      const JfrStackTrace* const stack_trace = resolve(sample);
+      if (stack_trace->should_write()) {
+        stack_trace->write(_chunkwriter);
+        _count++;
+      }
+    }
+  }
+  int count() const {
+    return _count;
+  }
+};
+
+StackTraceChunkWriter::StackTraceChunkWriter(const JfrStackTraceRepository& stack_trace_repo, JfrChunkWriter& chunkwriter) :
+  _stack_trace_repo(stack_trace_repo), _chunkwriter(chunkwriter), _count(0) {
+}
+
+const JfrStackTrace* StackTraceChunkWriter::resolve(const ObjectSample* sample) {
+  return _stack_trace_repo.lookup(sample->stack_trace_hash(), sample->stack_trace_id());
+}
+
+static int do_write_stacktraces(const ObjectSampler* sampler, JfrStackTraceRepository& stack_trace_repo, JfrChunkWriter& chunkwriter) {
+  assert(sampler != NULL, "invariant");
+  const ObjectSample* const last = sampler->last();
+  if (last != sampler->last_resolved()) {
+    ResourceMark rm;
+    StackTraceChunkWriter writer(stack_trace_repo, chunkwriter);
+    iterate_samples(writer);
+    return writer.count();
+  }
+  return 0;
+}
+
+int ObjectSampleCheckpoint::write_objectsampler_stacktraces(const ObjectSampler* sampler, JfrStackTraceRepository& stack_trace_repo, JfrChunkWriter& chunkwriter) {
+  assert(sampler != NULL, "invariant");
+  assert(LeakProfiler::is_running(), "invariant");
+  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
+  // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
+  return do_write_stacktraces(sampler, stack_trace_repo, chunkwriter);
+}
+
+
 class StackTraceBlobInstaller {
  private:
   const JfrStackTraceRepository& _stack_trace_repo;

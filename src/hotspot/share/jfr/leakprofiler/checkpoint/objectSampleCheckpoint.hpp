@@ -32,6 +32,7 @@ class EdgeStore;
 class InstanceKlass;
 class JavaThread;
 class JfrCheckpointWriter;
+class JfrChunkWriter;
 class JfrStackTrace;
 class JfrStackTraceRepository;
 class Klass;
@@ -54,6 +55,7 @@ class ObjectSampleCheckpoint : AllStatic {
   static void on_type_set_unload(JfrCheckpointWriter& writer);
   static void on_thread_exit(JavaThread* jt);
   static void on_rotation(const ObjectSampler* sampler, JfrStackTraceRepository& repo);
+  static int write_objectsampler_stacktraces(const ObjectSampler* sampler, JfrStackTraceRepository& stack_trace_repo, JfrChunkWriter& chunkwriter);
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP
