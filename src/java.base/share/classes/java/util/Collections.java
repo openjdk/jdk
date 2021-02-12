@@ -5316,7 +5316,7 @@ public class Collections {
      * comparator is also serializable or {@code null}).
      *
      * @param <T> the class of the objects compared by the comparator
-     * @param cmp a comparator who's ordering is to be reversed by the returned
+     * @param cmp a comparator whose ordering is to be reversed by the returned
      * comparator or {@code null}
      * @return A comparator that imposes the reverse ordering of the
      *         specified comparator.
@@ -5509,11 +5509,11 @@ public class Collections {
      */
     public static boolean disjoint(Collection<?> c1, Collection<?> c2) {
         // The collection to be used for contains(). Preference is given to
-        // the collection who's contains() has lower O() complexity.
+        // the collection whose contains() has lower O() complexity.
         Collection<?> contains = c2;
         // The collection to be iterated. If the collections' contains() impl
         // are of different O() complexity, the collection with slower
-        // contains() will be used for iteration. For collections who's
+        // contains() will be used for iteration. For collections whose
         // contains() are of the same complexity then best performance is
         // achieved by iterating the smaller collection.
         Collection<?> iterate = c1;
