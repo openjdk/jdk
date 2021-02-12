@@ -156,6 +156,7 @@ class Space: public CHeapObj<mtGC> {
   size_t capacity()     const { return byte_size(bottom(), end()); }
   virtual size_t used() const = 0;
   virtual size_t free() const = 0;
+  virtual size_t live() const = 0;
 
   // Iterate over all the ref-containing fields of all objects in the
   // space, calling "cl.do_oop" on each.  Fields in objects allocated by
@@ -444,6 +445,7 @@ protected:
   // Used during compaction.
   HeapWord* _first_dead;
   HeapWord* _end_of_live;
+  size_t    _zombie_space;
 
   // This the function is invoked when an allocation of an object covering
   // "start" to "end occurs crosses the threshold; returns the next
@@ -548,6 +550,9 @@ class ContiguousSpace: public CompactibleSpace {
   // Size computations: sizes in bytes.
   size_t capacity() const        { return byte_size(bottom(), end()); }
   size_t used() const            { return byte_size(bottom(), top()); }
+  size_t live() const            {
+    return used() - _zombie_space;
+  }
   size_t free() const            { return byte_size(top(),    end()); }
 
   virtual bool is_free_block(const HeapWord* p) const;

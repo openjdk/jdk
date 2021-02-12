@@ -40,6 +40,10 @@ inline size_t CardGeneration::free() const {
   return space()->free();
 }
 
+inline size_t CardGeneration::live() const {
+  return space()->live();
+}
+
 inline MemRegion CardGeneration::used_region() const {
   return space()->used_region();
 }

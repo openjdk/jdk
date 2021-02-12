@@ -196,6 +196,11 @@ size_t ParallelScavengeHeap::used() const {
   return value;
 }
 
+size_t ParallelScavengeHeap::live() const {
+  size_t live = _young_live + _eden_live + _old_live;
+  return live > 0 ? live : used();
+}
+
 bool ParallelScavengeHeap::is_maximal_no_gc() const {
   return old_gen()->is_maximal_no_gc() && young_gen()->is_maximal_no_gc();
 }
@@ -432,6 +437,7 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
   // cause SoftRefs to be cleared.
   bool maximum_compaction = clear_all_soft_refs;
   PSParallelCompact::invoke(maximum_compaction);
+  capture_live();
 }
 
 // Failed allocation policy. Must be called from the VM thread, and

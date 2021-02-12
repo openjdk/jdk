@@ -107,6 +107,11 @@ size_t ZCollectedHeap::used() const {
   return _heap.used();
 }
 
+size_t ZCollectedHeap::live() const {
+  size_t live = ZStatHeap::live();
+  return live > 0 ? live : used();
+}
+
 size_t ZCollectedHeap::unused() const {
   return _heap.unused();
 }

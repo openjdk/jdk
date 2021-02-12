@@ -74,6 +74,10 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   WorkGang _workers;
 
+  size_t _young_live;
+  size_t _eden_live;
+  size_t _old_live;
+
   virtual void initialize_serviceability();
 
   void trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs);
@@ -82,13 +86,17 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Allocate in oldgen and record the allocation with the size_policy.
   HeapWord* allocate_old_gen_and_record(size_t word_size);
 
+  inline void capture_live();
+
  protected:
   static inline size_t total_invocations();
+  size_t live() const;
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size);
 
   inline bool should_alloc_in_eden(size_t size) const;
   inline void death_march_check(HeapWord* const result, size_t size);
   HeapWord* mem_allocate_old_gen(size_t size);
+
 
  public:
   ParallelScavengeHeap() :
@@ -102,7 +110,10 @@ class ParallelScavengeHeap : public CollectedHeap {
     _workers("GC Thread",
              ParallelGCThreads,
              true /* are_GC_task_threads */,
-             false /* are_ConcurrentGC_threads */) { }
+             false /* are_ConcurrentGC_threads */),
+    _young_live(0),
+    _eden_live(0),
+    _old_live(0) { }
 
   // For use by VM operations
   enum CollectionType {

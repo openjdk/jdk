@@ -85,6 +85,7 @@ class CardGeneration: public Generation {
   size_t capacity() const;
   size_t used() const;
   size_t free() const;
+  size_t live() const;
   MemRegion used_region() const;
 
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);

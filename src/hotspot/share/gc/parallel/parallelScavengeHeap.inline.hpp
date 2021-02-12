@@ -40,6 +40,13 @@ inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const 
 
 inline void ParallelScavengeHeap::invoke_scavenge() {
   PSScavenge::invoke();
+  capture_live();
+}
+
+inline void ParallelScavengeHeap::capture_live() {
+  _young_live = young_gen()->used_in_bytes();
+  _eden_live = young_gen()->eden_space()->used_in_bytes();
+  _old_live = old_gen()->used_in_bytes();
 }
 
 inline bool ParallelScavengeHeap::is_in_young(oop p) {

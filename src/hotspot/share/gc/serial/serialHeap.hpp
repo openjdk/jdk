@@ -41,6 +41,8 @@ private:
   MemoryPool* _survivor_pool;
   MemoryPool* _old_pool;
 
+  size_t _live_size;
+
   virtual void initialize_serviceability();
 
 public:

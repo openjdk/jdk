@@ -546,6 +546,7 @@ public:
   static size_t max_capacity();
   static size_t used_at_mark_start();
   static size_t used_at_relocate_end();
+  static size_t live();
 
   static void print();
 };

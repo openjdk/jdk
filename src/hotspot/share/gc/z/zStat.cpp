@@ -1352,6 +1352,10 @@ size_t ZStatHeap::used_at_relocate_end() {
   return _at_relocate_end.used;
 }
 
+size_t ZStatHeap::live() {
+  return _at_mark_end.live;
+}
+
 void ZStatHeap::print() {
   log_info(gc, heap)("Min Capacity: "
                      ZSIZE_FMT, ZSIZE_ARGS(_at_initialize.min_capacity));

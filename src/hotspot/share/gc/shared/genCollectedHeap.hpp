@@ -88,6 +88,8 @@ private:
   // In support of ExplicitGCInvokesConcurrent functionality
   unsigned int _full_collections_completed;
 
+  size_t _live_size;
+
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
                           bool run_verification, bool clear_soft_refs,
@@ -175,6 +177,10 @@ public:
 
   size_t capacity() const;
   size_t used() const;
+  size_t live() const {
+    size_t live = _live_size;
+    return live > 0 ? live : used();
+  };
 
   // Save the "used_region" for both generations.
   void save_used_regions();

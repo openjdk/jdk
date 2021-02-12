@@ -57,6 +57,7 @@ class elapsedTimer;
 
 class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
  friend class PSGCAdaptivePolicyCounters;
+ friend class ParallelScavengeHeap;
  private:
   // These values are used to record decisions made during the
   // policy.  For example, if the young generation was decreased

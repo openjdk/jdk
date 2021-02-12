@@ -1102,6 +1102,16 @@ void G1ConcurrentMark::remark() {
     return;
   }
 
+  // collect the liveness info from all referenced regions
+  // the info should be consistent form the previous marking phase
+  size_t live_size = 0;
+  uint max_reserved_regions = _g1h->max_reserved_regions();
+  for (uint i = 0; i < max_reserved_regions; i++) {
+    live_size += _region_mark_stats[i]._live_words;
+  }
+
+  _g1h->set_live(live_size * HeapWordSize);
+
   G1Policy* policy = _g1h->policy();
   policy->record_concurrent_mark_remark_start();
 

@@ -307,6 +307,11 @@
       <setting name="enabled">false</setting>
     </event>
 
+    <event name="jdk.HeapUsageSummary">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">5 s</setting>
+    </event>
+
     <event name="jdk.GCHeapSummary">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>

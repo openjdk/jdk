@@ -162,6 +162,8 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
   HeapWord* cur_obj = space->bottom();
   HeapWord* scan_limit = space->scan_limit();
 
+  size_t live_offset = 0;
+
   while (cur_obj < scan_limit) {
     if (space->scanned_block_is_obj(cur_obj) && oop(cur_obj)->is_gc_marked()) {
       // prefetch beyond cur_obj
@@ -183,7 +185,9 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
       // we don't have to compact quite as often.
       if (cur_obj == compact_top && dead_spacer.insert_deadspace(cur_obj, end)) {
         oop obj = oop(cur_obj);
-        compact_top = cp->space->forward(obj, obj->size(), cp, compact_top);
+        size_t obj_size = obj->size();
+        live_offset += obj_size;
+        compact_top = cp->space->forward(obj, obj_size, cp, compact_top);
         end_of_live = end;
       } else {
         // otherwise, it really is a free region.
@@ -204,6 +208,7 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
 
   assert(cur_obj == scan_limit, "just checking");
   space->_end_of_live = end_of_live;
+  space->_zombie_space = live_offset;
   if (first_dead != NULL) {
     space->_first_dead = first_dead;
   } else {

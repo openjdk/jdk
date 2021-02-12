@@ -214,6 +214,7 @@ protected:
   size_t capacity() const;
   size_t used() const;
   size_t free() const;
+  size_t live() const;
   size_t max_capacity() const;
   size_t capacity_before_gc() const;
   size_t unsafe_max_alloc_nogc() const;

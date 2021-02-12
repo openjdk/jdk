@@ -99,6 +99,7 @@ GenCollectedHeap::GenCollectedHeap(Generation::Name young,
   _gc_policy_counters(new GCPolicyCounters(policy_counters_name, 2, 2)),
   _incremental_collection_failed(false),
   _full_collections_completed(0),
+  _live_size(0),
   _young_manager(NULL),
   _old_manager(NULL) {
 }
@@ -678,6 +679,8 @@ void GenCollectedHeap::do_collection(bool           full,
 
     print_heap_after_gc();
   }
+  // update the live size after last GC
+  _live_size = _young_gen->live() + _old_gen->live();
 }
 
 bool GenCollectedHeap::should_do_full_collection(size_t size, bool full, bool is_tlab,
@@ -1138,6 +1141,7 @@ void GenCollectedHeap::prepare_for_compaction() {
   CompactPoint cp(_old_gen);
   _old_gen->prepare_for_compaction(&cp);
   _young_gen->prepare_for_compaction(&cp);
+
 }
 #endif // INCLUDE_SERIALGC
 

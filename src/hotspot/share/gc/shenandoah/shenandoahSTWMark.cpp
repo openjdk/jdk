@@ -91,7 +91,7 @@ void ShenandoahSTWMark::mark() {
     assert(task_queues()->is_empty(), "Should be empty");
   }
 
-  heap->mark_complete_marking_context();
+  heap->mark_finished();
 
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());

@@ -488,6 +488,30 @@ inline void ShenandoahHeap::mark_complete_marking_context() {
   _marking_context->mark_complete();
 }
 
+inline void ShenandoahHeap::mark_finished() {
+  mark_complete_marking_context();
+
+  class ShenandoahCollectLiveSizeClosure : public ShenandoahHeapRegionClosure {
+  private:
+    size_t _live;
+
+  public:
+    ShenandoahCollectLiveSizeClosure() : _live(0) {}
+
+    void heap_region_do(ShenandoahHeapRegion* r) {
+      _live += r->get_live_data_bytes();
+    }
+
+    size_t get_live() {
+      return _live;
+    }
+  };
+
+  ShenandoahCollectLiveSizeClosure cl;
+  heap_region_iterate(&cl);
+  set_live(cl.get_live());
+}
+
 inline void ShenandoahHeap::mark_incomplete_marking_context() {
   _marking_context->mark_incomplete();
 }

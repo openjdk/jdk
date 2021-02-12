@@ -623,6 +623,11 @@ size_t ShenandoahHeap::used() const {
   return Atomic::load_acquire(&_used);
 }
 
+size_t ShenandoahHeap::live() const {
+  size_t live = Atomic::load_acquire(&_live);
+  return live > 0 ? live : used();
+}
+
 size_t ShenandoahHeap::committed() const {
   OrderAccess::acquire();
   return _committed;
@@ -644,6 +649,10 @@ void ShenandoahHeap::increase_used(size_t bytes) {
 
 void ShenandoahHeap::set_used(size_t bytes) {
   Atomic::release_store_fence(&_used, bytes);
+}
+
+void ShenandoahHeap::set_live(size_t bytes) {
+  Atomic::release_store_fence(&_live, bytes);
 }
 
 void ShenandoahHeap::decrease_used(size_t bytes) {

@@ -1402,6 +1402,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _archive_set("Archive Region Set", new ArchiveRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(NULL),
+  _live_size(0),
   _listener(),
   _numa(G1NUMA::create()),
   _hrm(),
@@ -1842,6 +1843,11 @@ size_t G1CollectedHeap::used() const {
     result += _archive_allocator->used();
   }
   return result;
+}
+
+size_t G1CollectedHeap::live() const {
+  size_t size = Atomic::load(&_live_size);
+  return size > 0 ? size : used();
 }
 
 size_t G1CollectedHeap::used_unlocked() const {
@@ -4566,6 +4572,10 @@ void G1CollectedHeap::decrease_used(size_t bytes) {
 
 void G1CollectedHeap::set_used(size_t bytes) {
   _summary_bytes_used = bytes;
+}
+
+void G1CollectedHeap::set_live(size_t bytes) {
+  Atomic::release_store(&_live_size, bytes);
 }
 
 class RebuildRegionSetsClosure : public HeapRegionClosure {

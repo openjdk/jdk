@@ -77,6 +77,7 @@ public:
   virtual size_t max_capacity() const { return _virtual_space.reserved_size();  }
   virtual size_t capacity()     const { return _virtual_space.committed_size(); }
   virtual size_t used()         const { return _space->used(); }
+  virtual size_t live()         const { return used(); }
 
   virtual bool is_in(const void* p) const {
     return _space->is_in(p);

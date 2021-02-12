@@ -171,6 +171,7 @@ private:
   shenandoah_padding(0);
   volatile size_t _used;
   volatile size_t _committed;
+  volatile size_t _live;
   volatile size_t _bytes_allocated_since_gc_start;
   shenandoah_padding(1);
 
@@ -178,6 +179,7 @@ public:
   void increase_used(size_t bytes);
   void decrease_used(size_t bytes);
   void set_used(size_t bytes);
+  void set_live(size_t bytes);
 
   void increase_committed(size_t bytes);
   void decrease_committed(size_t bytes);
@@ -192,6 +194,7 @@ public:
   size_t initial_capacity()  const;
   size_t capacity()          const;
   size_t used()              const;
+  size_t live()              const;
   size_t committed()         const;
 
   void set_soft_max_capacity(size_t v);
@@ -564,6 +567,7 @@ private:
 public:
   inline ShenandoahMarkingContext* complete_marking_context() const;
   inline ShenandoahMarkingContext* marking_context() const;
+  inline void mark_finished();
   inline void mark_complete_marking_context();
   inline void mark_incomplete_marking_context();
 

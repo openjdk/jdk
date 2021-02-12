@@ -140,6 +140,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1FullCollector;
   friend class G1GCAllocRegion;
   friend class G1HeapVerifier;
+  friend class G1ConcurrentMark;
 
   // Closures used in implementation.
   friend class G1ParScanThreadState;
@@ -178,6 +179,8 @@ private:
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
 
+  volatile size_t _live_size;
+
 public:
   void prepare_region_for_full_compaction(HeapRegion* hr);
 
@@ -211,6 +214,7 @@ private:
   void decrease_used(size_t bytes);
 
   void set_used(size_t bytes);
+  void set_live(size_t bytes);
 
   // Number of bytes used in all regions during GC. Typically changed when
   // retiring a GC alloc region.
@@ -1054,6 +1058,7 @@ public:
 
   virtual size_t capacity() const;
   virtual size_t used() const;
+  virtual size_t live() const;
   // This should be called when we're not holding the heap lock. The
   // result might be a bit inaccurate.
   size_t used_unlocked() const;

@@ -214,6 +214,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   virtual size_t capacity() const = 0;
   virtual size_t used() const = 0;
+  // a best-effort estimate of the live set size
+  virtual size_t live() const = 0;
 
   // Returns unused capacity.
   virtual size_t unused() const;
