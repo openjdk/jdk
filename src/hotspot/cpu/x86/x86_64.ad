@@ -3176,6 +3176,19 @@ operand immL_32bits()
   interface(CONST_INTER);
 %}
 
+// Int Immediate: power of 2, positive
+operand immI_bitmask()
+%{
+  predicate((n->get_int() != 0)
+            && ((n->get_int() & 0xc0000000) == 0)
+            && is_power_of_2(n->get_int() + 1));
+  match(ConI);
+
+  op_cost(20);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Float Immediate zero
 operand immF0()
 %{
@@ -9151,6 +9164,22 @@ instruct andI2L_rReg_imm65535(rRegL dst, rRegI src, immI_65535 mask)
   opcode(0x0F, 0xB7);
   ins_encode(REX_reg_reg(dst, src), OpcP, OpcS, reg_reg(dst, src));
   ins_pipe(ialu_reg);
+%}
+
+// Can skip int2long conversions after AND with small bitmask
+instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src, immI_bitmask mask, rRegI tmp, rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_bmi2());
+  ins_cost(125);
+  effect(TEMP tmp, KILL cr);
+  match(Set dst (ConvI2L (AndI src mask)));
+  format %{ "bzhi $dst, $src, $mask \t# using $tmp as TEMP, int & immI_bitmask -> long" %}
+  ins_encode %{
+    assert(VM_Version::supports_bmi2(), "required");
+    __ movl($tmp$$Register, exact_log2($mask$$constant + 1));
+    __ bzhi($dst$$Register, $src$$Register, $tmp$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
 %}
 
 // And Register with Immediate
