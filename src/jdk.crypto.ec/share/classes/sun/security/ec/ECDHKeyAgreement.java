@@ -174,7 +174,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         try {
             resultOpt = deriveKeyImpl(privateKey, publicKey);
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+            throw new ProviderException(e);
         }
         if (resultOpt.isEmpty()) {
             NamedCurve nc = CurveDB.lookup(publicKey.getParams());
