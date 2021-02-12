@@ -182,6 +182,12 @@ public class CgroupSubsystemFactory {
             return Optional.empty();
         }
 
+        // Map a cgroup version specific 'action' to a line in 'selfCgroup' (i.e.
+        // /proc/self/cgroups) , split on the ':' token, so as to set the appropriate
+        // path to the cgroup controller in cgroup data structures 'infos'.
+        // See:
+        //   setCgroupV1Path() for the action run for cgroups v1 systems
+        //   setCgroupV2Path() for the action run for cgroups v2 systems
         try (Stream<String> selfCgroupLines =
              CgroupUtil.readFilePrivileged(Paths.get(selfCgroup))) {
             Consumer<String[]> action = (tokens -> setCgroupV1Path(infos, tokens));
