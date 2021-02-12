@@ -387,7 +387,7 @@ protected:
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                PackageEntry* pkg_entry,
                                                TRAPS);
-  static Handle compute_loader_lock_object(Handle class_loader);
+  static Handle get_loader_lock_or_null(Handle class_loader);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);
