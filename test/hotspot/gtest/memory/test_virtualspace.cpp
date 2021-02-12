@@ -661,7 +661,7 @@ public:
 };
 
 TEST_VM(VirtualSpace, reserve_space_concurrent) {
-  ConcurrentTestRunner testRunner(new ReservedSpaceRunnable(), 10, 1000); // TODO: update to original value of 30, 15000
+  ConcurrentTestRunner testRunner(new ReservedSpaceRunnable(), 30, 15000);
   testRunner.run();
 }
 
@@ -673,6 +673,6 @@ public:
 };
 
 TEST_VM(VirtualSpace, virtual_space_concurrent) {
-  ConcurrentTestRunner testRunner(new VirtualSpaceRunnable(), 10, 1000); // TODO: update to original value of 30, 15000
+  ConcurrentTestRunner testRunner(new VirtualSpaceRunnable(), 30, 15000);
   testRunner.run();
 }

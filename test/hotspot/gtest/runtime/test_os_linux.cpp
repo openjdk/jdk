@@ -414,7 +414,7 @@ public:
 };
 
 TEST_VM(os_linux, reserve_memory_special_concurrent) {
-  ConcurrentTestRunner testRunner(new ReserveMemorySpecialRunnable(), 10, 1000); // TODO: update to original value of 30, 15000
+  ConcurrentTestRunner testRunner(new ReserveMemorySpecialRunnable(), 30, 15000);
   testRunner.run();
 }
 
