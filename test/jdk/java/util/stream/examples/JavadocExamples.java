@@ -20,46 +20,55 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import org.testng.annotations.Test;
+
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.testng.Assert.assertEquals;
 
 /*
  * THE CONTENTS OF THIS FILE HAVE TO BE IN SYNC WITH THE EXAMPLES USED IN THE
  * JAVADOC.
  *
  * @test
- * @compile JavadocExamples.java
+ * @run testng/othervm JavadocExamples
  * @summary Checks to ensure example code displayed in the API documentation of
  *  java/util/Stream compiles correctly.
  */
 public class JavadocExamples {
 
-    public void fromMapMulti() {
-        // Number/Integer Example
+    // From mapMulti
+    @Test
+    public void testNumberIntegerExample() {
         Stream<Number> numbers = Stream.of(1, 2, 3.0);
         List<Integer> integers = numbers.<Integer>mapMulti((number, consumer) -> {
             if (number instanceof Integer i)
                 consumer.accept(i);
         })
         .collect(Collectors.toList());
+
+        assertEquals(integers, List.of(1,2));
     }
-}
-// mapMulti - Expand Iterable Example
-class C {
-    static void expandIterable(Object e, Consumer<Object> c) {
-        if (e instanceof Iterable<?> elements) {
-            for (Object ie : elements) {
-                expandIterable(ie, c);
+    @Test
+    public void testExpandIterableExample() {
+        var nestedList = List.of(1, List.of(2, List.of(3, 4)), 5);
+        Stream<Object> expandedStream = nestedList.stream().mapMulti(C::expandIterable);
+
+        assertEquals(expandedStream.toList(), List.of(1,2,3,4,5));
+    }
+    static class C {
+        static void expandIterable(Object e, Consumer<Object> c) {
+            if (e instanceof Iterable<?> elements) {
+                for (Object ie : elements) {
+                    expandIterable(ie, c);
+                }
+            } else if (e != null) {
+                c.accept(e);
             }
-        } else if (e != null) {
-            c.accept(e);
         }
-    }
-    public static void main(String[] args) {
-        Stream<Object> stream = Stream.of(1, List.of(2, List.of(3, 4)), 5);
-        Stream<Object> expandedStream = stream.mapMulti(C::expandIterable);
     }
 }
 

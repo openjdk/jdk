@@ -407,8 +407,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *     }
      *
      *     public static void main(String[] args) {
-     *         Stream<Object> stream = ...;
-     *         Stream<Object> expandedStream = stream.mapMulti(C::expandIterable);
+     *         var nestedList = ...;
+     *         Stream<Object> expandedStream = nestedList.stream().mapMulti(C::expandIterable);
      *     }
      * }
      * }</pre>
