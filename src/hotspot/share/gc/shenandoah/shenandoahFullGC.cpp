@@ -958,7 +958,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
 
       Copy::aligned_conjoint_words(heap->get_region(old_start)->bottom(),
                                    heap->get_region(new_start)->bottom(),
-                                   ShenandoahHeapRegion::region_size_words()*num_regions);
+                                   words_size);
 
       oop new_obj = oop(heap->get_region(new_start)->bottom());
       new_obj->init_mark();

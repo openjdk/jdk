@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ public class strace001 {
     public static volatile boolean testFailed = false;
     public static Object common = new Object();
     public static Integer activeThreads;
+    public static String activeThreadsSync = "abc";
     private static Log log;
     private static int depth;
     private static int threadCount;
@@ -69,7 +70,7 @@ public class strace001 {
 
         for (int i = 0; i < ITERATIONS; i++) {
             log.display("\nIteration: " + i);
-            activeThreads = new Integer(0);
+            activeThreads = Integer.valueOf(0);
             finish = false;
 
             // Start all threads. Half of them are user threads,
@@ -292,9 +293,9 @@ class RunningThread extends Thread {
 
         // This instance of the thread is alive
         synchronized (strace001.common) {
-            synchronized (strace001.activeThreads) {
+            synchronized (strace001.activeThreadsSync) {
                 strace001.activeThreads
-                    = new Integer(strace001.activeThreads.intValue() + 1);
+                    = Integer.valueOf(strace001.activeThreads.intValue() + 1);
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ public class CustomMBeanServer implements MBeanServer {
                                try {
                                        newName = register.preRegister(this, name);
                                } catch (Exception e) {
-                                       register.postRegister(new Boolean(false));
+                                       register.postRegister(Boolean.valueOf(false));
                                        throw new MBeanRegistrationException(e);
                                }
 
@@ -182,7 +182,7 @@ public class CustomMBeanServer implements MBeanServer {
                                        log.trace(TRACE_ALL, "[registerMBean] " + newName);
 
                                if  (isRegistered(newName)) {
-                                       register.postRegister(new Boolean(false));
+                                       register.postRegister(Boolean.valueOf(false));
                                        throw new InstanceAlreadyExistsException("already registered");
                                }
 
@@ -193,7 +193,7 @@ public class CustomMBeanServer implements MBeanServer {
                                        throw new RuntimeOperationsException(e);
                                }
                                registeredMBeans.put(newName, new ObjectKeeper(instance, object));
-                               register.postRegister(new Boolean(true));
+                               register.postRegister(Boolean.valueOf(true));
                                return instance;
                        }
 
