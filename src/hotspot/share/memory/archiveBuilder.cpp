@@ -161,37 +161,40 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
   _ptrmap.iterate(&relocator, start, end);
 }
 
-ArchiveBuilder::ArchiveBuilder()
-  : _mc_region("mc", MAX_SHARED_DELTA),
-    _rw_region("rw", MAX_SHARED_DELTA),
-    _ro_region("ro", MAX_SHARED_DELTA),
-    _rw_src_objs(), _ro_src_objs(), _src_obj_table(INITIAL_TABLE_SIZE) {
-  assert(_current == NULL, "must be");
-  _current = this;
-
+ArchiveBuilder::ArchiveBuilder() :
+  _current_dump_space(NULL),
+  _buffer_bottom(NULL),
+  _last_verified_top(NULL),
+  _num_dump_regions_used(0),    
+  _other_region_used_bytes(0),
+  _requested_static_archive_bottom(NULL),
+  _requested_static_archive_top(NULL),
+  _requested_dynamic_archive_bottom(NULL),
+  _requested_dynamic_archive_top(NULL),
+  _mapped_static_archive_bottom(NULL),
+  _mapped_static_archive_top(NULL),
+  _buffer_to_requested_delta(0),
+  _mc_region("mc", MAX_SHARED_DELTA),
+  _rw_region("rw", MAX_SHARED_DELTA),
+  _ro_region("ro", MAX_SHARED_DELTA),
+  _rw_src_objs(),
+  _ro_src_objs(),
+  _src_obj_table(INITIAL_TABLE_SIZE),
+  _num_instance_klasses(0),
+  _num_obj_array_klasses(0),
+  _num_type_array_klasses(0),
+  _total_closed_heap_region_size(0),
+  _total_open_heap_region_size(0),
+  _estimated_metaspaceobj_bytes(0),
+  _estimated_hashtable_bytes(0),
+  _estimated_trampoline_bytes(0)
+{
   _klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
   _special_refs = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<SpecialRefInfo>(24 * K, mtClassShared);
 
-  _num_instance_klasses = 0;
-  _num_obj_array_klasses = 0;
-  _num_type_array_klasses = 0;
-  _total_closed_heap_region_size = 0;
-  _total_open_heap_region_size = 0;
-
-  _num_dump_regions_used = 0;
-
-  _estimated_metaspaceobj_bytes = 0;
-  _estimated_hashtable_bytes = 0;
-  _estimated_trampoline_bytes = 0;
-
-  _requested_static_archive_bottom = NULL;
-  _requested_static_archive_top = NULL;
-  _mapped_static_archive_bottom = NULL;
-  _mapped_static_archive_top = NULL;
-  _requested_dynamic_archive_bottom = NULL;
-  _requested_dynamic_archive_top = NULL;
-  _buffer_to_requested_delta = 0;
+  assert(_current == NULL, "must be");
+  _current = this;
 }
 
 ArchiveBuilder::~ArchiveBuilder() {
@@ -371,7 +374,7 @@ address ArchiveBuilder::reserve_buffer() {
   // buffer_bottom is the lowest address of the 3 core regions (mc, rw, ro) when
   // we are copying the class metadata into the buffer.
   address buffer_bottom = (address)rs.base();
-  log_info(cds)("Reserved output buffer space at    : " PTR_FORMAT " [" SIZE_FORMAT " bytes]",
+  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [" SIZE_FORMAT " bytes]",
                 p2i(buffer_bottom), buffer_size);
   _shared_rs = rs;
 
