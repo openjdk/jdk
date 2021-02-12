@@ -49,7 +49,7 @@ public class JavadocExamples {
 // mapMulti - Expand Iterable Example
 class C {
     static void expandIterable(Object e, Consumer<Object> c) {
-        if (e instanceof Iterable elements) {
+        if (e instanceof Iterable<?> elements) {
             for (Object ie : elements) {
                 expandIterable(ie, c);
             }

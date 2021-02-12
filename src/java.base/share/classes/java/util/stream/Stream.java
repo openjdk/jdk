@@ -397,7 +397,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <pre>{@code
      * class C {
      *     static void expandIterable(Object e, Consumer<Object> c) {
-     *         if (e instanceof Iterable elements) {
+     *         if (e instanceof Iterable<?> elements) {
      *             for (Object ie : elements) {
      *                 expandIterable(ie, c);
      *             }
