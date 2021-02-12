@@ -213,8 +213,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 if (!utils.isCoreClass(klass) || !configuration.isGeneratedDoc(klass)) {
                     continue;
                 }
-                Content classLink = getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.Kind.PACKAGE, klass));
+                Content classLink = getLink(new HtmlLinkInfo(
+                        configuration, HtmlLinkInfo.Kind.PACKAGE, klass));
                 ContentBuilder description = new ContentBuilder();
                 addPreviewSummary(klass, description);
                 if (utils.isDeprecated(klass)) {

@@ -151,7 +151,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             } else {
                 if (!utils.hasHiddenTag(holder) && !utils.hasHiddenTag(method)) {
                     Content link =
-                            writer.getDocLink(LinkInfoImpl.Kind.EXECUTABLE_ELEMENT_COPY,
+                            writer.getDocLink(HtmlLinkInfo.Kind.EXECUTABLE_ELEMENT_COPY,
                                     holder, method,
                                     utils.isIncluded(holder)
                                             ? utils.getSimpleName(holder)
@@ -215,7 +215,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
         Content classLink = writer.getPreQualifiedClassLink(
-                LinkInfoImpl.Kind.MEMBER, typeElement);
+                HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = new StringContent(utils.isClass(typeElement)
@@ -273,22 +273,22 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
 
         Contents contents = writer.contents;
         Content label;
-        LinkInfoImpl.Kind context;
+        HtmlLinkInfo.Kind context;
         if (utils.isAbstract(holder) && utils.isAbstract(method)) {
             //Abstract method is implemented from abstract class,
             //not overridden
             label = contents.specifiedByLabel;
-            context = LinkInfoImpl.Kind.METHOD_SPECIFIED_BY;
+            context = HtmlLinkInfo.Kind.METHOD_SPECIFIED_BY;
         } else {
             label = contents.overridesLabel;
-            context = LinkInfoImpl.Kind.METHOD_OVERRIDES;
+            context = HtmlLinkInfo.Kind.METHOD_OVERRIDES;
         }
         dl.add(HtmlTree.DT(label));
         Content overriddenTypeLink =
-                writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType));
+                writer.getLink(new HtmlLinkInfo(writer.configuration, context, overriddenType));
         Content codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
         Content methlink = writer.getLink(
-                new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER, holder)
+                new HtmlLinkInfo(writer.configuration, HtmlLinkInfo.Kind.MEMBER, holder)
                         .where(writer.htmlIds.forMember(method).name())
                         .label(method.getSimpleName()));
         Content codeMethLink = HtmlTree.CODE(methlink);
@@ -324,12 +324,12 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         for (ExecutableElement implementedMeth : implementedMethods) {
             TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);
             intfac = utils.getDeclaredType(utils.getEnclosingTypeElement(method), intfac);
-            Content intfaclink = writer.getLink(new LinkInfoImpl(
-                    writer.configuration, LinkInfoImpl.Kind.METHOD_SPECIFIED_BY, intfac));
+            Content intfaclink = writer.getLink(new HtmlLinkInfo(
+                    writer.configuration, HtmlLinkInfo.Kind.METHOD_SPECIFIED_BY, intfac));
             Content codeIntfacLink = HtmlTree.CODE(intfaclink);
             dl.add(HtmlTree.DT(contents.specifiedByLabel));
             Content methlink = writer.getDocLink(
-                    LinkInfoImpl.Kind.MEMBER, implementedMeth,
+                    HtmlLinkInfo.Kind.MEMBER, implementedMeth,
                     implementedMeth.getSimpleName());
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
@@ -350,7 +350,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     protected Content getReturnType(ExecutableElement method) {
         TypeMirror type = utils.getReturnType(typeElement, method);
         if (type != null) {
-            return writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type));
+            return writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RETURN_TYPE, type));
         }
         return new ContentBuilder();
     }

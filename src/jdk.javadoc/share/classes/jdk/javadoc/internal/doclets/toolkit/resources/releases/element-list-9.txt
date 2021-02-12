@@ -319,6 +319,8 @@ com.sun.jarsigner
 jdk.security.jarsigner
 module:jdk.javadoc
 com.sun.javadoc
+com.sun.tools.doclets
+com.sun.tools.doclets.standard
 com.sun.tools.javadoc
 jdk.javadoc.doclet
 module:jdk.jconsole
@@ -351,7 +353,6 @@ module:jdk.net
 jdk.net
 module:jdk.packager.services
 jdk.packager.services
-jdk.packager.services.singleton
 module:jdk.scripting.nashorn
 jdk.nashorn.api.scripting
 jdk.nashorn.api.tree

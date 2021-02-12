@@ -821,6 +821,8 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 javax/script/Test7.java                                         8239361 generic-all
 
+jdk/dynalink/TypeConverterFactoryMemoryLeakTest.java            8261483 generic-all
+
 ############################################################################
 
 # jdk_jfr

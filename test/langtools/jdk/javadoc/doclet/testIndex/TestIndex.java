@@ -52,31 +52,30 @@ public class TestIndex extends JavadocTester {
         //Test index-all.html
         checkOutput("index-all.html", true,
                 """
-                    <a href="pkg/C.html" title="class in pkg"><span class="type-name-link">C</span><\
-                    /a> - Class in <a href="pkg/package-summary.html">pkg</a>""",
+                    <a href="pkg/C.html" class="type-name-link" title="class in pkg">C</a> - Class i\
+                    n <a href="pkg/package-summary.html">pkg</a>""",
                 """
-                    <a href="pkg/Interface.html" title="interface in pkg"><span class="type-name-lin\
-                    k">Interface</span></a> - Interface in <a href="pkg/package-summary.html">pkg</a\
-                    >""",
+                    <a href="pkg/Interface.html" class="type-name-link" title="interface in pkg">Int\
+                    erface</a> - Interface in <a href="pkg/package-summary.html">pkg</a>""",
                 """
-                    <a href="pkg/AnnotationType.html" title="annotation in pkg"><span class="type-na\
-                    me-link">AnnotationType</span></a> - Annotation Interface in <a href="pkg/package-sum\
-                    mary.html">pkg</a>""",
+                    <a href="pkg/AnnotationType.html" class="type-name-link" title="annotation in pk\
+                    g">AnnotationType</a> - Annotation Interface in <a href="pkg/packag\
+                    e-summary.html">pkg</a>""",
                 """
-                    <a href="pkg/Coin.html" title="enum class in pkg"><span class="type-name-link">Coin</s\
-                    pan></a> - Enum Class in <a href="pkg/package-summary.html">pkg</a>""",
+                    <a href="pkg/Coin.html" class="type-name-link" title="enum class in pkg">Coin</a\
+                    > - Enum Class in <a href="pkg/package-summary.html">pkg</a>""",
                 """
                     Class in <a href="package-summary.html">&lt;Unnamed&gt;</a>""",
                 """
                     <dl class="index">
-                    <dt><span class="member-name-link"><a href="pkg/C.html#Java">Java</a></span> - S\
-                    tatic variable in class pkg.<a href="pkg/C.html" title="class in pkg">C</a></dt>
+                    <dt><a href="pkg/C.html#Java" class="member-name-link">Java</a> - Static variabl\
+                    e in class pkg.<a href="pkg/C.html" title="class in pkg">C</a></dt>
                     <dd>&nbsp;</dd>
-                    <dt><span class="member-name-link"><a href="pkg/C.html#JDK">JDK</a></span> - Sta\
-                    tic variable in class pkg.<a href="pkg/C.html" title="class in pkg">C</a></dt>
+                    <dt><a href="pkg/C.html#JDK" class="member-name-link">JDK</a> - Static variable \
+                    in class pkg.<a href="pkg/C.html" title="class in pkg">C</a></dt>
                     <dd>&nbsp;</dd>
                     </dl>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/Coin.html#Enum">Enum</a></span> - Search tag in enum class pkg.Coin</dt>""");
+                    <dt><a href="pkg/Coin.html#Enum" class="search-tag-link">Enum</a> - Search tag in enum class pkg.Coin</dt>""");
     }
 }

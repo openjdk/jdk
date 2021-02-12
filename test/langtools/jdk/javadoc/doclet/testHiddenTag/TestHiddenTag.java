@@ -116,15 +116,16 @@ public class TestHiddenTag extends JavadocTester {
 
         checkOutput("pkg1/Child.html", true,
                 """
-                    <a href="InvisibleParent.VisibleInner.html" title="class in pkg1">InvisibleParent.VisibleInner</a>""",
+                    <a href="InvisibleParent.VisibleInner.html" class="type-name-link" title="class \
+                    in pkg1">InvisibleParent.VisibleInner</a>""",
                 """
-                    <a href="#visibleField">visibleField</a>""",
+                    <a href="#visibleField" class="member-name-link">visibleField</a>""",
                 """
-                    <a href="#invisibleInterfaceMethod()">invisibleInterfaceMethod</a>""",
+                    <a href="#invisibleInterfaceMethod()" class="member-name-link">invisibleInterfaceMethod</a>""",
                 """
-                    <a href="#visibleInterfaceMethod()">visibleInterfaceMethod</a>""",
+                    <a href="#visibleInterfaceMethod()" class="member-name-link">visibleInterfaceMethod</a>""",
                 """
-                    <a href="#visibleMethod(pkg1.InvisibleParent)">visibleMethod</a></span>""",
+                    <a href="#visibleMethod(pkg1.InvisibleParent)" class="member-name-link">visibleMethod</a>""",
                 """
                     <a href="Intf.html#visibleDefaultMethod()">visibleDefaultMethod</a>""",
                 // Invisible return or parameter types must not be linked

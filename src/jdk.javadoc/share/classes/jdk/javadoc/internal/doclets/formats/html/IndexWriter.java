@@ -214,8 +214,8 @@ public class IndexWriter extends HtmlDocletWriter {
             case RECORD:
             case ANNOTATION_TYPE:
             case INTERFACE:
-                dt = HtmlTree.DT(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.INDEX, (TypeElement) element).strong(true)));
+                dt = HtmlTree.DT(getLink(new HtmlLinkInfo(configuration,
+                        HtmlLinkInfo.Kind.INDEX, (TypeElement) element).style(HtmlStyle.typeNameLink)));
                 dt.add(" - ");
                 addClassInfo((TypeElement) element, dt);
                 break;
@@ -225,9 +225,8 @@ public class IndexWriter extends HtmlDocletWriter {
             case FIELD:
             case ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
-                dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                        getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element,
-                                new StringContent(label), false)));
+                dt = HtmlTree.DT(getDocLink(HtmlLinkInfo.Kind.INDEX, containingType, element,
+                                label, HtmlStyle.memberNameLink));
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
                 break;
@@ -269,7 +268,7 @@ public class IndexWriter extends HtmlDocletWriter {
         String itemPath = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
         itemPath += item.getUrl();
         HtmlTree labelLink = HtmlTree.A(itemPath, new StringContent(item.getLabel()));
-        Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.searchTagLink, labelLink));
+        Content dt = HtmlTree.DT(labelLink.setStyle(HtmlStyle.searchTagLink));
         dt.add(" - ");
         dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
         dlTree.add(dt);
@@ -339,8 +338,8 @@ public class IndexWriter extends HtmlDocletWriter {
             default -> throw new IllegalArgumentException(member.getKind().toString());
         };
         contentTree.add(contents.getContent(resource, kindName)).add(" ");
-        addPreQualifiedClassLink(LinkInfoImpl.Kind.INDEX, enclosing,
-                false, contentTree);
+        addPreQualifiedClassLink(HtmlLinkInfo.Kind.INDEX, enclosing,
+                null, contentTree);
     }
 
     /**
