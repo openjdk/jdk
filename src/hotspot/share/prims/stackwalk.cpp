@@ -407,6 +407,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   int end_index = start_index;
   int numFrames = 0;
   if (!stream.at_end()) {
+    KeepStackGCProcessedMark keep_stack(THREAD->as_Java_thread());
     numFrames = fill_in_frames(mode, stream, frame_count, start_index,
                                frames_array, end_index, CHECK_NULL);
     if (numFrames < 1) {

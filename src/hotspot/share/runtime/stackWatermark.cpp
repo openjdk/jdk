@@ -250,8 +250,16 @@ void StackWatermark::process_one() {
 }
 
 void StackWatermark::link_watermark(StackWatermark* watermark) {
-  assert(watermark == NULL || _linked_watermark == NULL, "nesting not supported");
+  if (watermark != NULL) {
+    watermark->_linked_watermark = _linked_watermark;
+  }
   _linked_watermark = watermark;
+}
+
+void StackWatermark::unlink_watermark() {
+  if (_linked_watermark != NULL) {
+    _linked_watermark = _linked_watermark->_linked_watermark;
+  }
 }
 
 uintptr_t StackWatermark::watermark() {
