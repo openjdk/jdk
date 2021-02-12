@@ -66,14 +66,14 @@ public class ByteStreamDecoder {
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non
             magna augue. Sed tristique ante id maximus interdum. Suspendisse
             potenti. Aliquam molestie metus vitae magna gravida egestas.
-            Phasellus eleifend tortor sit amet neque euismod, vitae luctus 
+            Phasellus eleifend tortor sit amet neque euismod, vitae luctus
             ante viverra. Sed quis justo ultrices, eleifend dui sed, egestas
             lorem. Mauris ipsum ex, interdum eu turpis sed, fermentum efficitur
             lorem. Sed vel imperdiet libero, eget ullamcorper sem. Praesent
-            gravida arcu quis ipsum viverra tristique. Quisque maximus 
-            elit nec nisi vulputate tempor. Integer aliquet tortor vel 
+            gravida arcu quis ipsum viverra tristique. Quisque maximus
+            elit nec nisi vulputate tempor. Integer aliquet tortor vel
             vehicula efficitur. Sed neque felis, ultricies eu leo ultricies,
-            egestas placerat dolor. Etiam iaculis magna quis lacinia 
+            egestas placerat dolor. Etiam iaculis magna quis lacinia
             tincidunt. Donec in tellus volutpat, semper nunc ornare,
             tempus erat. Donec volutpat mauris in arcu mattis sollicitudin.
             Morbi vestibulum ipsum sed erat porta, mollis commodo nisi
