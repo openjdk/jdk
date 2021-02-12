@@ -53,7 +53,7 @@ class G1BarrierSet: public CardTableBarrierSet {
   G1BarrierSet(G1CardTable* table);
   ~G1BarrierSet() { }
 
-  bool card_mark_must_follow_store() const {
+  virtual bool card_mark_must_follow_store() const {
     return true;
   }
 
