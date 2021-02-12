@@ -1331,11 +1331,6 @@ void G1ConcurrentMark::cleanup() {
     _g1h->heap_region_iterate(&cl);
   }
 
-  if (log_is_enabled(Trace, gc, liveness)) {
-    G1PrintRegionLivenessInfoClosure cl("Post-Cleanup");
-    _g1h->heap_region_iterate(&cl);
-  }
-
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
 
   // We need to make this be a "collection" so any collection pause that

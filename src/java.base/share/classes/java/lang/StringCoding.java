@@ -34,13 +34,6 @@ class StringCoding {
 
     private StringCoding() { }
 
-    /**
-     *  Print a message directly to stderr, bypassing all character conversion
-     *  methods.
-     *  @param msg  message to print
-     */
-    private static native void err(String msg);
-
     @IntrinsicCandidate
     public static boolean hasNegatives(byte[] ba, int off, int len) {
         for (int i = off; i < off + len; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -967,9 +967,9 @@ class ConstantPool : public Metadata {
 
 class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
  private:
-  unsigned int        _hash;   // 32-bit hash for item
   SymbolHashMapEntry* _next;   // Next element in the linked list for this bucket
   Symbol*             _symbol; // 1-st part of the mapping: symbol => value
+  unsigned int        _hash;   // 32-bit hash for item
   u2                  _value;  // 2-nd part of the mapping: symbol => value
 
  public:
@@ -986,7 +986,7 @@ class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
   void       set_value(u2 value)          { _value = value; }
 
   SymbolHashMapEntry(unsigned int hash, Symbol* symbol, u2 value)
-    : _hash(hash), _next(NULL), _symbol(symbol), _value(value) {}
+    : _next(NULL), _symbol(symbol), _hash(hash), _value(value) {}
 
 }; // End SymbolHashMapEntry class
 

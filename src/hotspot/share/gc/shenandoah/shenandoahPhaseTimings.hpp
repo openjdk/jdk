@@ -53,11 +53,9 @@ class outputStream;
   f(init_mark,                                      "Pause Init Mark (N)")             \
   f(init_manage_tlabs,                              "  Manage TLABs")                  \
   f(init_update_region_states,                      "  Update Region States")          \
-  f(scan_roots,                                     "  Scan Roots")                    \
-  SHENANDOAH_PAR_PHASE_DO(scan_,                    "    S: ", f)                      \
                                                                                        \
-  f(conc_mark_roots,                                "  Roots ")                        \
-  SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "    CM: ", f)                     \
+  f(conc_mark_roots,                                "Concurrent Mark Roots ")          \
+  SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "  CMR: ", f)                      \
   f(conc_mark,                                      "Concurrent Marking")              \
                                                                                        \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
@@ -75,6 +73,9 @@ class outputStream;
   f(init_evac,                                      "  Initial Evacuation")            \
   SHENANDOAH_PAR_PHASE_DO(evac_,                    "    E: ", f)                      \
                                                                                        \
+  f(conc_thread_roots,                              "Concurrent Stack Processing")     \
+  f(conc_thread_roots_work,                           "  Threads")                     \
+  SHENANDOAH_PAR_PHASE_DO(conc_thread_roots_work_,    "    CT: ", f)                   \
   f(conc_weak_refs,                                 "Concurrent Weak References")      \
   f(conc_weak_refs_work,                            "  Process")                       \
   SHENANDOAH_PAR_PHASE_DO(conc_weak_refs_work_,     "    CWRF: ", f)                   \

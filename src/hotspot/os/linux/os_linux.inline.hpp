@@ -101,10 +101,6 @@ inline struct hostent* os::get_host_by_name(char* name) {
   return ::gethostbyname(name);
 }
 
-inline bool os::supports_monotonic_clock() {
-  return os::Posix::supports_monotonic_clock();
-}
-
 inline void os::exit(int num) {
   ::exit(num);
 }

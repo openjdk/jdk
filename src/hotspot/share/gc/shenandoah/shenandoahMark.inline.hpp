@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -48,7 +49,7 @@ ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(Shena
 template <GenerationMode GENERATION>
 template <class T>
 void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
+  ShenandoahMark::mark_through_ref<T, GENERATION, NO_DEDUP>(p, _queue, _mark_context, false);
 }
 
 template <class T>
@@ -244,61 +245,40 @@ public:
   void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop, GENERATION, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, GENERATION, STRING_DEDUP>(p, _queue, _mark_context, false);
     }
   }
 };
 
-template<class T, GenerationMode GENERATION, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
+template<class T, GenerationMode GENERATION, StringDedupMode STRING_DEDUP>
+inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    switch (UPDATE_REFS) {
-    case NONE:
-      break;
-    case SIMPLE:
-      // We piggy-back reference updating to the marking tasks.
-      obj = heap->update_with_forwarded_not_null(p, obj);
-      break;
-    case CONCURRENT:
-      obj = heap->maybe_update_with_forwarded_not_null(p, obj);
-      break;
-    default:
-      ShouldNotReachHere();
-    }
 
-    // Note: Only when concurrently updating references can obj be different
-    // (that is, really different, not just different from-/to-space copies of the same)
-    // from the one we originally loaded. Mutator thread can beat us by writing something
-    // else into the location. In that case, we would mark through that updated value,
-    // on the off-chance it is not handled by other means (e.g. via SATB). However,
-    // if that write was NULL, we don't need to do anything else.
-    if (UPDATE_REFS != CONCURRENT || !CompressedOops::is_null(obj)) {
-      shenandoah_assert_not_forwarded(p, obj);
-      shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
+    shenandoah_assert_not_forwarded(p, obj);
+    shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc());
 
-      if (GENERATION != YOUNG || heap->is_in_young(obj)) {
-        bool skip_live = false;
-        bool marked;
-        if (weak) {
-          marked = mark_context->mark_weak(obj);
-        } else {
-          marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
-        }
-        if (marked) {
-          bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
-          assert(pushed, "overflow queue should always succeed pushing");
+    if (GENERATION != YOUNG || heap->is_in_young(obj)) {
+      bool skip_live = false;
+      bool marked;
+      if (weak) {
+        marked = mark_context->mark_weak(obj);
+      } else {
+        marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
+      }
+      if (marked) {
+        bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
+        assert(pushed, "overflow queue should always succeed pushing");
 
-          if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
-            assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
-            ShenandoahStringDedup::enqueue_candidate(obj);
-          }
+        if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
+          assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
+          ShenandoahStringDedup::enqueue_candidate(obj);
         }
       }
-
-      shenandoah_assert_marked(p, obj);
     }
+
+    shenandoah_assert_marked(p, obj);
   }
 }
 

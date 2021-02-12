@@ -36,7 +36,6 @@ template<GenerationMode GENERATION>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
 private:
   ShenandoahObjToScanQueue* const _queue;
-  ShenandoahHeap*           const _heap;
   ShenandoahMarkingContext* const _mark_context;
 
   template <class T>
@@ -62,8 +61,8 @@ protected:
   ShenandoahMark();
 
 public:
-  template<class T, GenerationMode GENERATION, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
+  template<class T, GenerationMode GENERATION, StringDedupMode STRING_DEDUP>
+  static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
 
   static void clear();
 

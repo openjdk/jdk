@@ -54,16 +54,15 @@ private:
   // active state, to support inline barriers in compiled code.
   bool _active;
 
-  // Filter out unwanted entries from the buffer.
-  inline void filter();
-
 public:
   SATBMarkQueue(SATBMarkQueueSet* qset);
 
   bool is_active() const { return _active; }
   void set_active(bool value) { _active = value; }
 
-  inline SATBMarkQueueSet* satb_qset() const;
+  // Apply cl to the active part of the buffer.
+  // Prerequisite: Must be at a safepoint.
+  void apply_closure_and_empty(SATBBufferClosure* cl);
 
 #ifndef PRODUCT
   // Helpful for debugging
@@ -173,14 +172,6 @@ public:
   // If a marking is being abandoned, reset any unprocessed log buffers.
   void abandon_partial_marking();
 };
-
-inline SATBMarkQueueSet* SATBMarkQueue::satb_qset() const {
-  return static_cast<SATBMarkQueueSet*>(qset());
-}
-
-inline void SATBMarkQueue::filter() {
-  satb_qset()->filter(*this);
-}
 
 // Removes entries from queue's buffer that are no longer needed, as
 // determined by filter. If e is a void* entry in queue's buffer,

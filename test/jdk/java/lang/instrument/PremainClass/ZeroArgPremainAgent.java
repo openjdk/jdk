@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,25 @@
  * questions.
  */
 
-import java.lang.instrument.*;
+/*
+ * @test
+ * @bug 6289149
+ * @summary test when the agent's class has a zero arg premain() function.
+ * @library /test/lib
+ * @library /test
+ *
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.ZeroArgPremainAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             ZeroArgPremainAgent ZeroArgPremainAgent.jar
+ * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner ZeroArgPremainAgent NoSuchMethodException
+ */
 
-class ZeroArgPremainAgent {
+public class ZeroArgPremainAgent {
 
     // This agent has a zero arg premain() function.
     public static void premain () {
         System.out.println("Hello from ZeroArgInheritAgent!");
+        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
     }
 }

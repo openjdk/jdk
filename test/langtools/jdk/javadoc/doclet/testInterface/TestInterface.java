@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,13 +133,13 @@ public class TestInterface extends JavadocTester {
                     <div class="block">A hider field</div>""",
 
                 """
-                    <div class="col-first even-row-color method-summary-table-tab1 method-summary-table-t\
-                    ab4 method-summary-table"><code>static void</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab1 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#m()">m\
-                    </a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab1 method-summary-table-ta\
-                    b4 method-summary-table">
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab1 method-summary-table-tab4"><code>static void</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab1 method-summary-table-tab4"><code><span class="member-name-link"><a href="#m\
+                    ()">m</a></span>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b1 method-summary-table-tab4">
                     <div class="block">A hider method</div>
                     </div>
                     """,

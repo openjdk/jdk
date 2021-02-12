@@ -65,6 +65,21 @@ public:
   void oops_do(T* cl, uint worker_id);
 };
 
+class ShenandoahJavaThreadsIterator {
+private:
+  ThreadsListHandle             _threads;
+  volatile uint                 _claimed;
+  ShenandoahPhaseTimings::Phase _phase;
+
+  uint claim();
+public:
+  ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase);
+  void threads_do(ThreadClosure* cl, uint worker_id);
+
+  uint length() const { return _threads.length(); }
+  Thread* thread_at(uint index) const { return _threads.thread_at(index); }
+};
+
 class ShenandoahThreadRoots {
 private:
   ShenandoahPhaseTimings::Phase _phase;
@@ -183,6 +198,7 @@ public:
 
 class ShenandoahConcurrentRootScanner : public ShenandoahRootProcessor {
 private:
+  ShenandoahJavaThreadsIterator             _java_threads;
   ShenandoahVMRoots<true /*concurrent*/>    _vm_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /* single-threaded*/>
                                            _cld_roots;
@@ -194,6 +210,9 @@ public:
   ~ShenandoahConcurrentRootScanner();
 
   void roots_do(OopClosure* oops, uint worker_id);
+
+private:
+  void update_tlab_stats();
 };
 
 // This scanner is only for SH::object_iteration() and only supports single-threaded
@@ -213,17 +232,6 @@ public:
   ~ShenandoahHeapIterationRootScanner();
 
   void roots_do(OopClosure* cl);
-};
-
-// Evacuate all roots at a safepoint
-class ShenandoahRootEvacuator : public ShenandoahRootProcessor {
-private:
-  ShenandoahThreadRoots                                     _thread_roots;
-public:
-  ShenandoahRootEvacuator(uint n_workers, ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahRootEvacuator();
-
-  void roots_do(uint worker_id, OopClosure* oops);
 };
 
 // Update all roots at a safepoint

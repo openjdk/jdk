@@ -281,16 +281,6 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
   ResourceMark rm(THREAD);
   ClassFileStream st((u1*)buf, bufLen, NULL, ClassFileStream::verify);
   Handle class_loader (THREAD, JNIHandles::resolve(loaderRef));
-
-  if (UsePerfData && !class_loader.is_null()) {
-    // check whether the current caller thread holds the lock or not.
-    // If not, increment the corresponding counter
-    if (ObjectSynchronizer::
-        query_lock_ownership(thread, class_loader) !=
-        ObjectSynchronizer::owner_self) {
-      ClassLoader::sync_JNIDefineClassLockFreeCounter()->inc();
-    }
-  }
   Klass* k = SystemDictionary::resolve_from_stream(class_name,
                                                    class_loader,
                                                    Handle(),

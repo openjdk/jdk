@@ -293,7 +293,6 @@ tier1_runtime = \
  -runtime/ConstantPool/IntfMethod.java \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
- -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/InvocationTests \
  -runtime/logging/MonitorMismatchTest.java \

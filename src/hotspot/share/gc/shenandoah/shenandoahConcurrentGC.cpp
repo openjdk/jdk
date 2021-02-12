@@ -34,12 +34,14 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
-#include "gc/shenandoah/shenandoahVMOperations.hpp"
+#include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "prims/jvmtiTagMap.hpp"
@@ -79,6 +81,11 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
   // Complete marking under STW, and start evacuation
   vmop_entry_final_mark();
+
+  // Concurrent stack processing
+  if (heap->is_evacuation_in_progress()) {
+    entry_thread_roots();
+  }
 
   // Process weak roots that might still point to regions that would be broken by cleanup
   if (heap->is_concurrent_weak_root_in_progress()) {
@@ -268,6 +275,20 @@ void ShenandoahConcurrentGC::entry_mark() {
 
   heap->try_inject_alloc_failure();
   op_mark();
+}
+
+void ShenandoahConcurrentGC::entry_thread_roots() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  static const char* msg = "Concurrent thread roots";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_thread_roots);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              msg);
+
+  heap->try_inject_alloc_failure();
+  op_thread_roots();
 }
 
 void ShenandoahConcurrentGC::entry_weak_refs() {
@@ -462,14 +483,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   heap->set_concurrent_mark_in_progress(true);
 
-  // We need to reset all TLABs because they might be below the TAMS, and we need to mark
-  // the objects in them. Do not let mutators allocate any new objects in their current TLABs.
-  // It is also a good place to resize the TLAB sizes for future allocations.
-  if (UseTLAB) {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_manage_tlabs);
-    heap->tlabs_retire(ResizeTLAB);
-  }
-
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
@@ -490,8 +503,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
     ShenandoahCodeRoots::arm_nmethods();
   }
 
-  _mark.mark_stw_roots(_generation);
-
+  ShenandoahStackWatermark::change_epoch_id();
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_mark();
   }
@@ -535,18 +547,18 @@ void ShenandoahConcurrentGC::op_final_mark() {
       // From here on, we need to update references.
       heap->set_has_forwarded_objects(true);
 
-      // Arm nmethods for concurrent processing
-      ShenandoahCodeRoots::arm_nmethods();
-
-      // Should be gone after 8212879 and concurrent stack processing
-      heap->evacuate_and_update_roots();
-
-      // Notify JVMTI that oops are changed.
-      JvmtiTagMap::set_needs_rehashing();
-
+      // Verify before arming for concurrent processing.
+      // Otherwise, verification can trigger stack processing.
       if (ShenandoahVerify) {
         heap->verifier()->verify_during_evacuation();
       }
+
+      // Arm nmethods/stack for concurrent processing
+      ShenandoahCodeRoots::arm_nmethods();
+      ShenandoahStackWatermark::change_epoch_id();
+
+      // Notify JVMTI that oops are changed.
+      JvmtiTagMap::set_needs_rehashing();
 
       if (ShenandoahPacing) {
         heap->pacer()->setup_for_evac();
@@ -561,6 +573,51 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
     }
   }
+}
+
+class ShenandoahConcurrentEvacThreadClosure : public ThreadClosure {
+private:
+  OopClosure* const _oops;
+
+public:
+  ShenandoahConcurrentEvacThreadClosure(OopClosure* oops);
+  void do_thread(Thread* thread);
+};
+
+ShenandoahConcurrentEvacThreadClosure::ShenandoahConcurrentEvacThreadClosure(OopClosure* oops) :
+  _oops(oops) {
+}
+
+void ShenandoahConcurrentEvacThreadClosure::do_thread(Thread* thread) {
+  JavaThread* const jt = thread->as_Java_thread();
+  StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
+}
+
+class ShenandoahConcurrentEvacUpdateThreadTask : public AbstractGangTask {
+private:
+  ShenandoahJavaThreadsIterator _java_threads;
+
+public:
+  ShenandoahConcurrentEvacUpdateThreadTask() :
+    AbstractGangTask("Shenandoah Evacuate/Update Concurrent Thread Roots"),
+    _java_threads(ShenandoahPhaseTimings::conc_thread_roots) {
+  }
+
+  void work(uint worker_id) {
+    // ShenandoahEvacOOMScope has to be setup by ShenandoahContextEvacuateUpdateRootsClosure.
+    // Otherwise, may deadlock with watermark lock
+    ShenandoahContextEvacuateUpdateRootsClosure oops_cl;
+    ShenandoahConcurrentEvacThreadClosure thr_cl(&oops_cl);
+    _java_threads.threads_do(&thr_cl, worker_id);
+  }
+};
+
+void ShenandoahConcurrentGC::op_thread_roots() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  assert(heap->is_evacuation_in_progress(), "Checked by caller");
+  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_thread_roots);
+  ShenandoahConcurrentEvacUpdateThreadTask task;
+  heap->workers()->run_task(&task);
 }
 
 void ShenandoahConcurrentGC::op_weak_refs() {
@@ -682,7 +739,7 @@ public:
 
       // String dedup weak roots
       ShenandoahForwardedIsAliveClosure is_alive;
-      ShenandoahEvacuateUpdateRootsClosure<MO_RELEASE> keep_alive;
+      ShenandoahEvacuateUpdateMetadataClosure<MO_RELEASE> keep_alive;
       _dedup_roots.oops_do(&is_alive, &keep_alive, worker_id);
     }
 
@@ -743,8 +800,8 @@ void ShenandoahConcurrentGC::op_class_unloading() {
 
 class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {
 private:
-  BarrierSetNMethod* const               _bs;
-  ShenandoahEvacuateUpdateRootsClosure<> _cl;
+  BarrierSetNMethod* const                  _bs;
+  ShenandoahEvacuateUpdateMetadataClosure<> _cl;
 
 public:
   ShenandoahEvacUpdateCodeCacheClosure() :
@@ -799,12 +856,12 @@ public:
       {
         // vm_roots and weak_roots are OopStorage backed roots, concurrent iteration
         // may race against OopStorage::release() calls.
-        ShenandoahEvacUpdateOopStorageRootsClosure cl;
-        _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl, worker_id);
+        ShenandoahContextEvacuateUpdateRootsClosure cl;
+        _vm_roots.oops_do<ShenandoahContextEvacuateUpdateRootsClosure>(&cl, worker_id);
       }
 
       {
-        ShenandoahEvacuateUpdateRootsClosure<> cl;
+        ShenandoahEvacuateUpdateMetadataClosure<> cl;
         CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
         _cld_roots.cld_do(&clds, worker_id);
       }

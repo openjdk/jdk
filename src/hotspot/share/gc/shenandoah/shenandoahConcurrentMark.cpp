@@ -185,62 +185,8 @@ public:
   }
 };
 
-template<GenerationMode GENERATION>
-class ShenandoahInitMarkRootsTask : public AbstractGangTask {
-private:
-  ShenandoahRootScanner              _root_scanner;
-  ShenandoahObjToScanQueueSet* const _task_queues;
-public:
-  ShenandoahInitMarkRootsTask(uint n_workers, ShenandoahObjToScanQueueSet* task_queues) :
-    AbstractGangTask("Shenandoah Init Mark Roots"),
-    _root_scanner(n_workers, ShenandoahPhaseTimings::scan_roots),
-    _task_queues(task_queues) {
-    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  }
-
-  void work(uint worker_id) {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    assert(_task_queues->get_reserved() > worker_id, "Queue has not been reserved for worker id: %d", worker_id);
-
-    ShenandoahObjToScanQueue* q = _task_queues->queue(worker_id);
-    ShenandoahInitMarkRootsClosure<GENERATION> mark_cl(q);
-    _root_scanner.roots_do(worker_id, &mark_cl);
-  }
-};
-
 ShenandoahConcurrentMark::ShenandoahConcurrentMark() :
   ShenandoahMark() {}
-
-void ShenandoahConcurrentMark::mark_stw_roots(ShenandoahGeneration* generation) {
-  assert(Thread::current()->is_VM_thread(), "Can only do this in VMThread");
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  assert(!ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
-
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::scan_roots);
-
-  WorkGang* workers = ShenandoahHeap::heap()->workers();
-  uint nworkers = workers->active_workers();
-
-  assert(nworkers <= task_queues()->size(), "Just check");
-
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
-  task_queues()->reserve(nworkers);
-
-  switch (generation->generation_mode()) {
-    case YOUNG: {
-      ShenandoahInitMarkRootsTask<YOUNG> mark_roots(nworkers, task_queues());
-      workers->run_task(&mark_roots);
-      break;
-    }
-    case GLOBAL: {
-      ShenandoahInitMarkRootsTask<GLOBAL> mark_roots(nworkers, task_queues());
-      workers->run_task(&mark_roots);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
-  }
-}
 
 // Mark concurrent roots during concurrent phases
 template<GenerationMode GENERATION>
@@ -285,6 +231,8 @@ void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
 void ShenandoahConcurrentMark::mark_concurrent_roots(ShenandoahGeneration* generation) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(!heap->has_forwarded_objects(), "Not expected");
+
+  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
 
   WorkGang* workers = heap->workers();
   ShenandoahReferenceProcessor* rp = heap->ref_processor();
