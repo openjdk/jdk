@@ -37,11 +37,13 @@ import sun.util.logging.PlatformLogger;
 
 import jdk.internal.misc.Unsafe;
 
+import java.awt.Rectangle;
+
 import java.awt.GraphicsDevice;
 
 import java.awt.GraphicsEnvironment;
 
-import sun.awt.X11GraphicsDevice;
+import sun.awt.X11GraphicsConfig;
 
 /**
  * XDropTargetProtocol implementation for XDnD protocol.
@@ -607,36 +609,19 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             x = xwindow.scaleDown(x);
             y = xwindow.scaleDown(y);
         } else {
-            long display = xclient.get_display();
-            GraphicsEnvironment ge = GraphicsEnvironment.
-                    getLocalGraphicsEnvironment();
-            GraphicsDevice[] gds = ge.getScreenDevices();
-            int gdslen = gds.length;
-            XToolkit.awtLock();
-            try {
-                for (int i = 0; i < gdslen; i++) {
-                    long screenRoot = XlibWrapper.RootWindow(display, i);
-                    boolean pointerFound = XlibWrapper.XQueryPointer(
-                            display, screenRoot,
-                            XlibWrapper.larg1,  // root_return
-                            XlibWrapper.larg2,  // child_return
-                            XlibWrapper.larg3,  // xr_return
-                            XlibWrapper.larg4,  // yr_return
-                            XlibWrapper.larg5,  // xw_return
-                            XlibWrapper.larg6,  // yw_return
-                            XlibWrapper.larg7); // mask_return
-                    if (pointerFound) {
-                        GraphicsDevice device = gds[i];
-                        if (device instanceof X11GraphicsDevice) {
-                            int scale = ((X11GraphicsDevice) device).getScaleFactor();
-                            x = XlibUtil.scaleDown(x, scale);
-                            y = XlibUtil.scaleDown(y, scale);
-                        }
-                        break;
-                    }
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            for (GraphicsDevice gd : ge.getScreenDevices()) {
+                X11GraphicsConfig gc = (X11GraphicsConfig)gd.getDefaultConfiguration();
+                Rectangle rt = gc.getBounds();
+                rt.x      = gc.scaleUp(rt.x);
+                rt.y      = gc.scaleUp(rt.y);
+                rt.width  = gc.scaleUp(rt.width);
+                rt.height = gc.scaleUp(rt.height);
+                if (rt.contains(x, y)) {
+                    x = gc.scaleDown(x);
+                    y = gc.scaleDown(y);
+                    break;
                 }
-            } finally {
-                XToolkit.awtUnlock();
             }
 
             long receiver =
