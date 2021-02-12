@@ -249,7 +249,7 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
 
     // parallel thread number for heap dump, initialize based on active processor count.
     // Note the real number of threads used is also determined by active workers and compression
-    // backend thread number.
+    // backend thread number, see heapDumper.cpp.
     uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
     // Request a full GC before heap dump if live_objects_only = true
     // This helps reduces the amount of unreachable objects in the dump
@@ -259,6 +259,97 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
   }
   return JNI_OK;
 }
+
+// Return the number of arguments parsed.
+static int parse_args(char* line, const char** args, uint args_count, const char delim) {
+  if (line == NULL || args == NULL || delim == '\0')
+    return 0;
+
+  char* ptr = line;
+  uint count = 0;
+  while (count < args_count) {
+    args[count++] = ptr;
+    while (*ptr != delim && *ptr != '\0') {
+      ptr++;
+    }
+    if (*ptr == '\0') {
+      return count;
+    }
+    *ptr = '\0';
+    ptr++;
+  }
+  return count;
+}
+
+// Implementation of "dumpheap" command with extra options.
+// See also: HeapDumpDCmd class
+//
+// Input arguments :-
+//   arg0: Name of the dump file
+//   arg1: "-live" or "-all"
+//   arg2: more_args: "compress_level,noparallel"
+jint dump_heap_ext(AttachOperation* op, outputStream* out) {
+  // Possible argument number for op->arg(2).
+  const int MAX_EXTRA_ARGS_COUNT = 2;
+  const char* extra_args[MAX_EXTRA_ARGS_COUNT] = {NULL};
+  const char* arg_str = op->arg(2);
+  const char* path = NULL;
+  bool live_objects_only = true;   // default is true to retain the behavior before this change is made
+
+  // First process filename and liveopt.
+  // filename
+  path = op->arg(0);
+  if (path == NULL || path[0] == '\0') {
+    out->print_cr("No dump file specified");
+    return JNI_ERR;
+  } else {
+    // -live
+    const char* arg1 = op->arg(1);
+    if (arg1 != NULL && (strlen(arg1) > 0)) {
+      if (strcmp(arg1, "-all") != 0 && strcmp(arg1, "-live") != 0) {
+        out->print_cr("Invalid argument to dumpheap operation: %s", arg1);
+        return JNI_ERR;
+      }
+      live_objects_only = strcmp(arg1, "-live") == 0;
+    }
+  }
+
+  // Then parse arguments from op->arg(2).
+  // Format: "compress_level,noparallel".
+  if (arg_str != NULL && arg_str[0] != '\0') {
+    int args_len = strlen(arg_str);
+    char* args_line = NEW_C_HEAP_ARRAY(char, args_len + 1, mtInternal);
+    snprintf(args_line, args_len + 1, "%s", arg_str);
+    int args_count = parse_args(args_line, extra_args, MAX_EXTRA_ARGS_COUNT, ',');
+    // gz=
+    const char* num_str = extra_args[0];
+    uintx level = 0;
+    if (num_str != NULL && num_str[0] != '\0') {
+      if (!Arguments::parse_uintx(num_str, &level, 0)) {
+        out->print_cr("Invalid compress level: [%s]", num_str);
+        return JNI_ERR;
+      } else if (level < 1 || level > 9) {
+        out->print_cr("Compression level out of range (1-9): " UINTX_FORMAT, level);
+        return JNI_ERR;
+      }
+    }
+    // noparallel
+    uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
+    const char* par_str = extra_args[1];
+    if (par_str != NULL && par_str[0] != '\0' && (strcmp("true", par_str) == 0)) {
+      parallel_thread_num = 1;
+    }
+
+    // Request a full GC before heap dump if live_objects_only = true
+    // This helps reduces the amount of unreachable objects in the dump
+    // and makes it easier to browse.
+    HeapDumper dumper(live_objects_only /* request GC */);
+    dumper.dump(path, out, (int)level, (uint)parallel_thread_num);
+    FREE_C_HEAP_ARRAY(char, args_line);
+  }
+  return JNI_OK;
+}
+
 
 // Implementation of "inspectheap" command
 // See also: ClassHistogramDCmd class
@@ -361,6 +452,7 @@ static AttachOperationFunctionInfo funcs[] = {
   { "agentProperties",  get_agent_properties },
   { "datadump",         data_dump },
   { "dumpheap",         dump_heap },
+  { "dumpheapext",      dump_heap_ext },
   { "load",             load_agent },
   { "properties",       get_system_properties },
   { "threaddump",       thread_dump },
