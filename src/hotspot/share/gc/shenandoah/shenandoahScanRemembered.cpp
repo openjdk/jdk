@@ -27,7 +27,7 @@
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 
 ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(CardTable *card_table, size_t total_card_count) {
   _heap = ShenandoahHeap::heap();
