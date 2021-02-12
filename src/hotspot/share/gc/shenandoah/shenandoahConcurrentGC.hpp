@@ -30,6 +30,8 @@
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
+class ShenandoahGeneration;
+
 class VM_ShenandoahInitMark;
 class VM_ShenandoahFinalMarkStartEvac;
 class VM_ShenandoahInitUpdateRefs;
@@ -42,11 +44,12 @@ class ShenandoahConcurrentGC : public ShenandoahGC {
   friend class VM_ShenandoahFinalUpdateRefs;
 
 private:
-  ShenandoahConcurrentMark  _mark;
-  ShenandoahDegenPoint      _degen_point;
+  ShenandoahConcurrentMark    _mark;
+  ShenandoahDegenPoint        _degen_point;
+  ShenandoahGeneration* const _generation;
 
 public:
-  ShenandoahConcurrentGC();
+  ShenandoahConcurrentGC(ShenandoahGeneration* generation);
   bool collect(GCCause::Cause cause);
   ShenandoahDegenPoint degen_point() const;
 

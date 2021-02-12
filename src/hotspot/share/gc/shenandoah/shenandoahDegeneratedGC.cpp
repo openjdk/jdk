@@ -227,7 +227,7 @@ void ShenandoahDegenGC::op_mark() {
 
 void ShenandoahDegenGC::op_finish_mark() {
   ShenandoahConcurrentMark mark;
-  mark.finish_mark();
+  mark.finish_mark(ShenandoahHeap::heap()->global_generation());
 }
 
 void ShenandoahDegenGC::op_prepare_evacuation() {
