@@ -331,9 +331,9 @@
           "Number of entries in an SATB log buffer.")                       \
           range(1, max_uintx)                                               \
                                                                             \
-  product(uintx, ShenandoahSATBBufferFlushInterval, 100, EXPERIMENTAL,      \
-          "Forcefully flush non-empty SATB buffers at this interval. "      \
-          "Time is in milliseconds.")                                       \
+  product(uintx, ShenandoahMaxSATBBufferFlushes, 5, EXPERIMENTAL,           \
+          "How many times to maximum attempt to flush SATB buffers at the " \
+          "end of concurrent marking.")                                     \
                                                                             \
   product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
           "Suspend concurrent GC worker threads at safepoints")             \

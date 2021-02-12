@@ -166,7 +166,7 @@ function import_path() {
           # unixpath is based on short name
         fi
         # Make it lower case
-        path="$(echo "$unixpath" | tr [:upper:] [:lower:])"
+        path="$(echo "$unixpath" | tr '[:upper:]' '[:lower:]')"
       fi
     else
       # On WSL1, PATHTOOL will fail for files in envroot. If the unix path

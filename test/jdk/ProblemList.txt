@@ -776,7 +776,6 @@ sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 
 tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all,linux-aarch64
 tools/jlink/JLinkReproducible3Test.java                         8253688 linux-aarch64
-tools/jlink/plugins/CompressorPluginTest.java                   8247407 generic-all
 
 ############################################################################
 

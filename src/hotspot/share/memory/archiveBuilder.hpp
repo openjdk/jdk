@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ public:
   void dump_rw_region();
   void dump_ro_region();
   void relocate_pointers();
-  void relocate_well_known_klasses();
+  void relocate_vm_classes();
   void make_klasses_shareable();
   void write_cds_map_to_log(FileMapInfo* mapinfo,
                             GrowableArray<MemRegion> *closed_heap_regions,

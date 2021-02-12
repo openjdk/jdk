@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,7 +662,7 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandl
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
-  if (is_client_compilation_mode_vm()) {
+  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter) {
     return no_profile_data;
   }
   switch (code) {
@@ -785,7 +785,7 @@ bool MethodData::is_speculative_trap_bytecode(Bytecodes::Code code) {
   case Bytecodes::_ifnonnull:
   case Bytecodes::_invokestatic:
 #ifdef COMPILER2
-    if (is_server_compilation_mode_vm()) {
+    if (CompilerConfig::is_c2_enabled()) {
       return UseTypeSpeculation;
     }
 #endif
@@ -969,7 +969,7 @@ int MethodData::compute_allocation_size_in_words(const methodHandle& method) {
 // the segment in bytes.
 int MethodData::initialize_data(BytecodeStream* stream,
                                        int data_index) {
-  if (is_client_compilation_mode_vm()) {
+  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter) {
     return 0;
   }
   int cell_count = -1;
@@ -1327,29 +1327,11 @@ void MethodData::init() {
 
 // Get a measure of how much mileage the method has on it.
 int MethodData::mileage_of(Method* method) {
-  int mileage = 0;
-  if (TieredCompilation) {
-    mileage = MAX2(method->invocation_count(), method->backedge_count());
-  } else {
-    int iic = method->interpreter_invocation_count();
-    if (mileage < iic)  mileage = iic;
-    MethodCounters* mcs = method->method_counters();
-    if (mcs != NULL) {
-      InvocationCounter* ic = mcs->invocation_counter();
-      InvocationCounter* bc = mcs->backedge_counter();
-      int icval = ic->count();
-      if (ic->carry()) icval += CompileThreshold;
-      if (mileage < icval)  mileage = icval;
-      int bcval = bc->count();
-      if (bc->carry()) bcval += CompileThreshold;
-      if (mileage < bcval)  mileage = bcval;
-    }
-  }
-  return mileage;
+  return MAX2(method->invocation_count(), method->backedge_count());
 }
 
 bool MethodData::is_mature() const {
-  return CompilationPolicy::policy()->is_mature(_method);
+  return CompilationPolicy::is_mature(_method);
 }
 
 // Translate a bci to its corresponding data index (di).

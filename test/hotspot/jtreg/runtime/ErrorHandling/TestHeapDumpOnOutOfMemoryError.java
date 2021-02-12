@@ -24,9 +24,14 @@
 /*
  * @test TestHeapDumpOnOutOfMemoryError
  * @summary Test verifies that -XX:HeapDumpOnOutOfMemoryError dumps heap when OutOfMemory is thrown in heap
- *          and when OutOfMemory is thrown in metaspace.
  * @library /test/lib
  * @run driver TestHeapDumpOnOutOfMemoryError run heap
+ */
+
+/*
+ * @test TestHeapDumpOnOutOfMemoryError
+ * @summary Test verifies that -XX:HeapDumpOnOutOfMemoryError dumps heap when OutOfMemory is thrown in metaspace.
+ * @library /test/lib
  * @run driver/timeout=240 TestHeapDumpOnOutOfMemoryError run metaspace
  */
 

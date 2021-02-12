@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,6 +21,7 @@
 
 package com.sun.org.apache.xml.internal.serializer.dom3;
 
+import com.sun.org.apache.xerces.internal.impl.Constants;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -32,7 +33,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
-
+import jdk.xml.internal.SecuritySupport;
 import com.sun.org.apache.xml.internal.serializer.DOM3Serializer;
 import com.sun.org.apache.xml.internal.serializer.Encodings;
 import com.sun.org.apache.xml.internal.serializer.Serializer;
@@ -67,7 +68,7 @@ import org.w3c.dom.ls.LSSerializerFilter;
  * @version $Id:
  *
  * @xsl.usage internal
- * @LastModified: Aug 2019
+ * @LastModified: Jan 2021
  */
 final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
@@ -159,6 +160,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
     // Parameter discard-default-content, true [required] (default)
     private final static int XMLDECL = 0x1 << 18;
+
+    // Parameter is-standalone, jdk specific, not required
+    private final static int IS_STANDALONE = 0x1 << 19;
+
     // ************************************************************************
 
     // Recognized parameters for which atleast one value can be set
@@ -182,6 +187,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
             DOMConstants.DOM_FORMAT_PRETTY_PRINT,
             DOMConstants.DOM_IGNORE_UNKNOWN_CHARACTER_DENORMALIZATIONS,
             DOMConstants.DOM_XMLDECL,
+            DOMConstants.FQ_IS_STANDALONE,
             DOMConstants.DOM_ERROR_HANDLER
     };
 
@@ -351,6 +357,20 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
         // xml-declaration
         fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "no");
 
+        // JDK specific property isStandalone
+        String p = SecuritySupport.getSystemProperty(DOMConstants.SP_IS_STANDALONE);
+        if (p == null || p.isEmpty()) {
+            p = SecuritySupport.readJAXPProperty(DOMConstants.SP_IS_STANDALONE);
+        }
+        // the system property is true only if it is "true" and false otherwise
+        if (p != null && p.equals("true")) {
+            fFeatures |= IS_STANDALONE;
+            fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE,
+                    DOMConstants.DOM3_EXPLICIT_TRUE);
+        } else {
+            fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE,
+                    DOMConstants.DOM3_DEFAULT_FALSE);
+        }
     }
 
     // ************************************************************************
@@ -378,7 +398,8 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                     || name.equalsIgnoreCase(DOMConstants.DOM_WELLFORMED)
                     || name.equalsIgnoreCase(DOMConstants.DOM_DISCARD_DEFAULT_CONTENT)
                     || name.equalsIgnoreCase(DOMConstants.DOM_FORMAT_PRETTY_PRINT)
-                    || name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)){
+                    || name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)
+                    || name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)){
                 // both values supported
                 return true;
             }
@@ -390,11 +411,11 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                     // || name.equalsIgnoreCase(DOMConstants.DOM_NORMALIZE_CHARACTERS)
                     ) {
                 // true is not supported
-                return !((Boolean)value).booleanValue();
+                return !((Boolean)value);
             }
             else if (name.equalsIgnoreCase(DOMConstants.DOM_IGNORE_UNKNOWN_CHARACTER_DENORMALIZATIONS)) {
                 // false is not supported
-                return ((Boolean)value).booleanValue();
+                return ((Boolean)value);
             }
         }
         else if (name.equalsIgnoreCase(DOMConstants.DOM_ERROR_HANDLER) &&
@@ -436,6 +457,8 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
             return ((fFeatures & PRETTY_PRINT) != 0) ? Boolean.TRUE : Boolean.FALSE;
         } else if (name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)) {
             return ((fFeatures & XMLDECL) != 0) ? Boolean.TRUE : Boolean.FALSE;
+        } else if (name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)) {
+            return ((fFeatures & IS_STANDALONE) != 0) ? Boolean.TRUE : Boolean.FALSE;
         } else if (name.equalsIgnoreCase(DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE)) {
             return ((fFeatures & ELEM_CONTENT_WHITESPACE) != 0) ? Boolean.TRUE : Boolean.FALSE;
         } else if (name.equalsIgnoreCase(DOMConstants.DOM_IGNORE_UNKNOWN_CHARACTER_DENORMALIZATIONS)) {
@@ -606,6 +629,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                 } else {
                     fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "yes");
                 }
+            } else if (name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)) {
+                fFeatures = state ? fFeatures | IS_STANDALONE : fFeatures & ~IS_STANDALONE;
+                fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE, state ? "yes" : "no");
+
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE)) {
                 fFeatures = state ? fFeatures | ELEM_CONTENT_WHITESPACE : fFeatures
                         & ~ELEM_CONTENT_WHITESPACE;

@@ -363,8 +363,8 @@ public class Method extends Metadata {
     return getMethodCounters().interpreterThrowoutCount();
   }
 
-  public int interpreterInvocationCount() {
-    return getMethodCounters().interpreterInvocationCount();
+  public long interpreterInvocationCount() {
+    return getInvocationCount();
   }
 
   public String nameAsAscii() {

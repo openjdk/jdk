@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,52 +49,24 @@ JVMFlag::Error AliasLevelConstraintFunc(intx value, bool verbose) {
 }
 
 /**
- * Validate the minimum number of compiler threads needed to run the
- * JVM. The following configurations are possible.
- *
- * 1) The JVM is build using an interpreter only. As a result, the minimum number of
- *    compiler threads is 0.
- * 2) The JVM is build using the compiler(s) and tiered compilation is disabled. As
- *    a result, either C1 or C2 is used, so the minimum number of compiler threads is 1.
- * 3) The JVM is build using the compiler(s) and tiered compilation is enabled. However,
- *    the option "TieredStopAtLevel < CompLevel_full_optimization". As a result, only
- *    C1 can be used, so the minimum number of compiler threads is 1.
- * 4) The JVM is build using the compilers and tiered compilation is enabled. The option
- *    'TieredStopAtLevel = CompLevel_full_optimization' (the default value). As a result,
- *    the minimum number of compiler threads is 2.
- * 5) Non-tiered emulation mode is on. CompilationModeFlag::disable_intermediate() == true.
- *    The minimum number of threads is 2. But if CompilationModeFlag::quick_internal() == false, then it's 1.
+ * Validate the minimum number of compiler threads needed to run the JVM.
  */
 JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   int min_number_of_compiler_threads = 0;
-#if !defined(COMPILER1) && !defined(COMPILER2) && !INCLUDE_JVMCI
-  // case 1
-#elif defined(TIERED)
-  if (TieredCompilation) {
-    if (TieredStopAtLevel < CompLevel_full_optimization || CompilationModeFlag::quick_only()) {
-      min_number_of_compiler_threads = 1; // case 3
-    } else if (CompilationModeFlag::disable_intermediate()) {
-      // case 5
-      if (CompilationModeFlag::quick_internal()) {
-        min_number_of_compiler_threads = 2;
-      } else {
-        min_number_of_compiler_threads = 1;
-      }
-    } else {
-      min_number_of_compiler_threads = 2;   // case 4 (tiered)
-    }
-  } else {
-    min_number_of_compiler_threads = 1; // case 2
+#if COMPILER1_OR_COMPILER2
+  if (CompilerConfig::is_tiered()) {
+    min_number_of_compiler_threads = 2;
+  } else if (!CompilerConfig::is_interpreter_only()) {
+    min_number_of_compiler_threads = 1;
   }
 #else
-  min_number_of_compiler_threads = 1; // case 2
+  if (value > 0) {
+    JVMFlag::printError(verbose,
+                        "CICompilerCount (" INTX_FORMAT ") cannot be "
+                        "greater than 0 because there are no compilers\n", value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
 #endif
-
-  // The default CICompilerCount's value is CI_COMPILER_COUNT.
-  // With a client VM, -XX:+TieredCompilation causes TieredCompilation
-  // to be true here (the option is validated later) and
-  // min_number_of_compiler_threads to exceed CI_COMPILER_COUNT.
-  min_number_of_compiler_threads = MIN2(min_number_of_compiler_threads, CI_COMPILER_COUNT);
 
   if (value < (intx)min_number_of_compiler_threads) {
     JVMFlag::printError(verbose,
@@ -160,6 +132,12 @@ JVMFlag::Error CompileThresholdConstraintFunc(intx value, bool verbose) {
 }
 
 JVMFlag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) {
+  // We depend on CompileThreshold being valid, verify it first.
+  if (CompileThresholdConstraintFunc(CompileThreshold, false) == JVMFlag::VIOLATES_CONSTRAINT) {
+    JVMFlag::printError(verbose, "OnStackReplacePercentage cannot be validated because CompileThreshold value is invalid\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
   int64_t  max_percentage_limit = INT_MAX;
   if (!ProfileInterpreter) {
     max_percentage_limit = (max_percentage_limit>>InvocationCounter::count_shift);
@@ -438,3 +416,4 @@ JVMFlag::Error ControlIntrinsicConstraintFunc(ccstrlist value, bool verbose) {
 
   return JVMFlag::SUCCESS;
 }
+

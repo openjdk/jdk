@@ -205,7 +205,9 @@ public class JavaTokenizer extends UnicodeReader {
      */
     protected void lexError(DiagnosticFlag flags, int pos, JCDiagnostic.Error key) {
         log.error(flags, pos, key);
-        tk = TokenKind.ERROR;
+        if (flags != DiagnosticFlag.SOURCE_LEVEL) {
+            tk = TokenKind.ERROR;
+        }
         errPos = pos;
     }
 

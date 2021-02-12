@@ -1799,7 +1799,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
   assert(UseLoopCounter || !UseOnStackReplacement,
          "on-stack-replacement requires loop counters");
   Label backedge_counter_overflow;
-  Label profile_method;
   Label dispatch;
   if (UseLoopCounter) {
     // increment backedge counter for backward branches
@@ -1826,76 +1825,28 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     __ cbz(rscratch1, dispatch); // No MethodCounters allocated, OutOfMemory
     __ bind(has_counters);
 
-    if (TieredCompilation) {
-      Label no_mdo;
-      int increment = InvocationCounter::count_increment;
-      if (ProfileInterpreter) {
-        // Are we profiling?
-        __ ldr(r1, Address(rmethod, in_bytes(Method::method_data_offset())));
-        __ cbz(r1, no_mdo);
-        // Increment the MDO backedge counter
-        const Address mdo_backedge_counter(r1, in_bytes(MethodData::backedge_counter_offset()) +
-                                           in_bytes(InvocationCounter::counter_offset()));
-        const Address mask(r1, in_bytes(MethodData::backedge_mask_offset()));
-        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
-                                   r0, rscratch1, false, Assembler::EQ,
-                                   UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
-        __ b(dispatch);
-      }
-      __ bind(no_mdo);
-      // Increment backedge counter in MethodCounters*
-      __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
-      const Address mask(rscratch1, in_bytes(MethodCounters::backedge_mask_offset()));
-      __ increment_mask_and_jump(Address(rscratch1, be_offset), increment, mask,
-                                 r0, rscratch2, false, Assembler::EQ,
+    Label no_mdo;
+    int increment = InvocationCounter::count_increment;
+    if (ProfileInterpreter) {
+      // Are we profiling?
+      __ ldr(r1, Address(rmethod, in_bytes(Method::method_data_offset())));
+      __ cbz(r1, no_mdo);
+      // Increment the MDO backedge counter
+      const Address mdo_backedge_counter(r1, in_bytes(MethodData::backedge_counter_offset()) +
+                                         in_bytes(InvocationCounter::counter_offset()));
+      const Address mask(r1, in_bytes(MethodData::backedge_mask_offset()));
+      __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
+                                 r0, rscratch1, false, Assembler::EQ,
                                  UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
-    } else { // not TieredCompilation
-      // increment counter
-      __ ldr(rscratch2, Address(rmethod, Method::method_counters_offset()));
-      __ ldrw(r0, Address(rscratch2, be_offset));        // load backedge counter
-      __ addw(rscratch1, r0, InvocationCounter::count_increment); // increment counter
-      __ strw(rscratch1, Address(rscratch2, be_offset));        // store counter
-
-      __ ldrw(r0, Address(rscratch2, inv_offset));    // load invocation counter
-      __ andw(r0, r0, (unsigned)InvocationCounter::count_mask_value); // and the status bits
-      __ addw(r0, r0, rscratch1);        // add both counters
-
-      if (ProfileInterpreter) {
-        // Test to see if we should create a method data oop
-        __ ldrw(rscratch1, Address(rscratch2, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
-        __ cmpw(r0, rscratch1);
-        __ br(Assembler::LT, dispatch);
-
-        // if no method data exists, go to profile method
-        __ test_method_data_pointer(r0, profile_method);
-
-        if (UseOnStackReplacement) {
-          // check for overflow against w1 which is the MDO taken count
-          __ ldrw(rscratch1, Address(rscratch2, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
-          __ cmpw(r1, rscratch1);
-          __ br(Assembler::LO, dispatch); // Intel == Assembler::below
-
-          // When ProfileInterpreter is on, the backedge_count comes
-          // from the MethodData*, which value does not get reset on
-          // the call to frequency_counter_overflow().  To avoid
-          // excessive calls to the overflow routine while the method is
-          // being compiled, add a second test to make sure the overflow
-          // function is called only once every overflow_frequency.
-          const int overflow_frequency = 1024;
-          __ andsw(r1, r1, overflow_frequency - 1);
-          __ br(Assembler::EQ, backedge_counter_overflow);
-
-        }
-      } else {
-        if (UseOnStackReplacement) {
-          // check for overflow against w0, which is the sum of the
-          // counters
-          __ ldrw(rscratch1, Address(rscratch2, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
-          __ cmpw(r0, rscratch1);
-          __ br(Assembler::HS, backedge_counter_overflow); // Intel == Assembler::aboveEqual
-        }
-      }
+      __ b(dispatch);
     }
+    __ bind(no_mdo);
+    // Increment backedge counter in MethodCounters*
+    __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
+    const Address mask(rscratch1, in_bytes(MethodCounters::backedge_mask_offset()));
+    __ increment_mask_and_jump(Address(rscratch1, be_offset), increment, mask,
+                               r0, rscratch2, false, Assembler::EQ,
+                               UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
     __ bind(dispatch);
   }
 
@@ -1907,62 +1858,51 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
   // rbcp: target bcp
   __ dispatch_only(vtos, /*generate_poll*/true);
 
-  if (UseLoopCounter) {
-    if (ProfileInterpreter && !TieredCompilation) {
-      // Out-of-line code to allocate method data oop.
-      __ bind(profile_method);
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-      __ load_unsigned_byte(r1, Address(rbcp, 0));  // restore target bytecode
-      __ set_method_data_pointer_for_bcp();
-      __ b(dispatch);
-    }
+  if (UseLoopCounter && UseOnStackReplacement) {
+    // invocation counter overflow
+    __ bind(backedge_counter_overflow);
+    __ neg(r2, r2);
+    __ add(r2, r2, rbcp);     // branch bcp
+    // IcoResult frequency_counter_overflow([JavaThread*], address branch_bcp)
+    __ call_VM(noreg,
+               CAST_FROM_FN_PTR(address,
+                                InterpreterRuntime::frequency_counter_overflow),
+               r2);
+    __ load_unsigned_byte(r1, Address(rbcp, 0));  // restore target bytecode
 
-    if (UseOnStackReplacement) {
-      // invocation counter overflow
-      __ bind(backedge_counter_overflow);
-      __ neg(r2, r2);
-      __ add(r2, r2, rbcp);     // branch bcp
-      // IcoResult frequency_counter_overflow([JavaThread*], address branch_bcp)
-      __ call_VM(noreg,
-                 CAST_FROM_FN_PTR(address,
-                                  InterpreterRuntime::frequency_counter_overflow),
-                 r2);
-      __ load_unsigned_byte(r1, Address(rbcp, 0));  // restore target bytecode
+    // r0: osr nmethod (osr ok) or NULL (osr not possible)
+    // w1: target bytecode
+    // r2: scratch
+    __ cbz(r0, dispatch);     // test result -- no osr if null
+    // nmethod may have been invalidated (VM may block upon call_VM return)
+    __ ldrb(r2, Address(r0, nmethod::state_offset()));
+    if (nmethod::in_use != 0)
+      __ sub(r2, r2, nmethod::in_use);
+    __ cbnz(r2, dispatch);
 
-      // r0: osr nmethod (osr ok) or NULL (osr not possible)
-      // w1: target bytecode
-      // r2: scratch
-      __ cbz(r0, dispatch);     // test result -- no osr if null
-      // nmethod may have been invalidated (VM may block upon call_VM return)
-      __ ldrb(r2, Address(r0, nmethod::state_offset()));
-      if (nmethod::in_use != 0)
-        __ sub(r2, r2, nmethod::in_use);
-      __ cbnz(r2, dispatch);
+    // We have the address of an on stack replacement routine in r0
+    // We need to prepare to execute the OSR method. First we must
+    // migrate the locals and monitors off of the stack.
 
-      // We have the address of an on stack replacement routine in r0
-      // We need to prepare to execute the OSR method. First we must
-      // migrate the locals and monitors off of the stack.
+    __ mov(r19, r0);                             // save the nmethod
 
-      __ mov(r19, r0);                             // save the nmethod
+    call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
-      call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
+    // r0 is OSR buffer, move it to expected parameter location
+    __ mov(j_rarg0, r0);
 
-      // r0 is OSR buffer, move it to expected parameter location
-      __ mov(j_rarg0, r0);
+    // remove activation
+    // get sender esp
+    __ ldr(esp,
+        Address(rfp, frame::interpreter_frame_sender_sp_offset * wordSize));
+    // remove frame anchor
+    __ leave();
+    // Ensure compiled code always sees stack at proper alignment
+    __ andr(sp, esp, -16);
 
-      // remove activation
-      // get sender esp
-      __ ldr(esp,
-          Address(rfp, frame::interpreter_frame_sender_sp_offset * wordSize));
-      // remove frame anchor
-      __ leave();
-      // Ensure compiled code always sees stack at proper alignment
-      __ andr(sp, esp, -16);
-
-      // and begin the OSR nmethod
-      __ ldr(rscratch1, Address(r19, nmethod::osr_entry_point_offset()));
-      __ br(rscratch1);
-    }
+    // and begin the OSR nmethod
+    __ ldr(rscratch1, Address(r19, nmethod::osr_entry_point_offset()));
+    __ br(rscratch1);
   }
 }
 
@@ -2484,7 +2424,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!is_c1_or_interpreter_only()){
+  if (!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci()){
     Label notVolatile;
     __ tbz(raw_flags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3087,7 +3027,7 @@ void TemplateTable::fast_accessfield(TosState state)
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!is_c1_or_interpreter_only()) {
+  if (!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci()) {
     Label notVolatile;
     __ tbz(r3, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3149,7 +3089,7 @@ void TemplateTable::fast_xaccess(TosState state)
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!is_c1_or_interpreter_only()) {
+  if (!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci()) {
     Label notVolatile;
     __ ldrw(r3, Address(r2, in_bytes(ConstantPoolCache::base_offset() +
                                      ConstantPoolCacheEntry::flags_offset())));

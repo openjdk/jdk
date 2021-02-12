@@ -31,6 +31,7 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
@@ -106,17 +107,16 @@ public:
   }
 };
 
-class ShenandoahSATBAndRemarkCodeRootsThreadsClosure : public ThreadClosure {
+class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
 private:
   SATBMarkQueueSet& _satb_qset;
   OopClosure* const _cl;
-  MarkingCodeBlobClosure* _code_cl;
   uintx _claim_token;
 
 public:
-  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl, MarkingCodeBlobClosure* code_cl) :
+  ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
     _satb_qset(satb_qset),
-    _cl(cl), _code_cl(code_cl),
+    _cl(cl),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
@@ -126,15 +126,7 @@ public:
       if (thread->is_Java_thread()) {
         if (_cl != NULL) {
           ResourceMark rm;
-          thread->oops_do(_cl, _code_cl);
-        } else if (_code_cl != NULL) {
-          // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
-          // however the liveness of oops reachable from nmethods have very complex lifecycles:
-          // * Alive if on the stack of an executing method
-          // * Weakly reachable otherwise
-          // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
-          // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-          thread->as_Java_thread()->nmethods_do(_code_cl);
+          thread->oops_do(_cl, NULL);
         }
       }
     }
@@ -168,12 +160,9 @@ public:
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      bool do_nmethods = heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading();
       ShenandoahMarkRefsClosure<GENERATION> mark_cl(q, rp);
-      MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
-      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(satb_mq_set,
-                                                        ShenandoahIUBarrier ? &mark_cl : NULL,
-                                                        do_nmethods ? &blobsCl : NULL);
+      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
+                                               ShenandoahIUBarrier ? &mark_cl : NULL);
       Threads::threads_do(&tc);
     }
 
@@ -253,13 +242,28 @@ void ShenandoahConcurrentMark::mark_concurrent_roots(ShenandoahGeneration* gener
   }
 }
 
+class ShenandoahFlushSATBHandshakeClosure : public HandshakeClosure {
+private:
+  SATBMarkQueueSet& _qset;
+public:
+  ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
+    HandshakeClosure("Shenandoah Flush SATB Handshake"),
+    _qset(qset) {}
+
+  void do_thread(Thread* thread) {
+    _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+  }
+};
+
 void ShenandoahConcurrentMark::concurrent_mark(ShenandoahGeneration* generation) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   WorkGang* workers = heap->workers();
   uint nworkers = workers->active_workers();
   task_queues()->reserve(nworkers);
 
-  {
+  ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
+  ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
+  for (uint flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
     switch (generation->generation_mode()) {
       case YOUNG: {
         TaskTerminator terminator(nworkers, task_queues());
@@ -276,8 +280,21 @@ void ShenandoahConcurrentMark::concurrent_mark(ShenandoahGeneration* generation)
       default:
         ShouldNotReachHere();
     }
-  }
 
+    if (heap->cancelled_gc()) {
+      // GC is cancelled, break out.
+      break;
+    }
+
+    size_t before = qset.completed_buffers_num();
+    Handshake::execute(&flush_satb);
+    size_t after = qset.completed_buffers_num();
+
+    if (before == after) {
+      // No more retries needed, break out.
+      break;
+    }
+  }
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
 
