@@ -200,6 +200,7 @@ public class WorkArounds {
 
 
     // TODO: The following should be replaced by a new method such as Elements.isAutomaticModule
+    // see JDK-8261625
     public boolean isAutomaticModule(ModuleElement me) {
         if (me == null) {
             return false;
