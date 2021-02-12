@@ -13,29 +13,29 @@
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Color by execution frequency"/>
         </file>
-        <file name="Hide data nodes" url="filters/hideData.filter">
+        <file name="Hide data subgraph" url="filters/hideData.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Simplify graph"/>
         </file>
-        <file name="Hide memory nodes" url="filters/hideMemory.filter">
+        <file name="Hide memory subgraph" url="filters/hideMemory.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Hide data nodes"/>
+            <attr name="after" stringvalue="Hide data subgraph"/>
         </file>
-        <file name="Hide control nodes" url="filters/hideControl.filter">
+        <file name="Hide control subgraph" url="filters/hideControl.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Hide memory nodes"/>
+            <attr name="after" stringvalue="Hide memory subgraph"/>
         </file>
-        <file name="Hide mixed nodes" url="filters/hideMixed.filter">
+        <file name="Hide mixed subgraph" url="filters/hideMixed.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Hide control nodes"/>
+            <attr name="after" stringvalue="Hide control subgraph"/>
         </file>
-        <file name="Hide other nodes" url="filters/hideOther.filter">
+        <file name="Hide other subgraph" url="filters/hideOther.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Hide mixed nodes"/>
+            <attr name="after" stringvalue="Hide mixed subgraph"/>
         </file>
         <file name="Show control flow only" url="filters/onlyControlFlow.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Hide other nodes"/>
+            <attr name="after" stringvalue="Hide other subgraph"/>
         </file>
         <file name="Hide data edges" url="filters/hideDataEdges.filter">
             <attr name="enabled" boolvalue="false"/>
