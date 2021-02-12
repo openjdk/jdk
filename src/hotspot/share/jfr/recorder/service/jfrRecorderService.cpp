@@ -546,8 +546,6 @@ void JfrRecorderService::pre_safepoint_write() {
   if (LeakProfiler::is_running()) {
     // Exclusive access to the object sampler instance.
     // The sampler is released (unlocked) later in post_safepoint_write.
-    ObjectSampleCheckpoint::on_rotation(ObjectSampler::acquire(), _stack_trace_repository);
-    // FLO: not sure about this
     ObjectSampleCheckpoint::on_rotation(ObjectSampler::acquire(), _leak_profiler_stack_trace_repository);
   }
   if (_string_pool.is_modified()) {
@@ -557,9 +555,10 @@ void JfrRecorderService::pre_safepoint_write() {
   if (_stack_trace_repository.is_modified()) {
     write_stacktrace(_stack_trace_repository, _chunkwriter, false);
   }
-  // FLO: write stack trace from the old object sample hashtable
-  if (_leak_profiler_stack_trace_repository.is_modified()) {
-    write_stacktrace(_leak_profiler_stack_trace_repository, _chunkwriter, false);
+  if (LeakProfiler::is_running()) {
+    if (_leak_profiler_stack_trace_repository.is_modified()) {
+      write_stacktrace(_leak_profiler_stack_trace_repository, _chunkwriter, false);
+    }
   }
 }
 
@@ -579,9 +578,10 @@ void JfrRecorderService::safepoint_write() {
   _checkpoint_manager.on_rotation();
   _storage.write_at_safepoint();
   _chunkwriter.set_time_stamp();
-  // FL0: write stack trace from the old object sample hashtable
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
-  write_stacktrace(_leak_profiler_stack_trace_repository, _chunkwriter, true);
+  if (LeakProfiler::is_running()) {
+    write_stacktrace(_leak_profiler_stack_trace_repository, _chunkwriter, true);
+  }
   _checkpoint_manager.end_epoch_shift();
 }
 
