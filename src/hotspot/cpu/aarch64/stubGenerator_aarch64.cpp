@@ -6772,7 +6772,9 @@ class StubGenerator: public StubCodeGenerator {
 
 #ifdef LINUX
 
+#if 0  // JDK-8261660: disabled for now.
     generate_atomic_entry_points();
+#endif
 
 #endif // LINUX
 
