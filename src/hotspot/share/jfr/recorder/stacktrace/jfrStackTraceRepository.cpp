@@ -31,6 +31,7 @@
 #include "runtime/mutexLocker.hpp"
 
 static JfrStackTraceRepository* _instance = NULL;
+static JfrStackTraceRepository* _leak_profiler_instance = NULL;
 
 JfrStackTraceRepository::JfrStackTraceRepository() :
   _next_id(0),
@@ -43,10 +44,20 @@ JfrStackTraceRepository& JfrStackTraceRepository::instance() {
   return *_instance;
 }
 
+JfrStackTraceRepository& JfrStackTraceRepository::leak_profiler_instance() {
+  return *_leak_profiler_instance;
+}
+
 JfrStackTraceRepository* JfrStackTraceRepository::create() {
   assert(_instance == NULL, "invariant");
   _instance = new JfrStackTraceRepository();
   return _instance;
+}
+
+JfrStackTraceRepository* JfrStackTraceRepository::create_leak_profiler() {
+  assert(_leak_profiler_instance == NULL, "invariant");
+  _leak_profiler_instance = new JfrStackTraceRepository();
+  return _leak_profiler_instance;
 }
 
 class JfrFrameType : public JfrSerializer {
@@ -72,6 +83,12 @@ void JfrStackTraceRepository::destroy() {
   assert(_instance != NULL, "invariant");
   delete _instance;
   _instance = NULL;
+}
+
+void JfrStackTraceRepository::destroy_leak_profiler() {
+  assert(_leak_profiler_instance != NULL, "invariant");
+  delete _leak_profiler_instance;
+  _leak_profiler_instance = NULL;
 }
 
 bool JfrStackTraceRepository::is_modified() const {
