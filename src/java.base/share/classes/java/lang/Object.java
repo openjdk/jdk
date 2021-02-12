@@ -234,7 +234,7 @@ public class Object {
      * be a concise but informative representation that is easy for a
      * person to read.
      * It is recommended that all subclasses override this method.
-     * The string output is not necessary stable over time or across JVM invocations.
+     * The string output is not necessarily stable over time or across JVM invocations.
      * @implSpec
      * The {@code toString} method for class {@code Object}
      * returns a string consisting of the name of the class of which the
