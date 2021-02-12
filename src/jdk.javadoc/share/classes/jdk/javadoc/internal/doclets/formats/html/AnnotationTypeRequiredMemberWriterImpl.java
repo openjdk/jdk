@@ -184,10 +184,10 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected void addSummaryLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element member,
-            Content tdSummary) {
-        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                writer.getDocLink(context, member, name(member)));
+    protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element member,
+                                  Content tdSummary) {
+        Content memberLink = writer.getDocLink(context, utils.getEnclosingTypeElement(member), member,
+                name(member), HtmlStyle.memberNameLink);
         Content code = HtmlTree.CODE(memberLink);
         tdSummary.add(code);
     }
@@ -206,7 +206,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     @Override
     protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
-        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
+        return writer.getDocLink(HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
     }
 
     protected Comment selectComment(Comment c1, Comment c2) {
