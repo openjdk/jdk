@@ -40,14 +40,15 @@ public class JavadocExamples {
         // Number/Integer Example
         Stream<Number> numbers = Stream.of(1, 2, 3.0);
         List<Integer> integers = numbers.<Integer>mapMulti((number, consumer) -> {
-                    if (number instanceof Integer i)
-                        consumer.accept(i);
-                })
+            if (number instanceof Integer i)
+                consumer.accept(i);
+        })
                 .collect(Collectors.toList());
-
-        // Expand Iterable Example
-        Consumer<Object> c = null;
-        Object e = List.of(1, 2, 3);
+    }
+}
+// mapMulti - Expand Iterable Example
+class C {
+    static void expandIterable(Object e, Consumer<Object> c) {
         if (e instanceof Iterable elements) {
             for (Object ie : elements) {
                 expandIterable(ie, c);
@@ -56,7 +57,10 @@ public class JavadocExamples {
             c.accept(e);
         }
     }
-    private void expandIterable(Object o, Consumer<Object> c) { }
+    public static void main(String[] args) {
+        Stream<Object> stream = Stream.of(1, 2, 3);
+        Stream<Object> expandedStream = stream.mapMulti(C::expandIterable);
+    }
 }
 
 
