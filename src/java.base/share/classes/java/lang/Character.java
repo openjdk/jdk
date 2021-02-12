@@ -67,7 +67,6 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * The Java platform has supported different versions of the Unicode
  * Standard over time. Upgrades to newer versions of the Unicode Standard
  * occurred in the following Java releases, each indicating the new version:
- * <p>
  * <table class="striped">
  * <caption style="display:none">Shows Java releases and supported Unicode versions</caption>
  * <thead>
