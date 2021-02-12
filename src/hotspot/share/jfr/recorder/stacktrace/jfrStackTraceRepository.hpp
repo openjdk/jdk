@@ -52,6 +52,8 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   JfrStackTraceRepository();
   static JfrStackTraceRepository* create();
   static void destroy();
+  static JfrStackTraceRepository* create_leak_profiler();
+  static void destroy_leak_profiler();
   bool initialize();
 
   bool is_modified() const;
@@ -66,6 +68,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
 
  public:
   static JfrStackTraceRepository& instance();
+  static JfrStackTraceRepository& leak_profiler_instance();
   traceid record(Thread* thread, int skip = 0);
   void record_and_cache(JavaThread* thread, int skip = 0);
 };
