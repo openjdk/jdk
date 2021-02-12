@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @return true if the class, that is being processed, is generated and is visible.
      */
     public boolean isVisibleClass(TypeElement typeElement) {
-        return visibleClasses.contains(typeElement) && configuration.isGeneratedDoc(typeElement);
+        return visibleClasses.contains(typeElement) && configuration.isGeneratedDoc(typeElement)
+                && !utils.hasHiddenTag(typeElement);
     }
 
     /**

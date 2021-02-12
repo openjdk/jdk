@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,55 +23,31 @@
 
 package pkg1;
 
-public class A {
-    /**
-     * A visible field.
-     */
-    public A visibleField;
+/**
+ * An visible interface
+ */
+public interface Intf {
 
     /**
-     * An invisible field.
+     * A visible interface method.
+     */
+    void visibleInterfaceMethod();
+
+    /**
+     * An invisible interface method.
      * @hidden
      */
-    public A invisibleField;
+    void invisibleInterfaceMethod();
 
     /**
-     * A visible method.
+     * A visible default method.
      */
-    public void visibleMethod() {}
+    default void visibleDefaultMethod() {}
 
     /**
-     * An invisible method.
+     * An invisible default method.
      * @hidden
      */
-    public void invisibleMethod() {}
-
-    /**
-     * A visible inner class.
-     */
-    public static class VisibleInner extends A {
-        /**
-         * An invisible constructor
-         * @hidden invisible
-         */
-        public VisibleInner() {}
-    }
-
-    /**
-     * An invisible inner class.
-     * @hidden
-     */
-    public static class InvisibleInner extends A {}
-
-    /**
-     * A visible inner class, extending an invisible class.
-     */
-    public static class VisibleInnerExtendsInvisibleInner extends InvisibleInner {}
-
-    /**
-     * An invisible inner class extending a visible class.
-     * @hidden
-     */
-    public static class InvisibleInnerExtendsVisibleInner extends InvisibleInner {}
+    default void invisibleDefaultMethod() {}
 
 }

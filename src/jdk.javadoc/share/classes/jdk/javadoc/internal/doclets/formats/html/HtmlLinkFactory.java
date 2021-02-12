@@ -105,7 +105,7 @@ public class HtmlLinkFactory extends LinkFactory {
 
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
-            if (configuration.isGeneratedDoc(typeElement)) {
+            if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(docPaths.forName(typeElement)).equals(m_writer.filename)) {
