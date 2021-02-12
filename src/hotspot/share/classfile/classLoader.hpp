@@ -27,7 +27,7 @@
 
 #include "jimage.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 

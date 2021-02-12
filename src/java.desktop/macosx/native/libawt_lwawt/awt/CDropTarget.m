@@ -84,8 +84,8 @@ extern jclass jc_CDropTargetContextPeer;
 
     if (control != nil) {
         JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-        fComponent = JNFNewGlobalRef(env, jcomponent);
-        fDropTarget = JNFNewGlobalRef(env, jdropTarget);
+        fComponent = (*env)->NewGlobalRef(env, jcomponent);
+        fDropTarget = (*env)->NewGlobalRef(env, jdropTarget);
 
         fView = [((AWTView *) control) retain];
         [fView setDropTarget:self];
@@ -148,7 +148,7 @@ extern jclass jc_CDropTargetContextPeer;
 
     if (sDraggingFormats != NULL) {
         JNIEnv *env = [ThreadUtilities getJNIEnv];
-        JNFDeleteGlobalRef(env, sDraggingFormats);
+        (*env)->DeleteGlobalRef(env, sDraggingFormats);
         sDraggingFormats = NULL;
     }
 
@@ -165,15 +165,15 @@ extern jclass jc_CDropTargetContextPeer;
 
     // Clean up JNI refs
     if (fComponent != NULL) {
-        JNFDeleteGlobalRef(env, fComponent);
+        (*env)->DeleteGlobalRef(env, fComponent);
         fComponent = NULL;
     }
     if (fDropTarget != NULL) {
-        JNFDeleteGlobalRef(env, fDropTarget);
+        (*env)->DeleteGlobalRef(env, fDropTarget);
         fDropTarget = NULL;
     }
     if (fDropTargetContextPeer != NULL) {
-        JNFDeleteGlobalRef(env, fDropTargetContextPeer);
+        (*env)->DeleteGlobalRef(env, fDropTargetContextPeer);
         fDropTargetContextPeer = NULL;
     }
 
@@ -239,7 +239,7 @@ extern jclass jc_CDropTargetContextPeer;
     if (formats == nil)
         return FALSE;
 
-    sDraggingFormats = (jlongArray) JNFNewGlobalRef(env, formats);
+    sDraggingFormats = (jlongArray) (*env)->NewGlobalRef(env, formats);
     (*env)->DeleteLocalRef(env, formats);
     if (sDraggingFormats == nil)
         return FALSE;
@@ -356,7 +356,7 @@ extern jclass jc_CDropTargetContextPeer;
     jbyteArray lbyteArray = (*env)->NewByteArray(env, dataLength);
     if (lbyteArray == nil)
         return nil;
-    jbyteArray gbyteArray = (jbyteArray) JNFNewGlobalRef(env, lbyteArray);
+    jbyteArray gbyteArray = (jbyteArray) (*env)->NewGlobalRef(env, lbyteArray);
     (*env)->DeleteLocalRef(env, lbyteArray);
     if (gbyteArray == nil)
         return nil;
@@ -459,7 +459,7 @@ extern jclass jc_CDropTargetContextPeer;
 
         // Delete any drop target context peer left over from a previous drag:
         if (fDropTargetContextPeer != NULL) {
-            JNFDeleteGlobalRef(env, fDropTargetContextPeer);
+            (*env)->DeleteGlobalRef(env, fDropTargetContextPeer);
             fDropTargetContextPeer = NULL;
         }
 
@@ -473,7 +473,7 @@ extern jclass jc_CDropTargetContextPeer;
             CHECK_EXCEPTION();
 
             if (dropTargetContextPeer != nil) {
-                fDropTargetContextPeer = JNFNewGlobalRef(env, dropTargetContextPeer);
+                fDropTargetContextPeer = (*env)->NewGlobalRef(env, dropTargetContextPeer);
                 (*env)->DeleteLocalRef(env, dropTargetContextPeer);
             }
         }

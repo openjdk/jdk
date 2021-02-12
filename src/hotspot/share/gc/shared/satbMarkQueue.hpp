@@ -65,10 +65,6 @@ public:
 
   inline SATBMarkQueueSet* satb_qset() const;
 
-  // Apply cl to the active part of the buffer.
-  // Prerequisite: Must be at a safepoint.
-  void apply_closure_and_empty(SATBBufferClosure* cl);
-
 #ifndef PRODUCT
   // Helpful for debugging
   void print(const char* name);

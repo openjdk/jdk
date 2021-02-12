@@ -115,9 +115,9 @@ static void displaycb_handle
     [ThreadUtilities performOnMainThreadWaiting:NO block:^() {
 
         JNFPerformEnvBlock(JNFThreadDetachImmediately, ^(JNIEnv *env) {
-            JNFWeakJObjectWrapper *wrapper = (JNFWeakJObjectWrapper *)userInfo;
+            jobject cgeRef = (jobject)userInfo;
 
-            jobject graphicsEnv = [wrapper jObjectWithEnv:env];
+            jobject graphicsEnv = (*env)->NewLocalRef(env, cgeRef);
             if (graphicsEnv == NULL) return; // ref already GC'd
             DECLARE_CLASS(jc_CGraphicsEnvironment, "sun/awt/CGraphicsEnvironment");
             DECLARE_METHOD(jm_displayReconfiguration,
@@ -143,15 +143,15 @@ Java_sun_awt_CGraphicsEnvironment_registerDisplayReconfiguration
 
 JNI_COCOA_ENTER(env);
 
-    JNFWeakJObjectWrapper *wrapper = [[JNFWeakJObjectWrapper wrapperWithJObject:this withEnv:env] retain];
+    jobject cgeRef = (*env)->NewWeakGlobalRef(env, this);
 
     /* Register the callback */
-    if (CGDisplayRegisterReconfigurationCallback(&displaycb_handle, wrapper) != kCGErrorSuccess) {
+    if (CGDisplayRegisterReconfigurationCallback(&displaycb_handle, cgeRef) != kCGErrorSuccess) {
         JNU_ThrowInternalError(env, "CGDisplayRegisterReconfigurationCallback() failed");
         return 0L;
     }
 
-    ret = ptr_to_jlong(wrapper);
+    ret = ptr_to_jlong(cgeRef);
 
 JNI_COCOA_EXIT(env);
 
@@ -169,17 +169,16 @@ Java_sun_awt_CGraphicsEnvironment_deregisterDisplayReconfiguration
 {
 JNI_COCOA_ENTER(env);
 
-    JNFWeakJObjectWrapper *wrapper = (JNFWeakJObjectWrapper *)jlong_to_ptr(p);
-    if (!wrapper) return;
+    jobject cgeRef = (jobject)jlong_to_ptr(p);
+    if (!cgeRef) return;
 
     /* Remove the registration */
-    if (CGDisplayRemoveReconfigurationCallback(&displaycb_handle, wrapper) != kCGErrorSuccess) {
+    if (CGDisplayRemoveReconfigurationCallback(&displaycb_handle, cgeRef) != kCGErrorSuccess) {
         JNU_ThrowInternalError(env, "CGDisplayRemoveReconfigurationCallback() failed, leaking the callback context!");
         return;
     }
 
-    [wrapper setJObject:NULL withEnv:env]; // more efficient to pre-clear
-    [wrapper release];
+    (*env)->DeleteWeakGlobalRef(env, cgeRef);
 
 JNI_COCOA_EXIT(env);
 }

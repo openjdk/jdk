@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/oopStorage.hpp"
-#include "gc/shared/weakProcessorPhase.hpp"
-#include "gc/shared/weakProcessorPhaseTimes.hpp"
+#include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/weakProcessorTimes.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
@@ -40,7 +41,7 @@ static bool is_initialized_time(double t) { return t >= 0.0; }
 #endif // ASSERT
 
 
-WeakProcessorPhaseTimes::WeakProcessorPhaseTimes(uint max_threads) :
+WeakProcessorTimes::WeakProcessorTimes(uint max_threads) :
   _max_threads(max_threads),
   _active_workers(0),
   _total_time_sec(uninitialized_time),
@@ -49,10 +50,9 @@ WeakProcessorPhaseTimes::WeakProcessorPhaseTimes(uint max_threads) :
   assert(_max_threads > 0, "max_threads must not be zero");
 
   WorkerDataArray<double>** wpt = _worker_data;
-  OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
-  for ( ; !it.is_end(); ++it) {
+  for (auto id : EnumRange<OopStorageSet::WeakId>()) {
     assert(size_t(wpt - _worker_data) < ARRAY_SIZE(_worker_data), "invariant");
-    const char* description = it->name();
+    const char* description = OopStorageSet::storage(id)->name();
     *wpt = new WorkerDataArray<double>(NULL, description, _max_threads);
     (*wpt)->create_thread_work_items("Dead", DeadItems);
     (*wpt)->create_thread_work_items("Total", TotalItems);
@@ -61,27 +61,27 @@ WeakProcessorPhaseTimes::WeakProcessorPhaseTimes(uint max_threads) :
   assert(size_t(wpt - _worker_data) == ARRAY_SIZE(_worker_data), "invariant");
 }
 
-WeakProcessorPhaseTimes::~WeakProcessorPhaseTimes() {
+WeakProcessorTimes::~WeakProcessorTimes() {
   for (size_t i = 0; i < ARRAY_SIZE(_worker_data); ++i) {
     delete _worker_data[i];
   }
 }
 
-uint WeakProcessorPhaseTimes::max_threads() const { return _max_threads; }
+uint WeakProcessorTimes::max_threads() const { return _max_threads; }
 
-uint WeakProcessorPhaseTimes::active_workers() const {
+uint WeakProcessorTimes::active_workers() const {
   assert(_active_workers != 0, "active workers not set");
   return _active_workers;
 }
 
-void WeakProcessorPhaseTimes::set_active_workers(uint n) {
+void WeakProcessorTimes::set_active_workers(uint n) {
   assert(_active_workers == 0, "active workers already set");
   assert(n > 0, "active workers must be non-zero");
   assert(n <= _max_threads, "active workers must not exceed max threads");
   _active_workers = n;
 }
 
-void WeakProcessorPhaseTimes::reset() {
+void WeakProcessorTimes::reset() {
   _active_workers = 0;
   _total_time_sec = uninitialized_time;
   for (size_t i = 0; i < ARRAY_SIZE(_worker_data); ++i) {
@@ -89,48 +89,49 @@ void WeakProcessorPhaseTimes::reset() {
   }
 }
 
-double WeakProcessorPhaseTimes::total_time_sec() const {
+double WeakProcessorTimes::total_time_sec() const {
   assert(is_initialized_time(_total_time_sec), "Total time not set");
   return _total_time_sec;
 }
 
-void WeakProcessorPhaseTimes::record_total_time_sec(double time_sec) {
+void WeakProcessorTimes::record_total_time_sec(double time_sec) {
   assert(!is_initialized_time(_total_time_sec), "Already set total time");
   _total_time_sec = time_sec;
 }
 
-WorkerDataArray<double>* WeakProcessorPhaseTimes::worker_data(WeakProcessorPhase phase) const {
-  size_t index = EnumRange<WeakProcessorPhase>().index(phase);
+WorkerDataArray<double>* WeakProcessorTimes::worker_data(OopStorageSet::WeakId id) const {
+  size_t index = EnumRange<OopStorageSet::WeakId>().index(id);
   assert(index < ARRAY_SIZE(_worker_data), "invalid phase");
   return _worker_data[index];
 }
 
-double WeakProcessorPhaseTimes::worker_time_sec(uint worker_id, WeakProcessorPhase phase) const {
+double WeakProcessorTimes::worker_time_sec(uint worker_id,
+                                           OopStorageSet::WeakId id) const {
   assert(worker_id < active_workers(),
          "invalid worker id %u for %u", worker_id, active_workers());
-  return worker_data(phase)->get(worker_id);
+  return worker_data(id)->get(worker_id);
 }
 
-void WeakProcessorPhaseTimes::record_worker_time_sec(uint worker_id,
-                                                     WeakProcessorPhase phase,
-                                                     double time_sec) {
-  worker_data(phase)->set(worker_id, time_sec);
+void WeakProcessorTimes::record_worker_time_sec(uint worker_id,
+                                                OopStorageSet::WeakId id,
+                                                double time_sec) {
+  worker_data(id)->set(worker_id, time_sec);
 }
 
-void WeakProcessorPhaseTimes::record_worker_items(uint worker_id,
-                                                  WeakProcessorPhase phase,
-                                                  size_t num_dead,
-                                                  size_t num_total) {
-  WorkerDataArray<double>* phase_data = worker_data(phase);
-  phase_data->set_or_add_thread_work_item(worker_id, num_dead, DeadItems);
-  phase_data->set_or_add_thread_work_item(worker_id, num_total, TotalItems);
+void WeakProcessorTimes::record_worker_items(uint worker_id,
+                                             OopStorageSet::WeakId id,
+                                             size_t num_dead,
+                                             size_t num_total) {
+  WorkerDataArray<double>* data = worker_data(id);
+  data->set_or_add_thread_work_item(worker_id, num_dead, DeadItems);
+  data->set_or_add_thread_work_item(worker_id, num_total, TotalItems);
 }
 
 static double elapsed_time_sec(Ticks start_time, Ticks end_time) {
   return (end_time - start_time).seconds();
 }
 
-WeakProcessorTimeTracker::WeakProcessorTimeTracker(WeakProcessorPhaseTimes* times) :
+WeakProcessorTimeTracker::WeakProcessorTimeTracker(WeakProcessorTimes* times) :
   _times(times),
   _start_time(Ticks::now())
 {}
@@ -142,11 +143,11 @@ WeakProcessorTimeTracker::~WeakProcessorTimeTracker() {
   }
 }
 
-WeakProcessorPhaseTimeTracker::WeakProcessorPhaseTimeTracker(WeakProcessorPhaseTimes* times,
-                                                             WeakProcessorPhase phase,
-                                                             uint worker_id) :
+WeakProcessorParTimeTracker::WeakProcessorParTimeTracker(WeakProcessorTimes* times,
+                                                         OopStorageSet::WeakId storage_id,
+                                                         uint worker_id) :
   _times(times),
-  _phase(phase),
+  _storage_id(storage_id),
   _worker_id(worker_id),
   _start_time(Ticks::now())
 {
@@ -155,10 +156,10 @@ WeakProcessorPhaseTimeTracker::WeakProcessorPhaseTimeTracker(WeakProcessorPhaseT
 }
 
 
-WeakProcessorPhaseTimeTracker::~WeakProcessorPhaseTimeTracker() {
+WeakProcessorParTimeTracker::~WeakProcessorParTimeTracker() {
   if (_times != NULL) {
     double time_sec = elapsed_time_sec(_start_time, Ticks::now());
-    _times->record_worker_time_sec(_worker_id, _phase, time_sec);
+    _times->record_worker_time_sec(_worker_id, _storage_id, time_sec);
   }
 }
 
@@ -174,27 +175,25 @@ static const char* indent_str(size_t i) {
 
 #define TIME_FORMAT "%.1lfms"
 
-void WeakProcessorPhaseTimes::log_phase_summary(WeakProcessorPhase phase,
-                                                uint indent) const {
+void WeakProcessorTimes::log_summary(OopStorageSet::WeakId id, uint indent) const {
   LogTarget(Debug, gc, phases) lt;
   LogStream ls(lt);
   ls.print("%s", indents[indent]);
-  worker_data(phase)->print_summary_on(&ls, true);
-  log_phase_details(worker_data(phase), indent + 1);
+  worker_data(id)->print_summary_on(&ls, true);
+  log_details(worker_data(id), indent + 1);
 
-  for (uint i = 0; i < worker_data(phase)->MaxThreadWorkItems; i++) {
-    WorkerDataArray<size_t>* work_items = worker_data(phase)->thread_work_items(i);
+  for (uint i = 0; i < worker_data(id)->MaxThreadWorkItems; i++) {
+    WorkerDataArray<size_t>* work_items = worker_data(id)->thread_work_items(i);
     if (work_items != NULL) {
       ls.print("%s", indents[indent + 1]);
       work_items->print_summary_on(&ls, true);
-      log_phase_details(work_items, indent + 1);
+      log_details(work_items, indent + 1);
     }
   }
 }
 
 template <typename T>
-void WeakProcessorPhaseTimes::log_phase_details(WorkerDataArray<T>* data,
-                                                uint indent) const {
+void WeakProcessorTimes::log_details(WorkerDataArray<T>* data, uint indent) const {
   LogTarget(Trace, gc, phases) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
@@ -203,20 +202,17 @@ void WeakProcessorPhaseTimes::log_phase_details(WorkerDataArray<T>* data,
   }
 }
 
-void WeakProcessorPhaseTimes::log_print_phases(uint indent) const {
+void WeakProcessorTimes::log_subtotals(uint indent) const {
   if (log_is_enabled(Debug, gc, phases)) {
-    for (WeakProcessorPhase phase : EnumRange<WeakProcessorPhase>()) {
-      log_phase_summary(phase, indent);
+    for (auto id : EnumRange<OopStorageSet::WeakId>()) {
+      log_summary(id, indent);
     }
   }
 }
 
-void WeakProcessorPhaseTimes::log_print(uint indent) const {
-  if (log_is_enabled(Debug, gc, phases)) {
-    log_debug(gc, phases)("%s%s: " TIME_FORMAT,
-                          indent_str(indent),
-                          "Weak Processing",
-                          total_time_sec() * MILLIUNITS);
-    log_print_phases(indent + 1);
-  }
+void WeakProcessorTimes::log_total(uint indent) const {
+  log_debug(gc, phases)("%s%s: " TIME_FORMAT,
+                        indent_str(indent),
+                        "Weak Processing",
+                        total_time_sec() * MILLIUNITS);
 }

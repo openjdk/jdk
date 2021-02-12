@@ -26,7 +26,9 @@
 #define SHARE_GC_SHARED_THREADLOCALALLOCBUFFER_HPP
 
 #include "gc/shared/gcUtil.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
+#include "utilities/align.hpp"
+#include "utilities/sizes.hpp"
 
 class ThreadLocalAllocStats;
 

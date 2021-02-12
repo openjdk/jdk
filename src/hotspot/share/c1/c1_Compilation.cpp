@@ -446,7 +446,7 @@ void Compilation::compile_method() {
     dependency_recorder()->assert_evol_method(method());
   }
 
-  if (directive()->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     BREAKPOINT;
   }
 

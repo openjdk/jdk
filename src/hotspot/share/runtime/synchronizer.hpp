@@ -30,7 +30,6 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
-#include "runtime/perfData.hpp"
 
 class LogStream;
 class ObjectMonitor;

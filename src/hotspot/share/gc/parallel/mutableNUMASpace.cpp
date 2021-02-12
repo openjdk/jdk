@@ -30,6 +30,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/thread.inline.hpp"

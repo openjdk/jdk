@@ -31,7 +31,7 @@
 @interface CGLLayer : CAOpenGLLayer
 {
 @private
-    JNFWeakJObjectWrapper *javaLayer;
+    jobject javaLayer;
 
     // intermediate buffer, used the RQ lock to synchronize
     GLuint textureID;
@@ -40,13 +40,13 @@
     float textureHeight;
 }
 
-@property (nonatomic, retain) JNFWeakJObjectWrapper *javaLayer;
+@property (nonatomic) jobject javaLayer;
 @property (readwrite, assign) GLuint textureID;
 @property (readwrite, assign) GLenum target;
 @property (readwrite, assign) float textureWidth;
 @property (readwrite, assign) float textureHeight;
 
-- (id) initWithJavaLayer:(JNFWeakJObjectWrapper *)javaLayer;
+- (id) initWithJavaLayer:(jobject)javaLayer;
 - (void) blitTexture;
 @end
 

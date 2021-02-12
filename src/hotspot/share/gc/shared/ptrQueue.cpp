@@ -199,6 +199,12 @@ PtrQueueSet::PtrQueueSet(BufferNode::Allocator* allocator) :
 
 PtrQueueSet::~PtrQueueSet() {}
 
+void PtrQueueSet::reset_queue(PtrQueue& queue) {
+  if (queue.buffer() != nullptr) {
+    queue.set_index(buffer_size());
+  }
+}
+
 void PtrQueueSet::flush_queue(PtrQueue& queue) {
   void** buffer = queue.buffer();
   if (buffer != nullptr) {

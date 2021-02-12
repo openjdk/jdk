@@ -49,7 +49,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
 {
   if (self = [super init]) {
         fHasFileFilter = inHasFilter;
-        fFileDialog = JNFNewGlobalRef(env, inDialog);
+        fFileDialog = (*env)->NewGlobalRef(env, inDialog);
         fDirectory = inPath;
         [fDirectory retain];
         fFile = inFile;
@@ -69,7 +69,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
 -(void) disposer {
     if (fFileDialog != NULL) {
         JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-        JNFDeleteGlobalRef(env, fFileDialog);
+        (*env)->DeleteGlobalRef(env, fFileDialog);
         fFileDialog = NULL;
     }
 }

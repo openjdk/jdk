@@ -109,7 +109,8 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
          "We should not be at a safepoint");
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
   assert(!queue.is_active(), "SATB queue should not be active");
-  assert( queue.is_empty(),  "SATB queue should be empty");
+  assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
+  assert(queue.index() == 0, "SATB queue index should be zero");
   queue.set_active(_satb_mark_queue_set.is_active());
   if (thread->is_Java_thread()) {
     ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());

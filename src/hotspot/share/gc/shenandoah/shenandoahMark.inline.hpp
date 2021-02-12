@@ -257,9 +257,6 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahHeap* heap, Shenand
     switch (UPDATE_REFS) {
     case NONE:
       break;
-    case RESOLVE:
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      break;
     case SIMPLE:
       // We piggy-back reference updating to the marking tasks.
       obj = heap->update_with_forwarded_not_null(p, obj);

@@ -3378,7 +3378,7 @@ instruct reinterpret_shrink(vec dst, legVec src) %{
   format %{ "vector_reinterpret_shrink $dst,$src\t!" %}
   ins_encode %{
     switch (vector_length_in_bytes(this)) {
-      case  4: __ movflt ($dst$$XMMRegister, $src$$XMMRegister); break;
+      case  4: __ movfltz($dst$$XMMRegister, $src$$XMMRegister); break;
       case  8: __ movq   ($dst$$XMMRegister, $src$$XMMRegister); break;
       case 16: __ movdqu ($dst$$XMMRegister, $src$$XMMRegister); break;
       case 32: __ vmovdqu($dst$$XMMRegister, $src$$XMMRegister); break;

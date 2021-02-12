@@ -112,13 +112,13 @@ static void initializeInputMethodController() {
     [inputMethodController performSelector:@selector(setCurrentInputMethodForLocale) withObject:theLocale];
 }
 
-+ (void) _nativeNotifyPeerWithView:(AWTView *)view inputMethod:(JNFJObjectWrapper *) inputMethod {
++ (void) _nativeNotifyPeerWithView:(AWTView *)view inputMethod:(jobject) inputMethod {
     AWT_ASSERT_APPKIT_THREAD;
 
     if (!view) return;
     if (!inputMethod) return;
 
-    [view setInputMethod:[inputMethod jObject]];
+    [view setInputMethod:inputMethod]; // inputMethod is a GlobalRef
 }
 
 + (void) _nativeEndComposition:(AWTView *)view {
@@ -177,9 +177,9 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CInputMethod_nativeNotifyPeer
 {
 JNI_COCOA_ENTER(env);
     AWTView *view = (AWTView *)jlong_to_ptr(nativePeer);
-    JNFJObjectWrapper *inputMethodWrapper = [[JNFJObjectWrapper alloc] initWithJObject:inputMethod withEnv:env];
+    jobject inputMethodRef = (*env)->NewGlobalRef(env, inputMethod);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
-        [CInputMethod _nativeNotifyPeerWithView:view inputMethod:inputMethodWrapper];
+        [CInputMethod _nativeNotifyPeerWithView:view inputMethod:inputMethodRef];
     }];
 
 JNI_COCOA_EXIT(env);
@@ -234,11 +234,11 @@ JNI_COCOA_ENTER(env);
         [isoAbbreviation release];
 
         if (sLastKeyboardLocaleObj) {
-            JNFDeleteGlobalRef(env, sLastKeyboardLocaleObj);
+            (*env)->DeleteGlobalRef(env, sLastKeyboardLocaleObj);
             sLastKeyboardLocaleObj = NULL;
         }
         if (localObj != NULL) {
-            sLastKeyboardLocaleObj = JNFNewGlobalRef(env, localObj);
+            sLastKeyboardLocaleObj = (*env)->NewGlobalRef(env, localObj);
             (*env)->DeleteLocalRef(env, localObj);
         }
     }
