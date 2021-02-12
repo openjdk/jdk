@@ -1030,6 +1030,42 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
 #endif // INCLUDE_JVMCI || INCLUDE_AOT
 
 #if COMPILER2_OR_JVMCI
+// the order of instanceKlass::nonstatic_fields is differernt from ciInstanceKlass::_nonstatic_fields.
+// this closure indices all fields in sorted order and return the index;
+class DebugInfoFieldLocator : public FieldClosure {
+  Symbol* _name;
+  Symbol* _signature;
+  int _tracking_id;
+  int _index;           // index in debuginfo
+
+  void do_field(fieldDescriptor* fd) {
+    if (_name == fd->name() && _signature == fd->signature()) {
+      _index = _tracking_id;
+    }
+    _tracking_id++;
+  }
+
+public:
+  DebugInfoFieldLocator(Symbol* name, Symbol* signature): _name(name), _signature(signature),
+                                                          _tracking_id(0), _index(badInt) {}
+  int index() const { return _index; }
+};
+
+// return the index of value field of java.lang.String in DebugInfo order
+static int java_lang_String_value_index() {
+  static int index = badInt;
+
+  if (index == badInt) {
+    DebugInfoFieldLocator locator(vmSymbols::value_name(), vmSymbols::byte_array_signature());
+    // do_nonstatic_fields access locator in sorted order
+    vmClasses::String_klass()->do_nonstatic_fields(&locator);
+    index = locator.index();
+    assert(index != badInt, "fail to locate j.l.String::value field");
+  }
+
+  return index;
+}
+
 bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
   Handle pending_exception(THREAD, thread->pending_exception());
   const char* exception_file = thread->exception_file();
@@ -1063,6 +1099,58 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
         if (EnableVectorSupport && VectorSupport::is_vector(ik)) {
           obj = VectorSupport::allocate_vector(ik, fr, reg_map, sv, THREAD);
         } else {
+          if (OptimizeTempArray && ik == vmClasses::String_klass()) {
+            ScopeValue* fld_value = sv->field_at(java_lang_String_value_index());
+            int idx = -1;
+
+            if (fld_value->is_object()) {
+              for (int j = i + 1; j < objects->length(); ++j) {
+                if (objects->at(j) == fld_value) {
+                  idx = j;
+                  break;
+                }
+              }
+
+              if (idx != -1) {
+                ObjectValue* sv_value = fld_value->as_ObjectValue();
+                TypeArrayKlass* ak = TypeArrayKlass::cast(java_lang_Class::as_Klass(
+                                    sv_value->klass()->as_ConstantOopReadValue()->value()()));
+                // open the envelope and re-allocate the eliminated arrayoop
+                // [0] src
+                // [1] src_pos
+                // [2] length
+                // dst = Arrays.copyOfRange(src, src_pos, src_post + length)
+                oop src;
+                int src_pos, length;
+
+                ScopeValue* x;
+                StackValue* value;
+                intptr_t val;
+
+                x = sv_value->field_at(0);
+                value = StackValue::create_stack_value(fr, reg_map, x);
+                assert(value->type() == T_OBJECT, "Agreement.");
+                src = value->get_obj()();
+
+                x = sv_value->field_at(1);
+                value  = StackValue::create_stack_value(fr, reg_map, x);
+                assert(value->type() == T_INT, "Agreement.");
+                val = value->get_int();
+                src_pos = (jint)*((jint*)&val);
+
+                x = sv_value->field_at(2);
+                value = StackValue::create_stack_value(fr, reg_map, x);
+                assert(value->type() == T_INT, "Agreement.");
+                val = value->get_int();
+                length = (jint)*((jint*)&val);
+
+                oop dst = ak->allocate(length, THREAD);
+                ak->copy_array((arrayOop)src, src_pos, (arrayOop)dst, 0, length, THREAD);
+                sv_value->set_value(dst);
+                objects->delete_at(idx);
+              }
+            }
+          }
           obj = ik->allocate_instance(THREAD);
         }
 #else

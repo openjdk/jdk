@@ -725,7 +725,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, bool str_al
 
 // find AllocateNode of j.l.String from AllocateArrayNode's result_cast()
 static AllocateNode* find_string_alloc_from_res(PhaseGVN& gvn, CheckCastPPNode* dst) {
-  AllocateNode* obj = nullptr;
+  AllocateNode* found = nullptr;
 
   if (dst != nullptr && dst->has_out_with(Op_EncodeP)) {
     Node* enc = dst->find_out_with(Op_EncodeP);
@@ -746,20 +746,24 @@ static AllocateNode* find_string_alloc_from_res(PhaseGVN& gvn, CheckCastPPNode* 
         if (t_oop != nullptr && t_oop->is_known_instance_field()) {
           Node* res = st->in(2)->as_AddP()->base_node();
 
-          if (res->is_CheckCastPP() &&
-              res->in(1)->in(0)->_idx == static_cast<node_idx_t>(t_oop->instance_id())) {
-            if (obj != nullptr && obj != res->in(1)->in(0)) {
-              // store this narrowoop to more than one places, bail out
-              return nullptr;
-            }
+          if (res != nullptr && res->is_CheckCastPP()) {
+            // CheckCastPP <- Proj <- Allocate
+            res = res->as_CheckCastPP()->in(1)->in(0);
 
-            AllocateNode* alloc = res->in(1)->in(0)->as_Allocate();
-            const TypeKlassPtr* klass = gvn.type(alloc->in(AllocateNode::KlassNode))->isa_klassptr();
-            // after we discover an AllocateNode, verify it is j.l.String
-            // and scalar-replaceable
-            if (alloc->_is_scalar_replaceable &&
-                klass->name() == ciSymbols::java_lang_String()) {
-              obj = alloc;
+            if (res->_idx == static_cast<node_idx_t>(t_oop->instance_id())) {
+              if (found != nullptr && found != res) {
+                // store this narrowoop to more than one place, bail out
+                return nullptr;
+              }
+
+              AllocateNode* alloc = res->as_Allocate();
+              const TypeKlassPtr* klass = gvn.type(alloc->in(AllocateNode::KlassNode))->isa_klassptr();
+              // after we discover an AllocateNode, verify it is j.l.String
+              // and scalar-replaceable
+              if (alloc->_is_scalar_replaceable &&
+                  klass->name() == ciSymbols::java_lang_String()) {
+                found = alloc;
+              }
             }
           }
         }
@@ -770,7 +774,7 @@ static AllocateNode* find_string_alloc_from_res(PhaseGVN& gvn, CheckCastPPNode* 
     }
   }
 
-  return obj;
+  return found;
 }
 
 // Preconditions:
@@ -972,19 +976,27 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         if (obj == alloc && aa->is_str_alloc_obsolete()) {
           ac = find_arraycopy_node_from_res(field_val->as_CheckCastPP());
           assert(ac != nullptr, "must see an ArrayCopyNode use field_val as Src");
-          SafePointScalarObjectNode* nest_sobj = new SafePointScalarObjectNode(res_type,
+
+          const TypeAryPtr* t_aryptr = _igvn.type(field_val)->is_aryptr();
+          assert(t_aryptr != nullptr && t_aryptr->elem() == TypeInt::BYTE, "wrong type of src! it must be byte[]");
+          // type t_aryptr is inconsistent here on purpose.
+          // but there're only 3 fields! I use SafePointScalarObjectNode and ObjectValue as envelopes to mock and oop.
+          // The real purpose is to encode information so deoptimization can re-allocate the arrayOop.
+          // see Deoptimization::realloc_objects()
+          SafePointScalarObjectNode* nest_sobj = new SafePointScalarObjectNode(t_aryptr,
                                                       DEBUG_ONLY(alloc COMMA)
-                                                      first_ind + j, 3);
+                                                      first_ind + j + 1, 3);
           nest_sobj->init_req(0, C->root());
           transform_later(nest_sobj);
 
+          sfpt->add_req(nest_sobj);
           // 1. src oop
           sfpt->add_req(ac->in(ArrayCopyNode::Src));
           // 2. src Position
           sfpt->add_req(ac->in(ArrayCopyNode::SrcPos));
           // 3. length
           sfpt->add_req(ac->in(ArrayCopyNode::Length));
-          field_val = nest_sobj;
+          field_val = C->top();
         }
       }
       sfpt->add_req(field_val);
@@ -2906,11 +2918,13 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
-// sort macro nodes for strcpy elimination
-// after-sort order: others < AllocateArray(aa) < Allocate(alloc) < ArrayCopy(ac)
-// the order guarantees ME to process ac first and aa last.
-// eliminate_strcpy_node(ac) must see alloc and aa
-// scalar_replacement(alloc) must see aa
+// Sort macro nodes for strcpy elimination, result:
+// others < AllocateArray(aa) < Allocate(alloc) < ArrayCopy(ac)
+//
+// Rationale:
+// the order make sure ME to process ac first and aa last.
+// eliminate_strcpy_node(ac) must see alloc and aa, so process first.
+// scalar_replacement(alloc) must see aa, so come after ac.
 void PhaseMacroExpand::sort_macro_for_strcpy_opt() {
   int order[] = {Op_ArrayCopy, Op_Allocate, Op_AllocateArray};
 
@@ -2980,7 +2994,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         _has_locks = true;
         break;
       case Node::Class_ArrayCopy:
-        // don't delete arraycopy
         success = eliminate_strcpy_node(n->as_ArrayCopy());
         break;
       case Node::Class_OuterStripMinedLoop:
