@@ -42,8 +42,7 @@
 template<GenerationMode GENERATION>
 ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
   _queue(q),
-  _heap(ShenandoahHeap::heap()),
-  _mark_context(_heap->marking_context()) {
+  _mark_context(ShenandoahHeap::heap()->marking_context()) {
 }
 
 template <GenerationMode GENERATION>
@@ -259,7 +258,7 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
     shenandoah_assert_not_forwarded(p, obj);
     shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc());
 
-    if (GENERATION != YOUNG || heap->is_in_young(obj)) {
+    if (GENERATION != YOUNG || ShenandoahHeap::heap()->is_in_young(obj)) {
       bool skip_live = false;
       bool marked;
       if (weak) {

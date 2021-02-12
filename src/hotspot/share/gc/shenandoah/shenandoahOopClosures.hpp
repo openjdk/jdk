@@ -80,6 +80,7 @@ public:
   };
 };
 
+template <GenerationMode GENERATION>
 class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkUpdateRefsSuperClosure {
 private:
   template <class T>
