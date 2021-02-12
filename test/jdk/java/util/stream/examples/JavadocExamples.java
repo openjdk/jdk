@@ -43,7 +43,7 @@ public class JavadocExamples {
             if (number instanceof Integer i)
                 consumer.accept(i);
         })
-                .collect(Collectors.toList());
+        .collect(Collectors.toList());
     }
 }
 // mapMulti - Expand Iterable Example
@@ -58,7 +58,7 @@ class C {
         }
     }
     public static void main(String[] args) {
-        Stream<Object> stream = Stream.of(1, 2, 3);
+        Stream<Object> stream = Stream.of(1, List.of(2, List.of(3, 4)), 5);
         Stream<Object> expandedStream = stream.mapMulti(C::expandIterable);
     }
 }
