@@ -66,7 +66,10 @@ import java.util.*;
  * orderings that are consistent with equals.  One exception is
  * {@link java.math.BigDecimal}, whose {@linkplain java.math.BigDecimal#compareTo natural ordering} equates
  * {@code BigDecimal} objects with equal numerical values and different representations
- * (such as 4.0 and 4.00).<p>
+ * (such as 4.0 and 4.00). For {@link java.math.BigDecimal#equals
+ * BigDecimal#equals()} to return true, the representation and
+ * numerical value of the two {@code BigDecimal} objects must be the
+ * same.<p>
  *
  * For the mathematically inclined, the <i>relation</i> that defines
  * the natural ordering on a given class C is:<pre>{@code

@@ -131,7 +131,7 @@ public class Object {
      * <p>
      * An equivalence relation partitions the elements it operates on
      * into <i>equivalence classes</i>; all the members of an
-     * equivalence class are equal to each other. The equal objects
+     * equivalence class are equal to each other. Members of an equivalence class
      * are substitutable for each other, at least for some purposes.
      *
      * @implSpec
@@ -234,6 +234,7 @@ public class Object {
      * be a concise but informative representation that is easy for a
      * person to read.
      * It is recommended that all subclasses override this method.
+     * The string output is not necessary stable over time or across JVM invocations.
      * @implSpec
      * The {@code toString} method for class {@code Object}
      * returns a string consisting of the name of the class of which the

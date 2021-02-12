@@ -87,14 +87,16 @@ import java.util.Objects;
  * representations (with different scales), the rules of arithmetic
  * and rounding must specify both the numerical result and the scale
  * used in the result's representation.
-
- * The different representations of the same numerical value are called
- * members of the same <i>cohort</i>. The {@linkplain
+ *
+ * The different representations of the same numerical value are
+ * called members of the same <i>cohort</i>. The {@linkplain
  * compareTo(BigDecimal) natural order} of {@code BigDecimal}
  * considers members of the same cohort to be equal to each other. In
  * contrast, the {@link equals equals} method requires both the
  * numerical value and representation to be the same for equality to
- * hold.
+ * hold. The results of methods like {@link scale} and {@link
+ * unscaledValue} will differ for numerically equal values with
+ * different representations.
  *
  * <p>In general the rounding modes and precision setting determine
  * how operations return results with a limited number of digits when
