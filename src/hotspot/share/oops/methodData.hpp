@@ -30,6 +30,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutex.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 

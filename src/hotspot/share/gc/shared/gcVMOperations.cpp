@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gcId.hpp"

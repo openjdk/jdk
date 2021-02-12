@@ -25,9 +25,10 @@
 #ifndef SHARE_OOPS_OBJARRAYKLASS_HPP
 #define SHARE_OOPS_OBJARRAYKLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
 #include "utilities/macros.hpp"
+
+class ClassLoaderData;
 
 // ObjArrayKlass is the klass for objArrays
 

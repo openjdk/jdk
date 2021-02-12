@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_GENOOPCLOSURES_INLINE_HPP
 #define SHARE_GC_SHARED_GENOOPCLOSURES_INLINE_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.hpp"

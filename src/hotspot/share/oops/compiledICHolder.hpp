@@ -71,16 +71,7 @@ class CompiledICHolder : public CHeapObj<mtCompiler> {
   CompiledICHolder* next()     { return _next; }
   void set_next(CompiledICHolder* n) { _next = n; }
 
-  inline bool is_loader_alive() {
-    Klass* k = _is_metadata_method ? ((Method*)_holder_metadata)->method_holder() : (Klass*)_holder_metadata;
-    if (!k->is_loader_alive()) {
-      return false;
-    }
-    if (!_holder_klass->is_loader_alive()) {
-      return false;
-    }
-    return true;
-  }
+  inline bool is_loader_alive();
 
   // Verify
   void verify_on(outputStream* st);

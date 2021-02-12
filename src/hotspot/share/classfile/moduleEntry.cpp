@@ -368,6 +368,11 @@ ModuleEntryTable::~ModuleEntryTable() {
   assert(new_entry_free_list() == NULL, "entry present on ModuleEntryTable's free list");
 }
 
+void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
+  assert(!cld->has_class_mirror_holder(), "Unexpected has_class_mirror_holder cld");
+  _loader_data = cld;
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 typedef ResourceHashtable<
   const ModuleEntry*,

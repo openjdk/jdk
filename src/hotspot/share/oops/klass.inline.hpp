@@ -29,6 +29,26 @@
 #include "oops/klass.hpp"
 #include "oops/markWord.hpp"
 
+// This loads the klass's holder as a phantom. This is useful when a weak Klass
+// pointer has been "peeked" and then must be kept alive before it may
+// be used safely.  All uses of klass_holder need to apply the appropriate barriers,
+// except during GC.
+inline oop Klass::klass_holder() const {
+  return class_loader_data()->holder_phantom();
+}
+
+inline bool Klass::is_non_strong_hidden() const {
+  return access_flags().is_hidden_class() &&
+         class_loader_data()->has_class_mirror_holder();
+}
+
+// Iff the class loader (or mirror for unsafe anonymous classes) is alive the
+// Klass is considered alive. This is safe to call before the CLD is marked as
+// unloading, and hence during concurrent class unloading.
+inline bool Klass::is_loader_alive() const {
+  return class_loader_data()->is_alive();
+}
+
 inline void Klass::set_prototype_header(markWord header) {
   assert(!header.has_bias_pattern() || is_instance_klass(), "biased locking currently only supported for Java instances");
   _prototype_header = header;

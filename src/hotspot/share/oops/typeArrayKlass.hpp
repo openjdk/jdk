@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_TYPEARRAYKLASS_HPP
 #define SHARE_OOPS_TYPEARRAYKLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
+
+class ClassLoaderData;
 
 // A TypeArrayKlass is the klass of a typeArray
 // It contains the type and size of the elements

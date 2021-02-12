@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "runtime/atomic.hpp"
 

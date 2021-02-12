@@ -29,6 +29,7 @@
 #include "classfile/loaderConstraints.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"

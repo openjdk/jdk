@@ -27,6 +27,7 @@
 
 #include "oops/objArrayOop.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
 

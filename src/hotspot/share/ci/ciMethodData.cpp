@@ -30,6 +30,7 @@
 #include "compiler/compiler_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "utilities/copy.hpp"
 
