@@ -145,6 +145,13 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   PerRegionTable* prt = find_region_table(ind, from_hr);
   if (prt == NULL) {
     MutexLocker x(_m, Mutex::_no_safepoint_check_flag);
+
+    // Make sure region hasn't been coarsened by other thread.
+    if (is_region_coarsened(from_hrm_ind)) {
+      assert(contains_reference(from), "We just found " PTR_FORMAT " in the Coarse table", p2i(from));
+      return;
+    }
+
     // Confirm that it's really not there...
     prt = find_region_table(ind, from_hr);
     if (prt == NULL) {
@@ -159,6 +166,8 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
         assert(contains_reference_locked(from), "We just added " PTR_FORMAT " to the Sparse table", p2i(from));
         return;
       }
+
+      // Sparse PRT returned overflow (sparse table is full)
 
       if (_n_fine_entries == _max_fine_entries) {
         prt = delete_region_table(num_added_by_coarsening);
