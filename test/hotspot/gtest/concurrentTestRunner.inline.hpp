@@ -25,7 +25,6 @@
 #define GTEST_CONCURRENT_TEST_RUNNER_INLINE_HPP
 
 #include "threadHelper.inline.hpp"
-// #include "unittest.hpp"
 
 class TestRunnable {
 public:
@@ -42,6 +41,7 @@ public:
     runnable = runnableArg;
     testDuration = testDurationArg;
   }
+
   virtual ~UnitTestThread() {}
 
   void main_run() {
@@ -71,9 +71,9 @@ public:
   void run() {
     Semaphore done(0);
 
-    UnitTestThread* t[nrOfThreads];
+    std::vector<UnitTestThread*> t;
     for (int i = 0; i < nrOfThreads; i++) {
-      t[i] = new UnitTestThread(unitTestRunnable, &done, testDurationMillis);
+      t.push_back(new UnitTestThread(unitTestRunnable, &done, testDurationMillis));
     }
 
     for (int i = 0; i < nrOfThreads; i++) {
@@ -83,6 +83,8 @@ public:
     for (int i = 0; i < nrOfThreads; i++) {
       done.wait();
     }
+
+    // TODO: make sure to delete the UnitTestThread instances
   }
 };
 

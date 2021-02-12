@@ -418,5 +418,4 @@ TEST_VM(os_linux, reserve_memory_special_concurrent) {
   testRunner.run();
 }
 
-
 #endif
