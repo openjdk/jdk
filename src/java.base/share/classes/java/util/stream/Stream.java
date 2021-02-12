@@ -386,8 +386,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <pre>{@code
      *     Stream<Number> numbers = ... ;
      *     List<Integer> integers = numbers.<Integer>mapMulti((number, consumer) -> {
-     *             if (number instanceof Integer)
-     *                 consumer.accept((Integer) number);
+     *             if (number instanceof Integer i)
+     *                 consumer.accept(i);
      *         })
      *         .collect(Collectors.toList());
      * }</pre>
@@ -397,8 +397,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <pre>{@code
      * class C {
      *     static void expandIterable(Object e, Consumer<Object> c) {
-     *         if (e instanceof Iterable) {
-     *             for (Object ie: (Iterable<?>) e) {
+     *         if (e instanceof Iterable elements) {
+     *             for (Object ie : elements) {
      *                 expandIterable(ie, c);
      *             }
      *         } else if (e != null) {
