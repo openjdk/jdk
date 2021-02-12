@@ -1370,7 +1370,8 @@ public class ObjectInputStream
             event.objectReferences = totalObjectRefs;
             event.depth = depth;
             event.bytesRead = bytesRead;
-            event.exceptionMessage = ex != null ? ex.toString() : null;
+            event.exceptionType = ex != null ? ex.getClass() : null;
+            event.exceptionMessage = ex != null ? ex.getMessage() : null;
             event.commit();
         }
         if (serialFilter != null && (status == null || status == ObjectInputFilter.Status.REJECTED)) {

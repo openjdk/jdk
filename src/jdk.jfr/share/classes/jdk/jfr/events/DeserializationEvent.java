@@ -59,6 +59,9 @@ public final class DeserializationEvent extends AbstractJDKEvent {
     @Label ("Bytes Read")
     public long bytesRead;
 
+    @Label ("Exception Type")
+    public Class<?> exceptionType;
+
     @Label ("Exception Message")
     public String exceptionMessage;
 }

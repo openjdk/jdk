@@ -37,5 +37,6 @@ public final class DeserializationEvent extends Event {
     public long objectReferences;
     public long depth;
     public long bytesRead;
+    public Class<?> exceptionType;
     public String exceptionMessage;
 }

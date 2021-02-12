@@ -77,6 +77,7 @@ public class TestDeserializationEvent {
                         assertObjectReferences(1),
                         assertDepth(1),
                         assertHasBytesRead(),
+                        assertExceptionType(null),
                         assertExceptionMessage(null))) },
             {   2,  // primitive int array
                 (Runnable)() -> deserialize(ba2),
@@ -207,23 +208,26 @@ public class TestDeserializationEvent {
         }
     }
 
-    static class XYZException extends RuntimeException { }
+    static class XYZException extends RuntimeException {
+        XYZException(String msg) { super(msg); }
+    }
 
     @Test
     public void testException() throws Exception {
         try (Recording recording = new Recording();
              var bais = new ByteArrayInputStream(serialize(new R()));
              var ois = new ObjectInputStream(bais)) {
-            ois.setObjectInputFilter(fv -> { throw new XYZException(); });
+            ois.setObjectInputFilter(fv -> { throw new XYZException("I am a bad filter!!!"); });
             recording.enable(EventNames.Deserialization);
             recording.start();
-            InvalidClassException ice = expectThrows(ICE, () -> ois.readObject());
+            assertThrows(ICE, () -> ois.readObject());
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(events.size(), 1);
             assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
             assertFilterConfigured(true).accept(events.get(0));
-            assertExceptionMessage("jdk.jfr.event.io.TestDeserializationEvent$XYZException").accept(events.get(0));
+            assertExceptionType(XYZException.class).accept(events.get(0));
+            assertExceptionMessage("I am a bad filter!!!").accept(events.get(0));
         }
     }
 
@@ -239,7 +243,8 @@ public class TestDeserializationEvent {
                 checker.accept(recordedEvent);
             }
             assertFilterConfigured(false).accept(recordedEvent); // no filter expected
-            assertExceptionMessage(null).accept(recordedEvent);  // no exception expected
+            assertExceptionType(null).accept(recordedEvent);     // no exception type expected
+            assertExceptionMessage(null).accept(recordedEvent);  // no exception message expected
             found++;
         }
         assertEquals(found, expectedValuesChecker.size());
@@ -269,17 +274,11 @@ public class TestDeserializationEvent {
         };
     }
 
-    static Consumer<RecordedEvent> assertType(Class expectedValue) {
+    static Consumer<RecordedEvent> assertType(Class<?> expectedValue) {
         return new Consumer<>() {
             @Override public void accept(RecordedEvent recordedEvent) {
                 assertTrue(recordedEvent.hasField("type"));
-                if (expectedValue == null && recordedEvent.getValue("type") == null)
-                    return;
-
-                if (recordedEvent.getValue("type") instanceof RecordedClass recordedClass)
-                    assertEquals(recordedClass.getName(), expectedValue.getName());
-                else
-                    fail("Expected RecordedClass, got:" + recordedEvent.getValue("type") .getClass());
+                assertClassOrNull(expectedValue, recordedEvent, "type");
             }
             @Override public String toString() {
                 return "assertType, expectedValue=" + expectedValue;
@@ -346,6 +345,18 @@ public class TestDeserializationEvent {
         };
     }
 
+    static Consumer<RecordedEvent> assertExceptionType(Class<?> expectedValue) {
+        return new Consumer<>() {
+            @Override public void accept(RecordedEvent recordedEvent) {
+                assertTrue(recordedEvent.hasField("exceptionType"));
+                assertClassOrNull(expectedValue, recordedEvent, "exceptionType");
+            }
+            @Override public String toString() {
+                return "assertExceptionType, expectedValue=" + expectedValue;
+            }
+        };
+    }
+
     static Consumer<RecordedEvent> assertExceptionMessage(String expectedValue) {
         return new Consumer<>() {
             @Override public void accept(RecordedEvent recordedEvent) {
@@ -356,6 +367,18 @@ public class TestDeserializationEvent {
                 return "assertExceptionMessage, expectedValue=" + expectedValue;
             }
         };
+    }
+
+    static void assertClassOrNull(Class<?> expectedValue,
+                                  RecordedEvent recordedEvent,
+                                  String valueName) {
+        if (expectedValue == null && recordedEvent.getValue(valueName) == null)
+            return;
+
+        if (recordedEvent.getValue(valueName) instanceof RecordedClass recordedClass)
+            assertEquals(recordedClass.getName(), expectedValue.getName());
+        else
+            fail("Expected RecordedClass, got:" + recordedEvent.getValue(valueName).getClass());
     }
 
     static <T> byte[] serialize(T obj) throws IOException {
