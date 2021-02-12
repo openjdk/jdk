@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,10 +18,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-grant {
-    // No permission
-    permission java.io.FilePermission "sock", "delete";
 
-    permission java.lang.RuntimePermission "setSecurityManager";
-};
+#ifndef CPU_AARCH64_ATOMIC_AARCH64_HPP
+#define CPU_AARCH64_ATOMIC_AARCH64_HPP
+
+// Atomic stub implementation.
+// Default implementations are in atomic_linux_aarch64.S
+//
+// All stubs pass arguments the same way
+// x0: src/dest address
+// x1: arg1
+// x2: arg2 (optional)
+// x3, x8, x9: scratch
+typedef uint64_t (*aarch64_atomic_stub_t)(volatile void *ptr, uint64_t arg1, uint64_t arg2);
+
+// Pointers to stubs
+extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_4_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_8_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_xchg_4_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_xchg_8_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_1_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_4_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_8_impl;
+
+#endif // CPU_AARCH64_ATOMIC_AARCH64_HPP
