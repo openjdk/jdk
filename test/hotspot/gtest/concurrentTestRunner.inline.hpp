@@ -26,17 +26,21 @@
 
 #include "threadHelper.inline.hpp"
 
+// This file contains helper classes to run unit tests concurrently in multiple threads.
+
+// Base class for test runnable. Override runUnitTest() to specify what to run.
 class TestRunnable {
 public:
   virtual void runUnitTest() {
   };
 };
 
+// This class represents a thread for a unit test.
 class UnitTestThread : public JavaTestThread {
 public:
-  long testDuration;
-  TestRunnable* runnable;
-
+  // runnableArg - what to run
+  // doneArg - a semaphore to notify when the thread is done running
+  // testDurationArg - how long to run (in milliseconds)
   UnitTestThread(TestRunnable* runnableArg, Semaphore* doneArg, long testDurationArg) : JavaTestThread(doneArg) {
     runnable = runnableArg;
     testDuration = testDurationArg;
@@ -44,22 +48,24 @@ public:
 
   virtual ~UnitTestThread() {}
 
+  // from JavaTestThread
   void main_run() {
-    tty->print_cr("Starting test thread");
     long stopTime = os::javaTimeMillis() + testDuration;
     while (os::javaTimeMillis() < stopTime) {
       runnable->runUnitTest();
     }
-    tty->print_cr("Leaving test thread");
   }
+private:
+  long testDuration;
+  TestRunnable* runnable;
 };
 
+// Helper class for running a given unit test concurrently in multiple threads.
 class ConcurrentTestRunner {
 public:
-  long testDurationMillis;
-  int nrOfThreads;
-  TestRunnable* unitTestRunnable;
-
+  // runnableArg - what to run
+  // nrOfThreadsArg - how many threads to use concurrently
+  // testDurationMillisArg - duration for each test run
   ConcurrentTestRunner(TestRunnable* runnableArg, int nrOfThreadsArg, long testDurationMillisArg) {
     unitTestRunnable = runnableArg;
     nrOfThreads = nrOfThreadsArg;
@@ -83,9 +89,12 @@ public:
     for (int i = 0; i < nrOfThreads; i++) {
       done.wait();
     }
-
-    // TODO: make sure to delete the UnitTestThread instances
   }
+
+private:
+  long testDurationMillis;
+  int nrOfThreads;
+  TestRunnable* unitTestRunnable;
 };
 
 #endif // include guard

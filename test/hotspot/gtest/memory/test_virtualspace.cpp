@@ -21,7 +21,6 @@
  * questions.
  */
 
-// TODO: organize headers
 #include "precompiled.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/os.hpp"
@@ -357,9 +356,9 @@ class TestReservedSpace : AllStatic {
 
   static void release_memory_for_test(ReservedSpace rs) {
     if (rs.special()) {
-      guarantee(os::release_memory_special(rs.base(), rs.size()), "Shouldn't fail");
+      EXPECT_TRUE(os::release_memory_special(rs.base(), rs.size()));
     } else {
-      guarantee(os::release_memory(rs.base(), rs.size()), "Shouldn't fail");
+      EXPECT_TRUE(os::release_memory(rs.base(), rs.size()));
     }
   }
 
@@ -653,9 +652,6 @@ class TestVirtualSpace : AllStatic {
     test_virtual_space_disable_large_pages();
   }
 };
-
-
-
 
 class ReservedSpaceRunnable : public TestRunnable {
 public:

@@ -304,12 +304,12 @@ class TestReserveMemorySpecial : AllStatic {
     char* const mapping1 = (char*) ::mmap(NULL, mapping_size,
       PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
       -1, 0);
-    assert(mapping1 != MAP_FAILED, "should work");
+    EXPECT_NE(mapping1, MAP_FAILED);
 
     char* const mapping2 = (char*) ::mmap(NULL, mapping_size,
       PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
       -1, 0);
-    assert(mapping2 != MAP_FAILED, "should work");
+    EXPECT_NE(mapping2, MAP_FAILED);
 
     // Unmap the first mapping, but leave the second mapping intact: the first
     // mapping will serve as a value for a "good" req_addr (case 2). The second
@@ -322,7 +322,7 @@ class TestReserveMemorySpecial : AllStatic {
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, NULL, false);
         if (p != NULL) {
-          assert(is_aligned(p, alignment), "must be");
+          EXPECT_TRUE(is_aligned(p, alignment));
           small_page_write(p, size);
           os::Linux::release_memory_special_huge_tlbfs(p, size);
         }
@@ -336,7 +336,7 @@ class TestReserveMemorySpecial : AllStatic {
         char* const req_addr = align_up(mapping1, alignment);
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
         if (p != NULL) {
-          assert(p == req_addr, "must be");
+          EXPECT_EQ(p, req_addr);
           small_page_write(p, size);
           os::Linux::release_memory_special_huge_tlbfs(p, size);
         }
@@ -351,7 +351,7 @@ class TestReserveMemorySpecial : AllStatic {
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
         // as the area around req_addr contains already existing mappings, the API should always
         // return NULL (as per contract, it cannot return another address)
-        assert(p == NULL, "must be");
+        EXPECT_TRUE(p == NULL);
       }
     }
 
@@ -376,8 +376,8 @@ class TestReserveMemorySpecial : AllStatic {
     char* addr = os::Linux::reserve_memory_special_shm(size, alignment, NULL, false);
 
     if (addr != NULL) {
-      assert(is_aligned(addr, alignment), "Check");
-      assert(is_aligned(addr, os::large_page_size()), "Check");
+      EXPECT_TRUE(is_aligned(addr, alignment));
+      EXPECT_TRUE(is_aligned(addr, os::large_page_size()));
 
       small_page_write(addr, size);
 
