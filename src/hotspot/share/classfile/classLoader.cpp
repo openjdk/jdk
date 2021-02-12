@@ -1337,11 +1337,13 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
     // save the path from the file: protocol or the module name from the jrt: protocol
     // if no protocol prefix is found, path is the same as stream->source()
     char* path = skip_uri_protocol(src);
+    // On Windows, convert the '/' file separator to native '\\'.
+    char* native_path = os::native_path(path);
     for (int i = 0; i < FileMapInfo::get_number_of_shared_paths(); i++) {
       SharedClassPathEntry* ent = FileMapInfo::shared_path(i);
       // If the path (from the class stream source) is the same as the shared
       // class or module path, then we have a match.
-      if (os::same_files(ent->name(), path)) {
+      if (os::same_files(ent->name(), native_path)) {
         // NULL pkg_entry and pkg_entry in an unnamed module implies the class
         // is from the -cp or boot loader append path which consists of -Xbootclasspath/a
         // and jvmti appended entries.
