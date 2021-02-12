@@ -5267,7 +5267,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 // the call setup code.
 //
 // On Linux, aarch64_get_thread_helper() clobbers only r0, r1, and flags.
-// On Windows, the helper is a usual C function.
+// On other systems, the helper is a usual C function.
 //
 void MacroAssembler::get_thread(Register dst) {
   RegSet saved_regs =
