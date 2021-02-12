@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoader.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/vm_version.hpp"

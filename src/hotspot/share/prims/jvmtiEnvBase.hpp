@@ -25,7 +25,6 @@
 #ifndef SHARE_PRIMS_JVMTIENVBASE_HPP
 #define SHARE_PRIMS_JVMTIENVBASE_HPP
 
-#include "classfile/classLoader.hpp"
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiThreadState.hpp"
