@@ -26,6 +26,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javax.imageio.ImageIO;
@@ -38,8 +39,8 @@ import javax.swing.text.View;
  * @test
  * @bug 8257664
  * @summary  Tests inherited font-size with parent percentage specification.
- * @run main TestWrongCSSFontSize false
- * @run main TestWrongCSSFontSize true
+ * @run main TestWrongCSSFontSize
+ * @run main TestWrongCSSFontSize -w3cUnits
  */
 public class TestWrongCSSFontSize {
 
@@ -131,7 +132,7 @@ public class TestWrongCSSFontSize {
         }
     }
 
-    private static void captureImage(Component comp, String path) {
+    private static void captureImage(Component comp, String suffix) {
         try {
             BufferedImage capture = new BufferedImage(comp.getWidth(),
                     comp.getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -139,15 +140,16 @@ public class TestWrongCSSFontSize {
             comp.paint(g);
             g.dispose();
 
-            ImageIO.write(capture, "png", new File(path));
+            ImageIO.write(capture, "png",
+                    new File(TestWrongCSSFontSize.class
+                                .getSimpleName() + suffix + ".png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public static void main(String[] args) throws Throwable {
-        TestWrongCSSFontSize test = new TestWrongCSSFontSize(
-                (args.length > 0) && Boolean.parseBoolean(args[0]));
+        TestWrongCSSFontSize test = new TestWrongCSSFontSize(argW3CUnits(args));
         AtomicReference<Throwable> failure = new AtomicReference<>();
         SwingUtilities.invokeAndWait(() -> {
             try {
@@ -156,14 +158,25 @@ public class TestWrongCSSFontSize {
             } catch (Throwable e) {
                 failure.set(e);
             } finally {
-                if (args.length == 1) {
-                    captureImage(test.editor, args[0]);
+                String suffix = test.w3cUnits ? "-w3cUnits" : "";
+                if (failure.get() != null) {
+                    captureImage(test.editor, suffix + "-failure");
+                } else if (argCapture(args)) {
+                    captureImage(test.editor, suffix + "-success");
                 }
             }
         });
         if (failure.get() != null) {
             throw failure.get();
         }
+    }
+
+    private static boolean argW3CUnits(String[] args) {
+        return Arrays.asList(args).contains("-w3cUnits");
+    }
+
+    private static boolean argCapture(String[] args) {
+        return Arrays.asList(args).contains("-capture");
     }
 
 }
