@@ -3159,6 +3159,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   _uncommon_trap_blob =  UncommonTrapBlob::create(&buffer, oop_maps,
                                                  SimpleRuntimeFrame::framesize >> 1);
 }
+#endif // COMPILER2
 
 //------------------------------generate_handler_blob------
 //
@@ -3408,6 +3409,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
 }
 
+#ifdef COMPILER2
 static const int native_invoker_code_size = MethodHandles::adapter_code_size;
 
 class NativeInvokerGenerator : public StubCodeGenerator {
