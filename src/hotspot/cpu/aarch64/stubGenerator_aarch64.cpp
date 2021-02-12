@@ -5578,6 +5578,115 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If LSE is in use, generate LSE versions of all the stubs. The
   // non-LSE versions are in atomic_aarch64.S.
+  void generate_old_atomic_entry_points() {
+
+    if (0 & ! UseLSE) {
+      return;
+    }
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "atomic entry points");
+
+    __ align(32);
+    aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+      __ atomic_addal(prev, incr, addr);
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ mov(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+      __ atomic_addalw(prev, incr, addr);
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, newv = c_rarg1;
+      __ atomic_xchglw(prev, newv, addr);
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, newv = c_rarg1;
+      __ atomic_xchgl(prev, newv, addr);
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ mov(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+        exchange_val = c_rarg2;
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ cmpxchg(ptr, compare_val, exchange_val,
+                 MacroAssembler::byte,
+                 /*acquire*/false, /*release*/false, /*weak*/false,
+                 prev);
+      __ movw(r0, prev);
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+        exchange_val = c_rarg2;
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ cmpxchg(ptr, compare_val, exchange_val,
+                 MacroAssembler::word,
+                 /*acquire*/false, /*release*/false, /*weak*/false,
+                 prev);
+      __ movw(r0, prev);
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+        exchange_val = c_rarg2;
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ cmpxchg(ptr, compare_val, exchange_val,
+                 MacroAssembler::xword,
+                 /*acquire*/false, /*release*/false, /*weak*/false,
+                 prev);
+      __ mov(r0, prev);
+      if (! UseLSE) __ dmb(Assembler::ISH);
+      __ ret(lr);
+    }
+  }
+
+
+  // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
+  //
+  // If LSE is in use, generate LSE versions of all the stubs. The
+  // non-LSE versions are in atomic_aarch64.S.
+
+  void gen_cas_entry(Assembler::operand_size size,
+                     bool acquire, bool release) {
+    Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+      exchange_val = c_rarg2;
+    __ cmpxchg(ptr, compare_val, exchange_val,
+               size, acquire, release, /*weak*/false, prev);
+    if (size == Assembler::xword) {
+      __ mov(r0, prev);
+    } else {
+      __ movw(r0, prev);
+    }
+    __ ret(lr);
+  }
+
   void generate_atomic_entry_points() {
 
     if (! UseLSE) {
@@ -5591,7 +5700,7 @@ class StubGenerator: public StubCodeGenerator {
     aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-      __ atomic_addal(prev, incr, addr);
+      __ ldaddal(Assembler::xword, prev, incr, addr);
       __ mov(r0, prev);
       __ ret(lr);
     }
@@ -5599,15 +5708,16 @@ class StubGenerator: public StubCodeGenerator {
     aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-      __ atomic_addalw(prev, incr, addr);
+      __ ldaddal(Assembler::word, prev, incr, addr);
       __ movw(r0, prev);
       __ ret(lr);
     }
+
     __ align(32);
     aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r2, addr = c_rarg0, newv = c_rarg1;
-      __ atomic_xchglw(prev, newv, addr);
+      __ swpal(Assembler::word, newv, prev, addr);
       __ movw(r0, prev);
       __ ret(lr);
     }
@@ -5615,46 +5725,30 @@ class StubGenerator: public StubCodeGenerator {
     aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)__ pc();
     {
       Register prev = r2, addr = c_rarg0, newv = c_rarg1;
-      __ atomic_xchgl(prev, newv, addr);
+      __ swpal(Assembler::xword, newv, prev, addr);
       __ mov(r0, prev);
       __ ret(lr);
     }
+
     __ align(32);
     aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)__ pc();
-    {
-      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
-        exchange_val = c_rarg2;
-      __ cmpxchg(ptr, compare_val, exchange_val,
-                 MacroAssembler::byte,
-                 /*acquire*/false, /*release*/false, /*weak*/false,
-                 prev);
-      __ movw(r0, prev);
-      __ ret(lr);
-    }
+    gen_cas_entry(MacroAssembler::byte, /*acquire*/true, /*release*/true);
     __ align(32);
     aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_stub_t)__ pc();
-    {
-      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
-        exchange_val = c_rarg2;
-      __ cmpxchg(ptr, compare_val, exchange_val,
-                 MacroAssembler::word,
-                 /*acquire*/false, /*release*/false, /*weak*/false,
-                 prev);
-      __ movw(r0, prev);
-      __ ret(lr);
-    }
+    gen_cas_entry(MacroAssembler::word, /*acquire*/true, /*release*/true);
     __ align(32);
-    aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_stub_t)__ pc();
-    {
-      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
-        exchange_val = c_rarg2;
-      __ cmpxchg(ptr, compare_val, exchange_val,
-                 MacroAssembler::xword,
-                 /*acquire*/false, /*release*/false, /*weak*/false,
-                 prev);
-      __ mov(r0, prev);
-      __ ret(lr);
-    }
+    aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)__ pc();
+    gen_cas_entry(MacroAssembler::xword, /*acquire*/true, /*release*/true);
+
+    __ align(32);
+    aarch64_atomic_cmpxchg_1_relaxed_impl = (aarch64_atomic_stub_t)__ pc();
+    gen_cas_entry(MacroAssembler::byte, /*acquire*/false, /*release*/false);
+    __ align(32);
+    aarch64_atomic_cmpxchg_4_relaxed_impl = (aarch64_atomic_stub_t)__ pc();
+    gen_cas_entry(MacroAssembler::word, /*acquire*/false, /*release*/false);
+    __ align(32);
+    aarch64_atomic_cmpxchg_1_relaxed_impl = (aarch64_atomic_stub_t)__ pc();
+    gen_cas_entry(MacroAssembler::xword, /*acquire*/false, /*release*/false);
   }
 #endif // LINUX
 
@@ -6803,19 +6897,22 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
 // Define pointers to atomic stubs and initialize them to point to the
 // code in atomic_aarch64.S.
 
-#define DEFAULT_ATOMIC_OP(OPNAME, SIZE)                                 \
-  extern "C" uint64_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## _default_impl \
+#define DEFAULT_ATOMIC_OP(OPNAME, SIZE, RELAXED)                                \
+  extern "C" uint64_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl \
     (volatile void *ptr, uint64_t arg1, uint64_t arg2);                 \
-  aarch64_atomic_stub_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## _impl \
-    = aarch64_atomic_ ## OPNAME ## _ ## SIZE ## _default_impl;
+  aarch64_atomic_stub_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _impl \
+    = aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl;
 
-DEFAULT_ATOMIC_OP(fetch_add, 4)
-DEFAULT_ATOMIC_OP(fetch_add, 8)
-DEFAULT_ATOMIC_OP(xchg, 4)
-DEFAULT_ATOMIC_OP(xchg, 8)
-DEFAULT_ATOMIC_OP(cmpxchg, 1)
-DEFAULT_ATOMIC_OP(cmpxchg, 4)
-DEFAULT_ATOMIC_OP(cmpxchg, 8)
+DEFAULT_ATOMIC_OP(fetch_add, 4, )
+DEFAULT_ATOMIC_OP(fetch_add, 8, )
+DEFAULT_ATOMIC_OP(xchg, 4, )
+DEFAULT_ATOMIC_OP(xchg, 8, )
+DEFAULT_ATOMIC_OP(cmpxchg, 1, )
+DEFAULT_ATOMIC_OP(cmpxchg, 4, )
+DEFAULT_ATOMIC_OP(cmpxchg, 8, )
+DEFAULT_ATOMIC_OP(cmpxchg, 1, _relaxed)
+DEFAULT_ATOMIC_OP(cmpxchg, 4, _relaxed)
+DEFAULT_ATOMIC_OP(cmpxchg, 8, _relaxed)
 
 #undef DEFAULT_ATOMIC_OP
 
