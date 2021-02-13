@@ -35,8 +35,7 @@
 - (id) accessibilityValue
 {
     AWT_ASSERT_APPKIT_THREAD;
-    id value = [self accessibilityValueAttribute];
-    return value;
+    return [self accessibilityValueAttribute];
 }
 
 @end
