@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,6 +366,11 @@ ModuleEntryTable::~ModuleEntryTable() {
   }
   assert(number_of_entries() == 0, "should have removed all entries");
   assert(new_entry_free_list() == NULL, "entry present on ModuleEntryTable's free list");
+}
+
+void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
+  assert(!cld->has_class_mirror_holder(), "Unexpected has_class_mirror_holder cld");
+  _loader_data = cld;
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
