@@ -831,12 +831,52 @@ class WindowsPath implements Path {
         int flags = FILE_FLAG_BACKUP_SEMANTICS;
         if (!followLinks)
             flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+        try {
+            return openFileForReadAttributeAccess(flags);
+        } catch (WindowsException e) {
+            if (followLinks && e.lastError() == ERROR_CANT_ACCESS_FILE) {
+                // Object could be a Unix domain socket
+                try {
+                    return openSocketForReadAttributeAccess();
+                } catch (WindowsException ignore) {}
+            }
+            throw e;
+        }
+    }
+
+    private long openFileForReadAttributeAccess(int flags)
+        throws WindowsException
+    {
         return CreateFile(getPathForWin32Calls(),
-                          FILE_READ_ATTRIBUTES,
-                          (FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE),
-                          0L,
-                          OPEN_EXISTING,
-                          flags);
+                            FILE_READ_ATTRIBUTES,
+                            (FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE),
+                            0L,
+                            OPEN_EXISTING,
+                            flags);
+    }
+
+    /**
+     * Returns a handle to the file if it is a socket.
+     * Throws WindowsException if file is not a socket
+     */
+    private long openSocketForReadAttributeAccess()
+        throws WindowsException
+    {
+        // needs to specify FILE_FLAG_OPEN_REPARSE_POINT if the file is a socket
+        int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
+
+        long handle = openFileForReadAttributeAccess(flags);
+
+        try {
+            WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(handle);
+            if (!attrs.isUnixDomainSocket()) {
+                throw new WindowsException("not a socket");
+            }
+            return handle;
+        } catch (WindowsException e) {
+            CloseHandle(handle);
+            throw e;
+        }
     }
 
     void checkRead() {
