@@ -39,16 +39,7 @@ class AllocationSite {
   int hash() const { return _call_stack.hash(); }
 
   bool equals(const NativeCallStack& stack, MEMFLAGS flag) const {
-    bool samestack = _call_stack.equals(stack);
-    // Note: in theory, if two callstacks end with the same lowest frame, they should always
-    // reference the same single allocation call site and therefore share the same MEMFLAGS
-    // value.
-    // But if the call stack capturing was not precise enough (eg skipping too many
-    // frames at the low end) we could accidentally lump several allocation sites together,
-    // potentially with different flags. Lets assert that.
-    assert(!samestack || _flag == flag,
-           "same stack different flags (%d vs %d)?", (int)_flag, (int)flag);
-    return samestack;
+    return _call_stack.equals(stack);
   }
 
   bool equals(const AllocationSite& other) const {
