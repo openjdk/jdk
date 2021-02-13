@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.Reader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Vector;
 
 import javax.print.CancelablePrintJob;
@@ -432,7 +433,7 @@ public class Win32PrintJob implements CancelablePrintJob {
 
             if (mDestination != null) { // if destination attribute is set
                 try {
-                    Files.copy(instream, Path.of(mDestination));
+                    Files.copy(instream, Path.of(mDestination), StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException ioe) {
                     notifyEvent(PrintJobEvent.JOB_FAILED);
                     throw new PrintException(ioe.toString());
