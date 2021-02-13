@@ -138,7 +138,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* b
   MallocSiteHashtableEntry* head = _table[index];
   while (head != NULL && (*pos_idx) <= MAX_BUCKET_LENGTH) {
     MallocSite* site = head->data();
-    if (site->flag() == flags && site->equals(key, flags)) {
+    if (site->flag() == flags && site->equals(key)) {
       return head->data();
     }
 

@@ -38,12 +38,12 @@ class AllocationSite {
   AllocationSite(const NativeCallStack& stack, MEMFLAGS flag) : _call_stack(stack), _flag(flag) { }
   int hash() const { return _call_stack.hash(); }
 
-  bool equals(const NativeCallStack& stack, MEMFLAGS flag) const {
+  bool equals(const NativeCallStack& stack) const {
     return _call_stack.equals(stack);
   }
 
   bool equals(const AllocationSite& other) const {
-    return equals(other._call_stack, other._flag);
+    return other.equals(_call_stack);
   }
 
   const NativeCallStack* call_stack() const {
