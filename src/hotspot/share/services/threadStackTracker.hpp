@@ -40,8 +40,7 @@ public:
   SimpleThreadStackSite(address base, size_t size, const NativeCallStack& stack) :
     AllocationSite(stack, mtThreadStack),
     _base(base),
-    _size(size)
-  {}
+    _size(size) {}
 
   bool equals(const SimpleThreadStackSite& mts) const {
     bool eq = base() == mts.base();
