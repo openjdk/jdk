@@ -278,14 +278,9 @@ const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
     return thread->name();
   }
 
-  ThreadsListHandle tlh;
-  JavaThread* jt = thread->as_Java_thread();
-  if (Thread::current()->is_JavaThread_protected(jt)) {
-    // The target JavaThread is protected so get_thread_name_string() is safe:
-    return jt->get_thread_name_string();
-  }
-  // The target JavaThread is not protected so we return a non-NULL string:
-  return "<NOT FILLED IN>";
+  // If the target JavaThread is not protected, then we return the
+  // specified non-NULL string:
+  return thread->as_Java_thread()->get_thread_name("<NOT FILLED IN>");
 }
 
 

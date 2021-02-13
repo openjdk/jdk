@@ -484,6 +484,7 @@ void Thread::check_for_dangling_thread_pointer(Thread *thread) {
 }
 #endif
 
+// Is the target JavaThread protected by this Thread:
 bool Thread::is_JavaThread_protected(const JavaThread* p) {
   if (current() == p) {
     // Current thread is always protected:
@@ -2846,19 +2847,20 @@ void JavaThread::verify() {
 // Most callers of this method assume that it can't return NULL but a
 // thread may not have a name whilst it is in the process of attaching to
 // the VM - see CR 6412693, and there are places where a JavaThread can be
-// seen prior to having it's threadObj set (e.g., JNI attaching threads and
+// seen prior to having its threadObj set (e.g., JNI attaching threads and
 // if vm exit occurs during initialization). These cases can all be accounted
 // for such that this method never returns NULL.
-const char* JavaThread::get_thread_name() const {
-  ThreadsListHandle tlh;
+const char* JavaThread::get_thread_name(const char* default_name) const {
+  Thread* thread = Thread::current();
+  ThreadsListHandle tlh(thread);
 
-  if (Thread::current()->is_JavaThread_protected(this)) {
+  if (thread->is_JavaThread_protected(this)) {
     // The target JavaThread is protected so get_thread_name_string() is safe:
     return get_thread_name_string();
   }
 
-  // The target JavaThread is not protected so we return "Unknown thread":
-  return Thread::name();
+  // The target JavaThread is not protected so we return the default:
+  return (default_name != NULL) ? default_name : Thread::name();
 }
 
 // Returns a non-NULL representation of this thread's name, or a suitable
