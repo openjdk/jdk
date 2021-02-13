@@ -149,7 +149,7 @@ class ObjectValue: public ScopeValue {
   bool                        is_visited() const        { return _visited; }
 
   void                        set_value(oop value);
-  void                        set_visited(bool visited) { _visited = false; }
+  void                        set_visited(bool visited) { _visited = visited; }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);
