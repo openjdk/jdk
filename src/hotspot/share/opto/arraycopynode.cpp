@@ -526,7 +526,7 @@ bool ArrayCopyNode::is_string_copy(PhaseGVN* phase) const {
   return false;
 }
 
-Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+Node* ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape))  return this;
 
   if (StressArrayCopyMacroNode && !can_reshape) {
@@ -566,7 +566,7 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int count = get_count(phase);
 
   if (count < 0 || count > ArrayCopyLoadStoreMaxElem) {
-    return nullptr;
+    return NULL;
   }
 
   Node* mem = try_clone_instance(phase, can_reshape, count);

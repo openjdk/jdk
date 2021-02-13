@@ -160,6 +160,7 @@ public:
   bool is_copyof_validated()      const  { assert(_kind != None, "should bet set"); return _kind == CopyOf && _arguments_validated; }
   bool is_copyofrange()           const  { assert(_kind != None, "should bet set"); return _kind == CopyOfRange; }
   bool is_copyofrange_validated() const  { assert(_kind != None, "should bet set"); return _kind == CopyOfRange && _arguments_validated; }
+
   bool is_string_copy(PhaseGVN* phase) const;
   void set_arraycopy(bool validated)   { assert(_kind == None, "shouldn't bet set yet"); _kind = ArrayCopy; _arguments_validated = validated; }
   void set_clone_inst()                { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneInst; }

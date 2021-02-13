@@ -213,19 +213,20 @@ static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMet
     }
   }
   if (objects != NULL) {
+    bool skip_internal = (compiled_method != NULL) && !compiled_method->is_compiled_by_jvmci();
     if (exec_mode == Deoptimization::Unpack_none) {
       assert(thread->thread_state() == _thread_in_vm, "assumption");
       Thread* THREAD = thread;
       // Clear pending OOM if reallocation fails and return true indicating allocation failure
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, CHECK_AND_CLEAR_(true));
+      Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal, CHECK_AND_CLEAR_(true));
       deoptimized_objects = true;
     } else {
       JRT_BLOCK
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, THREAD);
+      Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal, THREAD);
       JRT_END
     }
-    bool skip_internal = (compiled_method != NULL) && !compiled_method->is_compiled_by_jvmci();
-    Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal);
 #ifndef PRODUCT
     if (TraceDeoptimization) {
       ttyLocker ttyl;
@@ -1030,40 +1031,36 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
 #endif // INCLUDE_JVMCI || INCLUDE_AOT
 
 #if COMPILER2_OR_JVMCI
-// the order of instanceKlass::nonstatic_fields is differernt from ciInstanceKlass::_nonstatic_fields.
-// this closure indices all fields in sorted order and return the index;
-class DebugInfoFieldLocator : public FieldClosure {
-  Symbol* _name;
-  Symbol* _signature;
-  int _tracking_id;
-  int _index;           // index in debuginfo
+static void toposort_dfs(ObjectValue* ov, GrowableArray<ScopeValue*>& sorted,
+                         const GrowableArray<ScopeValue*>& objects) {
+  if (ov->is_visited()) return;
 
-  void do_field(fieldDescriptor* fd) {
-    if (_name == fd->name() && _signature == fd->signature()) {
-      _index = _tracking_id;
-    }
-    _tracking_id++;
+  ov->set_visited(true);
+  for (int i = 0; i < ov->field_size(); ++i) {
+      if (ov->field_at(i)->is_object()) {
+#ifdef ASSERT
+        int ref = objects.find(ov->field_at(i));
+        assert(ref != -1, "must in be objects");
+#endif
+        toposort_dfs(ov->field_at(i)->as_ObjectValue(), sorted, objects);
+      }
+  }
+  sorted.append(ov);
+}
+
+static void toposort(GrowableArray<ScopeValue*>& objects) {
+  GrowableArray<ScopeValue*> sorted;
+
+  for (int i = 0; i < objects.length(); ++i) {
+    toposort_dfs(objects.at(i)->as_ObjectValue(), sorted, objects);
   }
 
-public:
-  DebugInfoFieldLocator(Symbol* name, Symbol* signature): _name(name), _signature(signature),
-                                                          _tracking_id(0), _index(badInt) {}
-  int index() const { return _index; }
-};
+  objects.swap(&sorted);
 
-// return the index of value field of java.lang.String in DebugInfo order
-static int java_lang_String_value_index() {
-  static int index = badInt;
-
-  if (index == badInt) {
-    DebugInfoFieldLocator locator(vmSymbols::value_name(), vmSymbols::byte_array_signature());
-    // do_nonstatic_fields access locator in sorted order
-    vmClasses::String_klass()->do_nonstatic_fields(&locator);
-    index = locator.index();
-    assert(index != badInt, "fail to locate j.l.String::value field");
+  // reset visited
+  for (int i = 0; i < objects.length(); ++i) {
+    objects.at(i)->as_ObjectValue()->set_visited(false);
   }
-
-  return index;
 }
 
 bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
@@ -1073,6 +1070,10 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
   thread->clear_pending_exception();
 
   bool failures = false;
+
+  if (objects->length() > 1) {
+    toposort(*objects);
+  }
 
   for (int i = 0; i < objects->length(); i++) {
     assert(objects->at(i)->is_object(), "invalid debug information");
@@ -1098,59 +1099,20 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
 #ifdef COMPILER2
         if (EnableVectorSupport && VectorSupport::is_vector(ik)) {
           obj = VectorSupport::allocate_vector(ik, fr, reg_map, sv, THREAD);
+        } else if (OptimizeTempArray && ik == vmClasses::String_klass() && sv->field_size() == 3) {
+          TypeArrayKlass* ak = TypeArrayKlass::create_klass(T_BYTE, THREAD);
+          ScopeValue* x;
+          StackValue* value;
+          intptr_t val;
+          int length;
+
+          x = sv->field_at(2);
+          value = StackValue::create_stack_value(fr, reg_map, x);
+          assert(value->type() == T_INT, "Agreement.");
+          val = value->get_int();
+          length = (jint)*((jint*)&val);
+          obj = ak->allocate(length, THREAD);
         } else {
-          if (OptimizeTempArray && ik == vmClasses::String_klass()) {
-            ScopeValue* fld_value = sv->field_at(java_lang_String_value_index());
-            int idx = -1;
-
-            if (fld_value->is_object()) {
-              for (int j = i + 1; j < objects->length(); ++j) {
-                if (objects->at(j) == fld_value) {
-                  idx = j;
-                  break;
-                }
-              }
-
-              if (idx != -1) {
-                ObjectValue* sv_value = fld_value->as_ObjectValue();
-                TypeArrayKlass* ak = TypeArrayKlass::cast(java_lang_Class::as_Klass(
-                                    sv_value->klass()->as_ConstantOopReadValue()->value()()));
-                // open the envelope and re-allocate the eliminated arrayoop
-                // [0] src
-                // [1] src_pos
-                // [2] length
-                // dst = Arrays.copyOfRange(src, src_pos, src_post + length)
-                oop src;
-                int src_pos, length;
-
-                ScopeValue* x;
-                StackValue* value;
-                intptr_t val;
-
-                x = sv_value->field_at(0);
-                value = StackValue::create_stack_value(fr, reg_map, x);
-                assert(value->type() == T_OBJECT, "Agreement.");
-                src = value->get_obj()();
-
-                x = sv_value->field_at(1);
-                value  = StackValue::create_stack_value(fr, reg_map, x);
-                assert(value->type() == T_INT, "Agreement.");
-                val = value->get_int();
-                src_pos = (jint)*((jint*)&val);
-
-                x = sv_value->field_at(2);
-                value = StackValue::create_stack_value(fr, reg_map, x);
-                assert(value->type() == T_INT, "Agreement.");
-                val = value->get_int();
-                length = (jint)*((jint*)&val);
-
-                oop dst = ak->allocate(length, THREAD);
-                ak->copy_array((arrayOop)src, src_pos, (arrayOop)dst, 0, length, THREAD);
-                sv_value->set_value(dst);
-                objects->delete_at(idx);
-              }
-            }
-          }
           obj = ik->allocate_instance(THREAD);
         }
 #else
@@ -1474,7 +1436,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 }
 
 // restore fields of all eliminated objects and arrays
-void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
+void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal, TRAPS) {
   for (int i = 0; i < objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) objects->at(i);
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
@@ -1499,7 +1461,39 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
 #endif
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);
+
+      if (ik == vmClasses::String_klass() && sv->field_size() == 3) {
+        TypeArrayKlass* ak = TypeArrayKlass::create_klass(T_BYTE, THREAD);
+        // open the envelope and re-allocate the eliminated arrayoop
+        // [0] src
+        // [1] src_pos
+        // [2] length
+        // dst = Arrays.copyOfRange(src, src_pos, src_pos + length)
+        oop src;
+        int src_pos;
+        ScopeValue* x;
+        StackValue* value;
+        intptr_t val;
+
+        x = sv->field_at(0);
+        value = StackValue::create_stack_value(fr, reg_map, x);
+        assert(value->type() == T_OBJECT, "Agreement.");
+        src = value->get_obj()();
+
+        x = sv->field_at(1);
+        value  = StackValue::create_stack_value(fr, reg_map, x);
+        assert(value->type() == T_INT, "Agreement.");
+        val = value->get_int();
+        src_pos = (jint)*((jint*)&val);
+
+        assert(sv->value()()->is_array(), "must be an arrayOop");
+        arrayOop dst = (arrayOop)(sv->value()());
+        ak->copy_array((arrayOop)src, src_pos, dst, 0, dst->length(), THREAD);
+
+        objects->delete_at(i--);
+      } else {
+        reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);
+      }
     } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());

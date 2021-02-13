@@ -977,13 +977,12 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
           ac = find_arraycopy_node_from_res(field_val->as_CheckCastPP());
           assert(ac != nullptr, "must see an ArrayCopyNode use field_val as Src");
 
-          const TypeAryPtr* t_aryptr = _igvn.type(field_val)->is_aryptr();
-          assert(t_aryptr != nullptr && t_aryptr->elem() == TypeInt::BYTE, "wrong type of src! it must be byte[]");
-          // type t_aryptr is inconsistent here on purpose.
-          // but there're only 3 fields! I use SafePointScalarObjectNode and ObjectValue as envelopes to mock and oop.
-          // The real purpose is to encode information so deoptimization can re-allocate the arrayOop.
+          // res_type should be an instptr whose klass is j.l.String.
+          // There are only 3 fields on purpose! I use SafePointScalarObjectNode and ObjectValue
+          // as envelopes to mock and oop.
+          // The real purpose is to encode information so deoptimization can allocate an arrayOop.
           // see Deoptimization::realloc_objects()
-          SafePointScalarObjectNode* nest_sobj = new SafePointScalarObjectNode(t_aryptr,
+          SafePointScalarObjectNode* nest_sobj = new SafePointScalarObjectNode(res_type,
                                                       DEBUG_ONLY(alloc COMMA)
                                                       first_ind + j + 1, 3);
           nest_sobj->init_req(0, C->root());

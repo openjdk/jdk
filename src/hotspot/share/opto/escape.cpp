@@ -80,7 +80,6 @@ bool ConnectionGraph::has_candidates(Compile *C) {
       if (!(obj->is_Parm() || obj->is_Con()))
         return true;
     }
-
     if (n->is_CallStaticJava() &&
         n->as_CallStaticJava()->is_boxing_method()) {
       return true;
