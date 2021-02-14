@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 package sun.jvm.hotspot.debugger.linux;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -93,9 +92,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     // called by native method attach0
     private LoadObject createLoadObject(String fileName, long textsize,
                                         long base) {
-       File f = new File(fileName);
        Address baseAddr = newAddress(base);
-       return new SharedObject(this, fileName, f.length(), baseAddr);
+       return new SharedObject(this, fileName, textsize, baseAddr);
     }
 
     // native methods

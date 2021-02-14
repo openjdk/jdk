@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, 2020, NTT DATA.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,18 +188,18 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
   // add load objects
   n = get_num_libs(ph);
   for (i = 0; i < n; i++) {
-     uintptr_t base;
+     uintptr_t exec_start, exec_end;
      const char* name;
      jobject loadObject;
      jobject loadObjectList;
      jstring str;
 
-     base = get_lib_base(ph, i);
+     get_lib_exec_addr_range(ph, i, &exec_start, &exec_end);
      name = get_lib_name(ph, i);
 
      str = env->NewStringUTF(name);
      CHECK_EXCEPTION;
-     loadObject = env->CallObjectMethod(this_obj, createLoadObject_ID, str, (jlong)0, (jlong)base);
+     loadObject = env->CallObjectMethod(this_obj, createLoadObject_ID, str, (jlong)(exec_end - exec_start), (jlong)exec_start);
      CHECK_EXCEPTION;
      loadObjectList = env->GetObjectField(this_obj, loadObjectList_ID);
      CHECK_EXCEPTION;

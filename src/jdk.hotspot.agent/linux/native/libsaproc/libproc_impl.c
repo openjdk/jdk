@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,6 +429,21 @@ uintptr_t get_lib_base(struct ps_prochandle* ph, int index) {
       lib = lib->next;
    }
    return (uintptr_t)NULL;
+}
+
+// get exec address range of lib
+void get_lib_exec_addr_range(struct ps_prochandle* ph, int index, uintptr_t* start, uintptr_t* end) {
+   int count = 0;
+   lib_info* lib = ph->libs;
+   while (lib) {
+      if (count == index) {
+         *start = lib->exec_start;
+         *end = lib->exec_end;
+         return;
+      }
+      count++;
+      lib = lib->next;
+   }
 }
 
 bool find_lib(struct ps_prochandle* ph, const char *lib_name) {
