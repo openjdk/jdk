@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,6 +50,26 @@ static void test_stringStream_is_zero_terminated(const stringStream* ss) {
   ASSERT_EQ(ss->base()[ss->size()], '\0');
 }
 
+static size_t count_char(const stringStream* ss, char ch) {
+  size_t cnt = 0;
+
+  for (size_t i = 0; i < ss->size(); ++i) {
+    if (ss->base()[i] == ch) {
+      cnt++;
+    }
+  }
+  return cnt;
+}
+
+static void test_stringStream_tr_delete(stringStream* ss) {
+  size_t whitespaces = count_char(ss, ' ');
+  size_t deleted = ss->tr_delete(' ');
+  ASSERT_EQ(whitespaces, deleted);
+
+  whitespaces = count_char(ss, ' ');
+  ASSERT_EQ(whitespaces, (size_t)0);
+}
+
 static void do_test_stringStream(stringStream* ss, size_t expected_cap) {
   test_stringStream_is_zero_terminated(ss);
   size_t written = 0;
@@ -63,6 +83,10 @@ static void do_test_stringStream(stringStream* ss, size_t expected_cap) {
     // Internal buffer should always be zero-terminated.
     test_stringStream_is_zero_terminated(ss);
   }
+
+  test_stringStream_tr_delete(ss);
+  test_stringStream_is_zero_terminated(ss);
+
   // Reset should zero terminate too
   ss->reset();
   ASSERT_EQ(ss->size(), (size_t)0);

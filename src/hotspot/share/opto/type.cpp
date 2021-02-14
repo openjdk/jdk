@@ -4036,21 +4036,19 @@ int TypeInstPtr::hash(void) const {
 //------------------------------dump2------------------------------------------
 // Dump oop Type
 #ifndef PRODUCT
-void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
-
-  if (_ptr == Constant && (WizardMode || Verbose)) {
-    bool saved = st->is_suppress_cr();
-    st->set_suppress_cr(true);
-    const_oop()->print_oop(st);
-    st->set_suppress_cr(saved);
-  }
-  else {
-    // Print the name of the klass.
-    klass()->print_name_on(st);
-  }
+void TypeInstPtr::dump2( Dict &d, uint depth, outputStream* st ) const {
+  // Print the name of the klass.
+  klass()->print_name_on(st);
 
   switch( _ptr ) {
-  case Constant: /* fall-through */
+  case Constant:
+    if (WizardMode || Verbose) {
+      stringStream ss;
+      ss.print(" ");
+      const_oop()->print_oop(&ss);
+      ss.tr_delete('\n');
+      st->print_raw(ss.as_string());
+    }
   case BotPTR:
     if (!WizardMode && !Verbose) {
       if( _klass_is_exact ) st->print(":exact");

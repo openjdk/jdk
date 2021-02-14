@@ -50,7 +50,6 @@ class outputStream : public ResourceObj {
    int _width;       // width of the page
    int _position;    // position on the current line
    int _newlines;    // number of '\n' output so far
-   bool _suppress_cr;// suppress all CRs
    julong _precount; // number of chars output, less _position
    TimeStamp _stamp; // for time stamps
    char* _scratch;   // internal scratch buffer for printf
@@ -88,11 +87,9 @@ class outputStream : public ResourceObj {
    // sizing
    int width()    const { return _width;    }
    int position() const { return _position; }
-   bool is_suppress_cr() const { return _suppress_cr; }
    julong count() const { return _precount + _position; }
    void set_count(julong count) { _precount = count - _position; }
    void set_position(int pos)   { _position = pos; }
-   void set_suppress_cr(bool suppress) { _suppress_cr = suppress; }
 
    // printing
    void print(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
@@ -222,6 +219,8 @@ class stringStream : public outputStream {
   void  reset();
   // copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
+  // delete all appearances of ch
+  size_t tr_delete(char ch);
 };
 
 class fileStream : public outputStream {

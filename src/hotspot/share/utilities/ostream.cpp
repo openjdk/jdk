@@ -47,7 +47,6 @@ outputStream::outputStream(int width) {
   _width       = width;
   _position    = 0;
   _newlines    = 0;
-  _suppress_cr = false;
   _precount    = 0;
   _indentation = 0;
   _scratch     = NULL;
@@ -58,7 +57,6 @@ outputStream::outputStream(int width, bool has_time_stamps) {
   _width       = width;
   _position    = 0;
   _newlines    = 0;
-  _suppress_cr = false;
   _precount    = 0;
   _indentation = 0;
   _scratch     = NULL;
@@ -157,7 +155,7 @@ void outputStream::print(const char* format, ...) {
 void outputStream::print_cr(const char* format, ...) {
   va_list ap;
   va_start(ap, format);
-  do_vsnprintf_and_write(format, ap, !_suppress_cr);
+  do_vsnprintf_and_write(format, ap, true);
   va_end(ap);
 }
 
@@ -166,7 +164,7 @@ void outputStream::vprint(const char *format, va_list argptr) {
 }
 
 void outputStream::vprint_cr(const char* format, va_list argptr) {
-  do_vsnprintf_and_write(format, argptr, !_suppress_cr);
+  do_vsnprintf_and_write(format, argptr, true);
 }
 
 void outputStream::fill_to(int col) {
@@ -209,9 +207,7 @@ void outputStream::sp(int count) {
 }
 
 void outputStream::cr() {
-  if (!_suppress_cr) {
-    this->write("\n", 1);
-  }
+  this->write("\n", 1);
 }
 
 void outputStream::cr_indent() {
@@ -421,6 +417,21 @@ stringStream::~stringStream() {
   }
 }
 
+size_t stringStream::tr_delete(char ch) {
+  size_t cnt = _written;
+
+  for (size_t i = 0; i < _written; ++i) {
+    if (_buffer[i] == ch) {
+      for (size_t j = i; j < _written - 1; ++j) {
+        _buffer[j] = _buffer[j + 1];
+      }
+      _written--;
+    }
+  }
+
+  zero_terminate();
+  return cnt - _written;
+}
 xmlStream*   xtty;
 outputStream* tty;
 extern Mutex* tty_lock;
