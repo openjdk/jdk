@@ -188,18 +188,18 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
   // add load objects
   n = get_num_libs(ph);
   for (i = 0; i < n; i++) {
-     uintptr_t exec_start, exec_end;
+     uintptr_t base, end;
      const char* name;
      jobject loadObject;
      jobject loadObjectList;
      jstring str;
 
-     get_lib_exec_addr_range(ph, i, &exec_start, &exec_end);
+     get_lib_addr_range(ph, i, &base, &end);
      name = get_lib_name(ph, i);
 
      str = env->NewStringUTF(name);
      CHECK_EXCEPTION;
-     loadObject = env->CallObjectMethod(this_obj, createLoadObject_ID, str, (jlong)(exec_end - exec_start), (jlong)exec_start);
+     loadObject = env->CallObjectMethod(this_obj, createLoadObject_ID, str, (jlong)(end - base), (jlong)base);
      CHECK_EXCEPTION;
      loadObjectList = env->GetObjectField(this_obj, loadObjectList_ID);
      CHECK_EXCEPTION;

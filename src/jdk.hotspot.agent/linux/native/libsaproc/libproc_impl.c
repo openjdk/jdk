@@ -159,7 +159,7 @@ lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t 
    return add_lib_info_fd(ph, libname, -1, base);
 }
 
-static bool fill_instr_info(lib_info* lib) {
+static bool fill_addr_info(lib_info* lib) {
   off_t current_pos;
   ELF_EHDR ehdr;
   ELF_PHDR* phbuf = NULL;
@@ -175,27 +175,34 @@ static bool fill_instr_info(lib_info* lib) {
     return false;
   }
 
+  lib->end = (uintptr_t)-1L;
   lib->exec_start = (uintptr_t)-1L;
   lib->exec_end = (uintptr_t)-1L;
   for (ph = phbuf, cnt = 0; cnt < ehdr.e_phnum; cnt++, ph++) {
-    if ((ph->p_type == PT_LOAD) && (ph->p_flags & PF_X)) {
-      print_debug("[%d] vaddr = 0x%lx, memsz = 0x%lx, filesz = 0x%lx\n", cnt, ph->p_vaddr, ph->p_memsz, ph->p_filesz);
-      if ((lib->exec_start == -1L) || (lib->exec_start > ph->p_vaddr)) {
-        lib->exec_start = ph->p_vaddr;
-      }
-      if ((lib->exec_end == (uintptr_t)-1L) || (lib->exec_end < (ph->p_vaddr + ph->p_memsz))) {
-        lib->exec_end = ph->p_vaddr + ph->p_memsz;
-      }
+    if (ph->p_type == PT_LOAD) {
       align = ph->p_align;
+      if ((lib->end == (uintptr_t)-1L) || (lib->end < (ph->p_vaddr + ph->p_memsz))) {
+        lib->end = ph->p_vaddr + ph->p_memsz;
+      }
+      if (ph->p_flags & PF_X) {
+        print_debug("[%d] vaddr = 0x%lx, memsz = 0x%lx, filesz = 0x%lx\n", cnt, ph->p_vaddr, ph->p_memsz, ph->p_filesz);
+        if ((lib->exec_start == -1L) || (lib->exec_start > ph->p_vaddr)) {
+          lib->exec_start = ph->p_vaddr;
+        }
+        if ((lib->exec_end == (uintptr_t)-1L) || (lib->exec_end < (ph->p_vaddr + ph->p_memsz))) {
+          lib->exec_end = ph->p_vaddr + ph->p_memsz;
+        }
+      }
     }
   }
 
   free(phbuf);
   lseek(lib->fd, current_pos, SEEK_SET);
 
-  if ((lib->exec_start == -1L) || (lib->exec_end == -1L)) {
+  if ((lib->end == -1L) || (lib->exec_start == -1L) || (lib->exec_end == -1L)) {
     return false;
   } else {
+    lib->end = (lib->end + lib->base + align) & ~(align - 1);
     lib->exec_start = (lib->exec_start + lib->base) & ~(align - 1);
     lib->exec_end = (lib->exec_end + lib->base + align) & ~(align - 1);
     return true;
@@ -275,7 +282,7 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
       print_debug("symbol table build failed for %s\n", newlib->name);
    }
 
-   if (fill_instr_info(newlib)) {
+   if (fill_addr_info(newlib)) {
      if (!read_eh_frame(ph, newlib)) {
        print_debug("Could not find .eh_frame section in %s\n", newlib->name);
      }
@@ -431,14 +438,14 @@ uintptr_t get_lib_base(struct ps_prochandle* ph, int index) {
    return (uintptr_t)NULL;
 }
 
-// get exec address range of lib
-void get_lib_exec_addr_range(struct ps_prochandle* ph, int index, uintptr_t* start, uintptr_t* end) {
+// get address range of lib
+void get_lib_addr_range(struct ps_prochandle* ph, int index, uintptr_t* base, uintptr_t* end) {
    int count = 0;
    lib_info* lib = ph->libs;
    while (lib) {
       if (count == index) {
-         *start = lib->exec_start;
-         *end = lib->exec_end;
+         *base = lib->base;
+         *end = lib->end;
          return;
       }
       count++;

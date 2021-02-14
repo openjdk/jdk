@@ -90,10 +90,10 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     }
 
     // called by native method attach0
-    private LoadObject createLoadObject(String fileName, long textsize,
+    private LoadObject createLoadObject(String fileName, long size,
                                         long base) {
        Address baseAddr = newAddress(base);
-       return new SharedObject(this, fileName, textsize, baseAddr);
+       return new SharedObject(this, fileName, size, baseAddr);
     }
 
     // native methods
