@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8234733
+ * @bug 8234733 8260291
  * @summary Verify that JSpinner up/down button rendering is changed
  *           according to pressed state in GTKLookAndFeel
  * @run main/manual TestJSpinnerPressUnpress
