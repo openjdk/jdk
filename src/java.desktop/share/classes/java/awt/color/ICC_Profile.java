@@ -94,14 +94,31 @@ public class ICC_Profile implements Serializable {
     private transient volatile Profile cmmProfile;
     private transient volatile ProfileDeferralInfo deferralInfo;
 
-    // Registry of singleton profile objects for specific color spaces
-    // defined in the ColorSpace class (e.g. CS_sRGB), see
-    // getInstance(int cspace) factory method.
-    private static ICC_Profile sRGBprofile;
-    private static ICC_Profile XYZprofile;
-    private static ICC_Profile PYCCprofile;
-    private static ICC_Profile GRAYprofile;
-    private static ICC_Profile LINEAR_RGBprofile;
+    /**
+     * The lazy registry of singleton profile objects for specific built-in
+     * color spaces defined in the ColorSpace class (e.g. CS_sRGB),
+     * see getInstance(int cspace) factory method.
+     */
+    private interface BuiltInProfile {
+        /*
+         * Deferral is only used for standard profiles. Enabling the appropriate
+         * access privileges is handled at a lower level.
+         */
+        ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+               "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+
+        ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+                "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+
+        ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
+               "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
+
+        ICC_Profile PYCC = new ICC_Profile(new ProfileDeferralInfo(
+               "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
+
+        ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
+               "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
+    }
 
     /**
      * Profile class is input.
@@ -818,89 +835,17 @@ public class ICC_Profile implements Serializable {
      * @throws IllegalArgumentException If {@code cspace} is not one of the
      *         predefined color space types
      */
-    public static ICC_Profile getInstance (int cspace) {
-        ICC_Profile thisProfile = null;
-        switch (cspace) {
-        case ColorSpace.CS_sRGB:
-            synchronized(ICC_Profile.class) {
-                if (sRGBprofile == null) {
-                    /*
-                     * Deferral is only used for standard profiles.
-                     * Enabling the appropriate access privileges is handled
-                     * at a lower level.
-                     */
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("sRGB.pf",
-                                                ColorSpace.TYPE_RGB, 3,
-                                                CLASS_DISPLAY);
-                    sRGBprofile = new ICC_ProfileRGB(pdi);
-                }
-                thisProfile = sRGBprofile;
+    public static ICC_Profile getInstance(int cspace) {
+        return switch (cspace) {
+            case ColorSpace.CS_sRGB -> BuiltInProfile.SRGB;
+            case ColorSpace.CS_LINEAR_RGB -> BuiltInProfile.LRGB;
+            case ColorSpace.CS_CIEXYZ -> BuiltInProfile.XYZ;
+            case ColorSpace.CS_PYCC -> BuiltInProfile.PYCC;
+            case ColorSpace.CS_GRAY -> BuiltInProfile.GRAY;
+            default -> {
+                throw new IllegalArgumentException("Unknown color space");
             }
-
-            break;
-
-        case ColorSpace.CS_CIEXYZ:
-            synchronized(ICC_Profile.class) {
-                if (XYZprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("CIEXYZ.pf",
-                                                ColorSpace.TYPE_XYZ, 3,
-                                                CLASS_ABSTRACT);
-                    XYZprofile = new ICC_Profile(pdi);
-                }
-                thisProfile = XYZprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_PYCC:
-            synchronized(ICC_Profile.class) {
-                if (PYCCprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("PYCC.pf",
-                                                ColorSpace.TYPE_3CLR, 3,
-                                                CLASS_COLORSPACECONVERSION);
-                    PYCCprofile = new ICC_Profile(pdi);
-                }
-                thisProfile = PYCCprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_GRAY:
-            synchronized(ICC_Profile.class) {
-                if (GRAYprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("GRAY.pf",
-                                                ColorSpace.TYPE_GRAY, 1,
-                                                CLASS_DISPLAY);
-                    GRAYprofile = new ICC_ProfileGray(pdi);
-                }
-                thisProfile = GRAYprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_LINEAR_RGB:
-            synchronized(ICC_Profile.class) {
-                if (LINEAR_RGBprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("LINEAR_RGB.pf",
-                                                ColorSpace.TYPE_RGB, 3,
-                                                CLASS_DISPLAY);
-                    LINEAR_RGBprofile = new ICC_ProfileRGB(pdi);
-                }
-                thisProfile = LINEAR_RGBprofile;
-            }
-
-            break;
-
-        default:
-            throw new IllegalArgumentException("Unknown color space");
-        }
-
-        return thisProfile;
+        };
     }
 
     /**
@@ -1803,15 +1748,15 @@ public class ICC_Profile implements Serializable {
         s.defaultWriteObject();
 
         String csName = null;
-        if (this == sRGBprofile) {
+        if (this == BuiltInProfile.SRGB) {
             csName = "CS_sRGB";
-        } else if (this == XYZprofile) {
+        } else if (this == BuiltInProfile.XYZ) {
             csName = "CS_CIEXYZ";
-        } else if (this == PYCCprofile) {
+        } else if (this == BuiltInProfile.PYCC) {
             csName = "CS_PYCC";
-        } else if (this == GRAYprofile) {
+        } else if (this == BuiltInProfile.GRAY) {
             csName = "CS_GRAY";
-        } else if (this == LINEAR_RGBprofile) {
+        } else if (this == BuiltInProfile.LRGB) {
             csName = "CS_LINEAR_RGB";
         }
 

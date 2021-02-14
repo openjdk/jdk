@@ -609,7 +609,8 @@ public class Utils {
     }
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
-        return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement))
+        return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
+                    || hasHiddenTag(enclosingTypeElement))
                 && !isLinkable(enclosingTypeElement);
     }
 
@@ -1157,10 +1158,11 @@ public class Utils {
      */
     public boolean isLinkable(TypeElement typeElem) {
         return
-            (typeElem != null &&
-                (isIncluded(typeElem) && configuration.isGeneratedDoc(typeElem))) ||
+            typeElem != null &&
+            ((isIncluded(typeElem) && configuration.isGeneratedDoc(typeElem) &&
+                    !hasHiddenTag(typeElem)) ||
             (configuration.extern.isExternal(typeElem) &&
-                (isPublic(typeElem) || isProtected(typeElem)));
+                    (isPublic(typeElem) || isProtected(typeElem))));
     }
 
     /**
@@ -1183,7 +1185,7 @@ public class Utils {
             return isLinkable((TypeElement) elem); // defer to existing behavior
         }
 
-        if (isIncluded(elem)) {
+        if (isIncluded(elem) && !hasHiddenTag(elem)) {
             return true;
         }
 
@@ -1553,16 +1555,17 @@ public class Utils {
     }
 
     /**
-     * Returns true if the element is included, contains &#64;hidden tag,
+     * Returns true if the element is included or selected, contains &#64;hidden tag,
      * or if javafx flag is present and element contains &#64;treatAsPrivate
      * tag.
      * @param e the queried element
      * @return true if it exists, false otherwise
      */
     public boolean hasHiddenTag(Element e) {
-        // prevent needless tests on elements which are not included
+        // Non-included elements may still be visible via "transclusion" from undocumented enclosures,
+        // but we don't want to run doclint on them, possibly causing warnings or errors.
         if (!isIncluded(e)) {
-            return false;
+            return hasBlockTagUnchecked(e, HIDDEN);
         }
         if (options.javafx() &&
                 hasBlockTag(e, DocTree.Kind.UNKNOWN_BLOCK_TAG, "treatAsPrivate")) {
@@ -2265,12 +2268,14 @@ public class Utils {
     }
 
     public TypeElement getEnclosingTypeElement(Element e) {
-        if (e.getKind() == ElementKind.PACKAGE)
+        if (isPackage(e) || isModule(e)) {
             return null;
+        }
         Element encl = e.getEnclosingElement();
-        ElementKind kind = encl.getKind();
-        if (kind == ElementKind.PACKAGE)
+        if (isPackage(encl)) {
             return null;
+        }
+        ElementKind kind = encl.getKind();
         while (!(kind.isClass() || kind.isInterface())) {
             encl = encl.getEnclosingElement();
             kind = encl.getKind();
@@ -2591,7 +2596,10 @@ public class Utils {
     }
 
     public List<? extends DocTree> getBlockTags(Element element) {
-        DocCommentTree dcTree = getDocCommentTree(element);
+        return getBlockTags(getDocCommentTree(element));
+    }
+
+    public List<? extends DocTree> getBlockTags(DocCommentTree dcTree) {
         return dcTree == null ? Collections.emptyList() : dcTree.getBlockTags();
     }
 
@@ -2641,14 +2649,26 @@ public class Utils {
     public boolean hasBlockTag(Element element, DocTree.Kind kind, final String tagName) {
         if (hasDocCommentTree(element)) {
             CommentHelper ch = getCommentHelper(element);
-            String tname = tagName != null && tagName.startsWith("@")
-                    ? tagName.substring(1)
-                    : tagName;
-            for (DocTree dt : getBlockTags(element, kind)) {
+            for (DocTree dt : getBlockTags(ch.dcTree)) {
+                if (dt.getKind() == kind && (tagName == null || ch.getTagName(dt).equals(tagName))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /*
+     * Tests whether an element's doc comment contains a block tag without caching it or
+     * running doclint on it. This is done by using getDocCommentInfo(Element) to retrieve
+     * the doc comment info.
+     */
+    boolean hasBlockTagUnchecked(Element element, DocTree.Kind kind) {
+        DocCommentInfo dcInfo = getDocCommentInfo(element);
+        if (dcInfo != null && dcInfo.dcTree != null) {
+            for (DocTree dt : getBlockTags(dcInfo.dcTree)) {
                 if (dt.getKind() == kind) {
-                    if (tname == null || ch.getTagName(dt).equals(tname)) {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }
@@ -2701,7 +2721,7 @@ public class Utils {
 
     /**
      * Retrieves the doc comments for a given element.
-     * @param element
+     * @param element the element
      * @return DocCommentTree for the Element
      */
     public DocCommentTree getDocCommentTree0(Element element) {
@@ -2759,7 +2779,7 @@ public class Utils {
 
     private DocCommentInfo getDocCommentInfo0(Element element) {
         // prevent nasty things downstream with overview element
-        if (element.getKind() != ElementKind.OTHER) {
+        if (!isOverviewElement(element)) {
             TreePath path = getTreePath(element);
             if (path != null) {
                 DocCommentTree docCommentTree = docTrees.getDocCommentTree(path);

@@ -1013,7 +1013,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       // Note: currently, find_or_load_shared_class is called only from
       // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
       // which are parallel-capable loaders, so a lock here is NOT taken.
-      assert(compute_loader_lock_object(class_loader) == NULL, "ObjectLocker not required");
+      assert(get_loader_lock_or_null(class_loader) == NULL, "ObjectLocker not required");
       {
         MutexLocker mu(THREAD, SystemDictionary_lock);
         InstanceKlass* check = dictionary->find_class(d_hash, name);
