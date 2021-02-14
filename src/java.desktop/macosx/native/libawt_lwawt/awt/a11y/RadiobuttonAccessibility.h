@@ -23,8 +23,6 @@
  * questions.
  */
 
-#import "JavaComponentAccessibility.h"
-#import "CommonComponentAccessibility.h"
 #import "ButtonAccessibility.h"
 
 #import <AppKit/AppKit.h>
