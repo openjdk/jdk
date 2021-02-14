@@ -1327,7 +1327,14 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
   Node* src_adr = nullptr;
 
   if (res == nullptr) return;
-  tty->print_cr("[process_users_of_string_allocation] alloc = %d, ac = %d", alloc->_idx, ac->_idx);
+
+#ifndef PRODUCT
+  _eliminated_string_allocation++;
+  if (Verbose) {
+    tty->print_cr("[process_users_of_string_allocation] alloc = %d, ac = %d", alloc->_idx, ac->_idx);
+  }
+#endif
+
   for (DUIterator_Fast imax, i = res->fast_outs(imax); i < imax; i++) {
     Node* use = res->fast_out(i);
     uint oc1 = res->outcnt();
@@ -3186,3 +3193,12 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   _igvn.set_delay_transform(false);
   return false;
 }
+
+//------------------------------print_statistics-------------------------------
+#ifndef PRODUCT
+int PhaseMacroExpand::_eliminated_string_allocation = 0;
+
+void PhaseMacroExpand::print_statistics() {
+  tty->print_cr("PhaseMacroExpand elimianted_str_alloc = %d", _eliminated_string_allocation);
+}
+#endif
