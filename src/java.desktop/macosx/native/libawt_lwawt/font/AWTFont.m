@@ -23,8 +23,6 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "java_awt_Font.h"
 #import "sun_awt_PlatformFont.h"
 #import "sun_awt_FontDescriptor.h"
@@ -310,9 +308,9 @@ JNI_COCOA_ENTER(env);
     jint i;
     for (i = 0; i < num; i++) {
         NSString *fontname = [filteredFonts objectAtIndex:i];
-        jobject jFontName = JNFNSToJavaString(env, fontname);
+        jobject jFontName = NSStringToJavaString(env, fontname);
         jobject jFontFamilyName =
-            JNFNSToJavaString(env, GetFamilyNameForFontName(fontname));
+            NSStringToJavaString(env, GetFamilyNameForFontName(fontname));
 
         (*env)->CallVoidMethod(env, jthis, jm_registerFont, jFontName, jFontFamilyName);
         CHECK_EXCEPTION();
@@ -334,7 +332,7 @@ Java_sun_font_CFontManager_loadNativeDirFonts
 {
 JNI_COCOA_ENTER(env);
 
-    NSString *path = JNFJavaToNSString(env, filename);
+    NSString *path = JavaStringToNSString(env, filename);
     NSURL *url = [NSURL fileURLWithPath:(NSString *)path];
     bool res = CTFontManagerRegisterFontsForURL((CFURLRef)url, kCTFontManagerScopeProcess, nil);
 #ifdef DEBUG
@@ -434,7 +432,7 @@ Java_sun_font_CFont_createNativeFont
 JNI_COCOA_ENTER(env);
 
     awtFont =
-        [AWTFont awtFontForName:JNFJavaToNSString(env, nativeFontName)
+        [AWTFont awtFontForName:JavaStringToNSString(env, nativeFontName)
          style:style]; // autoreleased
 
     if (awtFont) {
@@ -570,7 +568,7 @@ Java_sun_font_CFont_getCascadeList
 #ifdef DEBUG
         NSLog(@"Font is : %@", (NSString*)fontname);
 #endif
-        jstring jFontName = (jstring)JNFNSToJavaString(env, fontname);
+        jstring jFontName = (jstring)NSStringToJavaString(env, fontname);
         (*env)->CallBooleanMethod(env, arrayListOfString, addMID, jFontName);
         if ((*env)->ExceptionOccurred(env)) {
             return;

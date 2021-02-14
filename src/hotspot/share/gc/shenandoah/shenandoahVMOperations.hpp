@@ -29,7 +29,7 @@
 
 class ShenandoahConcurrentGC;
 class ShenandoahDegenGC;
-class ShenandoahMarkCompact;
+class ShenandoahFullGC;
 
 // VM_operations for the Shenandoah Collector.
 //
@@ -46,6 +46,7 @@ protected:
   uint         _gc_id;
 public:
   VM_ShenandoahOperation() : _gc_id(GCId::current()) {};
+  virtual bool skip_thread_oop_barriers() const { return true; }
 };
 
 class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {
@@ -94,10 +95,10 @@ public:
 
 class VM_ShenandoahFullGC : public VM_ShenandoahReferenceOperation {
 private:
-  GCCause::Cause                _gc_cause;
-  ShenandoahMarkCompact* const  _full_gc;
+  GCCause::Cause           _gc_cause;
+  ShenandoahFullGC* const  _full_gc;
 public:
-  VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahMarkCompact* full_gc) :
+  VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahFullGC* full_gc) :
     VM_ShenandoahReferenceOperation(),
     _gc_cause(gc_cause),
     _full_gc(full_gc) {};

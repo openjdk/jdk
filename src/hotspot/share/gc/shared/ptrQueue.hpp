@@ -44,9 +44,6 @@ class PtrQueue {
 
   NONCOPYABLE(PtrQueue);
 
-  // The ptr queue set to which this queue belongs.
-  PtrQueueSet* const _qset;
-
   // The (byte) index at which an object was last enqueued.  Starts at
   // capacity (in bytes) (indicating an empty buffer) and goes towards zero.
   // Value is always pointer-size aligned.
@@ -76,8 +73,6 @@ class PtrQueue {
 protected:
   // The buffer.
   void** _buf;
-
-  PtrQueueSet* qset() const { return _qset; }
 
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.

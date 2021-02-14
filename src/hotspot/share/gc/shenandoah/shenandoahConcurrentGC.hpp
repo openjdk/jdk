@@ -72,6 +72,7 @@ private:
   void entry_reset();
   void entry_mark_roots();
   void entry_mark();
+  void entry_thread_roots();
   void entry_weak_refs();
   void entry_weak_roots();
   void entry_class_unloading();
@@ -89,6 +90,7 @@ private:
   void op_mark_roots();
   void op_mark();
   void op_final_mark();
+  void op_thread_roots();
   void op_weak_refs();
   void op_weak_roots();
   void op_class_unloading();

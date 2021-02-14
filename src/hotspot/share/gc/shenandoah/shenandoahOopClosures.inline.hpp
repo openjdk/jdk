@@ -28,14 +28,28 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 
-template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-inline void ShenandoahMarkRefsSuperClosure::work(T *p) {
-  ShenandoahMark::mark_through_ref<T, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context, _weak);
+template<class T, StringDedupMode STRING_DEDUP>
+inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
+  ShenandoahMark::mark_through_ref<T, STRING_DEDUP>(p, _queue, _mark_context, _weak);
 }
 
-template <class T>
-inline void ShenandoahUpdateHeapRefsClosure::do_oop_work(T* p) {
-  _heap->maybe_update_with_forwarded(p);
+template<class T, StringDedupMode STRING_DEDUP>
+inline void ShenandoahMarkUpdateRefsSuperClosure::work(T* p) {
+  // Update the location
+  _heap->update_with_forwarded(p);
+
+  // ...then do the usual thing
+  ShenandoahMarkRefsSuperClosure::work<T, STRING_DEDUP>(p);
+}
+
+template<class T>
+inline void ShenandoahSTWUpdateRefsClosure::work(T* p) {
+  _heap->update_with_forwarded(p);
+}
+
+template<class T>
+inline void ShenandoahConcUpdateRefsClosure::work(T* p) {
+  _heap->conc_update_with_forwarded(p);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_INLINE_HPP

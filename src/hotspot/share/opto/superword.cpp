@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3217,21 +3217,23 @@ void SuperWord::compute_vector_element_type() {
             }
           }
           if (same_type) {
-            // For right shifts of small integer types (bool, byte, char, short)
-            // we need precise information about sign-ness. Only Load nodes have
-            // this information because Store nodes are the same for signed and
-            // unsigned values. And any arithmetic operation after a load may
-            // expand a value to signed Int so such right shifts can't be used
-            // because vector elements do not have upper bits of Int.
+            // In any Java arithmetic operation, operands of small integer types
+            // (boolean, byte, char & short) should be promoted to int first. As
+            // vector elements of small types don't have upper bits of int, for
+            // RShiftI or AbsI operations, the compiler has to know the precise
+            // signedness info of the 1st operand. These operations shouldn't be
+            // vectorized if the signedness info is imprecise.
             const Type* vt = vtn;
-            if (VectorNode::is_shift(in)) {
+            int op = in->Opcode();
+            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI) {
               Node* load = in->in(1);
               if (load->is_Load() && in_bb(load) && (velt_type(load)->basic_type() == T_INT)) {
+                // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
+                // (LoadUS/LoadUB) values. Store nodes only have one version.
                 vt = velt_type(load);
-              } else if (in->Opcode() != Op_LShiftI) {
-                // Widen type to Int to avoid creation of right shift vector
-                // (align + data_size(s1) check in stmts_can_pack() will fail).
-                // Note, left shifts work regardless type.
+              } else if (op != Op_LShiftI) {
+                // Widen type to int to avoid the creation of vector nodes. Note
+                // that left shifts work regardless of the signedness.
                 vt = TypeInt::INT;
               }
             }
@@ -3893,12 +3895,7 @@ bool SWPointer::scaled_iv(Node* n) {
       NOT_PRODUCT(_tracer.scaled_iv_6(n, _scale);)
       return true;
     }
-  } else if (opc == Op_ConvI2L) {
-    if (n->in(1)->Opcode() == Op_CastII &&
-        n->in(1)->as_CastII()->has_range_check()) {
-      // Skip range check dependent CastII nodes
-      n = n->in(1);
-    }
+  } else if (opc == Op_ConvI2L || opc == Op_CastII) {
     if (scaled_iv_plus_offset(n->in(1))) {
       NOT_PRODUCT(_tracer.scaled_iv_7(n);)
       return true;
@@ -3995,15 +3992,14 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
   }
 
   if (!is_main_loop_member(n)) {
-    // 'n' is loop invariant. Skip range check dependent CastII nodes before checking if 'n' is dominating the pre loop.
+    // 'n' is loop invariant. Skip ConvI2L and CastII nodes before checking if 'n' is dominating the pre loop.
     if (opc == Op_ConvI2L) {
       n = n->in(1);
-      if (n->Opcode() == Op_CastII &&
-          n->as_CastII()->has_range_check()) {
-        // Skip range check dependent CastII nodes
-        assert(!is_main_loop_member(n), "sanity");
-        n = n->in(1);
-      }
+    }
+    if (n->Opcode() == Op_CastII) {
+      // Skip CastII nodes
+      assert(!is_main_loop_member(n), "sanity");
+      n = n->in(1);
     }
     // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
     if (invariant(n)) {
@@ -4705,7 +4701,7 @@ bool SuperWord::fix_commutative_inputs(Node* gold, Node* fix) {
   Node* fin2 = fix->in(2);
   bool swapped = false;
 
-  if (in_bb(gin1) && in_bb(gin2) && in_bb(fin1) && in_bb(fin1)) {
+  if (in_bb(gin1) && in_bb(gin2) && in_bb(fin1) && in_bb(fin2)) {
     if (same_origin_idx(gin1, fin1) &&
         same_origin_idx(gin2, fin2)) {
       return true; // nothing to fix

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,27 +43,24 @@ import jtreg.SkippedException;
 public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
     public static void main(String... args) throws Exception {
         try {
-            testOuter(false);
-            testOuter(true);
+            testOuter();
         } catch (SkippedException s) {
             s.printStackTrace();
             throw new RuntimeException("Archive mapping should always succeed after JDK-8231610 (did the machine run out of memory?)");
         }
     }
 
-    static void testOuter(boolean dump_base_reloc) throws Exception {
-        testInner(dump_base_reloc, true,  false);
-        testInner(dump_base_reloc, false, true);
-        testInner(dump_base_reloc, true,  true);
+    static void testOuter() throws Exception {
+        testInner(true,  false);
+        testInner(false, true);
+        testInner(true,  true);
     }
 
-    static boolean dump_base_reloc, dump_top_reloc, run_reloc;
+    static boolean dump_top_reloc, run_reloc;
 
-    // dump_base_reloc - force relocation of archive when dumping base archive
     // dump_top_reloc  - force relocation of archive when dumping top  archive
     // run_reloc       - force relocation of archive when running
-    static void testInner(boolean dump_base_reloc, boolean dump_top_reloc, boolean run_reloc) throws Exception {
-        DynamicArchiveRelocationTest.dump_base_reloc = dump_base_reloc;
+    static void testInner(boolean dump_top_reloc, boolean run_reloc) throws Exception {
         DynamicArchiveRelocationTest.dump_top_reloc  = dump_top_reloc;
         DynamicArchiveRelocationTest.run_reloc       = run_reloc;
 
@@ -74,15 +71,14 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
     static void doTest() throws Exception {
         caseCount += 1;
         System.out.println("============================================================");
-        System.out.println("case = " + caseCount + ", base = " + dump_base_reloc
-                           + ", top = " + dump_top_reloc
+        System.out.println("case = " + caseCount
+                           + ", top_reloc = " + dump_top_reloc
                            + ", run = " + run_reloc);
         System.out.println("============================================================");
 
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         String mainClass = "Hello";
         String forceRelocation = "-XX:ArchiveRelocationMode=1";
-        String dumpBaseRelocArg = dump_base_reloc ? forceRelocation : "-showversion";
         String dumpTopRelocArg  = dump_top_reloc  ? forceRelocation : "-showversion";
         String runRelocArg      = run_reloc       ? forceRelocation : "-showversion";
         String logArg = "-Xlog:cds=debug,cds+reloc=debug";
@@ -91,17 +87,18 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         String topArchiveName  = getNewArchiveName("top");
 
         String runtimeMsg = "Try to map archive(s) at an alternative address";
+        String runtimeRelocMsg = "runtime archive relocation start";
         String unmapPrefix = ".*Unmapping region #3 at base 0x.*";
         String unmapPattern = unmapPrefix + "(Bitmap)";
+        String archiveRelocPattern = ".*ArchiveRelocationMode == 1.*";
+        String unmapRgn1Pattern = ".*Unmapping region #1 at base 0x.*";
+        String unmapRgn0Pattern = ".*Unmapping region #0 at base 0x.*(MiscCode)";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
 
         // (1) Dump base archive (static)
 
-        OutputAnalyzer out = TestCommon.dumpBaseArchive(baseArchiveName, unlockArg, dumpBaseRelocArg, logArg);
-        if (dump_base_reloc) {
-            out.shouldContain("ArchiveRelocationMode == 1: always allocate class space at an alternative address");
-            out.shouldContain("Relocating archive from");
-        }
+        OutputAnalyzer out = TestCommon.dumpBaseArchive(baseArchiveName, unlockArg, logArg);
+        out.shouldContain("Relocating archive from");
 
         // (2) Dump top archive (dynamic)
 
@@ -123,12 +120,21 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                     if (run_reloc) {
-                        output.shouldContain(runtimeMsg)
-                              // Check that there are two of the following lines in
-                              // the output. One for static archive and one for
-                              // dynamic archive:
-                              // Unmapping region #3 at base 0x<hex digits> (Bitmap)
-                              .shouldMatchByLine(unmapPrefix, "Hello World", unmapPattern);
+                        output.shouldContain(runtimeMsg);
+                        try {
+                            output.shouldContain(runtimeRelocMsg)
+                                  // Check that there are two of the following lines in
+                                  // the output. One for static archive and one for
+                                  // dynamic archive:
+                                  // Unmapping region #3 at base 0x<hex digits> (Bitmap)
+                                  .shouldMatchByLine(unmapPrefix, "Hello World", unmapPattern);
+                        } catch(java.lang.RuntimeException ex) {
+                            // On Windows, sometimes the OS picks the same archive
+                            // base address even with ArchiveRelcationMode=1. In
+                            // this case, runtime relocation won't happen. Checking
+                            // for "Unmapping region #0" messages instead.
+                            output.shouldMatchByLine(archiveRelocPattern, unmapRgn1Pattern, unmapRgn0Pattern);
+                        }
                     }
                 });
     }

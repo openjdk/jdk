@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class isvol001a {
     public    Long LU0, LU1[]={LU0}, LU2[][]={LU1};
     protected Long LR0, LR1[]={LR0}, LR2[][]={LR1};
     transient Long LT0, LT1[]={LT0}, LT2[][]={LT1};
-    final     Long LF0 = new Long(999), LF1[]={LF0}, LF2[][]={LF1};
+    final     Long LF0 = Long.valueOf(999), LF1[]={LF0}, LF2[][]={LF1};
 
     volatile static    Long LS0V, LS1V[]={LS0V}, LS2V[][]={LS1V};
     volatile private   Long LP0V, LP1V[]={LP0V}, LP2V[][]={LP1V};

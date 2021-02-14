@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,13 @@ final class P11Mac extends MacSpi {
         try {
             token.p11.C_SignFinal(session.id(), 0);
         } catch (PKCS11Exception e) {
+            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+                // Cancel Operation may be invoked after an error on a PKCS#11
+                // call. If the operation inside the token was already cancelled,
+                // do not fail here. This is part of a defensive mechanism for
+                // PKCS#11 libraries that do not strictly follow the standard.
+                return;
+            }
             throw new ProviderException("Cancel failed", e);
         }
     }
@@ -213,6 +220,12 @@ final class P11Mac extends MacSpi {
             ensureInitialized();
             return token.p11.C_SignFinal(session.id(), 0);
         } catch (PKCS11Exception e) {
+            // As per the PKCS#11 standard, C_SignFinal may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are handled at OpenJDK's libj2pkcs11 native
+            // library. Thus, P11Mac::reset can be called with a 'false'
+            // doCancel argument from here.
             throw new ProviderException("doFinal() failed", e);
         } finally {
             reset(false);

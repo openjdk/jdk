@@ -23,6 +23,7 @@
  */
 
 // no precompiled headers
+#include "jvm_io.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"

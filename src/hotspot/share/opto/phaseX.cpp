@@ -1665,12 +1665,20 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
     case Op_DivI:
     case Op_ModI: {
       // Type of divisor includes 0?
+      if (n->in(2)->is_top()) {
+        // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
+        return false;
+      }
       const TypeInt* type_divisor = type(n->in(2))->is_int();
       return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
     }
     case Op_DivL:
     case Op_ModL: {
       // Type of divisor includes 0?
+      if (n->in(2)->is_top()) {
+        // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
+        return false;
+      }
       const TypeLong* type_divisor = type(n->in(2))->is_long();
       return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
     }

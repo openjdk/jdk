@@ -31,6 +31,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"

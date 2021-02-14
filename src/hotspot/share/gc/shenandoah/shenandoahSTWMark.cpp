@@ -26,14 +26,15 @@
 #include "precompiled.hpp"
 
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-
 
 class ShenandoahSTWMarkTask : public AbstractGangTask {
 private:

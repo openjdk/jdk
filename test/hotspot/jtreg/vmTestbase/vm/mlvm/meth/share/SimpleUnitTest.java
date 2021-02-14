@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class SimpleUnitTest extends MlvmTest {
             retArg = new Argument(SimpleUnitTest.class, sut);
             retArg.setPreserved(true);
 
-            Argument intArg = new Argument(int.class, new Integer(1));
+            Argument intArg = new Argument(int.class, Integer.valueOf(1));
 
             for ( ;; ) {
                 try {
@@ -86,7 +86,7 @@ public class SimpleUnitTest extends MlvmTest {
                                     "test1",
                                     MethodType.methodType(SimpleUnitTest.class, int.class, float.class)
                             ),
-                            new Argument[] { new Argument(int.class, new Integer(1)), new Argument(float.class, new Float(1.0)) },
+                            new Argument[] { new Argument(int.class, Integer.valueOf(1)), new Argument(float.class, Float.valueOf(1.0)) },
                             true);
                         break;
 
@@ -99,7 +99,7 @@ public class SimpleUnitTest extends MlvmTest {
                                         "test2",
                                         MethodType.methodType(SimpleUnitTest.class, int.class, float.class)
                                 ),
-                                new Argument[] { new Argument(int.class, new Integer(1)), new Argument(float.class, new Float(1.0)) },
+                                new Argument[] { new Argument(int.class, Integer.valueOf(1)), new Argument(float.class, Float.valueOf(1.0)) },
                                 true);
                             break;
 

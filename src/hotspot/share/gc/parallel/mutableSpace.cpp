@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,14 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-MutableSpace::MutableSpace(size_t alignment): ImmutableSpace(), _alignment(alignment), _top(NULL) {
+MutableSpace::MutableSpace(size_t alignment) :
+  _mangler(NULL),
+  _last_setup_region(),
+  _alignment(alignment),
+  _bottom(NULL),
+  _top(NULL),
+  _end(NULL)
+{
   assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
   _mangler = new MutableSpaceMangler(this);
@@ -126,7 +133,11 @@ void MutableSpace::initialize(MemRegion mr,
   }
 
   set_bottom(mr.start());
-  set_end(mr.end());
+  // When expanding concurrently with callers of cas_allocate, setting end
+  // makes the new space available for allocation by other threads.  So this
+  // assignment must follow all other configuration and initialization that
+  // might be done for expansion.
+  Atomic::release_store(end_addr(), mr.end());
 
   if (clear_space) {
     clear(mangle_space);
@@ -173,25 +184,6 @@ void MutableSpace::set_top_for_allocations() {
 }
 #endif
 
-// This version requires locking. */
-HeapWord* MutableSpace::allocate(size_t size) {
-  assert(Heap_lock->owned_by_self() ||
-         (SafepointSynchronize::is_at_safepoint() &&
-          Thread::current()->is_VM_thread()),
-         "not locked");
-  HeapWord* obj = top();
-  if (pointer_delta(end(), obj) >= size) {
-    HeapWord* new_top = obj + size;
-    set_top(new_top);
-    assert(is_object_aligned(obj) && is_object_aligned(new_top),
-           "checking alignment");
-    return obj;
-  } else {
-    return NULL;
-  }
-}
-
-// This version is lock-free.
 HeapWord* MutableSpace::cas_allocate(size_t size) {
   do {
     // Read top before end, else the range check may pass when it shouldn't.

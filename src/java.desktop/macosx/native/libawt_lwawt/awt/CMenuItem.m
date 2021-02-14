@@ -23,7 +23,6 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #include <Carbon/Carbon.h>
 #import "CMenuItem.h"
 #import "CMenu.h"
@@ -313,7 +312,7 @@ Java_sun_lwawt_macosx_CMenuItem_nativeSetLabel
  jchar shortcutKey, jint shortcutKeyCode, jint mods)
 {
     JNI_COCOA_ENTER(env);
-    NSString *theLabel = JNFJavaToNSString(env, label);
+    NSString *theLabel = JavaStringToNSString(env, label);
     NSString *theKeyEquivalent = nil;
     unichar macKey = shortcutKey;
 
@@ -342,7 +341,7 @@ Java_sun_lwawt_macosx_CMenuItem_nativeSetTooltip
 (JNIEnv *env, jobject peer, jlong menuItemObj, jstring tooltip)
 {
     JNI_COCOA_ENTER(env);
-    NSString *theTooltip = JNFJavaToNSString(env, tooltip);
+    NSString *theTooltip = JavaStringToNSString(env, tooltip);
     [((CMenuItem *)jlong_to_ptr(menuItemObj)) setJavaToolTipText:theTooltip];
     JNI_COCOA_EXIT(env);
 }

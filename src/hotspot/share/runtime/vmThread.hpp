@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_VMTHREAD_HPP
 
 #include "runtime/perfDataTypes.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/task.hpp"
 #include "runtime/vmOperations.hpp"

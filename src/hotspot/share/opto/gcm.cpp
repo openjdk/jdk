@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1163,6 +1163,14 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
     if (mach && LCA == root_block)
       break;
 
+    if (self->is_memory_writer() &&
+        (LCA->_loop->depth() > early->_loop->depth())) {
+      // LCA is an invalid placement for a memory writer: choosing it would
+      // cause memory interference, as illustrated in schedule_late().
+      continue;
+    }
+    verify_memory_writer_placement(LCA, self);
+
     uint start_lat = get_latency_for_node(LCA->head());
     uint end_idx   = LCA->end_idx();
     uint end_lat   = get_latency_for_node(LCA->get_node(end_idx));
@@ -1250,6 +1258,17 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
     if( self->pinned() )          // Pinned in block?
       continue;
 
+#ifdef ASSERT
+    // Assert that memory writers (e.g. stores) have a "home" block (the block
+    // given by their control input), and that this block corresponds to their
+    // earliest possible placement. This guarantees that
+    // hoist_to_cheaper_block() will always have at least one valid choice.
+    if (self->is_memory_writer()) {
+      assert(find_block_for_node(self->in(0)) == early,
+             "The home of a memory writer must also be its earliest placement");
+    }
+#endif
+
     MachNode* mach = self->is_Mach() ? self->as_Mach() : NULL;
     if (mach) {
       switch (mach->ideal_Opcode()) {
@@ -1274,13 +1293,12 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       default:
         break;
       }
-      if (C->has_irreducible_loop() && self->bottom_type()->has_memory()) {
-        // If the CFG is irreducible, keep memory-writing nodes as close as
-        // possible to their original block (given by the control input). This
-        // prevents PhaseCFG::hoist_to_cheaper_block() from placing such nodes
-        // into descendants of their original loop, as in the following example:
+      if (C->has_irreducible_loop() && self->is_memory_writer()) {
+        // If the CFG is irreducible, place memory writers in their home block.
+        // This prevents hoist_to_cheaper_block() from accidentally placing such
+        // nodes into deeper loops, as in the following example:
         //
-        // Original placement of store in B1 (loop L1):
+        // Home placement of store in B1 (loop L1):
         //
         // B1 (L1):
         //   m1 <- ..
@@ -1301,12 +1319,16 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         // B3 (L1):
         //   .. <- .. m2, ..
         //
-        // This "hoist inversion" can happen due to CFGLoop::compute_freq()'s
-        // inaccurate estimation of frequencies for irreducible CFGs, which can
-        // lead to for example assigning B1 and B3 a higher frequency than B2.
+        // This "hoist inversion" can happen due to different factors such as
+        // inaccurate estimation of frequencies for irreducible CFGs, and loops
+        // with always-taken exits in reducible CFGs. In the reducible case,
+        // hoist inversion is prevented by discarding invalid blocks (those in
+        // deeper loops than the home block). In the irreducible case, the
+        // invalid blocks cannot be identified due to incomplete loop nesting
+        // information, hence a conservative solution is taken.
 #ifndef PRODUCT
         if (trace_opto_pipelining()) {
-          tty->print_cr("# Irreducible loops: schedule in earliest block B%d:",
+          tty->print_cr("# Irreducible loops: schedule in home block B%d:",
                         early->_pre_order);
           self->dump();
         }
@@ -1357,6 +1379,16 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         C->record_method_not_compilable("late schedule failed: incorrect graph");
       }
       return;
+    }
+
+    if (self->is_memory_writer()) {
+      // If the LCA of a memory writer is a descendant of its home loop, hoist
+      // it into a valid placement.
+      while (LCA->_loop->depth() > early->_loop->depth()) {
+        LCA = LCA->_idom;
+      }
+      assert(LCA != NULL, "a valid LCA must exist");
+      verify_memory_writer_placement(LCA, self);
     }
 
     // If there is no opportunity to hoist, then we're done.

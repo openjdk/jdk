@@ -35,16 +35,38 @@ class LogStream;
 class ObjectMonitor;
 class ThreadsList;
 
+class MonitorList {
+  friend class VMStructs;
+
+private:
+  ObjectMonitor* volatile _head;
+  volatile size_t _count;
+  volatile size_t _max;
+
+public:
+  void add(ObjectMonitor* monitor);
+  size_t unlink_deflated(Thread* self, LogStream* ls, elapsedTimer* timer_p,
+                         GrowableArray<ObjectMonitor*>* unlinked_list);
+  size_t count() const;
+  size_t max() const;
+
+  class Iterator;
+  Iterator iterator() const;
+};
+
+class MonitorList::Iterator {
+  ObjectMonitor* _current;
+
+public:
+  Iterator(ObjectMonitor* head) : _current(head) {}
+  bool has_next() const { return _current != NULL; }
+  ObjectMonitor* next();
+};
+
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
 
  public:
-  typedef enum {
-    owner_self,
-    owner_none,
-    owner_other
-  } LockOwnership;
-
   typedef enum {
     inflate_cause_vm_internal = 0,
     inflate_cause_monitor_enter = 1,
@@ -106,7 +128,6 @@ class ObjectSynchronizer : AllStatic {
 
   // java.lang.Thread support
   static bool current_thread_holds_lock(JavaThread* thread, Handle h_obj);
-  static LockOwnership query_lock_ownership(JavaThread* self, Handle h_obj);
 
   static JavaThread* get_lock_owner(ThreadsList * t_list, Handle h_obj);
 
@@ -151,6 +172,7 @@ class ObjectSynchronizer : AllStatic {
  private:
   friend class SynchronizerTest;
 
+  static MonitorList _in_use_list;
   static volatile bool _is_async_deflation_requested;
   static volatile bool _is_final_audit;
   static jlong         _last_async_deflation_time_ns;

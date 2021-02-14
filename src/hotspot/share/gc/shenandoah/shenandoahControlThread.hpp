@@ -46,13 +46,6 @@ public:
   virtual void task();
 };
 
-// Periodic task to flush SATB buffers periodically.
-class ShenandoahPeriodicSATBFlushTask : public PeriodicTask {
-public:
-  ShenandoahPeriodicSATBFlushTask() : PeriodicTask(ShenandoahSATBBufferFlushInterval) {}
-  virtual void task();
-};
-
 // Periodic task to notify blocked paced waiters.
 class ShenandoahPeriodicPacerNotify : public PeriodicTask {
 public:
@@ -77,7 +70,6 @@ private:
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
   ShenandoahPeriodicTask _periodic_task;
-  ShenandoahPeriodicSATBFlushTask _periodic_satb_flush_task;
   ShenandoahPeriodicPacerNotify _periodic_pacer_notify_task;
 
 public:
