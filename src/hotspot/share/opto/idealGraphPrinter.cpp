@@ -392,24 +392,24 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     }
 
     switch (t->category()) {
-    case Type::Category::Data:
-      print_prop("category", "data");
-      break;
-    case Type::Category::Memory:
-      print_prop("category", "memory");
-      break;
-    case Type::Category::Mixed:
-      print_prop("category", "mixed");
-      break;
-    case Type::Category::Control:
-      print_prop("category", "control");
-      break;
-    case Type::Category::Other:
-      print_prop("category", "other");
-      break;
-    case Type::Category::Undef:
-      print_prop("category", "undef");
-      break;
+      case Type::Category::Data:
+        print_prop("category", "data");
+        break;
+      case Type::Category::Memory:
+        print_prop("category", "memory");
+        break;
+      case Type::Category::Mixed:
+        print_prop("category", "mixed");
+        break;
+      case Type::Category::Control:
+        print_prop("category", "control");
+        break;
+      case Type::Category::Other:
+        print_prop("category", "other");
+        break;
+      case Type::Category::Undef:
+        print_prop("category", "undef");
+        break;
     }
 
     const jushort flags = node->flags();
