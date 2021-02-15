@@ -33,7 +33,6 @@
 #include "memory/archiveUtils.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -385,7 +384,7 @@ static ArchivedModuleEntries* _archive_modules_entries = NULL;
 
 ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   assert(is_named(), "unnamed packages/modules are not archived");
-  ModuleEntry* archived_entry = (ModuleEntry*)MetaspaceShared::read_write_space_alloc(sizeof(ModuleEntry));
+  ModuleEntry* archived_entry = (ModuleEntry*)ArchiveBuilder::rw_region_alloc(sizeof(ModuleEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
 
   if (_archive_modules_entries == NULL) {
@@ -410,7 +409,7 @@ Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArray<ModuleEntry
   Array<ModuleEntry*>* archived_array = NULL;
   int length = (array == NULL) ? 0 : array->length();
   if (length > 0) {
-    archived_array = MetaspaceShared::new_ro_array<ModuleEntry*>(length);
+    archived_array = ArchiveBuilder::new_ro_array<ModuleEntry*>(length);
     for (int i = 0; i < length; i++) {
       ModuleEntry* archived_entry = get_archived_entry(array->at(i));
       archived_array->at_put(i, archived_entry);
@@ -518,7 +517,7 @@ void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
 }
 
 Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
-  Array<ModuleEntry*>* archived_modules = MetaspaceShared::new_rw_array<ModuleEntry*>(number_of_entries());
+  Array<ModuleEntry*>* archived_modules = ArchiveBuilder::new_rw_array<ModuleEntry*>(number_of_entries());
   int n = 0;
   for (int i = 0; i < table_size(); ++i) {
     for (ModuleEntry* m = bucket(i); m != NULL; m = m->next()) {
