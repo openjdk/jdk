@@ -91,6 +91,17 @@
             J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: cannot create drawable of size 0");
             return;
         }
+
+        NSUInteger src_x = self.leftInset * self.contentsScale;
+        NSUInteger src_y = self.topInset * self.contentsScale;
+        NSUInteger src_w = self.buffer.width - src_x;
+        NSUInteger src_h = self.buffer.height - src_y;
+
+        if (src_h <= 0 || src_w <= 0) {
+           J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: Invalid src width or height.");
+           return;
+        }
+
         id<MTLCommandBuffer> commandBuf = [self.ctx createBlitCommandBuffer];
         if (commandBuf == nil) {
             J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: commandBuf is null");
@@ -102,12 +113,13 @@
             return;
         }
         self.nextDrawableCount++;
+
         id <MTLBlitCommandEncoder> blitEncoder = [commandBuf blitCommandEncoder];
 
         [blitEncoder
                 copyFromTexture:self.buffer sourceSlice:0 sourceLevel:0
-                sourceOrigin:MTLOriginMake((jint)(self.leftInset*self.contentsScale), (jint)(self.topInset*self.contentsScale), 0)
-                sourceSize:MTLSizeMake(self.buffer.width, self.buffer.height, 1)
+                sourceOrigin:MTLOriginMake(src_x, src_y, 0)
+                sourceSize:MTLSizeMake(src_w, src_h, 1)
                 toTexture:mtlDrawable.texture destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(0, 0, 0)];
         [blitEncoder endEncoding];
 
