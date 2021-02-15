@@ -52,7 +52,7 @@ KeepStackGCProcessedMark::~KeepStackGCProcessedMark() {
     return;
   }
   StackWatermark* our_watermark = StackWatermarkSet::get(JavaThread::current(), StackWatermarkKind::gc);
-  our_watermark->unlink_watermark();
+  our_watermark->link_watermark(NULL);
 }
 
 void KeepStackGCProcessedMark::finish_processing() {
