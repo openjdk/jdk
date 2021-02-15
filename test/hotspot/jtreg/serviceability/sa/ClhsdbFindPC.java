@@ -236,29 +236,43 @@ public class ClhsdbFindPC {
             } else {
                 expStrMap.put(cmdStr, List.of("vtable for JavaThread"));
             }
-            runTest(withCore, cmds, expStrMap);
+            String findpcOutput = runTest(withCore, cmds, expStrMap);
+
+            // Determine if we have symbol support. Currently we assume yes except on windows.
+            boolean hasSymbols = true;
+            if (Platform.isWindows()) {
+                if (findpcOutput.indexOf("jvm!JavaThread::`vftable'") == -1) {
+                    hasSymbols = false;
+                }
+            }
 
             // Run "findsym MaxJNILocalCapacity". The output should look something like:
             //   0x00007eff8e1a0da0: <jdk-dir>/lib/server/libjvm.so + 0x1d81da0
             String symbol = "MaxJNILocalCapacity";
             cmds = List.of("findsym " + symbol);
-            String findsymOutput = runTest(withCore, cmds, null);
+            expStrMap = new HashMap<>();
+            if (!hasSymbols) {
+                expStrMap.put(cmdStr, List.of("Symbol not found"));
+            }
+            String findsymOutput = runTest(withCore, cmds, expStrMap);
             // Run findpc on the result of "findsym MaxJNILocalCapacity". The output
             // should look something like:
             //   Address 0x00007eff8e1a0da0: MaxJNILocalCapacity
-            parts = findsymOutput.split("findsym " + symbol + linesep);
-            parts = parts[1].split(":");
-            String findsymAddress = parts[0].split(linesep)[0];
-            cmdStr = "findpc " + findsymAddress;
-            cmds = List.of(cmdStr);
-            expStrMap = new HashMap<>();
-            if (Platform.isOSX() && !withCore) {
-                // address -> symbol lookups not supported with OSX live process
-                expStrMap.put(cmdStr, List.of("Address " + findsymAddress + ": In unknown location"));
-            } else {
-                expStrMap.put(cmdStr, List.of("Address " + findsymAddress + ": .*" + symbol));
+            if (hasSymbols) {
+                parts = findsymOutput.split("findsym " + symbol + linesep);
+                parts = parts[1].split(":");
+                String findsymAddress = parts[0].split(linesep)[0];
+                cmdStr = "findpc " + findsymAddress;
+                cmds = List.of(cmdStr);
+                expStrMap = new HashMap<>();
+                if (Platform.isOSX() && !withCore) {
+                    // address -> symbol lookups not supported with OSX live process
+                    expStrMap.put(cmdStr, List.of("Address " + findsymAddress + ": In unknown location"));
+                } else {
+                    expStrMap.put(cmdStr, List.of("Address " + findsymAddress + ": .*" + symbol));
+                }
+                runTest(withCore, cmds, expStrMap);
             }
-            runTest(withCore, cmds, expStrMap);
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {
