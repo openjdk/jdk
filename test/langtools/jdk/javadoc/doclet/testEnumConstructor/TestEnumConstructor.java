@@ -68,10 +68,10 @@ public class TestEnumConstructor extends JavadocTester {
                 "Constructor Summary",
                 "Modifier", "Constructor",
                 "private", """
-                    <a href="#%3Cinit%3E(int)">TestEnum</a></span>&#8203;(int&nbsp;val)""");
+                    <a href="#%3Cinit%3E(int)" class="member-name-link">TestEnum</a>&#8203;(int&nbsp;val)""");
         checkOutput("index-all.html", true,
                 """
-                    <a href="pkg/TestEnum.html#%3Cinit%3E(int)">TestEnum(int)</a>""");
+                    <a href="pkg/TestEnum.html#%3Cinit%3E(int)" class="member-name-link">TestEnum(int)</a>""");
 
     }
 
