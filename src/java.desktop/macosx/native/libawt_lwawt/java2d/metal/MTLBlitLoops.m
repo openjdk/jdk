@@ -699,7 +699,6 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
 
             id<MTLCommandBuffer> cb = [mtlc createCommandBuffer];
             id<MTLBlitCommandEncoder> blitEncoder = [cb blitCommandEncoder];
-            [blitEncoder synchronizeTexture:srcOps->pTexture slice:0 level:0];
             [blitEncoder copyFromTexture:srcOps->pTexture
                             sourceSlice:0
                             sourceLevel:0
