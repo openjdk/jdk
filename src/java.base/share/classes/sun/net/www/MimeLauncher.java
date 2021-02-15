@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 1998, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,13 +114,24 @@ class MimeLauncher extends Thread {
             }
 
             ofn = getTempFileName(uc.getURL(), ofn);
-            try (OutputStream os = new FileOutputStream(ofn)) {
-                is.transferTo(os);
-            } catch (IOException e) {
-                //System.err.println("Exception in input or output stream");
-                //e.printStackTrace();
-            } finally {
-                is.close();
+            try {
+                OutputStream os = new FileOutputStream(ofn);
+                byte buf[] = new byte[2048];
+                int i = 0;
+                try {
+                    while ((i = is.read(buf)) >= 0) {
+                        os.write(buf, 0, i);
+                    }
+                } catch(IOException e) {
+                  //System.err.println("Exception in write loop " + i);
+                  //e.printStackTrace();
+                } finally {
+                    os.close();
+                    is.close();
+                }
+            } catch(IOException e) {
+              //System.err.println("Exception in input or output stream");
+              //e.printStackTrace();
             }
 
             int inx = 0;
