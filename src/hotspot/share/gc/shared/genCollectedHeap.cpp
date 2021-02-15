@@ -142,7 +142,7 @@ jint GenCollectedHeap::initialize() {
 }
 
 CardTableRS* GenCollectedHeap::create_rem_set(const MemRegion& reserved_region) {
-  return new CardTableRS(reserved_region, false /* scan_concurrently */);
+  return new CardTableRS(reserved_region);
 }
 
 void GenCollectedHeap::initialize_size_policy(size_t init_eden_size,

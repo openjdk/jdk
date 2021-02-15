@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -718,7 +718,7 @@ public class ClassFileGenerator implements Visitor {
         if (value == 0L) {
             mv.visitInsn(LCONST_0);
         } else {
-            mv.visitLdcInsn(new Long(value));
+            mv.visitLdcInsn(Long.valueOf(value));
         }
     }
 
@@ -733,7 +733,7 @@ public class ClassFileGenerator implements Visitor {
         } else if (value == 2.0f) {
             mv.visitInsn(FCONST_2);
         } else {
-            mv.visitLdcInsn(new Float(value));
+            mv.visitLdcInsn(Float.valueOf(value));
         }
     }
 
@@ -746,7 +746,7 @@ public class ClassFileGenerator implements Visitor {
         } else if (value == 1.0d) {
             mv.visitInsn(DCONST_1);
         } else {
-            mv.visitLdcInsn(new Double(value));
+            mv.visitLdcInsn(Double.valueOf(value));
         }
     }
 

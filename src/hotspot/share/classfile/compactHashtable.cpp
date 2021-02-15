@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,13 +198,8 @@ void SimpleCompactHashtable::init(address base_address, u4 entry_count, u4 bucke
   _bucket_count = bucket_count;
   _entry_count = entry_count;
   _base_address = base_address;
-  if (DynamicDumpSharedSpaces) {
-    _buckets = DynamicArchive::buffer_to_target(buckets);
-    _entries = DynamicArchive::buffer_to_target(entries);
-  } else {
-    _buckets = buckets;
-    _entries = entries;
-  }
+  _buckets = buckets;
+  _entries = entries;
 }
 
 size_t SimpleCompactHashtable::calculate_header_size() {

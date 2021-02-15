@@ -219,7 +219,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 .distinct()
                 .sorted()
                 .map(IncludeLocalesPlugin::tagToLocale)
-                .collect(Collectors.toList());
+                .toList();
         } else {
             // jdk.localedata is not added.
             throw new PluginException(PluginsResourceBundle.getMessage(getName() + ".localedatanotfound"));
@@ -236,7 +236,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 META_FILES.stream(),
                 filtered.stream().flatMap(s -> includeLocaleFilePatterns(s).stream()))
             .map(s -> "regex:" + s)
-            .collect(Collectors.toList());
+            .toList();
 
         predicate = ResourceFilter.includeFilter(value);
     }
@@ -266,7 +266,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
     private List<String> includeLocaleFiles(String localeStr) {
         return INCLUDE_LOCALE_FILES.stream()
             .map(s -> s + localeStr + ".class")
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private boolean stripUnsupportedLocales(byte[] bytes, ClassReader cr) {
@@ -299,7 +299,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             locales = originalTags.stream()
                 .filter(tag -> !tag.isEmpty())
                 .map(IncludeLocalesPlugin::tagToLocale)
-                .collect(Collectors.toList());
+                .toList();
         } catch (IllformedLocaleException ile) {
             // Seems not an available locales string literal.
             return false;
@@ -342,7 +342,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 .flatMap(Optional::stream)
                 .flatMap(IncludeLocalesPlugin::localeToTags)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
         return ret;
     }

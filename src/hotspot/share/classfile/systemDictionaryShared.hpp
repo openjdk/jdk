@@ -246,8 +246,8 @@ public:
   static bool is_sharing_possible(ClassLoaderData* loader_data);
 
   static bool add_unregistered_class(InstanceKlass* k, TRAPS);
-  static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* child_name,
-                                                Symbol* class_name,
+  static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* class_name,
+                                                Symbol* super_name,
                                                 Handle class_loader,
                                                 Handle protection_domain,
                                                 bool is_superclass,
@@ -341,11 +341,14 @@ public:
 #endif
 
   template <typename T>
-  static unsigned int hash_for_shared_dictionary(T* ptr) {
+  static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
+    assert(MetaspaceObj::is_shared((const MetaspaceObj*)ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
-    address p = address(ptr) - SharedBaseAddress;
-    return primitive_hash<address>(p);
+    uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
+    return primitive_hash<uintx>(offset);
   }
+
+  static unsigned int hash_for_shared_dictionary(address ptr);
 
 #if INCLUDE_CDS_JAVA_HEAP
 private:

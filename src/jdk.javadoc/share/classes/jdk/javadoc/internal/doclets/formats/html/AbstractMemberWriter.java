@@ -147,7 +147,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param tdSummary   the content tree to which the link will be added
      */
     protected void addSummaryLink(TypeElement typeElement, Element member, Content tdSummary) {
-        addSummaryLink(LinkInfoImpl.Kind.MEMBER, typeElement, member, tdSummary);
+        addSummaryLink(HtmlLinkInfo.Kind.MEMBER, typeElement, member, tdSummary);
     }
 
     /**
@@ -158,8 +158,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param member      the member to be documented
      * @param tdSummary   the content tree to which the summary link will be added
      */
-    protected abstract void addSummaryLink(LinkInfoImpl.Kind context,
-            TypeElement typeElement, Element member, Content tdSummary);
+    protected abstract void addSummaryLink(HtmlLinkInfo.Kind context,
+                                           TypeElement typeElement, Element member, Content tdSummary);
 
     /**
      * Adds the inherited summary link for the member.
@@ -210,8 +210,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 }
             }
             code.add(
-                    writer.getLink(new LinkInfoImpl(configuration,
-                            LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
+                    writer.getLink(new HtmlLinkInfo(configuration,
+                            HtmlLinkInfo.Kind.SUMMARY_RETURN_TYPE, type)));
         }
         tdSummaryType.add(code);
     }
@@ -336,8 +336,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 typeContent.add(name);
             }
             addSummaryLink(utils.isClass(element) || utils.isInterface(element)
-                    ? LinkInfoImpl.Kind.CLASS_USE
-                    : LinkInfoImpl.Kind.MEMBER,
+                    ? HtmlLinkInfo.Kind.CLASS_USE
+                    : HtmlLinkInfo.Kind.MEMBER,
                     te, element, typeContent);
             Content desc = new ContentBuilder();
             writer.addSummaryLinkComment(this, element, desc);

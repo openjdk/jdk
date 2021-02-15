@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,9 @@
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr,
                                                                     Register count, Register preserve) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
   assert_different_registers(addr, count, R0);
 
   Label Lskip_loop, Lstore_loop;
-
-  if (ct->scanned_concurrently()) { __ membar(Assembler::StoreStore); }
 
   __ sldi_(count, count, LogBytesPerHeapOop);
   __ beq(CCR0, Lskip_loop); // zero length
@@ -74,13 +70,10 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 void CardTableBarrierSetAssembler::card_table_write(MacroAssembler* masm,
                                                     CardTable::CardValue* byte_map_base,
                                                     Register tmp, Register obj) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
   assert_different_registers(obj, tmp, R0);
   __ load_const_optimized(tmp, (address)byte_map_base, R0);
   __ srdi(obj, obj, CardTable::card_shift);
   __ li(R0, CardTable::dirty_card_val());
-  if (ct->scanned_concurrently()) { __ membar(Assembler::StoreStore); }
   __ stbx(R0, tmp, obj);
 }
 
@@ -91,12 +84,16 @@ void CardTableBarrierSetAssembler::card_write_barrier_post(MacroAssembler* masm,
 
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                 Register base, RegisterOrConstant ind_or_offs, Register val,
-                                                Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
+                                                Register tmp1, Register tmp2, Register tmp3,
+                                                MacroAssembler::PreservationLevel preservation_level) {
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;
 
-  BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
+  BarrierSetAssembler::store_at(masm, decorators, type,
+                                base, ind_or_offs, val,
+                                tmp1, tmp2, tmp3,
+                                preservation_level);
 
   // No need for post barrier if storing NULL
   if (val != noreg) {

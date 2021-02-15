@@ -27,7 +27,6 @@
 
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 class ShenandoahCMDrainMarkingStackClosure;

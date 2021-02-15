@@ -291,6 +291,7 @@ IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* 
   loop->_parent = outer_ilt;
   loop->_next = NULL;
   loop->_nest++;
+  assert(loop->_nest <= SHRT_MAX, "sanity");
   return outer_ilt;
 }
 
@@ -2614,6 +2615,7 @@ bool IdealLoopTree::is_member(const IdealLoopTree *l) const {
 //------------------------------set_nest---------------------------------------
 // Set loop tree nesting depth.  Accumulate _has_call bits.
 int IdealLoopTree::set_nest( uint depth ) {
+  assert(depth <= SHRT_MAX, "sanity");
   _nest = depth;
   int bits = _has_call;
   if( _child ) bits |= _child->set_nest(depth+1);
@@ -3531,8 +3533,7 @@ void PhaseIdealLoop::log_loop_tree() {
 //---------------------collect_potentially_useful_predicates-----------------------
 // Helper function to collect potentially useful predicates to prevent them from
 // being eliminated by PhaseIdealLoop::eliminate_useless_predicates
-void PhaseIdealLoop::collect_potentially_useful_predicates(
-                         IdealLoopTree * loop, Unique_Node_List &useful_predicates) {
+void PhaseIdealLoop::collect_potentially_useful_predicates(IdealLoopTree* loop, Unique_Node_List &useful_predicates) {
   if (loop->_child) { // child
     collect_potentially_useful_predicates(loop->_child, useful_predicates);
   }
@@ -3543,22 +3544,28 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(
       !loop->tail()->is_top()) {
     LoopNode* lpn = loop->_head->as_Loop();
     Node* entry = lpn->in(LoopNode::EntryControl);
-    Node* predicate_proj = find_predicate(entry); // loop_limit_check first
-    if (predicate_proj != NULL) { // right pattern that can be used by loop predication
+
+    Node* predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
+    if (predicate != NULL) { // right pattern that can be used by loop predication
       assert(entry->in(0)->in(1)->in(1)->Opcode() == Op_Opaque1, "must be");
       useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
       entry = skip_loop_predicates(entry);
     }
     if (UseProfiledLoopPredicate) {
-      predicate_proj = find_predicate(entry); // Predicate
-      if (predicate_proj != NULL) {
+      predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
+      if (predicate != NULL) { // right pattern that can be used by loop predication
         useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
+        get_skeleton_predicates(entry, useful_predicates, true);
         entry = skip_loop_predicates(entry);
       }
     }
-    predicate_proj = find_predicate(entry); // Predicate
-    if (predicate_proj != NULL) {
-      useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
+
+    if (UseLoopPredicate) {
+      predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
+      if (predicate != NULL) { // right pattern that can be used by loop predication
+        useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
+        get_skeleton_predicates(entry, useful_predicates, true);
+      }
     }
   }
 
@@ -3572,8 +3579,9 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(
 // Note: it will also eliminates loop limits check predicate since it also uses
 // Opaque1 node (see Parse::add_predicate()).
 void PhaseIdealLoop::eliminate_useless_predicates() {
-  if (C->predicate_count() == 0)
+  if (C->predicate_count() == 0 && C->skeleton_predicate_count() == 0) {
     return; // no predicate left
+  }
 
   Unique_Node_List useful_predicates; // to store useful predicates
   if (C->has_loops()) {
@@ -3581,11 +3589,19 @@ void PhaseIdealLoop::eliminate_useless_predicates() {
   }
 
   for (int i = C->predicate_count(); i > 0; i--) {
-     Node * n = C->predicate_opaque1_node(i-1);
+     Node* n = C->predicate_opaque1_node(i - 1);
      assert(n->Opcode() == Op_Opaque1, "must be");
      if (!useful_predicates.member(n)) { // not in the useful list
        _igvn.replace_node(n, n->in(1));
      }
+  }
+
+  for (int i = C->skeleton_predicate_count(); i > 0; i--) {
+    Node* n = C->skeleton_predicate_opaque4_node(i - 1);
+    assert(n->Opcode() == Op_Opaque4, "must be");
+    if (!useful_predicates.member(n)) { // not in the useful list
+      _igvn.replace_node(n, n->in(2));
+    }
   }
 }
 

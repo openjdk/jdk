@@ -611,7 +611,7 @@ public:
 
   Node_List _body;              // Loop body for inner loops
 
-  uint8_t _nest;                // Nesting depth
+  uint16_t _nest;               // Nesting depth
   uint8_t _irreducible:1,       // True if irreducible
           _has_call:1,          // True if has call safepoint
           _has_sfpt:1,          // True if has non-call safepoint
@@ -914,7 +914,8 @@ private:
                                                IdealLoopTree* outer_loop, Node* input_proj);
   Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
                                       IdealLoopTree* outer_loop);
-  bool skeleton_predicate_has_opaque(IfNode* iff);
+  static bool skeleton_predicate_has_opaque(IfNode* iff);
+  static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
 #ifdef ASSERT
@@ -1607,6 +1608,8 @@ public:
   void check_long_counted_loop(IdealLoopTree* loop, Node* x) NOT_DEBUG_RETURN;
 
   LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
+
+  bool is_safe_load_ctrl(Node* ctrl);
 };
 
 

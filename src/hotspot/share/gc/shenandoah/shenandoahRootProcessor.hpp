@@ -67,16 +67,20 @@ public:
 
 class ShenandoahJavaThreadsIterator {
 private:
+  static const uint _chunks_per_worker = 16; // educated guess
+
   ThreadsListHandle             _threads;
+  uint const                    _length;
+  uint const                    _stride;
   volatile uint                 _claimed;
   ShenandoahPhaseTimings::Phase _phase;
 
   uint claim();
 public:
-  ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase);
+  ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase, uint n_workers);
   void threads_do(ThreadClosure* cl, uint worker_id);
 
-  uint length() const { return _threads.length(); }
+  uint length() const { return _length; }
   Thread* thread_at(uint index) const { return _threads.thread_at(index); }
 };
 

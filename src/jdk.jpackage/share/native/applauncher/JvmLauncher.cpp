@@ -24,7 +24,7 @@
  */
 
 #include <cstring>
-#include <jni.h>
+#include "tstrings.h"
 #include "JvmLauncher.h"
 #include "Log.h"
 #include "Dll.h"
@@ -39,11 +39,21 @@
 #define LAUNCH_FUNC "JLI_Launch"
 #endif
 
+Jvm::Jvm() {
+    LOG_TRACE(tstrings::any() << "Jvm(" << this << ")::Jvm()");
+}
+
+
+Jvm::~Jvm() {
+    LOG_TRACE(tstrings::any() << "Jvm(" << this << ")::~Jvm()");
+}
+
+
 Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
     const CfgFile::Properties& appOptions = cfgFile.getProperties(
             SectionName::Application);
 
-    do {
+    {
         const CfgFile::Properties::const_iterator modulepath = appOptions.find(
                 PropertyName::modulepath);
         if (modulepath != appOptions.end()) {
@@ -54,18 +64,18 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
                 addArgument(*it);
             };
         }
-    } while (0);
+    }
 
-    do {
+    {
         const CfgFile::Properties::const_iterator classpath = appOptions.find(
                 PropertyName::classpath);
         if (classpath != appOptions.end()) {
             addArgument(_T("-classpath"));
             addArgument(CfgFile::asPathList(*classpath));
         }
-    } while (0);
+    }
 
-    do {
+    {
         const CfgFile::Properties::const_iterator splash = appOptions.find(
                 PropertyName::splash);
         if (splash != appOptions.end()) {
@@ -78,9 +88,9 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
                         << splashPath << "\" not found");
             }
         }
-    } while (0);
+    }
 
-    do {
+    {
         const CfgFile::Properties& section = cfgFile.getProperties(
                 SectionName::JavaOptions);
         const CfgFile::Properties::const_iterator javaOptions = section.find(
@@ -92,44 +102,44 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
                 addArgument(*it);
             };
         }
-    } while (0);
+    }
 
-    do {
+    {
         addArgument(_T("-Djpackage.app-path=")
                 + SysInfo::getProcessModulePath());
-    } while (0);
+    }
 
     // No validation of data in config file related to how Java app should be
     // launched intentionally.
     // Just read what is in config file and put on jvm's command line as is.
 
-    do { // Run modular app
+    { // Run modular app
         const CfgFile::Properties::const_iterator mainmodule = appOptions.find(
                 PropertyName::mainmodule);
         if (mainmodule != appOptions.end()) {
             addArgument(_T("-m"));
             addArgument(CfgFile::asString(*mainmodule));
         }
-    } while (0);
+    }
 
-    do { // Run main class
+    { // Run main class
         const CfgFile::Properties::const_iterator mainclass = appOptions.find(
                 PropertyName::mainclass);
         if (mainclass != appOptions.end()) {
             addArgument(CfgFile::asString(*mainclass));
         }
-    } while (0);
+    }
 
-    do { // Run jar
+    { // Run jar
         const CfgFile::Properties::const_iterator mainjar = appOptions.find(
                 PropertyName::mainjar);
         if (mainjar != appOptions.end()) {
             addArgument(_T("-jar"));
             addArgument(CfgFile::asString(*mainjar));
         }
-    } while (0);
+    }
 
-    do {
+    {
         const CfgFile::Properties& section = cfgFile.getProperties(
                 SectionName::ArgOptions);
         const CfgFile::Properties::const_iterator arguments = section.find(
@@ -141,7 +151,7 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
                 addArgument(*it);
             };
         }
-    } while (0);
+    }
 
     return *this;
 }
@@ -160,69 +170,191 @@ bool Jvm::isWithSplash() const {
 
 
 namespace {
-void convertArgs(const std::vector<std::string>& args, std::vector<char*>& argv) {
-    argv.reserve(args.size() + 1);
-    argv.resize(0);
 
-    std::vector<std::string>::const_iterator it = args.begin();
-    const std::vector<std::string>::const_iterator end = args.end();
+struct JvmlLauncherHandleCloser {
+    typedef JvmlLauncherHandle pointer;
 
-    for (; it != end; ++it) {
-        argv.push_back(const_cast<char*>(it->c_str()));
-    };
+    void operator()(JvmlLauncherHandle h) {
+        jvmLauncherCloseHandle(jvmLauncherGetAPI(), h);
+    }
+};
 
-    // Add treminal '0'.
-    argv.push_back(0);
-}
+struct JvmlLauncherDataDeleter {
+    typedef JvmlLauncherData* pointer;
+
+    void operator()(JvmlLauncherData* ptr) {
+        free(ptr);
+    }
+};
+
 } // namespace
 
 void Jvm::launch() {
-    typedef int (JNICALL *LaunchFuncType)(int argc, char ** argv,
-        int jargc, const char** jargv,
-        int appclassc, const char** appclassv,
-        const char* fullversion,
-        const char* dotversion,
-        const char* pname,
-        const char* lname,
-        jboolean javaargs,
-        jboolean cpwildcard,
-        jboolean javaw,
-        jint ergo);
+    typedef std::unique_ptr<
+        JvmlLauncherHandle, JvmlLauncherHandleCloser> AutoJvmlLauncherHandle;
 
-    std::vector<char*> argv;
-#ifdef TSTRINGS_WITH_WCHAR
-    std::vector<std::string> mbcs_args;
-    do {
-        tstring_array::const_iterator it = args.begin();
-        const tstring_array::const_iterator end = args.end();
-        for (; it != end; ++it) {
-            mbcs_args.push_back(tstrings::toACP(*it));
-        }
-    } while (0);
-    convertArgs(mbcs_args, argv);
-#else
-    convertArgs(args, argv);
-#endif
+    typedef std::unique_ptr<
+        JvmlLauncherData, JvmlLauncherDataDeleter> AutoJvmlLauncherData;
 
-    // Don't count terminal '0'.
-    const int argc = (int)argv.size() - 1;
+    AutoJvmlLauncherHandle jlh(exportLauncher());
+
+    JvmlLauncherAPI* api = jvmLauncherGetAPI();
+
+    AutoJvmlLauncherData jld(jvmLauncherCreateJvmlLauncherData(api,
+                                                            jlh.release()));
 
     LOG_TRACE(tstrings::any() << "JVM library: \"" << jvmPath << "\"");
 
-    DllFunction<LaunchFuncType> func(Dll(jvmPath), LAUNCH_FUNC);
-    int exitStatus = func(argc, argv.data(),
-        0, 0,
-        0, 0,
-        "",
-        "",
-        "java",
-        "java",
-        JNI_FALSE,
-        JNI_FALSE,
-        JNI_FALSE,
-        0);
+    DllFunction<void*> func(Dll(jvmPath), LAUNCH_FUNC);
+
+    int exitStatus = jvmLauncherStartJvm(jld.get(), func.operator void*());
 
     if (exitStatus != 0) {
         JP_THROW("Failed to launch JVM");
     }
 }
+
+
+namespace {
+
+struct JliLaunchData {
+    std::string jliLibPath;
+    std::vector<std::string> args;
+
+    int initJvmlLauncherData(JvmlLauncherData* ptr, int bufferSize) const {
+        int minimalBufferSize = initJvmlLauncherData(0);
+        if (minimalBufferSize <= bufferSize) {
+            initJvmlLauncherData(ptr);
+        }
+        return minimalBufferSize;
+    }
+
+private:
+    int initJvmlLauncherData(JvmlLauncherData* ptr) const {
+        // Store path to JLI library just behind JvmlLauncherData header.
+        char* curPtr = reinterpret_cast<char*>(ptr + 1);
+        {
+            const size_t count = sizeof(char)
+                    * (jliLibPath.size() + 1 /* trailing zero */);
+            if (ptr) {
+                std::memcpy(curPtr, jliLibPath.c_str(), count);
+                ptr->jliLibPath = curPtr;
+            }
+            curPtr += count;
+        }
+
+        // Next write array of char* pointing to JLI lib arg strings.
+        if (ptr) {
+            ptr->jliLaunchArgv = reinterpret_cast<char**>(curPtr);
+            ptr->jliLaunchArgc = (int)args.size();
+            // Add terminal '0' arg.
+            ptr->jliLaunchArgv[ptr->jliLaunchArgc] = 0;
+        }
+
+        // Skip memory occupied by char* array.
+        curPtr += sizeof(char*) * (args.size() + 1 /* terminal '0' arg */);
+
+        // Store array of strings.
+        for (size_t i = 0; i != args.size(); i++) {
+            const size_t count = (args[i].size() + 1 /* trailing zero */);
+            if (ptr) {
+                std::memcpy(curPtr, args[i].c_str(), count);
+                ptr->jliLaunchArgv[i] = curPtr;
+            }
+            curPtr += count;
+        };
+
+        const size_t bufferSize = curPtr - reinterpret_cast<char*>(ptr);
+        if (ptr) {
+            LOG_TRACE(tstrings::any() << "Initialized " << bufferSize
+                                        << " bytes at " << ptr << " address");
+        } else {
+            LOG_TRACE(tstrings::any() << "Need " << bufferSize
+                                    << " bytes for JvmlLauncherData buffer");
+        }
+        return static_cast<int>(bufferSize);
+    }
+};
+
+} // namespace
+
+JvmlLauncherHandle Jvm::exportLauncher() const {
+    std::unique_ptr<JliLaunchData> result(new JliLaunchData());
+
+    result->jliLibPath = tstrings::toUtf8(jvmPath);
+
+#ifdef TSTRINGS_WITH_WCHAR
+    {
+        tstring_array::const_iterator it = args.begin();
+        const tstring_array::const_iterator end = args.end();
+        for (; it != end; ++it) {
+            result->args.push_back(tstrings::toACP(*it));
+        }
+    }
+#else
+    result->args = args;
+#endif
+
+    return result.release();
+}
+
+
+namespace {
+
+void closeHandle(JvmlLauncherHandle h) {
+    JP_TRY;
+
+    JliLaunchData* data = static_cast<JliLaunchData*>(h);
+    const std::unique_ptr<JliLaunchData> deleter(data);
+
+    JP_CATCH_ALL;
+}
+
+
+int getJvmlLauncherDataSize(JvmlLauncherHandle h) {
+    JP_TRY;
+
+    const JliLaunchData* data = static_cast<const JliLaunchData*>(h);
+    return data->initJvmlLauncherData(0, 0);
+
+    JP_CATCH_ALL;
+
+    return -1;
+}
+
+
+JvmlLauncherData* initJvmlLauncherData(JvmlLauncherHandle h,
+                                                void* ptr, int bufferSize) {
+    JP_TRY;
+
+    const JliLaunchData* data = static_cast<const JliLaunchData*>(h);
+    const int usedBufferSize = data->initJvmlLauncherData(
+                            static_cast<JvmlLauncherData*>(ptr), bufferSize);
+    if (bufferSize <= usedBufferSize) {
+        return static_cast<JvmlLauncherData*>(ptr);
+    }
+
+    JP_CATCH_ALL;
+
+    return 0;
+}
+
+class Impl : public JvmlLauncherAPI {
+public:
+    Impl() {
+        this->closeHandle = ::closeHandle;
+        this->getJvmlLauncherDataSize = ::getJvmlLauncherDataSize;
+        this->initJvmlLauncherData = ::initJvmlLauncherData;
+    }
+} api;
+
+} // namespace
+
+
+extern "C" {
+
+JNIEXPORT JvmlLauncherAPI* jvmLauncherGetAPI(void) {
+    return &api;
+}
+
+} // extern "C"

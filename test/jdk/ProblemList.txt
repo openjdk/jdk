@@ -254,7 +254,6 @@ java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 linux-all
 java/awt/image/DrawImage/BlitRotateClippedArea.java 8255724 linux-all
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187 macosx-all,windows-all
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
-java/awt/print/PrinterJob/TestPgfmtSetMPA.java 8198343 generic-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
@@ -698,6 +697,8 @@ javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
+sun/security/krb5/auto/ReplayCacheTestProcWithMD5.java          8258855 linux-all
+sun/security/krb5/auto/ReplayCacheTestProc.java                 8258855 linux-all
 
 ############################################################################
 
@@ -732,7 +733,6 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java 80134
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 8024627 macosx-all
 # The next test below is an intermittent failure
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
-javax/swing/JColorChooser/Test6827032.java 8197825 windows-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
@@ -821,6 +821,8 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 javax/script/Test7.java                                         8239361 generic-all
 
+jdk/dynalink/TypeConverterFactoryMemoryLeakTest.java            8261483 generic-all
+
 ############################################################################
 
 # jdk_jfr
@@ -828,7 +830,6 @@ javax/script/Test7.java                                         8239361 generic-
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
-jdk/jfr/jmx/streaming/TestRotate.java                           8257215 generic-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 
@@ -874,6 +875,7 @@ java/awt/print/PageFormat/Orient.java 8016055 macosx-all
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java 8024986 macosx-all,linux-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macosx-all
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
+java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 
 
 ############################################################################

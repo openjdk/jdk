@@ -30,9 +30,10 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTable.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/disassembler.hpp"
@@ -2566,6 +2567,8 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
 
 ATOMIC_XCHG(xchg, swp, ldxr, stxr, Assembler::xword)
 ATOMIC_XCHG(xchgw, swp, ldxrw, stxrw, Assembler::word)
+ATOMIC_XCHG(xchgl, swpl, ldxr, stlxr, Assembler::xword)
+ATOMIC_XCHG(xchglw, swpl, ldxrw, stlxrw, Assembler::word)
 ATOMIC_XCHG(xchgal, swpal, ldaxr, stlxr, Assembler::xword)
 ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word)
 

@@ -28,6 +28,7 @@
 #include "ci/ciKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/dependencies.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
@@ -98,30 +99,10 @@ void Dependencies::assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, c
   assert_common_2(abstract_with_unique_concrete_subtype, ctxk, conck);
 }
 
-void Dependencies::assert_abstract_with_no_concrete_subtype(ciKlass* ctxk) {
-  check_ctxk_abstract(ctxk);
-  assert_common_1(abstract_with_no_concrete_subtype, ctxk);
-}
-
-void Dependencies::assert_concrete_with_no_concrete_subtype(ciKlass* ctxk) {
-  check_ctxk_concrete(ctxk);
-  assert_common_1(concrete_with_no_concrete_subtype, ctxk);
-}
-
 void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm) {
   check_ctxk(ctxk);
   check_unique_method(ctxk, uniqm);
   assert_common_2(unique_concrete_method, ctxk, uniqm);
-}
-
-void Dependencies::assert_abstract_with_exclusive_concrete_subtypes(ciKlass* ctxk, ciKlass* k1, ciKlass* k2) {
-  check_ctxk(ctxk);
-  assert_common_3(abstract_with_exclusive_concrete_subtypes_2, ctxk, k1, k2);
-}
-
-void Dependencies::assert_exclusive_concrete_methods(ciKlass* ctxk, ciMethod* m1, ciMethod* m2) {
-  check_ctxk(ctxk);
-  assert_common_3(exclusive_concrete_methods_2, ctxk, m1, m2);
 }
 
 void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
@@ -263,47 +244,6 @@ void Dependencies::assert_common_2(DepType dept,
   // append the assertion in the correct bucket:
   deps->append(x0);
   deps->append(x1);
-}
-
-void Dependencies::assert_common_3(DepType dept,
-                                   ciKlass* ctxk, ciBaseObject* x, ciBaseObject* x2) {
-  assert(dep_context_arg(dept) == 0, "sanity");
-  assert(dep_args(dept) == 3, "sanity");
-  log_dependency(dept, ctxk, x, x2);
-  GrowableArray<ciBaseObject*>* deps = _deps[dept];
-
-  // try to normalize an unordered pair:
-  bool swap = false;
-  switch (dept) {
-  case abstract_with_exclusive_concrete_subtypes_2:
-    swap = (x->ident() > x2->ident() && x->as_metadata()->as_klass() != ctxk);
-    break;
-  case exclusive_concrete_methods_2:
-    swap = (x->ident() > x2->ident() && x->as_metadata()->as_method()->holder() != ctxk);
-    break;
-  default:
-    break;
-  }
-  if (swap) { ciBaseObject* t = x; x = x2; x2 = t; }
-
-  // see if the same (or a similar) dep is already recorded
-  if (note_dep_seen(dept, x) && note_dep_seen(dept, x2)) {
-    // look in this bucket for redundant assertions
-    const int stride = 3;
-    for (int i = deps->length(); (i -= stride) >= 0; ) {
-      ciBaseObject* y  = deps->at(i+1);
-      ciBaseObject* y2 = deps->at(i+2);
-      if (x == y && x2 == y2) {  // same subjects; check the context
-        if (maybe_merge_ctxk(deps, i+0, ctxk)) {
-          return;
-        }
-      }
-    }
-  }
-  // append the assertion in the correct bucket:
-  deps->append(ctxk);
-  deps->append(x);
-  deps->append(x2);
 }
 
 #if INCLUDE_JVMCI
@@ -472,10 +412,7 @@ size_t Dependencies::estimate_size_in_bytes() {
 
 ciKlass* Dependencies::ctxk_encoded_as_null(DepType dept, ciBaseObject* x) {
   switch (dept) {
-  case abstract_with_exclusive_concrete_subtypes_2:
-    return x->as_metadata()->as_klass();
   case unique_concrete_method:
-  case exclusive_concrete_methods_2:
     return x->as_metadata()->as_method()->holder();
   default:
     return NULL;  // let NULL be NULL
@@ -485,11 +422,7 @@ ciKlass* Dependencies::ctxk_encoded_as_null(DepType dept, ciBaseObject* x) {
 Klass* Dependencies::ctxk_encoded_as_null(DepType dept, Metadata* x) {
   assert(must_be_in_vm(), "raw oops here");
   switch (dept) {
-  case abstract_with_exclusive_concrete_subtypes_2:
-    assert(x->is_klass(), "sanity");
-    return (Klass*) x;
   case unique_concrete_method:
-  case exclusive_concrete_methods_2:
     assert(x->is_method(), "sanity");
     return ((Method*)x)->method_holder();
   default:
@@ -592,11 +525,7 @@ const char* Dependencies::_dep_name[TYPE_LIMIT] = {
   "evol_method",
   "leaf_type",
   "abstract_with_unique_concrete_subtype",
-  "abstract_with_no_concrete_subtype",
-  "concrete_with_no_concrete_subtype",
   "unique_concrete_method",
-  "abstract_with_exclusive_concrete_subtypes_2",
-  "exclusive_concrete_methods_2",
   "no_finalizable_subclasses",
   "call_site_target_value"
 };
@@ -606,11 +535,7 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   1, // evol_method m
   1, // leaf_type ctxk
   2, // abstract_with_unique_concrete_subtype ctxk, k
-  1, // abstract_with_no_concrete_subtype ctxk
-  1, // concrete_with_no_concrete_subtype ctxk
   2, // unique_concrete_method ctxk, m
-  3, // unique_concrete_subtypes_2 ctxk, k1, k2
-  3, // unique_concrete_methods_2 ctxk, m1, m2
   1, // no_finalizable_subclasses ctxk
   2  // call_site_target_value call_site, method_handle
 };
@@ -1346,8 +1271,8 @@ static bool count_find_witness_calls() {
 
 
 Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
-                                               Klass* context_type,
-                                               bool participants_hide_witnesses) {
+                                             Klass* context_type,
+                                             bool participants_hide_witnesses) {
   assert(changes.involves_context(context_type), "irrelevant dependency");
   Klass* new_type = changes.new_type();
 
@@ -1397,8 +1322,8 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
 // If top_level_call is false, skip testing the context type,
 // because the caller has already considered it.
 Klass* ClassHierarchyWalker::find_witness_anywhere(Klass* context_type,
-                                                     bool participants_hide_witnesses,
-                                                     bool top_level_call) {
+                                                   bool participants_hide_witnesses,
+                                                   bool top_level_call) {
   // Current thread must be in VM (not native mode, as in CI):
   assert(must_be_in_vm(), "raw oops here");
   // Must not move the class hierarchy during this check:
@@ -1497,8 +1422,8 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(Klass* context_type,
         // since the recursive call sees sub as the context_type.)
         if (do_counts) { NOT_PRODUCT(deps_find_witness_recursions++); }
         Klass* witness = find_witness_anywhere(sub,
-                                                 participants_hide_witnesses,
-                                                 /*top_level_call=*/ false);
+                                               participants_hide_witnesses,
+                                               /*top_level_call=*/ false);
         if (witness != NULL)  return witness;
       }
     }
@@ -1605,29 +1530,9 @@ Klass* Dependencies::check_leaf_type(Klass* ctxk) {
 // This allows the compiler to narrow occurrences of ctxk by conck,
 // when dealing with the types of actual instances.
 Klass* Dependencies::check_abstract_with_unique_concrete_subtype(Klass* ctxk,
-                                                                   Klass* conck,
-                                                                   KlassDepChange* changes) {
+                                                                 Klass* conck,
+                                                                 KlassDepChange* changes) {
   ClassHierarchyWalker wf(conck);
-  return wf.find_witness_subtype(ctxk, changes);
-}
-
-// If a non-concrete class has no concrete subtypes, it is not (yet)
-// instantiatable.  This can allow the compiler to make some paths go
-// dead, if they are gated by a test of the type.
-Klass* Dependencies::check_abstract_with_no_concrete_subtype(Klass* ctxk,
-                                                               KlassDepChange* changes) {
-  // Find any concrete subtype, with no participants:
-  ClassHierarchyWalker wf;
-  return wf.find_witness_subtype(ctxk, changes);
-}
-
-
-// If a concrete class has no concrete subtypes, it can always be
-// exactly typed.  This allows the use of a cheaper type test.
-Klass* Dependencies::check_concrete_with_no_concrete_subtype(Klass* ctxk,
-                                                               KlassDepChange* changes) {
-  // Find any concrete subtype, with only the ctxk as participant:
-  ClassHierarchyWalker wf(ctxk);
   return wf.find_witness_subtype(ctxk, changes);
 }
 
@@ -1644,22 +1549,6 @@ Klass* Dependencies::find_unique_concrete_subtype(Klass* ctxk) {
   if (wit != NULL)  return NULL;   // Too many witnesses.
   Klass* conck = wf.participant(0);
   if (conck == NULL) {
-#ifndef PRODUCT
-    // Make sure the dependency mechanism will pass this discovery:
-    if (VerifyDependencies) {
-      // Turn off dependency tracing while actually testing deps.
-      FlagSetting fs(TraceDependencies, false);
-      if (!Dependencies::is_concrete_klass(ctxk)) {
-        guarantee(NULL ==
-                  (void *)check_abstract_with_no_concrete_subtype(ctxk),
-                  "verify dep.");
-      } else {
-        guarantee(NULL ==
-                  (void *)check_concrete_with_no_concrete_subtype(ctxk),
-                  "verify dep.");
-      }
-    }
-#endif //PRODUCT
     return ctxk;                   // Return ctxk as a flag for "no subtypes".
   } else {
 #ifndef PRODUCT
@@ -1678,76 +1567,12 @@ Klass* Dependencies::find_unique_concrete_subtype(Klass* ctxk) {
   }
 }
 
-// Test the assertion that the k[12] are the only concrete subtypes of ctxk,
-// except possibly for further subtypes of k[12] themselves.
-// The context type must be abstract.  The types k1 and k2 are themselves
-// allowed to have further concrete subtypes.
-Klass* Dependencies::check_abstract_with_exclusive_concrete_subtypes(
-                                                Klass* ctxk,
-                                                Klass* k1,
-                                                Klass* k2,
-                                                KlassDepChange* changes) {
-  ClassHierarchyWalker wf;
-  wf.add_participant(k1);
-  wf.add_participant(k2);
-  return wf.find_witness_subtype(ctxk, changes);
-}
-
-// Search ctxk for concrete implementations.  If there are klen or fewer,
-// pack them into the given array and return the number.
-// Otherwise, return -1, meaning the given array would overflow.
-// (Note that a return of 0 means there are exactly no concrete subtypes.)
-// In this search, if ctxk is concrete, it will be reported alone.
-// For any type CC reported, no proper subtypes of CC will be reported.
-int Dependencies::find_exclusive_concrete_subtypes(Klass* ctxk,
-                                                   int klen,
-                                                   Klass* karray[]) {
-  ClassHierarchyWalker wf;
-  wf.record_witnesses(klen);
-  Klass* wit = wf.find_witness_subtype(ctxk);
-  if (wit != NULL)  return -1;  // Too many witnesses.
-  int num = wf.num_participants();
-  assert(num <= klen, "oob");
-  // Pack the result array with the good news.
-  for (int i = 0; i < num; i++)
-    karray[i] = wf.participant(i);
-#ifndef PRODUCT
-  // Make sure the dependency mechanism will pass this discovery:
-  if (VerifyDependencies) {
-    // Turn off dependency tracing while actually testing deps.
-    FlagSetting fs(TraceDependencies, false);
-    switch (Dependencies::is_concrete_klass(ctxk)? -1: num) {
-    case -1: // ctxk was itself concrete
-      guarantee(num == 1 && karray[0] == ctxk, "verify dep.");
-      break;
-    case 0:
-      guarantee(NULL == (void *)check_abstract_with_no_concrete_subtype(ctxk),
-                "verify dep.");
-      break;
-    case 1:
-      guarantee(NULL == (void *)
-                check_abstract_with_unique_concrete_subtype(ctxk, karray[0]),
-                "verify dep.");
-      break;
-    case 2:
-      guarantee(NULL == (void *)
-                check_abstract_with_exclusive_concrete_subtypes(ctxk,
-                                                                karray[0],
-                                                                karray[1]),
-                "verify dep.");
-      break;
-    default:
-      ShouldNotReachHere();  // klen > 2 yet supported
-    }
-  }
-#endif //PRODUCT
-  return num;
-}
 
 // If a class (or interface) has a unique concrete method uniqm, return NULL.
 // Otherwise, return a class that contains an interfering method.
-Klass* Dependencies::check_unique_concrete_method(Klass* ctxk, Method* uniqm,
-                                                    KlassDepChange* changes) {
+Klass* Dependencies::check_unique_concrete_method(Klass*  ctxk,
+                                                  Method* uniqm,
+                                                  KlassDepChange* changes) {
   // Here is a missing optimization:  If uniqm->is_final(),
   // we don't really need to search beneath it for overrides.
   // This is probably not important, since we don't use dependencies
@@ -1791,16 +1616,6 @@ Method* Dependencies::find_unique_concrete_method(Klass* ctxk, Method* m) {
   return fm;
 }
 
-Klass* Dependencies::check_exclusive_concrete_methods(Klass* ctxk,
-                                                        Method* m1,
-                                                        Method* m2,
-                                                        KlassDepChange* changes) {
-  ClassHierarchyWalker wf(m1);
-  wf.add_participant(m1->method_holder());
-  wf.add_participant(m2->method_holder());
-  return wf.find_witness_definer(ctxk, changes);
-}
-
 Klass* Dependencies::check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes) {
   Klass* search_at = ctxk;
   if (changes != NULL)
@@ -1811,7 +1626,7 @@ Klass* Dependencies::check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepCh
 Klass* Dependencies::check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes) {
   assert(call_site != NULL, "sanity");
   assert(method_handle != NULL, "sanity");
-  assert(call_site->is_a(SystemDictionary::CallSite_klass()),     "sanity");
+  assert(call_site->is_a(vmClasses::CallSite_klass()),     "sanity");
 
   if (changes == NULL) {
     // Validate all CallSites
@@ -1853,20 +1668,8 @@ Klass* Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) 
   case abstract_with_unique_concrete_subtype:
     witness = check_abstract_with_unique_concrete_subtype(context_type(), type_argument(1), changes);
     break;
-  case abstract_with_no_concrete_subtype:
-    witness = check_abstract_with_no_concrete_subtype(context_type(), changes);
-    break;
-  case concrete_with_no_concrete_subtype:
-    witness = check_concrete_with_no_concrete_subtype(context_type(), changes);
-    break;
   case unique_concrete_method:
     witness = check_unique_concrete_method(context_type(), method_argument(1), changes);
-    break;
-  case abstract_with_exclusive_concrete_subtypes_2:
-    witness = check_abstract_with_exclusive_concrete_subtypes(context_type(), type_argument(1), type_argument(2), changes);
-    break;
-  case exclusive_concrete_methods_2:
-    witness = check_exclusive_concrete_methods(context_type(), method_argument(1), method_argument(2), changes);
     break;
   case no_finalizable_subclasses:
     witness = check_has_no_finalizable_subclasses(context_type(), changes);
@@ -2034,6 +1837,6 @@ void Dependencies::print_statistics() {
 CallSiteDepChange::CallSiteDepChange(Handle call_site, Handle method_handle) :
   _call_site(call_site),
   _method_handle(method_handle) {
-  assert(_call_site()->is_a(SystemDictionary::CallSite_klass()), "must be");
-  assert(_method_handle.is_null() || _method_handle()->is_a(SystemDictionary::MethodHandle_klass()), "must be");
+  assert(_call_site()->is_a(vmClasses::CallSite_klass()), "must be");
+  assert(_method_handle.is_null() || _method_handle()->is_a(vmClasses::MethodHandle_klass()), "must be");
 }

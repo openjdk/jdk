@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -120,7 +121,7 @@ static jint load_agent(AttachOperation* op, outputStream* out) {
     JavaValue result(T_OBJECT);
     Handle h_module_name = java_lang_String::create_from_str("java.instrument", THREAD);
     JavaCalls::call_static(&result,
-                           SystemDictionary::module_Modules_klass(),
+                           vmClasses::module_Modules_klass(),
                            vmSymbols::loadModule_name(),
                            vmSymbols::loadModule_signature(),
                            h_module_name,
@@ -462,7 +463,7 @@ void AttachListener::init() {
 
   // Initialize thread_oop to put it into the system threadGroup
   Handle thread_group (THREAD, Universe::system_thread_group());
-  Handle thread_oop = JavaCalls::construct_new_instance(SystemDictionary::Thread_klass(),
+  Handle thread_oop = JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
@@ -472,7 +473,7 @@ void AttachListener::init() {
     return;
   }
 
-  Klass* group = SystemDictionary::ThreadGroup_klass();
+  Klass* group = vmClasses::ThreadGroup_klass();
   JavaValue result(T_VOID);
   JavaCalls::call_special(&result,
                         thread_group,

@@ -97,8 +97,8 @@ public class Signatures {
             } else {
                 nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
             }
-            LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS_SIGNATURE, typeElement);
+            HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
+                    HtmlLinkInfo.Kind.CLASS_SIGNATURE, typeElement);
             //Let's not link to ourselves in the signature.
             linkInfo.linkToSelf = false;
             nameSpan.add(classWriter.getTypeParameterLinks(linkInfo));
@@ -115,8 +115,8 @@ public class Signatures {
                     if (superclass != null) {
                         content.add(DocletConstants.NL);
                         extendsImplements.add("extends ");
-                        Content link = classWriter.getLink(new LinkInfoImpl(configuration,
-                                LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                        Content link = classWriter.getLink(new HtmlLinkInfo(configuration,
+                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
                                 superclass));
                         extendsImplements.add(link);
                     }
@@ -136,8 +136,8 @@ public class Signatures {
                         } else {
                             extendsImplements.add(", ");
                         }
-                        Content link = classWriter.getLink(new LinkInfoImpl(configuration,
-                                LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                        Content link = classWriter.getLink(new HtmlLinkInfo(configuration,
+                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
                                 type));
                         extendsImplements.add(link);
                     }
@@ -166,8 +166,8 @@ public class Signatures {
                     } else {
                         permitsSpan.add(", ");
                     }
-                    Content link = classWriter.getLink(new LinkInfoImpl(configuration,
-                            LinkInfoImpl.Kind.PERMITTED_SUBCLASSES,
+                    Content link = classWriter.getLink(new HtmlLinkInfo(configuration,
+                            HtmlLinkInfo.Kind.PERMITTED_SUBCLASSES,
                             type));
                     permitsSpan.add(link);
                 }
@@ -190,7 +190,7 @@ public class Signatures {
                 content.add(sep);
                 classWriter.getAnnotations(e.getAnnotationMirrors(), false)
                         .forEach(a -> { content.add(a).add(" "); });
-                Content link = classWriter.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RECORD_COMPONENT,
+                Content link = classWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RECORD_COMPONENT,
                         e.asType()));
                 content.add(link);
                 content.add(Entity.NO_BREAK_SPACE);
@@ -265,7 +265,7 @@ public class Signatures {
          * @return this instance
          */
         MemberSignature setType(TypeMirror type) {
-            this.returnType = memberWriter.writer.getLink(new LinkInfoImpl(memberWriter.configuration, LinkInfoImpl.Kind.MEMBER, type));
+            this.returnType = memberWriter.writer.getLink(new HtmlLinkInfo(memberWriter.configuration, HtmlLinkInfo.Kind.MEMBER, type));
             return this;
         }
 

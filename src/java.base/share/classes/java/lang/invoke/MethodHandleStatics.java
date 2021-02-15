@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
 
 import java.util.Properties;
+
+import static java.lang.invoke.LambdaForm.basicTypeSignature;
+import static java.lang.invoke.LambdaForm.shortenSignature;
 
 /**
  * This class consists exclusively of static names internal to the
@@ -108,6 +112,35 @@ class MethodHandleStatics {
                 LOG_LF_COMPILATION_FAILURE);
     }
 
+    /**
+     * If requested, logs the result of resolving the LambdaForm to stdout
+     * and informs the CDS subsystem about it.
+     */
+    /*non-public*/
+    static void traceLambdaForm(String name, MethodType type, Class<?> holder, MemberName resolvedMember) {
+        if (TRACE_RESOLVE) {
+            System.out.println("[LF_RESOLVE] " + holder.getName() + " " + name + " " +
+                    shortenSignature(basicTypeSignature(type)) +
+                    (resolvedMember != null ? " (success)" : " (fail)"));
+        }
+        if (CDS.isDumpingClassList()) {
+            CDS.traceLambdaFormInvoker("[LF_RESOLVE]", holder.getName(), name, shortenSignature(basicTypeSignature(type)));
+        }
+    }
+
+    /**
+     * If requested, logs the result of resolving the species type to stdout
+     * and the CDS subsystem.
+     */
+    /*non-public*/
+    static void traceSpeciesType(String cn, Class<?> salvage) {
+        if (TRACE_RESOLVE) {
+            System.out.println("[SPECIES_RESOLVE] " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
+        }
+        if (CDS.isDumpingClassList()) {
+            CDS.traceSpeciesType("[SPECIES_RESOLVE]", cn);
+        }
+    }
     // handy shared exception makers (they simplify the common case code)
     /*non-public*/
     static InternalError newInternalError(String message) {

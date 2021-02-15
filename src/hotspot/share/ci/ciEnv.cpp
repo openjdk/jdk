@@ -37,6 +37,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
@@ -799,7 +800,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     }
 
     // Fake a method that is equivalent to a declared method.
-    ciInstanceKlass* holder    = get_instance_klass(SystemDictionary::MethodHandle_klass());
+    ciInstanceKlass* holder    = get_instance_klass(vmClasses::MethodHandle_klass());
     ciSymbol*        name      = ciSymbols::invokeBasic_name();
     ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
     return get_unloaded_method(holder, name, signature, accessor);

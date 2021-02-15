@@ -23,16 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
-#include "memory/iterator.inline.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #ifdef COMPILER1
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #endif
@@ -64,21 +61,13 @@ void ShenandoahBarrierSet::print_on(outputStream* st) const {
   st->print("ShenandoahBarrierSet");
 }
 
-bool ShenandoahBarrierSet::is_a(BarrierSet::Name bsn) {
-  return bsn == BarrierSet::ShenandoahBarrierSet;
-}
-
-bool ShenandoahBarrierSet::is_aligned(HeapWord* hw) {
-  return true;
-}
-
 bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahLoadRefBarrier) return false;
   // Only needed for references
   return is_reference_type(type);
 }
 
-bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
+bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahSATBBarrier) return false;
   // Only needed for references
   if (!is_reference_type(type)) return false;

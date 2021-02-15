@@ -677,9 +677,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, UsePrivilegedStack, true,                                   \
           "Enable the security JVM functions")                              \
                                                                             \
-  develop(bool, ProtectionDomainVerification, true,                         \
-          "Verify protection domain before resolution in system dictionary")\
-                                                                            \
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
@@ -1489,6 +1486,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
+                                                                            \
+  product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
+          "Print metaspace statistics upon VM exit.")                       \
                                                                             \
   product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
           "Metapace allocations are guarded.")                              \
