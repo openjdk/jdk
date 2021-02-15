@@ -95,11 +95,6 @@ public class TestLargePageUseForAuxMemory {
         }
     }
 
-    static boolean checkLargePagesEnabled(OutputAnalyzer output) {
-        String lp = output.firstMatch("Large Page Support: (\\w*)", 1);
-        return lp != null && lp.equals("Enabled");
-    }
-
     static void checkSmallTables(OutputAnalyzer output, long expectedPageSize) throws Exception {
         checkSize(output, expectedPageSize, "Block Offset Table: .*page_size=([^ ]+)");
         checkSize(output, expectedPageSize, "Card Counts Table: .*page_size=([^ ]+)");
