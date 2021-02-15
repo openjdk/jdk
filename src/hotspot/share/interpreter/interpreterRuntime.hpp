@@ -33,6 +33,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 
+class BufferBlob;
 class CodeBuffer;
 
 // The InterpreterRuntime is called by the interpreter for everything

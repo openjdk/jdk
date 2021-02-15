@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8073100 8182765 8196202
+ * @bug 8073100 8182765 8196202 8261079
  * @summary ensure the hidden tag works as intended
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -63,9 +63,8 @@ public class TestHiddenTag extends JavadocTester {
                     n pkg1">A.VisibleInnerExtendsInvisibleInner</a></code></dd>""");
 
         checkOutput("pkg1/A.html", false,
-                "<h3 id=\"inVisibleField\">",
-                """
-                    <h3><span id="inVisibleMethod()">""");
+                "invisibleField",
+                "invisibleMethod()");
 
         checkOutput("pkg1/A.VisibleInner.html", true,
                 """
@@ -82,8 +81,8 @@ public class TestHiddenTag extends JavadocTester {
 
         checkOutput("pkg1/A.VisibleInner.html", false,
                 "../pkg1/A.VisibleInner.html#VisibleInner()",
-                "<a id=\"inVisibleField\">",
-                "<a id=\"inVisibleMethod()\">");
+                "invisibleField",
+                "invisibleMethod()");
 
         checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", true,
                 """
@@ -100,12 +99,63 @@ public class TestHiddenTag extends JavadocTester {
                 "invisibleMethod",
                 "A.InvisibleInner");
 
+        checkOutput("pkg1/Intf.html", true,
+                """
+                    <section class="detail" id="visibleDefaultMethod()">""",
+                """
+                    <section class="detail" id="visibleInterfaceMethod()">""",
+                """
+                    <dt>All Known Implementing Classes:</dt>
+                    <dd><code><a href="Child.html" title="class in pkg1">Child</a></code></dd>
+                    </dl>""");
+
+        checkOutput("pkg1/Intf.html", false,
+                "InvisibleParent",
+                "invisibleDefaultMethod",
+                "invisibleInterfaceMethod");
+
+        checkOutput("pkg1/Child.html", true,
+                """
+                    <a href="InvisibleParent.VisibleInner.html" class="type-name-link" title="class \
+                    in pkg1">InvisibleParent.VisibleInner</a>""",
+                """
+                    <a href="#visibleField" class="member-name-link">visibleField</a>""",
+                """
+                    <a href="#invisibleInterfaceMethod()" class="member-name-link">invisibleInterfaceMethod</a>""",
+                """
+                    <a href="#visibleInterfaceMethod()" class="member-name-link">visibleInterfaceMethod</a>""",
+                """
+                    <a href="#visibleMethod(pkg1.InvisibleParent)" class="member-name-link">visibleMethod</a>""",
+                """
+                    <a href="Intf.html#visibleDefaultMethod()">visibleDefaultMethod</a>""",
+                // Invisible return or parameter types must not be linked
+                """
+                    <span class="return-type">pkg1.InvisibleParent</span>""",
+                """
+                    <span class="parameters">(pkg1.InvisibleParent&lt;? extends pkg1.InvisibleParent&gt;&nbsp;p)</span>""");
+
+        checkOutput("pkg1/Child.html", false,
+                "InvisibleParent.InvisibleInner",
+                "invisibleField",
+                "invisibleMethod",
+                "invisibleDefaultMethod");
+
+        checkOutput("pkg1/InvisibleParent.VisibleInner.html", true,
+                """
+                    <dt>Enclosing class:</dt>
+                    <dd>pkg1.InvisibleParent&lt;T extends pkg1.InvisibleParent&gt;</dd>
+                    </dl>""");
+
         checkOutput("pkg1/package-summary.html", false, "A.InvisibleInner");
 
         checkOutput("pkg1/package-tree.html", false, "A.InvisibleInner");
 
+        checkOutput("pkg1/package-tree.html", false, "InvisibleParent.html");
+
         checkFiles(false,
                 "pkg1/A.InvisibleInner.html",
-                "pkg1/A.InvisibleInnerExtendsVisibleInner.html");
+                "pkg1/A.InvisibleInnerExtendsVisibleInner.html",
+                "pkg1/InvisibleParent.html",
+                "pkg1/InvisibleParent.InvisibleInner.html");
     }
 }

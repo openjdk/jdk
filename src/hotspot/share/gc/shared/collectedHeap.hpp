@@ -29,7 +29,6 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
-#include "memory/heapInspection.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"

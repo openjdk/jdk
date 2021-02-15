@@ -271,8 +271,7 @@ public class CDSTestUtils {
         if (!DYNAMIC_DUMP) {
             output.shouldContain("Loading classes to share");
         } else {
-            output.shouldContain("Buffer-space to target-space delta")
-                  .shouldContain("Written dynamic archive 0x");
+            output.shouldContain("Written dynamic archive 0x");
         }
         output.shouldHaveExitValue(0);
 

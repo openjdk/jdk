@@ -672,23 +672,27 @@ void Metaspace::global_initialize() {
 
   metaspace::ChunkHeaderPool::initialize();
 
+  if (DumpSharedSpaces) {
+    assert(!UseSharedSpaces, "sanity");
+    MetaspaceShared::initialize_for_static_dump();
+  }
+
   // If UseCompressedClassPointers=1, we have two cases:
-  // a) if CDS is active (either dump time or runtime), it will create the ccs
+  // a) if CDS is active (runtime, Xshare=on), it will create the class space
   //    for us, initialize it and set up CompressedKlassPointers encoding.
   //    Class space will be reserved above the mapped archives.
-  // b) if CDS is not active, we will create the ccs on our own. It will be
-  //    placed above the java heap, since we assume it has been placed in low
+  // b) if CDS either deactivated (Xshare=off) or a static dump is to be done (Xshare:dump),
+  //    we will create the class space on our own. It will be placed above the java heap,
+  //    since we assume it has been placed in low
   //    address regions. We may rethink this (see JDK-8244943). Failing that,
   //    it will be placed anywhere.
 
 #if INCLUDE_CDS
   // case (a)
-  if (DumpSharedSpaces) {
-    MetaspaceShared::initialize_dumptime_shared_and_meta_spaces();
-  } else if (UseSharedSpaces) {
+  if (UseSharedSpaces) {
+    MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
-    MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
   }
 
   if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
@@ -699,7 +703,7 @@ void Metaspace::global_initialize() {
 #ifdef _LP64
 
   if (using_class_space() && !class_space_is_initialized()) {
-    assert(!UseSharedSpaces && !DumpSharedSpaces, "CDS should be off at this point");
+    assert(!UseSharedSpaces, "CDS archive is not mapped at this point");
 
     // case (b)
     ReservedSpace rs;

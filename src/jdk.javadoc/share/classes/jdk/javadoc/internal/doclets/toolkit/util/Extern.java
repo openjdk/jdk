@@ -47,8 +47,6 @@ import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.DocumentationTool;
 
-import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -262,8 +260,8 @@ public class Extern {
             if (elementListUrl == null) {
                 reporter.print(Kind.WARNING, resources.getText("doclet.Resource_error", elementListPath.getPath()));
             } else {
-                try {
-                    readListFromURL(docUrl, elementListUrl);
+                try (InputStream in = open(elementListUrl)) {
+                    readElementList(in, docUrl, false, versionNumber);
                 } catch (IOException exc) {
                     throw new Fault(resources.getText(
                             "doclet.Resource_error", elementListPath.getPath()), exc);
@@ -280,7 +278,7 @@ public class Extern {
      * @return the resource path
      */
     private DocPath getPlatformElementList(int version) {
-        String filename = version <= 9
+        String filename = version <= 8
                 ? "package-list-" + version + ".txt"
                 : "element-list-" + version + ".txt";
         return DocPaths.RESOURCES.resolve("releases").resolve(filename);
@@ -426,7 +424,9 @@ public class Extern {
     private void readElementListFromURL(String urlpath, URL elemlisturlpath) throws Fault {
         try {
             URL link = elemlisturlpath.toURI().resolve(DocPaths.ELEMENT_LIST.getPath()).toURL();
-            readListFromURL(urlpath, link);
+            try (InputStream in = open(link)) {
+                readElementList(in, urlpath, false, 0);
+            }
         } catch (URISyntaxException | MalformedURLException exc) {
             throw new Fault(resources.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
         } catch (IOException exc) {
@@ -443,23 +443,13 @@ public class Extern {
     private void readPackageListFromURL(String urlpath, URL elemlisturlpath) throws Fault {
         try {
             URL link = elemlisturlpath.toURI().resolve(DocPaths.PACKAGE_LIST.getPath()).toURL();
-            readListFromURL(urlpath, link);
+            try (InputStream in = open(link)) {
+                readElementList(in, urlpath, false, 0);
+            }
         } catch (URISyntaxException | MalformedURLException exc) {
             throw new Fault(resources.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
         } catch (IOException exc) {
             throw new Fault(resources.getText("doclet.URL_error", elemlisturlpath.toString()), exc);
-        }
-    }
-
-    /**
-     * Read an element or package list from file.
-     *
-     * @param urlpath URL or path to the packages
-     * @param elementlistpath URL to read "element-list" file from
-     */
-    private void readListFromURL(String urlpath, URL elementlistpath) throws IOException {
-        try (InputStream in = open(elementlistpath)) {
-            readElementList(in, urlpath, false);
         }
     }
 
@@ -498,7 +488,7 @@ public class Extern {
                 boolean pathIsRelative
                         = !isUrl(path)
                         && !DocFile.createFileForInput(configuration, path).isAbsolute();
-                readElementList(file.openInputStream(), path, pathIsRelative);
+                readElementList(file.openInputStream(), path, pathIsRelative, 0);
             } else {
                 throw new Fault(resources.getText("doclet.File_error", file.getPath()), null);
             }
@@ -514,9 +504,11 @@ public class Extern {
      * @param input     InputStream from the "element-list" file.
      * @param path     URL or the directory path to the elements.
      * @param relative Is path relative?
+     * @param platformVersion The version of platform libraries the element list belongs to,
+     *                        or {@code 0} if it does not belong to a platform libraries doc bundle.
      * @throws IOException if there is a problem reading or closing the stream
      */
-    private void readElementList(InputStream input, String path, boolean relative)
+    private void readElementList(InputStream input, String path, boolean relative, int platformVersion)
                          throws IOException {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(input))) {
             String elemname;
@@ -533,12 +525,20 @@ public class Extern {
                         moduleItems.put(moduleName, item);
                     } else {
                         DocPath pkgPath = DocPath.create(elemname.replace('.', '/'));
-                        if (moduleName != null) {
+                        // Although being modular, JDKs 9 and 10 do not use module names in javadoc URL paths.
+                        if (moduleName != null && platformVersion != 9 && platformVersion != 10) {
                             elempath = elempath.resolve(DocPath.create(moduleName).resolve(pkgPath));
                         } else {
                             elempath = elempath.resolve(pkgPath);
                         }
-                        String actualModuleName = checkLinkCompatibility(elemname, moduleName, path, issueWarning);
+                        String actualModuleName;
+                        // For user provided libraries we check whether modularity matches the actual library.
+                        // We trust modularity to be correct for platform library element lists.
+                        if (platformVersion == 0) {
+                            actualModuleName = checkLinkCompatibility(elemname, moduleName, path, issueWarning);
+                        } else {
+                            actualModuleName = moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName;
+                        }
                         Item item = new Item(elemname, elempath, relative);
                         packageItems.computeIfAbsent(actualModuleName, k -> new TreeMap<>())
                             .putIfAbsent(elemname, item); // first-one-wins semantics
@@ -573,7 +573,7 @@ public class Extern {
                 return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
                 // suppress the warning message in the case of automatic modules
-                if (!isAutomaticModule(me) && issueWarning) {
+                if (!configuration.workArounds.isAutomaticModule(me) && issueWarning) {
                     configuration.getReporter().print(Kind.WARNING,
                             resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
                 }
@@ -582,16 +582,6 @@ public class Extern {
             }
         }
         return moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName;
-    }
-
-    // The following should be replaced by a new method such as Elements.isAutomaticModule
-    private boolean isAutomaticModule(ModuleElement me) {
-        if (me == null) {
-            return false;
-        } else {
-            ModuleSymbol msym = (ModuleSymbol) me;
-            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
-        }
     }
 
     public boolean isUrl (String urlCandidate) {

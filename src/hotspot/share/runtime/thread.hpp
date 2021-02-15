@@ -35,7 +35,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaFrameAnchor.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
@@ -60,6 +59,7 @@ class ThreadSafepointState;
 class ThreadsList;
 class ThreadsSMRSupport;
 
+class JNIHandleBlock;
 class JvmtiRawMonitor;
 class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
@@ -68,15 +68,6 @@ class OSThread;
 class ThreadStatistics;
 class ConcurrentLocksDump;
 class MonitorInfo;
-
-class BufferBlob;
-class AbstractCompiler;
-class ciEnv;
-class CompileThread;
-class CompileLog;
-class CompileTask;
-class CompileQueue;
-class CompilerCounters;
 
 class vframeArray;
 class vframe;
@@ -87,10 +78,6 @@ class JvmtiDeferredUpdates;
 
 class ThreadClosure;
 class ICRefillVerifier;
-class IdealGraphPrinter;
-
-class JVMCIEnv;
-class JVMCIPrimitiveArray;
 
 class Metadata;
 class ResourceArea;
@@ -286,12 +273,6 @@ class Thread: public ThreadShadow {
 
   // suspend/resume lock: used for self-suspend
   Monitor* _SR_lock;
-
-  // Stack watermark barriers.
-  StackWatermarks _stack_watermarks;
-
- public:
-  inline StackWatermarks* stack_watermarks() { return &_stack_watermarks; }
 
  protected:
   enum SuspendFlags {
@@ -864,141 +845,6 @@ inline Thread* Thread::current_or_null_safe() {
   return NULL;
 }
 
-class NonJavaThread: public Thread {
-  friend class VMStructs;
-
-  NonJavaThread* volatile _next;
-
-  class List;
-  static List _the_list;
-
-  void add_to_the_list();
-  void remove_from_the_list();
-
- protected:
-  virtual void pre_run();
-  virtual void post_run();
-
- public:
-  NonJavaThread();
-  ~NonJavaThread();
-
-  class Iterator;
-};
-
-// Provides iteration over the list of NonJavaThreads.
-// List addition occurs in pre_run(), and removal occurs in post_run(),
-// so that only live fully-initialized threads can be found in the list.
-// Threads created after an iterator is constructed will not be visited
-// by the iterator. The scope of an iterator is a critical section; there
-// must be no safepoint checks in that scope.
-class NonJavaThread::Iterator : public StackObj {
-  uint _protect_enter;
-  NonJavaThread* _current;
-
-  NONCOPYABLE(Iterator);
-
-public:
-  Iterator();
-  ~Iterator();
-
-  bool end() const { return _current == NULL; }
-  NonJavaThread* current() const { return _current; }
-  void step();
-};
-
-// Name support for threads.  non-JavaThread subclasses with multiple
-// uniquely named instances should derive from this.
-class NamedThread: public NonJavaThread {
-  friend class VMStructs;
-  enum {
-    max_name_len = 64
-  };
- private:
-  char* _name;
-  // log Thread being processed by oops_do
-  Thread* _processed_thread;
-  uint _gc_id; // The current GC id when a thread takes part in GC
-
- public:
-  NamedThread();
-  ~NamedThread();
-  // May only be called once per thread.
-  void set_name(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
-  virtual bool is_Named_thread() const { return true; }
-  virtual char* name() const { return _name == NULL ? (char*)"Unknown Thread" : _name; }
-  Thread *processed_thread() { return _processed_thread; }
-  void set_processed_thread(Thread *thread) { _processed_thread = thread; }
-  virtual void print_on(outputStream* st) const;
-
-  void set_gc_id(uint gc_id) { _gc_id = gc_id; }
-  uint gc_id() { return _gc_id; }
-};
-
-// Worker threads are named and have an id of an assigned work.
-class WorkerThread: public NamedThread {
- private:
-  uint _id;
- public:
-  WorkerThread() : _id(0)               { }
-  virtual bool is_Worker_thread() const { return true; }
-
-  virtual WorkerThread* as_Worker_thread() const {
-    assert(is_Worker_thread(), "Dubious cast to WorkerThread*?");
-    return (WorkerThread*) this;
-  }
-
-  void set_id(uint work_id)             { _id = work_id; }
-  uint id() const                       { return _id; }
-};
-
-// A single WatcherThread is used for simulating timer interrupts.
-class WatcherThread: public NonJavaThread {
-  friend class VMStructs;
- protected:
-  virtual void run();
-
- private:
-  static WatcherThread* _watcher_thread;
-
-  static bool _startable;
-  // volatile due to at least one lock-free read
-  volatile static bool _should_terminate;
- public:
-  enum SomeConstants {
-    delay_interval = 10                          // interrupt delay in milliseconds
-  };
-
-  // Constructor
-  WatcherThread();
-
-  // No destruction allowed
-  ~WatcherThread() {
-    guarantee(false, "WatcherThread deletion must fix the race with VM termination");
-  }
-
-  // Tester
-  bool is_Watcher_thread() const                 { return true; }
-
-  // Printing
-  char* name() const { return (char*)"VM Periodic Task Thread"; }
-  void print_on(outputStream* st) const;
-  void unpark();
-
-  // Returns the single instance of WatcherThread
-  static WatcherThread* watcher_thread()         { return _watcher_thread; }
-
-  // Create and start the single instance of WatcherThread, or stop it on shutdown
-  static void start();
-  static void stop();
-  // Only allow start once the VM is sufficiently initialized
-  // Otherwise the first task to enroll will trigger the start
-  static void make_startable();
- private:
-  int sleep() const;
-};
-
-
 class CompilerThread;
 
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
@@ -1209,6 +1055,11 @@ class JavaThread: public Thread {
   friend class ThreadWaitTransition;
   friend class VM_Exit;
 
+  // Stack watermark barriers.
+  StackWatermarks _stack_watermarks;
+
+ public:
+  inline StackWatermarks* stack_watermarks() { return &_stack_watermarks; }
 
  public:
   // Constructor
@@ -1897,100 +1748,6 @@ inline JavaThread* JavaThread::current() {
   return Thread::current()->as_Java_thread();
 }
 
-inline CompilerThread* JavaThread::as_CompilerThread() {
-  assert(is_Compiler_thread(), "just checking");
-  return (CompilerThread*)this;
-}
-
-// Dedicated thread to sweep the code cache
-class CodeCacheSweeperThread : public JavaThread {
-  CompiledMethod*       _scanned_compiled_method; // nmethod being scanned by the sweeper
- public:
-  CodeCacheSweeperThread();
-  // Track the nmethod currently being scanned by the sweeper
-  void set_scanned_compiled_method(CompiledMethod* cm) {
-    assert(_scanned_compiled_method == NULL || cm == NULL, "should reset to NULL before writing a new value");
-    _scanned_compiled_method = cm;
-  }
-
-  // Hide sweeper thread from external view.
-  bool is_hidden_from_external_view() const { return true; }
-
-  bool is_Code_cache_sweeper_thread() const { return true; }
-
-  // Prevent GC from unloading _scanned_compiled_method
-  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
-  void nmethods_do(CodeBlobClosure* cf);
-};
-
-// A thread used for Compilation.
-class CompilerThread : public JavaThread {
-  friend class VMStructs;
- private:
-  CompilerCounters* _counters;
-
-  ciEnv*                _env;
-  CompileLog*           _log;
-  CompileTask* volatile _task;  // print_threads_compiling can read this concurrently.
-  CompileQueue*         _queue;
-  BufferBlob*           _buffer_blob;
-
-  AbstractCompiler*     _compiler;
-  TimeStamp             _idle_time;
-
- public:
-
-  static CompilerThread* current();
-
-  CompilerThread(CompileQueue* queue, CompilerCounters* counters);
-  ~CompilerThread();
-
-  bool is_Compiler_thread() const                { return true; }
-
-  virtual bool can_call_java() const;
-
-  // Hide native compiler threads from external view.
-  bool is_hidden_from_external_view() const      { return !can_call_java(); }
-
-  void set_compiler(AbstractCompiler* c)         { _compiler = c; }
-  AbstractCompiler* compiler() const             { return _compiler; }
-
-  CompileQueue* queue()        const             { return _queue; }
-  CompilerCounters* counters() const             { return _counters; }
-
-  // Get/set the thread's compilation environment.
-  ciEnv*        env()                            { return _env; }
-  void          set_env(ciEnv* env)              { _env = env; }
-
-  BufferBlob*   get_buffer_blob() const          { return _buffer_blob; }
-  void          set_buffer_blob(BufferBlob* b)   { _buffer_blob = b; }
-
-  // Get/set the thread's logging information
-  CompileLog*   log()                            { return _log; }
-  void          init_log(CompileLog* log) {
-    // Set once, for good.
-    assert(_log == NULL, "set only once");
-    _log = log;
-  }
-
-  void start_idle_timer()                        { _idle_time.update(); }
-  jlong idle_time_millis() {
-    return TimeHelper::counter_to_millis(_idle_time.ticks_since_update());
-  }
-
-#ifndef PRODUCT
- private:
-  IdealGraphPrinter *_ideal_graph_printer;
- public:
-  IdealGraphPrinter *ideal_graph_printer()           { return _ideal_graph_printer; }
-  void set_ideal_graph_printer(IdealGraphPrinter *n) { _ideal_graph_printer = n; }
-#endif
-
-  // Get/set the thread's current task
-  CompileTask* task()                      { return _task; }
-  void         set_task(CompileTask* task) { _task = task; }
-};
-
 inline JavaThread* Thread::as_Java_thread() {
   assert(is_Java_thread(), "incorrect cast to JavaThread");
   return static_cast<JavaThread*>(this);
@@ -1999,10 +1756,6 @@ inline JavaThread* Thread::as_Java_thread() {
 inline const JavaThread* Thread::as_Java_thread() const {
   assert(is_Java_thread(), "incorrect cast to const JavaThread");
   return static_cast<const JavaThread*>(this);
-}
-
-inline CompilerThread* CompilerThread::current() {
-  return JavaThread::current()->as_CompilerThread();
 }
 
 // The active thread queue. It also keeps track of the current used
