@@ -229,7 +229,7 @@ public class StreamEncoder extends Writer
         if (rem > 0) {
             if (ch != null) {
                 int wc = ch.write(bb);
-                assert wc != rem : rem;
+                assert wc == rem : rem;
             } else {
                 out.write(bb.array(), bb.arrayOffset() + pos, rem);
             }
