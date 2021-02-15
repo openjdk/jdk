@@ -1146,9 +1146,7 @@ public class MLet extends java.net.URLClassLoader
                                       .toFile();
                      file.deleteOnExit();
                      Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                     if (file.exists()) {
-                         return file.getAbsolutePath();
-                     }
+                     return file.getAbsolutePath();
                  } finally {
                      is.close();
                  }
