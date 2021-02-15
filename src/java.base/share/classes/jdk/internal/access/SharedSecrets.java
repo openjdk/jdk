@@ -113,7 +113,14 @@ public class SharedSecrets {
     }
 
     public static JavaLangAccess getJavaLangAccess() {
-        return javaLangAccess;
+        var access = javaLangAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.lang.System$JavaLangAccessImpl", true, null);
+                access = javaLangAccess;
+            } catch (ClassNotFoundException e) {}
+        }
+        return access;
     }
 
     public static void setJavaLangInvokeAccess(JavaLangInvokeAccess jlia) {
@@ -126,7 +133,7 @@ public class SharedSecrets {
             try {
                 Class.forName("java.lang.invoke.MethodHandleImpl", true, null);
                 access = javaLangInvokeAccess;
-            } catch (ClassNotFoundException e) {};
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }

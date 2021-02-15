@@ -2005,10 +2005,6 @@ public final class System {
 
         lineSeparator = props.getProperty("line.separator");
 
-        // register shared secrets - do this before setting up System.out/in
-        // since encoders/decoders rely on it
-        setJavaLangAccess();
-
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
@@ -2140,176 +2136,178 @@ public final class System {
         VM.initLevel(4);
     }
 
-    private static void setJavaLangAccess() {
-        // Allow privileged classes outside of java.lang
-        SharedSecrets.setJavaLangAccess(new JavaLangAccess() {
-            public List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes) {
-                return klass.getDeclaredPublicMethods(name, parameterTypes);
-            }
-            public jdk.internal.reflect.ConstantPool getConstantPool(Class<?> klass) {
-                return klass.getConstantPool();
-            }
-            public boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType) {
-                return klass.casAnnotationType(oldType, newType);
-            }
-            public AnnotationType getAnnotationType(Class<?> klass) {
-                return klass.getAnnotationType();
-            }
-            public Map<Class<? extends Annotation>, Annotation> getDeclaredAnnotationMap(Class<?> klass) {
-                return klass.getDeclaredAnnotationMap();
-            }
-            public byte[] getRawClassAnnotations(Class<?> klass) {
-                return klass.getRawAnnotations();
-            }
-            public byte[] getRawClassTypeAnnotations(Class<?> klass) {
-                return klass.getRawTypeAnnotations();
-            }
-            public byte[] getRawExecutableTypeAnnotations(Executable executable) {
-                return Class.getExecutableTypeAnnotationBytes(executable);
-            }
-            public <E extends Enum<E>>
-            E[] getEnumConstantsShared(Class<E> klass) {
-                return klass.getEnumConstantsShared();
-            }
-            public void blockedOn(Interruptible b) {
-                Thread.blockedOn(b);
-            }
-            public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
-                Shutdown.add(slot, registerShutdownInProgress, hook);
-            }
-            public Thread newThreadWithAcc(Runnable target, AccessControlContext acc) {
-                return new Thread(target, acc);
-            }
-            @SuppressWarnings("deprecation")
-            public void invokeFinalize(Object o) throws Throwable {
-                o.finalize();
-            }
-            public ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl) {
-                return cl.createOrGetClassLoaderValueMap();
-            }
-            public Class<?> defineClass(ClassLoader loader, String name, byte[] b, ProtectionDomain pd, String source) {
-                return ClassLoader.defineClass1(loader, name, b, 0, b.length, pd, source);
-            }
-            public Class<?> defineClass(ClassLoader loader, Class<?> lookup, String name, byte[] b, ProtectionDomain pd,
-                                        boolean initialize, int flags, Object classData) {
-                return ClassLoader.defineClass0(loader, lookup, name, b, 0, b.length, pd, initialize, flags, classData);
-            }
-            public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
-                return cl.findBootstrapClassOrNull(name);
-            }
-            public Package definePackage(ClassLoader cl, String name, Module module) {
-                return cl.definePackage(name, module);
-            }
-            public String fastUUID(long lsb, long msb) {
-                return Long.fastUUID(lsb, msb);
-            }
-            public void addNonExportedPackages(ModuleLayer layer) {
-                SecurityManager.addNonExportedPackages(layer);
-            }
-            public void invalidatePackageAccessCache() {
-                SecurityManager.invalidatePackageAccessCache();
-            }
-            public Module defineModule(ClassLoader loader,
-                                       ModuleDescriptor descriptor,
-                                       URI uri) {
-                return new Module(null, loader, descriptor, uri);
-            }
-            public Module defineUnnamedModule(ClassLoader loader) {
-                return new Module(loader);
-            }
-            public void addReads(Module m1, Module m2) {
-                m1.implAddReads(m2);
-            }
-            public void addReadsAllUnnamed(Module m) {
-                m.implAddReadsAllUnnamed();
-            }
-            public void addExports(Module m, String pn) {
-                m.implAddExports(pn);
-            }
-            public void addExports(Module m, String pn, Module other) {
-                m.implAddExports(pn, other);
-            }
-            public void addExportsToAllUnnamed(Module m, String pn) {
-                m.implAddExportsToAllUnnamed(pn);
-            }
-            public void addOpens(Module m, String pn, Module other) {
-                m.implAddOpens(pn, other);
-            }
-            public void addOpensToAllUnnamed(Module m, String pn) {
-                m.implAddOpensToAllUnnamed(pn);
-            }
-            public void addOpensToAllUnnamed(Module m, Set<String> concealedPackages, Set<String> exportedPackages) {
-                m.implAddOpensToAllUnnamed(concealedPackages, exportedPackages);
-            }
-            public void addUses(Module m, Class<?> service) {
-                m.implAddUses(service);
-            }
-            public boolean isReflectivelyExported(Module m, String pn, Module other) {
-                return m.isReflectivelyExported(pn, other);
-            }
-            public boolean isReflectivelyOpened(Module m, String pn, Module other) {
-                return m.isReflectivelyOpened(pn, other);
-            }
-            public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
-                return layer.getServicesCatalog();
-            }
-            public void bindToLoader(ModuleLayer layer, ClassLoader loader) {
-                layer.bindToLoader(loader);
-            }
-            public Stream<ModuleLayer> layers(ModuleLayer layer) {
-                return layer.layers();
-            }
-            public Stream<ModuleLayer> layers(ClassLoader loader) {
-                return ModuleLayer.layers(loader);
-            }
+    // Allow privileged classes outside of java.lang
+    private static class JavaLangAccessImpl implements JavaLangAccess {
+        private JavaLangAccessImpl() {}
+        static {
+            SharedSecrets.setJavaLangAccess(new JavaLangAccessImpl());
+        }
+        public List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes) {
+            return klass.getDeclaredPublicMethods(name, parameterTypes);
+        }
+        public jdk.internal.reflect.ConstantPool getConstantPool(Class<?> klass) {
+            return klass.getConstantPool();
+        }
+        public boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType) {
+            return klass.casAnnotationType(oldType, newType);
+        }
+        public AnnotationType getAnnotationType(Class<?> klass) {
+            return klass.getAnnotationType();
+        }
+        public Map<Class<? extends Annotation>, Annotation> getDeclaredAnnotationMap(Class<?> klass) {
+            return klass.getDeclaredAnnotationMap();
+        }
+        public byte[] getRawClassAnnotations(Class<?> klass) {
+            return klass.getRawAnnotations();
+        }
+        public byte[] getRawClassTypeAnnotations(Class<?> klass) {
+            return klass.getRawTypeAnnotations();
+        }
+        public byte[] getRawExecutableTypeAnnotations(Executable executable) {
+            return Class.getExecutableTypeAnnotationBytes(executable);
+        }
+        public <E extends Enum<E>>
+        E[] getEnumConstantsShared(Class<E> klass) {
+            return klass.getEnumConstantsShared();
+        }
+        public void blockedOn(Interruptible b) {
+            Thread.blockedOn(b);
+        }
+        public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
+            Shutdown.add(slot, registerShutdownInProgress, hook);
+        }
+        public Thread newThreadWithAcc(Runnable target, AccessControlContext acc) {
+            return new Thread(target, acc);
+        }
+        @SuppressWarnings("deprecation")
+        public void invokeFinalize(Object o) throws Throwable {
+            o.finalize();
+        }
+        public ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl) {
+            return cl.createOrGetClassLoaderValueMap();
+        }
+        public Class<?> defineClass(ClassLoader loader, String name, byte[] b, ProtectionDomain pd, String source) {
+            return ClassLoader.defineClass1(loader, name, b, 0, b.length, pd, source);
+        }
+        public Class<?> defineClass(ClassLoader loader, Class<?> lookup, String name, byte[] b, ProtectionDomain pd,
+        boolean initialize, int flags, Object classData) {
+            return ClassLoader.defineClass0(loader, lookup, name, b, 0, b.length, pd, initialize, flags, classData);
+        }
+        public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
+            return cl.findBootstrapClassOrNull(name);
+        }
+        public Package definePackage(ClassLoader cl, String name, Module module) {
+            return cl.definePackage(name, module);
+        }
+        public String fastUUID(long lsb, long msb) {
+            return Long.fastUUID(lsb, msb);
+        }
+        public void addNonExportedPackages(ModuleLayer layer) {
+            SecurityManager.addNonExportedPackages(layer);
+        }
+        public void invalidatePackageAccessCache() {
+            SecurityManager.invalidatePackageAccessCache();
+        }
+        public Module defineModule(ClassLoader loader,
+                ModuleDescriptor descriptor,
+                URI uri) {
+            return new Module(null, loader, descriptor, uri);
+        }
+        public Module defineUnnamedModule(ClassLoader loader) {
+            return new Module(loader);
+        }
+        public void addReads(Module m1, Module m2) {
+            m1.implAddReads(m2);
+        }
+        public void addReadsAllUnnamed(Module m) {
+            m.implAddReadsAllUnnamed();
+        }
+        public void addExports(Module m, String pn) {
+            m.implAddExports(pn);
+        }
+        public void addExports(Module m, String pn, Module other) {
+            m.implAddExports(pn, other);
+        }
+        public void addExportsToAllUnnamed(Module m, String pn) {
+            m.implAddExportsToAllUnnamed(pn);
+        }
+        public void addOpens(Module m, String pn, Module other) {
+            m.implAddOpens(pn, other);
+        }
+        public void addOpensToAllUnnamed(Module m, String pn) {
+            m.implAddOpensToAllUnnamed(pn);
+        }
+        public void addOpensToAllUnnamed(Module m, Set<String> concealedPackages, Set<String> exportedPackages) {
+            m.implAddOpensToAllUnnamed(concealedPackages, exportedPackages);
+        }
+        public void addUses(Module m, Class<?> service) {
+            m.implAddUses(service);
+        }
+        public boolean isReflectivelyExported(Module m, String pn, Module other) {
+            return m.isReflectivelyExported(pn, other);
+        }
+        public boolean isReflectivelyOpened(Module m, String pn, Module other) {
+            return m.isReflectivelyOpened(pn, other);
+        }
+        public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
+            return layer.getServicesCatalog();
+        }
+        public void bindToLoader(ModuleLayer layer, ClassLoader loader) {
+            layer.bindToLoader(loader);
+        }
+        public Stream<ModuleLayer> layers(ModuleLayer layer) {
+            return layer.layers();
+        }
+        public Stream<ModuleLayer> layers(ClassLoader loader) {
+            return ModuleLayer.layers(loader);
+        }
 
-            public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return String.newStringNoRepl(bytes, cs);
-            }
+        public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
+            return String.newStringNoRepl(bytes, cs);
+        }
 
-            public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-                return String.getBytesNoRepl(s, cs);
-            }
+        public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+            return String.getBytesNoRepl(s, cs);
+        }
 
-            public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoRepl(bytes, off, len);
-            }
+        public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
+            return String.newStringUTF8NoRepl(bytes, off, len);
+        }
 
-            public byte[] getBytesUTF8NoRepl(String s) {
-                return String.getBytesUTF8NoRepl(s);
-            }
+        public byte[] getBytesUTF8NoRepl(String s) {
+            return String.getBytesUTF8NoRepl(s);
+        }
 
-            public void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
-                StringLatin1.inflate(src, srcOff, dst, dstOff, len);
-            }
+        public void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            StringLatin1.inflate(src, srcOff, dst, dstOff, len);
+        }
 
-            public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
-                return String.decodeASCII(src, srcOff, dst, dstOff, len);
-            }
+        public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            return String.decodeASCII(src, srcOff, dst, dstOff, len);
+        }
 
-            public void setCause(Throwable t, Throwable cause) {
-                t.setCause(cause);
-            }
+        public void setCause(Throwable t, Throwable cause) {
+            t.setCause(cause);
+        }
 
-            public ProtectionDomain protectionDomain(Class<?> c) {
-                return c.protectionDomain();
-            }
+        public ProtectionDomain protectionDomain(Class<?> c) {
+            return c.protectionDomain();
+        }
 
-            public MethodHandle stringConcatHelper(String name, MethodType methodType) {
-                return StringConcatHelper.lookupStatic(name, methodType);
-            }
+        public MethodHandle stringConcatHelper(String name, MethodType methodType) {
+            return StringConcatHelper.lookupStatic(name, methodType);
+        }
 
-            public long stringConcatInitialCoder() {
-                return StringConcatHelper.initialCoder();
-            }
+        public long stringConcatInitialCoder() {
+            return StringConcatHelper.initialCoder();
+        }
 
-            public long stringConcatMix(long lengthCoder, String constant) {
-                return StringConcatHelper.mix(lengthCoder, constant);
-            }
+        public long stringConcatMix(long lengthCoder, String constant) {
+            return StringConcatHelper.mix(lengthCoder, constant);
+        }
 
-            public Object classData(Class<?> c) {
-                return c.getClassData();
-            }
-        });
+        public Object classData(Class<?> c) {
+            return c.getClassData();
+        }
     }
 }
