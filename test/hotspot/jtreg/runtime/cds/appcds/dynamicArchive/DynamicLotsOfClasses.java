@@ -75,12 +75,12 @@ public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
              "ALL-SYSTEM",
              "-Xlog:hashtables",
              "-Xmx500m",
-             "-Xlog:cds,cds+dynamic",
+             "-Xlog:cds=debug", // test detailed metadata info printing
+             "-Xlog:cds+dynamic=info",
              bootClassPath,
              "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
              "-cp", appJar, mainClass, classList)
-             .assertNormalExit(output -> {
-                 output.shouldContain("Written dynamic archive 0x");
-             });
+            .assertNormalExit("Written dynamic archive 0x",
+                              "Detailed metadata info");
     }
 }
