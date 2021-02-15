@@ -315,6 +315,10 @@ Java_sun_java2d_metal_MTLRenderer_drawPoly
     }
 }
 
+const int SCANLINE_MAX_VERTEX_SIZE = 4096;
+const int VERTEX_STRUCT_SIZE = 8;
+const int NUM_OF_VERTICES_PER_SCANLINE = 3;
+
 void
 MTLRenderer_DrawScanlines(MTLContext *mtlc, BMTLSDOps * dstOps,
                           jint scanlineCount, jint *scanlines)
@@ -330,22 +334,74 @@ MTLRenderer_DrawScanlines(MTLContext *mtlc, BMTLSDOps * dstOps,
 
     if (mtlEncoder == nil) return;
 
-    struct Vertex verts[2*scanlineCount];
+    int vertexSize = NUM_OF_VERTICES_PER_SCANLINE
+        * scanlineCount * VERTEX_STRUCT_SIZE;
+    J2dTraceLn1(J2D_TRACE_INFO, "MTLRenderer_DrawScanlines: Total vertex size : %d", vertexSize);
 
-    for (int j = 0, i = 0; j < scanlineCount; j++) {
-        // Translate each vertex by a fraction so
-        // that we hit pixel centers.
-        float x1 = ((float)*(scanlines++)) + 0.2f;
-        float x2 = ((float)*(scanlines++)) + 1.2f;
-        float y  = ((float)*(scanlines++)) + 0.5f;
-        struct Vertex v1 = {{x1, y}};
-        struct Vertex v2 = {{x2, y}};
-        verts[i++] = v1;
-        verts[i++] = v2;
+    if (vertexSize <= SCANLINE_MAX_VERTEX_SIZE) {
+        struct Vertex verts[NUM_OF_VERTICES_PER_SCANLINE * scanlineCount];
+
+        for (int j = 0, i = 0; j < scanlineCount; j++) {
+            // Translate each vertex by a fraction so
+            // that we hit pixel centers.
+            float x1 = ((float)*(scanlines++)) + 0.2f;
+            float x2 = ((float)*(scanlines++)) + 1.2f;
+            float y  = ((float)*(scanlines++)) + 0.5f;
+            struct Vertex v1 = {{x1, y}};
+            struct Vertex v2 = {{x2, y}};
+            verts[i++] = v1;
+            verts[i++] = v2;
+        }
+
+        [mtlEncoder setVertexBytes:verts length:sizeof(verts) atIndex:MeshVertexBuffer];
+        [mtlEncoder drawPrimitives:MTLPrimitiveTypeLine vertexStart:0
+            vertexCount:NUM_OF_VERTICES_PER_SCANLINE * scanlineCount];
+    } else {
+        int remainingScanlineCount = vertexSize;
+        do {
+            if (remainingScanlineCount > SCANLINE_MAX_VERTEX_SIZE) {
+                struct Vertex verts[SCANLINE_MAX_VERTEX_SIZE/ VERTEX_STRUCT_SIZE];
+
+                for (int j = 0, i = 0; j < (SCANLINE_MAX_VERTEX_SIZE / (VERTEX_STRUCT_SIZE * 2)); j++) {
+                    // Translate each vertex by a fraction so
+                    // that we hit pixel centers.
+                    float x1 = ((float)*(scanlines++)) + 0.2f;
+                    float x2 = ((float)*(scanlines++)) + 1.2f;
+                    float y  = ((float)*(scanlines++)) + 0.5f;
+                    struct Vertex v1 = {{x1, y}};
+                    struct Vertex v2 = {{x2, y}};
+                    verts[i++] = v1;
+                    verts[i++] = v2;
+                }
+
+                [mtlEncoder setVertexBytes:verts length:sizeof(verts) atIndex:MeshVertexBuffer];
+                [mtlEncoder drawPrimitives:MTLPrimitiveTypeLine vertexStart:0
+                    vertexCount:(SCANLINE_MAX_VERTEX_SIZE / VERTEX_STRUCT_SIZE)];
+                remainingScanlineCount -= SCANLINE_MAX_VERTEX_SIZE;
+            } else {
+                struct Vertex verts[remainingScanlineCount / VERTEX_STRUCT_SIZE];
+
+                for (int j = 0, i = 0; j < (remainingScanlineCount / (VERTEX_STRUCT_SIZE * 2)); j++) {
+                    // Translate each vertex by a fraction so
+                    // that we hit pixel centers.
+                    float x1 = ((float)*(scanlines++)) + 0.2f;
+                    float x2 = ((float)*(scanlines++)) + 1.2f;
+                    float y  = ((float)*(scanlines++)) + 0.5f;
+                    struct Vertex v1 = {{x1, y}};
+                    struct Vertex v2 = {{x2, y}};
+                    verts[i++] = v1;
+                    verts[i++] = v2;
+                }
+
+                [mtlEncoder setVertexBytes:verts length:sizeof(verts) atIndex:MeshVertexBuffer];
+                [mtlEncoder drawPrimitives:MTLPrimitiveTypeLine vertexStart:0
+                    vertexCount:(remainingScanlineCount / VERTEX_STRUCT_SIZE)];
+                remainingScanlineCount -= remainingScanlineCount;
+            }
+            J2dTraceLn1(J2D_TRACE_INFO,
+                "MTLRenderer_DrawScanlines: Remaining vertex size %d", remainingScanlineCount);
+        } while (remainingScanlineCount != 0);
     }
-
-    [mtlEncoder setVertexBytes:verts length:sizeof(verts) atIndex:MeshVertexBuffer];
-    [mtlEncoder drawPrimitives:MTLPrimitiveTypeLine vertexStart:0 vertexCount:2*scanlineCount];
 }
 
 void
