@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashSet;
@@ -511,6 +506,17 @@ public class FileHandler extends StreamHandler {
                         channel = FileChannel.open(lockFilePath,
                                 CREATE_NEW, WRITE);
                         fileCreated = true;
+                    } catch (AccessDeniedException ade) {
+                        // Try again. If it doesn't work, then this will
+                        // eventually ensure that we increment "unique" and
+                        // use another file name.
+                        if (Files.isRegularFile(lockFilePath, LinkOption.NOFOLLOW_LINKS)
+                            && isParentWritable(lockFilePath)) {
+                            continue;
+                        }
+                        else {
+                            throw ade;
+                        }
                     } catch (FileAlreadyExistsException ix) {
                         // This may be a zombie file left over by a previous
                         // execution. Reuse it - but only if we can actually
