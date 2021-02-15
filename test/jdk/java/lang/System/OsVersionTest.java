@@ -24,6 +24,7 @@
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 /*
  * @test
@@ -49,8 +50,19 @@ public class OsVersionTest {
         }
         else if (Platform.isOSX()) {
             OutputAnalyzer output = ProcessTools.executeProcess("sw_vers", "-productVersion");
-            if (!osVersion.equals(output.getOutput().trim())) {
-                throw new Error(osVersion + " != " + output.getOutput().trim());
+            String swVersOutput = output.getOutput().trim();
+            if (!osVersion.equals(swVersOutput)) {
+                // This section can be removed if minimum build SDK is xcode 12+
+                String[] swVersParts = swVersOutput.split("\\.");
+                String[] osVersParts = osVersion.split("\\.");
+                if (swVersParts.length >= 2 &&
+                    osVersParts.length >= 2 &&
+                    swVersParts[0].equals(osVersParts[0]) &&
+                    swVersParts[1].equals(osVersParts[1])) {
+                        throw new SkippedException("MacOS version only matches in parts, this is expected when " +
+                                                   "JDK was built with Xcode < 12 and MacOS version patch is > 0");
+                }
+                throw new Error(osVersion + " != " + swVersOutput);
             }
         }
         else if (Platform.isAix()) {
