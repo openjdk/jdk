@@ -372,7 +372,7 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
 
   if (_encoder == nil) {
     _destination = dest;
-    _useStencil = [_mtlc.clip isShape];
+    _useStencil = [_mtlc.clip isShape] && !_mtlc.clip.stencilMaskGenerationInProgress;
     forceUpdate = JNI_TRUE;
 
     MTLCommandBufferWrapper *cbw = [_mtlc getCommandBufferWrapper];
