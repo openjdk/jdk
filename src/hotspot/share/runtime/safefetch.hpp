@@ -22,10 +22,9 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_STUBROUTINES_INLINE_HPP
-#define SHARE_RUNTIME_STUBROUTINES_INLINE_HPP
+#ifndef SHARE_RUNTIME_SAFEFETCH_HPP
+#define SHARE_RUNTIME_SAFEFETCH_HPP
 
-#include "runtime/thread.hpp"
 #include "runtime/stubRoutines.hpp"
 
 // Safefetch allows to load a value from a location that's not known
@@ -49,4 +48,4 @@ inline bool CanUseSafeFetchN() {
   return StubRoutines::SafeFetchN_stub() ? true : false;
 }
 
-#endif // SHARE_RUNTIME_STUBROUTINES_INLINE_HPP
+#endif // SHARE_RUNTIME_SAFEFETCH_HPP

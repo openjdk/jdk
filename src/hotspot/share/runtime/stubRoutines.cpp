@@ -30,8 +30,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER2

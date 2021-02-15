@@ -34,7 +34,7 @@
 #include "logging/log.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
-#include "runtime/stubRoutines.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
