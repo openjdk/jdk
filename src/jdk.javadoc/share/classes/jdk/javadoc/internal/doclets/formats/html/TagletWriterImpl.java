@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,14 +319,14 @@ public class TagletWriterImpl extends TagletWriter {
         Element exception = ch.getException(throwsTag);
         Content excName;
         if (substituteType != null) {
-           excName = htmlWriter.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER,
+           excName = htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
                    substituteType));
         } else if (exception == null) {
             excName = new RawHtml(ch.getExceptionName(throwsTag).toString());
         } else if (exception.asType() == null) {
             excName = new RawHtml(utils.getFullyQualifiedName(exception));
         } else {
-            LinkInfoImpl link = new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER,
+            HtmlLinkInfo link = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
                                                  exception.asType());
             link.excludeTypeBounds = true;
             excName = htmlWriter.getLink(link);
@@ -345,14 +345,14 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     public Content throwsTagOutput(TypeMirror throwsType) {
         HtmlTree result = HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
-                new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER, throwsType))));
+                new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER, throwsType))));
         return result;
     }
 
     @Override
     public Content valueTagOutput(VariableElement field, String constantVal, boolean includeLink) {
         return includeLink
-                ? htmlWriter.getDocLink(LinkInfoImpl.Kind.VALUE_TAG, field, constantVal)
+                ? htmlWriter.getDocLink(HtmlLinkInfo.Kind.VALUE_TAG, field, constantVal)
                 : new StringContent(constantVal);
     }
 

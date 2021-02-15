@@ -83,7 +83,7 @@ public class TestUseOption extends JavadocTester {
         );
         checkOutput("pkg1/class-use/UsedClass.html", true,
           """
-              <a href="../C1.html#methodInC1ReturningType()">methodInC1ReturningType</a>"""
+              <a href="../C1.html#methodInC1ReturningType()" class="member-name-link">methodInC1ReturningType</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
           """
@@ -100,7 +100,7 @@ public class TestUseOption extends JavadocTester {
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
            """
-               <a href="../AnAbstract.html" title="class in pkg1">AnAbstract</a>"""
+               <a href="../AnAbstract.html" class="type-name-link" title="class in pkg1">AnAbstract</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             "../C10.html#withReturningTypeParameters()"
@@ -114,15 +114,15 @@ public class TestUseOption extends JavadocTester {
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             """
-                <a href="../C10.html#addAll(pkg1.UsedInterface...)">addAll</a>"""
+                <a href="../C10.html#addAll(pkg1.UsedInterface...)" class="member-name-link">addAll</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             """
-                <a href="../C10.html#create(pkg1.UsedInterfaceA,pkg1.UsedInterface,java.lang.String)">"""
+                <a href="../C10.html#create(pkg1.UsedInterfaceA,pkg1.UsedInterface,java.lang.String)" class="member-name-link">"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             """
-                <a href="../C10.html#withTypeParametersOfType(java.lang.Class)">withTypeParametersOfType</a>"""
+                <a href="../C10.html#withTypeParametersOfType(java.lang.Class)" class="member-name-link">withTypeParametersOfType</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             """
@@ -130,8 +130,8 @@ public class TestUseOption extends JavadocTester {
                 nterface</a> in <a href="../package-summary.html">pkg1""",
             """
                 <div class="col-first even-row-color"><code>interface&nbsp;</code></div>
-                <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
-                ../SubInterface.html" title="interface in pkg1">SubInterface</a>&lt;T&gt;</span>\
+                <div class="col-second even-row-color"><code><a href="\
+                ../SubInterface.html" class="type-name-link" title="interface in pkg1">SubInterface</a>&lt;T&gt;\
                 </code></div>"""
         );
         checkOutput("pkg1/class-use/UsedThrowable.html", true,
@@ -141,8 +141,8 @@ public class TestUseOption extends JavadocTester {
             """
                 <div class="col-first even-row-color"><code>void</code></div>
                 <div class="col-second even-row-color"><span class="type-name-label">C1.</span><code>\
-                <span class="member-name-link"><a href="../C1.html#methodInC1ThrowsThrowable()">\
-                methodInC1ThrowsThrowable</a></span>()</code></div>"""
+                <a href="../C1.html#methodInC1ThrowsThrowable()" class="member-name-link">\
+                methodInC1ThrowsThrowable</a>()</code></div>"""
         );
     }
 
@@ -183,12 +183,12 @@ public class TestUseOption extends JavadocTester {
         checkExit(Exit.OK);
         checkUnique("unique/class-use/UseMe.html",
                 """
-                    <a href="../C1.html#umethod1(unique.UseMe,unique.UseMe%5B%5D)">""",
+                    <a href="../C1.html#umethod1(unique.UseMe,unique.UseMe%5B%5D)" class="member-name-link">""",
                 """
-                    <a href="../C1.html#umethod2(unique.UseMe,unique.UseMe)">""",
+                    <a href="../C1.html#umethod2(unique.UseMe,unique.UseMe)" class="member-name-link">""",
                 """
-                    <a href="../C1.html#umethod3(unique.UseMe,unique.UseMe)">""",
+                    <a href="../C1.html#umethod3(unique.UseMe,unique.UseMe)" class="member-name-link">""",
                 """
-                    <a href="../C1.html#%3Cinit%3E(unique.UseMe,unique.UseMe)">""");
+                    <a href="../C1.html#%3Cinit%3E(unique.UseMe,unique.UseMe)" class="member-name-link">""");
     }
 }

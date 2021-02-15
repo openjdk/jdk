@@ -199,6 +199,8 @@ public class EventNames {
     public final static String X509Validation = PREFIX + "X509Validation";
     public final static String SecurityProperty = PREFIX + "SecurityPropertyModification";
     public final static String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
+    public final static String Deserialization = PREFIX + "Deserialization";
+
 
     // Flight Recorder
     public final static String DumpReason = PREFIX + "DumpReason";

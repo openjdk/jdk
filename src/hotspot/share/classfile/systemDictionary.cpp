@@ -185,7 +185,7 @@ bool SystemDictionary::is_platform_class_loader(oop class_loader) {
   return (class_loader->klass() == vmClasses::jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass());
 }
 
-Handle SystemDictionary::compute_loader_lock_object(Handle class_loader) {
+Handle SystemDictionary::get_loader_lock_or_null(Handle class_loader) {
   // If class_loader is NULL or parallelCapable, the JVM doesn't acquire a lock while loading.
   if (is_parallelCapable(class_loader)) {
     return Handle();
@@ -692,7 +692,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // the define.
   // ParallelCapable Classloaders and the bootstrap classloader
   // do not acquire lock here.
-  Handle lockObject = compute_loader_lock_object(class_loader);
+  Handle lockObject = get_loader_lock_or_null(class_loader);
   ObjectLocker ol(lockObject, THREAD);
 
   // Check again (after locking) if the class already exists in SystemDictionary
@@ -1051,7 +1051,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 
   // Classloaders that support parallelism, e.g. bootstrap classloader,
   // do not acquire lock here
-  Handle lockObject = compute_loader_lock_object(class_loader);
+  Handle lockObject = get_loader_lock_or_null(class_loader);
   ObjectLocker ol(lockObject, THREAD);
 
   // Parse the stream and create a klass.
@@ -1342,7 +1342,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   {
     HandleMark hm(THREAD);
-    Handle lockObject = compute_loader_lock_object(class_loader);
+    Handle lockObject = get_loader_lock_or_null(class_loader);
     ObjectLocker ol(lockObject, THREAD);
     // prohibited package check assumes all classes loaded from archive call
     // restore_unshareable_info which calls ik->set_package()
@@ -1360,7 +1360,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
     int path_index = ik->shared_classpath_index();
-    ik->set_classpath_index(path_index, THREAD);
+    ik->set_classpath_index(path_index);
   }
 
   // notify a class loaded from shared object
@@ -1544,7 +1544,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // hole with systemDictionary updates and check_constraints
   if (!is_parallelCapable(class_loader)) {
     assert(ObjectSynchronizer::current_thread_holds_lock(THREAD->as_Java_thread(),
-           compute_loader_lock_object(class_loader)),
+           get_loader_lock_or_null(class_loader)),
            "define called without lock");
   }
 

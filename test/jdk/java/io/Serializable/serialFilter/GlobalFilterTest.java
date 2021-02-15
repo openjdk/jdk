@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,18 @@ import org.testng.annotations.DataProvider;
  *
  * @summary Test Global Filters
  */
+
+/* @test
+ * @bug 8261160
+ * @summary Add a deserialization JFR event
+ * @build GlobalFilterTest SerialFilterTest
+ * @requires vm.hasJFR
+ * @run testng/othervm/policy=security.policy
+ *        -XX:StartFlightRecording=name=DeserializationEvent,dumponexit=true
+ *        -Djava.security.properties=${test.src}/java.security-extra1
+ *        -Djava.security.debug=properties GlobalFilterTest
+ */
+
 @Test
 public class GlobalFilterTest {
     private static final String serialPropName = "jdk.serialFilter";
