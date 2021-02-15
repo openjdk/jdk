@@ -265,9 +265,7 @@ public class StreamDecoder extends Reader {
                 // Read from the input stream, and then update the buffer
                 int lim = bb.limit();
                 int pos = bb.position();
-                assert (pos <= lim);
-                int rem = (pos <= lim ? lim - pos : 0);
-                assert rem > 0;
+                int rem = lim - pos;
                 int n = in.read(bb.array(), bb.arrayOffset() + pos, rem);
                 if (n < 0)
                     return n;

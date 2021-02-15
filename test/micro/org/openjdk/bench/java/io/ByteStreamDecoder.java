@@ -51,10 +51,19 @@ import java.util.concurrent.TimeUnit;
 @Fork(value=2, jvmArgs="-Xmx1g")
 public class ByteStreamDecoder {
 
-    @Param({"US-ASCII", "ISO-8859-1", "UTF-8", "MS932", "ISO-8859-6"})
+    @Param({"US-ASCII", "ISO-8859-1", "UTF-8", "ISO-8859-6", "MS932"})
     private String charsetName;
 
+    @Param({"256", "4096", "25000"})
+    private int length;
+
     private byte[] bytes;
+
+    private byte[] nonASCIIBytesEnd;
+
+    private byte[] nonASCIIBytesStart;
+
+    private byte[] nonASCIIBytesEveryOther;
 
     private char[] chars;
 
@@ -62,7 +71,7 @@ public class ByteStreamDecoder {
 
     @Setup
     public void setup() throws IOException {
-        bytes = """
+        var s = """
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non
             magna augue. Sed tristique ante id maximus interdum. Suspendisse
             potenti. Aliquam molestie metus vitae magna gravida egestas.
@@ -78,19 +87,90 @@ public class ByteStreamDecoder {
             tempus erat. Donec volutpat mauris in arcu mattis sollicitudin.
             Morbi vestibulum ipsum sed erat porta, mollis commodo nisi
             gravida.
-            """.getBytes(charsetName);
-
-        chars = new char[bytes.length * 2];
+            """;
+        int n = length / s.length();
+        String full = "";
+        if (n > 0) {
+            full = s.repeat(n);
+        }
+        n = length % s.length();
+        if (n > 0) {
+            full += s.substring(0, n);
+        }
         cs = Charset.forName(charsetName);
+        bytes = full.getBytes(cs);
+        nonASCIIBytesEnd = (full + "\u00e5").getBytes(cs);
+        nonASCIIBytesStart = ("\u00e5" + full).getBytes(cs);
+
+        // string hostile to ASCII fast-path optimizations: every other char is ASCII
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < full.length(); i++) {
+            sb.append(i % 2 == 0 ? full.charAt(i) : '\u00e5');
+        }
+        nonASCIIBytesEveryOther = sb.toString().getBytes(cs);
+        chars = new char[full.length() + 2];
+
+        try {
+            if (!readStringDirect().equals(readStringReader())) {
+                System.out.println("direct: " + readStringDirect());
+                System.out.println("reader: " + readStringReader());
+                throw new RuntimeException("Unexpectedly different");
+            }
+            if (!readStringDirect_NonASCIIEnd().equals(readStringReader_NonASCIIEnd())) {
+                throw new RuntimeException("Unexpectedly different");
+            }
+            if (!readStringDirect_NonASCIIStart().equals(readStringReader_NonASCIIStart())) {
+                throw new RuntimeException("Unexpectedly different");
+            }
+            if (!readStringDirect_NonASCIIEveryOther().equals(readStringReader_NonASCIIEveryOther())) {
+                throw new RuntimeException("Unexpectedly different");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Benchmark
-    public int readBytesCharsetName() throws Exception {
-        return new InputStreamReader(new ByteArrayInputStream(bytes), charsetName).read(chars);
+    public String readStringReader() throws Exception {
+        int len = new InputStreamReader(new ByteArrayInputStream(bytes), cs).read(chars);
+        return new String(chars, 0, len);
     }
 
     @Benchmark
-    public int readBytesCharset() throws Exception {
-        return new InputStreamReader(new ByteArrayInputStream(bytes), cs).read(chars);
+    public String readStringReader_NonASCIIEnd() throws Exception {
+        int len = new InputStreamReader(new ByteArrayInputStream(nonASCIIBytesEnd), cs).read(chars);
+        return new String(chars, 0, len);
+    }
+
+    @Benchmark
+    public String readStringReader_NonASCIIStart() throws Exception {
+        int len = new InputStreamReader(new ByteArrayInputStream(nonASCIIBytesStart), cs).read(chars);
+        return new String(chars, 0, len);
+    }
+
+    @Benchmark
+    public String readStringReader_NonASCIIEveryOther() throws Exception {
+        int len = new InputStreamReader(new ByteArrayInputStream(nonASCIIBytesEveryOther), cs).read(chars);
+        return new String(chars, 0, len);
+    }
+
+    @Benchmark
+    public String readStringDirect() throws Exception {
+        return new String(bytes, cs);
+    }
+
+    @Benchmark
+    public String readStringDirect_NonASCIIEnd() throws Exception {
+        return new String(nonASCIIBytesEnd, cs);
+    }
+
+    @Benchmark
+    public String readStringDirect_NonASCIIStart() throws Exception {
+        return new String(nonASCIIBytesStart, cs);
+    }
+
+    @Benchmark
+    public String readStringDirect_NonASCIIEveryOther() throws Exception {
+        return new String(nonASCIIBytesEveryOther, cs);
     }
 }

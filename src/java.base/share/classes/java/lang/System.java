@@ -2277,6 +2277,14 @@ public final class System {
                 return String.getBytesUTF8NoRepl(s);
             }
 
+            public void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+                StringLatin1.inflate(src, srcOff, dst, dstOff, len);
+            }
+
+            public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+                return String.decodeASCII(src, srcOff, dst, dstOff, len);
+            }
+
             public void setCause(Throwable t, Throwable cause) {
                 t.setCause(cause);
             }
