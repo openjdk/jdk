@@ -56,10 +56,9 @@ inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
   return res;
 }
 
-// __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
 template<size_t byte_size>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attribute__((unused)),
+inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
                                                         T compare_value,
                                                         T exchange_value,
                                                         atomic_memory_order order) const {

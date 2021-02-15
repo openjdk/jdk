@@ -782,7 +782,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
 }
 
-int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
+static int c_calling_convention_priv(const BasicType *sig_bt,
                                          VMRegPair *regs,
                                          VMRegPair *regs2,
                                          int total_args_passed) {
@@ -869,6 +869,16 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     }
 
   return stk_args;
+}
+
+int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
+                                         VMRegPair *regs,
+                                         VMRegPair *regs2,
+                                         int total_args_passed)
+{
+  int result = c_calling_convention_priv(sig_bt, regs, regs2, total_args_passed);
+  guarantee(result >= 0, "Unsupported arguments configuration");
+  return result;
 }
 
 // On 64 bit we will store integer like items to the stack as
@@ -1376,7 +1386,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Now figure out where the args must be stored and how much stack space
   // they require.
   int out_arg_slots;
-  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, NULL, total_c_args);
+  out_arg_slots = c_calling_convention_priv(out_sig_bt, out_regs, NULL, total_c_args);
 
   if (out_arg_slots < 0) {
     return NULL;

@@ -66,7 +66,6 @@
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
-# include <pthread.h>
 # include <sys/stat.h>
 # include <sys/time.h>
 # include <sys/utsname.h>
@@ -82,27 +81,14 @@
 # include <pthread_np.h>
 #endif
 
-// needed by current_stack_region() workaround for Mavericks
-#if defined(__APPLE__)
-# include <errno.h>
-# include <sys/types.h>
-# include <sys/sysctl.h>
-# define DEFAULT_MAIN_THREAD_STACK_PAGES 2048
-# define OS_X_10_9_0_KERNEL_MAJOR_VERSION 13
-#endif
-
 #define SPELL_REG_SP "sp"
 #define SPELL_REG_FP "fp"
 
 #ifdef __APPLE__
 // see darwin-xnu/osfmk/mach/arm/_structs.h
 
-# if __DARWIN_UNIX03 && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
-  // 10.5 UNIX03 member name prefixes
-  #define DU3_PREFIX(s, m) __ ## s.__ ## m
-# else
-  #define DU3_PREFIX(s, m) s ## . ## m
-# endif
+// 10.5 UNIX03 member name prefixes
+#define DU3_PREFIX(s, m) __ ## s.__ ## m
 #endif
 
 #define context_x    uc_mcontext->DU3_PREFIX(ss,x)
@@ -213,15 +199,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   // point of execution.
   ThreadWXEnable wx(WXWrite, thread);
 
-/*
-  NOTE: does not seem to work on bsd.
-  if (info == NULL || info->si_code <= 0 || info->si_code == SI_NOINFO) {
-    // can't decode this kind of signal
-    info = NULL;
-  } else {
-    assert(sig == info->si_signo, "bad siginfo");
-  }
-*/
   // decide if this trap can be handled by a stub
   address stub = NULL;
 
@@ -465,27 +442,6 @@ static void current_stack_region(address * bottom, size_t * size) {
   pthread_t self = pthread_self();
   void *stacktop = pthread_get_stackaddr_np(self);
   *size = pthread_get_stacksize_np(self);
-  // workaround for OS X 10.9.0 (Mavericks)
-  // pthread_get_stacksize_np returns 128 pages even though the actual size is 2048 pages
-  if (pthread_main_np() == 1) {
-    // At least on Mac OS 10.12 we have observed stack sizes not aligned
-    // to pages boundaries. This can be provoked by e.g. setrlimit() (ulimit -s xxxx in the
-    // shell). Apparently Mac OS actually rounds upwards to next multiple of page size,
-    // however, we round downwards here to be on the safe side.
-    *size = align_down(*size, getpagesize());
-
-    if ((*size) < (DEFAULT_MAIN_THREAD_STACK_PAGES * (size_t)getpagesize())) {
-      char kern_osrelease[256];
-      size_t kern_osrelease_size = sizeof(kern_osrelease);
-      int ret = sysctlbyname("kern.osrelease", kern_osrelease, &kern_osrelease_size, NULL, 0);
-      if (ret == 0) {
-        // get the major number, atoi will ignore the minor amd micro portions of the version string
-        if (atoi(kern_osrelease) >= OS_X_10_9_0_KERNEL_MAJOR_VERSION) {
-          *size = (DEFAULT_MAIN_THREAD_STACK_PAGES*getpagesize());
-        }
-      }
-    }
-  }
   *bottom = (address) stacktop - *size;
 #elif defined(__OpenBSD__)
   stack_t ss;
