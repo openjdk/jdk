@@ -724,15 +724,17 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, bool str_al
 }
 
 // find AllocateNode of j.l.String from AllocateArrayNode's result_cast()
-static AllocateNode* find_string_alloc_from_res(PhaseGVN& gvn, CheckCastPPNode* dst) {
+static AllocateNode* find_string_alloc_from_res(PhaseGVN& gvn, Node* dst) {
   AllocateNode* found = nullptr;
 
   if (dst != nullptr && dst->has_out_with(Op_EncodeP)) {
-    Node* enc = dst->find_out_with(Op_EncodeP);
+    dst = dst->find_out_with(Op_EncodeP);
+  }
 
+  if (dst != nullptr) {
     // check all Store & Phi nodes
-    for (DUIterator_Fast imax, i = enc->fast_outs(imax); i < imax; i++) {
-      Node* use = enc->fast_out(i);
+    for (DUIterator_Fast imax, i = dst->fast_outs(imax); i < imax; i++) {
+      Node* use = dst->fast_out(i);
 
       if (use->is_Store()) {
         StoreNode* st = use->as_Store();
@@ -1341,7 +1343,7 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
 
     if (use->is_AddP()) {
       Node* offset = use->in(AddPNode::Offset);
-      jlong offset_const = offset->is_Con() ? offset->get_long() : -1;
+      int offset_const = (int) _igvn.find_intptr_t_con(offset, Type::OffsetBot);
 
       // second AddP, just redirect its Base
       if (use->in(AddPNode::Address) != res) {
@@ -1359,7 +1361,7 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
           } else if (n->Opcode() == Op_StrEquals) {
             assert(offset_const == arrayOopDesc::base_offset_in_bytes(T_BYTE), "offset equals to the base_offset");
             if (src_adr == nullptr) {
-              src_adr = ConvI2L(ac->in(ArrayCopyNode::SrcPos));
+              src_adr = ConvI2X(ac->in(ArrayCopyNode::SrcPos));
               src_adr = basic_plus_adr(src->in(1), src, src_adr);
             }
             Node* dst_adr = basic_plus_adr(src_adr->in(1), src_adr, offset);
@@ -1376,7 +1378,7 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
             assert(n->Opcode() == Op_LoadUB || n->Opcode() == Op_LoadB, "unknow code shape");
 
             if (src_adr == nullptr) {
-              src_adr = ConvI2L(ac->in(ArrayCopyNode::SrcPos));
+              src_adr = ConvI2X(ac->in(ArrayCopyNode::SrcPos));
               src_adr = basic_plus_adr(src, src, src_adr);
             }
             Node* dst_adr = basic_plus_adr(src_adr->in(AddPNode::Base), src_adr, offset);

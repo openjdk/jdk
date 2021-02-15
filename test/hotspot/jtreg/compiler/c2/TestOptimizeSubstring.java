@@ -71,23 +71,22 @@ public class TestOptimizeSubstring {
         } else {
             boolean val1 = false;
             boolean val2 = false;
-            boolean caughtEx;
 
             for (int i = 0; i < 20_000; ++i) {
-                val1 |= TestOptimizeSubstring.useStartsWith("abcdef");
-                val2 |= TestOptimizeSubstring.useStartsWith("efgdedf");
-
-                caughtEx = false;
-                try {
-                    TestOptimizeSubstring.useStartsWith("");
-                } catch(StringIndexOutOfBoundsException e) {
-                    caughtEx = true;
-                }
-                Asserts.assertTrue(caughtEx, "useStartsWith(\"\") should throw StringIndexOutOfBoundsException");
+                val1 |= TestOptimizeSubstring.useStartsWith("abcdefghijklmnop");
+                val2 |= TestOptimizeSubstring.useStartsWith("efgdedfghijklmnop");
             }
-
             Asserts.assertTrue (val1, "val1 should be true");
             Asserts.assertFalse(val2, "val2 should be false");
+
+            boolean caughtEx = false;
+            try {
+                TestOptimizeSubstring.useStartsWith("");
+            } catch(StringIndexOutOfBoundsException e) {
+                caughtEx = true;
+            }
+            Asserts.assertTrue(caughtEx, "useStartsWith(\"\") should throw StringIndexOutOfBoundsException");
+
         }
     }
 
@@ -97,7 +96,7 @@ public class TestOptimizeSubstring {
         try {
             oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
                     "-XX:" + (enabled ? "+" : "-") + "OptimizeTempArray",
-                    "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation",
+                    "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation", "-XX:ArrayCopyLoadStoreMaxElem=0",
                     "-XX:CompileOnly=" + TestOptimizeSubstring.class.getName() + "::useStartsWith",
                     TestOptimizeSubstring.class.getName(),
                     "runtest");
@@ -118,7 +117,7 @@ public class TestOptimizeSubstring {
         try {
             oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
                     "-XX:+OptimizeTempArray", "-XX:-UseOnStackReplacement",
-                    "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation",
+                    "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation", "-XX:ArrayCopyLoadStoreMaxElem=0",
                     "-XX:CompileOnly=" + TestOptimizeSubstring.class.getName() + "::useStartsWith_NonTrivial",
                     TestOptimizeSubstring.class.getName(),
                     "nontrivial");
@@ -133,7 +132,7 @@ public class TestOptimizeSubstring {
         try {
             oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
                     "-XX:+OptimizeTempArray", "-XX:-UseOnStackReplacement",
-                    "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation",
+                    "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation", "-XX:ArrayCopyLoadStoreMaxElem=0",
                     "-XX:CompileOnly=" + TestOptimizeSubstring.class.getName() + "::mayHaveDeoptimization",
                     "-XX:+TraceDeoptimization", "-XX:+PrintDeoptimizationDetails",
                     TestOptimizeSubstring.class.getName(),
