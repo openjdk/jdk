@@ -2598,7 +2598,7 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
-    Label L_doLast;
+    Label L_doLast, L_error;
 
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
@@ -2743,6 +2743,11 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpwi           (CCR0, keylen, 52);
     __ beq             (CCR0, L_doLast);
 
+#ifdef ASSERT
+    __ cmpwi           (CCR0, keylen, 60);
+    __ bne             (CCR0, L_error);
+#endif
+
     // 12th - 13th rounds
     __ vcipher         (vRet, vRet, vKey1);
     __ vcipher         (vRet, vRet, vKey2);
@@ -2764,17 +2769,16 @@ class StubGenerator: public StubCodeGenerator {
     __ vcipherlast     (vRet, vRet, vKey2);
 
 #ifdef VM_LITTLE_ENDIAN
-    // Swap Bytes
     // toPerm = 0x0F0E0D0C0B0A09080706050403020100
-    __ li(temp, 0);
-    __ vspltisb(vTmp1, 0xf);
-    __ lvsl(vTmp2, temp);
-    __ vxor(toPerm, vTmp1, vTmp2);
+    __ lvsl            (toPerm, keypos); // keypos is a multiple of 16
+    __ vxor            (toPerm, toPerm, fSplt);
 
-    __ vperm(vRet, vRet, vRet, toPerm);
+    // Swap Bytes
+    __ vperm           (vRet, vRet, vRet, toPerm);
 #endif
 
     // store result (unaligned)
+    // Note: We can't use a read-modify-write sequence which touches additional Bytes.
     Register lo = temp, hi = fifteen; // Reuse
     __ vsldoi          (vTmp1, vRet, vRet, 8);
     __ mfvrd           (hi, vRet);
@@ -2783,6 +2787,11 @@ class StubGenerator: public StubCodeGenerator {
     __ std             (lo, 0 BIG_ENDIAN_ONLY(+ 8), to);
 
     __ blr();
+
+#ifdef ASSERT
+    __ bind(L_error);
+    __ stop("aescrypt_encryptBlock: invalid key length");
+#endif
      return start;
   }
 
@@ -2796,9 +2805,7 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
-    Label L_doLast;
-    Label L_do44;
-    Label L_do52;
+    Label L_doLast, L_do44, L_do52, L_error;
 
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
@@ -2858,6 +2865,11 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpwi           (CCR0, keylen, 52);
     __ beq             (CCR0, L_do52);
 
+#ifdef ASSERT
+    __ cmpwi           (CCR0, keylen, 60);
+    __ bne             (CCR0, L_error);
+#endif
+
     // load the 15th round key to vKey1
     __ li              (keypos, 240);
     __ lvx             (vKey1, keypos, key);
@@ -2894,6 +2906,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ b               (L_doLast);
 
+    __ align(32);
     __ bind            (L_do52);
 
     // load the 13th round key to vKey1
@@ -2920,6 +2933,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ b               (L_doLast);
 
+    __ align(32);
     __ bind            (L_do44);
 
     // load the 11th round key to vKey1
@@ -2998,17 +3012,16 @@ class StubGenerator: public StubCodeGenerator {
     __ vncipherlast    (vRet, vRet, vKey5);
 
 #ifdef VM_LITTLE_ENDIAN
-    // Swap Bytes
     // toPerm = 0x0F0E0D0C0B0A09080706050403020100
-    __ li(temp, 0);
-    __ vspltisb(vTmp1, 0xf);
-    __ lvsl(vTmp2, temp);
-    __ vxor(toPerm, vTmp1, vTmp2);
+    __ lvsl            (toPerm, keypos); // keypos is a multiple of 16
+    __ vxor            (toPerm, toPerm, fSplt);
 
-    __ vperm(vRet, vRet, vRet, toPerm);
+    // Swap Bytes
+    __ vperm           (vRet, vRet, vRet, toPerm);
 #endif
 
     // store result (unaligned)
+    // Note: We can't use a read-modify-write sequence which touches additional Bytes.
     Register lo = temp, hi = fifteen; // Reuse
     __ vsldoi          (vTmp1, vRet, vRet, 8);
     __ mfvrd           (hi, vRet);
@@ -3017,6 +3030,11 @@ class StubGenerator: public StubCodeGenerator {
     __ std             (lo, 0 BIG_ENDIAN_ONLY(+ 8), to);
 
     __ blr();
+
+#ifdef ASSERT
+    __ bind(L_error);
+    __ stop("aescrypt_decryptBlock: invalid key length");
+#endif
      return start;
   }
 
