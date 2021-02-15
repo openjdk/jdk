@@ -43,6 +43,8 @@
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr,
                                                                     Register count, Register preserve) {
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTable* ct = ctbs->card_table();
   assert_different_registers(addr, count, R0);
 
   Label Lskip_loop, Lstore_loop;

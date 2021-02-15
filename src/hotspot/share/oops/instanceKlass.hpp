@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_INSTANCEKLASS_HPP
 #define SHARE_OOPS_INSTANCEKLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
