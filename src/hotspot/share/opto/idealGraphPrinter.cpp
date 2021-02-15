@@ -383,7 +383,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         buffer[0] = 0;
         stringStream freq(buffer, sizeof(buffer) - 1);
         // Higher precision has no practical effect in visualizations.
-        freq.print("%.8f", block->_freq / max_freq);
+        freq.print("%.8f", block->_freq / _max_freq);
         assert(freq.size() < sizeof(buffer), "size in range");
         // Enforce dots as decimal separators, as required by IGV.
         StringUtils::replace_no_expand(buffer, ",", ".");
@@ -682,11 +682,11 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   head(NODES_ELEMENT);
   if (C->cfg() != NULL) {
     // Compute the maximum estimated frequency in the current graph.
-    max_freq = 1.0e-6;
+    _max_freq = 1.0e-6;
     for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
       Block* block = C->cfg()->get_block(i);
-      if (block->_freq > max_freq) {
-        max_freq = block->_freq;
+      if (block->_freq > _max_freq) {
+        _max_freq = block->_freq;
       }
     }
   }
