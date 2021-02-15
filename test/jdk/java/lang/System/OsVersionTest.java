@@ -53,14 +53,9 @@ public class OsVersionTest {
             String swVersOutput = output.getOutput().trim();
             if (!osVersion.equals(swVersOutput)) {
                 // This section can be removed if minimum build SDK is xcode 12+
-                String[] swVersParts = swVersOutput.split("\\.");
-                String[] osVersParts = osVersion.split("\\.");
-                if (swVersParts.length >= 2 &&
-                    osVersParts.length >= 2 &&
-                    swVersParts[0].equals(osVersParts[0]) &&
-                    swVersParts[1].equals(osVersParts[1])) {
-                        throw new SkippedException("MacOS version only matches in parts, this is expected when " +
-                                                   "JDK was built with Xcode < 12 and MacOS version patch is > 0");
+                if (swVersOutput.startsWith(osVersion)) {
+                    throw new SkippedException("MacOS version only matches in parts, this is expected when " +
+                                               "JDK was built with Xcode < 12 and MacOS version patch is > 0");
                 }
                 throw new Error(osVersion + " != " + swVersOutput);
             }
