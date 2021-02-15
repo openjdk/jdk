@@ -59,7 +59,7 @@ FloatRegister InterpreterRuntime::SignatureHandlerGenerator::next_fpr() {
 
 // On macos/aarch64 native stack is packed, int/float are using only 4 bytes
 // on stack. Natural alignment for types are still in place,
-// for example double/long should be 8 bytes alligned
+// for example double/long should be 8 bytes aligned.
 
 int InterpreterRuntime::SignatureHandlerGenerator::next_stack_offset(unsigned elem_size) {
   MACOS_ONLY(_stack_offset = align_up(_stack_offset, elem_size));
