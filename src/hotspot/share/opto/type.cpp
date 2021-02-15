@@ -1173,8 +1173,9 @@ Type::Category Type::category() const {
         }
         return first;
       }
+    default:
+      assert(false, "unmatched base type: all base types must be categorized");
   }
-  assert(false, "unmatched base type");
   return Category::Undef;
 }
 #endif
