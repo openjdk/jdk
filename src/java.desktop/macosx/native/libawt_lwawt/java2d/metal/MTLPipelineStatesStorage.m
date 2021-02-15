@@ -93,6 +93,20 @@ static void setBlendingFactors(
                     stencilNeeded:NO];
 }
 
+- (id<MTLRenderPipelineState>) getPipelineState:(MTLRenderPipelineDescriptor *) pipelineDescriptor
+                                 vertexShaderId:(NSString *)vertexShaderId
+                               fragmentShaderId:(NSString *)fragmentShaderId
+                               stencilNeeded:(bool)stencilNeeded
+{
+    RenderOptions defaultOptions = {JNI_FALSE, JNI_FALSE, 0/*unused*/, {JNI_FALSE, JNI_TRUE}, {JNI_FALSE, JNI_TRUE}, JNI_FALSE};
+    return [self getPipelineState:pipelineDescriptor
+                   vertexShaderId:vertexShaderId
+                 fragmentShaderId:fragmentShaderId
+                        composite:nil
+                    renderOptions:&defaultOptions
+                    stencilNeeded:stencilNeeded];
+}
+
 // Base method to obtain MTLRenderPipelineState.
 // NOTE: parameters compositeRule, srcFlags, dstFlags are used to set MTLRenderPipelineColorAttachmentDescriptor multipliers
 - (id<MTLRenderPipelineState>) getPipelineState:(MTLRenderPipelineDescriptor *) pipelineDescriptor

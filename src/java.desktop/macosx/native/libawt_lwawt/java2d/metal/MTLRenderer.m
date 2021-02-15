@@ -714,8 +714,9 @@ setupAAShaderState(id<MTLRenderCommandEncoder> encoder,
     id<MTLRenderPipelineState> pipelineState =
                 [mtlc.pipelineStateStorage
                     getPipelineState:templateAAPipelineDesc
-                    vertexShaderId:@"vert_col_aa"
+                      vertexShaderId:@"vert_col_aa"
                     fragmentShaderId:@"frag_col_aa"
+                       stencilNeeded:mtlc.clip.isShape
                    ];
 
     [encoder setRenderPipelineState:pipelineState];

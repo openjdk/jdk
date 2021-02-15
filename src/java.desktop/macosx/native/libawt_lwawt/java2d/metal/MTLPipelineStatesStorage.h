@@ -59,6 +59,11 @@ NSMutableDictionary<NSString*, id<MTLComputePipelineState>> * computeStates;
 - (id<MTLRenderPipelineState>) getPipelineState:(MTLRenderPipelineDescriptor *) pipelineDescriptor
                                  vertexShaderId:(NSString *)vertexShaderId
                                fragmentShaderId:(NSString *)fragmentShaderId
+                                  stencilNeeded:(bool)stencilNeeded;
+
+- (id<MTLRenderPipelineState>) getPipelineState:(MTLRenderPipelineDescriptor *) pipelineDescriptor
+                                 vertexShaderId:(NSString *)vertexShaderId
+                               fragmentShaderId:(NSString *)fragmentShaderId
                                       composite:(MTLComposite*)composite
                                   renderOptions:(const RenderOptions *)renderOptions
                                   stencilNeeded:(bool)stencilNeeded;
