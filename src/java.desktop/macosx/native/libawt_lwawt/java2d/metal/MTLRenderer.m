@@ -329,14 +329,15 @@ MTLRenderer_DrawScanlines(MTLContext *mtlc, BMTLSDOps * dstOps,
             J2dTraceLn(J2D_TRACE_ERROR, "MTLRenderer_DrawScanlines: dest is null");
             return;
     }
+    RETURN_IF_NULL(scanlines);
+    int vertexSize = NUM_OF_VERTICES_PER_SCANLINE
+        * scanlineCount * VERTEX_STRUCT_SIZE;
+    J2dTraceLn1(J2D_TRACE_INFO, "MTLRenderer_DrawScanlines: Total vertex size : %d", vertexSize);
+    if (vertexSize == 0) return;
 
     id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
 
     if (mtlEncoder == nil) return;
-
-    int vertexSize = NUM_OF_VERTICES_PER_SCANLINE
-        * scanlineCount * VERTEX_STRUCT_SIZE;
-    J2dTraceLn1(J2D_TRACE_INFO, "MTLRenderer_DrawScanlines: Total vertex size : %d", vertexSize);
 
     if (vertexSize <= SCANLINE_MAX_VERTEX_SIZE) {
         struct Vertex verts[NUM_OF_VERTICES_PER_SCANLINE * scanlineCount];
