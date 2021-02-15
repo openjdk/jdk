@@ -392,22 +392,22 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     }
 
     switch (t->category()) {
-    case Type::CATEGORY::CatData:
+    case Type::Category::Data:
       print_prop("category", "data");
       break;
-    case Type::CATEGORY::CatMemory:
+    case Type::Category::Memory:
       print_prop("category", "memory");
       break;
-    case Type::CATEGORY::CatMixed:
+    case Type::Category::Mixed:
       print_prop("category", "mixed");
       break;
-    case Type::CATEGORY::CatControl:
+    case Type::Category::Control:
       print_prop("category", "control");
       break;
-    case Type::CATEGORY::CatOther:
+    case Type::Category::Other:
       print_prop("category", "other");
       break;
-    case Type::CATEGORY::CatUndef:
+    case Type::Category::Undef:
       print_prop("category", "undef");
       break;
     }

@@ -1115,7 +1115,7 @@ void Type::dump_stats() {
 
 //------------------------------category---------------------------------------
 #ifndef PRODUCT
-Type::CATEGORY Type::category() const {
+Type::Category Type::category() const {
   const TypeTuple* tuple;
   switch (base()) {
   case Type::Int:
@@ -1145,37 +1145,37 @@ Type::CATEGORY Type::category() const {
   case Type::DoubleTop:
   case Type::DoubleCon:
   case Type::DoubleBot:
-    return CatData;
+    return Category::Data;
   case Type::Memory:
-    return CatMemory;
+    return Category::Memory;
   case Type::Control:
-    return CatControl;
+    return Category::Control;
   case Type::Top:
   case Type::Abio:
   case Type::Bottom:
-    return CatOther;
+    return Category::Other;
   case Type::Bad:
   case Type::lastype:
-    return CatUndef;
+    return Category::Undef;
   case Type::Tuple:
     // Recursive case. Return CatMixed if the tuple contains types of different
     // categories (e.g. CallStaticJavaNode's type), or the specific category if
     // all types are of the same category (e.g. IfNode's type).
     tuple = is_tuple();
     if (tuple->cnt() == 0) {
-      return CatUndef;
+      return Category::Undef;
     } else {
-      CATEGORY first = tuple->field_at(0)->category();
+      Category first = tuple->field_at(0)->category();
       for (uint i = 1; i < tuple->cnt(); i++) {
         if (tuple->field_at(i)->category() != first) {
-          return CatMixed;
+          return Category::Mixed;
         }
       }
       return first;
     }
   }
   assert(false, "unmatched base type");
-  return CatUndef;
+  return Category::Undef;
 }
 #endif
 

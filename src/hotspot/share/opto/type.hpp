@@ -365,16 +365,16 @@ public:
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
   static  void dump_stats();
   // Groups of types, for debugging and visualization only.
-  enum CATEGORY {
-    CatData,
-    CatMemory,
-    CatMixed,   // Tuples with types of different categories.
-    CatControl,
-    CatOther,   // {Type::Top, Type::Abio, Type::Bottom}.
-    CatUndef    // {Type::Bad, Type::lastype}, for completeness.
+  enum class Category {
+    Data,
+    Memory,
+    Mixed,   // Tuples with types of different categories.
+    Control,
+    Other,   // {Type::Top, Type::Abio, Type::Bottom}.
+    Undef    // {Type::Bad, Type::lastype}, for completeness.
   };
   // Return the category of this type.
-  CATEGORY category() const;
+  Category category() const;
 
   static const char* str(const Type* t);
 #endif
