@@ -144,7 +144,7 @@ public class ClhsdbLauncher {
         System.out.println("Output: ");
         System.out.println(output);
 
-        // Make sure no -Xcheck:jni failures. WARNING: JNI local refs
+        // Make sure there are no -Xcheck:jni warnings.
         oa.shouldNotMatch("^WARNING: JNI local refs:.*$");
         oa.shouldNotMatch("^WARNING in native method:.*$");
         // This will detect most SA failures, including during the attach.
