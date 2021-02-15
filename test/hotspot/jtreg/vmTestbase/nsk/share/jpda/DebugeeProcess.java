@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,6 +307,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
      *
      * @deprecated Use redirectStdout(Log, String) instead.
      */
+    @Deprecated
     public void redirectStdout(OutputStream out) {
         if (stdoutRedirector != null) {
             return;
@@ -343,6 +344,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
      *
      * @deprecated Use redirectStderr(Log, String) instead.
      */
+    @Deprecated
     public void redirectStderr(OutputStream err) {
         if (stderrRedirector != null) {
             return;

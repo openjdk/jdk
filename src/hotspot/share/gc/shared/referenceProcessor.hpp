@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -633,9 +633,6 @@ public:
 
   // Executes a task using worker threads.
   virtual void execute(ProcessTask& task, uint ergo_workers) = 0;
-
-  // Switch to single threaded mode.
-  virtual void set_single_threaded_mode() { };
 };
 
 // Abstract reference processing task to execute.

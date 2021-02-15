@@ -304,7 +304,7 @@ void FileMapHeader::print(outputStream* st) {
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
   _type = non_existent_entry;
-  set_name(path, THREAD);
+  set_name(path, CHECK);
 }
 
 void SharedClassPathEntry::init(bool is_modules_image,
@@ -343,12 +343,12 @@ void SharedClassPathEntry::init(bool is_modules_image,
   // No need to save the name of the module file, as it will be computed at run time
   // to allow relocation of the JDK directory.
   const char* name = is_modules_image  ? "" : cpe->name();
-  set_name(name, THREAD);
+  set_name(name, CHECK);
 }
 
 void SharedClassPathEntry::set_name(const char* name, TRAPS) {
   size_t len = strlen(name) + 1;
-  _name = MetadataFactory::new_array<char>(ClassLoaderData::the_null_class_loader_data(), (int)len, THREAD);
+  _name = MetadataFactory::new_array<char>(ClassLoaderData::the_null_class_loader_data(), (int)len, CHECK);
   strcpy(_name->data(), name);
 }
 
@@ -358,12 +358,12 @@ void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData*
   _timestamp = ent->_timestamp;
   _filesize = ent->_filesize;
   _from_class_path_attr = ent->_from_class_path_attr;
-  set_name(ent->name(), THREAD);
+  set_name(ent->name(), CHECK);
 
   if (ent->is_jar() && !ent->is_signed() && ent->manifest() != NULL) {
     Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
                                                     ent->manifest_size(),
-                                                    THREAD);
+                                                    CHECK);
     char* p = (char*)(buf->data());
     memcpy(p, ent->manifest(), ent->manifest_size());
     set_manifest(buf);
@@ -449,7 +449,7 @@ void SharedPathTable::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 }
 
-void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, Thread* THREAD) {
+void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, TRAPS) {
   size_t entry_size = sizeof(SharedClassPathEntry);
   int num_entries = 0;
   num_entries += ClassLoader::num_boot_classpath_entries();
@@ -458,7 +458,7 @@ void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, Thread* THREAD
   num_entries += FileMapInfo::num_non_existent_class_paths();
   size_t bytes = entry_size * num_entries;
 
-  _table = MetadataFactory::new_array<u8>(loader_data, (int)bytes, THREAD);
+  _table = MetadataFactory::new_array<u8>(loader_data, (int)bytes, CHECK);
   _size = num_entries;
 }
 
@@ -466,44 +466,43 @@ void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, Thread* THREAD
 // It is needed because some Java code continues to execute after dynamic dump has finished.
 // However, during dynamic dump, we have modified FileMapInfo::_shared_path_table so
 // FileMapInfo::shared_path(i) returns incorrect information in ClassLoader::record_result().
-void FileMapInfo::copy_shared_path_table(ClassLoaderData* loader_data, Thread* THREAD) {
+void FileMapInfo::copy_shared_path_table(ClassLoaderData* loader_data, TRAPS) {
   size_t entry_size = sizeof(SharedClassPathEntry);
   size_t bytes = entry_size * _shared_path_table.size();
 
-  _saved_shared_path_table = SharedPathTable(MetadataFactory::new_array<u8>(loader_data, (int)bytes, THREAD),
-                                             _shared_path_table.size());
+  Array<u8>* array = MetadataFactory::new_array<u8>(loader_data, (int)bytes, CHECK);
+  _saved_shared_path_table = SharedPathTable(array, _shared_path_table.size());
 
   for (int i = 0; i < _shared_path_table.size(); i++) {
-    _saved_shared_path_table.path_at(i)->copy_from(shared_path(i), loader_data, THREAD);
+    _saved_shared_path_table.path_at(i)->copy_from(shared_path(i), loader_data, CHECK);
   }
 }
 
-void FileMapInfo::allocate_shared_path_table() {
+void FileMapInfo::allocate_shared_path_table(TRAPS) {
   Arguments::assert_is_dumping_archive();
 
-  EXCEPTION_MARK; // The following calls should never throw, but would exit VM on error.
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
 
   assert(jrt != NULL,
          "No modular java runtime image present when allocating the CDS classpath entry table");
 
-  _shared_path_table.dumptime_init(loader_data, THREAD);
+  _shared_path_table.dumptime_init(loader_data, CHECK);
 
   // 1. boot class path
   int i = 0;
-  i = add_shared_classpaths(i, "boot",   jrt, THREAD);
-  i = add_shared_classpaths(i, "app",    ClassLoader::app_classpath_entries(), THREAD);
-  i = add_shared_classpaths(i, "module", ClassLoader::module_path_entries(), THREAD);
+  i = add_shared_classpaths(i, "boot",   jrt, CHECK);
+  i = add_shared_classpaths(i, "app",    ClassLoader::app_classpath_entries(), CHECK);
+  i = add_shared_classpaths(i, "module", ClassLoader::module_path_entries(), CHECK);
 
   for (int x = 0; x < num_non_existent_class_paths(); x++, i++) {
     const char* path = _non_existent_class_paths->at(x);
-    shared_path(i)->init_as_non_existent(path, THREAD);
+    shared_path(i)->init_as_non_existent(path, CHECK);
   }
 
   assert(i == _shared_path_table.size(), "number of shared path entry mismatch");
 
-  copy_shared_path_table(loader_data, THREAD);
+  copy_shared_path_table(loader_data, CHECK);
 }
 
 int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {
@@ -513,9 +512,9 @@ int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry 
     const char* type = (is_jrt ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
     log_info(class, path)("add %s shared path (%s) %s", which, type, cpe->name());
     SharedClassPathEntry* ent = shared_path(i);
-    ent->init(is_jrt, is_module_path, cpe, THREAD);
+    ent->init(is_jrt, is_module_path, cpe, CHECK_0);
     if (cpe->is_jar_file()) {
-      update_jar_manifest(cpe, ent, THREAD);
+      update_jar_manifest(cpe, ent, CHECK_0);
     }
     if (is_jrt) {
       cpe = ClassLoader::get_next_boot_classpath_entry(cpe);
@@ -670,7 +669,7 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
       manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
       Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
                                                       manifest_size,
-                                                      THREAD);
+                                                      CHECK);
       char* p = (char*)(buf->data());
       memcpy(p, manifest, manifest_size);
       ent->set_manifest(buf);
@@ -2364,7 +2363,8 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   ClassFileStream* cfs = cpe->open_stream_for_loader(file_name, loader_data, THREAD);
-  assert(cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
+  assert(!HAS_PENDING_EXCEPTION &&
+         cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
   log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
                         cfs->source(), cfs->length());
   return cfs;

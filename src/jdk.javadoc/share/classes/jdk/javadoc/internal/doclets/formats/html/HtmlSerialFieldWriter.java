@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.lang.model.type.TypeMirror;
 import com.sun.source.doctree.DocTree;
 
 import com.sun.source.doctree.SerialTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -42,7 +41,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 /**
@@ -121,8 +119,8 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (fieldType == null) {
             pre.add(fieldTypeStr);
         } else {
-            Content fieldContent = writer.getLink(new LinkInfoImpl(
-                    configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
+            Content fieldContent = writer.getLink(new HtmlLinkInfo(
+                    configuration, HtmlLinkInfo.Kind.SERIAL_MEMBER, fieldType));
             pre.add(fieldContent);
         }
         pre.add(fieldDimensions + " ");
@@ -136,8 +134,8 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         Content heading = HtmlTree.HEADING(TagName.H5, nameContent);
         contentTree.add(heading);
         Content pre = new HtmlTree(TagName.PRE);
-        Content fieldContent = writer.getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
+        Content fieldContent = writer.getLink(new HtmlLinkInfo(
+                configuration, HtmlLinkInfo.Kind.SERIAL_MEMBER, fieldType));
         pre.add(fieldContent);
         pre.add(" ");
         pre.add(fieldName);

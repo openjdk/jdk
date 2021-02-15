@@ -185,7 +185,7 @@ bool SystemDictionary::is_platform_class_loader(oop class_loader) {
   return (class_loader->klass() == vmClasses::jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass());
 }
 
-Handle SystemDictionary::compute_loader_lock_object(Handle class_loader) {
+Handle SystemDictionary::get_loader_lock_or_null(Handle class_loader) {
   // If class_loader is NULL or parallelCapable, the JVM doesn't acquire a lock while loading.
   if (is_parallelCapable(class_loader)) {
     return Handle();
@@ -570,12 +570,9 @@ void SystemDictionary::double_lock_wait(Thread* thread, Handle lockObject) {
 // super class loading here.
 // This also is critical in cases where the original thread gets stalled
 // even in non-circularity situations.
-// Note: must call resolve_super_or_fail even if null super -
-// to force placeholder entry creation for this class for circularity detection
-// Caller must check for pending exception
 // Returns non-null Klass* if other thread has completed load
-// and we are done,
-// If return null Klass* and no pending exception, the caller must load the class
+// and we are done.  If this returns a null Klass* and no pending exception,
+// the caller must load the class.
 InstanceKlass* SystemDictionary::handle_parallel_super_load(
     Symbol* name, Symbol* superclassname, Handle class_loader,
     Handle protection_domain, Handle lockObject, TRAPS) {
@@ -584,14 +581,7 @@ InstanceKlass* SystemDictionary::handle_parallel_super_load(
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int name_hash = dictionary->compute_hash(name);
 
-  // superk is not used, resolve_super called for circularity check only
-  // This code is reached in two situations. One if this thread
-  // is loading the same class twice (e.g. ClassCircularity, or
-  // java.lang.instrument).
-  // The second is if another thread started the resolve_super first
-  // and has not yet finished.
-  // In both cases the original caller will clean up the placeholder
-  // entry on error.
+  // superk is not used; resolve_super_or_fail is called for circularity check only.
   Klass* superk = SystemDictionary::resolve_super_or_fail(name,
                                                           superclassname,
                                                           class_loader,
@@ -603,7 +593,6 @@ InstanceKlass* SystemDictionary::handle_parallel_super_load(
   // Serial class loaders and bootstrap classloader do wait for superclass loads
  if (!class_loader.is_null() && is_parallelCapable(class_loader)) {
     MutexLocker mu(THREAD, SystemDictionary_lock);
-    // Check if classloading completed while we were loading superclass or waiting
     return dictionary->find_class(name_hash, name);
   }
 
@@ -703,7 +692,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // the define.
   // ParallelCapable Classloaders and the bootstrap classloader
   // do not acquire lock here.
-  Handle lockObject = compute_loader_lock_object(class_loader);
+  Handle lockObject = get_loader_lock_or_null(class_loader);
   ObjectLocker ol(lockObject, THREAD);
 
   // Check again (after locking) if the class already exists in SystemDictionary
@@ -759,10 +748,8 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     //    but only allows a single thread to load a class/classloader pair.
     //    The LOAD_INSTANCE placeholder is the mechanism for mutual exclusion.
     // case 2. parallelCapable user level classloaders
-    //    These class loaders don't lock the object until load_instance_class is
-    //    called after this placeholder is added.
-    //    Allow parallel classloading of a class/classloader pair where mutual
-    //    exclusion is provided by this lock in the class loader Java code.
+    //    These class loaders lock a per-class object lock when ClassLoader.loadClass()
+    //    is called. A LOAD_INSTANCE placeholder isn't used for mutual exclusion.
     // case 3. traditional classloaders that rely on the classloader object lock
     //    There should be no need for need for LOAD_INSTANCE, except:
     // case 4. traditional class loaders that break the classloader object lock
@@ -771,65 +758,64 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     //    and that lock is still held when calling classloader's loadClass.
     //    For these classloaders, we ensure that the first requestor
     //    completes the load and other requestors wait for completion.
-    {
+    if (class_loader.is_null() || !is_parallelCapable(class_loader)) {
       MutexLocker mu(THREAD, SystemDictionary_lock);
-      if (class_loader.is_null() || !is_parallelCapable(class_loader)) {
-        PlaceholderEntry* oldprobe = placeholders()->get_entry(name_hash, name, loader_data);
-        if (oldprobe != NULL) {
-          // only need check_seen_thread once, not on each loop
-          // 6341374 java/lang/Instrument with -Xcomp
-          if (oldprobe->check_seen_thread(THREAD, PlaceholderTable::LOAD_INSTANCE)) {
-            throw_circularity_error = true;
-          } else {
-            // case 3: traditional: should never see load_in_progress.
-            while (!class_has_been_loaded && oldprobe != NULL && oldprobe->instance_load_in_progress()) {
+      PlaceholderEntry* oldprobe = placeholders()->get_entry(name_hash, name, loader_data);
+      if (oldprobe != NULL) {
+        // only need check_seen_thread once, not on each loop
+        // 6341374 java/lang/Instrument with -Xcomp
+        if (oldprobe->check_seen_thread(THREAD, PlaceholderTable::LOAD_INSTANCE)) {
+          throw_circularity_error = true;
+        } else {
+          // case 3: traditional: should never see load_in_progress.
+          while (!class_has_been_loaded && oldprobe != NULL && oldprobe->instance_load_in_progress()) {
 
-              // case 1: bootstrap classloader: prevent futile classloading,
-              // wait on first requestor
-              if (class_loader.is_null()) {
-                SystemDictionary_lock->wait();
-              } else {
+            // case 1: bootstrap classloader: prevent futile classloading,
+            // wait on first requestor
+            if (class_loader.is_null()) {
+              SystemDictionary_lock->wait();
+            } else {
               // case 4: traditional with broken classloader lock. wait on first
               // requestor.
-                double_lock_wait(THREAD, lockObject);
-              }
-              // Check if classloading completed while we were waiting
-              InstanceKlass* check = dictionary->find_class(name_hash, name);
-              if (check != NULL) {
-                // Klass is already loaded, so just return it
-                loaded_class = check;
-                class_has_been_loaded = true;
-              }
-              // check if other thread failed to load and cleaned up
-              oldprobe = placeholders()->get_entry(name_hash, name, loader_data);
+              double_lock_wait(THREAD, lockObject);
             }
+            // Check if classloading completed while we were waiting
+            InstanceKlass* check = dictionary->find_class(name_hash, name);
+            if (check != NULL) {
+              // Klass is already loaded, so just return it
+              loaded_class = check;
+              class_has_been_loaded = true;
+            }
+            // check if other thread failed to load and cleaned up
+            oldprobe = placeholders()->get_entry(name_hash, name, loader_data);
           }
         }
       }
 
-      // All cases: add LOAD_INSTANCE while holding the SystemDictionary_lock
+      // Add LOAD_INSTANCE while holding the SystemDictionary_lock
       if (!throw_circularity_error && !class_has_been_loaded) {
-        PlaceholderEntry* newprobe = placeholders()->find_and_add(name_hash, name, loader_data,
-                                                                  PlaceholderTable::LOAD_INSTANCE, NULL, THREAD);
-        load_instance_added = true;
-        // For class loaders that do not acquire the classloader object lock,
-        // if they did not catch another thread holding LOAD_INSTANCE,
-        // need a check analogous to the acquire ObjectLocker/find_class
-        // i.e. now that we hold the LOAD_INSTANCE token on loading this class/CL
-        // one final check if the load has already completed
-        // class loaders holding the ObjectLock shouldn't find the class here
+        // For the bootclass loader, if the thread did not catch another thread holding
+        // the LOAD_INSTANCE token, we need to check whether it completed loading
+        // while holding the SD_lock.
         InstanceKlass* check = dictionary->find_class(name_hash, name);
         if (check != NULL) {
           // Klass is already loaded, so return it after checking/adding protection domain
           loaded_class = check;
           class_has_been_loaded = true;
+        } else {
+          // Now we've got the LOAD_INSTANCE token. Threads will wait on loading to complete for this thread.
+          PlaceholderEntry* newprobe = placeholders()->find_and_add(name_hash, name, loader_data,
+                                                                    PlaceholderTable::LOAD_INSTANCE,
+                                                                    NULL,
+                                                                    THREAD);
+          load_instance_added = true;
         }
       }
     }
 
     // must throw error outside of owning lock
     if (throw_circularity_error) {
-      assert(!HAS_PENDING_EXCEPTION && load_instance_added == false,"circularity error cleanup");
+      assert(!HAS_PENDING_EXCEPTION && !load_instance_added, "circularity error cleanup");
       ResourceMark rm(THREAD);
       THROW_MSG_NULL(vmSymbols::java_lang_ClassCircularityError(), name->as_C_string());
     }
@@ -1065,7 +1051,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 
   // Classloaders that support parallelism, e.g. bootstrap classloader,
   // do not acquire lock here
-  Handle lockObject = compute_loader_lock_object(class_loader);
+  Handle lockObject = get_loader_lock_or_null(class_loader);
   ObjectLocker ol(lockObject, THREAD);
 
   // Parse the stream and create a klass.
@@ -1356,7 +1342,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   {
     HandleMark hm(THREAD);
-    Handle lockObject = compute_loader_lock_object(class_loader);
+    Handle lockObject = get_loader_lock_or_null(class_loader);
     ObjectLocker ol(lockObject, THREAD);
     // prohibited package check assumes all classes loaded from archive call
     // restore_unshareable_info which calls ik->set_package()
@@ -1374,7 +1360,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
     int path_index = ik->shared_classpath_index();
-    ik->set_classpath_index(path_index, THREAD);
+    ik->set_classpath_index(path_index);
   }
 
   // notify a class loaded from shared object
@@ -1558,7 +1544,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // hole with systemDictionary updates and check_constraints
   if (!is_parallelCapable(class_loader)) {
     assert(ObjectSynchronizer::current_thread_holds_lock(THREAD->as_Java_thread(),
-           compute_loader_lock_object(class_loader)),
+           get_loader_lock_or_null(class_loader)),
            "define called without lock");
   }
 
@@ -1812,17 +1798,6 @@ void SystemDictionary::initialize(TRAPS) {
   }
 }
 
-#ifdef ASSERT
-// Verify that this placeholder exists since this class is in the middle of loading.
-void verify_placeholder(Symbol* class_name, ClassLoaderData* loader_data) {
-  // Only parallel capable class loaders use placeholder table for define class.
-  assert_locked_or_safepoint(SystemDictionary_lock);
-  unsigned int name_hash = placeholders()->compute_hash(class_name);
-  Symbol* ph_check =  placeholders()->find_entry(name_hash, class_name, loader_data);
-  assert(ph_check != NULL, "This placeholder should exist");
-}
-#endif // ASSERT
-
 // Constraints on class loaders. The details of the algorithm can be
 // found in the OOPSLA'98 paper "Dynamic Class Loading in the Java
 // Virtual Machine" by Sheng Liang and Gilad Bracha.  The basic idea is
@@ -1861,8 +1836,6 @@ void SystemDictionary::check_constraints(unsigned int name_hash,
         return;
       }
     }
-
-    DEBUG_ONLY(if (is_parallelCapable(class_loader)) verify_placeholder(name, loader_data));
 
     if (throwException == false) {
       if (constraints()->check_or_update(k, class_loader, name) == false) {

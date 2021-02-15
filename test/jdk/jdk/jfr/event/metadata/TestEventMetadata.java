@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,9 +212,9 @@ public class TestEventMetadata {
         String lowerCased = name.toLowerCase();
         Asserts.assertFalse(lowerCased.contains("info") && !lowerCased.contains("information"), "Use 'information' instead 'info' in name");
         Asserts.assertFalse(lowerCased.contains("alloc") && !lowerCased.contains("alloca"), "Use 'allocation' instead 'alloc' in name");
-        Asserts.assertFalse(lowerCased.contains("config") && !lowerCased.contains("configuration"), "Use 'configuration' instead of 'config' in name");
+        Asserts.assertFalse(lowerCased.contains("config") && !(lowerCased.contains("configuration") || lowerCased.contains("filterconfigured")), "Use 'configuration' instead of 'config' in name");
         Asserts.assertFalse(lowerCased.contains("evac") && !lowerCased.contains("evacu"), "Use 'evacuation' instead of 'evac' in name");
-        Asserts.assertFalse(lowerCased.contains("stat") && !(lowerCased.contains("state") ||lowerCased.contains("statistic")) , "Use 'statistics' instead of 'stat' in name");
+        Asserts.assertFalse(lowerCased.contains("stat") && !(lowerCased.contains("state") ||lowerCased.contains("statistic") ||lowerCased.contains("filterstatus")) , "Use 'statistics' instead of 'stat' in name");
         Asserts.assertFalse(name.contains("ID") , "Use 'id' or 'Id' instead of 'ID' in name");
     }
 }
