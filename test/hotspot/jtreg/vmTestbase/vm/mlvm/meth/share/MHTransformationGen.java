@@ -122,10 +122,11 @@ public class MHTransformationGen {
 
         List<MHTFPair> pendingPWTFs = new LinkedList<MHTFPair>();
 
-        for ( int i = nextInt(MAX_CYCLES); i > 0; i-- ) {
+        final int cyclesToBuild = nextInt(MAX_CYCLES);
+        for ( int i = 0; i < cyclesToBuild; i++) {
             if (isCodeCacheEffectivelyFull()) {
                 Env.traceNormal("Not enought code cache to build up MH sequences anymore. " +
-                        " Has only been able to achieve " + (MAX_CYCLES - i) + " out of " + MAX_CYCLES);
+                        " Has only been able to achieve " + i + " out of " + cyclesToBuild);
                 break;
             }
 
