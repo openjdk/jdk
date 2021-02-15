@@ -73,9 +73,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     slop_delta  = load_const_maxLen - (__ pc() - start_pc);
     slop_bytes += slop_delta;
     assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
-    __ lwz(R12_scratch2, offs, R11_scratch1);
+    __ ld(R12_scratch2, offs, R11_scratch1);
     __ addi(R12_scratch2, R12_scratch2, 1);
-    __ stw(R12_scratch2, offs, R11_scratch1);
+    __ std(R12_scratch2, offs, R11_scratch1);
   }
 #endif
 
@@ -141,6 +141,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (s == NULL) {
     return NULL;
   }
+
   // Count unused bytes in instruction sequences of variable size.
   // We add them to the computed buffer size in order to avoid
   // overflow in subsequently generated stubs.
@@ -160,9 +161,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
     slop_delta  = load_const_maxLen - (__ pc() - start_pc);
     slop_bytes += slop_delta;
     assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
-    __ lwz(R12_scratch2, offs, R11_scratch1);
+    __ ld(R12_scratch2, offs, R11_scratch1);
     __ addi(R12_scratch2, R12_scratch2, 1);
-    __ stw(R12_scratch2, offs, R11_scratch1);
+    __ std(R12_scratch2, offs, R11_scratch1);
   }
 #endif
 

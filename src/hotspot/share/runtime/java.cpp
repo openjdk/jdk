@@ -98,8 +98,8 @@ GrowableArray<Method*>* collected_profiled_methods;
 int compare_methods(Method** a, Method** b) {
   // invocation_count() may have overflowed already. Interpret it's result
   // as unsigned int to shift the limit of meaningles results by a factor of 2.
-  return ((uint32_t)(*b)->invocation_count() + (*b)->compiled_invocation_count64())
-       - ((uint32_t)(*a)->invocation_count() + (*a)->compiled_invocation_count64());
+  return ((uint32_t)(*b)->invocation_count() + (*b)->compiled_invocation_count())
+       - ((uint32_t)(*a)->invocation_count() + (*a)->compiled_invocation_count());
 }
 
 void collect_profiled_methods(Method* m) {
@@ -151,7 +151,7 @@ void print_method_profiling_data() {
 GrowableArray<Method*>* collected_invoked_methods;
 
 void collect_invoked_methods(Method* m) {
-  if ((uint32_t)m->invocation_count() + m->compiled_invocation_count64() >= 1 ) {
+  if ((uint32_t)m->invocation_count() + m->compiled_invocation_count() >= 1 ) {
     collected_invoked_methods->push(m);
   }
 }
@@ -185,7 +185,7 @@ void print_method_invocation_histogram() {
     // them here as unsigned long. A counter can't be negative anyway.
     Method* m = collected_invoked_methods->at(index);
     uint64_t iic = (uint64_t)m->invocation_count();
-    uint64_t cic = m->compiled_invocation_count64();
+    uint64_t cic = m->compiled_invocation_count();
     if ((iic + cic) >= (uint64_t)MethodHistogramCutoff) m->print_invocation_count();
     int_total  += iic;
     comp_total += cic;

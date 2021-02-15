@@ -80,7 +80,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
-    __ incrementl(ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
+    __ incrementq(ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
   }
 #endif
 
@@ -156,6 +156,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (s == NULL) {
     return NULL;
   }
+
   // Count unused bytes in instruction sequences of variable size.
   // We add them to the computed buffer size in order to avoid
   // overflow in subsequently generated stubs.
@@ -171,7 +172,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
-    __ incrementl(ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
+    __ incrementq(ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
   }
 #endif /* PRODUCT */
 

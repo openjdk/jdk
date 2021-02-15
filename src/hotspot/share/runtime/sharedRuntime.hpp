@@ -78,7 +78,7 @@ class SharedRuntime: AllStatic {
 
 #ifndef PRODUCT
   // Counters
-  static int     _nof_megamorphic_calls;         // total # of megamorphic calls (through vtable)
+  static int64_t _nof_megamorphic_calls;         // total # of megamorphic calls (through vtable)
 #endif // !PRODUCT
 
  private:

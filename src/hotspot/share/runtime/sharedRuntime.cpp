@@ -146,7 +146,7 @@ int SharedRuntime::_throw_null_ctr = 0;
 int64_t SharedRuntime::_nof_normal_calls = 0;
 int64_t SharedRuntime::_nof_optimized_calls = 0;
 int64_t SharedRuntime::_nof_inlined_calls = 0;
-int SharedRuntime::_nof_megamorphic_calls = 0;     // asm adaptations required
+int64_t SharedRuntime::_nof_megamorphic_calls = 0;
 int64_t SharedRuntime::_nof_static_calls = 0;
 int64_t SharedRuntime::_nof_inlined_static_calls = 0;
 int64_t SharedRuntime::_nof_interface_calls = 0;
@@ -2226,7 +2226,7 @@ class MethodArityHistogram {
       int argsize = method->size_of_parameters();
       arity   = MIN2(arity, MAX_ARITY-1);
       argsize = MIN2(argsize, MAX_ARITY-1);
-      uint64_t count = (uint64_t)method->compiled_invocation_count64();
+      uint64_t count = (uint64_t)method->compiled_invocation_count();
       _max_compiled_calls_per_method = count > _max_compiled_calls_per_method ? count : _max_compiled_calls_per_method;
       _total_compiled_calls    += count;
       _arity_histogram[arity]  += count;
@@ -2290,14 +2290,14 @@ int MethodArityHistogram::_max_size;
 void SharedRuntime::print_call_statistics(uint64_t comp_total) {
   tty->print_cr("Calls from compiled code:");
   int64_t total  = _nof_normal_calls + _nof_interface_calls + _nof_static_calls;
-  int64_t mono_c = _nof_normal_calls - _nof_optimized_calls - (int64_t)_nof_megamorphic_calls;
+  int64_t mono_c = _nof_normal_calls - _nof_optimized_calls - _nof_megamorphic_calls;
   int64_t mono_i = _nof_interface_calls - _nof_optimized_interface_calls - _nof_megamorphic_interface_calls;
   tty->print_cr("\t" INT64_FORMAT_W(12) " (100%%)  total non-inlined   ", total);
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.1f%%) |- virtual calls       ", _nof_normal_calls, percent(_nof_normal_calls, total));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- inlined          ", _nof_inlined_calls, percent(_nof_inlined_calls, _nof_normal_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- optimized        ", _nof_optimized_calls, percent(_nof_optimized_calls, _nof_normal_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- monomorphic      ", mono_c, percent(mono_c, _nof_normal_calls));
-  tty->print_cr("\t" INT32_FORMAT_W(12) " (%4.0f%%) |  |- megamorphic      ", _nof_megamorphic_calls, percent((int64_t)_nof_megamorphic_calls, _nof_normal_calls));
+  tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- megamorphic      ", _nof_megamorphic_calls, percent(_nof_megamorphic_calls, _nof_normal_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.1f%%) |- interface calls     ", _nof_interface_calls, percent(_nof_interface_calls, total));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- inlined          ", _nof_inlined_interface_calls, percent(_nof_inlined_interface_calls, _nof_interface_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- optimized        ", _nof_optimized_interface_calls, percent(_nof_optimized_interface_calls, _nof_interface_calls));

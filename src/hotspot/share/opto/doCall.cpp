@@ -1048,7 +1048,7 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
       if (CountCompiledCalls && depth() == 1) {
         const TypePtr* addr_type = TypeMetadataPtr::make(method());
         Node* adr1 = makecon(addr_type);
-        Node* adr2 = basic_plus_adr(adr1, adr1, in_bytes(Method::compiled_invocation_counter_offset64()));
+        Node* adr2 = basic_plus_adr(adr1, adr1, in_bytes(Method::compiled_invocation_counter_offset()));
         increment_counter64(adr2);
       }
     } else if (is_inline) {
