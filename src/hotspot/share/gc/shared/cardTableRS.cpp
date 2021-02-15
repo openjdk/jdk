@@ -434,8 +434,8 @@ void CardTableRS::verify() {
   CardTable::verify();
 }
 
-CardTableRS::CardTableRS(MemRegion whole_heap, bool scanned_concurrently) :
-  CardTable(whole_heap, scanned_concurrently) { }
+CardTableRS::CardTableRS(MemRegion whole_heap) :
+  CardTable(whole_heap) { }
 
 void CardTableRS::initialize() {
   CardTable::initialize();

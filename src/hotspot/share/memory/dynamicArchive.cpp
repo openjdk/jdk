@@ -92,35 +92,7 @@ public:
   void write_archive(char* serialized_data);
 
 public:
-  DynamicArchiveBuilder() : ArchiveBuilder(MetaspaceShared::misc_code_dump_space(),
-                                           MetaspaceShared::read_write_dump_space(),
-                                           MetaspaceShared::read_only_dump_space()) {
-  }
-
-  void start_dump_space(DumpRegion* next) {
-    address bottom = _last_verified_top;
-    address top = (address)(current_dump_space()->top());
-    _other_region_used_bytes += size_t(top - bottom);
-
-    MetaspaceShared::pack_dump_space(current_dump_space(), next, MetaspaceShared::shared_rs());
-    _current_dump_space = next;
-    _num_dump_regions_used ++;
-
-    _last_verified_top = (address)(current_dump_space()->top());
-  }
-
-  void verify_estimate_size(size_t estimate, const char* which) {
-    address bottom = _last_verified_top;
-    address top = (address)(current_dump_space()->top());
-    size_t used = size_t(top - bottom) + _other_region_used_bytes;
-    int diff = int(estimate) - int(used);
-
-    log_info(cds)("%s estimate = " SIZE_FORMAT " used = " SIZE_FORMAT "; diff = %d bytes", which, estimate, used, diff);
-    assert(diff >= 0, "Estimate is too small");
-
-    _last_verified_top = top;
-    _other_region_used_bytes = 0;
-  }
+  DynamicArchiveBuilder() : ArchiveBuilder() { }
 
   // Do this before and after the archive dump to see if any corruption
   // is caused by dynamic dumping.
@@ -140,27 +112,16 @@ public:
     DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
     SystemDictionaryShared::check_excluded_classes();
 
-    gather_klasses_and_symbols();
-
-    // mc space starts ...
-    reserve_buffer();
     init_header();
-
-    allocate_method_trampolines();
-    verify_estimate_size(_estimated_trampoline_bytes, "Trampolines");
-
     gather_source_objs();
-    // rw space starts ...
-    start_dump_space(MetaspaceShared::read_write_dump_space());
+    reserve_buffer();
+
+    init_mc_region();
+    verify_estimate_size(_estimated_trampoline_bytes, "Trampolines");
 
     log_info(cds, dynamic)("Copying %d klasses and %d symbols",
                            klasses()->length(), symbols()->length());
-
     dump_rw_region();
-
-    // ro space starts ...
-    DumpRegion* ro_space = MetaspaceShared::read_only_dump_space();
-    start_dump_space(ro_space);
     dump_ro_region();
     relocate_metaspaceobj_embedded_pointers();
     relocate_roots();
@@ -173,12 +134,14 @@ public:
       // Note that these tables still point to the *original* objects, so
       // they would need to call DynamicArchive::original_to_target() to
       // get the correct addresses.
-      assert(current_dump_space() == ro_space, "Must be RO space");
+      assert(current_dump_space() == ro_region(), "Must be RO space");
       SymbolTable::write_to_archive(symbols());
+
+      ArchiveBuilder::OtherROAllocMark mark;
       SystemDictionaryShared::write_to_archive(false);
 
-      serialized_data = ro_space->top();
-      WriteClosure wc(ro_space);
+      serialized_data = ro_region()->top();
+      WriteClosure wc(ro_region());
       SymbolTable::serialize_shared_table_header(&wc, false);
       SystemDictionaryShared::serialize_dictionary_headers(&wc, false);
     }
@@ -333,9 +296,6 @@ void DynamicArchiveBuilder::remark_pointers_for_instance_klass(InstanceKlass* k,
 }
 
 void DynamicArchiveBuilder::write_archive(char* serialized_data) {
-  int num_klasses = klasses()->length();
-  int num_symbols = symbols()->length();
-
   Array<u8>* table = FileMapInfo::saved_shared_path_table().table();
   SharedPathTable runtime_table(table, FileMapInfo::shared_path_table().size());
   _header->set_shared_path_table(runtime_table);
@@ -344,19 +304,8 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
   assert(dynamic_info != NULL, "Sanity");
 
-  // Now write the archived data including the file offsets.
-  const char* archive_name = Arguments::GetSharedDynamicArchivePath();
-  dynamic_info->open_for_write(archive_name);
-  size_t bitmap_size_in_bytes;
-  char* bitmap = MetaspaceShared::write_core_archive_regions(dynamic_info, NULL, NULL, bitmap_size_in_bytes);
-  dynamic_info->set_requested_base((char*)MetaspaceShared::requested_base_address());
-  dynamic_info->set_header_crc(dynamic_info->compute_header_crc());
-  dynamic_info->write_header();
-  dynamic_info->close();
-
-  write_cds_map_to_log(dynamic_info, NULL, NULL,
-                       bitmap, bitmap_size_in_bytes);
-  FREE_C_HEAP_ARRAY(char, bitmap);
+  dynamic_info->open_for_write(Arguments::GetSharedDynamicArchivePath());
+  ArchiveBuilder::write_archive(dynamic_info, NULL, NULL, NULL, NULL);
 
   address base = _requested_dynamic_archive_bottom;
   address top  = _requested_dynamic_archive_top;
@@ -366,13 +315,13 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
                          " [" SIZE_FORMAT " bytes header, " SIZE_FORMAT " bytes total]",
                          p2i(base), p2i(top), _header->header_size(), file_size);
 
-  log_info(cds, dynamic)("%d klasses; %d symbols", num_klasses, num_symbols);
+  log_info(cds, dynamic)("%d klasses; %d symbols", klasses()->length(), symbols()->length());
 }
 
 class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
-  DynamicArchiveBuilder* _builder;
+  DynamicArchiveBuilder builder;
 public:
-  VM_PopulateDynamicDumpSharedSpace(DynamicArchiveBuilder* builder) : VM_GC_Sync_Operation(), _builder(builder) {}
+  VM_PopulateDynamicDumpSharedSpace() : VM_GC_Sync_Operation() {}
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
@@ -386,7 +335,7 @@ public:
     }
     FileMapInfo::check_nonempty_dir_in_shared_path_table();
 
-    _builder->doit();
+    builder.doit();
   }
 };
 
@@ -397,8 +346,7 @@ void DynamicArchive::dump() {
     return;
   }
 
-  DynamicArchiveBuilder builder;
-  VM_PopulateDynamicDumpSharedSpace op(&builder);
+  VM_PopulateDynamicDumpSharedSpace op;
   VMThread::execute(&op);
 }
 

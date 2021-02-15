@@ -142,7 +142,7 @@ jint GenCollectedHeap::initialize() {
 }
 
 CardTableRS* GenCollectedHeap::create_rem_set(const MemRegion& reserved_region) {
-  return new CardTableRS(reserved_region, false /* scan_concurrently */);
+  return new CardTableRS(reserved_region);
 }
 
 void GenCollectedHeap::initialize_size_policy(size_t init_eden_size,
@@ -172,11 +172,12 @@ ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
          SIZE_FORMAT, total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
+  size_t used_page_size = ReservedSpace::actual_reserved_page_size(heap_rs);
 
   os::trace_page_sizes("Heap",
                        MinHeapSize,
                        total_reserved,
-                       alignment,
+                       used_page_size,
                        heap_rs.base(),
                        heap_rs.size());
 

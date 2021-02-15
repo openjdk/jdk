@@ -2567,6 +2567,8 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
 
 ATOMIC_XCHG(xchg, swp, ldxr, stxr, Assembler::xword)
 ATOMIC_XCHG(xchgw, swp, ldxrw, stxrw, Assembler::word)
+ATOMIC_XCHG(xchgl, swpl, ldxr, stlxr, Assembler::xword)
+ATOMIC_XCHG(xchglw, swpl, ldxrw, stlxrw, Assembler::word)
 ATOMIC_XCHG(xchgal, swpal, ldaxr, stlxr, Assembler::xword)
 ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word)
 
@@ -5266,10 +5268,14 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 // by the call to JavaThread::aarch64_get_thread_helper() or, indeed,
 // the call setup code.
 //
-// aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On Linux, aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On other systems, the helper is a usual C function.
 //
 void MacroAssembler::get_thread(Register dst) {
-  RegSet saved_regs = RegSet::range(r0, r1) + lr - dst;
+  RegSet saved_regs =
+    LINUX_ONLY(RegSet::range(r0, r1)  + lr - dst)
+    NOT_LINUX (RegSet::range(r0, r17) + lr - dst);
+
   push(saved_regs, sp);
 
   mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));

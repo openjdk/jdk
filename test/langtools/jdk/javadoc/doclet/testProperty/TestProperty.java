@@ -80,8 +80,8 @@ public class TestProperty extends JavadocTester {
                     <div class="col-first even-row-color"><code><a href="ObjectProperty.html" title="clas\
                     s in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj<\
                     /a>[]&gt;</code></div>
-                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
-                    #badProperty">bad</a></span></code></div>
+                    <div class="col-second even-row-color"><code><a href="#badProperty" class="membe\
+                    r-name-link">bad</a></code></div>
                     <div class="col-last even-row-color">""",
 
                 // tab classes should be used in the method table
@@ -91,8 +91,8 @@ public class TestProperty extends JavadocTester {
                     g">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&g\
                     t;</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
-                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#badPro\
-                    perty()">badProperty</a></span>()</code></div>"""
+                    tab2 method-summary-table-tab4"><code><a href="#badProperty()" class="member-nam\
+                    e-link">badProperty</a>()</code></div>"""
         );
 
         checkOutput("pkg/MyClassT.html", true,
