@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2020, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -345,12 +345,14 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_l
   jlong addr;
   jboolean isCopy;
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
-  AutoJavaString objectName_cstr(env, objectName);
-  CHECK_EXCEPTION_(0);
+  // Note, objectName is ignored, and may in fact be NULL.
+  // lookup_symbol will always search all objects/libs
+  //AutoJavaString objectName_cstr(env, objectName);
+  //CHECK_EXCEPTION_(0);
   AutoJavaString symbolName_cstr(env, symbolName);
   CHECK_EXCEPTION_(0);
 
-  addr = (jlong) lookup_symbol(ph, objectName_cstr, symbolName_cstr);
+  addr = (jlong) lookup_symbol(ph, NULL, symbolName_cstr);
   return addr;
 }
 
