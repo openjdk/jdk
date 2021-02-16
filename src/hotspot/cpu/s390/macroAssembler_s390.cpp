@@ -3619,7 +3619,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   z_illtrap(0xee);
   bind(ok);
 #endif
-  
+
   // Do Klass pointers always fit into 32bit?
   const MetaWord* ccs_end = Metaspace::class_space_end();
   assert(ccs_end != NULL, "Sanity");
