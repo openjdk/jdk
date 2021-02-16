@@ -96,10 +96,10 @@ public class ClhsdbInspect {
             }
 
             // This part is testing JDK-8261269. When inspecting a java object, we want to make
-            // sure the address is not prtined twice and that "Oop for ..." is not printed twice.
+            // sure the address is not printed twice and that "Oop for ..." is not printed twice.
             //
-            // The end goal is to dump the Class instance for java.lang.System. It contains some
-            // Oop statics, and that's where the redundant "Oop for..." was noticed. The script
+            // The goal of this test is to dump the Class instance for java.lang.System. It contains
+            // some Oop statics, and that's where the redundant "Oop for..." was noticed. The script
             // looks something like this:
             //
             // hsdb> class java.lang.System
