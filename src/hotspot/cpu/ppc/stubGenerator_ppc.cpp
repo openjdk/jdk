@@ -2628,7 +2628,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ li              (fifteen, 15);
 
-    // load unaligned from[0-15] to vsRet
+    // load unaligned from[0-15] to vRet
     __ lvx             (vRet, from);
     __ lvx             (vTmp1, fifteen, from);
     __ lvsl            (fromPerm, from);
@@ -2836,7 +2836,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ li              (fifteen, 15);
 
-    // load unaligned from[0-15] to vsRet
+    // load unaligned from[0-15] to vRet
     __ lvx             (vRet, from);
     __ lvx             (vTmp1, fifteen, from);
     __ lvsl            (fromPerm, from);
