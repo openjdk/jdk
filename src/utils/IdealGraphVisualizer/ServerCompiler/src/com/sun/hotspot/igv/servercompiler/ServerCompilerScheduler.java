@@ -646,5 +646,40 @@ public class ServerCompilerScheduler implements Scheduler {
                 n.isCFG = false;
             }
         }
+
+        // Fix ill-formed graphs with orphan/widow control-flow nodes by adding
+        // edges from/to the Root node. Such edges are assumed by different
+        // parts of the scheduling algorithm, but are not always present, e.g.
+        // for certain 'Safepoint' nodes in the 'Before RemoveUseless' phase.
+        Node root = findRoot();
+        if (root == null) {
+            return;
+        }
+        for (Node n : nodes) {
+            if (n.isCFG) {
+                boolean orphan = true;
+                for (Node p : n.preds) {
+                    if (p != n && p.isCFG) {
+                        orphan = false;
+                    }
+                }
+                if (orphan) {
+                    // Add edge from root to this node.
+                    root.succs.add(n);
+                    n.preds.add(0, root);
+                }
+                boolean widow = true;
+                for (Node s : n.succs) {
+                    if (s != n && s.isCFG) {
+                        widow = false;
+                    }
+                }
+                if (widow) {
+                    // Add edge from this node to root.
+                    root.preds.add(n);
+                    n.succs.add(root);
+                }
+            }
+        }
     }
 }
