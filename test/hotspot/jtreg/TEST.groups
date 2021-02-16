@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,8 @@ hotspot_containers = \
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
-  gtest/MetaspaceGtests.java
+  gtest/MetaspaceGtests.java \
+  gtest/LargePageGtests.java
 
 tier1_compiler = \
   :tier1_compiler_1 \
@@ -276,7 +277,6 @@ tier1_runtime = \
  -runtime/ConstantPool/IntfMethod.java \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
- -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/InvocationTests \
  -runtime/logging/MonitorMismatchTest.java \
@@ -335,6 +335,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/LambdaEagerInit.java \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/LambdaVerificationFailedDuringDump.java \
+ -runtime/cds/appcds/LambdaWithOldClass.java \
  -runtime/cds/appcds/LongClassListPath.java \
  -runtime/cds/appcds/LotsOfClasses.java \
  -runtime/cds/appcds/MismatchedPathTriggerMemoryRelease.java \

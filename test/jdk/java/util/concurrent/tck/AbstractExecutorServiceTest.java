@@ -74,7 +74,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
         public void shutdown() { shutdown = true; }
         public List<Runnable> shutdownNow() {
             shutdown = true;
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         public boolean isShutdown() { return shutdown; }
         public boolean isTerminated() { return isShutdown(); }
@@ -138,7 +138,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
         Runnable r = new CheckedRunnable() {
             public void realRun() throws Exception {
                 ExecutorService e = new DirectExecutorService();
-                Future future = e.submit(Executors.callable(new PrivilegedAction() {
+                Future<?> future = e.submit(Executors.callable(new PrivilegedAction<Object>() {
                     public Object run() {
                         return TEST_STRING;
                     }}));
@@ -159,7 +159,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
         Runnable r = new CheckedRunnable() {
             public void realRun() throws Exception {
                 ExecutorService e = new DirectExecutorService();
-                Future future = e.submit(Executors.callable(new PrivilegedExceptionAction() {
+                Future<?> future = e.submit(Executors.callable(new PrivilegedExceptionAction<Object>() {
                     public Object run() {
                         return TEST_STRING;
                     }}));
@@ -177,7 +177,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
         Runnable r = new CheckedRunnable() {
             public void realRun() throws Exception {
                 ExecutorService e = new DirectExecutorService();
-                Future future = e.submit(Executors.callable(new PrivilegedExceptionAction() {
+                Future<?> future = e.submit(Executors.callable(new PrivilegedExceptionAction<Object>() {
                     public Object run() throws Exception {
                         throw new IndexOutOfBoundsException();
                     }}));
@@ -208,7 +208,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
     public void testInterruptedSubmit() throws InterruptedException {
         final CountDownLatch submitted    = new CountDownLatch(1);
         final CountDownLatch quittingTime = new CountDownLatch(1);
-        final Callable<Void> awaiter = new CheckedCallable<Void>() {
+        final Callable<Void> awaiter = new CheckedCallable<>() {
             public Void realCall() throws InterruptedException {
                 assertTrue(quittingTime.await(2*LONG_DELAY_MS, MILLISECONDS));
                 return null;
@@ -240,7 +240,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
                                    60, TimeUnit.SECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(p)) {
-            Callable c = new Callable() {
+            Callable<Object> c = new Callable<>() {
                 public Object call() { throw new ArithmeticException(); }};
             try {
                 p.submit(c).get();
@@ -611,7 +611,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
                     e.invokeAll(tasks, timeout, MILLISECONDS);
                 assertEquals(tasks.size(), futures.size());
                 assertTrue(millisElapsedSince(startTime) >= timeout);
-                for (Future future : futures)
+                for (Future<?> future : futures)
                     assertTrue(future.isDone());
                 try {
                     assertEquals("0", futures.get(0).get());

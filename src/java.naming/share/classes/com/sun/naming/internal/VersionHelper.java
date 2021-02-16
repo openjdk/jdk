@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
 package com.sun.naming.internal;
 
 import javax.naming.NamingEnumeration;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -170,14 +170,12 @@ public final class VersionHelper {
             return name;
         }
         if (!name.startsWith("/")) {
-            while (c.isArray()) {
-                c = c.getComponentType();
-            }
-            String baseName = c.getName();
-            int index = baseName.lastIndexOf('.');
-            if (index != -1) {
-                name = baseName.substring(0, index).replace('.', '/')
-                    +"/"+name;
+            if (!c.isPrimitive()) {
+                String baseName = c.getPackageName();
+                if (!baseName.isEmpty()) {
+                    name = baseName.replace('.', '/') + "/"
+                            + name;
+                }
             }
         } else {
             name = name.substring(1);
@@ -192,8 +190,7 @@ public final class VersionHelper {
     InputStream getResourceAsStream(Class<?> c, String name) {
         PrivilegedAction<InputStream> act = () -> {
             try {
-                Module m = c.getModule();
-                return c.getModule().getResourceAsStream(resolveName(c,name));
+                return c.getModule().getResourceAsStream(resolveName(c, name));
              } catch (IOException x) {
                  return null;
              }
@@ -214,9 +211,7 @@ public final class VersionHelper {
                 if (javahome == null) {
                     return null;
                 }
-                String pathname = javahome + File.separator +
-                        "conf" + File.separator + filename;
-                return new FileInputStream(pathname);
+                return Files.newInputStream(Path.of(javahome, "conf", filename));
             } catch (Exception e) {
                 return null;
             }
@@ -272,20 +267,11 @@ public final class VersionHelper {
             throws MalformedURLException {
         // Parse codebase into separate URLs
         StringTokenizer parser = new StringTokenizer(codebase);
-        List<String> list = new ArrayList<>();
+        List<URL> list = new ArrayList<>();
         while (parser.hasMoreTokens()) {
-            list.add(parser.nextToken());
+            list.add(new URL(parser.nextToken()));
         }
-        String[] url = new String[list.size()];
-        for (int i = 0; i < url.length; i++) {
-            url[i] = list.get(i);
-        }
-
-        URL[] urlArray = new URL[url.length];
-        for (int i = 0; i < urlArray.length; i++) {
-            urlArray[i] = new URL(url[i]);
-        }
-        return urlArray;
+        return list.toArray(new URL[0]);
     }
 
     /**

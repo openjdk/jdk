@@ -161,7 +161,7 @@ final class TrustStoreManager {
                                     SSLLogger.isOn("trustmanager")) {
                                 SSLLogger.fine(
                                         "Inaccessible trust store: " +
-                                        storePropName);
+                                        fileName);
                             }
                         }
                     } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -575,8 +575,6 @@ class SharedRuntime: AllStatic {
   static int     _nof_optimized_interface_calls; // total # of statically-bound interface calls
   static int     _nof_inlined_interface_calls;   // total # of inlined interface calls
   static int     _nof_megamorphic_interface_calls;// total # of megamorphic interface calls
-  // stats for runtime exceptions
-  static int     _nof_removable_exceptions;      // total # of exceptions that could be replaced by branches due to inlining
 
  public: // for compiler
   static address nof_normal_calls_addr()                { return (address)&_nof_normal_calls; }

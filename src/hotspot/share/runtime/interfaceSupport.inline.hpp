@@ -35,7 +35,6 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -192,6 +191,7 @@ class ThreadInVMfromUnknown {
 
 
 class ThreadInVMfromNative : public ThreadStateTransition {
+  ResetNoHandleMark __rnhm;
  public:
   ThreadInVMfromNative(JavaThread* thread) : ThreadStateTransition(thread) {
     trans_from_native(_thread_in_vm);
@@ -329,34 +329,16 @@ class VMNativeEntryWrapper {
   ~VMNativeEntryWrapper();
 };
 
-class RuntimeHistogramElement : public HistogramElement {
-  public:
-   RuntimeHistogramElement(const char* name);
-};
 #endif // ASSERT
-
-#ifdef ASSERT
-#define TRACE_CALL(result_type, header)                            \
-  if (CountRuntimeCalls) {                                         \
-    static RuntimeHistogramElement* e = new RuntimeHistogramElement(#header); \
-    if (e != NULL) e->increment_count();                           \
-  }
-#else
-#define TRACE_CALL(result_type, header)                            \
-  /* do nothing */
-#endif // ASSERT
-
 
 // LEAF routines do not lock, GC or throw exceptions
 
 #define VM_LEAF_BASE(result_type, header)                            \
-  TRACE_CALL(result_type, header)                                    \
   debug_only(NoHandleMark __hm;)                                     \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
 #define VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)         \
-  TRACE_CALL(result_type, header)                                    \
   debug_only(ResetNoHandleMark __rnhm;)                              \
   HandleMarkCleaner __hm(thread);                                    \
   Thread* THREAD = thread;                                           \
@@ -367,7 +349,6 @@ class RuntimeHistogramElement : public HistogramElement {
 // ENTRY routines may lock, GC and throw exceptions
 
 #define VM_ENTRY_BASE(result_type, header, thread)                   \
-  TRACE_CALL(result_type, header)                                    \
   HandleMarkCleaner __hm(thread);                                    \
   Thread* THREAD = thread;                                           \
   os::verify_stack_alignment();                                      \
@@ -410,7 +391,6 @@ class RuntimeHistogramElement : public HistogramElement {
 // to get back into Java from the VM
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
-    TRACE_CALL(result_type, header)                                  \
     HandleMarkCleaner __hm(thread);
 
 #define JRT_BLOCK                                                    \

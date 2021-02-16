@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -247,10 +248,6 @@ JRT_END
 
 
 JRT_BLOCK_ENTRY(void, CompilerRuntime::invocation_event(JavaThread *thread, MethodCounters* counters))
-  if (!TieredCompilation) {
-    // Ignore the event if tiered is off
-    return;
-  }
   JRT_BLOCK
     methodHandle mh(THREAD, counters->method());
     RegisterMap map(thread, false);
@@ -259,15 +256,11 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::invocation_event(JavaThread *thread, Meth
     CompiledMethod* cm = fr.cb()->as_compiled_method_or_null();
     assert(cm != NULL && cm->is_compiled(), "Sanity check");
     methodHandle emh(THREAD, cm->method());
-    CompilationPolicy::policy()->event(emh, mh, InvocationEntryBci, InvocationEntryBci, CompLevel_aot, cm, THREAD);
+    CompilationPolicy::event(emh, mh, InvocationEntryBci, InvocationEntryBci, CompLevel_aot, cm, THREAD);
   JRT_BLOCK_END
 JRT_END
 
 JRT_BLOCK_ENTRY(void, CompilerRuntime::backedge_event(JavaThread *thread, MethodCounters* counters, int branch_bci, int target_bci))
-  if (!TieredCompilation) {
-    // Ignore the event if tiered is off
-    return;
-  }
   assert(branch_bci != InvocationEntryBci && target_bci != InvocationEntryBci, "Wrong bci");
   assert(target_bci <= branch_bci, "Expected a back edge");
   JRT_BLOCK
@@ -279,7 +272,7 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::backedge_event(JavaThread *thread, Method
     CompiledMethod* cm = fr.cb()->as_compiled_method_or_null();
     assert(cm != NULL && cm->is_compiled(), "Sanity check");
     methodHandle emh(THREAD, cm->method());
-    nmethod* osr_nm = CompilationPolicy::policy()->event(emh, mh, branch_bci, target_bci, CompLevel_aot, cm, THREAD);
+    nmethod* osr_nm = CompilationPolicy::event(emh, mh, branch_bci, target_bci, CompLevel_aot, cm, THREAD);
     if (osr_nm != NULL) {
       Deoptimization::deoptimize_frame(thread, fr.id());
     }

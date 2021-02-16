@@ -2070,10 +2070,22 @@ public class LambdaToMethod extends TreeTranslator {
                     case LOCAL_VAR:
                         ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym);
                         ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
+                        // If sym.data == ElementKind.EXCEPTION_PARAMETER,
+                        // set ret.data = ElementKind.EXCEPTION_PARAMETER too.
+                        // Because method com.sun.tools.javac.jvm.Code.fillExceptionParameterPositions and
+                        // com.sun.tools.javac.jvm.Code.fillLocalVarPosition would use it.
+                        // See JDK-8257740 for more information.
+                        if (((VarSymbol) sym).isExceptionParameter()) {
+                            ((VarSymbol) ret).setData(ElementKind.EXCEPTION_PARAMETER);
+                        }
                         break;
                     case PARAM:
                         ret = new VarSymbol((sym.flags() & FINAL) | PARAMETER, sym.name, types.erasure(sym.type), translatedSym);
                         ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
+                        // Set ret.data. Same as case LOCAL_VAR above.
+                        if (((VarSymbol) sym).isExceptionParameter()) {
+                            ((VarSymbol) ret).setData(ElementKind.EXCEPTION_PARAMETER);
+                        }
                         break;
                     default:
                         Assert.error(skind.name());

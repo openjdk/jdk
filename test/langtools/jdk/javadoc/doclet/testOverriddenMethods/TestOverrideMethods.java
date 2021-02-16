@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,12 +104,12 @@ public class TestOverrideMethods  extends JavadocTester {
                 // Check method summary
                 "Method Summary",
                 "void",
-                "#m1()\">m1",
+                "#m1()\" class=\"member-name-link\">m1",
                 "A modified method",
 
                 "void",
                 """
-                    #m4(java.lang.String,java.lang.String)">m4""",
+                    #m4(java.lang.String,java.lang.String)" class="member-name-link">m4""",
                 "java.lang.String&nbsp;k,",
                 "java.lang.String",
                 "&nbsp;v)",
@@ -239,8 +239,8 @@ public class TestOverrideMethods  extends JavadocTester {
 
                 // Check Method Summary
                 "Method Summary",
-                "#m()\">m",
-                "#n()\">n",
+                "#m()\" class=\"member-name-link\">m",
+                "#n()\" class=\"member-name-link\">n",
 
                 // Check footnotes
                 """
@@ -265,45 +265,46 @@ public class TestOverrideMethods  extends JavadocTester {
                 """
                     <h2 class="title" id="I:M">M</h2>""",
                 """
-                    <a href="pkg5/Interfaces.C.html#m()">m()""",
+                    <a href="pkg5/Interfaces.C.html#m()" class="member-name-link">m()""",
                 """
-                    <a href="pkg5/Interfaces.D.html#m()">m()</a>""",
+                    <a href="pkg5/Interfaces.D.html#m()" class="member-name-link">m()</a>""",
                 """
-                    <a href="pkg5/Classes.GP.html#m0()">m0()""",
+                    <a href="pkg5/Classes.GP.html#m0()" class="member-name-link">m0()""",
                 """
-                    <a href="pkg5/Interfaces.A.html#m0()">m0()</a>""",
+                    <a href="pkg5/Interfaces.A.html#m0()" class="member-name-link">m0()</a>""",
                 """
-                    <a href="pkg5/Classes.C.html#m1()">m1()</a>""",
+                    <a href="pkg5/Classes.C.html#m1()" class="member-name-link">m1()</a>""",
                 """
-                    <a href="pkg5/Classes.P.html#m1()">m1()</a>""",
+                    <a href="pkg5/Classes.P.html#m1()" class="member-name-link">m1()</a>""",
                 """
-                    <a href="pkg5/Interfaces.A.html#m1()">m1()</a>""",
+                    <a href="pkg5/Interfaces.A.html#m1()" class="member-name-link">m1()</a>""",
                 """
-                    <a href="pkg5/Interfaces.B.html#m1()">m1()</a>""",
+                    <a href="pkg5/Interfaces.B.html#m1()" class="member-name-link">m1()</a>""",
                 """
-                    <a href="pkg5/Classes.P.html#m2()">m2()</a>""",
+                    <a href="pkg5/Classes.P.html#m2()" class="member-name-link">m2()</a>""",
                 """
-                    <a href="pkg5/Interfaces.A.html#m2()">m2()</a>""",
+                    <a href="pkg5/Interfaces.A.html#m2()" class="member-name-link">m2()</a>""",
                 """
-                    <a href="pkg5/Classes.P.html#m3()">m3()</a>""",
+                    <a href="pkg5/Classes.P.html#m3()" class="member-name-link">m3()</a>""",
                 """
-                    <a href="pkg5/Interfaces.A.html#m3()">m3()</a>""",
+                    <a href="pkg5/Interfaces.A.html#m3()" class="member-name-link">m3()</a>""",
                 """
-                    <a href="pkg5/Interfaces.B.html#m3()">m3()</a>""",
+                    <a href="pkg5/Interfaces.B.html#m3()" class="member-name-link">m3()</a>""",
                 """
-                    <a href="pkg5/Classes.C.html#m4(java.lang.String,java.lang.String)">m4(String, String)</a>""",
+                    <a href="pkg5/Classes.C.html#m4(java.lang.String,java.lang.String)" class="membe\
+                    r-name-link">m4(String, String)</a>""",
                 """
-                    <a href="pkg5/Classes.P.html#m4(K,V)">m4(K, V)</a>""",
+                    <a href="pkg5/Classes.P.html#m4(K,V)" class="member-name-link">m4(K, V)</a>""",
                 """
-                    <a href="pkg5/Classes.P.html#m5()">m5()</a>""",
+                    <a href="pkg5/Classes.P.html#m5()" class="member-name-link">m5()</a>""",
                 """
-                    <a href="pkg5/Classes.C.html#m6()">m6()</a>""",
+                    <a href="pkg5/Classes.C.html#m6()" class="member-name-link">m6()</a>""",
                 """
-                    <a href="pkg5/Classes.P.html#m6()">m6()</a>""",
+                    <a href="pkg5/Classes.P.html#m6()" class="member-name-link">m6()</a>""",
                 """
-                    <a href="pkg5/Classes.C.html#m7()">m7()</a>""",
+                    <a href="pkg5/Classes.C.html#m7()" class="member-name-link">m7()</a>""",
                 """
-                    <a href="pkg5/Classes.GP.html#m7()">m7()</a>""",
+                    <a href="pkg5/Classes.GP.html#m7()" class="member-name-link">m7()</a>""",
                 "Returns the enum constant of this class with the specified name.",
                 """
                     Returns an array containing the constants of this enum class, in
@@ -318,37 +319,58 @@ public class TestOverrideMethods  extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>java.lang.String</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#m2()">\
-                    m2</a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.String</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><a href="#m2()" class="member-name-link">\
+                    m2</a>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4">
                     <div class="block">This is Base::m2.</div>
                     </div>
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code>void</code></div>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m4()">m4</a></span>()</code></div>
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4"><code>void</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><a href="#m4()" class="member-name-link">m4\
+                    </a>()</code></div>
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab4">
                     <div class="block">This is Base::m4.</div>
                     </div>
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code>java.lang.Object</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m5()">m5</a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><a href="#m5()" class="member-name-link">m\
+                    5</a>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4">
                     <div class="block">This is Base::m5.</div>
                     </div>
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code>java.lang.Object</code></div>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m6()">m6</a></span>()</code></div>
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><a href="#m6()" class="member-name-link">m6\
+                    </a>()</code></div>
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab4">
                     <div class="block">This is Base::m6.</div>
                     </div>
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code>java.lang.Object</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table"><code><span class="member-name-link"><a href="#m7()">m7</a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><a href="#m7()" class="member-name-link">m\
+                    7</a>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4">
                     <div class="block">This is Base::m7.</div>
                     </div>
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table method-summary-table-tab3"><code>abstract java.lang.Object</code></div>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table method-summary-table-tab3"><code><span class="member-name-link"><a href="#m8()">m8</a></span>()</code></div>
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table method-summary-table-tab3">
+                    <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab3"><code>abstract java.lang.Object</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab3"><code><a href="#m8()" class="member-name-link">m8\
+                    </a>()</code></div>
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab3">
                     <div class="block">This is Base::m8.</div>
                     </div>
                     """,

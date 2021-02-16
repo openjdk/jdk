@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,11 +172,6 @@ class DigestServer extends Thread {
         return finalHash;
     }
 
-    private final static char charArray[] = {
-        '0', '1', '2', '3', '4', '5', '6', '7',
-        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-    };
-
     private String encode(String src, char[] passwd, MessageDigest md) {
         md.update(src.getBytes());
         if (passwd != null) {
@@ -187,15 +182,7 @@ class DigestServer extends Thread {
             Arrays.fill(passwdBytes, (byte)0x00);
         }
         byte[] digest = md.digest();
-
-        StringBuffer res = new StringBuffer(digest.length * 2);
-        for (int i = 0; i < digest.length; i++) {
-            int hashchar = ((digest[i] >>> 4) & 0xf);
-            res.append(charArray[hashchar]);
-            hashchar = (digest[i] & 0xf);
-            res.append(charArray[hashchar]);
-        }
-        return res.toString();
+        return HexFormat.of().formatHex(digest);
     }
 
 }

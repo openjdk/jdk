@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.instrument;
 
 import java.lang.instrument.UnmodifiableModuleException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.AccessibleObject;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.ClassDefinition;
@@ -441,12 +442,6 @@ public class InstrumentationImpl implements Instrumentation {
         //
         // 1) declared with a signature of (String, Instrumentation)
         // 2) declared with a signature of (String)
-        // 3) inherited with a signature of (String, Instrumentation)
-        // 4) inherited with a signature of (String)
-        //
-        // So the declared version of either 1-arg or 2-arg always takes
-        // primary precedence over an inherited version. After that, the
-        // 2-arg version takes precedence over the 1-arg version.
         //
         // If no method is found then we throw the NoSuchMethodException
         // from the first attempt so that the exception text indicates
@@ -471,44 +466,24 @@ public class InstrumentationImpl implements Instrumentation {
                 m = javaAgentClass.getDeclaredMethod(methodname,
                                                  new Class<?>[] { String.class });
             } catch (NoSuchMethodException x) {
-                // ignore this exception because we'll try
-                // two arg inheritance next
-            }
-        }
-
-        if (m == null) {
-            // now try the inherited 2-arg method
-            try {
-                m = javaAgentClass.getMethod( methodname,
-                                 new Class<?>[] {
-                                     String.class,
-                                     java.lang.instrument.Instrumentation.class
-                                 }
-                               );
-                twoArgAgent = true;
-            } catch (NoSuchMethodException x) {
-                // ignore this exception because we'll try
-                // one arg inheritance next
-            }
-        }
-
-        if (m == null) {
-            // finally try the inherited 1-arg method
-            try {
-                m = javaAgentClass.getMethod(methodname,
-                                             new Class<?>[] { String.class });
-            } catch (NoSuchMethodException x) {
                 // none of the methods exists so we throw the
                 // first NoSuchMethodException as per 5.0
                 throw firstExc;
             }
         }
 
-        // the premain method should not be required to be public,
-        // make it accessible so we can call it
-        // Note: The spec says the following:
-        //     The agent class must implement a public static premain method...
-        setAccessible(m, true);
+        // reject non-public premain or agentmain method
+        if (!Modifier.isPublic(m.getModifiers())) {
+            String msg = "method " + classname + "." +  methodname + " must be declared public";
+            throw new IllegalAccessException(msg);
+        }
+
+        if (!Modifier.isPublic(javaAgentClass.getModifiers()) &&
+            !javaAgentClass.getModule().isNamed()) {
+            // If the java agent class is in an unnamed module, the java agent class can be non-public.
+            // Suppress access check upon the invocation of the premain/agentmain method.
+            setAccessible(m, true);
+        }
 
         // invoke the 1 or 2-arg method
         if (twoArgAgent) {

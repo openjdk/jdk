@@ -486,7 +486,7 @@ abstract class OutputRecord
         }
 
         // use the right TLSCiphertext.opaque_type and legacy_record_version
-        ProtocolVersion pv = protocolVersion;
+        ProtocolVersion pv;
         if (!encCipher.isNullCipher()) {
             pv = ProtocolVersion.TLS12;
             contentType = ContentType.APPLICATION_DATA.id;

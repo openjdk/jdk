@@ -550,7 +550,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * <pre> {@code
      * class X {
-     *   ReentrantLock lock = new ReentrantLock();
+     *   final ReentrantLock lock = new ReentrantLock();
      *   // ...
      *   public void m() {
      *     assert lock.getHoldCount() == 0;
@@ -580,7 +580,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * <pre> {@code
      * class X {
-     *   ReentrantLock lock = new ReentrantLock();
+     *   final ReentrantLock lock = new ReentrantLock();
      *   // ...
      *
      *   public void m() {
@@ -594,7 +594,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * <pre> {@code
      * class X {
-     *   ReentrantLock lock = new ReentrantLock();
+     *   final ReentrantLock lock = new ReentrantLock();
      *   // ...
      *
      *   public void m() {

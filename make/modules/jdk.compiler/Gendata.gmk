@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
 CT_DATA_DESCRIPTION += $(TOPDIR)/make/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
-    --add-exports java.base/jdk.internal=java.compiler.interim,jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=java.compiler.interim,jdk.compiler.interim \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.api=ALL-UNNAMED \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.code=ALL-UNNAMED \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.util=ALL-UNNAMED \
@@ -60,7 +60,6 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \
         $(INTERIM_LANGTOOLS_ARGS) \
-        --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))
 

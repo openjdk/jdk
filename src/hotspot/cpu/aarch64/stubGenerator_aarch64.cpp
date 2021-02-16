@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "atomic_aarch64.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -38,6 +39,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -490,11 +492,10 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
                     rthread, c_rarg1);
-    if (UseSVE > 0 ) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
+    // Reinitialize the ptrue predicate register, in case the external runtime
+    // call clobbers ptrue reg, as we may return to SVE compiled code.
+    __ reinitialize_ptrue();
+
     // we should not really care that lr is no longer the callee
     // address. we saved the value the handler needs in r19 so we can
     // just copy it to r3. however, the C2 handler will push its own
@@ -1341,10 +1342,10 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ verify_oop(temp);
     } else {
-      __ ldrw(r16, Address(a, rscratch2, Address::lsl(exact_log2(size))));
+      __ ldrw(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ decode_heap_oop(temp); // calls verify_oop
     }
-    __ add(rscratch2, rscratch2, size);
+    __ add(rscratch2, rscratch2, 1);
     __ b(loop);
     __ bind(end);
   }
@@ -1362,7 +1363,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
   //   disjoint_int_copy_entry is set to the no-overlap entry point
@@ -1432,7 +1433,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   address generate_conjoint_copy(int size, bool aligned, bool is_oop, address nooverlap_target,
                                  address *entry, const char *name,
@@ -1597,7 +1598,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
   //   disjoint_int_copy_entry is set to the no-overlap entry point
@@ -1621,7 +1622,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   address generate_conjoint_int_copy(bool aligned, address nooverlap_target,
                                      address *entry, const char *name,
@@ -5572,6 +5573,91 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+#ifdef LINUX
+  // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
+  //
+  // If LSE is in use, generate LSE versions of all the stubs. The
+  // non-LSE versions are in atomic_aarch64.S.
+  void generate_atomic_entry_points() {
+
+    if (! UseLSE) {
+      return;
+    }
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "atomic entry points");
+
+    __ align(32);
+    aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+      __ atomic_addal(prev, incr, addr);
+      __ mov(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+      __ atomic_addalw(prev, incr, addr);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, newv = c_rarg1;
+      __ atomic_xchglw(prev, newv, addr);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r2, addr = c_rarg0, newv = c_rarg1;
+      __ atomic_xchgl(prev, newv, addr);
+      __ mov(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+        exchange_val = c_rarg2;
+      __ cmpxchg(ptr, compare_val, exchange_val,
+                 MacroAssembler::byte,
+                 /*acquire*/false, /*release*/false, /*weak*/false,
+                 prev);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+        exchange_val = c_rarg2;
+      __ cmpxchg(ptr, compare_val, exchange_val,
+                 MacroAssembler::word,
+                 /*acquire*/false, /*release*/false, /*weak*/false,
+                 prev);
+      __ movw(r0, prev);
+      __ ret(lr);
+    }
+    __ align(32);
+    aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_stub_t)__ pc();
+    {
+      Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+        exchange_val = c_rarg2;
+      __ cmpxchg(ptr, compare_val, exchange_val,
+                 MacroAssembler::xword,
+                 /*acquire*/false, /*release*/false, /*weak*/false,
+                 prev);
+      __ mov(r0, prev);
+      __ ret(lr);
+    }
+  }
+#endif // LINUX
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -5655,11 +5741,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ reset_last_Java_frame(true);
 
-    if (UseSVE > 0) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
+    // Reinitialize the ptrue predicate register, in case the external runtime
+    // call clobbers ptrue reg, as we may return to SVE compiled code.
+    __ reinitialize_ptrue();
 
     __ leave();
 
@@ -6686,6 +6770,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
+#ifdef LINUX
+
+#if 0  // JDK-8261660: disabled for now.
+    generate_atomic_entry_points();
+#endif
+
+#endif // LINUX
+
     StubRoutines::aarch64::set_completed();
   }
 
@@ -6706,3 +6798,27 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
   }
   StubGenerator g(code, all);
 }
+
+
+#ifdef LINUX
+
+// Define pointers to atomic stubs and initialize them to point to the
+// code in atomic_aarch64.S.
+
+#define DEFAULT_ATOMIC_OP(OPNAME, SIZE)                                 \
+  extern "C" uint64_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## _default_impl \
+    (volatile void *ptr, uint64_t arg1, uint64_t arg2);                 \
+  aarch64_atomic_stub_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## _impl \
+    = aarch64_atomic_ ## OPNAME ## _ ## SIZE ## _default_impl;
+
+DEFAULT_ATOMIC_OP(fetch_add, 4)
+DEFAULT_ATOMIC_OP(fetch_add, 8)
+DEFAULT_ATOMIC_OP(xchg, 4)
+DEFAULT_ATOMIC_OP(xchg, 8)
+DEFAULT_ATOMIC_OP(cmpxchg, 1)
+DEFAULT_ATOMIC_OP(cmpxchg, 4)
+DEFAULT_ATOMIC_OP(cmpxchg, 8)
+
+#undef DEFAULT_ATOMIC_OP
+
+#endif // LINUX

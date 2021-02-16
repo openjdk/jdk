@@ -410,19 +410,6 @@ bool CompilerOracle::should_break_at(const methodHandle& method) {
   return check_predicate(CompileCommand::Break, method);
 }
 
-bool CompilerOracle::should_blackhole(const methodHandle& method) {
-  if (!check_predicate(CompileCommand::Blackhole, method)) {
-    return false;
-  }
-  guarantee(UnlockDiagnosticVMOptions, "Checked during initial parsing");
-  if (method->result_type() != T_VOID) {
-    warning("Blackhole compile option only works for methods with void type: %s",
-            method->name_and_sig_as_C_string());
-    return false;
-  }
-  return true;
-}
-
 static enum CompileCommand match_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {
   assert(ARRAY_SIZE(option_names) == static_cast<int>(CompileCommand::Count), "option_names size mismatch");
 

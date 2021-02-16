@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,11 @@ typedef struct {
 } DeferredEventModeList;
 
 static DeferredEventModeList deferredEventModes;
+
+#ifdef DEBUG
+static void dumpThreadList(ThreadList *list);
+static void dumpThread(ThreadNode *node);
+#endif
 
 static jint
 getStackDepth(jthread thread)
@@ -2513,3 +2518,40 @@ threadControl_getFrameGeneration(jthread thread)
 
     return frameGeneration;
 }
+
+/***** debugging *****/
+
+#ifdef DEBUG
+
+void
+threadControl_dumpAllThreads()
+{
+    tty_message("Dumping runningThreads:\n");
+    dumpThreadList(&runningThreads);
+    tty_message("Dumping otherThreads:\n");
+    dumpThreadList(&otherThreads);
+}
+
+static void
+dumpThreadList(ThreadList *list)
+{
+    ThreadNode *node;
+    for (node = list->first; node != NULL; node = node->next) {
+        if (!node->isDebugThread) {
+            dumpThread(node);
+        }
+    }
+}
+
+static void
+dumpThread(ThreadNode *node) {
+    tty_message("  Thread: node = %p, jthread = %p", node, node->thread);
+#ifdef DEBUG_THREADNAME
+    tty_message("\tname: %s", node->name);
+#endif
+    // More fields can be printed here when needed. The amount of output is intentionlly
+    // kept small so it doesn't generate too much output.
+    tty_message("\tsuspendCount: %d", node->suspendCount);
+}
+
+#endif /* DEBUG */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@
  * @run driver DumpClassList
  */
 
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class DumpClassList {
     public static void main(String[] args) throws Exception {
@@ -74,24 +74,27 @@ public class DumpClassList {
         String appendJar = JarBuilder.build("bootappend", "boot/append/Foo");
 
         // dump class list
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:DumpLoadedClassList=" + classList,
-            "--patch-module=java.base=" + patchJar,
-            "-Xbootclasspath/a:" + appendJar,
-            "-cp",
-            appJar,
-            appClass[0]);
-        OutputAnalyzer output = TestCommon.executeAndLog(pb, "dumpClassList");
-        TestCommon.checkExecReturn(output, 0, true,
-                                   "hello world",
-                                   "skip writing class java/lang/NewClass") // skip classes outside of jrt image
-            .shouldNotContain("skip writing class boot/append/Foo");        // but classes on -Xbootclasspath/a should not be skipped
+        CDSTestUtils.dumpClassList(classList,
+                                   "--patch-module=java.base=" + patchJar,
+                                   "-Xbootclasspath/a:" + appendJar,
+                                   "-cp",
+                                   appJar,
+                                   appClass[0])
+            .assertNormalExit(output -> {
+                output.shouldContain("hello world");
+                // skip classes outside of jrt image
+                output.shouldContain("skip writing class java/lang/NewClass");
+                // but classes on -Xbootclasspath/a should not be skipped
+                output.shouldNotContain("skip writing class boot/append/Foo");
+            });
 
-        output = TestCommon.createArchive(appJar, appClass,
-                                          "-Xbootclasspath/a:" + appendJar,
-                                          "-Xlog:class+load",
-                                          "-XX:SharedClassListFile=" + classList);
-        TestCommon.checkDump(output)
+        CDSOptions opts = (new CDSOptions())
+            .setClassList(appClass)
+            .addPrefix("-cp", appJar,
+                       "-Xbootclasspath/a:" + appendJar,
+                       "-Xlog:class+load",
+                       "-XX:SharedClassListFile=" + classList);
+        CDSTestUtils.createArchiveAndCheck(opts)
             .shouldNotContain("Preload Warning: Cannot find java/lang/invoke/LambdaForm")
             .shouldNotContain("Preload Warning: Cannot find boot/append/Foo")
             .shouldContain("[info][class,load] boot.append.Foo");

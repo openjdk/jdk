@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,14 @@ import org.w3c.dom.Node;
  * <code>DOMValidateContext</code> is used with different signature structures
  * (for example, you should not use the same <code>DOMValidateContext</code>
  * instance to validate two different {@link XMLSignature} objects).
+ *
+ * @implNote
+ * By default, the JDK implementation enables a secure validation mode by
+ * setting the <code>org.jcp.xml.dsig.secureValidation</code> property to
+ * <code>Boolean.TRUE</code> (see the {@link #setProperty setProperty}
+ * method). When enabled, validation of XML signatures are subject to
+ * stricter checking of algorithms and other constraints as specified by the
+ * <code>jdk.xml.dsig.secureValidationPolicy</code> security property.
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group
@@ -103,10 +111,7 @@ public class DOMValidateContext extends DOMCryptoContext
 
         this.node = node;
         super.setKeySelector(ks);
-        if (System.getSecurityManager() != null) {
-            super.setProperty("org.jcp.xml.dsig.secureValidation",
-                              Boolean.TRUE);
-        }
+        super.setProperty("org.jcp.xml.dsig.secureValidation", Boolean.TRUE);
     }
 
     /**

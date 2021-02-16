@@ -233,6 +233,14 @@ public abstract class AbstractEventStream implements EventStream {
         return flushOperation;
     }
 
+
+    final protected void onFlush() {
+       Runnable r = getFlushOperation();
+       if (r != null) {
+           r.run();
+       }
+    }
+
     private void startInternal(long startNanos) {
         synchronized (streamConfiguration) {
             if (streamConfiguration.started) {
@@ -290,7 +298,7 @@ public abstract class AbstractEventStream implements EventStream {
         streamConfiguration.addMetadataAction(action);
     }
 
-    protected final void emitMetadataEvent(ChunkParser parser) {
+    protected final void onMetadata(ChunkParser parser) {
         if (parser.hasStaleMetadata()) {
             if (dispatcher.hasMetadataHandler()) {
                 List<EventType> ce = parser.getEventTypes();

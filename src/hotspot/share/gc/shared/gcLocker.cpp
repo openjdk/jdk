@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcTrace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "logging/log.hpp"
@@ -97,6 +98,7 @@ bool GCLocker::check_active_before_gc() {
   if (is_active() && !_needs_gc) {
     verify_critical_count();
     _needs_gc = true;
+    GCLockerTracer::start_gc_locker(_jni_lock_count);
     log_debug_jni("Setting _needs_gc.");
   }
   return is_active();
@@ -107,6 +109,7 @@ void GCLocker::stall_until_clear() {
   MonitorLocker ml(JNICritical_lock);
 
   if (needs_gc()) {
+    GCLockerTracer::inc_stall_count();
     log_debug_jni("Allocation failed. Thread stalled by JNI critical section.");
   }
 
@@ -152,6 +155,7 @@ void GCLocker::jni_unlock(JavaThread* thread) {
     // getting the count, else there may be unnecessary GCLocker GCs.
     _total_collections = Universe::heap()->total_collections();
     _doing_gc = true;
+    GCLockerTracer::report_gc_locker();
     {
       // Must give up the lock while at a safepoint
       MutexUnlocker munlock(JNICritical_lock);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import java.util.Hashtable;
+import java.io.Serial;
 import java.util.Arrays;
+import java.util.Hashtable;
 
 /**
  * The {@code GridBagLayout} class is a flexible layout
@@ -2230,6 +2232,9 @@ java.io.Serializable {
         }
     }
 
-    // Added for serial backwards compatibility (4348425)
-    static final long serialVersionUID = 8838754796412211005L;
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
+    @Serial
+    private static final long serialVersionUID = 8838754796412211005L;
 }

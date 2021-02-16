@@ -299,6 +299,7 @@
 <h3 id="microsoft-visual-studio">Microsoft Visual Studio</h3>
 <p>The minimum accepted version of Visual Studio is 2017. Older versions will not be accepted by <code>configure</code> and will not work. The maximum accepted version of Visual Studio is 2019.</p>
 <p>If you have multiple versions of Visual Studio installed, <code>configure</code> will by default pick the latest. You can request a specific version to be used by setting <code>--with-toolchain-version</code>, e.g. <code>--with-toolchain-version=2017</code>.</p>
+<p>If you have Visual Studio installed but <code>configure</code> fails to detect it, it may be because of <a href="#spaces-in-path">spaces in path</a>.</p>
 <h3 id="ibm-xl-cc">IBM XL C/C++</h3>
 <p>Please consult the AIX section of the <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of XLC are supported.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
@@ -819,6 +820,8 @@ Clock skew detected. Your build may be incomplete.</code></pre>
 cannot create ... Permission denied
 spawn failed</code></pre>
 <p>This can be a sign of a Cygwin problem. See the information about solving problems in the <a href="#cygwin">Cygwin</a> section. Rebooting the computer might help temporarily.</p>
+<h4 id="spaces-in-path">Spaces in Path</h4>
+<p>On Windows, when configuring, <code>fixpath.sh</code> may report that some directory names have spaces. Usually, it assumes those directories have <a href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name">short paths</a>. You can run <code>fsutil file setshortname</code> in <code>cmd</code> on certain directories, such as <code>Microsoft Visual Studio</code> or <code>Windows Kits</code>, to assign arbitrary short paths so <code>configure</code> can access them.</p>
 <h3 id="getting-help">Getting Help</h3>
 <p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for the JDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
  */
 
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.OutputAnalyzer;
-import java.io.File;
 
 // The main purpose is to test the interaction between shared strings
 // and -XX:+UseStringDeduplication. We run in -Xshare:auto mode so
@@ -39,9 +37,8 @@ import java.io.File;
 // doesn't happen often so it won't impact coverage).
 public class SharedStringsDedup {
     public static void main(String[] args) throws Exception {
-        OutputAnalyzer out =
-            CDSTestUtils.createArchive();
-        CDSTestUtils.checkDump(out, "Shared string table stats");
+        CDSTestUtils.createArchiveAndCheck()
+            .shouldContain("Shared string table stats");
         CDSTestUtils.runWithArchiveAndCheck("-XX:+UseStringDeduplication");
     }
 }

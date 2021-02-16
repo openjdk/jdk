@@ -91,6 +91,7 @@ public final class ChunkParser {
             return (mask & flags) != 0;
         }
     }
+    public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
 
     private static final long CONSTANT_POOL_TYPE_ID = 1;
     private static final String CHUNKHEADER = "jdk.types.ChunkHeader";
@@ -104,7 +105,6 @@ public final class ChunkParser {
     private LongMap<Parser> parsers;
     private boolean chunkFinished;
 
-    private Runnable flushOperation;
     private ParserConfiguration configuration;
     private volatile boolean closed;
     private MetadataDescriptor previousMetadata;
@@ -194,6 +194,9 @@ public final class ChunkParser {
     RecordedEvent readStreamingEvent() throws IOException {
         long absoluteChunkEnd = chunkHeader.getEnd();
         RecordedEvent event = readEvent();
+        if (event == ChunkParser.FLUSH_MARKER) {
+            return null;
+        }
         if (event != null) {
             return event;
         }
@@ -253,8 +256,9 @@ public final class ChunkParser {
                 // Not accepted by filter
             } else {
                 if (typeId == 1) { // checkpoint event
-                    if (flushOperation != null) {
-                        parseCheckpoint();
+                    if (CheckPointType.FLUSH.is(parseCheckpointType())) {
+                        input.position(pos + size);
+                        return FLUSH_MARKER;
                     }
                 } else {
                     if (typeId != 0) { // Not metadata event
@@ -267,16 +271,11 @@ public final class ChunkParser {
         return null;
     }
 
-    private void parseCheckpoint() throws IOException {
-        // Content has been parsed previously. This
-        // is to trigger flush
+    private byte parseCheckpointType() throws IOException {
         input.readLong(); // timestamp
         input.readLong(); // duration
         input.readLong(); // delta
-        byte typeFlags = input.readByte();
-        if (CheckPointType.FLUSH.is(typeFlags)) {
-            flushOperation.run();
-        }
+        return input.readByte();
     }
 
     private boolean awaitUpdatedHeader(long absoluteChunkEnd, long filterEnd) throws IOException {
@@ -449,10 +448,6 @@ public final class ChunkParser {
 
     public boolean isChunkFinished() {
         return chunkFinished;
-    }
-
-    public void setFlushOperation(Runnable flushOperation) {
-        this.flushOperation = flushOperation;
     }
 
     public long getChunkDuration() {

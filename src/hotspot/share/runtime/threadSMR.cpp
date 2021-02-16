@@ -76,7 +76,7 @@ volatile uint         ThreadsSMRSupport::_deleted_thread_time_max = 0;
 volatile uint         ThreadsSMRSupport::_deleted_thread_times = 0;
 
 // The bootstrap list is empty and cannot be freed.
-ThreadsList ThreadsSMRSupport::_bootstrap_list = ThreadsList(0);
+ThreadsList ThreadsSMRSupport::_bootstrap_list{0};
 
 // This is the VM's current "threads list" and it contains all of
 // the JavaThreads the VM considers to be alive at this moment in
@@ -585,18 +585,32 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
 #endif
 }
 
-// 'entries + 1' so we always have at least one entry.
+// Shared singleton data for all ThreadsList(0) instances.
+// Used by _bootstrap_list to avoid static init time heap allocation.
+// No real entries, just the final NULL terminator.
+static JavaThread* const empty_threads_list_data[1] = {};
+
+// Result has 'entries + 1' elements, with the last being the NULL terminator.
+static JavaThread* const* make_threads_list_data(int entries) {
+  if (entries == 0) {
+    return empty_threads_list_data;
+  }
+  JavaThread** data = NEW_C_HEAP_ARRAY(JavaThread*, entries + 1, mtThread);
+  data[entries] = NULL;         // Make sure the final entry is NULL.
+  return data;
+}
+
 ThreadsList::ThreadsList(int entries) :
   _length(entries),
   _next_list(NULL),
-  _threads(NEW_C_HEAP_ARRAY(JavaThread*, entries + 1, mtThread)),
+  _threads(make_threads_list_data(entries)),
   _nested_handle_cnt(0)
-{
-  *(JavaThread**)(_threads + entries) = NULL;  // Make sure the extra entry is NULL.
-}
+{}
 
 ThreadsList::~ThreadsList() {
-  FREE_C_HEAP_ARRAY(JavaThread*, _threads);
+  if (_threads != empty_threads_list_data) {
+    FREE_C_HEAP_ARRAY(JavaThread*, _threads);
+  }
 }
 
 // Add a JavaThread to a ThreadsList. The returned ThreadsList is a
@@ -1107,7 +1121,7 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
 // Print Threads class SMR info.
 void ThreadsSMRSupport::print_info_on(outputStream* st) {
   bool needs_unlock = false;
-  if (Threads_lock->try_lock()) {
+  if (Threads_lock->try_lock_without_rank_check()) {
     // We were able to grab the Threads_lock which makes things safe for
     // this call, but if we are error reporting, then a nested error
     // could happen with the Threads_lock held.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "memory/heap.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -206,17 +207,12 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   _log2_segment_size = exact_log2(segment_size);
 
   // Reserve and initialize space for _memory.
-  size_t page_size = os::vm_page_size();
-  if (os::can_execute_large_page_memory()) {
-    const size_t min_pages = 8;
-    page_size = MIN2(os::page_size_for_region_aligned(committed_size, min_pages),
-                     os::page_size_for_region_aligned(rs.size(), min_pages));
-  }
-
+  const size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
   const size_t granularity = os::vm_allocation_granularity();
   const size_t c_size = align_up(committed_size, page_size);
+  assert(c_size <= rs.size(), "alignment made committed size to large");
 
-  os::trace_page_sizes(_name, committed_size, rs.size(), page_size,
+  os::trace_page_sizes(_name, c_size, rs.size(), page_size,
                        rs.base(), rs.size());
   if (!_memory.initialize(rs, c_size)) {
     return false;

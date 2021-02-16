@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
  */
 
 #include "jvm.h"
+#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/osThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -1115,23 +1117,6 @@ static void pthread_init_common(void) {
   os::PlatformMutex::init();
 }
 
-// Not all POSIX types and API's are available on all notionally "posix"
-// platforms. If we have build-time support then we will check for actual
-// runtime support via dlopen/dlsym lookup. This allows for running on an
-// older OS version compared to the build platform. But if there is no
-// build time support then there cannot be any runtime support as we do not
-// know what the runtime types would be (for example clockid_t might be an
-// int or int64_t).
-//
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
-// This means we have clockid_t, clock_gettime et al and CLOCK_MONOTONIC
-
-int (*os::Posix::_clock_gettime)(clockid_t, struct timespec *) = NULL;
-int (*os::Posix::_clock_getres)(clockid_t, struct timespec *) = NULL;
-
-bool os::Posix::_supports_monotonic_clock = false;
-
 static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
 
 static bool _use_clock_monotonic_condattr = false;
@@ -1143,44 +1128,7 @@ void os::Posix::init(void) {
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
 
-  // 1. Check for CLOCK_MONOTONIC support.
-
-  void* handle = NULL;
-
-  // For older linux we need librt, for other OS we can find
-  // this function in regular libc.
-#ifdef NEEDS_LIBRT
-  // We do dlopen's in this particular order due to bug in linux
-  // dynamic loader (see 6348968) leading to crash on exit.
-  handle = dlopen("librt.so.1", RTLD_LAZY);
-  if (handle == NULL) {
-    handle = dlopen("librt.so", RTLD_LAZY);
-  }
-#endif
-
-  if (handle == NULL) {
-    handle = RTLD_DEFAULT;
-  }
-
-  int (*clock_getres_func)(clockid_t, struct timespec*) =
-    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_getres");
-  int (*clock_gettime_func)(clockid_t, struct timespec*) =
-    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_gettime");
-  if (clock_getres_func != NULL && clock_gettime_func != NULL) {
-    _clock_gettime = clock_gettime_func;
-    _clock_getres = clock_getres_func;
-    // We assume that if both clock_gettime and clock_getres support
-    // CLOCK_MONOTONIC then the OS provides true high-res monotonic clock.
-    struct timespec res;
-    struct timespec tp;
-    if (clock_getres_func(CLOCK_MONOTONIC, &res) == 0 &&
-        clock_gettime_func(CLOCK_MONOTONIC, &tp) == 0) {
-      // Yes, monotonic clock is supported.
-      _supports_monotonic_clock = true;
-    }
-  }
-
-  // 2. Check for pthread_condattr_setclock support.
+  // Check for pthread_condattr_setclock support.
 
   // libpthread is already loaded.
   int (*condattr_setclock_func)(pthread_condattr_t*, clockid_t) =
@@ -1195,7 +1143,7 @@ void os::Posix::init(void) {
   pthread_init_common();
 
   int status;
-  if (_pthread_condattr_setclock != NULL && _clock_gettime != NULL) {
+  if (_pthread_condattr_setclock != NULL) {
     if ((status = _pthread_condattr_setclock(_condAttr, CLOCK_MONOTONIC)) != 0) {
       if (status == EINVAL) {
         _use_clock_monotonic_condattr = false;
@@ -1211,27 +1159,12 @@ void os::Posix::init(void) {
 }
 
 void os::Posix::init_2(void) {
-  log_info(os)("Use of CLOCK_MONOTONIC is%s supported",
-               (_clock_gettime != NULL ? "" : " not"));
+  log_info(os)("Use of CLOCK_MONOTONIC is supported");
   log_info(os)("Use of pthread_condattr_setclock is%s supported",
                (_pthread_condattr_setclock != NULL ? "" : " not"));
   log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with %s",
                _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
 }
-
-#else // !SUPPORTS_CLOCK_MONOTONIC
-
-void os::Posix::init(void) {
-  pthread_init_common();
-}
-
-void os::Posix::init_2(void) {
-  log_info(os)("Use of CLOCK_MONOTONIC is not supported");
-  log_info(os)("Use of pthread_condattr_setclock is not supported");
-  log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with the default clock");
-}
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
 
 // Utility to convert the given timeout to an absolute timespec
 // (based on the appropriate clock) to use with pthread_cond_timewait,
@@ -1284,7 +1217,6 @@ static void calc_rel_time(timespec* abstime, jlong timeout, jlong now_sec,
 
 // Unpack the given deadline in milliseconds since the epoch, into the given timespec.
 // The current time in seconds is also passed in to enforce an upper bound as discussed above.
-// This is only used with gettimeofday, when clock_gettime is not available.
 static void unpack_abs_time(timespec* abstime, jlong deadline, jlong now_sec) {
   time_t max_secs = now_sec + MAX_SECS;
 
@@ -1319,38 +1251,21 @@ static void to_abstime(timespec* abstime, jlong timeout,
     timeout = 0;
   }
 
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
   clockid_t clock = CLOCK_MONOTONIC;
-  // need to ensure we have a runtime check for clock_gettime support
-  if (!isAbsolute && os::Posix::supports_monotonic_clock()) {
-    if (!_use_clock_monotonic_condattr || isRealtime) {
-      clock = CLOCK_REALTIME;
-    }
-    struct timespec now;
-    int status = os::Posix::clock_gettime(clock, &now);
-    assert_status(status == 0, status, "clock_gettime");
-    calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
-    DEBUG_ONLY(max_secs += now.tv_sec;)
-  } else {
-
-#else
-
-  { // Match the block scope.
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
-
-    // Time-of-day clock is all we can reliably use.
-    struct timeval now;
-    int status = gettimeofday(&now, NULL);
-    assert_status(status == 0, errno, "gettimeofday");
-    if (isAbsolute) {
-      unpack_abs_time(abstime, timeout, now.tv_sec);
-    } else {
-      calc_rel_time(abstime, timeout, now.tv_sec, now.tv_usec, MICROUNITS);
-    }
-    DEBUG_ONLY(max_secs += now.tv_sec;)
+  if (isAbsolute || (!_use_clock_monotonic_condattr || isRealtime)) {
+    clock = CLOCK_REALTIME;
   }
+
+  struct timespec now;
+  int status = clock_gettime(clock, &now);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+
+  if (!isAbsolute) {
+    calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
+  } else {
+    unpack_abs_time(abstime, timeout, now.tv_sec);
+  }
+  DEBUG_ONLY(max_secs += now.tv_sec;)
 
   assert(abstime->tv_sec >= 0, "tv_sec < 0");
   assert(abstime->tv_sec <= max_secs, "tv_sec > max_secs");
@@ -1365,6 +1280,51 @@ void os::Posix::to_RTC_abstime(timespec* abstime, int64_t millis) {
              false /* not absolute */,
              true  /* use real-time clock */);
 }
+
+// Common (partly) shared time functions
+
+jlong os::javaTimeMillis() {
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  return jlong(ts.tv_sec) * MILLIUNITS +
+    jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
+}
+
+void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  seconds = jlong(ts.tv_sec);
+  nanos = jlong(ts.tv_nsec);
+}
+
+// macOS and AIX have platform specific implementations for javaTimeNanos()
+// using native clock/timer access APIs. These have historically worked well
+// for those platforms, but it may be possible for them to switch to the
+// generic clock_gettime mechanism in the future.
+#if !defined(__APPLE__) && !defined(AIX)
+
+jlong os::javaTimeNanos() {
+  struct timespec tp;
+  int status = clock_gettime(CLOCK_MONOTONIC, &tp);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  jlong result = jlong(tp.tv_sec) * NANOSECS_PER_SEC + jlong(tp.tv_nsec);
+  return result;
+}
+
+// for timer info max values which include all bits
+#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
+
+void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
+  // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
+  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
+  info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
+  info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
+}
+
+#endif // ! APPLE && !AIX
 
 // Shared pthread_mutex/cond based PlatformEvent implementation.
 // Not currently usable by Solaris.
@@ -1533,15 +1493,22 @@ void os::PlatformEvent::unpark() {
 
 // JSR166 support
 
- os::PlatformParker::PlatformParker() {
-  int status;
-  status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
+ os::PlatformParker::PlatformParker() : _counter(0), _cur_index(-1) {
+  int status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
   assert_status(status == 0, status, "cond_init rel");
   status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
   assert_status(status == 0, status, "cond_init abs");
   status = pthread_mutex_init(_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
-  _cur_index = -1; // mark as unused
+}
+
+os::PlatformParker::~PlatformParker() {
+  int status = pthread_cond_destroy(&_cond[REL_INDEX]);
+  assert_status(status == 0, status, "cond_destroy rel");
+  status = pthread_cond_destroy(&_cond[ABS_INDEX]);
+  assert_status(status == 0, status, "cond_destroy abs");
+  status = pthread_mutex_destroy(_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
 }
 
 // Parker::park decrements count if > 0, else does a condvar wait.  Unpark

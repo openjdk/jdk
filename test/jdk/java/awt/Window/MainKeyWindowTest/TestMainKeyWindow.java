@@ -388,7 +388,7 @@ public class TestMainKeyWindow
             MenuBar mb = new MenuBar();
             mb.add(new Menu("Hello"));
             frame.setMenuBar(mb);
-            frame.setBounds(400, 180, 1068, 821);
+            frame.setBounds(400, 180, 300, 300);
             frame.setVisible(true);
             frame.toFront();
             Thread.sleep(20_000);
