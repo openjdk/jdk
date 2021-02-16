@@ -25,15 +25,19 @@
 
 package sun.security.rsa;
 
-import java.math.BigInteger;
-import java.util.*;
-
-import java.security.SecureRandom;
-import java.security.interfaces.*;
+import sun.security.jca.JCAUtil;
 
 import javax.crypto.BadPaddingException;
-
-import sun.security.jca.JCAUtil;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.security.interfaces.RSAKey;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Core of the RSA implementation. Has code to perform public and private key
@@ -56,7 +60,7 @@ public final class RSACore {
     // cache for blinding parameters. Map<BigInteger, BlindingParameters>
     // use a weak hashmap so that cached values are automatically cleared
     // when the modulus is GC'ed
-    private static final Map<BigInteger, BlindingParameters>
+    private static final Map<BigInteger, ConcurrentLinkedQueue<BlindingParameters>>
                 blindingCache = new WeakHashMap<>();
 
     private RSACore() {
@@ -403,55 +407,55 @@ public final class RSACore {
                 (this.d != null && this.d.equals(d))) {
 
                 BlindingRandomPair brp = null;
-                synchronized (this) {
-                    if (!u.equals(BigInteger.ZERO) &&
-                        !v.equals(BigInteger.ZERO)) {
+                if (!u.equals(BigInteger.ZERO) &&
+                    !v.equals(BigInteger.ZERO)) {
 
-                        brp = new BlindingRandomPair(u, v);
-                        if (u.compareTo(BigInteger.ONE) <= 0 ||
-                            v.compareTo(BigInteger.ONE) <= 0) {
+                    brp = new BlindingRandomPair(u, v);
+                    if (needsReset()) {
+                        u = u.modPow(BIG_TWO, n);
+                        v = v.modPow(BIG_TWO, n);
+                    }
+                } // Otherwise, need to reset the random pair.
 
-                            // need to reset the random pair next time
-                            u = BigInteger.ZERO;
-                            v = BigInteger.ZERO;
-                        } else {
-                            u = u.modPow(BIG_TWO, n);
-                            v = v.modPow(BIG_TWO, n);
-                        }
-                    } // Otherwise, need to reset the random pair.
-                }
                 return brp;
             }
 
             return null;
+        }
+
+        boolean needsReset() {
+            return u.compareTo(BigInteger.ONE) > 0 && v.compareTo(
+                BigInteger.ONE) > 0;
         }
     }
 
     private static BlindingRandomPair getBlindingRandomPair(
             BigInteger e, BigInteger d, BigInteger n) {
 
-        BlindingParameters bps = null;
-        synchronized (blindingCache) {
-            bps = blindingCache.get(n);
+        ConcurrentLinkedQueue<BlindingParameters> queue = blindingCache.get(n);
+
+        if (queue == null) {
+            // Overwriting an existing queue is ok.
+            queue = new ConcurrentLinkedQueue<>();
+            blindingCache.putIfAbsent(n, queue);
         }
 
+        BlindingParameters bps;
+        bps = queue.poll();
         if (bps == null) {
             bps = new BlindingParameters(e, d, n);
-            synchronized (blindingCache) {
-                blindingCache.putIfAbsent(n, bps);
-            }
         }
 
         BlindingRandomPair brp = bps.getBlindingRandomPair(e, d, n);
         if (brp == null) {
             // need to reset the blinding parameters
             bps = new BlindingParameters(e, d, n);
-            synchronized (blindingCache) {
-                blindingCache.replace(n, bps);
-            }
             brp = bps.getBlindingRandomPair(e, d, n);
         }
 
+        if (bps.needsReset()) {
+            queue.add(bps);
+        }
         return brp;
     }
 
