@@ -3378,7 +3378,7 @@ instruct reinterpret_shrink(vec dst, legVec src) %{
   format %{ "vector_reinterpret_shrink $dst,$src\t!" %}
   ins_encode %{
     switch (vector_length_in_bytes(this)) {
-      case  4: __ movflt ($dst$$XMMRegister, $src$$XMMRegister); break;
+      case  4: __ movfltz($dst$$XMMRegister, $src$$XMMRegister); break;
       case  8: __ movq   ($dst$$XMMRegister, $src$$XMMRegister); break;
       case 16: __ movdqu ($dst$$XMMRegister, $src$$XMMRegister); break;
       case 32: __ vmovdqu($dst$$XMMRegister, $src$$XMMRegister); break;
@@ -6011,7 +6011,6 @@ instruct vshiftI_imm(vec dst, vec src, immI8 shift) %{
   match(Set dst (LShiftVI src (LShiftCntV shift)));
   match(Set dst (RShiftVI src (RShiftCntV shift)));
   match(Set dst (URShiftVI src (RShiftCntV shift)));
-  effect(TEMP dst, USE src);
   format %{ "vshiftd_imm  $dst,$src,$shift\t! shift packedI" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
@@ -6058,7 +6057,6 @@ instruct vshiftL(vec dst, vec src, vec shift) %{
 instruct vshiftL_imm(vec dst, vec src, immI8 shift) %{
   match(Set dst (LShiftVL src (LShiftCntV shift)));
   match(Set dst (URShiftVL src (RShiftCntV shift)));
-  effect(TEMP dst, USE src, USE shift);
   format %{ "vshiftq_imm  $dst,$src,$shift\t! shift packedL" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();

@@ -55,6 +55,8 @@ class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahCollectionSet;
 class ShenandoahFreeSet;
+class ShenandoahConcurrentMark;
+class ShenandoahFullGC;
 class ShenandoahMonitoringSupport;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
@@ -120,6 +122,11 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
   friend class ShenandoahSafepoint;
+  // Supported GC
+  friend class ShenandoahConcurrentGC;
+  friend class ShenandoahDegenGC;
+  friend class ShenandoahFullGC;
+
 // ---------- Locks that guard important data structures in Heap
 //
 private:
@@ -301,38 +308,6 @@ public:
   inline bool is_concurrent_strong_root_in_progress() const;
   inline bool is_concurrent_weak_root_in_progress() const;
 
-// ---------- GC cancellation and degeneration machinery
-//
-// Cancelled GC flag is used to notify concurrent phases that they should terminate.
-//
-public:
-  enum ShenandoahDegenPoint {
-    _degenerated_unset,
-    _degenerated_outside_cycle,
-    _degenerated_mark,
-    _degenerated_evac,
-    _degenerated_updaterefs,
-    _DEGENERATED_LIMIT
-  };
-
-  static const char* degen_point_to_string(ShenandoahDegenPoint point) {
-    switch (point) {
-      case _degenerated_unset:
-        return "<UNSET>";
-      case _degenerated_outside_cycle:
-        return "Outside of Cycle";
-      case _degenerated_mark:
-        return "Mark";
-      case _degenerated_evac:
-        return "Evacuation";
-      case _degenerated_updaterefs:
-        return "Update Refs";
-      default:
-        ShouldNotReachHere();
-        return "ERROR";
-    }
-  };
-
 private:
   enum CancelState {
     // Normal state. GC has not been cancelled and is open for cancellation.
@@ -362,85 +337,38 @@ public:
 
   void cancel_gc(GCCause::Cause cause);
 
-// ---------- GC operations entry points
-//
 public:
-  // Entry points to STW GC operations, these cause a related safepoint, that then
-  // call the entry method below
-  void vmop_entry_init_mark();
-  void vmop_entry_final_mark();
-  void vmop_entry_init_updaterefs();
-  void vmop_entry_final_updaterefs();
-  void vmop_entry_full(GCCause::Cause cause);
-  void vmop_degenerated(ShenandoahDegenPoint point);
-
-  // Entry methods to normally STW GC operations. These set up logging, monitoring
-  // and workers for net VM operation
-  void entry_init_mark();
-  void entry_final_mark();
-  void entry_init_updaterefs();
-  void entry_final_updaterefs();
-  void entry_full(GCCause::Cause cause);
-  void entry_degenerated(int point);
-
-  // Entry methods to normally concurrent GC operations. These set up logging, monitoring
-  // for concurrent operation.
-  void entry_reset();
-  void entry_mark_roots();
-  void entry_mark();
-  void entry_weak_refs();
-  void entry_weak_roots();
-  void entry_class_unloading();
-  void entry_strong_roots();
-  void entry_cleanup_early();
-  void entry_rendezvous_roots();
-  void entry_evac();
-  void entry_update_thread_roots();
-  void entry_updaterefs();
-  void entry_cleanup_complete();
+  // Elastic heap support
   void entry_uncommit(double shrink_before, size_t shrink_until);
-
-private:
-  // Actual work for the phases
-  void op_init_mark();
-  void op_final_mark();
-  void op_init_updaterefs();
-  void op_final_updaterefs();
-  void op_full(GCCause::Cause cause);
-  void op_degenerated(ShenandoahDegenPoint point);
-  void op_degenerated_fail();
-  void op_degenerated_futile();
-
-  void op_reset();
-  void op_mark_roots();
-  void op_mark();
-  void op_weak_refs();
-  void op_weak_roots();
-  void op_class_unloading();
-  void op_strong_roots();
-  void op_cleanup_early();
-  void op_rendezvous_roots();
-  void op_conc_evac();
-  void op_stw_evac();
-  void op_update_thread_roots();
-  void op_updaterefs();
-  void op_cleanup_complete();
   void op_uncommit(double shrink_before, size_t shrink_until);
 
+private:
+  // GC support
+  // Reset bitmap, prepare regions for new GC cycle
+  void prepare_gc();
+  void prepare_regions_and_collection_set(bool concurrent);
+  // Evacuation
+  void prepare_evacuation(bool concurrent);
+  void evacuate_collection_set(bool concurrent);
+  // Concurrent root processing
+  void prepare_concurrent_roots();
+  void finish_concurrent_roots();
+  // Concurrent class unloading support
+  void do_class_unloading();
+  // Reference updating
+  void prepare_update_heap_references(bool concurrent);
+  void update_heap_references(bool concurrent);
+  // Final update region states
+  void update_heap_region_states(bool concurrent);
+  void rebuild_free_set(bool concurrent);
+
   void rendezvous_threads();
+  void recycle_trash();
 
-  // Messages for GC trace events, they have to be immortal for
-  // passing around the logging/tracing systems
-  const char* init_mark_event_message() const;
-  const char* final_mark_event_message() const;
-  const char* conc_mark_event_message() const;
-  const char* degen_event_message(ShenandoahDegenPoint point) const;
+public:
+  void notify_gc_progress()    { _progress_last_gc.set();   }
+  void notify_gc_no_progress() { _progress_last_gc.unset(); }
 
-// Helpers
-  void finish_mark();
-  void prepare_evacuation();
-
-// ---------- GC subsystems
 //
 // Mark support
 private:
@@ -517,11 +445,6 @@ private:
   void stw_process_weak_roots(bool full_gc);
   void stw_weak_refs(bool full_gc);
 
-  // Prepare concurrent root processing
-  void prepare_concurrent_roots();
-  // Prepare and finish concurrent unloading
-  void prepare_concurrent_unloading();
-  void finish_concurrent_unloading();
   // Heap iteration support
   void scan_roots_for_iteration(ShenandoahScanObjectStack* oop_stack, ObjectIterateScanRootClosure* oops);
   bool prepare_aux_bitmap_for_iteration();
@@ -582,6 +505,11 @@ public:
 
   void sync_pinned_region_status();
   void assert_pinned_region_status() NOT_DEBUG_RETURN;
+
+// ---------- Concurrent Stack Processing support
+//
+public:
+  bool uses_stack_watermark_barrier() const { return true; }
 
 // ---------- Allocation support
 //
@@ -652,7 +580,6 @@ public:
 
   // SATB barriers hooks
   inline bool requires_marking(const void* entry) const;
-  void force_satb_flush_all_threads();
 
   // Support for bitmap uncommits
   bool commit_bitmap_slice(ShenandoahHeapRegion *r);
@@ -670,8 +597,6 @@ public:
 private:
   ShenandoahCollectionSet* _collection_set;
   ShenandoahEvacOOMHandler _oom_evac_handler;
-
-  void evacuate_and_update_roots();
 
 public:
   static address in_cset_fast_test_addr();
@@ -696,16 +621,10 @@ public:
 //
 public:
   template <class T>
-  inline oop evac_update_with_forwarded(T* p);
+  inline void conc_update_with_forwarded(T* p);
 
   template <class T>
-  inline oop maybe_update_with_forwarded(T* p);
-
-  template <class T>
-  inline oop maybe_update_with_forwarded_not_null(T* p, oop obj);
-
-  template <class T>
-  inline oop update_with_forwarded_not_null(T* p, oop obj);
+  inline void update_with_forwarded(T* p);
 
   static inline oop cas_oop(oop n, narrowOop* addr, oop c);
   static inline oop cas_oop(oop n, oop* addr, oop c);
@@ -717,7 +636,6 @@ public:
 
 private:
   void trash_cset_regions();
-  void update_heap_references(bool concurrent);
 
 // ---------- Testing helpers functions
 //

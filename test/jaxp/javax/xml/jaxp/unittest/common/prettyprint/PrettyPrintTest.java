@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 package common.prettyprint;
 
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -30,6 +33,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -48,6 +53,7 @@ import org.testng.annotations.Test;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
@@ -60,7 +66,7 @@ import org.xml.sax.SAXException;
 
 /*
  * @test
- * @bug 6439439 8087303 8174025 8223291
+ * @bug 6439439 8087303 8174025 8223291 8249867 8261209
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true common.prettyprint.PrettyPrintTest
  * @run testng/othervm common.prettyprint.PrettyPrintTest
@@ -68,6 +74,19 @@ import org.xml.sax.SAXException;
  */
 @Listeners({jaxp.library.FilePolicy.class})
 public class PrettyPrintTest {
+    private static final String DOM_FORMAT_PRETTY_PRINT = "format-pretty-print";
+    private static final String JDK_IS_STANDALONE =
+            "http://www.oracle.com/xml/jaxp/properties/isStandalone";
+    private static final String SP_JDK_IS_STANDALONE = "jdk.xml.isStandalone";
+    // pretty-print=true, isStandalone=true, linebreak added after header
+    private static final String XML_LB
+            = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sometag/>\n";
+    // pretty-print=true, isStandalone=false, no linebreak after header
+    private static final String XML_PPTRUE_NOLB
+            = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sometag/>\n";
+    // pretty-print=false, isStandalone=true, linebreak added after header
+    private static final String XML_PPFALSE_LB
+            = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sometag/>";
     /*
      * test CDATA, elements only, text and element, xml:space property, mixed
      * node types.
@@ -84,25 +103,119 @@ public class PrettyPrintTest {
     }
 
     /*
+     * Bug: 8249867
+     * DataProvider: for testing the isStandalone property
+     * Data columns: pretty-print, property, system property, value, expected result
+     */
+    @DataProvider(name = "setting")
+    Object[][] getData() throws Exception {
+        return new Object[][]{
+            // pretty-print = true
+            {true, false, true, true, XML_LB},       //set System property = true
+            {true, false, true, false, XML_PPTRUE_NOLB}, //set System property = false
+            {true, true, false, true, XML_LB},       //set property = true
+            {true, true, false, false, XML_PPTRUE_NOLB}, //set property = false
+            {true, false, false, false, XML_PPTRUE_NOLB},//default
+
+            // pretty-print = false
+            {false, false, true, true, XML_PPFALSE_LB}, //System property = true
+            {false, true, false, true, XML_PPFALSE_LB}, //set property = true
+
+        };
+    }
+
+    /*
+     * Bug: 8249867
+     * DataProvider: for verifying the System property
+     * Data columns: value for system property, expected result
+     */
+    @DataProvider(name = "SP")
+    Object[][] getSystemProperty() throws Exception {
+        return new Object[][]{
+            // the system property is true only if it is "true" and false otherwise
+            {"true", true},
+            {"false", false},
+            {"yes", false},
+            {"", false},
+        };
+    }
+
+    /*
+     * Bug: 8249867
+     * Verifies the use of the new property "isStandalone" and the
+     * corresponding System property "jdk.xml.isStandalone".
+     *
+     * Bug: 8261209
+     * Verifies that the property takes effect regardless of the settings of
+     * property "pretty-print".
+     */
+    @Test(dataProvider = "setting")
+    public void testIsStandalone_DOMLS(boolean pretty, boolean p, boolean sp,
+            boolean val, String expected)
+            throws Exception {
+        if (sp) {
+            setSystemProperty(SP_JDK_IS_STANDALONE, Boolean.toString(val));
+        }
+        Document document = getDocument();
+        DOMImplementationLS impl = (DOMImplementationLS)document.getImplementation();
+        LSSerializer ser = impl.createLSSerializer();
+        DOMConfiguration config = ser.getDomConfig();
+        if (pretty) {
+            config.setParameter("format-pretty-print", true);
+        }
+        if (p && !sp) {
+            config.setParameter(JDK_IS_STANDALONE, val);
+        }
+        if (sp) {
+            clearSystemProperty(SP_JDK_IS_STANDALONE);
+        }
+        final StringWriter writer = new StringWriter();
+        final LSOutput output = impl.createLSOutput();
+        output.setCharacterStream(writer);
+        ser.write(document, output);
+        String result = writer.toString();
+
+        Assert.assertEquals(result, expected);
+    }
+
+    /*
+     * Bug: 8249867
+     * Verifies the definition of the System property "jdk.xml.isStandalone".
+     * The system property is true only if it is "true" and false otherwise.
+     */
+    @Test(dataProvider = "SP")
+    public void testSP(String value, boolean expected) throws Exception {
+        setSystemProperty(SP_JDK_IS_STANDALONE, value);
+        DOMConfiguration c = getConfig();
+        clearSystemProperty(SP_JDK_IS_STANDALONE);
+
+        Assert.assertEquals(c.getParameter(JDK_IS_STANDALONE), expected);
+    }
+
+    /*
      * @bug 8087303
      * Test the xml document are serialized with pretty-print by
      * LSSerializer and transformer correctly
      *
      */
     @Test(dataProvider = "xml-data")
-    public void testXMLPrettyPrint(String sourceFile, String expectedFile) throws Exception {
+    public void testXMLPrettyPrint(String sourceFile, String expectedFile)
+            throws Exception {
         String source = read(sourceFile);
         String expected = read(expectedFile);
         // test it's no change if no pretty-print
         String result = serializerWrite(toXmlDocument(source), false);
-        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)), "The actual is: " + result);
+        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)),
+                "The actual is: " + result);
         // test pretty-print
         assertEquals(serializerWrite(toXmlDocument(source), true), expected);
         // test it's no change if no pretty-print
         result = transform(toXmlDocument(source), false);
-        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)), "The actual is: " + result);
+        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)),
+                "The actual is: " + result);
         // test pretty-print
-        assertEquals(transform(toXmlDocument(source), true).replaceAll("\r\n", "\n"), expected);
+        assertEquals(transform(toXmlDocument(source), true).replaceAll("\r\n", "\n"),
+                expected);
     }
 
 
@@ -164,12 +277,14 @@ public class PrettyPrintTest {
      *
      */
     @Test(dataProvider = "xml-data-whitespace-ls")
-    public void testWhitespaceWithLSSerializer(String sourceFile, String expectedFile) throws Exception {
+    public void testWhitespaceWithLSSerializer(String sourceFile, String expectedFile)
+            throws Exception {
         String source = read(sourceFile);
         String expected = read(expectedFile);
         // test it's no change if no pretty-print
         String result = serializerWrite(toXmlDocument(source), false);
-        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)), "The actual is: " + result);
+        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)),
+                "The actual is: " + result);
         // test pretty-print
         assertEquals(serializerWrite(toXmlDocument(source), true), expected);
     }
@@ -191,14 +306,17 @@ public class PrettyPrintTest {
      *
      */
     @Test(dataProvider = "xml-data-whitespace-xslt")
-    public void testWhitespaceWithTransformer(String sourceFile, String expectedFile) throws Exception {
+    public void testWhitespaceWithTransformer(String sourceFile, String expectedFile)
+            throws Exception {
         String source = read(sourceFile);
         String expected = read(expectedFile);
         // test it's no change if no pretty-print
         String result = transform(toXmlDocument(source), false);
-        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)), "The actual is: " + result);
+        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)),
+                "The actual is: " + result);
         // test pretty-print
-        assertEquals(transform(toXmlDocument(source), true).replaceAll("\r\n", "\n"), expected);
+        assertEquals(transform(toXmlDocument(source), true).replaceAll("\r\n", "\n"),
+                expected);
     }
 
     /*
@@ -223,17 +341,21 @@ public class PrettyPrintTest {
      *
      */
     @Test(dataProvider = "html-data")
-    public void testTransformToHTML(String sourceFile, String expectedFile) throws Exception {
+    public void testTransformToHTML(String sourceFile, String expectedFile)
+            throws Exception {
         String source = read(sourceFile);
         String expected = read(expectedFile);
         // test it's no change if no pretty-print
         StringWriter writer = new StringWriter();
-        getTransformer(true, false).transform(new StreamSource(new StringReader(source)), new StreamResult(writer));
-        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(writer.toString())), "The actual is: " + writer.toString());
+        getTransformer(true, false).transform(
+                new StreamSource(new StringReader(source)), new StreamResult(writer));
+        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(writer.toString())),
+                "The actual is: " + writer.toString());
 
         // test pretty-print
         writer = new StringWriter();
-        getTransformer(true, true).transform(new StreamSource(new StringReader(source)), new StreamResult(writer));
+        getTransformer(true, true).transform(
+                new StreamSource(new StringReader(source)), new StreamResult(writer));
         assertEquals(writer.toString().replaceAll("\r\n", "\n"), expected);
     }
 
@@ -248,13 +370,15 @@ public class PrettyPrintTest {
         final String xml ="simple-entity-resolver-config.xml";
         final String expectedOutput ="simple-entity-resolver-config-transformed.xml";
         TransformerFactory factory = TransformerFactory.newInstance();
-        Transformer transformer = factory.newTemplates(new StreamSource(new StringReader(read(xsl)))).newTransformer();
+        Transformer transformer = factory.newTemplates(
+                new StreamSource(new StringReader(read(xsl)))).newTransformer();
 
         String key = "schemaBase";
         String value = "schemas";
         transformer.setParameter(key, value);
         StringWriter writer = new StringWriter();
-        transformer.transform(new StreamSource(new StringReader(read(xml))), new StreamResult(writer));
+        transformer.transform(new StreamSource(new StringReader(read(xml))),
+                new StreamResult(writer));
         assertEquals(writer.toString().replaceAll("\r\n", "\n"), read(expectedOutput));
     }
 
@@ -262,7 +386,8 @@ public class PrettyPrintTest {
     public void testLSSerializerFormatPrettyPrint() {
 
         final String XML_DOCUMENT = "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n"
-                + "<hello>before child element<child><children/><children/></child>after child element</hello>";
+                + "<hello>before child element<child><children/><children/></child>"
+                + "after child element</hello>";
         /**JDK-8035467
          * no newline in default output
          */
@@ -273,7 +398,8 @@ public class PrettyPrintTest {
                 + "<child><children/><children/></child>"
                 + "after child element</hello>";
 
-        final String XML_DOCUMENT_PRETTY_PRINT = "<?xml version=\"1.0\" encoding=\"UTF-16\"?><hello>\n" +
+        final String XML_DOCUMENT_PRETTY_PRINT =
+                "<?xml version=\"1.0\" encoding=\"UTF-16\"?><hello>\n" +
                 "    before child element\n" +
                 "    <child>\n" +
                 "        <children/>\n" +
@@ -310,58 +436,73 @@ public class PrettyPrintTest {
         DOMImplementationLS domImplementationLS = (DOMImplementationLS) domImplementation;
         LSSerializer lsSerializer = domImplementationLS.createLSSerializer();
 
-        System.out.println("Serializer is: " + lsSerializer.getClass().getName() + " " + lsSerializer);
+        System.out.println("Serializer is: " + lsSerializer.getClass().getName()
+                + " " + lsSerializer);
 
         // get configuration
         DOMConfiguration domConfiguration = lsSerializer.getDomConfig();
 
         // query current configuration
-        Boolean defaultFormatPrettyPrint = (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT);
-        Boolean canSetFormatPrettyPrintFalse = (Boolean) domConfiguration.canSetParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.FALSE);
-        Boolean canSetFormatPrettyPrintTrue = (Boolean) domConfiguration.canSetParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.TRUE);
+        Boolean defaultFormatPrettyPrint =
+                (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT);
+        Boolean canSetFormatPrettyPrintFalse =
+                (Boolean) domConfiguration.canSetParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.FALSE);
+        Boolean canSetFormatPrettyPrintTrue =
+                (Boolean) domConfiguration.canSetParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.TRUE);
 
-        System.out.println(DOM_FORMAT_PRETTY_PRINT + " default/can set false/can set true = " + defaultFormatPrettyPrint + "/"
+        System.out.println(DOM_FORMAT_PRETTY_PRINT + " default/can set false/can set true = "
+                + defaultFormatPrettyPrint + "/"
                 + canSetFormatPrettyPrintFalse + "/" + canSetFormatPrettyPrintTrue);
 
         // test values
-        assertEquals(defaultFormatPrettyPrint, Boolean.FALSE, "Default value of " + DOM_FORMAT_PRETTY_PRINT + " should be " + Boolean.FALSE);
+        assertEquals(defaultFormatPrettyPrint, Boolean.FALSE,
+                "Default value of " + DOM_FORMAT_PRETTY_PRINT + " should be " + Boolean.FALSE);
 
-        assertEquals(canSetFormatPrettyPrintFalse, Boolean.TRUE, "Can set " + DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.FALSE + " should be "
+        assertEquals(canSetFormatPrettyPrintFalse, Boolean.TRUE,
+                "Can set " + DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.FALSE + " should be "
                 + Boolean.TRUE);
 
-        assertEquals(canSetFormatPrettyPrintTrue, Boolean.TRUE, "Can set " + DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.TRUE + " should be "
+        assertEquals(canSetFormatPrettyPrintTrue, Boolean.TRUE,
+                "Can set " + DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.TRUE + " should be "
                 + Boolean.TRUE);
 
         // get default serialization
         String prettyPrintDefault = lsSerializer.writeToString(document);
-        System.out.println("(default) " + DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
+        System.out.println("(default) " + DOM_FORMAT_PRETTY_PRINT + "=="
+                + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
                 + ": \n\"" + prettyPrintDefault + "\"");
 
-        assertEquals(prettyPrintDefault, XML_DOCUMENT_DEFAULT_PRINT, "Invalid serialization with default value, " + DOM_FORMAT_PRETTY_PRINT + "=="
+        assertEquals(prettyPrintDefault, XML_DOCUMENT_DEFAULT_PRINT,
+                "Invalid serialization with default value, " + DOM_FORMAT_PRETTY_PRINT + "=="
                 + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT));
 
         // configure LSSerializer to not format-pretty-print
         domConfiguration.setParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.FALSE);
         String prettyPrintFalse = lsSerializer.writeToString(document);
-        System.out.println("(FALSE) " + DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
+        System.out.println("(FALSE) " + DOM_FORMAT_PRETTY_PRINT + "=="
+                + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
                 + ": \n\"" + prettyPrintFalse + "\"");
 
-        assertEquals(prettyPrintFalse, XML_DOCUMENT_DEFAULT_PRINT, "Invalid serialization with FALSE value, " + DOM_FORMAT_PRETTY_PRINT + "=="
+        assertEquals(prettyPrintFalse, XML_DOCUMENT_DEFAULT_PRINT,
+                "Invalid serialization with FALSE value, " + DOM_FORMAT_PRETTY_PRINT + "=="
                 + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT));
 
         // configure LSSerializer to format-pretty-print
         domConfiguration.setParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.TRUE);
         String prettyPrintTrue = lsSerializer.writeToString(document);
-        System.out.println("(TRUE) " + DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
+        System.out.println("(TRUE) " + DOM_FORMAT_PRETTY_PRINT + "=="
+                + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
                 + ": \n\"" + prettyPrintTrue + "\"");
 
-        assertEquals(prettyPrintTrue, XML_DOCUMENT_PRETTY_PRINT, "Invalid serialization with TRUE value, " + DOM_FORMAT_PRETTY_PRINT + "=="
+        assertEquals(prettyPrintTrue, XML_DOCUMENT_PRETTY_PRINT,
+                "Invalid serialization with TRUE value, " + DOM_FORMAT_PRETTY_PRINT + "=="
                 + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT));
     }
 
     private String serializerWrite(Node xml, boolean pretty) throws Exception {
         DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
-        DOMImplementationLS domImplementation = (DOMImplementationLS) registry.getDOMImplementation("LS");
+        DOMImplementationLS domImplementation =
+                (DOMImplementationLS) registry.getDOMImplementation("LS");
         StringWriter writer = new StringWriter();
         LSOutput formattedOutput = domImplementation.createLSOutput();
         formattedOutput.setCharacterStream(writer);
@@ -457,12 +598,29 @@ public class PrettyPrintTest {
         return transformer;
     }
 
-
     private String read(String filename) throws Exception {
         try (InputStream in = PrettyPrintTest.class.getResourceAsStream(filename)) {
             return new String(in.readAllBytes());
         }
     }
 
-    private static final String DOM_FORMAT_PRETTY_PRINT = "format-pretty-print";
+    private Document getDocument() throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document document = builder.newDocument();
+
+        Element child = document.createElement("sometag");
+        document.appendChild(child);
+        return document;
+    }
+
+    private DOMImplementationLS getImpl() throws Exception {
+        Document document = getDocument();
+        return (DOMImplementationLS)document.getImplementation();
+    }
+
+    private DOMConfiguration getConfig() throws Exception {
+        LSSerializer ser = getImpl().createLSSerializer();
+        return ser.getDomConfig();
+    }
 }

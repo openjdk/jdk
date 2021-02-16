@@ -725,8 +725,8 @@ public class TestModules extends JavadocTester {
                     <!-- ============ MODULES SUMMARY =========== -->
                     <h2>Modules</h2>""",
                 """
-                    <div class="col-first even-row-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last even-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""",
+                    <div class="col-first even-row-color package-summary-table package-summary-table-tab1"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
                 """
                     <section class="packages-summary" id="packages.summary">
                     <!-- ============ PACKAGES SUMMARY =========== -->
@@ -848,36 +848,36 @@ public class TestModules extends JavadocTester {
                     </dl>""",
                 """
                     <dl class="index">
-                    <dt><span class="search-tag-link"><a href="moduleB/module-summary.html#search_wo\
-                    rd">search_word</a></span> - Search tag in module moduleB</dt>
+                    <dt><a href="moduleB/module-summary.html#search_word" class="search-tag-link">se\
+                    arch_word</a> - Search tag in module moduleB</dt>
                     <dd>&nbsp;</dd>
-                    <dt><span class="search-tag-link"><a href="moduleA/module-summary.html#searchphr\
-                    ase">search phrase</a></span> - Search tag in module moduleA</dt>
+                    <dt><a href="moduleA/module-summary.html#searchphrase" class="search-tag-link">s\
+                    earch phrase</a> - Search tag in module moduleA</dt>
                     <dd>with description</dd>
                     </dl>""");
         checkOutput("index-all.html", false,
                 """
-                    <dt><span class="search-tag-link"><a href="moduleA/module-summary.html#searchphr\
-                    ase">search phrase</a></span> - Search tag in module moduleA</dt>
+                    <dt><a href="moduleA/module-summary.html#searchphrase" class="search-tag-link">s\
+                    earch phrase</a> - Search tag in module moduleA</dt>
                     <dd>with description</dd>
-                    <dt><span class="search-tag-link"><a href="moduleA/module-summary.html#searchphr\
-                    ase">search phrase</a></span> - Search tag in module moduleA</dt>
+                    <dt><a href="moduleA/module-summary.html#searchphrase" class="search-tag-link">s\
+                    earch phrase</a></span> - Search tag in module moduleA</dt>
                     <dd>with description</dd>""");
     }
 
     void checkModuleModeCommon() {
         checkOutput("index.html", true,
                 """
-                    <div class="col-first even-row-color all-modules-table-tab1 all-modules-table"><a href="moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last even-row-color all-modules-table-tab1 all-modules-table">
+                    <div class="col-first even-row-color all-modules-table all-modules-table-tab1"><a href="moduleA/module-summary.html">moduleA</a></div>
+                    <div class="col-last even-row-color all-modules-table all-modules-table-tab1">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""",
                 """
-                    <div class="col-first odd-row-color all-modules-table-tab1 all-modules-table"><a href="moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last odd-row-color all-modules-table-tab1 all-modules-table">
+                    <div class="col-first odd-row-color all-modules-table all-modules-table-tab1"><a href="moduleB/module-summary.html">moduleB</a></div>
+                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1">
                     <div class="block">This is a test description for the moduleB module.</div>""",
                 """
-                    <div class="col-first odd-row-color all-modules-table-tab1 all-modules-table"><a href="moduletags/module-summary.html">moduletags</a></div>
-                    <div class="col-last odd-row-color all-modules-table-tab1 all-modules-table">
+                    <div class="col-first odd-row-color all-modules-table all-modules-table-tab1"><a href="moduletags/module-summary.html">moduletags</a></div>
+                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1">
                     <div class="block">This is a test description for the moduletags module.<br>
                      Type Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html" title="class in testpkgmdltags"><code>TestClassInModuleTags</code></a>.<br>
                      Member Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html#testMethod(java.lang.String)"><code>testMethod(String)</code></a>.<br>
@@ -895,8 +895,8 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("moduletags/module-summary.html", true,
                 """
-                    <div class="col-first even-row-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
-                    <div class="col-last even-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""",
+                    <div class="col-first even-row-color package-summary-table package-summary-table-tab1"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
                 """
                     <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
                     <li><a href="#modules.summary">Modules</a>&nbsp;|&nbsp;</li>
@@ -940,8 +940,8 @@ public class TestModules extends JavadocTester {
     void checkModuleModeApi(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
                 """
-                    <div class="col-first even-row-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last even-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""");
+                    <div class="col-first even-row-color package-summary-table package-summary-table-tab1"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
                     <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
@@ -990,9 +990,9 @@ public class TestModules extends JavadocTester {
                     <div class="col-first even-row-color"><a href="../moduleC/module-summary.html">moduleC</a></div>
                     <div class="col-last even-row-color"><a href="../moduleC/testpkgmdlC/package-summary.html">testpkgmdlC</a></div>""",
                 """
-                    <div class="col-first odd-row-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-second odd-row-color package-summary-table-tab1 package-summary-table">All Modules</div>
-                    <div class="col-last odd-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""",
+                    <div class="col-first odd-row-color package-summary-table package-summary-table-tab1"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
+                    <div class="col-second odd-row-color package-summary-table package-summary-table-tab1">All Modules</div>
+                    <div class="col-last odd-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
                     <button id="package-summary-table-tab0" role="tab" aria-selected="true" aria-con\
@@ -1009,9 +1009,9 @@ public class TestModules extends JavadocTester {
                     s="table-tab">Concealed</button>\
                     </div>""",
                 """
-                    <div class="col-first even-row-color package-summary-table-tab3 package-summary-table"><a href="concealedpkgmdlA/package-summary.html">concealedpkgmdlA</a></div>
-                    <div class="col-second even-row-color package-summary-table-tab3 package-summary-table">None</div>
-                    <div class="col-last even-row-color package-summary-table-tab3 package-summary-table">&nbsp;</div>""");
+                    <div class="col-first even-row-color package-summary-table package-summary-table-tab3"><a href="concealedpkgmdlA/package-summary.html">concealedpkgmdlA</a></div>
+                    <div class="col-second even-row-color package-summary-table package-summary-table-tab3">None</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab3">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
                     <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
@@ -1331,9 +1331,9 @@ public class TestModules extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color package-summary-table-tab1 package-summary-table">\
+                    <div class="col-first even-row-color package-summary-table package-summary-table-tab1">\
                     <a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last even-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>
                     </div>
                     </div>
                     """);

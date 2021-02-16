@@ -452,15 +452,23 @@ public abstract class $Type$Buffer
      */
     public int read(CharBuffer target) throws IOException {
         // Determine the number of bytes n that can be transferred
-        int targetRemaining = target.remaining();
         int limit = limit();
-        int remaining = limit - position();
-        if (remaining == 0)
+        int pos = position();
+        int remaining = limit - pos;
+        assert remaining >= 0;
+        if (remaining <= 0) // include equality condition when remaining == 0
             return -1;
+
+        int targetRemaining = target.remaining();
+        assert targetRemaining >= 0;
+        if (targetRemaining <= 0) // include condition targetRemaining == 0
+            return 0;
+
         int n = Math.min(remaining, targetRemaining);
+
         // Set source limit to prevent target overflow
         if (targetRemaining < remaining)
-            limit(position() + n);
+            limit(pos + n);
         try {
             if (n > 0)
                 target.put(this);
@@ -951,15 +959,19 @@ public abstract class $Type$Buffer
             throw new ReadOnlyBufferException();
 
         int srcPos = src.position();
-        int n = src.limit() - srcPos;
+        int srcLim = src.limit();
+        int srcRem = (srcPos <= srcLim ? srcLim - srcPos : 0);
         int pos = position();
-        if (n > limit() - pos)
+        int lim = limit();
+        int rem = (pos <= lim ? lim - pos : 0);
+
+        if (srcRem > rem)
             throw new BufferOverflowException();
 
-        putBuffer(pos, src, srcPos, n);
+        putBuffer(pos, src, srcPos, srcRem);
 
-        position(pos + n);
-        src.position(srcPos + n);
+        position(pos + srcRem);
+        src.position(srcPos + srcRem);
 
         return this;
     }

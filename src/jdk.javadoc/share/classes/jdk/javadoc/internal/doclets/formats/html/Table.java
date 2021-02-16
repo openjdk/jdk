@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,13 +304,12 @@ public class Table extends Content {
             int rowIndex = bodyRows.size();
             rowStyle = stripedStyles.get(rowIndex % 2);
         }
-        Set<String> tabClasses = new HashSet<>(); // !! would be better as a List
+        List<String> tabClasses = new ArrayList<>();
         if (tabMap != null) {
-            // Construct a series of CSS classes to add to the cells of this row,
-            // such that there is a default value and a value corresponding to each
-            // tab whose predicate matches the element. The classes correspond to
-            // the equivalent ids. The classes are used to determine the cells to
-            // make visible when a tab is selected.
+            // Construct a series of values to add to the HTML 'class' attribute for the cells of
+            // this row, such that there is a default value and a value corresponding to each tab
+            // whose predicate matches the element. The values correspond to the equivalent ids.
+            // The values are used to determine the cells to make visible when a tab is selected.
             tabClasses.add(id.name());
             int tabIndex = 1;
             for (Map.Entry<String, Predicate<Element>> e : tabMap.entrySet()) {

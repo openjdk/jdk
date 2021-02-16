@@ -244,6 +244,11 @@ public class VMProps implements Callable<Map<String, String>> {
           return "false";
         }
 
+        // Interpreted mode cannot enable JVMCI
+        if (vmCompMode().equals("Xint")) {
+          return "false";
+        }
+
         return "true";
     }
 

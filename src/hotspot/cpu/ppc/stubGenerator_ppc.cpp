@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/instanceOop.hpp"
@@ -2226,7 +2227,10 @@ class StubGenerator: public StubCodeGenerator {
 
     // ======== loop entry is here ========
     __ bind(load_element);
-    __ load_heap_oop(R10_oop, R8_offset, R3_from, R12_tmp, noreg, false, AS_RAW, &store_null);
+    __ load_heap_oop(R10_oop, R8_offset, R3_from,
+                     R11_scratch1, R12_tmp,
+                     MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,
+                     AS_RAW, &store_null);
 
     __ load_klass(R11_klass, R10_oop); // Query the object klass.
 
@@ -3545,6 +3549,54 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_nmethod_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    address stub_address = __ pc();
+
+    int nbytes_save = MacroAssembler::num_volatile_regs * BytesPerWord;
+    __ save_volatile_gprs(R1_SP, -nbytes_save, true);
+
+    // Link register points to instruction in prologue of the guarded nmethod.
+    // As the stub requires one layer of indirection (argument is of type address* and not address),
+    // passing the link register's value directly doesn't work.
+    // Since we have to save the link register on the stack anyway, we calculate the corresponding stack address
+    // and pass that one instead.
+    __ add(R3_ARG1, _abi0(lr), R1_SP);
+
+    __ save_LR_CR(R0);
+    __ push_frame_reg_args(nbytes_save, R0);
+
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
+    __ mr(R0, R3_RET);
+
+    __ pop_frame();
+    __ restore_LR_CR(R3_RET /* used as tmp register */);
+    __ restore_volatile_gprs(R1_SP, -nbytes_save, true);
+
+    __ cmpdi(CCR0, R0, 0);
+
+    // Return to prologue if no deoptimization is required (bnelr)
+    __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintIsTaken);
+
+    // Deoptimization required.
+    // For actually handling the deoptimization, the 'wrong method stub' is invoked.
+    __ load_const_optimized(R0, SharedRuntime::get_handle_wrong_method_stub());
+    __ mtctr(R0);
+
+    // Pop the frame built in the prologue.
+    __ pop_frame();
+
+    // Restore link register.  Required as the 'wrong method stub' needs the caller's frame
+    // to properly deoptimize this method (e.g. by re-resolving the call site for compiled methods).
+    // This method's prologue is aborted.
+    __ restore_LR_CR(R0);
+
+    __ bctr();
+    return stub_address;
+  }
+
 #ifdef VM_LITTLE_ENDIAN
 // The following Base64 decode intrinsic is based on an algorithm outlined
 // in here:
@@ -4459,13 +4511,13 @@ class StubGenerator: public StubCodeGenerator {
 
     // CRC32 Intrinsics.
     if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_adr = StubRoutines::generate_crc_constants(REVERSE_CRC32_POLY);
+      StubRoutines::_crc_table_adr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32_POLY);
       StubRoutines::_updateBytesCRC32 = generate_CRC32_updateBytes(false);
     }
 
     // CRC32C Intrinsics.
     if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = StubRoutines::generate_crc_constants(REVERSE_CRC32C_POLY);
+      StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(true);
     }
 
@@ -4490,6 +4542,12 @@ class StubGenerator: public StubCodeGenerator {
 
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop();
+
+    // nmethod entry barriers for concurrent class unloading
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::ppc::_nmethod_entry_barrier            = generate_nmethod_entry_barrier();
+    }
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();

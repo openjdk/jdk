@@ -632,14 +632,14 @@ jobs:
 
       # Roll in the multilib environment and its dependencies.
       # Some multilib libraries do not have proper inter-dependencies, so we have to
-      # install their dependencies manually. Additionally, installing libc6 libraries
-      # ahead of the bulk of other packages solves potential circularity problems.
+      # install their dependencies manually. Additionally, upgrading apt solves
+      # the libc6 installation bugs until base image catches up, see JDK-8260460.
       - name: Install dependencies
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install gcc-10-multilib g++-10-multilib libc6:i386 libc6-dev:i386
-          sudo apt-get install libfreetype6-dev:i386 libxrandr-dev:i386 libxtst-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libcups2-dev:i386 libasound2-dev:i386
+          sudo apt-get install --only-upgrade apt
+          sudo apt-get install gcc-10-multilib g++-10-multilib libfreetype6-dev:i386 libxrandr-dev:i386 libxtst-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libcups2-dev:i386 libasound2-dev:i386
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10
 
       - name: Configure

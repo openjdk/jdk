@@ -444,14 +444,14 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
     }
 
     public long getMemoryAndSwapFailCount() {
-        if (!memory.isSwapEnabled()) {
+        if (memory != null && !memory.isSwapEnabled()) {
             return getMemoryFailCount();
         }
         return getLongValue(memory, "memory.memsw.failcnt");
     }
 
     public long getMemoryAndSwapLimit() {
-        if (!memory.isSwapEnabled()) {
+        if (memory != null && !memory.isSwapEnabled()) {
             return getMemoryLimit();
         }
         long retval = getLongValue(memory, "memory.memsw.limit_in_bytes");
@@ -469,14 +469,14 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
     }
 
     public long getMemoryAndSwapMaxUsage() {
-        if (!memory.isSwapEnabled()) {
+        if (memory != null && !memory.isSwapEnabled()) {
             return getMemoryMaxUsage();
         }
         return getLongValue(memory, "memory.memsw.max_usage_in_bytes");
     }
 
     public long getMemoryAndSwapUsage() {
-        if (!memory.isSwapEnabled()) {
+        if (memory != null && !memory.isSwapEnabled()) {
             return getMemoryUsage();
         }
         return getLongValue(memory, "memory.memsw.usage_in_bytes");

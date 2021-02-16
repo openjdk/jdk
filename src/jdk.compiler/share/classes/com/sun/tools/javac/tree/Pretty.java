@@ -460,6 +460,7 @@ public class Pretty extends JCTree.Visitor {
             if (tree.directives == null) {
                 print(";");
             } else {
+                print(" ");
                 printBlock(tree.directives);
             }
             println();

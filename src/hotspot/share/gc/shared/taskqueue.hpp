@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -513,36 +513,6 @@ uint GenericTaskQueueSet<T, F>::tasks() const {
 class TerminatorTerminator: public CHeapObj<mtInternal> {
 public:
   virtual bool should_exit_termination() = 0;
-};
-
-// This is a container class for either an oop* or a narrowOop*.
-// Both are pushed onto a task queue and the consumer will test is_narrow()
-// to determine which should be processed.
-class StarTask {
-  void*  _holder;        // either union oop* or narrowOop*
-
-  enum { COMPRESSED_OOP_MASK = 1 };
-
- public:
-  StarTask(narrowOop* p) {
-    assert(((uintptr_t)p & COMPRESSED_OOP_MASK) == 0, "Information loss!");
-    _holder = (void *)((uintptr_t)p | COMPRESSED_OOP_MASK);
-  }
-  StarTask(oop* p)       {
-    assert(((uintptr_t)p & COMPRESSED_OOP_MASK) == 0, "Information loss!");
-    _holder = (void*)p;
-  }
-  StarTask()             { _holder = NULL; }
-  // Trivially copyable, for use in GenericTaskQueue.
-
-  operator oop*()        { return (oop*)_holder; }
-  operator narrowOop*()  {
-    return (narrowOop*)((uintptr_t)_holder & ~COMPRESSED_OOP_MASK);
-  }
-
-  bool is_narrow() const {
-    return (((uintptr_t)_holder & COMPRESSED_OOP_MASK) != 0);
-  }
 };
 
 class ObjArrayTask

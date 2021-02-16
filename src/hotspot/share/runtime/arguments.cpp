@@ -29,6 +29,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -1456,13 +1457,11 @@ void Arguments::set_mode_flags(Mode mode) {
   AlwaysCompileLoopMethods   = Arguments::_AlwaysCompileLoopMethods;
   UseOnStackReplacement      = Arguments::_UseOnStackReplacement;
   BackgroundCompilation      = Arguments::_BackgroundCompilation;
-  if (TieredCompilation) {
-    if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
-      Tier3InvokeNotifyFreqLog = Arguments::_Tier3InvokeNotifyFreqLog;
-    }
-    if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
-      Tier4InvocationThreshold = Arguments::_Tier4InvocationThreshold;
-    }
+  if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
+    Tier3InvokeNotifyFreqLog = Arguments::_Tier3InvokeNotifyFreqLog;
+  }
+  if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
+    Tier4InvocationThreshold = Arguments::_Tier4InvocationThreshold;
   }
 
   // Change from defaults based on mode
@@ -1486,7 +1485,7 @@ void Arguments::set_mode_flags(Mode mode) {
     // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
     // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
     // compile a level 4 (C2) and then continue executing it.
-    if (TieredCompilation) {
+    if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
       Tier3InvokeNotifyFreqLog = 0;
       Tier4InvocationThreshold = 0;
     }
@@ -2136,10 +2135,8 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
-  if (TieredCompilation) {
-    Arguments::_Tier3InvokeNotifyFreqLog = Tier3InvokeNotifyFreqLog;
-    Arguments::_Tier4InvocationThreshold = Tier4InvocationThreshold;
-  }
+  Arguments::_Tier3InvokeNotifyFreqLog = Tier3InvokeNotifyFreqLog;
+  Arguments::_Tier4InvocationThreshold = Tier4InvocationThreshold;
 
   // Remember the default value of SharedBaseAddress.
   Arguments::_default_SharedBaseAddress = SharedBaseAddress;
@@ -3097,16 +3094,10 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   UNSUPPORTED_OPTION(ProfileInterpreter);
 #endif
 
-
-#ifdef TIERED
   // Parse the CompilationMode flag
   if (!CompilationModeFlag::initialize()) {
     return JNI_ERR;
   }
-#else
-  // Tiered compilation is undefined.
-  UNSUPPORTED_OPTION(TieredCompilation);
-#endif
 
   if (!check_vm_args_consistency()) {
     return JNI_ERR;
@@ -3155,10 +3146,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   UNSUPPORTED_OPTION_INIT(Tier3AOTMinInvocationThreshold, 0);
   UNSUPPORTED_OPTION_INIT(Tier3AOTCompileThreshold, 0);
   UNSUPPORTED_OPTION_INIT(Tier3AOTBackEdgeThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier0AOTInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier0AOTMinInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier0AOTCompileThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier0AOTBackEdgeThreshold, 0);
 #ifndef PRODUCT
   UNSUPPORTED_OPTION(PrintAOTStatistics);
 #endif
@@ -3990,12 +3977,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
-
-#ifndef TIERED
-  if (FLAG_IS_CMDLINE(CompilationMode)) {
-    warning("CompilationMode has no effect in non-tiered VMs");
-  }
-#endif
 
   apply_debugger_ergo();
 

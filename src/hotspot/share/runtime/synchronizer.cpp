@@ -28,7 +28,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -43,6 +42,7 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -56,31 +56,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"
-
-class MonitorList {
-  ObjectMonitor* volatile _head;
-  volatile size_t _count;
-  volatile size_t _max;
-
-public:
-  void add(ObjectMonitor* monitor);
-  size_t unlink_deflated(Thread* self, LogStream* ls, elapsedTimer* timer_p,
-                         GrowableArray<ObjectMonitor*>* unlinked_list);
-  size_t count() const;
-  size_t max() const;
-
-  class Iterator;
-  Iterator iterator() const;
-};
-
-class MonitorList::Iterator {
-  ObjectMonitor* _current;
-
-public:
-  Iterator(ObjectMonitor* head) : _current(head) {}
-  bool has_next() const { return _current != NULL; }
-  ObjectMonitor* next();
-};
 
 void MonitorList::add(ObjectMonitor* m) {
   ObjectMonitor* head;
@@ -239,7 +214,7 @@ void ObjectSynchronizer::initialize() {
   set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);
 }
 
-static MonitorList _in_use_list;
+MonitorList ObjectSynchronizer::_in_use_list;
 // monitors_used_above_threshold() policy is as follows:
 //
 // The ratio of the current _in_use_list count to the ceiling is used
@@ -1036,53 +1011,6 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* thread,
   // Unlocked case, header in place
   assert(mark.is_neutral(), "sanity check");
   return false;
-}
-
-// Be aware of this method could revoke bias of the lock object.
-// This method queries the ownership of the lock handle specified by 'h_obj'.
-// If the current thread owns the lock, it returns owner_self. If no
-// thread owns the lock, it returns owner_none. Otherwise, it will return
-// owner_other.
-ObjectSynchronizer::LockOwnership ObjectSynchronizer::query_lock_ownership
-(JavaThread *self, Handle h_obj) {
-  // The caller must beware this method can revoke bias, and
-  // revocation can result in a safepoint.
-  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(self->thread_state() != _thread_blocked, "invariant");
-
-  // Possible mark states: neutral, biased, stack-locked, inflated
-
-  if (UseBiasedLocking && h_obj()->mark().has_bias_pattern()) {
-    // CASE: biased
-    BiasedLocking::revoke(h_obj, self);
-    assert(!h_obj->mark().has_bias_pattern(),
-           "biases should be revoked by now");
-  }
-
-  assert(self == JavaThread::current(), "Can only be called on current thread");
-  oop obj = h_obj();
-  markWord mark = read_stable_mark(obj);
-
-  // CASE: stack-locked.  Mark points to a BasicLock on the owner's stack.
-  if (mark.has_locker()) {
-    return self->is_lock_owned((address)mark.locker()) ?
-      owner_self : owner_other;
-  }
-
-  // CASE: inflated. Mark (tagged pointer) points to an ObjectMonitor.
-  if (mark.has_monitor()) {
-    // The first stage of async deflation does not affect any field
-    // used by this comparison so the ObjectMonitor* is usable here.
-    ObjectMonitor* monitor = mark.monitor();
-    void* owner = monitor->owner();
-    if (owner == NULL) return owner_none;
-    return (owner == self ||
-            self->is_lock_owned((address)owner)) ? owner_self : owner_other;
-  }
-
-  // CASE: neutral
-  assert(mark.is_neutral(), "sanity check");
-  return owner_none;           // it's unlocked
 }
 
 // FIXME: jvmti should call this

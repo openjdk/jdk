@@ -172,22 +172,22 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>
                     </div>""",
                 """
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b6 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4 method-summary-table-tab6">
                     <div class="block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">class_test5 passes.</div>
                     </div>
                     </div>""",
                 """
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b6 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4 method-summary-table-tab6">
                     <div class="block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">class_test6 passes.</div>
                     </div>
                     </div>""",
                 """
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b6 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab4 method-summary-table-tab6">
                     <div class="block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">class_test7 passes.</div>
                     </div>

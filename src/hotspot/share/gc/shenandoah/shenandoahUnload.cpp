@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
@@ -120,7 +118,7 @@ public:
 };
 
 ShenandoahUnload::ShenandoahUnload() {
-  if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+  if (ClassUnloading) {
     static ShenandoahIsUnloadingBehaviour is_unloading_behaviour;
     IsUnloadingBehaviour::set_current(&is_unloading_behaviour);
 
@@ -131,14 +129,14 @@ ShenandoahUnload::ShenandoahUnload() {
 
 void ShenandoahUnload::prepare() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(), "Sanity");
+  assert(ClassUnloading, "Sanity");
   CodeCache::increment_unloading_cycle();
   DependencyContext::cleaning_start();
 }
 
 void ShenandoahUnload::unload() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(), "Filtered by caller");
+  assert(ClassUnloading, "Filtered by caller");
   assert(heap->is_concurrent_weak_root_in_progress(), "Filtered by caller");
 
   // Unlink stale metadata and nmethods

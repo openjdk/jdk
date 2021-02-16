@@ -29,6 +29,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/perfData.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/copy.hpp"
