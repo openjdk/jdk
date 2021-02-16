@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 
@@ -330,9 +329,9 @@ public interface JavaLangAccess {
     byte[] getBytesUTF8NoRepl(String s);
 
     /**
-     * Inflated copy from byte[] to char[], as defined by StringLatin1
+     * Inflated copy from byte[] to char[], as defined by StringLatin1.inflate
      */
-    void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+    void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Decodes ASCII from the source byte array into the destination

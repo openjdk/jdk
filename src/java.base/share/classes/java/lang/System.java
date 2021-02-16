@@ -2278,7 +2278,7 @@ public final class System {
             return String.getBytesUTF8NoRepl(s);
         }
 
-        public void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+        public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
             StringLatin1.inflate(src, srcOff, dst, dstOff, len);
         }
 

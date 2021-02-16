@@ -86,7 +86,7 @@ public class ISO_8859_1
             int dl = doff + dst.limit();
 
             int decodeLen = Math.min(sl - sp, dl - dp);
-            JLA.inflate(sa, sp, da, dp, decodeLen);
+            JLA.inflateBytesToChars(sa, sp, da, dp, decodeLen);
             sp += decodeLen;
             dp += decodeLen;
             src.position(sp - soff);

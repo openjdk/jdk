@@ -1010,7 +1010,8 @@ public final class String
 
     /**
      * Decodes ASCII from the source byte array into the destination
-     * char array.
+     * char array. Used via JavaLangAccess from UTF_8 and other charset
+     * decoders.
      *
      * @return the number of bytes successfully decoded, at most len
      */
