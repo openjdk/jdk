@@ -25,6 +25,7 @@
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -41,10 +42,10 @@ import java.util.logging.LogRecord;
  */
 
 public class FileHandlerAccessTest {
-    public static void main(String[] args){
+    public static void main(String[] args) throws Exception {
         if (!(args.length == 2 || args.length == 1)) {
             System.out.println("Usage error: expects java FileHandlerAccessTest [process/thread] <count>");
-            System.exit(1);
+            return;
         }
         else if (args.length == 2) {
             var type = args[0];
@@ -65,14 +66,13 @@ public class FileHandlerAccessTest {
         }
     }
 
-    private static void access(){
+    private static void access() {
         try {
             var handler = new FileHandler("sample%g.log", 1048576, 2, true);
             handler.publish(new LogRecord(Level.SEVERE, "TEST"));
             handler.close();
-        }
-        catch(Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -90,23 +90,20 @@ public class FileHandlerAccessTest {
 
             bufferedReader = new BufferedReader(new InputStreamReader(childProcess.getInputStream()));
             String line;
-            while((line = bufferedReader.readLine()) != null) {
+            while ((line = bufferedReader.readLine()) != null) {
                 System.out.println(name + "\t|" + line);
             }
             childProcess.waitFor();
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-        }
-        finally {
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
             if (childProcess != null){
                 childProcess.destroy();
             }
             if (bufferedReader != null){
-                try{
+                try {
                     bufferedReader.close();
-                }
-                catch(Exception ignored){}
+                } catch (Exception ignored) {}
             }
         }
     }
