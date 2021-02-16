@@ -1481,7 +1481,7 @@ public final class Main {
         PublicKey issuerPubKey = signerCert.getPublicKey();
 
         KeyIdentifier signerSubjectKeyId;
-        if (subjectPubKey.equals(issuerPubKey)) {
+        if (Arrays.equals(subjectPubKey.getEncoded(), issuerPubKey.getEncoded())) {
             // No AKID for self-signed cert
             signerSubjectKeyId = null;
         } else {
