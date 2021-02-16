@@ -1912,7 +1912,7 @@ class ZipFileSystem extends FileSystem {
         IndexNode inode = getInode(path);
         if (inode == null) {
             if (path != null && path.length == 0)
-                throw new ZipException("root directory </> can't not be delete");
+                throw new ZipException("root directory </> cannot be deleted");
             if (failIfNotExists)
                 throw new NoSuchFileException(getString(path));
         } else {
