@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,34 +265,12 @@ public class CommandProcessor {
             out.println("Usage: " + usage);
         }
 
-        void printOopValue(Oop oop) {
-            if (oop != null) {
-                Klass k = oop.getKlass();
-                Symbol s = k.getName();
-                if (s != null) {
-                    out.print("Oop for " + s.asString() + " @ ");
-                } else {
-                    out.print("Oop @ ");
-                }
-                Oop.printOopAddressOn(oop, out);
-            } else {
-                out.print("null");
-            }
-        }
-
         void printNode(SimpleTreeNode node) {
             int count = node.getChildCount();
             for (int i = 0; i < count; i++) {
                 try {
                     SimpleTreeNode field = node.getChild(i);
-                    if (field instanceof OopTreeNodeAdapter) {
-                        out.print(field);
-                        out.print(" ");
-                        printOopValue(((OopTreeNodeAdapter)field).getOop());
-                        out.println();
-                    } else {
-                        out.println(field);
-                    }
+                    out.println(field);
                 } catch (Exception e) {
                     out.println();
                     out.println("Error: " + e);
@@ -1027,7 +1005,7 @@ public class CommandProcessor {
                         Oop oop = VM.getVM().getObjectHeap().newOop(handle);
                         node = new OopTreeNodeAdapter(oop, null);
 
-                        out.println("instance of " + node.getValue() + " @ " + a +
+                        out.println("instance of " + node.getValue() +
                                     " (size = " + oop.getObjectSize() + ")");
                     } else if (VM.getVM().getCodeCache().contains(a)) {
                         CodeBlob blob = VM.getVM().getCodeCache().findBlobUnsafe(a);
