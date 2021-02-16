@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -142,32 +140,14 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
   return true;
 }
 
-// By default, gcc always saves frame pointer rfp on this stack. This
-// may get turned off by -fomit-frame-pointer.
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->link(), fr->link(), fr->sender_pc());
+  ShouldNotReachHere();
+  return frame();
 }
 
 frame os::current_frame() {
-  typedef intptr_t*      get_fp_func           ();
-  get_fp_func* func = CAST_TO_FN_PTR(get_fp_func*,
-                                     StubRoutines::aarch64::get_previous_fp_entry());
-  if (func == NULL) return frame();
-  intptr_t* fp = (*func)();
-  if (fp == NULL) {
-    return frame();
-  }
-
-  frame myframe((intptr_t*)os::current_stack_pointer(),
-                (intptr_t*)fp,
-                CAST_FROM_FN_PTR(address, os::current_frame));
-  if (os::is_first_C_frame(&myframe)) {
-
-    // stack is not walkable
-    return frame();
-  } else {
-    return os::get_sender_for_C_frame(&myframe);
-  }
+  return frame();  // cannot walk Windows frames this way.  See os::get_native_stack
+                   // and os::platform_print_native_stack
 }
 
 ////////////////////////////////////////////////////////////////////////////////

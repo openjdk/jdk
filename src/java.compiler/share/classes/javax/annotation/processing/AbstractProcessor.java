@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ import javax.tools.Diagnostic;
  * superclass for most concrete annotation processors.  This class
  * examines annotation values to compute the {@linkplain
  * #getSupportedOptions options}, {@linkplain
- * #getSupportedAnnotationTypes annotation types}, and {@linkplain
- * #getSupportedSourceVersion source version} supported by its
- * subtypes.
+ * #getSupportedAnnotationTypes annotation interfaces}, and
+ * {@linkplain #getSupportedSourceVersion source version} supported by
+ * its subtypes.
  *
  * <p>The getter methods may {@linkplain Messager#printMessage issue
  * warnings} about noteworthy conditions using the facilities available
@@ -98,8 +98,8 @@ public abstract class AbstractProcessor implements Processor {
      * then any leading {@linkplain Processor#getSupportedAnnotationTypes
      * module prefixes} are stripped from the names.
      *
-     * @return the names of the annotation types supported by this
-     * processor, or an empty set if none
+     * @return the names of the annotation interfaces supported by
+     * this processor, or an empty set if none
      */
     public Set<String> getSupportedAnnotationTypes() {
             SupportedAnnotationTypes sat = this.getClass().getAnnotation(SupportedAnnotationTypes.class);
@@ -171,7 +171,7 @@ public abstract class AbstractProcessor implements Processor {
                                     RoundEnvironment roundEnv);
 
     /**
-     * Returns an empty iterable of completions.
+     * {@return an empty iterable of completions}
      *
      * @param element {@inheritDoc}
      * @param annotation {@inheritDoc}
@@ -186,11 +186,8 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Returns {@code true} if this object has been {@linkplain #init
-     * initialized}, {@code false} otherwise.
-     *
-     * @return {@code true} if this object has been initialized,
-     * {@code false} otherwise.
+     * {@return {@code true} if this object has been {@linkplain #init
+     * initialized}, {@code false} otherwise}
      */
     protected synchronized boolean isInitialized() {
         return initialized;

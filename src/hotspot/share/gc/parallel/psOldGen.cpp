@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,25 +146,6 @@ bool  PSOldGen::is_allocated() {
   return virtual_space()->reserved_size() != 0;
 }
 
-// Allocation. We report all successful allocations to the size policy
-// Note that the perm gen does not use this method, and should not!
-HeapWord* PSOldGen::allocate(size_t word_size) {
-  assert_locked_or_safepoint(Heap_lock);
-  HeapWord* res = allocate_noexpand(word_size);
-
-  if (res == NULL) {
-    res = expand_and_allocate(word_size);
-  }
-
-  // Allocations in the old generation need to be reported
-  if (res != NULL) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    heap->size_policy()->tenured_allocation(word_size * HeapWordSize);
-  }
-
-  return res;
-}
-
 size_t PSOldGen::num_iterable_blocks() const {
   return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
 }
@@ -197,27 +178,31 @@ void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   }
 }
 
-HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
-  expand(word_size*HeapWordSize);
+bool PSOldGen::expand_for_allocate(size_t word_size) {
+  assert(word_size > 0, "allocating zero words?");
+  bool result = true;
+  {
+    MutexLocker x(ExpandHeap_lock);
+    // Avoid "expand storms" by rechecking available space after obtaining
+    // the lock, because another thread may have already made sufficient
+    // space available.  If insufficient space available, that will remain
+    // true until we expand, since we have the lock.  Other threads may take
+    // the space we need before we can allocate it, regardless of whether we
+    // expand.  That's okay, we'll just try expanding again.
+    if (object_space()->needs_expand(word_size)) {
+      result = expand(word_size*HeapWordSize);
+    }
+  }
   if (GCExpandToAllocateDelayMillis > 0) {
     os::naked_sleep(GCExpandToAllocateDelayMillis);
   }
-  return allocate_noexpand(word_size);
+  return result;
 }
 
-HeapWord* PSOldGen::expand_and_cas_allocate(size_t word_size) {
-  expand(word_size*HeapWordSize);
-  if (GCExpandToAllocateDelayMillis > 0) {
-    os::naked_sleep(GCExpandToAllocateDelayMillis);
-  }
-  return cas_allocate_noexpand(word_size);
-}
-
-void PSOldGen::expand(size_t bytes) {
-  if (bytes == 0) {
-    return;
-  }
-  MutexLocker x(ExpandHeap_lock);
+bool PSOldGen::expand(size_t bytes) {
+  assert_lock_strong(ExpandHeap_lock);
+  assert_locked_or_safepoint(Heap_lock);
+  assert(bytes > 0, "precondition");
   const size_t alignment = virtual_space()->alignment();
   size_t aligned_bytes  = align_up(bytes, alignment);
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
@@ -227,13 +212,11 @@ void PSOldGen::expand(size_t bytes) {
     // providing a page per lgroup. Alignment is larger or equal to the page size.
     aligned_expand_bytes = MAX2(aligned_expand_bytes, alignment * os::numa_get_groups_num());
   }
-  if (aligned_bytes == 0){
-    // The alignment caused the number of bytes to wrap.  An expand_by(0) will
-    // return true with the implication that and expansion was done when it
-    // was not.  A call to expand implies a best effort to expand by "bytes"
-    // but not a guarantee.  Align down to give a best effort.  This is likely
-    // the most that the generation can expand since it has some capacity to
-    // start with.
+  if (aligned_bytes == 0) {
+    // The alignment caused the number of bytes to wrap.  A call to expand
+    // implies a best effort to expand by "bytes" but not a guarantee.  Align
+    // down to give a best effort.  This is likely the most that the generation
+    // can expand since it has some capacity to start with.
     aligned_bytes = align_down(bytes, alignment);
   }
 
@@ -251,14 +234,13 @@ void PSOldGen::expand(size_t bytes) {
   if (success && GCLocker::is_active_and_needs_gc()) {
     log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
+  return success;
 }
 
 bool PSOldGen::expand_by(size_t bytes) {
   assert_lock_strong(ExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
-  if (bytes == 0) {
-    return true;  // That's what virtual_space()->expand_by(0) would return
-  }
+  assert(bytes > 0, "precondition");
   bool result = virtual_space()->expand_by(bytes);
   if (result) {
     if (ZapUnusedHeapArea) {
@@ -295,7 +277,7 @@ bool PSOldGen::expand_to_reserved() {
   assert_lock_strong(ExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
 
-  bool result = true;
+  bool result = false;
   const size_t remaining_bytes = virtual_space()->uncommitted_size();
   if (remaining_bytes > 0) {
     result = expand_by(remaining_bytes);
@@ -350,10 +332,10 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
+    MutexLocker x(ExpandHeap_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    // shrink doesn't grab this lock, expand does. Is that right?
     MutexLocker x(ExpandHeap_lock);
     shrink(change_bytes);
   }
@@ -380,7 +362,9 @@ void PSOldGen::post_resize() {
   WorkGang* workers = Thread::current()->is_VM_thread() ?
                       &ParallelScavengeHeap::heap()->workers() : NULL;
 
-  // ALWAYS do this last!!
+  // The update of the space's end is done by this call.  As that
+  // makes the new space available for concurrent allocation, this
+  // must be the last step when expanding.
   object_space()->initialize(new_memregion,
                              SpaceDecorator::DontClear,
                              SpaceDecorator::DontMangle,

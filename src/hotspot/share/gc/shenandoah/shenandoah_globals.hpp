@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,6 +126,34 @@
           "In percents of total garbage found. Setting this threshold "     \
           "to 100 effectively disables the shortcut.")                      \
           range(0,100)                                                      \
+                                                                            \
+  product(uintx, ShenandoahAdaptiveSampleFrequencyHz, 10, EXPERIMENTAL,     \
+          "The number of times per second to update the allocation rate "   \
+          "moving average.")                                                \
+                                                                            \
+  product(uintx, ShenandoahAdaptiveSampleSizeSeconds, 10, EXPERIMENTAL,     \
+          "The size of the moving window over which the average "           \
+          "allocation rate is maintained. The total number of samples "     \
+          "is the product of this number and the sample frequency.")        \
+                                                                            \
+  product(double, ShenandoahAdaptiveInitialConfidence, 1.8, EXPERIMENTAL,   \
+          "The number of standard deviations used to determine an initial " \
+          "margin of error for the average cycle time and average "         \
+          "allocation rate. Increasing this value will cause the "          \
+          "heuristic to initiate more concurrent cycles." )                 \
+                                                                            \
+  product(double, ShenandoahAdaptiveInitialSpikeThreshold, 1.8, EXPERIMENTAL, \
+          "If the most recently sampled allocation rate is more than "      \
+          "this many standard deviations away from the moving average, "    \
+          "then a cycle is initiated. This value controls how sensitive "   \
+          "the heuristic is to allocation spikes. Decreasing this number "  \
+          "increases the sensitivity. ")                                    \
+                                                                            \
+  product(double, ShenandoahAdaptiveDecayFactor, 0.5, EXPERIMENTAL,         \
+          "The decay factor (alpha) used for values in the weighted "       \
+          "moving average of cycle time and allocation rate. "              \
+          "Larger values give more weight to recent values.")               \
+          range(0,1.0)                                                      \
                                                                             \
   product(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000, EXPERIMENTAL,   \
           "Many heuristics would guarantee a concurrent GC cycle at "       \
@@ -302,9 +330,9 @@
           "Number of entries in an SATB log buffer.")                       \
           range(1, max_uintx)                                               \
                                                                             \
-  product(uintx, ShenandoahSATBBufferFlushInterval, 100, EXPERIMENTAL,      \
-          "Forcefully flush non-empty SATB buffers at this interval. "      \
-          "Time is in milliseconds.")                                       \
+  product(uintx, ShenandoahMaxSATBBufferFlushes, 5, EXPERIMENTAL,           \
+          "How many times to maximum attempt to flush SATB buffers at the " \
+          "end of concurrent marking.")                                     \
                                                                             \
   product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
           "Suspend concurrent GC worker threads at safepoints")             \
@@ -312,8 +340,8 @@
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \
-  product(bool, ShenandoahStoreValEnqueueBarrier, false, DIAGNOSTIC,        \
-          "Turn on/off enqueuing of oops for storeval barriers")            \
+  product(bool, ShenandoahIUBarrier, false, DIAGNOSTIC,                     \
+          "Turn on/off I-U barriers barriers in Shenandoah")                \
                                                                             \
   product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
           "Turn on/off CAS barriers in Shenandoah")                         \

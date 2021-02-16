@@ -217,6 +217,7 @@ public:
 
   int number_of_entries() const { return _number_of_entries; }
 
+  int calculate_resize(bool use_large_table_sizes) const;
   bool resize(int new_size);
 
   // Grow the number of buckets if the average entries per bucket is over the load_factor

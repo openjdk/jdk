@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,17 +66,36 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     private transient AlgorithmParameterSpec keyParams;
 
     /**
-     * Generate a new RSAPublicKey from the specified encoding.
-     * Used by SunPKCS11 provider.
+     * Generate a new RSAPublicKey from the specified type, format, and
+     * encoding.
+     * Also used by SunPKCS11 provider.
      */
-    public static RSAPublicKey newKey(byte[] encoded)
-            throws InvalidKeyException {
-        return new RSAPublicKeyImpl(encoded);
+    public static RSAPublicKey newKey(KeyType type, String format,
+            byte[] encoded) throws InvalidKeyException {
+        RSAPublicKey key;
+        switch (format) {
+        case "X.509":
+            key = new RSAPublicKeyImpl(encoded);
+            RSAKeyFactory.checkKeyAlgo(key, type.keyAlgo);
+            break;
+        case "PKCS#1":
+            try {
+                BigInteger[] comps = parseASN1(encoded);
+                key = new RSAPublicKeyImpl(type, null, comps[0], comps[1]);
+            } catch (IOException ioe) {
+                throw new InvalidKeyException("Invalid PKCS#1 encoding", ioe);
+            }
+            break;
+        default:
+            throw new InvalidKeyException("Unsupported RSA PublicKey format: " +
+                    format);
+        }
+        return key;
     }
 
     /**
      * Generate a new RSAPublicKey from the specified type and components.
-     * Used by SunPKCS11 provider.
+     * Also used by SunPKCS11 provider.
      */
     public static RSAPublicKey newKey(KeyType type,
             AlgorithmParameterSpec params, BigInteger n, BigInteger e)
@@ -123,9 +142,9 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     }
 
     /**
-     * Construct a key from its encoding. Used by RSAKeyFactory.
+     * Construct a key from its encoding.
      */
-    RSAPublicKeyImpl(byte[] encoded) throws InvalidKeyException {
+    private RSAPublicKeyImpl(byte[] encoded) throws InvalidKeyException {
         if (encoded == null || encoded.length == 0) {
             throw new InvalidKeyException("Missing key encoding");
         }
@@ -181,22 +200,30 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
         return keyParams;
     }
 
+    // utility method for parsing DER encoding of RSA public keys in PKCS#1
+    // format as defined in RFC 8017 Appendix A.1.1, i.e. SEQ of n and e.
+    private static BigInteger[] parseASN1(byte[] raw) throws IOException {
+        DerValue derValue = new DerValue(raw);
+        if (derValue.tag != DerValue.tag_Sequence) {
+            throw new IOException("Not a SEQUENCE");
+        }
+        BigInteger[] result = new BigInteger[2]; // n, e
+        result[0] = derValue.data.getPositiveBigInteger();
+        result[1] = derValue.data.getPositiveBigInteger();
+        if (derValue.data.available() != 0) {
+            throw new IOException("Extra data available");
+        }
+        return result;
+    }
+
     /**
      * Parse the key. Called by X509Key.
      */
     protected void parseKeyBits() throws InvalidKeyException {
         try {
-            DerInputStream in = new DerInputStream(getKey().toByteArray());
-            DerValue derValue = in.getDerValue();
-            if (derValue.tag != DerValue.tag_Sequence) {
-                throw new IOException("Not a SEQUENCE");
-            }
-            DerInputStream data = derValue.data;
-            n = data.getPositiveBigInteger();
-            e = data.getPositiveBigInteger();
-            if (derValue.data.available() != 0) {
-                throw new IOException("Extra data available");
-            }
+            BigInteger[] comps = parseASN1(getKey().toByteArray());
+            n = comps[0];
+            e = comps[1];
         } catch (IOException e) {
             throw new InvalidKeyException("Invalid RSA public key", e);
         }

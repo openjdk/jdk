@@ -43,6 +43,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.ListModel;
+import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.filechooser.FileView;
@@ -341,18 +342,18 @@ public class JFileChooserOperator extends JComponentOperator
      * @return a component being used to display directory content.
      */
     public Component getFileList() {
-        int index = 0;
-        // In GTK and Motif L&F, there are two JLists, one is to list folders
-        // and second one one is to list files
+        final String fileListName;
         if (LookAndFeel.isMotif() || LookAndFeel.isGTK()) {
-            index =1;
+            fileListName = UIManager.getString("FileChooser.filesLabelText", getLocale());
+        } else {
+            fileListName = UIManager.getString("FileChooser.filesListAccessibleName", getLocale());
         }
         return innerSearcher.
                 findComponent(new ComponentChooser() {
                     @Override
                     public boolean checkComponent(Component comp) {
-                        return (comp != null
-                                && (comp instanceof JList || comp instanceof JTable));
+                        return ((comp instanceof JList && fileListName.equals(comp.getAccessibleContext().getAccessibleName()))
+                                || comp instanceof JTable);
                     }
 
                     @Override
@@ -364,7 +365,7 @@ public class JFileChooserOperator extends JComponentOperator
                     public String toString() {
                         return "JFileChooserOperator.getFileList.ComponentChooser{description = " + getDescription() + '}';
                     }
-                }, index);
+                });
     }
 
     /**

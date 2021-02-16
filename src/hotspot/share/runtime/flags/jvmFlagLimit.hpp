@@ -48,6 +48,7 @@ typedef JVMFlag::Error (*JVMFlagConstraintFunc_uintx)(uintx value, bool verbose)
 typedef JVMFlag::Error (*JVMFlagConstraintFunc_uint64_t)(uint64_t value, bool verbose);
 typedef JVMFlag::Error (*JVMFlagConstraintFunc_size_t)(size_t value, bool verbose);
 typedef JVMFlag::Error (*JVMFlagConstraintFunc_double)(double value, bool verbose);
+typedef JVMFlag::Error (*JVMFlagConstraintFunc_ccstr)(ccstr value, bool verbose);
 
 // A JVMFlagLimit is created for each JVMFlag that has a range() and/or constraint() in its declaration in
 // the globals_xxx.hpp file.

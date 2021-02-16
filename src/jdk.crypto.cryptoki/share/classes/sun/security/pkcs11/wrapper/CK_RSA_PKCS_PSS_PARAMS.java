@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,12 @@ public class CK_RSA_PKCS_PSS_PARAMS {
             throw new ProviderException("Only MGF1 is supported");
         }
         // no dash in PKCS#11 mechanism names
-        this.mgf = Functions.getMGFId("CKG_MGF1_" + mgfHash.replaceFirst("-", ""));
+        if (mgfHash.startsWith("SHA3-")) {
+            mgfHash = mgfHash.replaceFirst("-", "_");
+        } else {
+            mgfHash = mgfHash.replaceFirst("-", "");
+        }
+        this.mgf = Functions.getMGFId("CKG_MGF1_" + mgfHash);
         this.sLen = sLen;
     }
 

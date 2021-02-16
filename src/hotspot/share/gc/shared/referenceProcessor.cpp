@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -39,6 +39,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/nonJavaThread.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -59,7 +60,7 @@ void ReferenceProcessor::init_statics() {
   java_lang_ref_SoftReference::set_clock(_soft_ref_timestamp_clock);
 
   _always_clear_soft_ref_policy = new AlwaysClearPolicy();
-  if (is_server_compilation_mode_vm()) {
+  if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
     _default_soft_ref_policy = new LRUMaxHeapPolicy();
   } else {
     _default_soft_ref_policy = new LRUCurrentHeapPolicy();
@@ -244,11 +245,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
     process_phantom_refs(is_alive, keep_alive, complete_gc, task_executor, phase_times);
   }
 
-  if (task_executor != NULL) {
-    // Record the work done by the parallel workers.
-    task_executor->set_single_threaded_mode();
-  }
-
   phase_times->set_total_time_ms((os::elapsedTime() - start_time) * 1000);
 
   return stats;
@@ -260,8 +256,6 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   assert(_current_discovered_addr && oopDesc::is_oop_or_null(discovered),
          "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   _next_discovered = discovered;
-
-  _referent_addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
   _referent = java_lang_ref_Reference::unknown_referent_no_keepalive(_current_discovered);
   assert(Universe::heap()->is_in_or_null(_referent),
          "Wrong oop found in java.lang.Reference object");
@@ -295,8 +289,17 @@ void DiscoveredListIterator::remove() {
   _refs_list.dec_length(1);
 }
 
+void DiscoveredListIterator::make_referent_alive() {
+  HeapWord* addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
+  if (UseCompressedOops) {
+    _keep_alive->do_oop((narrowOop*)addr);
+  } else {
+    _keep_alive->do_oop((oop*)addr);
+  }
+}
+
 void DiscoveredListIterator::clear_referent() {
-  RawAccess<>::oop_store(_referent_addr, oop(NULL));
+  java_lang_ref_Reference::clear_referent(_current_discovered);
 }
 
 void DiscoveredListIterator::enqueue() {

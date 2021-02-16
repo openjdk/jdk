@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -91,11 +89,11 @@ char* os::non_memory_address_word() {
   return (char*) 0xffffffffffff;
 }
 
-address os::Linux::ucontext_get_pc(const ucontext_t * uc) {
+address os::Posix::ucontext_get_pc(const ucontext_t * uc) {
   return (address)uc->uc_mcontext.pc;
 }
 
-void os::Linux::ucontext_set_pc(ucontext_t * uc, address pc) {
+void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
   uc->uc_mcontext.pc = (intptr_t)pc;
 }
 
@@ -114,7 +112,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = os::Linux::ucontext_get_pc(uc);
+    epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Linux::ucontext_get_sp(uc);
     if (ret_fp) *ret_fp = os::Linux::ucontext_get_fp(uc);
   } else {
@@ -183,12 +181,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
   //%note os_trap_1
   if (info != NULL && uc != NULL && thread != NULL) {
-    pc = (address) os::Linux::ucontext_get_pc(uc);
-
-    if (StubRoutines::is_safefetch_fault(pc)) {
-      os::Linux::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
+    pc = (address) os::Posix::ucontext_get_pc(uc);
 
     address addr = (address) info->si_addr;
 
@@ -245,7 +238,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           tty->print_cr("trap: %s: (SIGILL)", msg);
         }
 
-        return false; // Fatal error
+        // End life with a fatal error, message and detail message and the context.
+        // Note: no need to do any post-processing here (e.g. signal chaining)
+        va_list va_dummy;
+        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
+        va_end(va_dummy);
+
+        ShouldNotReachHere();
+
       }
       else
 
@@ -287,12 +287,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // save all thread context in case we need to restore it
     if (thread != NULL) thread->set_saved_exception_pc(pc);
 
-    os::Linux::ucontext_set_pc(uc, stub);
+    os::Posix::ucontext_set_pc(uc, stub);
     return true;
   }
 
   return false; // Mute compiler
-
 }
 
 void os::Linux::init_thread_fpu_state(void) {
@@ -347,7 +346,7 @@ void os::print_context(outputStream *st, const void *context) {
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Linux::ucontext_get_pc(uc);
+  address pc = os::Posix::ucontext_get_pc(uc);
   print_instructions(st, pc, 4/*native instruction size*/);
   st->cr();
 }

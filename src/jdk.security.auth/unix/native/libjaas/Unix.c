@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ Java_com_sun_security_auth_module_UnixSystem_getUnixInfo
 
     int i;
     char pwd_buf[1024];
-    struct passwd *pwd;
+    struct passwd *pwd = NULL;
     struct passwd resbuf;
     jfieldID userNameID;
     jfieldID userID;

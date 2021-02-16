@@ -220,6 +220,7 @@ class RotateLeftNode : public TypeNode {
     init_req(2, in2);
   }
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
@@ -232,6 +233,7 @@ class RotateRightNode : public TypeNode {
     init_req(2, in2);
   }
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 

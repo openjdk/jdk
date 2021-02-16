@@ -56,8 +56,8 @@ package java.util.concurrent;
  * <pre> {@code
  * interface ArchiveSearcher { String search(String target); }
  * class App {
- *   ExecutorService executor = ...
- *   ArchiveSearcher searcher = ...
+ *   ExecutorService executor = ...;
+ *   ArchiveSearcher searcher = ...;
  *   void showSearch(String target) throws InterruptedException {
  *     Callable<String> task = () -> searcher.search(target);
  *     Future<String> future = executor.submit(task);
@@ -88,25 +88,28 @@ package java.util.concurrent;
 public interface Future<V> {
 
     /**
-     * Attempts to cancel execution of this task.  This attempt will
-     * fail if the task has already completed, has already been cancelled,
-     * or could not be cancelled for some other reason. If successful,
-     * and this task has not started when {@code cancel} is called,
-     * this task should never run.  If the task has already started,
-     * then the {@code mayInterruptIfRunning} parameter determines
-     * whether the thread executing this task should be interrupted in
-     * an attempt to stop the task.
+     * Attempts to cancel execution of this task.  This method has no
+     * effect if the task is already completed or cancelled, or could
+     * not be cancelled for some other reason.  Otherwise, if this
+     * task has not started when {@code cancel} is called, this task
+     * should never run.  If the task has already started, then the
+     * {@code mayInterruptIfRunning} parameter determines whether the
+     * thread executing this task (when known by the implementation)
+     * is interrupted in an attempt to stop the task.
      *
-     * <p>After this method returns, subsequent calls to {@link #isDone} will
-     * always return {@code true}.  Subsequent calls to {@link #isCancelled}
-     * will always return {@code true} if this method returned {@code true}.
+     * <p>The return value from this method does not necessarily
+     * indicate whether the task is now cancelled; use {@link
+     * #isCancelled}.
      *
-     * @param mayInterruptIfRunning {@code true} if the thread executing this
-     * task should be interrupted; otherwise, in-progress tasks are allowed
-     * to complete
+     * @param mayInterruptIfRunning {@code true} if the thread
+     * executing this task should be interrupted (if the thread is
+     * known to the implementation); otherwise, in-progress tasks are
+     * allowed to complete
      * @return {@code false} if the task could not be cancelled,
-     * typically because it has already completed normally;
-     * {@code true} otherwise
+     * typically because it has already completed; {@code true}
+     * otherwise. If two or more threads cause a task to be cancelled,
+     * then at least one of them returns {@code true}. Implementations
+     * may provide stronger guarantees.
      */
     boolean cancel(boolean mayInterruptIfRunning);
 

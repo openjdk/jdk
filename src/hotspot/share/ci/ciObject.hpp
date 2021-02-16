@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "ci/ciBaseObject.hpp"
 #include "ci/ciClassList.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/jniHandles.hpp"
 
 // ciObject
 //
@@ -107,6 +106,7 @@ public:
   virtual bool is_array()                   { return false; }
   virtual bool is_obj_array()               { return false; }
   virtual bool is_type_array()              { return false; }
+  virtual bool is_native_entry_point()const { return false; }
 
   // Is this a type or value which has no associated class?
   // It is true of primitive types and null objects.
@@ -159,6 +159,10 @@ public:
   ciTypeArray* as_type_array() {
     assert(is_type_array(), "bad cast");
     return (ciTypeArray*)this;
+  }
+  ciNativeEntryPoint* as_native_entry_point() {
+    assert(is_native_entry_point(), "bad cast");
+    return (ciNativeEntryPoint*)this;
   }
 
   // Print debugging output about this ciObject.

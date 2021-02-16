@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/codeBlob.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -781,7 +782,7 @@ void VM_Version::get_processor_features() {
               cores_per_cpu(), threads_per_core(),
               cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   assert(res > 0, "not enough temporary space allocated");
-  assert(exact_log2_long(CPU_MAX_FEATURE) + 1 == sizeof(_features_names) / sizeof(char*), "wrong size features_names");
+  assert(log2i_exact((uint64_t)CPU_MAX_FEATURE) + 1 == sizeof(_features_names) / sizeof(char*), "wrong size features_names");
   insert_features_names(buf + res, sizeof(buf) - res, _features_names);
 
   _features_string = os::strdup(buf);
@@ -1005,7 +1006,7 @@ void VM_Version::get_processor_features() {
 
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking) {
-    if (is_client_compilation_mode_vm()) {
+    if (!CompilerConfig::is_c2_enabled()) {
       // Only C2 does RTM locking optimization.
       // Can't continue because UseRTMLocking affects UseBiasedLocking flag
       // setting during arguments processing. See use_biased_locking().
@@ -1311,9 +1312,10 @@ void VM_Version::get_processor_features() {
     }
 #endif // COMPILER2
 
-    // Some defaults for AMD family 17h || Hygon family 18h
-    if (cpu_family() == 0x17 || cpu_family() == 0x18) {
-      // On family 17h processors use XMM and UnalignedLoadStores for Array Copy
+    // Some defaults for AMD family >= 17h && Hygon family 18h
+    if (cpu_family() >= 0x17) {
+      // On family >=17h processors use XMM and UnalignedLoadStores
+      // for Array Copy
       if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         FLAG_SET_DEFAULT(UseXMMForArrayCopy, true);
       }
@@ -1362,6 +1364,7 @@ void VM_Version::get_processor_features() {
         MaxLoopPad = 11;
       }
 #endif // COMPILER2
+
       if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
       }
@@ -1399,6 +1402,38 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
+#ifdef COMPILER2
+    if (UseAVX > 2) {
+      if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
+          (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
+           ArrayCopyPartialInlineSize != 0 &&
+           ArrayCopyPartialInlineSize != 32 &&
+           ArrayCopyPartialInlineSize != 16 &&
+           ArrayCopyPartialInlineSize != 64)) {
+        int inline_size = 0;
+        if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
+          inline_size = 64;
+        } else if (MaxVectorSize >= 32) {
+          inline_size = 32;
+        } else if (MaxVectorSize >= 16) {
+          inline_size = 16;
+        }
+        if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
+          warning("Setting ArrayCopyPartialInlineSize as %d", inline_size);
+        }
+        ArrayCopyPartialInlineSize = inline_size;
+      }
+
+      if (ArrayCopyPartialInlineSize > MaxVectorSize) {
+        ArrayCopyPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+        if (ArrayCopyPartialInlineSize) {
+          warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+        } else {
+          warning("Setting ArrayCopyPartialInlineSize as " INTX_FORMAT, ArrayCopyPartialInlineSize);
+        }
+      }
+    }
+#endif
   }
 
 #ifdef _LP64
@@ -1485,6 +1520,22 @@ void VM_Version::get_processor_features() {
     warning("fast-string operations are not available on this CPU");
     FLAG_SET_DEFAULT(UseFastStosb, false);
   }
+
+  // For AMD Processors use XMM/YMM MOVDQU instructions
+  // for Object Initialization as default
+  if (is_amd() && cpu_family() >= 0x19) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = false;
+    }
+  }
+
+#ifdef COMPILER2
+  if (is_intel() && MaxVectorSize > 16) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = false;
+    }
+  }
+#endif
 
   // Use XMM/YMM MOVDQU instruction for Object Initialization
   if (!UseFastStosb && UseSSE >= 2 && UseUnalignedLoadStores) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "vmreg_x86.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #include "runtime/vframeArray.hpp"
@@ -344,6 +345,11 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map->include_argument_oops(), "should be set by clear");
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+
+  if (jfa->saved_rbp_address()) {
+    update_map_with_saved_link(map, jfa->saved_rbp_address());
+  }
+
   return fr;
 }
 
@@ -585,7 +591,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
         oop* obj_p = (oop*)tos_addr;
         obj = (obj_p == NULL) ? (oop)NULL : *obj_p;
       }
-      assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
+      assert(Universe::is_in_heap_or_null(obj), "sanity check");
       *oop_result = obj;
       break;
     }

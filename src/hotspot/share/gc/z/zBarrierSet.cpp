@@ -55,7 +55,6 @@ ZBarrierSetAssembler* ZBarrierSet::assembler() {
 
 bool ZBarrierSet::barrier_needed(DecoratorSet decorators, BasicType type) {
   assert((decorators & AS_RAW) == 0, "Unexpected decorator");
-  assert((decorators & AS_NO_KEEPALIVE) == 0, "Unexpected decorator");
   //assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Unexpected decorator");
 
   if (is_reference_type(type)) {

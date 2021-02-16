@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary deadlock in LogManager
  * @author  Serguei Spitsyn / SAP
  *
+ * @library  /test/lib
  * @build    LoggingDeadlock
  * @run  main/timeout=15 LoggingDeadlock
  * @key randomness
@@ -53,18 +54,24 @@
  */
 
 
+import java.util.Random;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import jdk.test.lib.RandomFactory;
 
 public class LoggingDeadlock {
 
+    private static int preventLoopElision;
+    private static final Random random = RandomFactory.getRandom();
+
     public static void randomDelay() {
-        int runs = (int) Math.random() * 1000000;
+        int runs = random.nextInt(1000000);
         int c = 0;
 
         for (int i = 0; i < runs; ++i) {
             c = c + i;
         }
+        preventLoopElision = c;
     }
 
     public static void main(String[] args) throws InterruptedException{

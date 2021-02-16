@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,11 +68,10 @@ public class TestInterface extends JavadocTester {
 
         checkOutput("pkg/Interface.html", true,
                 """
-                    <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="member-name">method</span>()</div>""",
+                    <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">method</span>()</div>""",
                 """
                     <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
-                    span class="return-type">int</span>&nbsp;<span class="member-name">field</span><\
-                    /div>""",
+                    span class="return-type">int</span>&nbsp;<span class="element-name">field</span></div>""",
                 // Make sure known implementing class list is correct and omits type parameters.
                 """
                     <dl class="notes">
@@ -130,18 +129,17 @@ public class TestInterface extends JavadocTester {
                     <section class="detail" id="f">
                     <h3>f</h3>
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="return-type">int</span>&nbsp;<span class="member-name">f</span></di\
-                    v>
+                    <span class="return-type">int</span>&nbsp;<span class="element-name">f</span></div>
                     <div class="block">A hider field</div>""",
 
                 """
-                    <div class="col-first even-row-color method-summary-table-tab1 method-summary-table-t\
-                    ab4 method-summary-table"><code>static void</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab1 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#m()">m\
-                    </a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab1 method-summary-table-ta\
-                    b4 method-summary-table">
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab1 method-summary-table-tab4"><code>static void</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab1 method-summary-table-tab4"><code><a href="#m()" class="member-name-link">m<\
+                    /a>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b1 method-summary-table-tab4">
                     <div class="block">A hider method</div>
                     </div>
                     """,
@@ -150,8 +148,8 @@ public class TestInterface extends JavadocTester {
                     <section class="detail" id="staticMethod()">
                     <h3>staticMethod</h3>
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="return-type">void</span>&nbsp;<span class="member-name">staticMetho\
-                    d</span>()</div>
+                    <span class="return-type">void</span>&nbsp;<span class="element-name">staticMethod</span\
+                    >()</div>
                     <div class="block"><span class="descfrm-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="InterfaceWithStaticMembers.html#staticMethod()">Inter\
                     faceWithStaticMembers</a></code></span></div>
@@ -160,8 +158,9 @@ public class TestInterface extends JavadocTester {
 
         checkOutput("pkg/ClassWithStaticMembers.InnerClass.html", true,
                 """
-                    <pre>public static class <span class="type-name-label">ClassWithStaticMembers.InnerClass</span>
-                    extends java.lang.Object</pre>
+                    <div class="type-signature"><span class="modifiers">public static class </span><\
+                    span class="element-name type-name-label">ClassWithStaticMembers.InnerClass</span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>
                     <div class="block">A hider inner class</div>""");
     }
 

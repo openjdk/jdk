@@ -23,19 +23,19 @@
 
 /*
  * @test
- * @bug 8226585
+ * @bug 8226585 8250768
  * @summary Verify behavior w.r.t. preview feature API errors and warnings
  * @library /tools/lib /tools/javac/lib
  * @modules
- *      java.base/jdk.internal
+ *      java.base/jdk.internal.javac
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.file
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.util
+ *      jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} PreviewErrors.java
- * @run main/othervm --enable-preview PreviewErrors
+ * @run main PreviewErrors
  */
 
 import java.io.IOException;
@@ -48,11 +48,19 @@ import combo.ComboParameter;
 import combo.ComboTask;
 import combo.ComboTestHelper;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.tools.Diagnostic;
 
-import jdk.internal.PreviewFeature;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ConstantPoolException;
+import java.io.FileWriter;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.util.Map.Entry;
+import javax.tools.JavaFileObject;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;
@@ -66,25 +74,120 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
         tb = new ToolBox();
     }
 
+    private static String previewAPI(PreviewElementType elementType) {
+        return """
+               package preview.api;
+               public class ${name} {
+                   @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.${preview}
+                                                ${reflective})
+                   public static void test() { }
+                   @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.${preview}
+                                                ${reflective})
+                   public static class Clazz {}
+               }
+               """.replace("${name}", elementType.className)
+                  .replace("${preview}", "TEST")
+                  .replace("${reflective}", elementType.reflective);
+    }
+
+    private static final String SEALED_DECLARATION = """
+                                                     package user;
+                                                     public sealed interface R {}
+                                                     final class C implements R {}
+                                                     """;
+
+    static Map<PreviewElementType, Map<Preview, Map<Suppress, Map<Lint, StringBuilder>>>> parts = new TreeMap<>();
     public static void main(String... args) throws Exception {
         new ComboTestHelper<PreviewErrors>()
-                .withDimension("ESSENTIAL", (x, essential) -> x.essential = essential, EssentialAPI.values())
                 .withDimension("PREVIEW", (x, preview) -> x.preview = preview, Preview.values())
                 .withDimension("LINT", (x, lint) -> x.lint = lint, Lint.values())
                 .withDimension("SUPPRESS", (x, suppress) -> x.suppress = suppress, Suppress.values())
-                .withDimension("FROM", (x, from) -> x.from = from, PreviewFrom.values())
+                .withDimension("ELEMENT_TYPE", (x, elementType) -> x.elementType = elementType, PreviewElementType.values())
                 .run(PreviewErrors::new);
+        if (args.length == 1) {
+            try (Writer out = new FileWriter(args[0])) {
+                int petCount = 0;
+                for (Entry<PreviewElementType, Map<Preview, Map<Suppress, Map<Lint, StringBuilder>>>> pet : parts.entrySet()) {
+                    petCount++;
+                    switch (pet.getKey()) {
+                        case API_REFLECTIVE_CLASS, API_CLASS -> {
+                            if (pet.getKey() == PreviewElementType.API_REFLECTIVE_CLASS) {
+                                out.write("<h2>" + petCount + ". Reflective Preview API</h2>\n");
+                            } else {
+                                out.write("<h2>" + petCount + ". Preview API</h2>\n");
+                            }
+                            out.write("API source (part of java.base):\n");
+                            out.write("<pre>\n");
+                            String previewAPI = previewAPI(pet.getKey());
+                            out.write(previewAPI);
+                            out.write("\n</pre>\n");
+                        }
+                        case REFER_TO_DECLARATION_CLASS -> {
+                            out.write("<h2>" + petCount + ". Using an element declared using a preview feature</h2>\n");
+                            out.write("Element declaration:\n");
+                            out.write("<pre>\n");
+                            out.write(SEALED_DECLARATION);
+                            out.write("\n</pre>\n");
+                        }
+                        case LANGUAGE -> {
+                            out.write("<h2>" + petCount + ". Using preview language feature</h2>\n");
+                        }
+                    }
+                    int prevCount = 0;
+                    for (Entry<Preview, Map<Suppress, Map<Lint, StringBuilder>>> prev : pet.getValue().entrySet()) {
+                        prevCount++;
+                        switch (prev.getKey()) {
+                            case YES -> {
+                                out.write("<h3>" + petCount + "." + prevCount + ". With --enable-preview</h3>\n");
+                            }
+                            case NO -> {
+                                out.write("<h3>" + petCount + "." + prevCount + ". Without --enable-preview</h3>\n");
+                            }
+                        }
+                        int supCount = 0;
+                        for (Entry<Suppress, Map<Lint, StringBuilder>> sup : prev.getValue().entrySet()) {
+                            supCount++;
+                            switch (sup.getKey()) {
+                                case YES -> {
+                                    out.write("<h4>" + petCount + "." + prevCount + "." + supCount + ". Usages suppressed with @SuppressWarnings</h4>\n");
+                                }
+                                case NO -> {
+                                    out.write("<h4>" + petCount + "." + prevCount + "." + supCount + ". Usages not suppressed with @SuppressWarnings</h4>\n");
+                                }
+                            }
+                            int lintCount = 0;
+                            for (Entry<Lint, StringBuilder> lint : sup.getValue().entrySet()) {
+                                lintCount++;
+                                switch (lint.getKey()) {
+                                    case NONE -> {
+                                        out.write("<h5>" + petCount + "." + prevCount + "." + supCount + "." + lintCount + ". Neither -Xlint:preview nor -Xlint:-preview</h5>\n");
+                                    }
+                                    case ENABLE_PREVIEW -> {
+                                        out.write("<h5>" + petCount + "." + prevCount + "." + supCount + "." + lintCount + ". With -Xlint:preview</h5>\n");
+                                    }
+                                    case DISABLE_PREVIEW -> {
+                                        out.write("<h5>" + petCount + "." + prevCount + "." + supCount + "." + lintCount + ". With -Xlint:-preview</h5>\n");
+                                    }
+                                }
+                                out.write(lint.getValue().toString());
+                                out.write("\n");
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    private EssentialAPI essential;
     private Preview preview;
     private Lint lint;
     private Suppress suppress;
-    private PreviewFrom from;
+    private PreviewElementType elementType;
 
     @Override
     public void doWork() throws IOException {
         Path base = Paths.get(".");
+        tb.cleanDirectory(base);
         Path src = base.resolve("src");
         Path srcJavaBase = src.resolve("java.base");
         Path classes = base.resolve("classes");
@@ -92,62 +195,83 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
 
         Files.createDirectories(classesJavaBase);
 
-        String previewAPI = """
-                            package preview.api;
-                            public class Extra {
-                                @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.${preview}
-                                                             ${essential})
-                                public static void test() { }
-                                @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.${preview}
-                                                             ${essential})
-                                public static class Clazz {}
-                            }
-                            """.replace("${preview}", PreviewFeature.Feature.values()[0].name())
-                               .replace("${essential}", essential.expand(null));
-
-         if (from == PreviewFrom.CLASS) {
-            tb.writeJavaFiles(srcJavaBase, previewAPI);
-
-            new JavacTask(tb)
-                    .outdir(classesJavaBase)
-                    .options("--patch-module", "java.base=" + srcJavaBase.toString())
-                    .files(tb.findJavaFiles(srcJavaBase))
-                    .run()
-                    .writeAll();
-         }
+        String previewAPI = previewAPI(elementType);
 
         ComboTask task = newCompilationTask()
-                .withSourceFromTemplate("""
-                                        package test;
-                                        public class Test {
-                                            #{SUPPRESS}
-                                            public void test() {
-                                                preview.api.Extra.test();
-                                                preview.api.Extra.Clazz c;
-                                            }
-                                        }
-                                        """)
                 .withOption("-XDrawDiagnostics")
                 .withOption("-source")
                 .withOption(String.valueOf(Runtime.version().feature()));
 
-        if (from == PreviewFrom.CLASS) {
-            task.withOption("--patch-module")
-                .withOption("java.base=" + classesJavaBase.toString())
-                .withOption("--add-exports")
-                .withOption("java.base/preview.api=ALL-UNNAMED");
-        } else {
-            task.withSourceFromTemplate("Extra", previewAPI)
-                .withOption("--add-exports")
-                .withOption("java.base/jdk.internal=ALL-UNNAMED");
+        switch (elementType) {
+            case API_CLASS, API_REFLECTIVE_CLASS -> {
+                tb.writeJavaFiles(srcJavaBase, previewAPI);
+
+                new JavacTask(tb)
+                        .outdir(classesJavaBase)
+                        .options("--patch-module", "java.base=" + srcJavaBase.toString())
+                        .files(tb.findJavaFiles(srcJavaBase))
+                        .run()
+                        .writeAll();
+
+                task.withOption("--patch-module")
+                    .withOption("java.base=" + classesJavaBase.toString())
+                    .withOption("--add-exports")
+                    .withOption("java.base/preview.api=ALL-UNNAMED");
+            }
+            case API_SOURCE, API_REFLECTIVE_SOURCE -> {
+                tb.writeJavaFiles(srcJavaBase, previewAPI);
+
+                task.withOption("--patch-module")
+                    .withOption("java.base=" + srcJavaBase.toString())
+                    .withOption("--add-exports")
+                    .withOption("java.base/preview.api=ALL-UNNAMED");
+            }
+            case LANGUAGE -> {
+                task.withOption("-XDforcePreview=true");
+            }
+            case REFER_TO_DECLARATION_CLASS -> {
+                tb.writeJavaFiles(srcJavaBase, SEALED_DECLARATION);
+
+                new JavacTask(tb)
+                        .outdir(classesJavaBase)
+                        .options("--patch-module", "java.base=" + srcJavaBase.toString(),
+                                 "--enable-preview",
+                                 "-source", String.valueOf(Runtime.version().feature()))
+                        .files(tb.findJavaFiles(srcJavaBase))
+                        .run()
+                        .writeAll();
+
+                task.withOption("--patch-module")
+                    .withOption("java.base=" + classesJavaBase.toString())
+                    .withOption("--add-exports")
+                    .withOption("java.base/user=ALL-UNNAMED");
+            }
+            case REFER_TO_DECLARATION_SOURCE -> {
+                tb.writeJavaFiles(srcJavaBase, SEALED_DECLARATION);
+
+                task.withOption("--patch-module")
+                    .withOption("java.base=" + srcJavaBase.toString())
+                    .withOption("--add-exports")
+                    .withOption("java.base/user=ALL-UNNAMED");
+            }
         }
 
+        task.withSourceFromTemplate("""
+                                    package test;
+                                    public class Test {
+                                        #{SUPPRESS}
+                                        public void test(Object o) {
+                                            #{ELEMENT_TYPE}
+                                        }
+                                    }
+                                    """);
+
         if (preview.expand(null)!= null) {
-            task = task.withOption(preview.expand(null));
+            task.withOption(preview.expand(null));
         }
 
         if (lint.expand(null) != null) {
-            task = task.withOption(lint.expand(null));
+            task.withOption(lint.expand(null));
         }
 
         task.generate(result -> {
@@ -155,63 +279,172 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                                             .flatMap(kind -> result.diagnosticsForKind(kind).stream())
                                             .map(d -> d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode())
                                             .collect(Collectors.toSet());
-                Set<String> expected;
                 boolean ok;
-                if (essential == EssentialAPI.YES) {
-                    if (preview == Preview.YES) {
-                        if (suppress == Suppress.YES) {
-                            expected = Set.of();
-                        } else if (lint == Lint.ENABLE_PREVIEW) {
-                            expected = Set.of("5:26:compiler.warn.is.preview", "6:26:compiler.warn.is.preview");
-                        } else {
-                            expected = Set.of("-1:-1:compiler.note.preview.filename",
-                                              "-1:-1:compiler.note.preview.recompile");
+                boolean previewClass = true;
+                Set<String> expected = null;
+                if (preview == Preview.NO) {
+                    switch (elementType) {
+                        case LANGUAGE -> {
+                            ok = false;
+                            expected = Set.of("5:41:compiler.err.preview.feature.disabled");
                         }
-                        ok = true;
-                    } else {
-                        expected = Set.of("5:26:compiler.err.is.preview", "6:26:compiler.err.is.preview");
-                        ok = false;
+                        case REFER_TO_DECLARATION_CLASS -> {
+                            ok = false;
+                            expected = Set.of("-1:-1:compiler.err.preview.feature.disabled.classfile");
+                        }
+                        case REFER_TO_DECLARATION_SOURCE -> {
+                            ok = false;
+                            expected = Set.of("2:8:compiler.err.preview.feature.disabled.plural");
+                        }
+                        case API_CLASS, API_SOURCE -> {
+                            ok = false;
+                            expected = Set.of("6:17:compiler.err.is.preview",
+                                              "5:25:compiler.err.is.preview");
+                        }
+                        case API_REFLECTIVE_CLASS, API_REFLECTIVE_SOURCE -> {
+                            ok = true;
+                            previewClass = false;
+                            if (suppress == Suppress.YES) {
+                                expected = Set.of();
+                            } else if (lint == Lint.NONE || lint == Lint.ENABLE_PREVIEW) {
+                                expected = Set.of("6:20:compiler.warn.is.preview.reflective",
+                                                  "5:28:compiler.warn.is.preview.reflective");
+                            } else {//-Xlint:-preview
+                                expected = Set.of("-1:-1:compiler.note.preview.filename",
+                                                  "-1:-1:compiler.note.preview.recompile");
+                            }
+                        }
+                        default -> {
+                            throw new IllegalStateException(elementType.name());
+                        }
                     }
                 } else {
-                    if (suppress == Suppress.YES) {
-                        expected = Set.of();
-                    } else if ((preview == Preview.YES && (lint == Lint.NONE || lint == Lint.DISABLE_PREVIEW)) ||
-                               (preview == Preview.NO && lint == Lint.DISABLE_PREVIEW)) {
-                        expected = Set.of("-1:-1:compiler.note.preview.filename",
-                                          "-1:-1:compiler.note.preview.recompile");
-                    } else {
-                        expected = Set.of("5:26:compiler.warn.is.preview", "6:26:compiler.warn.is.preview");
-                    }
                     ok = true;
+                    switch (elementType) {
+                        case LANGUAGE -> {
+                            if (lint == Lint.ENABLE_PREVIEW) {
+                                expected = Set.of("5:41:compiler.warn.preview.feature.use");
+                            } else {
+                                expected = Set.of("-1:-1:compiler.note.preview.filename",
+                                                  "-1:-1:compiler.note.preview.recompile");
+                            }
+                        }
+                        case REFER_TO_DECLARATION_CLASS -> {
+                            if (suppress == Suppress.YES) {
+                                if (lint == Lint.ENABLE_PREVIEW) {
+                                    expected = Set.of("-1:-1:compiler.warn.preview.feature.use.classfile");
+                                } else {
+                                    expected = Set.of(/*"-1:-1:compiler.note.preview.filename",
+                                                      "-1:-1:compiler.note.preview.recompile"*/);
+                                }
+                            } else if (lint == Lint.ENABLE_PREVIEW) {
+                                expected = Set.of("5:13:compiler.warn.declared.using.preview",
+                                                  "5:24:compiler.warn.declared.using.preview",
+                                                  "-1:-1:compiler.warn.preview.feature.use.classfile");
+                            } else {
+                                expected = Set.of("-1:-1:compiler.note.preview.filename",
+                                                  "-1:-1:compiler.note.preview.recompile");
+                            }
+                        }
+                        case REFER_TO_DECLARATION_SOURCE -> {
+                            if (lint == Lint.ENABLE_PREVIEW) {
+                                if (suppress == Suppress.YES) {
+                                    expected = Set.of("2:8:compiler.warn.preview.feature.use.plural",
+                                                      "3:26:compiler.warn.declared.using.preview");
+                                } else {
+                                    expected = Set.of("5:13:compiler.warn.declared.using.preview",
+                                                      "5:24:compiler.warn.declared.using.preview",
+                                                      "2:8:compiler.warn.preview.feature.use.plural",
+                                                      "3:26:compiler.warn.declared.using.preview");
+                                }
+                            } else {
+                                if (suppress == Suppress.YES) {
+                                    expected = Set.of("-1:-1:compiler.note.preview.filename",
+                                                      "-1:-1:compiler.note.preview.recompile");
+                                } else {
+                                    expected = Set.of("-1:-1:compiler.note.preview.plural",
+                                                      "-1:-1:compiler.note.preview.recompile");
+                                }
+                            }
+                        }
+                        case API_CLASS, API_SOURCE -> {
+                            if (suppress == Suppress.YES) {
+                                expected = Set.of();
+                            } else if (lint == Lint.ENABLE_PREVIEW) {
+                                expected = Set.of("6:17:compiler.warn.is.preview",
+                                                  "5:25:compiler.warn.is.preview");
+                            } else {
+                                expected = Set.of("-1:-1:compiler.note.preview.filename",
+                                                  "-1:-1:compiler.note.preview.recompile");
+                            }
+                        }
+                        case API_REFLECTIVE_CLASS, API_REFLECTIVE_SOURCE -> {
+                            previewClass = false;
+                            if (suppress == Suppress.YES) {
+                                expected = Set.of();
+                            } else if (lint == Lint.ENABLE_PREVIEW) {
+                                expected = Set.of("6:20:compiler.warn.is.preview.reflective",
+                                                  "5:28:compiler.warn.is.preview.reflective");
+                            } else {
+                                expected = Set.of("-1:-1:compiler.note.preview.filename",
+                                                  "-1:-1:compiler.note.preview.recompile");
+                            }
+                        }
+                    }
+                }
+                if (!elementType.isSource) {
+                    try {
+                        parts.computeIfAbsent(elementType, x -> new TreeMap<>())
+                                .computeIfAbsent(preview, x -> new TreeMap<>())
+                                .computeIfAbsent(suppress, x -> new TreeMap<>())
+                                .computeIfAbsent(lint, x -> new StringBuilder())
+                                .append("<pre>\n")
+                                .append(task.getSources().head.getCharContent(false))
+                                .append("\n</pre>\n")
+                                .append("<pre>\n")
+                                .append(Arrays.stream(Diagnostic.Kind.values())
+                                              .flatMap(kind -> result.diagnosticsForKind(kind).reverse().stream())
+                                              .filter(d -> d.getSource() == null || !d.getSource().getName().contains("R.java"))
+                                              .map(d -> (d.getSource() != null ? d.getSource().getName() + ":" + d.getLineNumber() + ":" : "") + d.getKind()+ ": " + d.getMessage(null)).collect(Collectors.joining("\n")))
+                                .append("\n</pre>\n")
+                                .append(ok ? previewClass ? "Test.class is marked as a preview class file." : "Test.class is <b>NOT</b> marked as a preview class file." : "Does not compile.");
+                    } catch (IOException ex) {
+                        throw new UncheckedIOException(ex);
+                    }
                 }
                 if (ok) {
                     if (!result.get().iterator().hasNext()) {
-                        throw new IllegalStateException("Did not succeed as expected." + actual);
+                        throw new IllegalStateException("Did not succeed as expected for preview=" + preview + ", lint=" + lint + ", suppress=" + suppress + ", elementType=" + elementType + ": actual:\"" + actual + "\"");
+                    }
+                    ClassFile cf;
+                    try {
+                        JavaFileObject testClass = null;
+                        for (JavaFileObject classfile : result.get()) {
+                            if (classfile.isNameCompatible("Test", JavaFileObject.Kind.CLASS)){
+                                testClass = classfile;
+                            }
+                        }
+                        if (testClass == null) {
+                            throw new IllegalStateException("Cannot find Test.class");
+                        }
+                        cf = ClassFile.read(testClass.openInputStream());
+                    } catch (IOException | ConstantPoolException ex) {
+                        throw new IllegalStateException(ex);
+                    }
+                    if (previewClass && cf.minor_version != 65535) {
+                        throw new IllegalStateException("Expected preview class, but got: " + cf.minor_version);
+                    } else if (!previewClass && cf.minor_version != 0) {
+                        throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minor_version);
                     }
                 } else {
                     if (result.get().iterator().hasNext()) {
-                        throw new IllegalStateException("Succeed unexpectedly.");
+                        throw new IllegalStateException("Succeed unexpectedly for preview=" + preview + ", lint=" + lint + ", suppress=" + suppress + ", elementType=" + elementType);
                     }
                 }
-                if (!expected.equals(actual)) {
-                    throw new IllegalStateException("Unexpected output for " + essential + ", " + preview + ", " + lint + ", " + suppress + ", " + from + ": actual: \"" + actual + "\", expected: \"" + expected + "\"");
+                if (expected != null && !expected.equals(actual)) {
+                    throw new IllegalStateException("Unexpected output for preview=" + preview + ", lint=" + lint + ", suppress=" + suppress + ", elementType=" + elementType + ": actual: \"" + actual + "\", expected: \"" + expected + "\"");
                 }
             });
-    }
-
-    public enum EssentialAPI implements ComboParameter {
-        YES(", essentialAPI=true"),
-        NO(", essentialAPI=false");
-
-        private final String code;
-
-        private EssentialAPI(String code) {
-            this.code = code;
-        }
-
-        public String expand(String optParameter) {
-            return code;
-        }
     }
 
     public enum Preview implements ComboParameter {
@@ -260,15 +493,53 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
         }
     }
 
-    public enum PreviewFrom implements ComboParameter {
-        CLASS,
-        SOURCE;
+    public enum PreviewElementType implements ComboParameter {
+        LANGUAGE("boolean b = o instanceof String s;", ", reflective=false", "", false),
+        REFER_TO_DECLARATION_SOURCE("user.R d1; user.R d2;", ", reflective=false", "", true),
+        REFER_TO_DECLARATION_CLASS("user.R d1; user.R d2;", ", reflective=false", "", false),
+        API_CLASS("""
+                  preview.api.Core.test();
+                  preview.api.Core.Clazz c;
+                  """,
+                  ", reflective=false",
+                  "Core",
+                false),
+        API_REFLECTIVE_CLASS("""
+                  preview.api.Reflect.test();
+                  preview.api.Reflect.Clazz c;
+                  """,
+                  ", reflective=true",
+                  "Reflect",
+                false),
+        API_SOURCE("""
+                   preview.api.Core.test();
+                   preview.api.Core.Clazz c;
+                   """,
+                   ", reflective=false",
+                   "Core",
+                   true),
+        API_REFLECTIVE_SOURCE("""
+                   preview.api.Reflect.test();
+                   preview.api.Reflect.Clazz c;
+                   """,
+                   ", reflective=true",
+                   "Reflect",
+                   true);
 
-        private PreviewFrom() {
+        String code;
+        String reflective;
+        String className;
+        boolean isSource;
+
+        private PreviewElementType(String code, String reflective, String className, boolean isSource) {
+            this.code = code;
+            this.reflective = reflective;
+            this.className = className;
+            this.isSource = isSource;
         }
 
         public String expand(String optParameter) {
-            throw new IllegalStateException();
+            return code;
         }
     }
 }

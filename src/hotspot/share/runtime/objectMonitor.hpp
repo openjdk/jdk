@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 
 class ObjectMonitor;
 
@@ -147,13 +147,13 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
                         sizeof(WeakHandle));
   // Used by async deflation as a marker in the _owner field:
   #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
-  void* volatile _owner;            // pointer to owning thread OR BasicLock
+  void* _owner;                     // pointer to owning thread OR BasicLock
   volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void*) +
                         sizeof(volatile jlong));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
@@ -242,8 +242,8 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
     if (contentions() > 0) {
       ret_code |= contentions();
     }
-    if (_owner != DEFLATER_MARKER) {
-      ret_code |= intptr_t(_owner);
+    if (!owner_is_DEFLATER_MARKER()) {
+      ret_code |= intptr_t(owner_raw());
     }
     return ret_code;
   }
@@ -252,8 +252,9 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   intptr_t  is_entered(Thread* current) const;
 
   void*     owner() const;  // Returns NULL if DEFLATER_MARKER is observed.
+  void*     owner_raw() const;
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
-  bool      owner_is_DEFLATER_MARKER();
+  bool      owner_is_DEFLATER_MARKER() const;
   // Returns true if 'this' is being async deflated and false otherwise.
   bool      is_being_async_deflated();
   // Clear _owner field; current value must match old_value.

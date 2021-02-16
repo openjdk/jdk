@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
   case "${TOOLCHAIN_TYPE}" in
     microsoft)
       DISABLE_WARNING_PREFIX="-wd"
+      BUILD_CC_DISABLE_WARNING_PREFIX="-wd"
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
 
       WARNINGS_ENABLE_ALL="-W3"
@@ -142,6 +143,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
     gcc)
       DISABLE_WARNING_PREFIX="-Wno-"
+      BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
       # Additional warnings that are not activated by -Wall and -Wextra
@@ -153,7 +155,6 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
       DISABLED_WARNINGS="unused-parameter unused"
-      BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
       ;;
 
     clang)
@@ -166,11 +167,6 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
       DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
-
-      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-        # missing-method-return-type triggers in JavaNativeFoundation framework
-        DISABLED_WARNINGS="$DISABLED_WARNINGS missing-method-return-type"
-      fi
 
       ;;
 
@@ -604,25 +600,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     fi
   fi
 
-  # Optional POSIX functionality needed by the JVM
-  #
-  # Check if clock_gettime is available and in which library. This indicates
-  # availability of CLOCK_MONOTONIC for hotspot. But we don't need to link, so
-  # don't let it update LIBS.
-  save_LIBS="$LIBS"
-  AC_SEARCH_LIBS(clock_gettime, rt, [HAS_CLOCK_GETTIME=true], [])
-  if test "x$LIBS" = "x-lrt "; then
-    CLOCK_GETTIME_IN_LIBRT=true
-  fi
-  LIBS="$save_LIBS"
-
-  if test "x$HAS_CLOCK_GETTIME" = "xtrue"; then
-    OS_CFLAGS_JVM="$OS_CFLAGS_JVM -DSUPPORTS_CLOCK_MONOTONIC"
-    if test "x$CLOCK_GETTIME_IN_LIBRT" = "xtrue"; then
-      OS_CFLAGS_JVM="$OS_CFLAGS_JVM -DNEEDS_LIBRT"
-    fi
-  fi
-
   # Extra flags needed when building optional static versions of certain
   # JDK libraries.
   STATIC_LIBS_CFLAGS="-DSTATIC_BUILD=1"
@@ -683,9 +660,21 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   # CFLAGS PER CPU
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     # COMMON to gcc and clang
+    AC_MSG_CHECKING([if $1 is x86])
     if test "x$FLAGS_CPU" = xx86; then
-      # Force compatibility with i586 on 32 bit intel platforms.
-      $1_CFLAGS_CPU="-march=i586"
+      AC_MSG_RESULT([yes])
+      AC_MSG_CHECKING([if control flow protection is enabled by additional compiler flags])
+      if echo "${EXTRA_CFLAGS}${EXTRA_CXXFLAGS}${EXTRA_ASFLAGS}" | ${GREP} -q 'fcf-protection' ; then
+        # cf-protection requires CMOV and thus i686
+        $1_CFLAGS_CPU="-march=i686"
+        AC_MSG_RESULT([yes, forcing ${$1_CFLAGS_CPU}])
+      else
+        # Force compatibility with i586 on 32 bit intel platforms.
+        $1_CFLAGS_CPU="-march=i586"
+        AC_MSG_RESULT([no, forcing ${$1_CFLAGS_CPU}])
+      fi
+    else
+      AC_MSG_RESULT([no])
     fi
   fi
 
@@ -750,6 +739,18 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
   fi
 
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft && test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
+    # Enabling deterministic creates warnings if __DATE__ or __TIME__ are
+    # used, and since we are, silence that warning.
+    REPRODUCIBLE_CFLAGS="-experimental:deterministic -wd5048"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${REPRODUCIBLE_CFLAGS}],
+        PREFIX: $3,
+        IF_FALSE: [
+            REPRODUCIBLE_CFLAGS=
+        ]
+    )
+  fi
+
   # Prevent the __FILE__ macro from generating absolute paths into the built
   # binaries. Depending on toolchain, different mitigations are possible.
   # * GCC and Clang of new enough versions have -fmacro-prefix-map.
@@ -768,6 +769,29 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
               FILE_MACRO_CFLAGS=
           ]
       )
+    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft &&
+        test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
+      # There is a known issue with the pathmap if the mapping is made to the
+      # empty string. Add a minimal string "s" as prefix to work around this.
+      workspace_root_win=`$FIXPATH_BASE print "${WORKSPACE_ROOT%/}"`
+      # PATHMAP_FLAGS is also added to LDFLAGS in flags-ldflags.m4.
+      PATHMAP_FLAGS="-pathmap:${workspace_root_win//\//\\\\}=s \
+          -pathmap:${workspace_root_win}=s"
+      FILE_MACRO_CFLAGS="$PATHMAP_FLAGS"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
+          PREFIX: $3,
+          IF_FALSE: [
+              PATHMAP_FLAGS=
+              FILE_MACRO_CFLAGS=
+          ]
+      )
+    fi
+
+    AC_MSG_CHECKING([how to prevent absolute paths in output])
+    if test "x$FILE_MACRO_CFLAGS" != x; then
+      AC_MSG_RESULT([using compiler options])
+    else
+      AC_MSG_RESULT([using relative paths])
     fi
   fi
   AC_SUBST(FILE_MACRO_CFLAGS)
@@ -776,12 +800,13 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
       $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
       $OS_CFLAGS $OS_CFLAGS_JVM $CFLAGS_OS_DEF_JVM $DEBUG_CFLAGS_JVM \
-      $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS"
+      $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS \
+      $REPRODUCIBLE_CFLAGS"
 
   CFLAGS_JDK_COMMON="$ALWAYS_CFLAGS_JDK $ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
       $OS_CFLAGS $CFLAGS_OS_DEF_JDK $DEBUG_CFLAGS_JDK $DEBUG_OPTIONS_FLAGS_JDK \
       $WARNING_CFLAGS $WARNING_CFLAGS_JDK $DEBUG_SYMBOLS_CFLAGS_JDK \
-      $FILE_MACRO_CFLAGS"
+      $FILE_MACRO_CFLAGS $REPRODUCIBLE_CFLAGS"
 
   # Use ${$2EXTRA_CFLAGS} to block EXTRA_CFLAGS to be added to build flags.
   # (Currently we don't have any OPENJDK_BUILD_EXTRA_CFLAGS, but that might

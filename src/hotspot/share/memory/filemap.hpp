@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_MEMORY_FILEMAP_HPP
 #define SHARE_MEMORY_FILEMAP_HPP
 
-#include "classfile/classLoader.hpp"
 #include "include/cds.h"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspace.hpp"
@@ -44,6 +43,9 @@
 static const int JVM_IDENT_MAX = 256;
 
 class CHeapBitMap;
+class ClassFileStream;
+class ClassLoaderData;
+class ClassPathEntry;
 class outputStream;
 
 class SharedClassPathEntry {
@@ -117,7 +119,7 @@ public:
   SharedPathTable() : _table(NULL), _size(0) {}
   SharedPathTable(Array<u8>* table, int size) : _table(table), _size(size) {}
 
-  void dumptime_init(ClassLoaderData* loader_data, Thread* THREAD);
+  void dumptime_init(ClassLoaderData* loader_data, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
 
   int size() {
@@ -169,7 +171,7 @@ public:
   void set_read_only(bool v)         { _read_only = v; }
   void set_mapped_base(char* p)      { _mapped_base = p; }
   void set_mapped_from_file(bool v)  { _mapped_from_file = v; }
-  void init(int region_index, char* base, size_t size, bool read_only,
+  void init(int region_index, size_t mapping_offset, size_t size, bool read_only,
             bool allow_exec, int crc);
 
   void init_oopmap(size_t oopmap_offset, size_t size_in_bits) {
@@ -202,7 +204,6 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   size_t  _cloned_vtables_offset;   // The address of the first cloned vtable
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
   size_t  _i2i_entry_code_buffers_offset;
-  size_t  _i2i_entry_code_buffers_size;
   address _heap_end;                // heap end at dump time.
   bool _base_archive_is_default;    // indicates if the base archive is the system default one
 
@@ -238,14 +239,11 @@ class FileMapHeader: private CDSFileMapHeaderBase {
                                         // some expensive operations.
   bool   _use_full_module_graph;        // Can we use the full archived module graph?
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
-
+  narrowOop _heap_obj_roots;            // An objArray that stores all the roots of archived heap objects
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
-  void set_mapped_offset(char* p, size_t *offset) {
-    assert(p >= mapped_base_address(), "sanity");
-    *offset = p - mapped_base_address();
-  }
+  void set_as_offset(char* p, size_t *offset);
 public:
   // Accessors -- fields declared in CDSFileMapHeaderBase
   unsigned int magic() const {return _magic;}
@@ -270,7 +268,6 @@ public:
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   address i2i_entry_code_buffers()         const { return (address)from_mapped_offset(_i2i_entry_code_buffers_offset); }
-  size_t i2i_entry_code_buffers_size()     const { return _i2i_entry_code_buffers_size; }
   address heap_end()                       const { return _heap_end; }
   bool base_archive_is_default()           const { return _base_archive_is_default; }
   const char* jvm_ident()                  const { return _jvm_ident; }
@@ -286,26 +283,27 @@ public:
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
   jshort app_class_paths_start_index()     const { return _app_class_paths_start_index; }
   jshort num_module_paths()                const { return _num_module_paths; }
+  narrowOop heap_obj_roots()               const { return _heap_obj_roots; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
-  void set_cloned_vtables(char* p)               { set_mapped_offset(p, &_cloned_vtables_offset); }
-  void set_serialized_data(char* p)              { set_mapped_offset(p, &_serialized_data_offset); }
+  void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
+  void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_base_archive_name_size(size_t s)      { _base_archive_name_size = s; }
   void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
   void set_header_size(size_t s)                 { _header_size = s; }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
-  void set_i2i_entry_code_buffers(address p, size_t s) {
-    set_mapped_offset((char*)p, &_i2i_entry_code_buffers_offset);
-    _i2i_entry_code_buffers_size = s;
+  void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
+  void set_i2i_entry_code_buffers(address p) {
+    set_as_offset((char*)p, &_i2i_entry_code_buffers_offset);
   }
 
   void set_shared_path_table(SharedPathTable table) {
-    set_mapped_offset((char*)table.table(), &_shared_path_table_offset);
+    set_as_offset((char*)table.table(), &_shared_path_table_offset);
     _shared_path_table_size = table.size();
   }
 
-  void set_final_requested_base(char* b) {
+  void set_requested_base(char* b) {
     _requested_base_address = b;
     _mapped_base_address = 0;
   }
@@ -414,19 +412,17 @@ public:
   void  align_file_position();
 
   address i2i_entry_code_buffers()            const { return header()->i2i_entry_code_buffers();  }
-  size_t i2i_entry_code_buffers_size()        const { return header()->i2i_entry_code_buffers_size(); }
-  void set_i2i_entry_code_buffers(address addr, size_t s) const {
-    header()->set_i2i_entry_code_buffers(addr, s);
+  void set_i2i_entry_code_buffers(address addr) const {
+    header()->set_i2i_entry_code_buffers(addr);
   }
 
   bool is_static()                            const { return _is_static; }
   bool is_mapped()                            const { return _is_mapped; }
   void set_is_mapped(bool v)                        { _is_mapped = v; }
   const char* full_path()                     const { return _full_path; }
-  void set_final_requested_base(char* b);
 
-  char* requested_base_address()           const { return header()->requested_base_address(); }
-
+  void set_requested_base(char* b)                  { header()->set_requested_base(b); }
+  char* requested_base_address()           const    { return header()->requested_base_address(); }
 
   class DynamicArchiveHeader* dynamic_header() const {
     assert(!is_static(), "must be");
@@ -504,8 +500,8 @@ public:
   // Stop CDS sharing and unmap CDS regions.
   static void stop_sharing_and_unmap(const char* msg);
 
-  static void allocate_shared_path_table();
-  static void copy_shared_path_table(ClassLoaderData* loader_data, Thread* THREAD);
+  static void allocate_shared_path_table(TRAPS);
+  static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool validate_shared_path_table();
@@ -580,7 +576,7 @@ public:
   char* map_bitmap_region();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  read_region(int i, char* base, size_t size);
-  bool  relocate_pointers(intx addr_delta);
+  bool  relocate_pointers_in_core_regions(intx addr_delta);
   static size_t set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_size);
   static size_t write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_offset, char* buffer);
 

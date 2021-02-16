@@ -60,15 +60,14 @@ public class TestAnnotationTypes extends JavadocTester {
                 "<!-- =========== FIELD SUMMARY =========== -->",
                 "<h2>Field Summary</h2>",
                 """
-                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
-                    #DEFAULT_NAME">DEFAULT_NAME</a></span></code></div>""",
+                    <div class="col-second even-row-color"><code><a href="#DEFAULT_NAME" class="memb\
+                    er-name-link">DEFAULT_NAME</a></code></div>""",
                 "<!-- ============ FIELD DETAIL =========== -->",
                 """
                     <section class="detail" id="DEFAULT_NAME">
                     <h3>DEFAULT_NAME</h3>
                     <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
-                    span class="return-type">java.lang.String</span>&nbsp;<span class="member-name">\
-                    DEFAULT_NAME</span></div>
+                    span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">DEFAULT_NAME</span></div>
                     """);
 
         checkOutput("pkg/AnnotationType.html", true,
@@ -80,13 +79,12 @@ public class TestAnnotationTypes extends JavadocTester {
                     <li>Field&nbsp;|&nbsp;</li>""");
 
         checkOutput("pkg/AnnotationType.html", true,
-                    "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->",
+                    "<!-- ============ ANNOTATION INTERFACE MEMBER DETAIL =========== -->",
                     "<ul class=\"member-list\">",
                     "<li>",
                     """
-                        <section class="details" id="annotation.type.element.detail">""",
+                        <section class="details" id="annotation.interface.element.detail">""",
                     "<h2>Element Details</h2>",
-                    "<!--   -->",
                     "</a>",
                     "<ul class=\"member-list\">",
                     "<li>",
@@ -94,7 +92,7 @@ public class TestAnnotationTypes extends JavadocTester {
                         <section class="detail" id="value()">""",
                     "<h3>value</h3>\n",
                     """
-                        <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="member-name">value</span></div>""");
+                        <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">value</span></div>""");
 
         checkOutput("pkg/AnnotationType.html", false,
                 """
@@ -124,10 +122,10 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                 """
-                    public @interface <a href="../src-html/pkg/AnnotationType.html#line.31">AnnotationType</a></pre>""");
+                    <span class="modifiers">public @interface </span><span class="element-name"><a href="../src-html/pkg/AnnotationType.html#line.31">AnnotationType</a></span></div>""");
 
         checkOutput("pkg/AnnotationTypeField.html", true,
                 """
-                    public @interface <a href="../src-html/pkg/AnnotationTypeField.html#line.31">AnnotationTypeField</a></pre>""");
+                    <span class="modifiers">public @interface </span><span class="element-name"><a href="../src-html/pkg/AnnotationTypeField.html#line.31">AnnotationTypeField</a></span></div>""");
     }
 }

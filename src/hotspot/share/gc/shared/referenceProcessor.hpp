@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,6 @@ private:
   HeapWord*          _current_discovered_addr;
   oop                _next_discovered;
 
-  HeapWord*          _referent_addr;
   oop                _referent;
 
   OopClosure*        _keep_alive;
@@ -120,14 +119,8 @@ public:
   // Remove the current reference from the list
   void remove();
 
-  // Make the referent alive.
-  inline void make_referent_alive() {
-    if (UseCompressedOops) {
-      _keep_alive->do_oop((narrowOop*)_referent_addr);
-    } else {
-      _keep_alive->do_oop((oop*)_referent_addr);
-    }
-  }
+  // Apply the keep_alive function to the referent address.
+  void make_referent_alive();
 
   // Do enqueuing work, i.e. notifying the GC about the changed discovered pointers.
   void enqueue();
@@ -640,9 +633,6 @@ public:
 
   // Executes a task using worker threads.
   virtual void execute(ProcessTask& task, uint ergo_workers) = 0;
-
-  // Switch to single threaded mode.
-  virtual void set_single_threaded_mode() { };
 };
 
 // Abstract reference processing task to execute.

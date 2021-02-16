@@ -76,6 +76,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">чероки</language>
 			<language type="chy">чэенн</language>
 			<language type="ckb">төв курд</language>
+			<language type="ckb" alt="menu">Курд, Төв</language>
+			<language type="ckb" alt="variant">Курд, Сорани</language>
 			<language type="co">корсик</language>
 			<language type="crs">сеселва креол франц</language>
 			<language type="cs">чех</language>
@@ -3173,9 +3175,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Калининград</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Симферополь</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Москва</exemplarCity>
 			</zone>
@@ -3370,6 +3369,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Киев</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Симферополь</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Запорожье</exemplarCity>
@@ -4142,9 +4144,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Норфолк арлын цаг</generic>
-					<standard draft="contributed">Норфолк арлын стандарт цаг</standard>
-					<daylight draft="contributed">Норфолк арлын зуны цаг</daylight>
+					<generic>Норфолк арлын цаг</generic>
+					<standard>Норфолк арлын стандарт цаг</standard>
+					<daylight>Норфолк арлын зуны цаг</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5689,6 +5691,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ёотта{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>киби{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>мэби{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>гиби{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>тэби{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>пэби{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>эксби{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>зэби{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>яиобэ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{1} тутамд {0}</compoundUnitPattern>
 			</compoundUnit>
@@ -6084,6 +6110,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} цэг/см</unitPattern>
 				<unitPattern count="other">{0} цэг/см</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>цэг</displayName>
+				<unitPattern count="one">{0} цэг</unitPattern>
+				<unitPattern count="other">{0} цэг</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>дэлхийн радиус</displayName>
+				<unitPattern count="one">{0} дэлхийн радиус</unitPattern>
+				<unitPattern count="other">{0} дэлхийн радиус</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>километр</displayName>
 				<unitPattern count="one">{0} километр</unitPattern>
@@ -6164,6 +6200,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} сансрын нэгж</unitPattern>
 				<unitPattern count="other">{0} сансрын нэгж</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>фурлонг</displayName>
+				<unitPattern count="one">{0} фурлонг</unitPattern>
+				<unitPattern count="other">{0} фурлонг</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>фатом</displayName>
+				<unitPattern count="one">{0} фатом</unitPattern>
+				<unitPattern count="other">{0} фатом</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>далайн миль</displayName>
 				<unitPattern count="one">{0} далайн миль</unitPattern>
@@ -6188,6 +6234,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>люкс</displayName>
 				<unitPattern count="one">{0} люкс</unitPattern>
 				<unitPattern count="other">{0} люкс</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>кандел</displayName>
+				<unitPattern count="one">{0} кандел</unitPattern>
+				<unitPattern count="other">{0} кандел</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>люмен</displayName>
+				<unitPattern count="one">{0} люмен</unitPattern>
+				<unitPattern count="other">{0} люмен</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>нарны гэрлийн урсгал</displayName>
@@ -6226,6 +6282,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} америк тонн</unitPattern>
 				<unitPattern count="other">{0} америк тонн</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>чулуу</displayName>
+				<unitPattern count="one">{0} чулуу</unitPattern>
+				<unitPattern count="other">{0} чулуу</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>фунт</displayName>
 				<unitPattern count="one">{0} фунт</unitPattern>
@@ -6262,6 +6323,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>нарны масс</displayName>
 				<unitPattern count="one">{0} нарны масс</unitPattern>
 				<unitPattern count="other">{0} нарны масс</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>үр</displayName>
+				<unitPattern count="one">{0} үр</unitPattern>
+				<unitPattern count="other">{0} үр</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>гигаВатт</displayName>
@@ -6526,6 +6592,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} баррель</unitPattern>
 				<unitPattern count="other">{0} баррель</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>амттаны халбага</displayName>
+				<unitPattern count="one">{0} амттаны халбага</unitPattern>
+				<unitPattern count="other">{0} амттаны халбага</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Том амттаны халбага</displayName>
+				<unitPattern count="one">{0} том амттаны халбага</unitPattern>
+				<unitPattern count="other">{0} том амттаны халбага</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>дусал</displayName>
+				<unitPattern count="one">{0} дусал</unitPattern>
+				<unitPattern count="other">{0} дусал</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>драм</displayName>
+				<unitPattern count="one">{0} драм</unitPattern>
+				<unitPattern count="other">{0} драм</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>джиггер</displayName>
+				<unitPattern count="one">{0} джиггер</unitPattern>
+				<unitPattern count="other">{0} джиггер</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>чимх</displayName>
+				<unitPattern count="one">{0} чимх</unitPattern>
+				<unitPattern count="other">{0} чимх</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Том куарт</displayName>
+				<unitPattern count="one">{0} том куарт</unitPattern>
+				<unitPattern count="other">{0} том куарт</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>зүг чиг</displayName>
 				<coordinateUnitPattern type="east">зүүн уртрагийн {0}</coordinateUnitPattern>
@@ -6594,6 +6695,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Ё{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ки{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Ми{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Ги{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ти{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Пи{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Эи{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Зи{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Яи{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -6974,6 +7099,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} цэг/см</unitPattern>
 				<unitPattern count="other">{0} цэг/см</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>цэг</displayName>
+				<unitPattern count="one">{0} цэг</unitPattern>
+				<unitPattern count="other">{0} цэг</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>км</displayName>
 				<unitPattern count="one">{0} км</unitPattern>
@@ -7054,6 +7184,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} сн</unitPattern>
 				<unitPattern count="other">{0} сн</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>фурлонг</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>фатом</displayName>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>дми</displayName>
 				<unitPattern count="one">{0} дми</unitPattern>
@@ -7112,6 +7248,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ам. тн</unitPattern>
 				<unitPattern count="other">{0} ам. тн</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>чулуу</displayName>
+				<unitPattern count="one">{0} ч</unitPattern>
+				<unitPattern count="other">{0} ч</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>фунт</displayName>
 				<unitPattern count="one">{0} фунт</unitPattern>
@@ -7144,6 +7285,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>нарны масс</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>үр</displayName>
+				<unitPattern count="one">{0} үр</unitPattern>
+				<unitPattern count="other">{0} үр</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>ГВт</displayName>
@@ -7266,7 +7412,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}°К</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
-				<displayName>Н*м</displayName>
+				<displayName>Н⋅м</displayName>
+				<unitPattern count="one">{0} Н⋅м</unitPattern>
+				<unitPattern count="other">{0} Н⋅м</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>км³</displayName>
@@ -7403,6 +7551,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} баррель</unitPattern>
 				<unitPattern count="other">{0} баррель</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>амт.х</displayName>
+				<unitPattern count="one">{0} амт.х</unitPattern>
+				<unitPattern count="other">{0} амт.х</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>том амт.х</displayName>
+				<unitPattern count="one">{0} том амт.х</unitPattern>
+				<unitPattern count="other">{0} том амт.х</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>дусал</displayName>
+				<unitPattern count="one">{0} дусал</unitPattern>
+				<unitPattern count="other">{0} дусал</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>драм шингэн</displayName>
+				<unitPattern count="one">{0} драм.ш</unitPattern>
+				<unitPattern count="other">{0} драм.ш</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>джиггер</displayName>
+				<unitPattern count="one">{0} джиггер</unitPattern>
+				<unitPattern count="other">{0} джиггер</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>чимх</displayName>
+				<unitPattern count="one">{0} чимх</unitPattern>
+				<unitPattern count="other">{0} чимх</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>том куарт</displayName>
+				<unitPattern count="one">{0} том куарт</unitPattern>
+				<unitPattern count="other">{0} том куарт</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>зүг</displayName>
 				<coordinateUnitPattern type="east">{0} з.у</coordinateUnitPattern>
@@ -7471,6 +7654,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Ё{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ки{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Ми{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Ги{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ти{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Пи{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Эи{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Зи{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Яи{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -7763,103 +7970,105 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</messages>
 	</posix>
 	<characterLabels>
-		<characterLabelPattern type="all">{0} - Бүгд</characterLabelPattern>
+		<characterLabelPattern type="all">{0} — бүгд</characterLabelPattern>
 		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
 		<characterLabelPattern type="compatibility">{0} - нийцэл</characterLabelPattern>
-		<characterLabelPattern type="enclosed">{0} — Хавсарсан</characterLabelPattern>
-		<characterLabelPattern type="extended">{0} — Өргөтгөсөн</characterLabelPattern>
-		<characterLabelPattern type="historic">{0} — Түүхэн</characterLabelPattern>
-		<characterLabelPattern type="miscellaneous">{0} — Бусад</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — хавсаргасан</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — өргөтгөсөн</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — түүхэн</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — янз бүр</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — бусад</characterLabelPattern>
-		<characterLabelPattern type="scripts">Бичвэрүүд — {0}</characterLabelPattern>
+		<characterLabelPattern type="scripts">скрипт — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} цохилт</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} цохилт</characterLabelPattern>
-		<characterLabel type="activities">Үйл ажиллагаанууд</characterLabel>
-		<characterLabel type="african_scripts">Африк бичвэр</characterLabel>
-		<characterLabel type="american_scripts">Америк бичвэр</characterLabel>
-		<characterLabel type="animal">амьтан</characterLabel>
-		<characterLabel type="animals_nature">Ан амьтан ба байгаль</characterLabel>
-		<characterLabel type="arrows">Сум</characterLabel>
+		<characterLabelPattern type="subscript">дэд скрипт {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">супер скрипт {0}</characterLabelPattern>
+		<characterLabel type="activities">үйл ажиллагаа</characterLabel>
+		<characterLabel type="african_scripts">Африкан скрипт</characterLabel>
+		<characterLabel type="american_scripts">Американ скрипт</characterLabel>
+		<characterLabel type="animal">ан амьтан</characterLabel>
+		<characterLabel type="animals_nature">ан амьтан ба байгаль</characterLabel>
+		<characterLabel type="arrows">сум</characterLabel>
 		<characterLabel type="body">бие</characterLabel>
-		<characterLabel type="box_drawing">Хайрцаг зурах</characterLabel>
-		<characterLabel type="braille">Брайль</characterLabel>
+		<characterLabel type="box_drawing">хайрцаг зурах</characterLabel>
+		<characterLabel type="braille">брайль</characterLabel>
 		<characterLabel type="building">барилга</characterLabel>
-		<characterLabel type="bullets_stars">Сум/од</characterLabel>
-		<characterLabel type="consonantal_jamo">Жамо гийгүүлэгчийн дараалал</characterLabel>
-		<characterLabel type="currency_symbols">Мөнгөн тэмдэгтийн дүрс</characterLabel>
-		<characterLabel type="dash_connector">Зураас/холбоос</characterLabel>
+		<characterLabel type="bullets_stars">сум ба од</characterLabel>
+		<characterLabel type="consonantal_jamo">жамо гийгүүлэгчийн дараалал</characterLabel>
+		<characterLabel type="currency_symbols">валютын тэмдэг</characterLabel>
+		<characterLabel type="dash_connector">зураас ба холбоос</characterLabel>
 		<characterLabel type="digits">орон</characterLabel>
-		<characterLabel type="dingbats">Дүрс тэмдгүүд</characterLabel>
-		<characterLabel type="divination_symbols">Мэргийн тэмдгүүд</characterLabel>
-		<characterLabel type="downwards_arrows">Доош заасан сум</characterLabel>
-		<characterLabel type="downwards_upwards_arrows">Доош, дээш заасан сум</characterLabel>
+		<characterLabel type="dingbats">чимэг тэмдэг</characterLabel>
+		<characterLabel type="divination_symbols">мэргийн тэмдэг</characterLabel>
+		<characterLabel type="downwards_arrows">доош заасан сум</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">доош, дээш заасан сум</characterLabel>
 		<characterLabel type="east_asian_scripts">Зүүн Азийн бичвэр</characterLabel>
-		<characterLabel type="emoji">Эможи</characterLabel>
-		<characterLabel type="european_scripts">Европ бичвэр</characterLabel>
+		<characterLabel type="emoji">эможи</characterLabel>
+		<characterLabel type="european_scripts">Европийн скрипт</characterLabel>
 		<characterLabel type="female">эмэгтэй</characterLabel>
 		<characterLabel type="flag">туг</characterLabel>
-		<characterLabel type="flags">Туг</characterLabel>
-		<characterLabel type="food_drink">Хоол, унд</characterLabel>
-		<characterLabel type="format">Формат</characterLabel>
-		<characterLabel type="format_whitespace">Формат, хоосон зай</characterLabel>
-		<characterLabel type="full_width_form_variant">Бүтэн өргөн загварын хувилбар</characterLabel>
-		<characterLabel type="geometric_shapes">Геометрийн дүрсүүд</characterLabel>
-		<characterLabel type="half_width_form_variant">Өргөөшөө загварын хувилбарууд</characterLabel>
-		<characterLabel type="han_characters">Хан ханзнууд</characterLabel>
+		<characterLabel type="flags">туг</characterLabel>
+		<characterLabel type="food_drink">хоол, унд</characterLabel>
+		<characterLabel type="format">формат</characterLabel>
+		<characterLabel type="format_whitespace">формат, хоосон зай</characterLabel>
+		<characterLabel type="full_width_form_variant">бүтэн өргөн хувилбар</characterLabel>
+		<characterLabel type="geometric_shapes">геометрийн дүрс</characterLabel>
+		<characterLabel type="half_width_form_variant">хагас өргөн хувилбар</characterLabel>
+		<characterLabel type="han_characters">Хан ханз</characterLabel>
 		<characterLabel type="han_radicals">Хятад язгуур</characterLabel>
-		<characterLabel type="hanja">Ханз</characterLabel>
+		<characterLabel type="hanja">ханз</characterLabel>
 		<characterLabel type="hanzi_simplified">Ханз (Хялбаршуулсан)</characterLabel>
 		<characterLabel type="hanzi_traditional">Ханз (Уламжлалт)</characterLabel>
 		<characterLabel type="heart">зүрх</characterLabel>
-		<characterLabel type="historic_scripts">Түүхэн бичвэр</characterLabel>
-		<characterLabel type="ideographic_desc_characters">Идеографик буурах тэмдэгтүүд</characterLabel>
+		<characterLabel type="historic_scripts">түүхэн скрипт</characterLabel>
+		<characterLabel type="ideographic_desc_characters">идеографик буурах тэмдэгт</characterLabel>
 		<characterLabel type="japanese_kana">Япон кана</characterLabel>
-		<characterLabel type="kanbun">Канбун</characterLabel>
-		<characterLabel type="kanji">Канжи</characterLabel>
+		<characterLabel type="kanbun">канбун</characterLabel>
+		<characterLabel type="kanji">канжи</characterLabel>
 		<characterLabel type="keycap">түлхүүрийн гэр</characterLabel>
-		<characterLabel type="leftwards_arrows">Зүүн харсан сум</characterLabel>
-		<characterLabel type="leftwards_rightwards_arrows">Зүүн, баруун харсан сум</characterLabel>
-		<characterLabel type="letterlike_symbols">Үсгэн тэмдэгтүүд</characterLabel>
-		<characterLabel type="limited_use">Хязгаарлагдмал хэрэглээ</characterLabel>
+		<characterLabel type="leftwards_arrows">зүүн харсан сум</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">зүүн, баруун харсан сум</characterLabel>
+		<characterLabel type="letterlike_symbols">үсгэн тэмдэгт</characterLabel>
+		<characterLabel type="limited_use">хязгаарлагдмал хэрэглээ</characterLabel>
 		<characterLabel type="male">эрэгтэй</characterLabel>
-		<characterLabel type="math_symbols">Математикийн тэмдэгтүүд</characterLabel>
+		<characterLabel type="math_symbols">математикийн тэмдэгт</characterLabel>
 		<characterLabel type="middle_eastern_scripts">Ойрх дорнодын бичвэр</characterLabel>
-		<characterLabel type="miscellaneous">Бусад</characterLabel>
-		<characterLabel type="modern_scripts">Орчин цагийн бичвэр</characterLabel>
-		<characterLabel type="modifier">Өөрчлөгч</characterLabel>
-		<characterLabel type="musical_symbols">Хөгжмийн тэмдэгтүүд</characterLabel>
+		<characterLabel type="miscellaneous">янз бүрийн</characterLabel>
+		<characterLabel type="modern_scripts">орчин цагийн скрипт</characterLabel>
+		<characterLabel type="modifier">өөрчлөгч</characterLabel>
+		<characterLabel type="musical_symbols">хөгжмийн тэмдэг</characterLabel>
 		<characterLabel type="nature">байгаль</characterLabel>
-		<characterLabel type="nonspacing">Зайгүй</characterLabel>
-		<characterLabel type="numbers">Тоонууд</characterLabel>
-		<characterLabel type="objects">Дүрснүүд</characterLabel>
-		<characterLabel type="other">Бусад</characterLabel>
-		<characterLabel type="paired">Хослосон</characterLabel>
+		<characterLabel type="nonspacing">зайгүй</characterLabel>
+		<characterLabel type="numbers">тоо</characterLabel>
+		<characterLabel type="objects">объект</characterLabel>
+		<characterLabel type="other">бусад</characterLabel>
+		<characterLabel type="paired">хослосон</characterLabel>
 		<characterLabel type="person">хүн</characterLabel>
-		<characterLabel type="phonetic_alphabet">Дуудлагын үсэг</characterLabel>
-		<characterLabel type="pictographs">Пиктограм</characterLabel>
+		<characterLabel type="phonetic_alphabet">дуудлагын үсэг</characterLabel>
+		<characterLabel type="pictographs">пиктограм</characterLabel>
 		<characterLabel type="place">газар</characterLabel>
 		<characterLabel type="plant">ургамал</characterLabel>
-		<characterLabel type="punctuation">Цэг, таслал</characterLabel>
-		<characterLabel type="rightwards_arrows">Баруун заасан сум</characterLabel>
-		<characterLabel type="sign_standard_symbols">Тэмдэг/стандарт тэмдэгт</characterLabel>
-		<characterLabel type="small_form_variant">Жижиг загварын хувилбарууд</characterLabel>
+		<characterLabel type="punctuation">цэг, таслал</characterLabel>
+		<characterLabel type="rightwards_arrows">баруун заасан сум</characterLabel>
+		<characterLabel type="sign_standard_symbols">дүрс ба тэмдэг</characterLabel>
+		<characterLabel type="small_form_variant">жижиг загварын хувилбар</characterLabel>
 		<characterLabel type="smiley">инээмсэглэл</characterLabel>
-		<characterLabel type="smileys_people">Инээмсэглэлүүд ба хүмүүс</characterLabel>
-		<characterLabel type="south_asian_scripts">Өмнөд Азийн бичвэр</characterLabel>
-		<characterLabel type="southeast_asian_scripts">Зүүн өмнөд азийн бичвэр</characterLabel>
-		<characterLabel type="spacing">Зай авалт</characterLabel>
+		<characterLabel type="smileys_people">инээмсэглэл ба хүн</characterLabel>
+		<characterLabel type="south_asian_scripts">Өмнөд Азийн скрипт</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Зүүн өмнөд азийн скрипт</characterLabel>
+		<characterLabel type="spacing">зай авалт</characterLabel>
 		<characterLabel type="sport">спорт</characterLabel>
-		<characterLabel type="symbols">Тэмдэгүүд</characterLabel>
-		<characterLabel type="technical_symbols">Техникийн тэмдэгүүд</characterLabel>
-		<characterLabel type="tone_marks">Дууны өнгөний тэмдэглэгээ</characterLabel>
+		<characterLabel type="symbols">тэмдэг</characterLabel>
+		<characterLabel type="technical_symbols">техникийн тэмдэг</characterLabel>
+		<characterLabel type="tone_marks">дууны өнгөний тэмдэглэгээ</characterLabel>
 		<characterLabel type="travel">аялал</characterLabel>
-		<characterLabel type="travel_places">Аялал, газар нутгууд</characterLabel>
-		<characterLabel type="upwards_arrows">Дээш заасан сум</characterLabel>
-		<characterLabel type="variant_forms">Хувилбарын хэлбэрүүд</characterLabel>
-		<characterLabel type="vocalic_jamo">Эгшгийн Жамо</characterLabel>
+		<characterLabel type="travel_places">аялал ба газар нутаг</characterLabel>
+		<characterLabel type="upwards_arrows">дээш заасан сум</characterLabel>
+		<characterLabel type="variant_forms">хувилбар</characterLabel>
+		<characterLabel type="vocalic_jamo">эгшгийн жамо</characterLabel>
 		<characterLabel type="weather">цаг агаар</characterLabel>
-		<characterLabel type="western_asian_scripts">Баруун азийн бичвэр</characterLabel>
-		<characterLabel type="whitespace">Хоосон зай</characterLabel>
+		<characterLabel type="western_asian_scripts">Баруун азийн скрипт</characterLabel>
+		<characterLabel type="whitespace">хоосон зай</characterLabel>
 	</characterLabels>
 	<typographicNames>
 		<axisName type="ital">налуу</axisName>

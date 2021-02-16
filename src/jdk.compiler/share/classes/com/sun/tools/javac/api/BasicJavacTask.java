@@ -55,6 +55,7 @@ import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformDescription.PluginInfo;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
@@ -257,8 +258,11 @@ public class BasicJavacTask extends JavacTask {
     public void initDocLint(List<String> docLintOpts) {
         if (docLintOpts.isEmpty())
             return;
-
-        DocLint.newDocLint().init(this, docLintOpts.toArray(new String[docLintOpts.size()]));
-        JavaCompiler.instance(context).keepComments = true;
+        try {
+            DocLint.newDocLint().init(this, docLintOpts.toArray(new String[docLintOpts.size()]));
+            JavaCompiler.instance(context).keepComments = true;
+        } catch (IllegalStateException e) {
+            Log.instance(context).warning(Warnings.DoclintNotAvailable);
+        }
     }
 }

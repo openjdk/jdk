@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.peer.ScrollPanePeer;
+import java.io.Serial;
 import java.io.Serializable;
 
 import sun.awt.AWTAccessor;
@@ -172,8 +173,9 @@ public class ScrollPaneAdjustable implements Adjustable, Serializable {
     }
 
     /**
-     * JDK 1.1 serialVersionUID.
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -3359745691033257079L;
 
 

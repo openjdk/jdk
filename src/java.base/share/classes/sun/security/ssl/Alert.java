@@ -123,7 +123,7 @@ enum Alert {
         }
 
         SSLException ssle;
-        if ((cause != null) && (cause instanceof IOException)) {
+        if (cause instanceof IOException) {
             ssle = new SSLException(reason);
         } else if ((this == UNEXPECTED_MESSAGE)) {
             ssle = new SSLProtocolException(reason);

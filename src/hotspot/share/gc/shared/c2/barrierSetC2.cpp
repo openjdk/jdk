@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/convertnode.hpp"
@@ -692,7 +693,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-    ac->_adr_type = TypeRawPtr::BOTTOM;
+    ac->set_adr_type(TypeRawPtr::BOTTOM);
     kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
   } else {
     kit->set_all_memory(n);

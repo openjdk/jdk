@@ -65,7 +65,7 @@ public interface Driver {
      * the JDBC driver manager is asked to connect to a given URL it passes
      * the URL to each loaded driver in turn.
      *
-     * <P>The driver should throw an <code>SQLException</code> if it is the right
+     * <P>The driver should throw an {@code SQLException} if it is the right
      * driver to connect to the given URL but has trouble connecting to
      * the database.
      *
@@ -83,7 +83,7 @@ public interface Driver {
      * @param info a list of arbitrary string tag/value pairs as
      * connection arguments. Normally at least a "user" and
      * "password" property should be included.
-     * @return a <code>Connection</code> object that represents a
+     * @return a {@code Connection} object that represents a
      *         connection to the URL
      * @throws SQLException if a database access error occurs or the url is
      * {@code null}
@@ -93,13 +93,13 @@ public interface Driver {
 
     /**
      * Retrieves whether the driver thinks that it can open a connection
-     * to the given URL.  Typically drivers will return <code>true</code> if they
-     * understand the sub-protocol specified in the URL and <code>false</code> if
+     * to the given URL.  Typically drivers will return {@code true} if they
+     * understand the sub-protocol specified in the URL and {@code false} if
      * they do not.
      *
      * @param url the URL of the database
-     * @return <code>true</code> if this driver understands the given URL;
-     *         <code>false</code> otherwise
+     * @return {@code true} if this driver understands the given URL;
+     *         {@code false} otherwise
      * @throws SQLException if a database access error occurs or the url is
      * {@code null}
      */
@@ -109,18 +109,18 @@ public interface Driver {
     /**
      * Gets information about the possible properties for this driver.
      * <P>
-     * The <code>getPropertyInfo</code> method is intended to allow a generic
+     * The {@code getPropertyInfo} method is intended to allow a generic
      * GUI tool to discover what properties it should prompt
      * a human for in order to get
      * enough information to connect to a database.  Note that depending on
      * the values the human has supplied so far, additional values may become
      * necessary, so it may be necessary to iterate though several calls
-     * to the <code>getPropertyInfo</code> method.
+     * to the {@code getPropertyInfo} method.
      *
      * @param url the URL of the database to which to connect
      * @param info a proposed list of tag/value pairs that will be sent on
      *          connect open
-     * @return an array of <code>DriverPropertyInfo</code> objects describing
+     * @return an array of {@code DriverPropertyInfo} objects describing
      *          possible properties.  This array may be an empty array if
      *          no properties are required.
      * @throws SQLException if a database access error occurs
@@ -146,8 +146,8 @@ public interface Driver {
     /**
      * Reports whether this driver is a genuine JDBC
      * Compliant driver.
-     * A driver may only report <code>true</code> here if it passes the JDBC
-     * compliance tests; otherwise it is required to return <code>false</code>.
+     * A driver may only report {@code true} here if it passes the JDBC
+     * compliance tests; otherwise it is required to return {@code false}.
      * <P>
      * JDBC compliance requires full support for the JDBC API and full support
      * for SQL 92 Entry Level.  It is expected that JDBC compliant drivers will
@@ -159,7 +159,7 @@ public interface Driver {
      * databases that do not support full database functionality, or for
      * special databases such as document information retrieval where a SQL
      * implementation may not be feasible.
-     * @return <code>true</code> if this driver is JDBC Compliant; <code>false</code>
+     * @return {@code true} if this driver is JDBC Compliant; {@code false}
      *         otherwise
      */
     boolean jdbcCompliant();

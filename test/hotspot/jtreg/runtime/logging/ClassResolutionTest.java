@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,20 +71,6 @@ public class ClassResolutionTest {
                                                    ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
         o.shouldNotContain("[class,resolve]");
-
-        // (3) TraceClassResolution should turn on.
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceClassResolution",
-                                                   ClassResolutionTestMain.class.getName());
-        o = new OutputAnalyzer(pb.start());
-        o.shouldContain("[class,resolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
-
-        // (4) TraceClassResolution should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+resolve=debug",
-                                                   "-XX:-TraceClassResolution",
-                                                   ClassResolutionTestMain.class.getName());
-        o = new OutputAnalyzer(pb.start());
-        o.shouldNotContain("[class,resolve]");
-
     };
 
 }

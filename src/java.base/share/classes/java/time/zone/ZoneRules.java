@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,10 +259,12 @@ public final class ZoneRules implements Serializable {
         }
 
         // last rules
-        if (lastRules.size() > 16) {
+        Object[] temp = lastRules.toArray();
+        ZoneOffsetTransitionRule[] rulesArray = Arrays.copyOf(temp, temp.length, ZoneOffsetTransitionRule[].class);
+        if (rulesArray.length > 16) {
             throw new IllegalArgumentException("Too many transition rules");
         }
-        this.lastRules = lastRules.toArray(new ZoneOffsetTransitionRule[lastRules.size()]);
+        this.lastRules = rulesArray;
     }
 
     /**

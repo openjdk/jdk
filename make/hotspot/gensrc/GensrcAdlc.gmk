@@ -168,7 +168,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   $(SINGLE_AD_SRCFILE): $(AD_SRC_FILES)
 	$(call LogInfo, Preprocessing adlc files $(^F))
 	$(call MakeDir, $(@D))
-	$(NAWK) $(INSERT_FILENAME_AWK_SCRIPT) $^ > $@
+	$(AWK) $(INSERT_FILENAME_AWK_SCRIPT) $^ > $@
 
   ##############################################################################
   # Run the adlc tool on the single concatenated ad source file, and store the
@@ -205,7 +205,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles/%: $(adlc_run_TARGET)
 	$(call LogInfo, Postprocessing adlc file $*)
 	$(call MakeDir, $(@D))
-	$(NAWK) \
+	$(AWK) \
 	    'BEGIN { print "#line 1 \"$*\""; } \
 	     /^#line 999999$$/ {print "#line " (NR+1) " \"$*\""; next} \
 	     $(if $(call equals, $(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), false), \

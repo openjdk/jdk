@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -814,18 +814,26 @@ bool Type::interface_vs_oop(const Type *t) const {
 
 #endif
 
-void Type::check_symmetrical(const Type *t, const Type *mt) const {
+void Type::check_symmetrical(const Type* t, const Type* mt) const {
 #ifdef ASSERT
-  assert(mt == t->xmeet(this), "meet not commutative");
+  const Type* mt2 = t->xmeet(this);
+  if (mt != mt2) {
+    tty->print_cr("=== Meet Not Commutative ===");
+    tty->print("t           = ");   t->dump(); tty->cr();
+    tty->print("this        = ");      dump(); tty->cr();
+    tty->print("t meet this = "); mt2->dump(); tty->cr();
+    tty->print("this meet t = ");  mt->dump(); tty->cr();
+    fatal("meet not commutative");
+  }
   const Type* dual_join = mt->_dual;
-  const Type *t2t    = dual_join->xmeet(t->_dual);
-  const Type *t2this = dual_join->xmeet(this->_dual);
+  const Type* t2t    = dual_join->xmeet(t->_dual);
+  const Type* t2this = dual_join->xmeet(this->_dual);
 
   // Interface meet Oop is Not Symmetric:
   // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
   // Interface:NotNull meet Oop:NotNull == java/lang/Object:NotNull
 
-  if( !interface_vs_oop(t) && (t2t != t->_dual || t2this != this->_dual) ) {
+  if (!interface_vs_oop(t) && (t2t != t->_dual || t2this != this->_dual)) {
     tty->print_cr("=== Meet Not Symmetric ===");
     tty->print("t   =                   ");              t->dump(); tty->cr();
     tty->print("this=                   ");                 dump(); tty->cr();
@@ -838,7 +846,7 @@ void Type::check_symmetrical(const Type *t, const Type *mt) const {
     tty->print("mt_dual meet t_dual=    "); t2t           ->dump(); tty->cr();
     tty->print("mt_dual meet this_dual= "); t2this        ->dump(); tty->cr();
 
-    fatal("meet not symmetric" );
+    fatal("meet not symmetric");
   }
 #endif
 }
@@ -1105,6 +1113,73 @@ void Type::dump_stats() {
 }
 #endif
 
+//------------------------------category---------------------------------------
+#ifndef PRODUCT
+Type::Category Type::category() const {
+  const TypeTuple* tuple;
+  switch (base()) {
+    case Type::Int:
+    case Type::Long:
+    case Type::Half:
+    case Type::NarrowOop:
+    case Type::NarrowKlass:
+    case Type::Array:
+    case Type::VectorA:
+    case Type::VectorS:
+    case Type::VectorD:
+    case Type::VectorX:
+    case Type::VectorY:
+    case Type::VectorZ:
+    case Type::AnyPtr:
+    case Type::RawPtr:
+    case Type::OopPtr:
+    case Type::InstPtr:
+    case Type::AryPtr:
+    case Type::MetadataPtr:
+    case Type::KlassPtr:
+    case Type::Function:
+    case Type::Return_Address:
+    case Type::FloatTop:
+    case Type::FloatCon:
+    case Type::FloatBot:
+    case Type::DoubleTop:
+    case Type::DoubleCon:
+    case Type::DoubleBot:
+      return Category::Data;
+    case Type::Memory:
+      return Category::Memory;
+    case Type::Control:
+      return Category::Control;
+    case Type::Top:
+    case Type::Abio:
+    case Type::Bottom:
+      return Category::Other;
+    case Type::Bad:
+    case Type::lastype:
+      return Category::Undef;
+    case Type::Tuple:
+      // Recursive case. Return CatMixed if the tuple contains types of
+      // different categories (e.g. CallStaticJavaNode's type), or the specific
+      // category if all types are of the same category (e.g. IfNode's type).
+      tuple = is_tuple();
+      if (tuple->cnt() == 0) {
+        return Category::Undef;
+      } else {
+        Category first = tuple->field_at(0)->category();
+        for (uint i = 1; i < tuple->cnt(); i++) {
+          if (tuple->field_at(i)->category() != first) {
+            return Category::Mixed;
+          }
+        }
+        return first;
+      }
+    default:
+      assert(false, "unmatched base type: all base types must be categorized");
+  }
+  return Category::Undef;
+}
+#endif
+
 //------------------------------typerr-----------------------------------------
 void Type::typerr( const Type *t ) const {
 #ifndef PRODUCT
@@ -1344,6 +1419,22 @@ const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
   }
   assert(bt == T_LONG, "basic type not an int or long");
   return TypeLong::make(lo, hi, w);
+}
+
+jlong TypeInteger::get_con_as_long(BasicType bt) const {
+  if (bt == T_INT) {
+    return is_int()->get_con();
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return is_long()->get_con();
+}
+
+const TypeInteger* TypeInteger::bottom(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::INT;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::LONG;
 }
 
 //=============================================================================

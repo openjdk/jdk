@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1442,7 +1442,7 @@ abstract public class Debugee extends DebugeeProcess {
                         addSupertypes(typeID, supertypes, interfaces, superclasses,
                                         true, declared);
                     }
-                    Long value = new Long(typeID);
+                    Long value = Long.valueOf(typeID);
                     if (supertypes != null) {
                         supertypes.add(value);
                     }
@@ -1477,7 +1477,7 @@ abstract public class Debugee extends DebugeeProcess {
                         addSupertypes(typeID, supertypes, interfaces, superclasses,
                                     false, declared);
                     }
-                    Long value = new Long(typeID);
+                    Long value = Long.valueOf(typeID);
                     if (supertypes != null) {
                         supertypes.add(value);
                     }
@@ -1536,13 +1536,13 @@ abstract public class Debugee extends DebugeeProcess {
                 int modBits = reply.getInt();
 
                 if (IDs != null)
-                    IDs.add(new Long(id));
+                    IDs.add(Long.valueOf(id));
                 if (names != null)
                     names.add(name);
                 if (signatures != null)
                     signatures.add(signature);
                 if (modifiers != null)
-                    modifiers.add(new Integer(modBits));
+                    modifiers.add(Integer.valueOf(modBits));
             }
 
         } catch (BoundException e) {
@@ -1594,13 +1594,13 @@ abstract public class Debugee extends DebugeeProcess {
                 int modBits = reply.getInt();
 
                 if (IDs != null)
-                    IDs.add(new Long(id));
+                    IDs.add(Long.valueOf(id));
                 if (names != null)
                     names.add(name);
                 if (signatures != null)
                     signatures.add(signature);
                 if (modifiers != null)
-                    modifiers.add(new Integer(modBits));
+                    modifiers.add(Integer.valueOf(modBits));
             }
 
         } catch (BoundException e) {

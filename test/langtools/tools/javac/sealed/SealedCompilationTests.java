@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -260,30 +258,8 @@ public class SealedCompilationTests extends CompilationTestCase {
                 "class SealedTest { int sealed = 0; int non = 0; int ns = non-sealed; }",
                 "class SealedTest { void test(String sealed) { } }",
                 "class SealedTest { void sealed(String sealed) { } }",
-                "class SealedTest { void test() { String sealed = null; } }"
-        )) {
-            assertOK(s);
-        }
+                "class SealedTest { void test() { String sealed = null; } }",
 
-        for (String s : List.of(
-                "class sealed {}",
-                "enum sealed {}",
-                "record sealed() {}",
-                "interface sealed {}",
-                "@interface sealed {}"
-        )) {
-            assertFail("compiler.err.restricted.type.not.allowed", s);
-        }
-
-        for (String s : List.of(
-                "class Foo { sealed m() {} }",
-                "class Foo { sealed i; }",
-                "class Foo { void m(sealed i) {} }"
-                )) {
-            assertFail("compiler.err.restricted.type.not.allowed.here", s);
-        }
-
-        for (String s : List.of(
                 "class SealedTest { String permits; }",
                 "class SealedTest { int permits = 0; }",
                 "class SealedTest { void test(String permits) { } }",
@@ -294,6 +270,12 @@ public class SealedCompilationTests extends CompilationTestCase {
         }
 
         for (String s : List.of(
+                "class sealed {}",
+                "enum sealed {}",
+                "record sealed() {}",
+                "interface sealed {}",
+                "@interface sealed {}",
+
                 "class permits {}",
                 "enum permits {}",
                 "record permits() {}",
@@ -304,10 +286,16 @@ public class SealedCompilationTests extends CompilationTestCase {
         }
 
         for (String s : List.of(
+                "class Foo { sealed m() {} }",
+                "class Foo { sealed i; }",
+                "class Foo { void m() { sealed i; } }",
+                "class Foo { void m(sealed i) {} }",
+
                 "class Foo { permits m() {} }",
                 "class Foo { permits i; }",
+                "class Foo { void m() { permits i; } }",
                 "class Foo { void m(permits i) {} }"
-        )) {
+                )) {
             assertFail("compiler.err.restricted.type.not.allowed.here", s);
         }
 
@@ -468,6 +456,26 @@ public class SealedCompilationTests extends CompilationTestCase {
                         final class D extends C { }
                     }
                 }
+                """,
+                """
+                sealed class C {
+                    void m() {
+                        class L {
+                            final class D extends C { }
+                        }
+                    }
+                }
+                """,
+                """
+                sealed class C {
+                    void m() {
+                        class L {
+                            void foo() {
+                                final class D extends C { }
+                            }
+                        }
+                    }
+                }
                 """))
             assertFail("compiler.err.local.classes.cant.extend.sealed", s);
     }
@@ -613,7 +621,7 @@ public class SealedCompilationTests extends CompilationTestCase {
             float.class, float[].class, double.class, double[].class, char.class, char[].class, boolean.class, boolean[].class, void.class,
             String[].class}) {
             Assert.check(!c.isSealed());
-            Assert.check(c.permittedSubclasses().length == 0);
+            Assert.check(c.getPermittedSubclasses() == null);
         }
     }
 
@@ -952,6 +960,295 @@ public class SealedCompilationTests extends CompilationTestCase {
                 }
             }
             """
+        )) {
+            assertOK(s);
+        }
+    }
+
+    public void testDoNotAllowSealedAnnotation() {
+        for (String s : List.of(
+            """
+            sealed @interface A {}
+            non-sealed interface I extends A {}
+            """
+        )) {
+            assertFail("compiler.err.expected4", s);
+        }
+    }
+
+    public void testNarrowConversion() {
+        for (String s : List.of(
+                """
+                interface I {}
+                sealed class C permits D {}
+                final class D extends C {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                sealed interface I permits C {}
+                final class C implements I {}
+                interface J {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        J j = (J) i;
+                    }
+                }
+                """,
+                """
+                interface I {}
+                sealed interface J permits C {}
+                final class C implements J {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        J j = (J) i;
+                    }
+                }
+                """,
+                """
+                sealed interface I permits A {}
+                sealed interface J permits B {}
+                final class A implements I {}
+                final class B implements J {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        J j = (J) i;
+                    }
+                }
+                """,
+                """
+                class C {}
+                sealed interface I permits A {}
+                final class A implements I {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                final class C {}
+                interface I {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                final class C {}
+                sealed interface I permits D {}
+                final class D implements I {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                sealed class C permits D {}
+                final class D extends C {}
+                non-sealed interface I {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                sealed class C permits D {}
+                final class D {}
+                sealed interface I permits E {}
+                final class E {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                sealed class C permits D {}
+                sealed class D permits NS {}
+                non-sealed class NS extends D {}
+                sealed interface I permits E {}
+                final class E {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                interface I {}
+                final class C {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        C c = (C) i;
+                    }
+                }
+                """,
+                """
+                interface I {}
+                sealed class C permits D {}
+                final class D {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        C c = (C) i;
+                    }
+                }
+                """,
+                """
+                sealed interface I permits D {}
+                final class D {}
+                class C {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        C c = (C) i;
+                    }
+                }
+                """,
+                """
+                sealed interface I permits D {}
+                final class D implements I {}
+                final class C {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        C c = (C) i;
+                    }
+                }
+                """,
+                """
+                sealed interface I permits D {}
+                final class D implements I {}
+                sealed class C permits E {}
+                final class E extends C {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        C c = (C) i;
+                    }
+                }
+                """
+        )) {
+            assertFail("compiler.err.prob.found.req", s);
+        }
+
+        for (String s : List.of(
+                """
+                interface I {}
+                sealed class C permits D, E {}
+                non-sealed class D extends C {}
+                final class E extends C {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                interface I {}
+                interface J {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        J j = (J) i;
+                    }
+                }
+                """,
+                """
+                class C {}
+                interface I {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                interface I {}
+                class C {}
+
+                class Test {
+                    void test () {
+                        I i = null;
+                        C c = (C) i;
+                    }
+                }
+                """,
+                """
+                sealed class C permits D {}
+                sealed class D extends C permits NS {}
+                non-sealed class NS extends D {}
+                interface I {}
+
+                class Test {
+                    void test () {
+                        C c = null;
+                        I i = (I) c;
+                    }
+                }
+                """,
+                """
+                sealed interface A permits B { }
+                non-sealed interface B extends A { }
+                interface C { }
+
+                class D implements C, B { }
+
+                class Test {
+                  void m(A a, C c) {
+                     a = (A)c;
+                  }
+                }
+                """,
+                """
+                sealed interface A<T> {
+                    final class B implements A<Object> { }
+                }
+
+                class Test {
+                    void f(A.B a, A<Object> b) {
+                        a = (A.B)b;
+                    }
+                }
+                """
         )) {
             assertOK(s);
         }

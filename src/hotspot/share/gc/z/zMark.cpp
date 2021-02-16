@@ -22,17 +22,19 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zMarkCache.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
 #include "gc/z/zNMethod.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
+#include "gc/z/zOop.inline.hpp"
 #include "gc/z/zPage.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
@@ -92,7 +94,12 @@ size_t ZMark::calculate_nstripes(uint nworkers) const {
   return MIN2(nstripes, ZMarkStripesMax);
 }
 
-void ZMark::prepare_mark() {
+void ZMark::start() {
+  // Verification
+  if (ZVerifyMarking) {
+    verify_all_stacks_empty();
+  }
+
   // Increment global sequence number to invalidate
   // marking information for all pages.
   ZGlobalSeqNum++;
@@ -125,16 +132,6 @@ void ZMark::prepare_mark() {
                 worker_id, _nworkers, stripe_id, nstripes);
     }
   }
-}
-
-void ZMark::start() {
-  // Verification
-  if (ZVerifyMarking) {
-    verify_all_stacks_empty();
-  }
-
-  // Prepare for concurrent mark
-  prepare_mark();
 }
 
 void ZMark::prepare_work() {
@@ -235,6 +232,26 @@ void ZMark::follow_partial_array(ZMarkStackEntry entry, bool finalizable) {
 
   follow_array(addr, size, finalizable);
 }
+
+template <bool finalizable>
+class ZMarkBarrierOopClosure : public ClaimMetadataVisitingOopIterateClosure {
+public:
+  ZMarkBarrierOopClosure() :
+      ClaimMetadataVisitingOopIterateClosure(finalizable
+                                                 ? ClassLoaderData::_claim_finalizable
+                                                 : ClassLoaderData::_claim_strong,
+                                             finalizable
+                                                 ? NULL
+                                                 : ZHeap::heap()->reference_discoverer()) {}
+
+  virtual void do_oop(oop* p) {
+    ZBarrier::mark_barrier_on_oop_field(p, finalizable);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
 
 void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
   if (finalizable) {
@@ -627,11 +644,11 @@ public:
 
 typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkCLDClosure;
 
-class ZMarkConcurrentRootsTask : public ZTask {
+class ZMarkRootsTask : public ZTask {
 private:
   ZMark* const               _mark;
   SuspendibleThreadSetJoiner _sts_joiner;
-  ZConcurrentRootsIterator   _roots;
+  ZRootsIterator             _roots;
 
   ZMarkOopClosure            _cl;
   ZMarkCLDClosure            _cld_cl;
@@ -639,8 +656,8 @@ private:
   ZMarkNMethodClosure        _nm_cl;
 
 public:
-  ZMarkConcurrentRootsTask(ZMark* mark) :
-      ZTask("ZMarkConcurrentRootsTask"),
+  ZMarkRootsTask(ZMark* mark) :
+      ZTask("ZMarkRootsTask"),
       _mark(mark),
       _sts_joiner(),
       _roots(ClassLoaderData::_claim_strong),
@@ -651,7 +668,7 @@ public:
     ClassLoaderDataGraph_lock->lock();
   }
 
-  ~ZMarkConcurrentRootsTask() {
+  ~ZMarkRootsTask() {
     ClassLoaderDataGraph_lock->unlock();
   }
 
@@ -693,7 +710,7 @@ public:
 
 void ZMark::mark(bool initial) {
   if (initial) {
-    ZMarkConcurrentRootsTask task(this);
+    ZMarkRootsTask task(this);
     _workers->run_concurrent(&task);
   }
 

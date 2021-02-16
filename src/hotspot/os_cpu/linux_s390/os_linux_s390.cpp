@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,8 +28,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/assembler.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
@@ -99,11 +97,11 @@ char* os::non_memory_address_word() {
 // Frame information (pc, sp, fp) retrieved via ucontext
 // always looks like a C-frame according to the frame
 // conventions in frame_s390.hpp.
-address os::Linux::ucontext_get_pc(const ucontext_t * uc) {
+address os::Posix::ucontext_get_pc(const ucontext_t * uc) {
   return (address)uc->uc_mcontext.psw.addr;
 }
 
-void os::Linux::ucontext_set_pc(ucontext_t * uc, address pc) {
+void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
   uc->uc_mcontext.psw.addr = (unsigned long)pc;
 }
 
@@ -126,7 +124,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = os::Linux::ucontext_get_pc(uc);
+    epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) { *ret_sp = os::Linux::ucontext_get_sp(uc); }
     if (ret_fp) { *ret_fp = os::Linux::ucontext_get_fp(uc); }
   } else {
@@ -207,16 +205,6 @@ frame os::current_frame() {
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-  // Moved SafeFetch32 handling outside thread!=NULL conditional block to make
-  // it work if no associated JavaThread object exists.
-  if (uc) {
-    address const pc = os::Linux::ucontext_get_pc(uc);
-    if (pc && StubRoutines::is_safefetch_fault(pc)) {
-      os::Linux::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
-  }
-
   // Decide if this trap can be handled by a stub.
   address stub    = NULL;
   address pc      = NULL;  // Pc as retrieved from PSW. Usually points past failing instruction.
@@ -224,7 +212,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
   //%note os_trap_1
   if (info != NULL && uc != NULL && thread != NULL) {
-    pc = os::Linux::ucontext_get_pc(uc);
+    pc = os::Posix::ucontext_get_pc(uc);
     if (TraceTraps) {
       tty->print_cr("     pc at " INTPTR_FORMAT, p2i(pc));
     }
@@ -345,7 +333,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // continue at the next instruction after the faulting read. Returning
         // garbage from this read is ok.
         thread->set_pending_unsafe_access_error();
-        os::Linux::ucontext_set_pc(uc, pc + Assembler::instr_len(pc));
+        os::Posix::ucontext_set_pc(uc, pc + Assembler::instr_len(pc));
         return true;
       }
     }
@@ -363,12 +351,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (stub != NULL) {
     // Save all thread context in case we need to restore it.
     if (thread != NULL) thread->set_saved_exception_pc(pc);
-    os::Linux::ucontext_set_pc(uc, stub);
+    os::Posix::ucontext_set_pc(uc, stub);
     return true;
   }
 
   return false;
-
 }
 
 void os::Linux::init_thread_fpu_state(void) {
@@ -455,7 +442,7 @@ void os::print_context(outputStream *st, const void *context) {
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Linux::ucontext_get_pc(uc);
+  address pc = os::Posix::ucontext_get_pc(uc);
   print_instructions(st, pc, /*intrsize=*/4);
   st->cr();
 }

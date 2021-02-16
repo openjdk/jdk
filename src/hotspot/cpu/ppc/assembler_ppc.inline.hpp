@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
+#include "runtime/vm_version.hpp"
 
 inline void Assembler::emit_int32(int x) {
   AbstractAssembler::emit_int32(x);
@@ -127,6 +128,8 @@ inline void Assembler::divd(   Register d, Register a, Register b) { emit_int32(
 inline void Assembler::divd_(  Register d, Register a, Register b) { emit_int32(DIVD_OPCODE   | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
 inline void Assembler::divw(   Register d, Register a, Register b) { emit_int32(DIVW_OPCODE   | rt(d) | ra(a) | rb(b) | oe(0) | rc(0)); }
 inline void Assembler::divw_(  Register d, Register a, Register b) { emit_int32(DIVW_OPCODE   | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
+inline void Assembler::divwu(  Register d, Register a, Register b) { emit_int32(DIVWU_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(0)); }
+inline void Assembler::divwu_( Register d, Register a, Register b) { emit_int32(DIVWU_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
 
 // Fixed-Point Arithmetic Instructions with Overflow detection
 inline void Assembler::addo(    Register d, Register a, Register b) { emit_int32(ADD_OPCODE    | rt(d) | ra(a) | rb(b) | oe(1) | rc(0)); }
@@ -383,6 +386,17 @@ inline void Assembler::mcrxrx(ConditionRegister cra)
                                                   { emit_int32(MCRXRX_OPCODE | bf(cra)); }
 inline void Assembler::setb(Register d, ConditionRegister cra)
                                                   { emit_int32(SETB_OPCODE | rt(d) | bfa(cra)); }
+
+inline void Assembler::setbc(Register d, int biint)
+                                                  { emit_int32(SETBC_OPCODE | rt(d) | bi(biint)); }
+inline void Assembler::setbc(Register d, ConditionRegister cr, Condition cc) {
+  setbc(d, bi0(cr, cc));
+}
+inline void Assembler::setnbc(Register d, int biint)
+                                                  { emit_int32(SETNBC_OPCODE | rt(d) | bi(biint)); }
+inline void Assembler::setnbc(Register d, ConditionRegister cr, Condition cc) {
+  setnbc(d, bi0(cr, cc));
+}
 
 // Special purpose registers
 // Exception Register
@@ -781,11 +795,14 @@ inline void Assembler::lvsr(  VectorRegister d, Register s1, Register s2) { emit
 // Vector-Scalar (VSX) instructions.
 inline void Assembler::lxv(     VectorSRegister d, int ui16, Register a)     { assert(is_aligned(ui16, 16), "displacement must be a multiple of 16"); emit_int32( LXV_OPCODE  | vsrt_dq(d) | ra0mem(a) | uimm(ui16, 16)); }
 inline void Assembler::stxv(    VectorSRegister d, int ui16, Register a)     { assert(is_aligned(ui16, 16), "displacement must be a multiple of 16"); emit_int32( STXV_OPCODE  | vsrs_dq(d) | ra0mem(a) | uimm(ui16, 16)); }
+inline void Assembler::lxvl(    VectorSRegister d, Register s1, Register b)  { emit_int32( LXVL_OPCODE    | vsrt(d) | ra0mem(s1) | rb(b)); }
+inline void Assembler::stxvl(   VectorSRegister d, Register s1, Register b)  { emit_int32( STXVL_OPCODE   | vsrt(d) | ra0mem(s1) | rb(b)); }
 inline void Assembler::lxvd2x(  VectorSRegister d, Register s1)              { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra(0) | rb(s1)); }
 inline void Assembler::lxvd2x(  VectorSRegister d, Register s1, Register s2) { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1)              { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra(0) | rb(s1)); }
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::mtvsrd(  VectorSRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d)  | ra(a)); }
+inline void Assembler::mtvsrdd( VectorSRegister d, Register a, Register b)   { emit_int32( MTVSRDD_OPCODE | vsrt(d)  | ra(a) | rb(b)); }
 inline void Assembler::mfvsrd(  Register d, VectorSRegister a)               { emit_int32( MFVSRD_OPCODE  | vsrs(a)  | ra(d)); }
 inline void Assembler::mtvsrwz( VectorSRegister d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d) | ra(a)); }
 inline void Assembler::mfvsrwz( Register d, VectorSRegister a)               { emit_int32( MFVSRWZ_OPCODE | vsrs(a) | ra(d)); }

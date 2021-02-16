@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
@@ -381,6 +380,14 @@ void SafepointSynchronize::begin() {
   assert(_waiting_to_block == 0, "No thread should be running");
 
 #ifndef PRODUCT
+  // Mark all threads
+  if (VerifyCrossModifyFence) {
+    JavaThreadIteratorWithHandle jtiwh;
+    for (; JavaThread *cur = jtiwh.next(); ) {
+      cur->set_requires_cross_modify_fence(true);
+    }
+  }
+
   if (safepoint_limit_time != 0) {
     jlong current_time = os::javaTimeNanos();
     if (safepoint_limit_time < current_time) {
@@ -538,10 +545,12 @@ public:
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
   void work(uint worker_id) {
-    if (_do_lazy_roots && _subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
-      Tracer t("lazy partial thread root processing");
-      ParallelSPCleanupThreadClosure cl;
-      Threads::threads_do(&cl);
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
+      if (_do_lazy_roots) {
+        Tracer t("lazy partial thread root processing");
+        ParallelSPCleanupThreadClosure cl;
+        Threads::threads_do(&cl);
+      }
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
@@ -551,7 +560,7 @@ public:
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
       Tracer t("compilation policy safepoint handler");
-      CompilationPolicy::policy()->do_safepoint_work();
+      CompilationPolicy::do_safepoint_work();
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
@@ -581,7 +590,7 @@ public:
       OopStorage::trigger_cleanup_if_needed();
     }
 
-    _subtasks.all_tasks_completed(_num_workers);
+    _subtasks.all_tasks_claimed();
   }
 };
 

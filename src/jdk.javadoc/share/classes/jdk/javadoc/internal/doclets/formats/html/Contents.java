@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,6 @@ public class Contents {
     public final Content navProperty;
     public final Content navServices;
     public final Content nestedClassSummary;
-    public final Content newPage;
     public final Content noScriptMessage;
     public final Content openModuleLabel;
     public final Content openedTo;
@@ -151,6 +150,10 @@ public class Contents {
     public final Content package_;
     public final Content packagesLabel;
     public final Content parameters;
+    public final Content previewAPI;
+    public final Content previewLabel;
+    public final Content previewMark;
+    public final Content previewPhrase;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
@@ -176,6 +179,15 @@ public class Contents {
     public final Content valueLabel;
 
     private final EnumMap<VisibleMemberTable.Kind, Content> navLinkLabels;
+
+    public final String annotationTypeSummary;
+    public final String classSummary;
+    public final String enumSummary;
+    public final String errorSummary;
+    public final String exceptionSummary;
+    public final String interfaceSummary;
+    public final String packageSummary;
+    public final String recordSummary;
 
     private final Resources resources;
 
@@ -274,7 +286,6 @@ public class Contents {
         navProperty = getContent("doclet.navProperty");
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
-        newPage = new Comment(resources.getText("doclet.New_Page"));
         noScriptMessage = getContent("doclet.No_Script_Message");
         openedTo = getContent("doclet.OpenedTo");
         openModuleLabel = getContent("doclet.Open_Module");
@@ -285,11 +296,15 @@ public class Contents {
         package_ = getContent("doclet.package");
         packagesLabel = getContent("doclet.Packages");
         parameters = getContent("doclet.Parameters");
+        previewAPI = getContent("doclet.Preview_API");
+        previewLabel = getContent("doclet.Preview_Label");
+        previewMark = getContent("doclet.Preview_Mark");
+        previewPhrase = getContent("doclet.Preview");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
         propertySummaryLabel = getContent("doclet.Property_Summary");
-        record = getContent("doclet.Record");
+        record = getContent("doclet.RecordClass");
         recordComponents = getContent("doclet.RecordComponents");
         referencedIn = getContent("doclet.ReferencedIn");
         returns = getContent("doclet.Returns");
@@ -315,6 +330,15 @@ public class Contents {
         navLinkLabels.put(VisibleMemberTable.Kind.FIELDS, getContent("doclet.navField"));
         navLinkLabels.put(VisibleMemberTable.Kind.CONSTRUCTORS, getContent("doclet.navConstructor"));
         navLinkLabels.put(VisibleMemberTable.Kind.METHODS, getContent("doclet.navMethod"));
+
+        this.annotationTypeSummary = resources.getText("doclet.Annotation_Types_Summary");
+        this.classSummary = resources.getText("doclet.Class_Summary");
+        this.enumSummary = resources.getText("doclet.Enum_Summary");
+        this.errorSummary = resources.getText("doclet.Error_Summary");
+        this.exceptionSummary = resources.getText("doclet.Exception_Summary");
+        this.interfaceSummary = resources.getText("doclet.Interface_Summary");
+        this.packageSummary = resources.getText("doclet.Package_Summary");
+        this.recordSummary = resources.getText("doclet.Record_Class_Summary");
     }
 
     /**

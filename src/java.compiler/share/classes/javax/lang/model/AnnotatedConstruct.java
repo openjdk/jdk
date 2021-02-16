@@ -129,10 +129,10 @@ import javax.lang.model.type.*;
  * </ul>
  *
  * @since 1.8
- * @jls 9.6 Annotation Types
+ * @jls 9.6 Annotation Interfaces
  * @jls 9.6.4.3 {@code @Inherited}
  * @jls 9.7.4 Where Annotations May Appear
- * @jls 9.7.5 Multiple Annotations of the Same Type
+ * @jls 9.7.5 Multiple Annotations of the Same Interface
  */
 public interface AnnotatedConstruct {
     /**
@@ -145,8 +145,8 @@ public interface AnnotatedConstruct {
     List<? extends AnnotationMirror> getAnnotationMirrors();
 
     /**
-     * Returns this construct's annotation of the specified type if
-     * such an annotation is <em>present</em>, else {@code null}.
+     * {@return this construct's annotation of the specified type if
+     * such an annotation is <em>present</em>, else {@code null}}
      *
      * <p> The annotation returned by this method could contain an element
      * whose value is of type {@code Class}.
@@ -176,8 +176,6 @@ public interface AnnotatedConstruct {
      * @param <A>  the annotation type
      * @param annotationType  the {@code Class} object corresponding to
      *          the annotation type
-     * @return this construct's annotation for the specified
-     * annotation type if present, else {@code null}
      *
      * @see #getAnnotationMirrors()
      * @see java.lang.reflect.AnnotatedElement#getAnnotation
@@ -186,7 +184,7 @@ public interface AnnotatedConstruct {
      * @see IncompleteAnnotationException
      * @see MirroredTypeException
      * @see MirroredTypesException
-     * @jls 9.6.1 Annotation Type Elements
+     * @jls 9.6.1 Annotation Interface Elements
      */
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
@@ -246,8 +244,8 @@ public interface AnnotatedConstruct {
      * @see IncompleteAnnotationException
      * @see MirroredTypeException
      * @see MirroredTypesException
-     * @jls 9.6 Annotation Types
-     * @jls 9.6.1 Annotation Type Elements
+     * @jls 9.6 Annotation Interfaces
+     * @jls 9.6.1 Annotation Interface Elements
      */
     <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);
 }

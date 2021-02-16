@@ -692,11 +692,27 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <p> If the format specifier contains a width or precision with an invalid
  * value or which is otherwise unsupported, then a {@link
  * IllegalFormatWidthException} or {@link IllegalFormatPrecisionException}
- * respectively will be thrown.
+ * respectively will be thrown. Similarly, values of zero for an argument
+ * index will result in an {@link IllegalFormatException}.
  *
  * <p> If a format specifier contains a conversion character that is not
  * applicable to the corresponding argument, then an {@link
  * IllegalFormatConversionException} will be thrown.
+ *
+ * <p> Values of <i>precision</i> must be in the range zero to
+ * {@link Integer#MAX_VALUE}, inclusive, otherwise
+ * {@link IllegalFormatPrecisionException} is thrown.</p>
+ *
+ * <p> Values of <i>width</i> must be in the range one to
+ * {@link Integer#MAX_VALUE}, inclusive, otherwise
+ * {@link IllegalFormatWidthException} will be thrown
+ * Note that widths can appear to have a negative value, but the negative sign
+ * is a <i>flag</i>. For example in the format string {@code "%-20s"} the
+ * <i>width</i> is <i>20</i> and the <i>flag</i> is "-".</p>
+ *
+ * <p> Values of <i>index</i> must be in the range one to
+ * {@link Integer#MAX_VALUE}, inclusive, otherwise
+ * {@link IllegalFormatException} will be thrown.</p>
  *
  * <p> All specified exceptions may be thrown by any of the {@code format}
  * methods of {@code Formatter} as well as by any {@code format} convenience
@@ -1816,7 +1832,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <p> The {@code '-'} flag defined for <a href="#dFlags">General
  * conversions</a> applies.  If any other flags are provided, then a
- * {@link FormatFlagsConversionMismatchException} will be thrown.
+ * {@link IllegalFormatFlagsException } will be thrown.
  *
  * <p> The precision is not applicable.  If the precision is specified an
  * {@link IllegalFormatPrecisionException} will be thrown.
@@ -2783,8 +2799,11 @@ public final class Formatter implements Closeable, Flushable {
                 try {
                     // skip the trailing '$'
                     index = Integer.parseInt(s, start, end - 1, 10);
+                    if (index <= 0) {
+                       throw new IllegalFormatArgumentIndexException(index);
+                    }
                 } catch (NumberFormatException x) {
-                    assert(false);
+                    throw new IllegalFormatArgumentIndexException(Integer.MIN_VALUE);
                 }
             } else {
                 index = 0;
@@ -2811,7 +2830,7 @@ public final class Formatter implements Closeable, Flushable {
                     if (width < 0)
                         throw new IllegalFormatWidthException(width);
                 } catch (NumberFormatException x) {
-                    assert(false);
+                    throw new IllegalFormatWidthException(Integer.MIN_VALUE);
                 }
             }
             return width;
@@ -2826,7 +2845,7 @@ public final class Formatter implements Closeable, Flushable {
                     if (precision < 0)
                         throw new IllegalFormatPrecisionException(precision);
                 } catch (NumberFormatException x) {
-                    assert(false);
+                    throw new IllegalFormatPrecisionException(Integer.MIN_VALUE);
                 }
             }
             return precision;

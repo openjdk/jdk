@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,21 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/disassembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -52,7 +56,7 @@
 
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg) {
   if (VerifyMethodHandles)
-    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+    verify_klass(_masm, klass_reg, VM_CLASS_ID(java_lang_Class),
                  "MH argument is a Class");
   __ movptr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset()));
 }
@@ -69,10 +73,10 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj, SystemDictionary::WKID klass_id,
+                                 Register obj, vmClassID klass_id,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  Klass* klass = SystemDictionary::well_known_klass(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Register temp = rdi;
   Register temp2 = noreg;
   LP64_ONLY(temp2 = rscratch1);  // used by MacroAssembler::cmpptr and load_klass
@@ -168,8 +172,6 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   assert(recv != noreg, "required register");
   assert(method_temp == rbx, "required register for loading method");
 
-  //NOT_PRODUCT({ FlagSetting fs(TraceMethodHandles, true); trace_method_handle(_masm, "LZMH"); });
-
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
   __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())), temp2);
@@ -213,6 +215,13 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.
     __ hlt();           // empty stubs make SG sick
+    return NULL;
+  }
+
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ hlt();
     return NULL;
   }
 
@@ -327,7 +336,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic) {
+  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+    if (iid == vmIntrinsics::_linkToNative) {
+      assert(for_compiler_entry, "only compiler entry is supported");
+    }
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, rbx_method, temp1, for_compiler_entry);
 
@@ -335,7 +347,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
       // make sure the trailing argument really is a MemberName (caller responsibility)
-      verify_klass(_masm, member_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_invoke_MemberName),
+      verify_klass(_masm, member_reg, VM_CLASS_ID(java_lang_invoke_MemberName),
                    "MemberName required for invokeVirtual etc.");
     }
 
@@ -468,7 +480,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+      fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
       break;
     }
 
@@ -498,13 +510,13 @@ void trace_method_handle_stub(const char* adaptername,
   bool has_mh = (strstr(adaptername, "/static") == NULL &&
                  strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "rcx_mh" : "rcx";
-  tty->print_cr("MH %s %s=" PTR_FORMAT " sp=" PTR_FORMAT,
-                adaptername, mh_reg_name,
-                p2i(mh), p2i(entry_sp));
+  log_info(methodhandles)("MH %s %s=" PTR_FORMAT " sp=" PTR_FORMAT, adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
 
-  if (Verbose) {
+  LogTarget(Trace, methodhandles) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    tty->print_cr("Registers:");
+    LogStream ls(lt);
+    ls.print_cr("Registers:");
     const int saved_regs_count = RegisterImpl::number_of_registers;
     for (int i = 0; i < saved_regs_count; i++) {
       Register r = as_Register(i);
@@ -513,76 +525,78 @@ void trace_method_handle_stub(const char* adaptername,
       assert(RegisterImpl::number_of_registers == 16, "sanity");
       if (r == rsp) {
         // rsp is actually not stored by pusha(), compute the old rsp from saved_regs (rsp after pusha): saved_regs + 16 = old rsp
-        tty->print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));
+        ls.print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));
       } else {
-        tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+        ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
       }
 #else
-      tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+      ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
 #endif
       if ((i + 1) % 4 == 0) {
-        tty->cr();
+        ls.cr();
       } else {
-        tty->print(", ");
+        ls.print(", ");
       }
     }
-    tty->cr();
+    ls.cr();
+
+    // Note: We want to allow trace_method_handle from any call site.
+    // While trace_method_handle creates a frame, it may be entered
+    // without a PC on the stack top (e.g. not just after a call).
+    // Walking that frame could lead to failures due to that invalid PC.
+    // => carefully detect that frame when doing the stack walking
 
     {
       // dumping last frame with frame::describe
 
       JavaThread* p = JavaThread::active();
 
-      PRESERVE_EXCEPTION_MARK; // may not be needed but safer and inexpensive here
+      // may not be needed by safer and unexpensive here
+      PreserveExceptionMark pem(Thread::current());
       FrameValues values;
-
-      // Note: We want to allow trace_method_handle from any call site.
-      // While trace_method_handle creates a frame, it may be entered
-      // without a PC on the stack top (e.g. not just after a call).
-      // Walking that frame could lead to failures due to that invalid PC.
-      // => carefully detect that frame when doing the stack walking
 
       // Current C frame
       frame cur_frame = os::current_frame();
 
-      // Robust search of trace_calling_frame (independant of inlining).
-      // Assumes saved_regs comes from a pusha in the trace_calling_frame.
-      assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
-      frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
-      while (trace_calling_frame.fp() < saved_regs) {
-        trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
-      }
+      if (cur_frame.fp() != 0) {  // not walkable
 
-      // safely create a frame and call frame::describe
-      intptr_t *dump_sp = trace_calling_frame.sender_sp();
-      intptr_t *dump_fp = trace_calling_frame.link();
+        // Robust search of trace_calling_frame (independent of inlining).
+        // Assumes saved_regs comes from a pusha in the trace_calling_frame.
+        assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
+        frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
+        while (trace_calling_frame.fp() < saved_regs) {
+          trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
+        }
 
-      bool walkable = has_mh; // whether the traced frame shoud be walkable
+        // safely create a frame and call frame::describe
+        intptr_t *dump_sp = trace_calling_frame.sender_sp();
+        intptr_t *dump_fp = trace_calling_frame.link();
 
-      if (walkable) {
-        // The previous definition of walkable may have to be refined
-        // if new call sites cause the next frame constructor to start
-        // failing. Alternatively, frame constructors could be
-        // modified to support the current or future non walkable
-        // frames (but this is more intrusive and is not considered as
-        // part of this RFE, which will instead use a simpler output).
-        frame dump_frame = frame(dump_sp, dump_fp);
-        dump_frame.describe(values, 1);
-      } else {
-        // Stack may not be walkable (invalid PC above FP):
-        // Add descriptions without building a Java frame to avoid issues
-        values.describe(-1, dump_fp, "fp for #1 <not parsed, cannot trust pc>");
-        values.describe(-1, dump_sp, "sp for #1");
+        if (has_mh) {
+          // The previous definition of walkable may have to be refined
+          // if new call sites cause the next frame constructor to start
+          // failing. Alternatively, frame constructors could be
+          // modified to support the current or future non walkable
+          // frames (but this is more intrusive and is not considered as
+          // part of this RFE, which will instead use a simpler output).
+          frame dump_frame = frame(dump_sp, dump_fp);
+          dump_frame.describe(values, 1);
+        } else {
+          // Stack may not be walkable (invalid PC above FP):
+          // Add descriptions without building a Java frame to avoid issues
+          values.describe(-1, dump_fp, "fp for #1 <not parsed, cannot trust pc>");
+          values.describe(-1, dump_sp, "sp for #1");
+        }
       }
       values.describe(-1, entry_sp, "raw top of stack");
 
-      tty->print_cr("Stack layout:");
-      values.print(p);
+      ls.print_cr("Stack layout:");
+      values.print_on(p, &ls);
     }
     if (has_mh && oopDesc::is_oop(mh)) {
-      mh->print();
+      mh->print_on(&ls);
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        java_lang_invoke_MethodHandle::form(mh)->print();
+        java_lang_invoke_MethodHandle::form(mh)->print_on(&ls);
       }
     }
   }

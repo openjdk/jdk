@@ -24,7 +24,10 @@
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Security;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /*
@@ -158,6 +161,9 @@ public class JdkProcClient extends AbstractClient {
         String serverNamesStr = System.getProperty(JdkProcUtils.PROP_SERVER_NAMES);
         String appProtocolsStr = System.getProperty(JdkProcUtils.PROP_APP_PROTOCOLS);
 
+        // Re-enable TLSv1 and TLSv1.1 since client depends on them
+        removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
+
         JdkClient.Builder builder = new JdkClient.Builder();
         builder.setCertTuple(JdkProcUtils.createCertTuple(
                 trustedCertsStr, eeCertsStr));
@@ -182,5 +188,23 @@ public class JdkProcClient extends AbstractClient {
         try(JdkClient client = builder.build()) {
             client.connect(host, port);
         }
+    }
+
+    /**
+     * Removes the specified protocols from the jdk.tls.disabledAlgorithms
+     * security property.
+     */
+    private static void removeFromDisabledTlsAlgs(String... algs) {
+        List<String> algList = Arrays.asList(algs);
+        String value = Security.getProperty("jdk.tls.disabledAlgorithms");
+        StringBuilder newValue = new StringBuilder();
+        for (String constraint : value.split(",")) {
+            String tmp = constraint.trim();
+            if (!algList.contains(tmp)) {
+                newValue.append(tmp);
+                newValue.append(",");
+            }
+        }
+        Security.setProperty("jdk.tls.disabledAlgorithms", newValue.toString());
     }
 }

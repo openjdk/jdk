@@ -27,6 +27,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.time.temporal.WeekFields;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -108,6 +109,10 @@ public class LocaleProviders {
 
             case "bug8248695Test":
                 bug8248695Test();
+                break;
+
+            case "bug8257964Test":
+                bug8257964Test();
                 break;
 
             default:
@@ -431,6 +436,36 @@ public class LocaleProviders {
             // Checks there's no "Too many pattern letters: aa" exception thrown, if
             // underlying OS provides the "am/pm" pattern.
             System.out.println(dtf.format(zdt));
+        }
+    }
+
+    // Run only if the platform locale is en-GB
+    static void bug8257964Test() {
+        var defLoc = Locale.getDefault(Locale.Category.FORMAT);
+        var type = LocaleProviderAdapter.getAdapter(CalendarNameProvider.class, Locale.UK)
+                .getAdapterType();
+        if (defLoc.equals(Locale.UK) &&
+                type == LocaleProviderAdapter.Type.HOST &&
+                (IS_WINDOWS || IS_MAC)) {
+            Calendar instance = Calendar.getInstance(Locale.UK);
+            int result = instance.getMinimalDaysInFirstWeek();
+            if (result != 4) {
+                throw new RuntimeException("MinimalDaysInFirstWeek for Locale.UK is incorrect. " +
+                        "returned: " + result);
+            }
+
+            LocalDate date = LocalDate.of(2020,12,31);
+            result = date.get(WeekFields.of(Locale.UK).weekOfWeekBasedYear());
+            if (result != 53) {
+                throw new RuntimeException("weekNumber is incorrect. " +
+                        "returned: " + result);
+            }
+            System.out.println("bug8257964Test succeeded.");
+        } else {
+            System.out.println("Test ignored. Either :-\n" +
+                    "Default format locale is not Locale.UK: " + defLoc + ", or\n" +
+                    "OS is neither macOS/Windows, or\n" +
+                    "provider is not HOST: " + type);
         }
     }
 }

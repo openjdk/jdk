@@ -111,6 +111,7 @@
   template(PrintMetadata)                         \
   template(GTestExecuteAtSafepoint)               \
   template(JFROldObject)                          \
+  template(JvmtiPostObjectFree)
 
 class VM_Operation : public StackObj {
  public:
@@ -275,13 +276,6 @@ class VM_ZombieAll: public VM_Operation {
   bool allow_nested_vm_operations() const        { return true; }
 };
 #endif // PRODUCT
-
-class VM_Verify: public VM_Operation {
- public:
-  VMOp_Type type() const { return VMOp_Verify; }
-  void doit();
-};
-
 
 class VM_PrintThreads: public VM_Operation {
  private:

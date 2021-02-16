@@ -249,6 +249,7 @@
   template(java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl,     "java/util/concurrent/atomic/AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl") \
   template(jdk_internal_vm_annotation_Contended_signature,                   "Ljdk/internal/vm/annotation/Contended;")    \
   template(jdk_internal_vm_annotation_ReservedStackAccess_signature,         "Ljdk/internal/vm/annotation/ReservedStackAccess;") \
+  template(jdk_internal_ValueBased_signature,                                "Ljdk/internal/ValueBased;") \
                                                                                                   \
   /* class symbols needed by intrinsics */                                                        \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, template, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -273,6 +274,7 @@
   template(linkToStatic_name,                         "linkToStatic")                             \
   template(linkToSpecial_name,                        "linkToSpecial")                            \
   template(linkToInterface_name,                      "linkToInterface")                          \
+  template(linkToNative_name,                         "linkToNative")                             \
   template(compiledLambdaForm_name,                   "<compiledLambdaForm>")  /*fake name*/      \
   template(star_name,                                 "*") /*not really a name*/                  \
   template(invoke_name,                               "invoke")                                   \
@@ -347,8 +349,12 @@
   template(DEFAULT_CONTEXT_name,                      "DEFAULT_CONTEXT")                          \
   NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
   LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
-                                                                                                                                      \
-  /* Support for JVMCI */                                                                                                             \
+  /* Panama Support */                                                                                          \
+  template(jdk_internal_invoke_NativeEntryPoint,                 "jdk/internal/invoke/NativeEntryPoint")           \
+  template(jdk_internal_invoke_NativeEntryPoint_signature,       "Ljdk/internal/invoke/NativeEntryPoint;")         \
+  template(jdk_incubator_foreign_MemoryAccess,       "jdk/incubator/foreign/MemoryAccess")        \
+                                                                                                  \
+  /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
                                                                                                   \
   template(java_lang_StackWalker,                     "java/lang/StackWalker")                    \
@@ -390,6 +396,7 @@
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
   template(get_name,                                  "get")                                      \
+  template(refersTo0_name,                            "refersTo0")                                \
   template(put_name,                                  "put")                                      \
   template(type_name,                                 "type")                                     \
   template(findNative_name,                           "findNative")                               \
@@ -520,6 +527,7 @@
   template(byte_array_signature,                      "[B")                                       \
   template(char_array_signature,                      "[C")                                       \
   template(int_array_signature,                       "[I")                                       \
+  template(long_array_signature,                      "[J")                                       \
   template(object_void_signature,                     "(Ljava/lang/Object;)V")                    \
   template(object_int_signature,                      "(Ljava/lang/Object;)I")                    \
   template(long_object_long_signature,                "(JLjava/lang/Object;)J")                   \
@@ -714,8 +722,6 @@ enum class vmSymbolID : int {
 };
 
 ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
-constexpr EnumRange<vmSymbolID> vmSymbolsRange; // the default range of all valid vmSymbolIDs
-using vmSymbolsIterator = EnumIterator<vmSymbolID>; // convenience
 
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;

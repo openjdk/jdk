@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,23 +96,6 @@ void Dictionary::free_entry(DictionaryEntry* entry) {
 }
 
 const int _resize_load_trigger = 5;       // load factor that will trigger the resize
-const double _resize_factor    = 2.0;     // by how much we will resize using current number of entries
-const int _resize_max_size     = 40423;   // the max dictionary size allowed
-const int _primelist[] = {107, 1009, 2017, 4049, 5051, 10103, 20201, _resize_max_size};
-const int _prime_array_size = sizeof(_primelist)/sizeof(int);
-
-// Calculate next "good" dictionary size based on requested count
-static int calculate_dictionary_size(int requested) {
-  int newsize = _primelist[0];
-  int index = 0;
-  for (newsize = _primelist[index]; index < (_prime_array_size - 1);
-       newsize = _primelist[++index]) {
-    if (requested <= newsize) {
-      break;
-    }
-  }
-  return newsize;
-}
 
 bool Dictionary::does_any_dictionary_needs_resizing() {
   return Dictionary::_some_dictionary_needs_resizing;
@@ -128,15 +111,14 @@ void Dictionary::check_if_needs_resize() {
 }
 
 bool Dictionary::resize_if_needed() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   int desired_size = 0;
   if (_needs_resizing == true) {
-    desired_size = calculate_dictionary_size((int)(_resize_factor*number_of_entries()));
-    if (desired_size >= _resize_max_size) {
-      desired_size = _resize_max_size;
-      // We have reached the limit, turn resizing off
-      _resizable = false;
-    }
-    if ((desired_size != 0) && (desired_size != table_size())) {
+    desired_size = calculate_resize(false);
+    assert(desired_size != 0, "bug in calculate_resize");
+    if (desired_size == table_size()) {
+      _resizable = false; // hit max
+    } else {
       if (!resize(desired_size)) {
         // Something went wrong, turn resizing off
         _resizable = false;
@@ -150,12 +132,17 @@ bool Dictionary::resize_if_needed() {
   return (desired_size != 0);
 }
 
+bool DictionaryEntry::is_valid_protection_domain(Handle protection_domain) {
+
+  return protection_domain() == NULL || !java_lang_System::allow_security_manager()
+        ? true
+        : contains_protection_domain(protection_domain());
+}
+
 bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
-  // Lock the pd_set list.  This lock cannot safepoint since the caller holds
-  // a Dictionary entry, which can be moved if the Dictionary is resized.
-  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
   if (protection_domain == instance_klass()->protection_domain()) {
+    MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
     // Ensure this doesn't show up in the pd_set (invariant)
     bool in_pd_set = false;
     for (ProtectionDomainEntry* current = pd_set();
@@ -178,10 +165,15 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
     return true;
   }
 
+  // Lock the pd_set list.  This lock cannot safepoint since the caller holds
+  // a Dictionary entry, which can be moved if the Dictionary is resized.
+  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
   for (ProtectionDomainEntry* current = pd_set();
                               current != NULL;
                               current = current->next()) {
-    if (current->object_no_keepalive() == protection_domain) return true;
+    if (current->object_no_keepalive() == protection_domain) {
+      return true;
+    }
   }
   return false;
 }
@@ -301,6 +293,7 @@ DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
 }
 
 
+
 InstanceKlass* Dictionary::find(unsigned int hash, Symbol* name,
                                 Handle protection_domain) {
   NoSafepointVerifier nsv;
@@ -314,20 +307,22 @@ InstanceKlass* Dictionary::find(unsigned int hash, Symbol* name,
   }
 }
 
-InstanceKlass* Dictionary::find_class(int index, unsigned int hash,
+InstanceKlass* Dictionary::find_class(unsigned int hash,
                                       Symbol* name) {
   assert_locked_or_safepoint(SystemDictionary_lock);
+
+  int index = hash_to_index(hash);
   assert (index == index_for(name), "incorrect index?");
 
   DictionaryEntry* entry = get_entry(index, hash, name);
   return (entry != NULL) ? entry->instance_klass() : NULL;
 }
 
-
 void Dictionary::add_protection_domain(int index, unsigned int hash,
                                        InstanceKlass* klass,
                                        Handle protection_domain,
                                        TRAPS) {
+  assert(java_lang_System::allow_security_manager(), "only needed if security manager allowed");
   Symbol*  klass_name = klass->name();
   DictionaryEntry* entry = get_entry(index, hash, klass_name);
 

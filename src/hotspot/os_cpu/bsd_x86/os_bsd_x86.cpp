@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -65,7 +63,6 @@
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
-# include <pthread.h>
 # include <sys/stat.h>
 # include <sys/time.h>
 # include <sys/utsname.h>
@@ -297,11 +294,11 @@ char* os::non_memory_address_word() {
   return (char*) -1;
 }
 
-address os::Bsd::ucontext_get_pc(const ucontext_t * uc) {
+address os::Posix::ucontext_get_pc(const ucontext_t * uc) {
   return (address)uc->context_pc;
 }
 
-void os::Bsd::ucontext_set_pc(ucontext_t * uc, address pc) {
+void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
   uc->context_pc = (intptr_t)pc ;
 }
 
@@ -320,7 +317,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = os::Bsd::ucontext_get_pc(uc);
+    epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Bsd::ucontext_get_sp(uc);
     if (ret_fp) *ret_fp = os::Bsd::ucontext_get_fp(uc);
   } else {
@@ -392,16 +389,6 @@ enum {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-
-/*
-  NOTE: does not seem to work on bsd.
-  if (info == NULL || info->si_code <= 0 || info->si_code == SI_NOINFO) {
-    // can't decode this kind of signal
-    info = NULL;
-  } else {
-    assert(sig == info->si_signo, "bad siginfo");
-  }
-*/
   // decide if this trap can be handled by a stub
   address stub = NULL;
 
@@ -409,12 +396,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
   //%note os_trap_1
   if (info != NULL && uc != NULL && thread != NULL) {
-    pc = (address) os::Bsd::ucontext_get_pc(uc);
-
-    if (StubRoutines::is_safefetch_fault(pc)) {
-      os::Bsd::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
+    pc = (address) os::Posix::ucontext_get_pc(uc);
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
@@ -570,7 +552,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       uc->context_trapno == trap_page_fault) {
     int page_size = os::vm_page_size();
     address addr = (address) info->si_addr;
-    address pc = os::Bsd::ucontext_get_pc(uc);
+    address pc = os::Posix::ucontext_get_pc(uc);
     // Make sure the pc and the faulting address are sane.
     //
     // If an instruction spans a page boundary, and the page containing
@@ -632,7 +614,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // save all thread context in case we need to restore it
     if (thread != NULL) thread->set_saved_exception_pc(pc);
 
-    os::Bsd::ucontext_set_pc(uc, stub);
+    os::Posix::ucontext_set_pc(uc, stub);
     return true;
   }
 
@@ -887,7 +869,7 @@ void os::print_context(outputStream *st, const void *context) {
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Bsd::ucontext_get_pc(uc);
+  address pc = os::Posix::ucontext_get_pc(uc);
   print_instructions(st, pc, sizeof(char));
   st->cr();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -307,7 +308,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
         (cmp != NULL && igvn->_worklist.member(cmp)) ) {
       // This control path may be dead.
       // Delay this memory node transformation until the control is processed.
-      phase->is_IterGVN()->_worklist.push(this);
+      igvn->_worklist.push(this);
       return NodeSentinel; // caller will return NULL
     }
   }
@@ -319,7 +320,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if (can_reshape && igvn != NULL && igvn->_worklist.member(mem)) {
     // This memory slice may be dead.
     // Delay this mem node transformation until the memory is processed.
-    phase->is_IterGVN()->_worklist.push(this);
+    igvn->_worklist.push(this);
     return NodeSentinel; // caller will return NULL
   }
 
@@ -350,7 +351,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
        (igvn->_worklist.size() > 0 && t_adr != adr_type())) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
-    phase->is_IterGVN()->_worklist.push(this);
+    igvn->_worklist.push(this);
     return NodeSentinel; // caller will return NULL
   }
 
@@ -1721,7 +1722,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       PhaseIterGVN *igvn = phase->is_IterGVN();
       if (igvn != NULL && igvn->_worklist.member(opt_mem)) {
         // Delay this transformation until memory Phi is processed.
-        phase->is_IterGVN()->_worklist.push(this);
+        igvn->_worklist.push(this);
         return NULL;
       }
       // Split instance field load through Phi.
@@ -2044,10 +2045,12 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     }
   }
 
-  if (is_instance) {
+  bool is_vect = (_type->isa_vect() != NULL);
+  if (is_instance && !is_vect) {
     // If we have an instance type and our memory input is the
     // programs's initial memory state, there is no matching store,
-    // so just return a zero of the appropriate type
+    // so just return a zero of the appropriate type -
+    // except if it is vectorized - then we have no zero constant.
     Node *mem = in(MemNode::Memory);
     if (mem->is_Parm() && mem->in(0)->is_Start()) {
       assert(mem->as_Parm()->_con == TypeFunc::Memory, "must be memory Parm");
@@ -2632,7 +2635,9 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (st->in(MemNode::Address)->eqv_uncast(address) &&
           st->as_Store()->memory_size() <= this->memory_size()) {
         Node* use = st->raw_out(0);
-        phase->igvn_rehash_node_delayed(use);
+        if (phase->is_IterGVN()) {
+          phase->is_IterGVN()->rehash_node_delayed(use);
+        }
         if (can_reshape) {
           use->set_req_X(MemNode::Memory, st->in(MemNode::Memory), phase->is_IterGVN());
         } else {
@@ -2746,14 +2751,14 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     }
   }
 
-  if (result != this && phase->is_IterGVN() != NULL) {
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (result != this && igvn != NULL) {
     MemBarNode* trailing = trailing_membar();
     if (trailing != NULL) {
 #ifdef ASSERT
       const TypeOopPtr* t_oop = phase->type(in(Address))->isa_oopptr();
       assert(t_oop == NULL || t_oop->is_known_instance_field(), "only for non escaping objects");
 #endif
-      PhaseIterGVN* igvn = phase->is_IterGVN();
       trailing->remove(igvn);
     }
   }
@@ -2954,7 +2959,7 @@ LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Ty
   : Node(required),
     _type(rt),
     _adr_type(at),
-    _barrier(0)
+    _barrier_data(0)
 {
   init_req(MemNode::Control, c  );
   init_req(MemNode::Memory , mem);
@@ -3050,6 +3055,8 @@ Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Assemblers are responsible to produce fast hardware clears for it.
   if (size > InitArrayShortSize) {
     return new ClearArrayNode(in(0), in(1), in(2), in(3), true);
+  } else if (size > 2 && Matcher::match_rule_supported_vector(Op_ClearArray, 4, T_LONG)) {
+    return NULL;
   }
   Node *mem = in(1);
   if( phase->type(mem)==Type::TOP ) return NULL;
@@ -3951,7 +3958,10 @@ Node* InitializeNode::capture_store(StoreNode* st, intptr_t start,
   // if it redundantly stored the same value (or zero to fresh memory).
 
   // In any case, wire it in:
-  phase->igvn_rehash_node_delayed(this);
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (igvn) {
+    igvn->rehash_node_delayed(this);
+  }
   set_req(i, new_st);
 
   // The caller may now kill the old guy.

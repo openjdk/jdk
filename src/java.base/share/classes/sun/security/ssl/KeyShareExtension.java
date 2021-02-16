@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import javax.net.ssl.SSLProtocolException;
-import sun.security.ssl.KeyShareExtension.CHKeyShareSpec;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
@@ -238,7 +235,7 @@ final class KeyShareExtension {
             List<NamedGroup> namedGroups;
             if (chc.serverSelectedNamedGroup != null) {
                 // Response to HelloRetryRequest
-                namedGroups = Arrays.asList(chc.serverSelectedNamedGroup);
+                namedGroups = List.of(chc.serverSelectedNamedGroup);
             } else {
                 namedGroups = chc.clientRequestedNamedGroups;
                 if (namedGroups == null || namedGroups.isEmpty()) {
@@ -291,7 +288,6 @@ final class KeyShareExtension {
 
         private static byte[] getShare(ClientHandshakeContext chc,
                 NamedGroup ng) {
-            byte[] share = null;
             SSLKeyExchange ke = SSLKeyExchange.valueOf(ng);
             if (ke == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -309,7 +305,7 @@ final class KeyShareExtension {
                     }
                 }
             }
-            return share;
+            return null;
         }
     }
 
@@ -838,12 +834,10 @@ final class KeyShareExtension {
                     spec.clientShares.size() == 1) {
                 int namedGroupId = spec.clientShares.get(0).namedGroupId;
 
-                byte[] extdata = new byte[] {
+                return new byte[] {
                         (byte)((namedGroupId >> 8) & 0xFF),
                         (byte)(namedGroupId & 0xFF)
                     };
-
-                return extdata;
             }
 
             return null;

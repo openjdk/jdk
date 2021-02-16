@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -198,25 +198,6 @@ uintptr_t ZBarrier::mark_barrier_on_finalizable_oop_slow_path(uintptr_t addr) {
   return mark<Follow, Finalizable, Overflow>(addr);
 }
 
-uintptr_t ZBarrier::mark_barrier_on_root_oop_slow_path(uintptr_t addr) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  assert(during_mark(), "Invalid phase");
-
-  // Mark
-  return mark<Follow, Strong, Publish>(addr);
-}
-
-//
-// Relocate barrier
-//
-uintptr_t ZBarrier::relocate_barrier_on_root_oop_slow_path(uintptr_t addr) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  assert(during_relocate(), "Invalid phase");
-
-  // Relocate
-  return relocate(addr);
-}
-
 //
 // Narrow oop variants, never used.
 //
@@ -257,4 +238,26 @@ oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile narrowOop* 
 oop ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile narrowOop* p, oop o) {
   ShouldNotReachHere();
   return NULL;
+}
+
+#ifdef ASSERT
+
+// ON_WEAK barriers should only ever be applied to j.l.r.Reference.referents.
+void ZBarrier::verify_on_weak(volatile oop* referent_addr) {
+  if (referent_addr != NULL) {
+    uintptr_t base = (uintptr_t)referent_addr - java_lang_ref_Reference::referent_offset();
+    oop obj = cast_to_oop(base);
+    assert(oopDesc::is_oop(obj), "Verification failed for: ref " PTR_FORMAT " obj: " PTR_FORMAT, (uintptr_t)referent_addr, base);
+    assert(java_lang_ref_Reference::is_referent_field(obj, java_lang_ref_Reference::referent_offset()), "Sanity");
+  }
+}
+
+#endif
+
+void ZLoadBarrierOopClosure::do_oop(oop* p) {
+  ZBarrier::load_barrier_on_oop_field(p);
+}
+
+void ZLoadBarrierOopClosure::do_oop(narrowOop* p) {
+  ShouldNotReachHere();
 }

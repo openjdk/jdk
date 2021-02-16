@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef PRODUCT
@@ -206,6 +207,52 @@ Address Address::make_raw(int base, int index, int scale, int disp, relocInfo::r
 
 int AbstractAssembler::code_fill_byte() {
   return (u_char)'\xF4'; // hlt
+}
+
+void Assembler::init_attributes(void) {
+  _legacy_mode_bw = (VM_Version::supports_avx512bw() == false);
+  _legacy_mode_dq = (VM_Version::supports_avx512dq() == false);
+  _legacy_mode_vl = (VM_Version::supports_avx512vl() == false);
+  _legacy_mode_vlbw = (VM_Version::supports_avx512vlbw() == false);
+  NOT_LP64(_is_managed = false;)
+  _attributes = NULL;
+}
+
+
+void Assembler::membar(Membar_mask_bits order_constraint) {
+  // We only have to handle StoreLoad
+  if (order_constraint & StoreLoad) {
+    // All usable chips support "locked" instructions which suffice
+    // as barriers, and are much faster than the alternative of
+    // using cpuid instruction. We use here a locked add [esp-C],0.
+    // This is conveniently otherwise a no-op except for blowing
+    // flags, and introducing a false dependency on target memory
+    // location. We can't do anything with flags, but we can avoid
+    // memory dependencies in the current method by locked-adding
+    // somewhere else on the stack. Doing [esp+C] will collide with
+    // something on stack in current method, hence we go for [esp-C].
+    // It is convenient since it is almost always in data cache, for
+    // any small C.  We need to step back from SP to avoid data
+    // dependencies with other things on below SP (callee-saves, for
+    // example). Without a clear way to figure out the minimal safe
+    // distance from SP, it makes sense to step back the complete
+    // cache line, as this will also avoid possible second-order effects
+    // with locked ops against the cache line. Our choice of offset
+    // is bounded by x86 operand encoding, which should stay within
+    // [-128; +127] to have the 8-byte displacement encoding.
+    //
+    // Any change to this code may need to revisit other places in
+    // the code where this idiom is used, in particular the
+    // orderAccess code.
+
+    int offset = -VM_Version::L1_line_size();
+    if (offset < -128) {
+      offset = -128;
+    }
+
+    lock();
+    addl(Address(rsp, offset), 0);// Assert the lock# signal here
+  }
 }
 
 // make this go away someday
@@ -2440,7 +2487,7 @@ void Assembler::kmovql(Address dst, KRegister src) {
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(dst, 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
-  emit_int8((unsigned char)0x90);
+  emit_int8((unsigned char)0x91);
   emit_operand((Register)src, dst);
 }
 
@@ -2706,34 +2753,18 @@ void Assembler::evmovdqub(XMMRegister dst, KRegister mask, Address src, bool mer
   emit_operand(dst, src);
 }
 
-void Assembler::evmovdqu(XMMRegister dst, KRegister mask, Address src, int vector_len, int type) {
-  assert(VM_Version::supports_avx512vlbw(), "");
-  assert(type == T_BYTE || type == T_SHORT || type == T_CHAR || type == T_INT || type == T_LONG, "");
-  InstructionMark im(this);
-  bool wide = type == T_SHORT || type == T_CHAR || type == T_LONG;
-  int prefix = (type == T_BYTE ||  type == T_SHORT || type == T_CHAR) ? VEX_SIMD_F2 : VEX_SIMD_F3;
-  InstructionAttr attributes(vector_len, /* vex_w */ wide, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
-  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
-  attributes.set_embedded_opmask_register_specifier(mask);
-  attributes.set_is_evex_instruction();
-  vex_prefix(src, 0, dst->encoding(), (Assembler::VexSimdPrefix)prefix, VEX_OPCODE_0F, &attributes);
-  emit_int8(0x6F);
-  emit_operand(dst, src);
-}
-
-void Assembler::evmovdqu(Address dst, KRegister mask, XMMRegister src, int vector_len, int type) {
+void Assembler::evmovdqub(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
   assert(VM_Version::supports_avx512vlbw(), "");
   assert(src != xnoreg, "sanity");
-  assert(type == T_BYTE || type == T_SHORT || type == T_CHAR || type == T_INT || type == T_LONG, "");
   InstructionMark im(this);
-  bool wide = type == T_SHORT || type == T_CHAR || type == T_LONG;
-  int prefix = (type == T_BYTE ||  type == T_SHORT || type == T_CHAR) ? VEX_SIMD_F2 : VEX_SIMD_F3;
-  InstructionAttr attributes(vector_len, /* vex_w */ wide, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
-  attributes.reset_is_clear_context();
   attributes.set_embedded_opmask_register_specifier(mask);
   attributes.set_is_evex_instruction();
-  vex_prefix(dst, 0, src->encoding(), (Assembler::VexSimdPrefix)prefix, VEX_OPCODE_0F, &attributes);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  vex_prefix(dst, 0, src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
   emit_int8(0x7F);
   emit_operand(src, dst);
 }
@@ -4905,7 +4936,7 @@ void Assembler::ret(int imm16) {
 }
 
 void Assembler::roll(Register dst, int imm8) {
-  assert(isShiftCount(imm8 >> 1), "illegal shift count");
+  assert(isShiftCount(imm8), "illegal shift count");
   int encode = prefix_and_encode(dst->encoding());
   if (imm8 == 1) {
     emit_int16((unsigned char)0xD1, (0xC0 | encode));
@@ -4920,7 +4951,7 @@ void Assembler::roll(Register dst) {
 }
 
 void Assembler::rorl(Register dst, int imm8) {
-  assert(isShiftCount(imm8 >> 1), "illegal shift count");
+  assert(isShiftCount(imm8), "illegal shift count");
   int encode = prefix_and_encode(dst->encoding());
   if (imm8 == 1) {
     emit_int16((unsigned char)0xD1, (0xC8 | encode));
@@ -8056,6 +8087,25 @@ void Assembler::vzeroupper_uncached() {
   }
 }
 
+void Assembler::fld_x(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDB);
+  emit_operand32(rbp, adr);
+}
+
+void Assembler::fstp_x(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDB);
+  emit_operand32(rdi, adr);
+}
+
+void Assembler::emit_operand32(Register reg, Address adr) {
+  assert(reg->encoding() < 8, "no extended registers");
+  assert(!adr.base_needs_rex() && !adr.index_needs_rex(), "no extended registers");
+  emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
+               adr._rspec);
+}
+
 #ifndef _LP64
 // 32bit only pieces of the assembler
 
@@ -8098,13 +8148,6 @@ void Assembler::decl(Register dst) {
 }
 
 // 64bit doesn't use the x87
-
-void Assembler::emit_operand32(Register reg, Address adr) {
-  assert(reg->encoding() < 8, "no extended registers");
-  assert(!adr.base_needs_rex() && !adr.index_needs_rex(), "no extended registers");
-  emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
-               adr._rspec);
-}
 
 void Assembler::emit_farith(int b1, int b2, int i) {
   assert(isByte(b1) && isByte(b2), "wrong opcode");
@@ -8290,12 +8333,6 @@ void Assembler::fld_s(int index) {
   emit_farith(0xD9, 0xC0, index);
 }
 
-void Assembler::fld_x(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDB);
-  emit_operand32(rbp, adr);
-}
-
 void Assembler::fldcw(Address src) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xD9);
@@ -8420,12 +8457,6 @@ void Assembler::fstp_s(Address adr) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xD9);
   emit_operand32(rbx, adr);
-}
-
-void Assembler::fstp_x(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDB);
-  emit_operand32(rdi, adr);
 }
 
 void Assembler::fsub(int i) {
@@ -10555,3 +10586,10 @@ void Assembler::xorq(Register dst, Address src) {
 }
 
 #endif // !LP64
+
+void InstructionAttr::set_address_attributes(int tuple_type, int input_size_in_bits) {
+  if (VM_Version::supports_evex()) {
+    _tuple_type = tuple_type;
+    _input_size_in_bits = input_size_in_bits;
+  }
+}

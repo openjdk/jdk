@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -69,6 +70,7 @@
 #include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
 
 bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
@@ -1160,6 +1162,7 @@ void G1ConcurrentMark::remark() {
     }
 
     _g1h->resize_heap_if_necessary();
+    _g1h->uncommit_regions_if_necessary();
 
     compute_new_sizes();
 
@@ -1200,6 +1203,7 @@ class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
     size_t _freed_bytes;
     FreeRegionList* _local_cleanup_list;
     uint _old_regions_removed;
+    uint _archive_regions_removed;
     uint _humongous_regions_removed;
 
   public:
@@ -1209,26 +1213,32 @@ class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
       _freed_bytes(0),
       _local_cleanup_list(local_cleanup_list),
       _old_regions_removed(0),
+      _archive_regions_removed(0),
       _humongous_regions_removed(0) { }
 
     size_t freed_bytes() { return _freed_bytes; }
     const uint old_regions_removed() { return _old_regions_removed; }
+    const uint archive_regions_removed() { return _archive_regions_removed; }
     const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
-      if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young() && !hr->is_archive()) {
+      if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young() && !hr->is_closed_archive()) {
+        log_trace(gc)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
+                      hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
         _freed_bytes += hr->used();
         hr->set_containing_set(NULL);
         if (hr->is_humongous()) {
           _humongous_regions_removed++;
           _g1h->free_humongous_region(hr, _local_cleanup_list);
+        } else if (hr->is_open_archive()) {
+          _archive_regions_removed++;
+          _g1h->free_region(hr, _local_cleanup_list);
         } else {
           _old_regions_removed++;
           _g1h->free_region(hr, _local_cleanup_list);
         }
         hr->clear_cardtable();
         _g1h->concurrent_mark()->clear_statistics_in_region(hr->hrm_index());
-        log_trace(gc)("Reclaimed empty region %u (%s) bot " PTR_FORMAT, hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
       }
 
       return false;
@@ -1253,8 +1263,10 @@ public:
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hrclaimer, worker_id);
     assert(cl.is_complete(), "Shouldn't have aborted!");
 
-    // Now update the old/humongous region sets
-    _g1h->remove_from_old_sets(cl.old_regions_removed(), cl.humongous_regions_removed());
+    // Now update the old/archive/humongous region sets
+    _g1h->remove_from_old_gen_sets(cl.old_regions_removed(),
+                                   cl.archive_regions_removed(),
+                                   cl.humongous_regions_removed());
     {
       MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
       _g1h->decrement_summary_bytes(cl.freed_bytes());
@@ -1318,11 +1330,6 @@ void G1ConcurrentMark::cleanup() {
   {
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
     G1UpdateRemSetTrackingAfterRebuild cl(_g1h);
-    _g1h->heap_region_iterate(&cl);
-  }
-
-  if (log_is_enabled(Trace, gc, liveness)) {
-    G1PrintRegionLivenessInfoClosure cl("Post-Cleanup");
     _g1h->heap_region_iterate(&cl);
   }
 
@@ -1727,22 +1734,22 @@ public:
 };
 
 class G1RemarkThreadsClosure : public ThreadClosure {
-  G1CMSATBBufferClosure _cm_satb_cl;
+  G1SATBMarkQueueSet& _qset;
   G1CMOopClosure _cm_cl;
   MarkingCodeBlobClosure _code_cl;
   uintx _claim_token;
 
  public:
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, G1CMTask* task) :
-    _cm_satb_cl(task, g1h),
+    _qset(G1BarrierSet::satb_mark_queue_set()),
     _cm_cl(g1h, task),
     _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
     if (thread->claim_threads_do(true, _claim_token)) {
-      SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
-      queue.apply_closure_and_empty(&_cm_satb_cl);
+      // Transfer any partial buffer to the qset for completed buffer processing.
+      _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
       if (thread->is_Java_thread()) {
         // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
         // however the liveness of oops reachable from nmethods have very complex lifecycles:
@@ -2885,8 +2892,9 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_STATE_H_FORMAT         "   %5s"
 #define G1PPRL_BYTE_FORMAT            "  " SIZE_FORMAT_W(9)
 #define G1PPRL_BYTE_H_FORMAT          "  %9s"
-#define G1PPRL_DOUBLE_FORMAT          "  %14.1f"
-#define G1PPRL_DOUBLE_H_FORMAT        "  %14s"
+#define G1PPRL_DOUBLE_FORMAT          "%14.1f"
+#define G1PPRL_GCEFF_FORMAT           "  %14s"
+#define G1PPRL_GCEFF_H_FORMAT         "  %14s"
 
 // For summary info
 #define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
@@ -2921,7 +2929,7 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
-                          G1PPRL_DOUBLE_H_FORMAT
+                          G1PPRL_GCEFF_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_STATE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT,
@@ -2934,7 +2942,7 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
-                          G1PPRL_DOUBLE_H_FORMAT
+                          G1PPRL_GCEFF_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_STATE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT,
@@ -2959,6 +2967,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t strong_code_roots_bytes = r->rem_set()->strong_code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
+  FormatBuffer<16> gc_efficiency("");
 
   _total_used_bytes      += used_bytes;
   _total_capacity_bytes  += capacity_bytes;
@@ -2967,20 +2976,26 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
   _total_remset_bytes    += remset_bytes;
   _total_strong_code_roots_bytes += strong_code_roots_bytes;
 
+  if(gc_eff < 0) {
+    gc_efficiency.append("-");
+  } else {
+    gc_efficiency.append(G1PPRL_DOUBLE_FORMAT, gc_eff);
+  }
+
   // Print a line for this particular region.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
-                          G1PPRL_TYPE_FORMAT
-                          G1PPRL_ADDR_BASE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_DOUBLE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_STATE_FORMAT
-                          G1PPRL_BYTE_FORMAT,
-                          type, p2i(bottom), p2i(end),
-                          used_bytes, prev_live_bytes, next_live_bytes, gc_eff,
-                          remset_bytes, remset_type, strong_code_roots_bytes);
+                        G1PPRL_TYPE_FORMAT
+                        G1PPRL_ADDR_BASE_FORMAT
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_GCEFF_FORMAT
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_STATE_FORMAT
+                        G1PPRL_BYTE_FORMAT,
+                        type, p2i(bottom), p2i(end),
+                        used_bytes, prev_live_bytes, next_live_bytes, gc_efficiency.buffer(),
+                        remset_bytes, remset_type, strong_code_roots_bytes);
 
   return false;
 }

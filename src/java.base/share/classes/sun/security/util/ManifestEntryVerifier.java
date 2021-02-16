@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,8 +214,8 @@ public class ManifestEntryVerifier {
             if (debug != null) {
                 debug.println("Manifest Entry: " +
                                    name + " digest=" + digest.getAlgorithm());
-                debug.println("  manifest " + toHex(manHash));
-                debug.println("  computed " + toHex(theHash));
+                debug.println("  manifest " + HexFormat.of().formatHex(manHash));
+                debug.println("  computed " + HexFormat.of().formatHex(theHash));
                 debug.println();
             }
 
@@ -231,25 +231,4 @@ public class ManifestEntryVerifier {
         }
         return signers;
     }
-
-    // for the toHex function
-    private static final char[] hexc =
-            {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
-    /**
-     * convert a byte array to a hex string for debugging purposes
-     * @param data the binary data to be converted to a hex string
-     * @return an ASCII hex string
-     */
-
-    static String toHex(byte[] data) {
-
-        StringBuilder sb = new StringBuilder(data.length*2);
-
-        for (int i=0; i<data.length; i++) {
-            sb.append(hexc[(data[i] >>4) & 0x0f]);
-            sb.append(hexc[data[i] & 0x0f]);
-        }
-        return sb.toString();
-    }
-
 }

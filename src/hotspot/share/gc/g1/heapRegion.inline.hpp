@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
   return !obj_allocated_since_prev_marking(obj) &&
          !prev_bitmap->is_marked(obj) &&
-         !is_open_archive();
+         !is_closed_archive();
 }
 
 inline size_t HeapRegion::block_size(const HeapWord *addr) const {
@@ -268,6 +268,7 @@ inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t min_word_size,
 inline void HeapRegion::note_start_of_marking() {
   _next_marked_bytes = 0;
   _next_top_at_mark_start = top();
+  _gc_efficiency = -1.0;
 }
 
 inline void HeapRegion::note_end_of_marking() {

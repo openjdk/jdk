@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @modules jdk.incubator.foreign
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAdaptVarHandles
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAdaptVarHandles
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAdaptVarHandles
@@ -153,21 +152,6 @@ public class TestAdaptVarHandles {
         assertEquals(value, "42");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadFilterNullTarget() {
-        MemoryHandles.filterValue(null, S2I, I2S);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadFilterNullUnbox() {
-        MemoryHandles.filterValue(intHandle, null, I2S);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadFilterNullBox() {
-        MemoryHandles.filterValue(intHandle, S2I, null);
-    }
-
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadFilterCarrier() {
         MemoryHandles.filterValue(floatHandle, S2I, I2S);
@@ -235,16 +219,6 @@ public class TestAdaptVarHandles {
         assertEquals(value, 42);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadFilterCoordinatesNullTarget() {
-        MemoryHandles.filterCoordinates(null, 0, S2I);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadFilterCoordinatesNullFilters() {
-        MemoryHandles.filterCoordinates(intHandle, 0, null);
-    }
-
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadFilterCoordinatesNegativePos() {
         MemoryHandles.filterCoordinates(intHandle, -1, SUM_OFFSETS);
@@ -288,16 +262,6 @@ public class TestAdaptVarHandles {
         assertEquals(value, 42);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadInsertCoordinatesNullTarget() {
-        MemoryHandles.insertCoordinates(null, 0, 42);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadInsertCoordinatesNullValues() {
-        MemoryHandles.insertCoordinates(intHandle, 0, null);
-    }
-
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadInsertCoordinatesNegativePos() {
         MemoryHandles.insertCoordinates(intHandle, -1, 42);
@@ -337,21 +301,6 @@ public class TestAdaptVarHandles {
         assertEquals(value, 42);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadPermuteCoordinatesNullTarget() {
-        MemoryHandles.permuteCoordinates(null, List.of());
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadPermuteCoordinatesNullCoordinates() {
-        MemoryHandles.permuteCoordinates(intHandle, null);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadPermuteCoordinatesNullReorder() {
-        MemoryHandles.permuteCoordinates(intHandle, List.of(int.class), null);
-    }
-
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadPermuteCoordinatesTooManyCoordinates() {
         MemoryHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), new int[2]);
@@ -388,16 +337,6 @@ public class TestAdaptVarHandles {
         assertEquals(oldValue, 12);
         value = (int)intHandle_sum.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, -2L, 2L);
         assertEquals(value, 42);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadCollectCoordinatesNullTarget() {
-        MemoryHandles.collectCoordinates(null, 0, SUM_OFFSETS);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadCollectCoordinatesNullFilters() {
-        MemoryHandles.collectCoordinates(intHandle, 0, null);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -451,16 +390,6 @@ public class TestAdaptVarHandles {
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadDropCoordinatesPosTooBig() {
         MemoryHandles.dropCoordinates(intHandle, 2);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadDropCoordinatesNullValueTypes() {
-        MemoryHandles.dropCoordinates(intHandle, 1, null);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadDropCoordinatesNullTarget() {
-        MemoryHandles.dropCoordinates(null, 1);
     }
 
     //helper methods

@@ -28,6 +28,7 @@ package jdk.incubator.foreign;
 import jdk.internal.foreign.MappedMemorySegmentImpl;
 
 import java.nio.MappedByteBuffer;
+import java.util.Objects;
 
 /**
  * This class provides capabilities to manipulate mapped memory segments, such as {@link #force(MemorySegment)},
@@ -41,6 +42,9 @@ import java.nio.MappedByteBuffer;
  * custom mapped memory segment factories; using JNI, e.g. on Linux, it is possible to call {@code mmap}
  * with the desired parameters; the returned address can be easily wrapped into a memory segment, using
  * {@link MemoryAddress#ofLong(long)} and {@link MemoryAddress#asSegmentRestricted(long, Runnable, Object)}.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
  * @implNote
  * The behavior of some the methods in this class (see {@link #load(MemorySegment)}, {@link #unload(MemorySegment)} and
@@ -151,6 +155,7 @@ public final class MappedMemorySegments {
     }
 
     static MappedMemorySegmentImpl toMappedSegment(MemorySegment segment) {
+        Objects.requireNonNull(segment);
         if (segment instanceof MappedMemorySegmentImpl) {
             return (MappedMemorySegmentImpl)segment;
         } else {

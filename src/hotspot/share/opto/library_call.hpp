@@ -113,7 +113,7 @@ class LibraryCallKit : public GraphKit {
 
  private:
   void fatal_unexpected_iid(vmIntrinsics::ID iid) {
-    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+    fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
   }
 
   void  set_result(Node* n) { assert(_result == NULL, "only set once"); _result = n; }
@@ -181,8 +181,8 @@ class LibraryCallKit : public GraphKit {
   CallJavaNode* generate_method_call_virtual(vmIntrinsics::ID method_id) {
     return generate_method_call(method_id, true, false);
   }
-  Node * load_field_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass * fromKls);
-  Node * field_address_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass * fromKls);
+  Node* load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, DecoratorSet decorators, bool is_static, ciInstanceKlass* fromKls);
+  Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass* fromKls);
 
   Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2, StrIntrinsicNode::ArgEnc ae);
   bool inline_string_compareTo(StrIntrinsicNode::ArgEnc ae);
@@ -264,6 +264,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
+  bool inline_reference_refersTo0(bool is_phantom);
   bool inline_Class_cast();
   bool inline_aescrypt_Block(vmIntrinsics::ID id);
   bool inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id);
@@ -324,9 +325,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
-  Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem, bool shuffle_to_vector = false);
-  Node* shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 
   enum VectorMaskUseType {
     VecMaskUseLoad,

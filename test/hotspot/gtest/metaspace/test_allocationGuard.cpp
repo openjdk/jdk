@@ -44,7 +44,7 @@ using metaspace::Settings;
 //  Note: We use TEST_VM_ASSERT_MSG. However, an assert is only triggered if allocation
 //  guards are enabled; if guards are disabled for the gtests, this test would fail.
 //  So for that case, we trigger a fake assert.
-TEST_VM_ASSERT_MSG(metaspace, test_overwriter, "Corrupt block") {
+TEST_VM_ASSERT_MSG(metaspace, test_overwriter, ".*failed: Corrupt block") {
 
   if (Settings::use_allocation_guard()) {
     MetaspaceGtestContext context;

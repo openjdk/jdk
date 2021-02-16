@@ -31,10 +31,11 @@ import jdk.internal.vm.annotation.Stable;
  * An immutable container for a key and a value, suitable for use
  * in creating and populating {@code Map} instances.
  *
- * <p>This is a <a href="../lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code KeyValueHolder} may have unpredictable results and should be avoided.
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  *
  * @apiNote
  * This class is not public. Instances can be created using the
@@ -49,6 +50,7 @@ import jdk.internal.vm.annotation.Stable;
  * @see Map#ofEntries Map.ofEntries()
  * @since 9
  */
+@jdk.internal.ValueBased
 final class KeyValueHolder<K,V> implements Map.Entry<K,V> {
     @Stable
     final K key;

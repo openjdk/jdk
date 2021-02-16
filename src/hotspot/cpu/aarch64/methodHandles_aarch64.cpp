@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
@@ -33,6 +34,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ _masm->
 
@@ -46,7 +48,7 @@
 
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg) {
   if (VerifyMethodHandles)
-    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+    verify_klass(_masm, klass_reg, VM_CLASS_ID(java_lang_Class),
                  "MH argument is a Class");
   __ ldr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset()));
 }
@@ -63,10 +65,10 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj, SystemDictionary::WKID klass_id,
+                                 Register obj, vmClassID klass_id,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  Klass* klass = SystemDictionary::well_known_klass(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Register temp = rscratch2;
   Register temp2 = rscratch1; // used by MacroAssembler::cmpptr
   Label L_ok, L_bad;
@@ -132,8 +134,6 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   assert(recv != noreg, "required register");
   assert(method_temp == rmethod, "required register for loading method");
 
-  //NOT_PRODUCT({ FlagSetting fs(TraceMethodHandles, true); trace_method_handle(_masm, "LZMH"); });
-
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
   __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())), temp2);
@@ -175,6 +175,13 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.
     __ hlt(0);           // empty stubs make SG sick
+    return NULL;
+  }
+
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ hlt(0);
     return NULL;
   }
 
@@ -272,7 +279,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic) {
+  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+    if (iid == vmIntrinsics::_linkToNative) {
+      assert(for_compiler_entry, "only compiler entry is supported");
+    }
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, rmethod, temp1, for_compiler_entry);
 
@@ -280,7 +290,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
       // make sure the trailing argument really is a MemberName (caller responsibility)
-      verify_klass(_masm, member_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_invoke_MemberName),
+      verify_klass(_masm, member_reg, VM_CLASS_ID(java_lang_invoke_MemberName),
                    "MemberName required for invokeVirtual etc.");
     }
 
@@ -414,7 +424,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+      fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
       break;
     }
 

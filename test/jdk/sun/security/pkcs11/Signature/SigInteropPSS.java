@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.security.interfaces.*;
 
 /*
  * @test
- * @bug 8080462 8226651
+ * @bug 8080462 8226651 8242332
  * @summary testing interoperability of PSS signatures of PKCS11 provider
  *         against SunRsaSign provider
  * @library /test/lib ..

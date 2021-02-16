@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_MEMORY_METASPACESHARED_HPP
 #define SHARE_MEMORY_METASPACESHARED_HPP
 
-#include "classfile/compactHashtable.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
@@ -33,17 +32,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
-#define MAX_SHARED_DELTA                (0x7FFFFFFF)
-
-// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
-// We enforce the same alignment rule in blocks allocated from the shared space.
-const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
-
-class outputStream;
-class CHeapBitMap;
 class FileMapInfo;
-class DumpRegion;
-struct ArchiveHeapOopmapInfo;
+class outputStream;
+
+template<class E> class GrowableArray;
 
 enum MapArchiveResult {
   MAP_ARCHIVE_SUCCESS,
@@ -51,33 +43,14 @@ enum MapArchiveResult {
   MAP_ARCHIVE_OTHER_FAILURE
 };
 
-class MetaspaceSharedStats {
-public:
-  MetaspaceSharedStats() {
-    memset(this, 0, sizeof(*this));
-  }
-  CompactHashtableStats symbol;
-  CompactHashtableStats string;
-};
-
 // Class Data Sharing Support
 class MetaspaceShared : AllStatic {
-
-  // CDS support
-
-  // Note: _shared_rs and _symbol_rs are only used at dump time.
-  static ReservedSpace _shared_rs;
-  static VirtualSpace _shared_vs;
-  static ReservedSpace _symbol_rs;
-  static VirtualSpace _symbol_vs;
-  static int _max_alignment;
-  static MetaspaceSharedStats _stats;
+  static ReservedSpace _symbol_rs;  // used only during -Xshare:dump
+  static VirtualSpace _symbol_vs;   // used only during -Xshare:dump
   static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
   static address _i2i_entry_code_buffers;
-  static size_t  _i2i_entry_code_buffers_size;
-  static size_t  _core_spaces_size;
   static void* _shared_metaspace_static_top;
   static intx _relocation_delta;
   static char* _requested_base_address;
@@ -110,44 +83,18 @@ class MetaspaceShared : AllStatic {
   static int preload_classes(const char * class_list_path,
                              TRAPS) NOT_CDS_RETURN_(0);
 
-  static GrowableArray<Klass*>* collected_klasses();
-
-  static ReservedSpace* shared_rs() {
-    CDS_ONLY(return &_shared_rs);
-    NOT_CDS(return NULL);
-  }
-
   static Symbol* symbol_rs_base() {
     return (Symbol*)_symbol_rs.base();
   }
 
-  static void set_shared_rs(ReservedSpace rs) {
-    CDS_ONLY(_shared_rs = rs);
-  }
-
-  static void commit_to(ReservedSpace* rs, VirtualSpace* vs, char* newtop) NOT_CDS_RETURN;
-  static void initialize_dumptime_shared_and_meta_spaces() NOT_CDS_RETURN;
+  static void initialize_for_static_dump() NOT_CDS_RETURN;
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
 
   static void print_on(outputStream* st);
 
-  // Delta of this object from SharedBaseAddress
-  static uintx object_delta_uintx(void* obj);
-
-  static u4 object_delta_u4(void* obj) {
-    // offset is guaranteed to be less than MAX_SHARED_DELTA in DumpRegion::expand_top_to()
-    uintx deltax = object_delta_uintx(obj);
-    guarantee(deltax <= MAX_SHARED_DELTA, "must be 32-bit offset");
-    return (u4)deltax;
-  }
-
   static void set_archive_loading_failed() {
     _archive_loading_failed = true;
-  }
-  static bool is_in_output_space(void* ptr) {
-    assert(DumpSharedSpaces, "must be");
-    return shared_rs()->contains(ptr);
   }
 
   static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
@@ -174,12 +121,6 @@ class MetaspaceShared : AllStatic {
 
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
-  static MetaspaceSharedStats* stats() {
-    return &_stats;
-  }
-
-  static void report_out_of_space(const char* name, size_t needed_bytes);
-
   // JVM/TI RedefineClasses() support:
   // Remap the shared readonly space to shared readwrite, private if
   // sharing is enabled. Simply returns true if sharing is not enabled
@@ -197,81 +138,40 @@ class MetaspaceShared : AllStatic {
 
 #if INCLUDE_CDS
   static size_t reserved_space_alignment();
-  static void init_shared_dump_space(DumpRegion* first_space);
-  static DumpRegion* misc_code_dump_space();
-  static DumpRegion* read_write_dump_space();
-  static DumpRegion* read_only_dump_space();
-  static void pack_dump_space(DumpRegion* current, DumpRegion* next,
-                              ReservedSpace* rs);
-
   static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
 #endif
 
   // Allocate a block of memory from the temporary "symbol" region.
   static char* symbol_space_alloc(size_t num_bytes);
 
-  // Allocate a block of memory from the "mc" or "ro" regions.
-  static char* misc_code_space_alloc(size_t num_bytes);
-  static char* read_only_space_alloc(size_t num_bytes);
-  static char* read_write_space_alloc(size_t num_bytes);
-
-  template <typename T>
-  static Array<T>* new_ro_array(int length) {
-    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
-    Array<T>* array = (Array<T>*)read_only_space_alloc(byte_size);
-    array->initialize(length);
-    return array;
-  }
-
-  template <typename T>
-  static Array<T>* new_rw_array(int length) {
-    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
-    Array<T>* array = (Array<T>*)read_write_space_alloc(byte_size);
-    array->initialize(length);
-    return array;
-  }
-
-  template <typename T>
-  static size_t ro_array_bytesize(int length) {
-    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
-    return align_up(byte_size, SharedSpaceObjectAlignment);
-  }
-
-  static address i2i_entry_code_buffers(size_t total_size);
-
-  static address i2i_entry_code_buffers() {
-    return _i2i_entry_code_buffers;
-  }
-  static size_t i2i_entry_code_buffers_size() {
-    return _i2i_entry_code_buffers_size;
-  }
-  static void relocate_klass_ptr(oop o);
-
-  static Klass* get_relocated_klass(Klass *k, bool is_final=false);
-
-  static void initialize_ptr_marker(CHeapBitMap* ptrmap);
+  static void init_misc_code_space();
+  static address i2i_entry_code_buffers();
+  static void set_i2i_entry_code_buffers(address b);
 
   // This is the base address as specified by -XX:SharedBaseAddress during -Xshare:dump.
   // Both the base/top archives are written using this as their base address.
+  //
+  // During static dump: _requested_base_address == SharedBaseAddress.
+  //
+  // During dynamic dump: _requested_base_address is not always the same as SharedBaseAddress:
+  // - SharedBaseAddress is used for *reading the base archive*. I.e., CompactHashtable uses
+  //   it to convert offsets to pointers to Symbols in the base archive.
+  //   The base archive may be mapped to an OS-selected address due to ASLR. E.g.,
+  //   you may have SharedBaseAddress == 0x00ff123400000000.
+  // - _requested_base_address is used for *writing the output archive*. It's usually
+  //   0x800000000 (unless it was set by -XX:SharedBaseAddress during -Xshare:dump).
   static char* requested_base_address() {
     return _requested_base_address;
   }
 
   // Non-zero if the archive(s) need to be mapped a non-default location due to ASLR.
   static intx relocation_delta() { return _relocation_delta; }
-  static intx final_delta();
+
   static bool use_windows_memory_mapping() {
     const bool is_windows = (NOT_WINDOWS(false) WINDOWS_ONLY(true));
     //const bool is_windows = true; // enable this to allow testing the windows mmap semantics on Linux, etc.
     return is_windows;
   }
-
-  // Returns the bitmap region which is allocated from C heap.
-  // Caller must free it with FREE_C_HEAP_ARRAY()
-  static char* write_core_archive_regions(FileMapInfo* mapinfo,
-                                          GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                          GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
-                                          size_t& bitmap_size_in_bytes);
 
   // Can we skip some expensive operations related to modules?
   static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
@@ -282,10 +182,6 @@ class MetaspaceShared : AllStatic {
   static void disable_full_module_graph() { _use_full_module_graph = false; }
 
 private:
-#if INCLUDE_CDS
-  static void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
-                           bool read_only,  bool allow_exec);
-#endif
   static void read_extra_data(const char* filename, TRAPS) NOT_CDS_RETURN;
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
@@ -295,10 +191,12 @@ private:
   static char* reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
                                                   FileMapInfo* dynamic_mapinfo,
                                                   bool use_archive_base_addr,
+                                                  ReservedSpace& total_space_rs,
                                                   ReservedSpace& archive_space_rs,
                                                   ReservedSpace& class_space_rs);
-  static void release_reserved_spaces(ReservedSpace& archive_space_rs,
-                                      ReservedSpace& class_space_rs);
+ static void release_reserved_spaces(ReservedSpace& total_space_rs,
+                                     ReservedSpace& archive_space_rs,
+                                     ReservedSpace& class_space_rs);
   static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs);
   static void unmap_archive(FileMapInfo* mapinfo);
 };

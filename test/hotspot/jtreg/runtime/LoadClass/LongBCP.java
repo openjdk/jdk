@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.nio.file.FileStore;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.spi.ToolProvider;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -46,6 +47,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class LongBCP {
 
     private static final int MAX_PATH = 260;
+
+    private static final ToolProvider JAR = ToolProvider.findFirst("jar")
+        .orElseThrow(() -> new RuntimeException("ToolProvider for jar not found"));
 
     public static void main(String args[]) throws Exception {
         Path sourceDir = Paths.get(System.getProperty("test.src"), "test-classes");
@@ -85,11 +89,9 @@ public class LongBCP {
               .shouldHaveExitValue(0);
 
         // create a hello.jar
-        sun.tools.jar.Main jarTool = new sun.tools.jar.Main(System.out, System.err, "jar");
         String helloJar = destDir.toString() + File.separator + "hello.jar";
-        if (!jarTool.run(new String[]
-            {"-cf", helloJar, "-C", destDir.toString(), "Hello.class"})) {
-            throw new RuntimeException("Could not write the Hello jar file");
+        if (JAR.run(System.out, System.err, "-cf", helloJar, "-C", destDir.toString(), "Hello.class") != 0) {
+            throw new RuntimeException("jar operation for hello.jar failed");
         }
 
         // run with long bootclasspath to hello.jar

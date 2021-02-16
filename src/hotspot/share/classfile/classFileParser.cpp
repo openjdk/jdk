@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -50,7 +51,7 @@
 #include "oops/annotations.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
@@ -76,6 +77,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -134,6 +136,8 @@
 #define JAVA_15_VERSION                   59
 
 #define JAVA_16_VERSION                   60
+
+#define JAVA_17_VERSION                   61
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
@@ -964,7 +968,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
         guarantee_property(unresolved_klass->char_at(0) != JVM_SIGNATURE_ARRAY,
                            "Bad interface name in class file %s", CHECK);
 
-        // Call resolve_super so classcircularity is checked
+        // Call resolve_super so class circularity is checked
         interf = SystemDictionary::resolve_super_or_fail(
                                                   _class_name,
                                                   unresolved_klass,
@@ -1091,6 +1095,7 @@ public:
     _jdk_internal_vm_annotation_Contended,
     _field_Stable,
     _jdk_internal_vm_annotation_ReservedStackAccess,
+    _jdk_internal_ValueBased,
     _annotation_LIMIT
   };
   const Location _location;
@@ -1098,7 +1103,7 @@ public:
   u2 _contended_group;
 
   AnnotationCollector(Location location)
-    : _location(location), _annotations_present(0)
+    : _location(location), _annotations_present(0), _contended_group(0)
   {
     assert((int)_annotation_LIMIT <= (int)sizeof(_annotations_present) * BitsPerByte, "");
   }
@@ -2147,6 +2152,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (RestrictReservedStack && !privileged) break; // honor privileges
       return _jdk_internal_vm_annotation_ReservedStackAccess;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_ValueBased_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in priviledged code
+      return _jdk_internal_ValueBased;
+    }
     default: {
       break;
     }
@@ -2190,7 +2200,16 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   assert(ik != NULL, "invariant");
-  ik->set_is_contended(is_contended());
+  if (has_annotation(_jdk_internal_vm_annotation_Contended)) {
+    ik->set_is_contended(is_contended());
+  }
+  if (has_annotation(_jdk_internal_ValueBased)) {
+    ik->set_has_value_based_class_annotation();
+    if (DiagnoseSyncOnValueBasedClasses) {
+      ik->set_is_value_based();
+      ik->set_prototype_header(markWord::prototype());
+    }
+  }
 }
 
 #define MAX_ARGS_SIZE 255
@@ -2667,7 +2686,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       cfs->skip_u2_fast(method_parameters_length);
       cfs->skip_u2_fast(method_parameters_length);
       // ignore this attribute if it cannot be reflected
-      if (!SystemDictionary::Parameter_klass_loaded())
+      if (!vmClasses::Parameter_klass_loaded())
         method_parameters_length = -1;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
@@ -3348,25 +3367,23 @@ u2 ClassFileParser::parse_classfile_permitted_subclasses_attribute(const ClassFi
     cfs->guarantee_more(2, CHECK_0);  // length
     length = cfs->get_u2_fast();
   }
-  if (length < 1) {
-    classfile_parse_error("PermittedSubclasses attribute is empty in class file %s", THREAD);
-    return 0;
-  }
   const int size = length;
   Array<u2>* const permitted_subclasses = MetadataFactory::new_array<u2>(_loader_data, size, CHECK_0);
   _permitted_subclasses = permitted_subclasses;
 
-  int index = 0;
-  cfs->guarantee_more(2 * length, CHECK_0);
-  for (int n = 0; n < length; n++) {
-    const u2 class_info_index = cfs->get_u2_fast();
-    check_property(
-      valid_klass_reference_at(class_info_index),
-      "Permitted subclass class_info_index %u has bad constant type in class file %s",
-      class_info_index, CHECK_0);
-    permitted_subclasses->at_put(index++, class_info_index);
+  if (length > 0) {
+    int index = 0;
+    cfs->guarantee_more(2 * length, CHECK_0);
+    for (int n = 0; n < length; n++) {
+      const u2 class_info_index = cfs->get_u2_fast();
+      check_property(
+        valid_klass_reference_at(class_info_index),
+        "Permitted subclass class_info_index %u has bad constant type in class file %s",
+        class_info_index, CHECK_0);
+      permitted_subclasses->at_put(index++, class_info_index);
+    }
+    assert(index == size, "wrong size");
   }
-  assert(index == size, "wrong size");
 
   // Restore buffer's current position.
   cfs->set_current(current_mark);
@@ -4291,8 +4308,8 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
 #endif
 
   // Check if this klass supports the java.lang.Cloneable interface
-  if (SystemDictionary::Cloneable_klass_loaded()) {
-    if (ik->is_subtype_of(SystemDictionary::Cloneable_klass())) {
+  if (vmClasses::Cloneable_klass_loaded()) {
+    if (ik->is_subtype_of(vmClasses::Cloneable_klass())) {
       ik->set_is_cloneable();
     }
   }
@@ -4937,7 +4954,7 @@ static const char* skip_over_field_name(const char* const name,
       if (not_first_ch) {
         // public static boolean isJavaIdentifierPart(char ch);
         JavaCalls::call_static(&result,
-          SystemDictionary::Character_klass(),
+          vmClasses::Character_klass(),
           vmSymbols::isJavaIdentifierPart_name(),
           vmSymbols::int_bool_signature(),
           &args,
@@ -4945,7 +4962,7 @@ static const char* skip_over_field_name(const char* const name,
       } else {
         // public static boolean isJavaIdentifierStart(char ch);
         JavaCalls::call_static(&result,
-          SystemDictionary::Character_klass(),
+          vmClasses::Character_klass(),
           vmSymbols::isJavaIdentifierStart_name(),
           vmSymbols::int_bool_signature(),
           &args,
@@ -5287,7 +5304,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       // The check is potentially expensive, therefore it is available
       // only in debug builds.
 
-      for (int id = vmIntrinsics::FIRST_ID; id < (int)vmIntrinsics::ID_LIMIT; ++id) {
+      for (auto id : EnumRange<vmIntrinsicID>{}) {
         if (vmIntrinsics::_compiledLambdaForm == id) {
           // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
           // generated for the JVM from a LambdaForm and therefore no method
@@ -5295,7 +5312,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
           continue;
         }
 
-        if (vmIntrinsics::class_for(vmIntrinsics::ID_from(id)) == klass_id) {
+        if (vmIntrinsics::class_for(id) == klass_id) {
           // Check if the current class contains a method with the same
           // name, flags, signature.
           bool match = false;
@@ -5311,8 +5328,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
             char buf[1000];
             tty->print("Compiler intrinsic is defined for method [%s], "
                        "but the method is not available in class [%s].%s",
-                        vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID_from(id),
-                                                             buf, sizeof(buf)),
+                        vmIntrinsics::short_name_as_C_string(id, buf, sizeof(buf)),
                         ik->name()->as_C_string(),
                         NOT_DEBUG("") DEBUG_ONLY(" Exiting.")
             );
@@ -6192,7 +6208,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                    CHECK);
   }
   // We check super class after class file is parsed and format is checked
-  if (_super_class_index > 0 && NULL ==_super_klass) {
+  if (_super_class_index > 0 && NULL == _super_klass) {
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);
     if (_access_flags.is_interface()) {
       // Before attempting to resolve the superclass, check for class format

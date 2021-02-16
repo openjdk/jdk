@@ -110,11 +110,13 @@ compiler.misc.wrong.version                             # ClassReader
 compiler.warn.annotation.method.not.found               # ClassReader
 compiler.warn.annotation.method.not.found.reason        # ClassReader
 compiler.warn.big.major.version                         # ClassReader
+compiler.warn.doclint.not.available                     # requires restricted image
 compiler.warn.future.attr                               # ClassReader
 compiler.warn.illegal.char.for.encoding
 compiler.warn.incubating.modules                        # requires adjusted classfile
 compiler.warn.invalid.archive.file
 compiler.warn.is.preview                                # difficult to produce reliably despite future changes to java.base
+compiler.warn.is.preview.reflective                     # difficult to produce reliably despite future changes to java.base
 compiler.warn.override.bridge
 compiler.warn.position.overflow                         # CRTable: caused by files with long lines >= 1024 chars
 compiler.warn.proc.type.already.exists                  # JavacFiler: just mentioned in TODO

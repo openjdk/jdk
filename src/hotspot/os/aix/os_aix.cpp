@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,8 +29,6 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -959,21 +957,6 @@ double os::elapsedVTime() {
   }
 }
 
-jlong os::javaTimeMillis() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "aix error at gettimeofday()");
-  return jlong(time.tv_sec) * 1000 + jlong(time.tv_usec / 1000);
-}
-
-void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "aix error at gettimeofday()");
-  seconds = jlong(time.tv_sec);
-  nanos = jlong(time.tv_usec) * 1000;
-}
-
 // We use mread_real_time here.
 // On AIX: If the CPU has a time register, the result will be RTC_POWER and
 // it has to be converted to real time. AIX documentations suggests to do
@@ -1438,25 +1421,6 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do beyond of what os::print_cpu_info() does.
-}
-
-void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
-  st->print_cr("Signal Handlers:");
-  PosixSignals::print_signal_handler(st, SIGSEGV, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGBUS , buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGFPE , buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGPIPE, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGXFSZ, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGILL , buf, buflen);
-  PosixSignals::print_signal_handler(st, SR_signum, buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
-  PosixSignals::print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGTRAP, buf, buflen);
-  // We also want to know if someone else adds a SIGDANGER handler because
-  // that will interfere with OOM killling.
-  PosixSignals::print_signal_handler(st, SIGDANGER, buf, buflen);
 }
 
 static char saved_jvm_path[MAXPATHLEN] = {0};
@@ -1977,7 +1941,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
     "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
     p2i(addr), os::vm_page_size());
@@ -2054,7 +2018,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 }
 
 // Reserves and attaches a shared memory segment.
-char* os::pd_reserve_memory(size_t bytes) {
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
 
@@ -2255,7 +2219,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
   char* addr = NULL;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
@@ -2460,7 +2424,7 @@ void os::init(void) {
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
-  _page_sizes[0] = 0;
+  _page_sizes.add(Aix::_page_size);
 
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));
@@ -2482,8 +2446,6 @@ void os::init(void) {
   os::Aix::initialize_system_info();
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
-
-  init_random(1234567);
 
   // _main_thread points to the thread that created/loaded the JVM.
   Aix::_main_thread = pthread_self();
@@ -2518,17 +2480,8 @@ jint os::init_2(void) {
     LoadedLibraries::print(tty);
   }
 
-  // initialize suspend/resume support - must do this before signal_sets_init()
-  if (PosixSignals::SR_initialize() != 0) {
-    perror("SR_initialize failed");
+  if (PosixSignals::init() == JNI_ERR) {
     return JNI_ERR;
-  }
-
-  PosixSignals::signal_sets_init();
-  PosixSignals::install_signal_handlers();
-  // Initialize data for jdk.internal.misc.Signal
-  if (!ReduceSignalUsage) {
-    PosixSignals::jdk_misc_signal_init();
   }
 
   // Check and sets minimum stack sizes against command line options
@@ -2598,14 +2551,6 @@ void os::set_native_thread_name(const char *name) {
 bool os::bind_to_processor(uint processor_id) {
   // Not yet implemented.
   return false;
-}
-
-void os::SuspendedThreadTask::internal_do_task() {
-  if (PosixSignals::do_suspend(_thread->osthread())) {
-    SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
-    do_task(context);
-    PosixSignals::do_resume(_thread->osthread());
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3326,3 +3271,5 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
 bool os::supports_map_sync() {
   return false;
 }
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}

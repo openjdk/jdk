@@ -419,6 +419,8 @@ Form::CallType InstructForm::is_ideal_call() const {
   idx = 0;
   if(_matrule->find_type("CallLeafNoFP",idx))     return Form::JAVA_LEAF;
   idx = 0;
+  if(_matrule->find_type("CallNative",idx))       return Form::JAVA_NATIVE;
+  idx = 0;
 
   return Form::invalid_type;
 }
@@ -779,6 +781,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
 #endif
+       !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
@@ -1130,6 +1133,9 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if( is_ideal_call() == Form::JAVA_LEAF ) {
     return "MachCallLeafNode";
+  }
+  else if( is_ideal_call() == Form::JAVA_NATIVE ) {
+    return "MachCallNativeNode";
   }
   else if (is_ideal_return()) {
     return "MachReturnNode";
@@ -1514,6 +1520,7 @@ Predicate *InstructForm::build_predicate() {
   for( DictI i(&names); i.test(); ++i ) {
     uintptr_t cnt = (uintptr_t)i._value;
     if( cnt > 1 ) {             // Need a predicate at all?
+      int path_bitmask = 0;
       assert( cnt == 2, "Unimplemented" );
       // Handle many pairs
       if( first ) first=0;
@@ -1524,10 +1531,10 @@ Predicate *InstructForm::build_predicate() {
       // Add predicate to working buffer
       sprintf(s,"/*%s*/(",(char*)i._key);
       s += strlen(s);
-      mnode->build_instr_pred(s,(char*)i._key,0);
+      mnode->build_instr_pred(s,(char*)i._key, 0, path_bitmask, 0);
       s += strlen(s);
       strcpy(s," == "); s += strlen(s);
-      mnode->build_instr_pred(s,(char*)i._key,1);
+      mnode->build_instr_pred(s,(char*)i._key, 1, path_bitmask, 0);
       s += strlen(s);
       strcpy(s,")"); s += strlen(s);
     }
@@ -3411,21 +3418,35 @@ void MatchNode::count_instr_names( Dict &names ) {
 //------------------------------build_instr_pred-------------------------------
 // Build a path to 'name' in buf.  Actually only build if cnt is zero, so we
 // can skip some leading instances of 'name'.
-int MatchNode::build_instr_pred( char *buf, const char *name, int cnt ) {
+int MatchNode::build_instr_pred( char *buf, const char *name, int cnt, int path_bitmask, int level) {
   if( _lChild ) {
-    if( !cnt ) strcpy( buf, "_kids[0]->" );
-    cnt = _lChild->build_instr_pred( buf+strlen(buf), name, cnt );
-    if( cnt < 0 ) return cnt;   // Found it, all done
+    cnt = _lChild->build_instr_pred(buf, name, cnt, path_bitmask, level+1);
+    if( cnt < 0 ) {
+      return cnt;   // Found it, all done
+    }
   }
   if( _rChild ) {
-    if( !cnt ) strcpy( buf, "_kids[1]->" );
-    cnt = _rChild->build_instr_pred( buf+strlen(buf), name, cnt );
-    if( cnt < 0 ) return cnt;   // Found it, all done
+    path_bitmask |= 1 << level;
+    cnt = _rChild->build_instr_pred( buf, name, cnt, path_bitmask, level+1);
+    if( cnt < 0 ) {
+      return cnt;   // Found it, all done
+    }
   }
   if( !_lChild && !_rChild ) {  // Found a leaf
     // Wrong name?  Give up...
     if( strcmp(name,_name) ) return cnt;
-    if( !cnt ) strcpy(buf,"_leaf");
+    if( !cnt )  {
+      for(int i = 0; i < level; i++) {
+        int kid = path_bitmask &  (1 << i);
+        if (0 == kid) {
+          strcpy( buf, "_kids[0]->" );
+        } else {
+          strcpy( buf, "_kids[1]->" );
+        }
+        buf += 10;
+      }
+      strcpy( buf, "_leaf" );
+    }
     return cnt-1;
   }
   return cnt;
@@ -3484,7 +3505,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
-    "StoreVector", "LoadVector", "LoadVectorGather", "StoreVectorScatter",
+    "StoreVector", "LoadVector", "LoadVectorGather", "StoreVectorScatter", "LoadVectorMasked", "StoreVectorMasked",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
     "LoadPLocked",
     "StorePConditional", "StoreIConditional", "StoreLConditional",
@@ -4176,7 +4197,7 @@ bool MatchRule::is_vector() const {
     "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
-    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret",
+    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD", "FmaVF","PopCountVI",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",

@@ -499,7 +499,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AL">Albania</territory>
 			<territory type="AM">Armenia</territory>
 			<territory type="AO">Angola</territory>
-			<territory type="AQ" draft="unconfirmed">Antarctica</territory>
+			<territory type="AQ">Antarctica</territory>
 			<territory type="AR">Argentina</territory>
 			<territory type="AS">Samoa american</territory>
 			<territory type="AT">Austria</territory>
@@ -667,7 +667,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SY">Syria</territory>
 			<territory type="SZ">Swazilandia</territory>
 			<territory type="TC">Insulas Turcos e Caicos</territory>
-			<territory type="TD" draft="unconfirmed">Tchad</territory>
+			<territory type="TD">Tchad</territory>
 			<territory type="TF">Territorios meridional francese</territory>
 			<territory type="TG">Togo</territory>
 			<territory type="TH">Thailandia</territory>
@@ -2456,9 +2456,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moscova</exemplarCity>
 			</zone>
@@ -2566,6 +2563,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporozhye</exemplarCity>
@@ -2986,40 +2986,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="contributed">¤ 0 mil</pattern>
-					<pattern type="1000" count="other" draft="contributed">¤ 0 mil</pattern>
-					<pattern type="10000" count="one" draft="contributed">¤ 00 mil</pattern>
-					<pattern type="10000" count="other" draft="contributed">¤ 00 mil</pattern>
-					<pattern type="100000" count="one" draft="contributed">¤ 000 mil</pattern>
-					<pattern type="100000" count="other" draft="contributed">¤ 000 mil</pattern>
-					<pattern type="1000000" count="one" draft="contributed">¤ 0 mln</pattern>
-					<pattern type="1000000" count="other" draft="contributed">¤ 0 mln</pattern>
-					<pattern type="10000000" count="one" draft="contributed">¤ 00 mln</pattern>
-					<pattern type="10000000" count="other" draft="contributed">¤ 00 mln</pattern>
-					<pattern type="100000000" count="one" draft="contributed">¤ 000 mln</pattern>
-					<pattern type="100000000" count="other" draft="contributed">¤ 000 mln</pattern>
-					<pattern type="1000000000" count="one" draft="contributed">¤ 0 mld</pattern>
-					<pattern type="1000000000" count="other" draft="contributed">¤ 0 mld</pattern>
-					<pattern type="10000000000" count="one" draft="contributed">¤ 00 mld</pattern>
-					<pattern type="10000000000" count="other" draft="contributed">¤ 00 mld</pattern>
-					<pattern type="100000000000" count="one" draft="contributed">¤ 000 mld</pattern>
-					<pattern type="100000000000" count="other" draft="contributed">¤ 000 mld</pattern>
-					<pattern type="1000000000000" count="one" draft="contributed">¤ 0 bln</pattern>
-					<pattern type="1000000000000" count="other" draft="contributed">¤ 0 bln</pattern>
-					<pattern type="10000000000000" count="one" draft="contributed">¤ 00 bln</pattern>
-					<pattern type="10000000000000" count="other" draft="contributed">¤ 00 bln</pattern>
-					<pattern type="100000000000000" count="one" draft="contributed">¤ 000 bln</pattern>
-					<pattern type="100000000000000" count="other" draft="contributed">¤ 000 bln</pattern>
+					<pattern type="1000" count="one">¤ 0 mil</pattern>
+					<pattern type="1000" count="other">¤ 0 mil</pattern>
+					<pattern type="10000" count="one">¤ 00 mil</pattern>
+					<pattern type="10000" count="other">¤ 00 mil</pattern>
+					<pattern type="100000" count="one">¤ 000 mil</pattern>
+					<pattern type="100000" count="other">¤ 000 mil</pattern>
+					<pattern type="1000000" count="one">¤ 0 mln</pattern>
+					<pattern type="1000000" count="other">¤ 0 mln</pattern>
+					<pattern type="10000000" count="one">¤ 00 mln</pattern>
+					<pattern type="10000000" count="other">¤ 00 mln</pattern>
+					<pattern type="100000000" count="one">¤ 000 mln</pattern>
+					<pattern type="100000000" count="other">¤ 000 mln</pattern>
+					<pattern type="1000000000" count="one">¤ 0 mld</pattern>
+					<pattern type="1000000000" count="other">¤ 0 mld</pattern>
+					<pattern type="10000000000" count="one">¤ 00 mld</pattern>
+					<pattern type="10000000000" count="other">¤ 00 mld</pattern>
+					<pattern type="100000000000" count="one">¤ 000 mld</pattern>
+					<pattern type="100000000000" count="other">¤ 000 mld</pattern>
+					<pattern type="1000000000000" count="one">¤ 0 bln</pattern>
+					<pattern type="1000000000000" count="other">¤ 0 bln</pattern>
+					<pattern type="10000000000000" count="one">¤ 00 bln</pattern>
+					<pattern type="10000000000000" count="other">¤ 00 bln</pattern>
+					<pattern type="100000000000000" count="one">¤ 000 bln</pattern>
+					<pattern type="100000000000000" count="other">¤ 000 bln</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one" draft="contributed">{0} {1}</unitPattern>
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ALL">
 				<displayName>lek albanese</displayName>
-				<displayName count="one" draft="contributed">lekë albanese</displayName>
-				<displayName count="other" draft="contributed">lekë albanese</displayName>
+				<displayName count="one">lekë albanese</displayName>
+				<displayName count="other">lekë albanese</displayName>
 			</currency>
 			<currency type="ANG">
 				<displayName>florino antillan</displayName>
@@ -3048,8 +3048,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BAM">
 				<displayName>marco convertibile de Bosnia-Herzegovina</displayName>
-				<displayName count="one" draft="contributed">marcos convertibile de Bosnia-Herzegovina</displayName>
-				<displayName count="other" draft="contributed">marcos convertibile de Bosnia-Herzegovina</displayName>
+				<displayName count="one">marcos convertibile de Bosnia-Herzegovina</displayName>
+				<displayName count="other">marcos convertibile de Bosnia-Herzegovina</displayName>
 			</currency>
 			<currency type="BBD">
 				<displayName>dollar barbadian</displayName>
@@ -3058,8 +3058,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BGN">
 				<displayName>lev bulgare</displayName>
-				<displayName count="one" draft="contributed">leva bulgare</displayName>
-				<displayName count="other" draft="contributed">leva bulgare</displayName>
+				<displayName count="one">leva bulgare</displayName>
+				<displayName count="other">leva bulgare</displayName>
 			</currency>
 			<currency type="BIF">
 				<displayName>franco burundese</displayName>
@@ -3093,8 +3093,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BYN">
 				<displayName>rublo bielorusse</displayName>
-				<displayName count="one" draft="contributed">rublos bielorusse</displayName>
-				<displayName count="other" draft="contributed">rublos bielorusse</displayName>
+				<displayName count="one">rublos bielorusse</displayName>
+				<displayName count="other">rublos bielorusse</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>dollar belizan</displayName>
@@ -3153,8 +3153,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CZK">
 				<displayName>corona chec</displayName>
-				<displayName count="one" draft="contributed">coronas chec</displayName>
-				<displayName count="other" draft="contributed">coronas chec</displayName>
+				<displayName count="one">coronas chec</displayName>
+				<displayName count="other">coronas chec</displayName>
 			</currency>
 			<currency type="DEM">
 				<displayName>Marco geman</displayName>
@@ -3238,18 +3238,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="GIP">
 				<displayName>libra de Gibraltar</displayName>
-				<displayName count="one" draft="contributed">libras de Gibraltar</displayName>
-				<displayName count="other" draft="contributed">libras de Gibraltar</displayName>
+				<displayName count="one">libras de Gibraltar</displayName>
+				<displayName count="other">libras de Gibraltar</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName>dalasi gambian</displayName>
-				<displayName count="one" draft="contributed">dalasis gambian</displayName>
-				<displayName count="other" draft="contributed">dalasis gambian</displayName>
+				<displayName count="one">dalasis gambian</displayName>
+				<displayName count="other">dalasis gambian</displayName>
 			</currency>
 			<currency type="GNF">
 				<displayName>franco guinean</displayName>
-				<displayName count="one" draft="contributed">francos guinean</displayName>
-				<displayName count="other" draft="contributed">francos guinean</displayName>
+				<displayName count="one">francos guinean</displayName>
+				<displayName count="other">francos guinean</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName>quetzal guatemaltec</displayName>
@@ -3268,8 +3268,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="HRK">
 				<displayName>kuna croate</displayName>
-				<displayName count="one" draft="contributed">kunas croate</displayName>
-				<displayName count="other" draft="contributed">kunas croate</displayName>
+				<displayName count="one">kunas croate</displayName>
+				<displayName count="other">kunas croate</displayName>
 			</currency>
 			<currency type="HTG">
 				<displayName>gourde haitian</displayName>
@@ -3278,8 +3278,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="HUF">
 				<displayName>forint hungare</displayName>
-				<displayName count="one" draft="contributed">forintes hungare</displayName>
-				<displayName count="other" draft="contributed">forintes hungare</displayName>
+				<displayName count="one">forintes hungare</displayName>
+				<displayName count="other">forintes hungare</displayName>
 			</currency>
 			<currency type="IEP">
 				<displayName>Libra irlandese</displayName>
@@ -3338,8 +3338,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MDL">
 				<displayName>leu moldave</displayName>
-				<displayName count="one" draft="contributed">lei moldave</displayName>
-				<displayName count="other" draft="contributed">lei moldave</displayName>
+				<displayName count="one">lei moldave</displayName>
+				<displayName count="other">lei moldave</displayName>
 			</currency>
 			<currency type="MGA">
 				<displayName>ariary malgache</displayName>
@@ -3348,8 +3348,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MKD">
 				<displayName>denar macedonie</displayName>
-				<displayName count="one" draft="contributed">denari macedonie</displayName>
-				<displayName count="other" draft="contributed">denari macedonie</displayName>
+				<displayName count="one">denari macedonie</displayName>
+				<displayName count="other">denari macedonie</displayName>
 			</currency>
 			<currency type="MRO">
 				<displayName>ouguiya mauritan (1973–2017)</displayName>
@@ -3358,8 +3358,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MRU">
 				<displayName>ouguiya mauritan</displayName>
-				<displayName count="one" draft="contributed">ouguiyas mauritan</displayName>
-				<displayName count="other" draft="contributed">ouguiyas mauritan</displayName>
+				<displayName count="one">ouguiyas mauritan</displayName>
+				<displayName count="other">ouguiyas mauritan</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName>rupia mauritian</displayName>
@@ -3388,8 +3388,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="NGN">
 				<displayName>naira nigerian</displayName>
-				<displayName count="one" draft="contributed">nairas nigerian</displayName>
-				<displayName count="other" draft="contributed">nairas nigerian</displayName>
+				<displayName count="one">nairas nigerian</displayName>
+				<displayName count="other">nairas nigerian</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName>cordoba nicaraguan</displayName>
@@ -3429,8 +3429,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="PLN">
 				<displayName>zloty polonese</displayName>
-				<displayName count="one" draft="contributed">zlotys polonese</displayName>
-				<displayName count="other" draft="contributed">zlotys polonese</displayName>
+				<displayName count="one">zlotys polonese</displayName>
+				<displayName count="other">zlotys polonese</displayName>
 			</currency>
 			<currency type="PYG">
 				<displayName>guarani paraguayan</displayName>
@@ -3439,18 +3439,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="RON">
 				<displayName>leu romanian</displayName>
-				<displayName count="one" draft="contributed">lei romanian</displayName>
-				<displayName count="other" draft="contributed">lei romanian</displayName>
+				<displayName count="one">lei romanian</displayName>
+				<displayName count="other">lei romanian</displayName>
 			</currency>
 			<currency type="RSD">
 				<displayName>dinar serbe</displayName>
-				<displayName count="one" draft="contributed">dinares serbe</displayName>
-				<displayName count="other" draft="contributed">dinares serbe</displayName>
+				<displayName count="one">dinares serbe</displayName>
+				<displayName count="other">dinares serbe</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>rublo russe</displayName>
-				<displayName count="one" draft="contributed">rublos russe</displayName>
-				<displayName count="other" draft="contributed">rublos russe</displayName>
+				<displayName count="one">rublos russe</displayName>
+				<displayName count="other">rublos russe</displayName>
 				<symbol draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
@@ -3485,8 +3485,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SLL">
 				<displayName>leone sierraleonese</displayName>
-				<displayName count="one" draft="contributed">leones sierraleonese</displayName>
-				<displayName count="other" draft="contributed">leones sierraleonese</displayName>
+				<displayName count="one">leones sierraleonese</displayName>
+				<displayName count="other">leones sierraleonese</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>shilling somali</displayName>
@@ -3535,8 +3535,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="UAH">
 				<displayName>hryvnia ukrainian</displayName>
-				<displayName count="one" draft="contributed">hryvni ukrainian</displayName>
-				<displayName count="other" draft="contributed">hryvni ukrainian</displayName>
+				<displayName count="one">hryvni ukrainian</displayName>
+				<displayName count="other">hryvni ukrainian</displayName>
 			</currency>
 			<currency type="UGX">
 				<displayName>shilling ugandese</displayName>
@@ -3585,8 +3585,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XOF">
 				<displayName>franco CFA de Africa Occidental</displayName>
-				<displayName count="one" draft="contributed">francos CFA de Africa Occidental</displayName>
-				<displayName count="other" draft="contributed">francos CFA de Africa Occidental</displayName>
+				<displayName count="one">francos CFA de Africa Occidental</displayName>
+				<displayName count="other">francos CFA de Africa Occidental</displayName>
 			</currency>
 			<currency type="XPF">
 				<displayName>franco CFP</displayName>
@@ -5212,8 +5212,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabelPattern type="miscellaneous">{0} — miscellanee</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — altere</characterLabelPattern>
 		<characterLabelPattern type="scripts">scripturas — {0}</characterLabelPattern>
-		<characterLabelPattern type="strokes" count="one" draft="contributed">{0} tractos</characterLabelPattern>
-		<characterLabelPattern type="strokes" count="other" draft="contributed">{0} tractos</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} tractos</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} tractos</characterLabelPattern>
 		<characterLabel type="activities">activitate</characterLabel>
 		<characterLabel type="african_scripts">scriptura african</characterLabel>
 		<characterLabel type="american_scripts">scriptura american</characterLabel>

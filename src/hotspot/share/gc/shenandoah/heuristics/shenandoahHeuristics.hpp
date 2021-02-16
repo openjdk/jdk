@@ -104,7 +104,7 @@ public:
 
   virtual void record_cycle_end();
 
-  virtual bool should_start_gc() const;
+  virtual bool should_start_gc();
 
   virtual bool should_degenerate_cycle();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,9 +200,9 @@
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
                                                                             \
-  product(size_t, PreTouchParallelChunkSize, 1 * G,                         \
+  product_pd(size_t, PreTouchParallelChunkSize,                             \
           "Per-thread chunk size for parallel memory pre-touch.")           \
-          range(1, SIZE_MAX / 2)                                            \
+          range(4*K, SIZE_MAX / 2)                                          \
                                                                             \
   /* where does the range max value of (max_jint - 1) come from? */         \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
@@ -290,21 +290,6 @@
   develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
           "Metadata allocation failure a lot interval")                     \
                                                                             \
-  product(bool, ExecutingUnitTests, false,                                  \
-          "Whether the JVM is running unit tests or not")                   \
-                                                                            \
-  product(bool, UseTLAB, true,                                              \
-          "Use thread-local object allocation")                             \
-                                                                            \
-  product(bool, ResizeTLAB, true,                                           \
-          "Dynamically resize TLAB size for threads")                       \
-                                                                            \
-  product(bool, ZeroTLAB, false,                                            \
-          "Zero out the newly created TLAB")                                \
-                                                                            \
-  product(bool, TLABStats, true,                                            \
-          "Provide more detailed and expensive TLAB statistics.")           \
-                                                                            \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "Never act like a server-class machine")                          \
                                                                             \
@@ -359,6 +344,7 @@
   develop(uintx, MaxVirtMemFraction, 2,                                     \
           "Maximum fraction (1/n) of virtual memory used for ergonomically "\
           "determining maximum heap size")                                  \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, UseAdaptiveSizePolicy, true,                                \
           "Use adaptive generation sizing policies")                        \
@@ -538,6 +524,9 @@
   product(bool, VerifyDuringGC, false, DIAGNOSTIC,                          \
           "Verify memory system during GC (between phases)")                \
                                                                             \
+  product(bool, VerifyArchivedFields, trueInDebug, DIAGNOSTIC,              \
+          "Verify memory when archived oop fields are loaded from CDS)")    \
+                                                                            \
   product(ccstrlist, VerifyGCType, "", DIAGNOSTIC,                          \
              "GC type(s) to verify when Verify*GC is enabled."              \
              "Available types are collector specific.")                     \
@@ -634,42 +623,6 @@
           "generation; zero means no maximum")                              \
           range(0, max_uintx)                                               \
                                                                             \
-  product(size_t, MinTLABSize, 2*K,                                         \
-          "Minimum allowed TLAB size (in bytes)")                           \
-          range(1, max_uintx/2)                                             \
-          constraint(MinTLABSizeConstraintFunc,AfterMemoryInit)             \
-                                                                            \
-  product(size_t, TLABSize, 0,                                              \
-          "Starting TLAB size (in bytes); zero means set ergonomically")    \
-          constraint(TLABSizeConstraintFunc,AfterMemoryInit)                \
-                                                                            \
-  product(size_t, YoungPLABSize, 4096,                                      \
-          "Size of young gen promotion LAB's (in HeapWords)")               \
-          constraint(YoungPLABSizeConstraintFunc,AfterMemoryInit)           \
-                                                                            \
-  product(size_t, OldPLABSize, 1024,                                        \
-          "Size of old gen promotion LAB's (in HeapWords)")                 \
-          constraint(OldPLABSizeConstraintFunc,AfterMemoryInit)             \
-                                                                            \
-  product(uintx, TLABAllocationWeight, 35,                                  \
-          "Allocation averaging weight")                                    \
-          range(0, 100)                                                     \
-                                                                            \
-  /* Limit the lower bound of this flag to 1 as it is used  */              \
-  /* in a division expression.                              */              \
-  product(uintx, TLABWasteTargetPercent, 1,                                 \
-          "Percentage of Eden that can be wasted")                          \
-          range(1, 100)                                                     \
-                                                                            \
-  product(uintx, TLABRefillWasteFraction,    64,                            \
-          "Maximum TLAB waste at a refill (internal fragmentation)")        \
-          range(1, max_juint)                                               \
-                                                                            \
-  product(uintx, TLABWasteIncrement,    4,                                  \
-          "Increment allowed waste at slow allocation")                     \
-          range(0, max_jint)                                                \
-          constraint(TLABWasteIncrementConstraintFunc,AfterMemoryInit)      \
-                                                                            \
   product(uintx, SurvivorRatio, 8,                                          \
           "Ratio of eden/survivor space size")                              \
           range(1, max_uintx-2)                                             \
@@ -735,5 +688,7 @@
           range(0, max_juint)
 
 // end of GC_FLAGS
+
+DECLARE_FLAGS(GC_FLAGS)
 
 #endif // SHARE_GC_SHARED_GC_GLOBALS_HPP

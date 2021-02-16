@@ -24,10 +24,12 @@
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
@@ -38,7 +40,7 @@ import static java.lang.String.format;
 
 /**
  * @test
- * @bug 8255380
+ * @bug 8255380 8257445
  * @summary Test that Zip FS can access the LOC offset from the Zip64 extra field
  * @modules jdk.zipfs
  * @requires (os.family == "linux") | (os.family == "mac")
@@ -91,14 +93,29 @@ public class TestLocOffsetFromZip64EF {
         rc.assertSuccess();
     }
 
+    /*
+     * DataProvider used to verify that a Zip file that contains a Zip64 Extra
+     * (EXT) header can be traversed
+     */
+    @DataProvider(name = "zipInfoTimeMap")
+    protected Object[][] zipInfoTimeMap() {
+        return new Object[][]{
+                {Map.of()},
+                {Map.of("zipinfo-time", "False")},
+                {Map.of("zipinfo-time", "true")},
+                {Map.of("zipinfo-time", "false")}
+        };
+    }
+
     /**
      * Navigate through the Zip file entries using Zip FS
+     * @param env Zip FS properties to use when accessing the Zip file
      * @throws IOException if an error occurs
      */
-    @Test
-    public void walkZipFSTest() throws IOException {
+    @Test(dataProvider = "zipInfoTimeMap")
+    public void walkZipFSTest(final Map<String, String> env) throws IOException {
         try (FileSystem fs =
-                     FileSystems.newFileSystem(Paths.get(ZIP_FILE_NAME), Map.of("zipinfo-time", "False"))) {
+                     FileSystems.newFileSystem(Paths.get(ZIP_FILE_NAME), env)) {
             for (Path root : fs.getRootDirectories()) {
                 Files.walkFileTree(root, new SimpleFileVisitor<>() {
                     @Override

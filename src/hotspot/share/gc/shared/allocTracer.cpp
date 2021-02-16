@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "jfr/jfrEvents.hpp"
-#include "runtime/handles.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -33,7 +32,7 @@
 #endif
 
 void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, Thread* thread) {
-  JFR_ONLY(JfrAllocationTracer tracer(obj, alloc_size, thread);)
+  JFR_ONLY(JfrAllocationTracer tracer(klass, obj, alloc_size, true, thread);)
   EventObjectAllocationOutsideTLAB event;
   if (event.should_commit()) {
     event.set_objectClass(klass);
@@ -43,7 +42,7 @@ void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size
 }
 
 void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, Thread* thread) {
-  JFR_ONLY(JfrAllocationTracer tracer(obj, alloc_size, thread);)
+  JFR_ONLY(JfrAllocationTracer tracer(klass, obj, alloc_size, false, thread);)
   EventObjectAllocationInNewTLAB event;
   if (event.should_commit()) {
     event.set_objectClass(klass);

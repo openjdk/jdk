@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package jdk.test.lib;
 
 import java.math.BigInteger;
+import java.util.HexFormat;
 import java.security.spec.EdECPoint;
 
 /**
@@ -33,32 +34,10 @@ import java.security.spec.EdECPoint;
 
 public class Convert {
 
-    // Convert from a byte array to a hexadecimal representation as a string.
-    public static String byteArrayToHexString(byte[] arr) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < arr.length; ++i) {
-            byte curVal = arr[i];
-            result.append(Character.forDigit(curVal >> 4 & 0xF, 16));
-            result.append(Character.forDigit(curVal & 0xF, 16));
-        }
-        return result.toString();
-    }
-
     // Expand a single byte to a byte array
     public static byte[] byteToByteArray(byte v, int length) {
         byte[] result = new byte[length];
         result[0] = v;
-        return result;
-    }
-
-    // Convert a hexadecimal string to a byte array
-    public static byte[] hexStringToByteArray(String str) {
-        byte[] result = new byte[str.length() / 2];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = (byte) Character.digit(str.charAt(2 * i), 16);
-            result[i] <<= 4;
-            result[i] += Character.digit(str.charAt(2 * i + 1), 16);
-        }
         return result;
     }
 
@@ -92,7 +71,7 @@ public class Convert {
     }
 
     public static EdECPoint hexStringToEdPoint(String str) {
-        return byteArrayToEdPoint(hexStringToByteArray(str));
+        return byteArrayToEdPoint(HexFormat.of().parseHex(str));
     }
 
     private static void swap(byte[] arr, int i, int j) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_CLASSFILE_JAVACLASSES_HPP
 #define SHARE_CLASSFILE_JAVACLASSES_HPP
 
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "oops/oop.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
@@ -75,6 +75,7 @@ class RecordComponent;
   f(java_lang_StackFrameInfo) \
   f(java_lang_LiveStackFrameInfo) \
   f(java_util_concurrent_locks_AbstractOwnableSynchronizer) \
+  f(jdk_internal_invoke_NativeEntryPoint) \
   f(jdk_internal_misc_UnsafeConstants) \
   f(java_lang_boxing_object) \
   f(vector_VectorPayload) \
@@ -275,9 +276,9 @@ class java_lang_Class : AllStatic {
 
   // Archiving
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-  static void archive_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static oop  archive_mirror(Klass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  static oop  process_archived_mirror(Klass* k, oop mirror, oop archived_mirror, Thread *THREAD)
+  static void archive_basic_type_mirrors() NOT_CDS_JAVA_HEAP_RETURN;
+  static oop  archive_mirror(Klass* k) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop  process_archived_mirror(Klass* k, oop mirror, oop archived_mirror)
                                       NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static bool restore_archived_mirror(Klass *k, Handle class_loader, Handle module,
                                       Handle protection_domain,
@@ -875,7 +876,7 @@ class java_lang_ref_Reference: AllStatic {
   static inline oop weak_referent_no_keepalive(oop ref);
   static inline oop phantom_referent_no_keepalive(oop ref);
   static inline oop unknown_referent_no_keepalive(oop ref);
-  static inline void set_referent_raw(oop ref, oop value);
+  static inline void clear_referent(oop ref);
   static inline HeapWord* referent_addr_raw(oop ref);
   static inline oop next(oop ref);
   static inline void set_next(oop ref, oop value);
@@ -944,7 +945,7 @@ class java_lang_invoke_MethodHandle: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::MethodHandle_klass());
+    return klass->is_subclass_of(vmClasses::MethodHandle_klass());
   }
   static bool is_instance(oop obj);
 
@@ -971,7 +972,7 @@ class java_lang_invoke_DirectMethodHandle: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::DirectMethodHandle_klass());
+    return klass->is_subclass_of(vmClasses::DirectMethodHandle_klass());
   }
   static bool is_instance(oop obj);
 
@@ -999,8 +1000,8 @@ class java_lang_invoke_LambdaForm: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return SystemDictionary::LambdaForm_klass() != NULL &&
-      klass->is_subclass_of(SystemDictionary::LambdaForm_klass());
+    return vmClasses::LambdaForm_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::LambdaForm_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1008,6 +1009,51 @@ class java_lang_invoke_LambdaForm: AllStatic {
   static int vmentry_offset()          { CHECK_INIT(_vmentry_offset); }
 };
 
+// Interface to java.lang.invoke.NativeEntryPoint objects
+// (These are a private interface for managing adapter code generation.)
+
+class jdk_internal_invoke_NativeEntryPoint: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _addr_offset;  // type is jlong
+  static int _shadow_space_offset;
+  static int _argMoves_offset;
+  static int _returnMoves_offset;
+  static int _need_transition_offset;
+  static int _method_type_offset;
+  static int _name_offset;
+
+  static void compute_offsets();
+
+ public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Accessors
+  static address    addr(oop entry);
+  static jint       shadow_space(oop entry);
+  static oop        argMoves(oop entry);
+  static oop        returnMoves(oop entry);
+  static jboolean   need_transition(oop entry);
+  static oop        method_type(oop entry);
+  static oop        name(oop entry);
+
+  // Testers
+  static bool is_subclass(Klass* klass) {
+    return vmClasses::NativeEntryPoint_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::NativeEntryPoint_klass());
+  }
+  static bool is_instance(oop obj);
+
+  // Accessors for code generation:
+  static int addr_offset_in_bytes()            { return _addr_offset;            }
+  static int shadow_space_offset_in_bytes()    { return _shadow_space_offset;    }
+  static int argMoves_offset_in_bytes()        { return _argMoves_offset;        }
+  static int returnMoves_offset_in_bytes()     { return _returnMoves_offset;     }
+  static int need_transition_offset_in_bytes() { return _need_transition_offset; }
+  static int method_type_offset_in_bytes()     { return _method_type_offset;     }
+  static int name_offset_in_bytes()            { return _name_offset;            }
+};
 
 // Interface to java.lang.invoke.MemberName objects
 // (These are a private interface for Java code to query the class hierarchy.)
@@ -1088,7 +1134,7 @@ class java_lang_invoke_MemberName: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::MemberName_klass());
+    return klass->is_subclass_of(vmClasses::MemberName_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1184,7 +1230,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::CallSite_klass());
+    return klass->is_subclass_of(vmClasses::CallSite_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1210,7 +1256,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::ConstantCallSite_klass());
+    return klass->is_subclass_of(vmClasses::ConstantCallSite_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1239,7 +1285,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::Context_klass());
+    return klass->is_subclass_of(vmClasses::Context_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1307,7 +1353,7 @@ class java_lang_ClassLoader : AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::ClassLoader_klass());
+    return klass->is_subclass_of(vmClasses::ClassLoader_klass());
   }
   static bool is_instance(oop obj);
 
@@ -1326,11 +1372,15 @@ class java_lang_System : AllStatic {
   static int _static_out_offset;
   static int _static_err_offset;
   static int _static_security_offset;
+  static int _static_allow_security_offset;
+  static int _static_never_offset;
 
  public:
   static int  in_offset() { CHECK_INIT(_static_in_offset); }
   static int out_offset() { CHECK_INIT(_static_out_offset); }
   static int err_offset() { CHECK_INIT(_static_err_offset); }
+  static bool allow_security_manager();
+  static bool has_security_manager();
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
@@ -1551,7 +1601,7 @@ class vector_VectorPayload : AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(SystemDictionary::vector_VectorPayload_klass());
+    return klass->is_subclass_of(vmClasses::vector_VectorPayload_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1671,13 +1721,13 @@ class java_lang_InternalError : AllStatic {
 
 class InjectedField {
  public:
-  const SystemDictionary::WKID klass_id;
+  const vmClassID klass_id;
   const vmSymbolID name_index;
   const vmSymbolID signature_index;
   const bool           may_be_java;
 
 
-  Klass* klass() const    { return SystemDictionary::well_known_klass(klass_id); }
+  Klass* klass() const      { return vmClasses::klass_at(klass_id); }
   Symbol* name() const      { return lookup_symbol(name_index); }
   Symbol* signature() const { return lookup_symbol(signature_index); }
 

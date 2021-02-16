@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,15 +452,23 @@ public abstract class $Type$Buffer
      */
     public int read(CharBuffer target) throws IOException {
         // Determine the number of bytes n that can be transferred
-        int targetRemaining = target.remaining();
         int limit = limit();
-        int remaining = limit - position();
-        if (remaining == 0)
+        int pos = position();
+        int remaining = limit - pos;
+        assert remaining >= 0;
+        if (remaining <= 0) // include equality condition when remaining == 0
             return -1;
+
+        int targetRemaining = target.remaining();
+        assert targetRemaining >= 0;
+        if (targetRemaining <= 0) // include condition targetRemaining == 0
+            return 0;
+
         int n = Math.min(remaining, targetRemaining);
+
         // Set source limit to prevent target overflow
         if (targetRemaining < remaining)
-            limit(position() + n);
+            limit(pos + n);
         try {
             if (n > 0)
                 target.put(this);
@@ -951,15 +959,19 @@ public abstract class $Type$Buffer
             throw new ReadOnlyBufferException();
 
         int srcPos = src.position();
-        int n = src.limit() - srcPos;
+        int srcLim = src.limit();
+        int srcRem = (srcPos <= srcLim ? srcLim - srcPos : 0);
         int pos = position();
-        if (n > limit() - pos)
+        int lim = limit();
+        int rem = (pos <= lim ? lim - pos : 0);
+
+        if (srcRem > rem)
             throw new BufferOverflowException();
 
-        putBuffer(pos, src, srcPos, n);
+        putBuffer(pos, src, srcPos, srcRem);
 
-        position(pos + n);
-        src.position(srcPos + n);
+        position(pos + srcRem);
+        src.position(srcPos + srcRem);
 
         return this;
     }
@@ -1835,9 +1847,10 @@ public abstract class $Type$Buffer
      * content of this buffer is mutable then modifications to one buffer will
      * cause the other to be modified.  The new buffer's capacity will be that
      * of this buffer, its position will be
-     * {@code position()}&nbsp;+&nbsp;{@code start}, and its limit will be
-     * {@code position()}&nbsp;+&nbsp;{@code end}.  The new buffer will be
-     * direct if, and only if, this buffer is direct, and it will be read-only
+     * {@code position()}&nbsp;+&nbsp;{@code start}, its limit will be
+     * {@code position()}&nbsp;+&nbsp;{@code end}, and its byte order
+     * will be identical to that of this buffer. The new buffer will be direct
+     * if, and only if, this buffer is direct, and it will be read-only
      * if, and only if, this buffer is read-only.  </p>
      *
      * @param  start

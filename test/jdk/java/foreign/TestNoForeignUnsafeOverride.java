@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.misc
- *          jdk.incubator.foreign/jdk.internal.foreign
  * @run testng TestNoForeignUnsafeOverride
  */
 

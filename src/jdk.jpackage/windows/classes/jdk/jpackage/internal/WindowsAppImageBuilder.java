@@ -75,7 +75,7 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     }
 
     private void writeEntry(InputStream in, Path dstFile) throws IOException {
-        Files.createDirectories(dstFile.getParent());
+        Files.createDirectories(IOUtils.getParent(dstFile));
         Files.copy(in, dstFile);
     }
 

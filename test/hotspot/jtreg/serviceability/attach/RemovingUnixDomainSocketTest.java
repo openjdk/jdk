@@ -51,7 +51,8 @@ public class RemovingUnixDomainSocketTest {
         jcmd.addToolArg(Long.toString(pid));
         jcmd.addToolArg("VM.version");
 
-        Process jcmdProc = ProcessTools.startProcess("jcmd", new ProcessBuilder(jcmd.getCommand()));
+        ProcessBuilder pb = new ProcessBuilder(jcmd.getCommand());
+        Process jcmdProc = pb.start();
 
         OutputAnalyzer out = new OutputAnalyzer(jcmdProc);
 
@@ -66,7 +67,7 @@ public class RemovingUnixDomainSocketTest {
             "jcmd  exitValue = " + out.getExitValue());
 
         out.shouldHaveExitValue(0);
-        out.stderrShouldBeEmptyIgnoreVMWarnings();
+        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
     }
 
     public static void main(String... args) throws Exception {

@@ -22,14 +22,144 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
-#include "utilities/debug.hpp"
+#include "gc/z/zStat.hpp"
+#include "gc/z/zUtils.inline.hpp"
+#include "utilities/align.hpp"
+
+//
+// Reference count states:
+//
+// * If the reference count is zero, it will never change again.
+//
+// * If the reference count is positive, it can be both retained
+//   (increased) and released (decreased).
+//
+// * If the reference count is negative, is can only be released
+//   (increased). A negative reference count means that one or more
+//   threads are waiting for one or more other threads to release
+//   their references.
+//
+// The reference lock is used for waiting until the reference
+// count has become zero (released) or negative one (claimed).
+//
+
+static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");
+
+bool ZForwarding::retain_page() {
+  for (;;) {
+    const int32_t ref_count = Atomic::load_acquire(&_ref_count);
+
+    if (ref_count == 0) {
+      // Released
+      return false;
+    }
+
+    if (ref_count < 0) {
+      // Claimed
+      wait_page_released();
+      return false;
+    }
+
+    if (Atomic::cmpxchg(&_ref_count, ref_count, ref_count + 1) == ref_count) {
+      // Retained
+      return true;
+    }
+  }
+}
+
+ZPage* ZForwarding::claim_page() {
+  for (;;) {
+    const int32_t ref_count = Atomic::load(&_ref_count);
+    assert(ref_count > 0, "Invalid state");
+
+    // Invert reference count
+    if (Atomic::cmpxchg(&_ref_count, ref_count, -ref_count) != ref_count) {
+      continue;
+    }
+
+    // If the previous reference count was 1, then we just changed it to -1,
+    // and we have now claimed the page. Otherwise we wait until it is claimed.
+    if (ref_count != 1) {
+      ZLocker<ZConditionLock> locker(&_ref_lock);
+      while (Atomic::load_acquire(&_ref_count) != -1) {
+        _ref_lock.wait();
+      }
+    }
+
+    return _page;
+  }
+}
+
+void ZForwarding::release_page() {
+  for (;;) {
+    const int32_t ref_count = Atomic::load(&_ref_count);
+    assert(ref_count != 0, "Invalid state");
+
+    if (ref_count > 0) {
+      // Decrement reference count
+      if (Atomic::cmpxchg(&_ref_count, ref_count, ref_count - 1) != ref_count) {
+        continue;
+      }
+
+      // If the previous reference count was 1, then we just decremented
+      // it to 0 and we should signal that the page is now released.
+      if (ref_count == 1) {
+        // Notify released
+        ZLocker<ZConditionLock> locker(&_ref_lock);
+        _ref_lock.notify_all();
+      }
+    } else {
+      // Increment reference count
+      if (Atomic::cmpxchg(&_ref_count, ref_count, ref_count + 1) != ref_count) {
+        continue;
+      }
+
+      // If the previous reference count was -2 or -1, then we just incremented it
+      // to -1 or 0, and we should signal the that page is now claimed or released.
+      if (ref_count == -2 || ref_count == -1) {
+        // Notify claimed or released
+        ZLocker<ZConditionLock> locker(&_ref_lock);
+        _ref_lock.notify_all();
+      }
+    }
+
+    return;
+  }
+}
+
+void ZForwarding::wait_page_released() const {
+  if (Atomic::load_acquire(&_ref_count) != 0) {
+    ZStatTimer timer(ZCriticalPhaseRelocationStall);
+    ZLocker<ZConditionLock> locker(&_ref_lock);
+    while (Atomic::load_acquire(&_ref_count) != 0) {
+      _ref_lock.wait();
+    }
+  }
+}
+
+ZPage* ZForwarding::detach_page() {
+  // Wait until released
+  if (Atomic::load_acquire(&_ref_count) != 0) {
+    ZLocker<ZConditionLock> locker(&_ref_lock);
+    while (Atomic::load_acquire(&_ref_count) != 0) {
+      _ref_lock.wait();
+    }
+  }
+
+  // Detach and return page
+  ZPage* const page = _page;
+  _page = NULL;
+  return page;
+}
 
 void ZForwarding::verify() const {
-  guarantee(_refcount > 0, "Invalid refcount");
+  guarantee(_ref_count != 0, "Invalid reference count");
   guarantee(_page != NULL, "Invalid page");
 
-  size_t live_objects = 0;
+  uint32_t live_objects = 0;
+  size_t live_bytes = 0;
 
   for (ZForwardingCursor i = 0; i < _entries.length(); i++) {
     const ZForwardingEntry entry = at(&i);
@@ -53,9 +183,13 @@ void ZForwarding::verify() const {
       guarantee(entry.to_offset() != other.to_offset(), "Duplicate to");
     }
 
+    const uintptr_t to_addr = ZAddress::good(entry.to_offset());
+    const size_t size = ZUtils::object_size(to_addr);
+    const size_t aligned_size = align_up(size, _page->object_alignment());
+    live_bytes += aligned_size;
     live_objects++;
   }
 
-  // Check number of non-empty entries
-  guarantee(live_objects == _page->live_objects(), "Invalid number of entries");
+  // Verify number of live objects and bytes
+  _page->verify_live(live_objects, live_bytes);
 }

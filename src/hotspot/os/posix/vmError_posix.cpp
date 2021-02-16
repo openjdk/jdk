@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
@@ -106,7 +108,7 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 
   // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
-  address pc = (uc != NULL) ? PosixSignals::ucontext_get_pc(uc) : NULL;
+  address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
 
   // Correct pc for SIGILL, SIGFPE (see JDK-8176872)
   if (sig == SIGILL || sig == SIGFPE) {
@@ -115,7 +117,7 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 
   // Needed to make it possible to call SafeFetch.. APIs in error handling.
   if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
-    PosixSignals::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+    os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
     return;
   }
 
@@ -131,7 +133,7 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   VMError::report_and_die(NULL, sig, pc, info, ucVoid);
 }
 
-void VMError::reset_signal_handlers() {
+void VMError::install_secondary_signal_handler() {
   for (int i = 0; i < NUM_SIGNALS; i++) {
     save_signal(i, SIGNALS[i]);
     os::signal(SIGNALS[i], CAST_FROM_FN_PTR(void *, crash_handler));

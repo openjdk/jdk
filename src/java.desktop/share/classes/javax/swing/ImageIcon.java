@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.beans.ConstructorProperties;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.IllegalComponentStateException;
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.Toolkit;
+import java.awt.image.ColorModel;
+import java.awt.image.ImageObserver;
+import java.awt.image.MemoryImageSource;
+import java.awt.image.PixelGrabber;
 import java.beans.BeanProperty;
+import java.beans.ConstructorProperties;
 import java.beans.Transient;
-import java.net.URL;
-
-import java.io.Serializable;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.net.URL;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.Locale;
-import javax.accessibility.*;
 
-import sun.awt.AppContext;
-import java.security.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleIcon;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+
 import sun.awt.AWTAccessor;
+import sun.awt.AppContext;
 
 /**
  * An implementation of the Icon interface that paints Icons
@@ -485,6 +502,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
         return super.toString();
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {
@@ -524,6 +542,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     }
 
 
+    @Serial
     private void writeObject(ObjectOutputStream s)
         throws IOException
     {
@@ -726,12 +745,14 @@ public class ImageIcon implements Icon, Serializable, Accessible {
             return ImageIcon.this.width;
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException
         {
             s.defaultReadObject();
         }
 
+        @Serial
         private void writeObject(ObjectOutputStream s)
             throws IOException
         {

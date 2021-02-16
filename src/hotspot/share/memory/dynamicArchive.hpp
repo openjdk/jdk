@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,47 +58,8 @@ public:
 };
 
 class DynamicArchive : AllStatic {
-  static class DynamicArchiveBuilder* _builder;
-  static address original_to_target_impl(address orig_obj);
-  static address original_to_buffer_impl(address orig_obj);
-  static address buffer_to_target_impl(address buff_obj);
-
 public:
   static void dump();
-
-  // obj is a copy of a MetaspaceObj, stored in the dumping buffer.
-  //
-  // The return value is the runtime targeted location of this object as
-  // mapped from the dynamic archive.
-  template <typename T> static T buffer_to_target(T buff_obj) {
-    return (T)buffer_to_target_impl(address(buff_obj));
-  }
-
-  // obj is an original MetaspaceObj used by the JVM (e.g., a valid Symbol* in the
-  // SymbolTable).
-  //
-  // The return value is the runtime targeted location of this object as
-  // mapped from the dynamic archive.
-  template <typename T> static T original_to_target(T obj) {
-    return (T)original_to_target_impl(address(obj));
-  }
-
-  // obj is an original MetaspaceObj use by the JVM (e.g., a valid Symbol* in the
-  // SymbolTable).
-  //
-  // The return value is the location of this object in the dump time
-  // buffer space
-  template <typename T> static T original_to_buffer(T obj) {
-    return (T)original_to_buffer_impl(address(obj));
-  }
-
-  // Delta of this object from SharedBaseAddress
-  static uintx object_delta_uintx(void* buff_obj);
-
-  // Does obj point to an address inside the runtime target space of the dynamic
-  // archive?
-  static bool is_in_target_space(void *obj);
-
   static bool is_mapped() { return FileMapInfo::dynamic_info() != NULL; }
   static bool validate(FileMapInfo* dynamic_info);
 };

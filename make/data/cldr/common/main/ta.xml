@@ -1144,16 +1144,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<characters>
 		<exemplarCharacters>[அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ ஃ க ங ச ஞ ட ண த ந ப ம ய ர ல வ ழ ள ற ன ஜ ஷ ஸ ஹ ா ி \u0BC0 ு ூ ெ ே ை ொ ோ ௌ \u0BCD]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ க ங ச ஞ ட ண த ந ப ம ய ர ல வ ழ ள ற ன ஜ ஶ ஷ ஸ ஹ {க\u0BCDஷ}]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ க ங ச ஞ ட ண த ந ப ம ய ர ல வ ழ ள ற ன]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0௦ 1௧ 2௨ 3௩ 4௪ 5௫ 6௬ 7௭ 8௮ 9௯]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
-		<ellipsis type="final" draft="contributed">{0}…</ellipsis>
-		<ellipsis type="initial" draft="contributed">…{0}</ellipsis>
-		<ellipsis type="medial" draft="contributed">{0}…{1}</ellipsis>
-		<ellipsis type="word-final" draft="contributed">{0} …</ellipsis>
-		<ellipsis type="word-initial" draft="contributed">… {0}</ellipsis>
-		<ellipsis type="word-medial" draft="contributed">{0} … {1}</ellipsis>
-		<moreInformation draft="contributed">?</moreInformation>
+		<ellipsis type="final">{0}…</ellipsis>
+		<ellipsis type="initial">…{0}</ellipsis>
+		<ellipsis type="medial">{0}…{1}</ellipsis>
+		<ellipsis type="word-final">{0} …</ellipsis>
+		<ellipsis type="word-initial">… {0}</ellipsis>
+		<ellipsis type="word-medial">{0} … {1}</ellipsis>
+		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
 			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
@@ -1175,10 +1175,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</parseLenients>
 	</characters>
 	<delimiters>
-		<quotationStart draft="contributed">“</quotationStart>
-		<quotationEnd draft="contributed">”</quotationEnd>
-		<alternateQuotationStart draft="contributed">‘</alternateQuotationStart>
-		<alternateQuotationEnd draft="contributed">’</alternateQuotationEnd>
+		<quotationStart>“</quotationStart>
+		<quotationEnd>”</quotationEnd>
+		<alternateQuotationStart>‘</alternateQuotationStart>
+		<alternateQuotationEnd>’</alternateQuotationEnd>
 	</delimiters>
 	<dates>
 		<calendars>
@@ -4124,9 +4124,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>கலினின்கிராட்</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>சிம்ஃபெரோபோல்</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>மாஸ்கோ</exemplarCity>
 			</zone>
@@ -4321,6 +4318,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>கீவ்</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>சிம்ஃபெரோபோல்</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>ஜபோரோஸியே</exemplarCity>
@@ -5155,9 +5155,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">நார்ஃபோக் தீவு நேரம்</generic>
-					<standard draft="contributed">நார்ஃபோக் தீவு நிலையான நேரம்</standard>
-					<daylight draft="contributed">நார்ஃபோக் தீவு கோடை நேரம்</daylight>
+					<generic>நார்ஃபோக் தீவு நேரம்</generic>
+					<standard>நார்ஃபோக் தீவு நிலையான நேரம்</standard>
+					<daylight>நார்ஃபோக் தீவு பகலொளி நேரம்</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -6763,6 +6763,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>யாட்டா{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>கிபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>மெபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>ஜிபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>டெபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>பெபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>எக்ஸ்பி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>செபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>யோபி{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -7178,6 +7202,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} புள்ளி / அங்குலம்</unitPattern>
 				<unitPattern count="other">{0} புள்ளிகள் / அங்குலம்</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>புள்ளி</displayName>
+				<unitPattern count="one">{0}புள்ளி</unitPattern>
+				<unitPattern count="other">{0}புள்ளி</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>புவி ஆரம்</displayName>
+				<unitPattern count="one">{0} புவி ஆரம்</unitPattern>
+				<unitPattern count="other">{0} புவி ஆரம்</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>கிலோமீட்டர்கள்</displayName>
 				<unitPattern count="one">{0} கிலோமீட்டர்</unitPattern>
@@ -7258,6 +7292,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} வானியல் அலகு</unitPattern>
 				<unitPattern count="other">{0} வானியல் அலகுகள்</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>பர்லாங்குகள்</displayName>
+				<unitPattern count="one">{0} பர்லாங்கு</unitPattern>
+				<unitPattern count="other">{0} பர்லாங்குகள்</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ஃபேதம்கள்</displayName>
+				<unitPattern count="one">{0} ஃபேதம்</unitPattern>
+				<unitPattern count="other">{0} ஃபேதம்கள்</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>கடல் மைல்கள்</displayName>
 				<unitPattern count="one">{0} கடல் மைல்</unitPattern>
@@ -7282,6 +7326,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>லக்ஸ்</displayName>
 				<unitPattern count="one">{0} லக்ஸ்</unitPattern>
 				<unitPattern count="other">{0} லக்ஸ்</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>கேண்டலா</displayName>
+				<unitPattern count="one">{0} கேண்டலா</unitPattern>
+				<unitPattern count="other">{0} கேண்டலா</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>லூமன்</displayName>
+				<unitPattern count="one">{0} லூமன்</unitPattern>
+				<unitPattern count="other">{0} லூமன்</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>சூரிய ஒளிர்வுத்தன்மை</displayName>
@@ -7321,9 +7375,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} டன்</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">ஸ்டோன்ஸ்</displayName>
-				<unitPattern count="one" draft="contributed">{0} ஸ்டோன்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ஸ்டோன்ஸ்</unitPattern>
+				<displayName>ஸ்டோன்ஸ்</displayName>
+				<unitPattern count="one">{0} ஸ்டோன்</unitPattern>
+				<unitPattern count="other">{0} ஸ்டோன்ஸ்</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>பவுண்டுகள்</displayName>
@@ -7361,6 +7415,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>சூரியத் திணிவுகள்</displayName>
 				<unitPattern count="one">{0} சூரியத் திணிவு</unitPattern>
 				<unitPattern count="other">{0} சூரியத் திணிவுகள்</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>கிரைன்</displayName>
+				<unitPattern count="one">{0} கிரைன்</unitPattern>
+				<unitPattern count="other">{0} கிரைன்</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>கிகாவாட்ஸ்</displayName>
@@ -7575,6 +7634,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ஏக்கர் அடி</unitPattern>
 				<unitPattern count="other">{0} ஏக்கர் அடி</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>புசல்கள்</displayName>
+				<unitPattern count="one">{0} புசல்</unitPattern>
+				<unitPattern count="other">{0} புசல்கள்</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>கேலன்கள்</displayName>
 				<unitPattern count="one">{0} கேலன்</unitPattern>
@@ -7626,6 +7690,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>பீப்பாய்கள்</displayName>
 				<unitPattern count="one">{0} பீப்பாய்</unitPattern>
 				<unitPattern count="other">{0} பீப்பாய்கள்</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>இனிப்புக் கரண்டி</displayName>
+				<unitPattern count="one">{0} இனிப்புக் கரண்டி</unitPattern>
+				<unitPattern count="other">{0} இனிப்புக் கரண்டி</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>இம்பீரியல் இனிப்புக் கரண்டி</displayName>
+				<unitPattern count="one">{0} இம்பீரியல் இனிப்புக் கரண்டி</unitPattern>
+				<unitPattern count="other">{0} இம்பீரியல் இனிப்புக் கரண்டி</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>துளி</displayName>
+				<unitPattern count="one">{0} துளி</unitPattern>
+				<unitPattern count="other">{0} துளி</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>டிராம்</displayName>
+				<unitPattern count="one">{0} டிராம்</unitPattern>
+				<unitPattern count="other">{0} டிராம்</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ஜிகர்</displayName>
+				<unitPattern count="one">{0} ஜிகர்</unitPattern>
+				<unitPattern count="other">{0} ஜிகர்</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>சிட்டிகை</displayName>
+				<unitPattern count="one">{0} சிட்டிகை</unitPattern>
+				<unitPattern count="other">{0} சிட்டிகை</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>இம்பீரியல் குவார்ட்</displayName>
+				<unitPattern count="one">{0} இம்பீரியல் குவார்ட்</unitPattern>
+				<unitPattern count="other">{0} இம்பீரியல் குவார்ட்</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>கார்டினல் திசை</displayName>
@@ -7692,6 +7791,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>யா.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>கிபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>மெபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>ஜிபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>டெபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>பெபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ஈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>சி.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>யி.{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -8094,6 +8217,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} பு / அங்.</unitPattern>
 				<unitPattern count="other">{0} பு / அங்.</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>புள்ளி</displayName>
+				<unitPattern count="one">{0} புள்ளி</unitPattern>
+				<unitPattern count="other">{0} புள்ளி</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>கி.மீ.</displayName>
 				<unitPattern count="one">{0} கி.மீ.</unitPattern>
@@ -8174,6 +8302,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} வா.அ.</unitPattern>
 				<unitPattern count="other">{0} வா.அ.</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>பர்</displayName>
+				<unitPattern count="one">{0} பர்</unitPattern>
+				<unitPattern count="other">{0} பர்</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ஃபே.</displayName>
+				<unitPattern count="one">{0} ஃபே.</unitPattern>
+				<unitPattern count="other">{0} ஃபே.</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>க.மை.</displayName>
 				<unitPattern count="one">{0} க.மை.</unitPattern>
@@ -8196,6 +8334,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>லக்ஸ்</displayName>
 				<unitPattern count="one">{0} லக்.</unitPattern>
 				<unitPattern count="other">{0} லக்.</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>கேண்ட.</displayName>
+				<unitPattern count="one">{0} கேண்ட.</unitPattern>
+				<unitPattern count="other">{0} கேண்ட.</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>லூம.</displayName>
+				<unitPattern count="one">{0} லூம.</unitPattern>
+				<unitPattern count="other">{0} லூம.</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>சூரிய ஒளிர்வுத்தன்மை</displayName>
@@ -8233,9 +8381,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} டன்</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">ஸ்டோ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} ஸ்டோ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ஸ்டோ.</unitPattern>
+				<displayName>ஸ்டோ.</displayName>
+				<unitPattern count="one">{0} ஸ்டோ.</unitPattern>
+				<unitPattern count="other">{0} ஸ்டோ.</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>பவு.</displayName>
@@ -8261,12 +8409,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>டால்ட்டன்ஸ்</displayName>
+				<unitPattern count="one">{0} டா.</unitPattern>
+				<unitPattern count="other">{0} டா.</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>புவித் திணிவுகள்</displayName>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>சூரியத் திணிவுகள்</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>கிரைன்</displayName>
+				<unitPattern count="one">{0} கிரைன்</unitPattern>
+				<unitPattern count="other">{0} கிரைன்</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>கி.வாட்.</displayName>
@@ -8481,6 +8636,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ஏக். அடி</unitPattern>
 				<unitPattern count="other">{0} ஏக். அடி</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>புசல்கள்</displayName>
+				<unitPattern count="one">{0} புச.</unitPattern>
+				<unitPattern count="other">{0} புச.</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>கேல.</displayName>
 				<unitPattern count="one">{0} கேல.</unitPattern>
@@ -8513,6 +8673,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} தி. அவு.</unitPattern>
 				<unitPattern count="other">{0} தி. அவு.</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>இம்பீ. தி. அவு.</displayName>
+				<unitPattern count="one">{0} தி. அவு. இம்பீ.</unitPattern>
+				<unitPattern count="other">{0} தி. அவு. இம்பீ.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>மே.க.</displayName>
 				<unitPattern count="one">{0} மே.க.</unitPattern>
@@ -8525,6 +8690,43 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>பீப்பாய்</displayName>
+				<unitPattern count="one">{0} பீப்.</unitPattern>
+				<unitPattern count="other">{0} பீப்.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>இ.க.</displayName>
+				<unitPattern count="one">{0} இ.க.</unitPattern>
+				<unitPattern count="other">{0} இ.க.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>இ.க. இம்பீ.</displayName>
+				<unitPattern count="one">{0} இ.க. இம்பீ.</unitPattern>
+				<unitPattern count="other">{0} இ.க. இம்பீ.</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>துளி</displayName>
+				<unitPattern count="one">{0} துளி</unitPattern>
+				<unitPattern count="other">{0} துளி</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>டிரா.தி.</displayName>
+				<unitPattern count="one">{0} டிரா.தி.</unitPattern>
+				<unitPattern count="other">{0} டிரா.தி.</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ஜிக.</displayName>
+				<unitPattern count="one">{0} ஜிக.</unitPattern>
+				<unitPattern count="other">{0} ஜிக.</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>சிட்டி</displayName>
+				<unitPattern count="one">{0} சிட்டி</unitPattern>
+				<unitPattern count="other">{0} சிட்டி</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>குவாட். இம்பீ.</displayName>
+				<unitPattern count="one">{0} குவாட். இம்பீ.</unitPattern>
+				<unitPattern count="other">{0} குவாட். இம்பீ.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>திசை</displayName>
@@ -8540,6 +8742,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p12">
 				<unitPrefixPattern>டெரா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>கிபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>மெபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>ஜிபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>டெபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>பெபி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ஈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>சி.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>யி.{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -8891,6 +9117,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">ஸ்கிரிப்டுகள்— {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} கோடு</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} கோடுகள்</characterLabelPattern>
+		<characterLabelPattern type="subscript">துணைஸ்கிரிப்ட் {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">சூப்பர்ஸ்கிரிப்ட் {0}</characterLabelPattern>
 		<characterLabel type="activities">செயல்பாடுகள்</characterLabel>
 		<characterLabel type="african_scripts">ஆப்பிரிக்க ஸ்கிரிப்டுகள்</characterLabel>
 		<characterLabel type="american_scripts">அமெரிக்க ஸ்கிரிப்டுகள்</characterLabel>

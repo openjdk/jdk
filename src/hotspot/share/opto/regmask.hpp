@@ -56,11 +56,15 @@ static unsigned int find_highest_bit(uintptr_t mask) {
 
 class RegMask {
 
-  enum {
-    _WordBits    = BitsPerWord,
-    _LogWordBits = LogBitsPerWord,
-    _RM_SIZE     = LP64_ONLY(align_up(RM_SIZE, 2) >> 1) NOT_LP64(RM_SIZE)
-  };
+  friend class RegMaskIterator;
+
+  // The RM_SIZE is aligned to 64-bit - assert that this holds
+  LP64_ONLY(STATIC_ASSERT(is_aligned(RM_SIZE, 2)));
+
+  static const unsigned int _WordBitMask = BitsPerWord - 1U;
+  static const unsigned int _LogWordBits = LogBitsPerWord;
+  static const unsigned int _RM_SIZE     = LP64_ONLY(RM_SIZE >> 1) NOT_LP64(RM_SIZE);
+  static const unsigned int _RM_MAX      = _RM_SIZE - 1U;
 
   union {
     // Array of Register Mask bits.  This array is large enough to cover
@@ -80,7 +84,7 @@ class RegMask {
   unsigned int _hwm;
 
  public:
-  enum { CHUNK_SIZE = RM_SIZE*BitsPerInt };
+  enum { CHUNK_SIZE = _RM_SIZE * BitsPerWord };
 
   // SlotsPerLong is 2, since slots are 32 bits and longs are 64 bits.
   // Also, consider the maximum alignment size for a normally allocated
@@ -119,7 +123,7 @@ class RegMask {
     FORALL_BODY
 #   undef BODY
     _lwm = 0;
-    _hwm = _RM_SIZE - 1;
+    _hwm = _RM_MAX;
     while (_hwm > 0      && _RM_UP[_hwm] == 0) _hwm--;
     while ((_lwm < _hwm) && _RM_UP[_lwm] == 0) _lwm++;
     assert(valid_watermarks(), "post-condition");
@@ -136,7 +140,7 @@ class RegMask {
   }
 
   // Construct an empty mask
-  RegMask() : _RM_UP(), _lwm(_RM_SIZE - 1), _hwm(0) {
+  RegMask() : _RM_UP(), _lwm(_RM_MAX), _hwm(0) {
     assert(valid_watermarks(), "post-condition");
   }
 
@@ -150,15 +154,19 @@ class RegMask {
     assert(reg < CHUNK_SIZE, "");
 
     unsigned r = (unsigned)reg;
-    return _RM_UP[r >> _LogWordBits] & (uintptr_t(1) <<(r & (_WordBits - 1U)));
+    return _RM_UP[r >> _LogWordBits] & (uintptr_t(1) << (r & _WordBitMask));
   }
 
   // The last bit in the register mask indicates that the mask should repeat
   // indefinitely with ONE bits.  Returns TRUE if mask is infinite or
   // unbounded in size.  Returns FALSE if mask is finite size.
-  bool is_AllStack() const { return _RM_UP[_RM_SIZE - 1U] >> (_WordBits - 1U); }
+  bool is_AllStack() const {
+    return (_RM_UP[_RM_MAX] & (uintptr_t(1) << _WordBitMask)) != 0;
+  }
 
-  void set_AllStack() { Insert(OptoReg::Name(CHUNK_SIZE-1)); }
+  void set_AllStack() {
+    _RM_UP[_RM_MAX] |= (uintptr_t(1) << _WordBitMask);
+  }
 
   // Test for being a not-empty mask.
   bool is_NotEmpty() const {
@@ -176,7 +184,7 @@ class RegMask {
     for (unsigned i = _lwm; i <= _hwm; i++) {
       uintptr_t bits = _RM_UP[i];
       if (bits) {
-        return OptoReg::Name((i<<_LogWordBits) + find_lowest_bit(bits));
+        return OptoReg::Name((i << _LogWordBits) + find_lowest_bit(bits));
       }
     }
     return OptoReg::Name(OptoReg::Bad);
@@ -190,7 +198,7 @@ class RegMask {
     while (i > _lwm) {
       uintptr_t bits = _RM_UP[--i];
       if (bits) {
-        return OptoReg::Name((i<<_LogWordBits) + find_highest_bit(bits));
+        return OptoReg::Name((i << _LogWordBits) + find_highest_bit(bits));
       }
     }
     return OptoReg::Name(OptoReg::Bad);
@@ -268,17 +276,17 @@ class RegMask {
 
   // Clear a register mask
   void Clear() {
-    _lwm = _RM_SIZE - 1;
+    _lwm = _RM_MAX;
     _hwm = 0;
-    memset(_RM_UP, 0, sizeof(uintptr_t)*_RM_SIZE);
+    memset(_RM_UP, 0, sizeof(uintptr_t) * _RM_SIZE);
     assert(valid_watermarks(), "sanity");
   }
 
   // Fill a register mask with 1's
   void Set_All() {
     _lwm = 0;
-    _hwm = _RM_SIZE - 1;
-    memset(_RM_UP, 0xFF, sizeof(uintptr_t)*_RM_SIZE);
+    _hwm = _RM_MAX;
+    memset(_RM_UP, 0xFF, sizeof(uintptr_t) * _RM_SIZE);
     assert(valid_watermarks(), "sanity");
   }
 
@@ -292,7 +300,7 @@ class RegMask {
     unsigned index = r >> _LogWordBits;
     if (index > _hwm) _hwm = index;
     if (index < _lwm) _lwm = index;
-    _RM_UP[index] |= (uintptr_t(1) << (r & (_WordBits - 1U)));
+    _RM_UP[index] |= (uintptr_t(1) << (r & _WordBitMask));
     assert(valid_watermarks(), "post-condition");
   }
 
@@ -300,7 +308,7 @@ class RegMask {
   void Remove(OptoReg::Name reg) {
     assert(reg < CHUNK_SIZE, "");
     unsigned r = (unsigned)reg;
-    _RM_UP[r >> _LogWordBits] &= ~(uintptr_t(1) << (r & (_WordBits-1U)));
+    _RM_UP[r >> _LogWordBits] &= ~(uintptr_t(1) << (r & _WordBitMask));
   }
 
   // OR 'rm' into 'this'
@@ -353,12 +361,74 @@ class RegMask {
     // NOTE: -1 in computation reflects the usage of the last
     //       bit of the regmask as an infinite stack flag and
     //       -7 is to keep mask aligned for largest value (VecZ).
-    return (int)reg < (int)(CHUNK_SIZE-1);
+    return (int)reg < (int)(CHUNK_SIZE - 1);
   }
   static bool can_represent_arg(OptoReg::Name reg) {
     // NOTE: -SlotsPerVecZ in computation reflects the need
     //       to keep mask aligned for largest value (VecZ).
-    return (int)reg < (int)(CHUNK_SIZE-SlotsPerVecZ);
+    return (int)reg < (int)(CHUNK_SIZE - SlotsPerVecZ);
+  }
+};
+
+class RegMaskIterator {
+ private:
+  uintptr_t _current_bits;
+  unsigned int _next_index;
+  OptoReg::Name _reg;
+  const RegMask& _rm;
+ public:
+  RegMaskIterator(const RegMask& rm) : _current_bits(0), _next_index(rm._lwm), _reg(OptoReg::Bad), _rm(rm) {
+    // Calculate the first element
+    next();
+  }
+
+  bool has_next() {
+    return _reg != OptoReg::Bad;
+  }
+
+  // Get the current element and calculate the next
+  OptoReg::Name next() {
+    OptoReg::Name r = _reg;
+
+    // This bit shift scheme, borrowed from IndexSetIterator,
+    // shifts the _current_bits down by the number of trailing
+    // zeros - which leaves the "current" bit on position zero,
+    // then subtracts by 1 to clear it. This quirk avoids the
+    // undefined behavior that could arise if trying to shift
+    // away the bit with a single >> (next_bit + 1) shift when
+    // next_bit is 31/63. It also keeps number of shifts and
+    // arithmetic ops to a minimum.
+
+    // We have previously found bits at _next_index - 1, and
+    // still have some left at the same index.
+    if (_current_bits != 0) {
+      unsigned int next_bit = find_lowest_bit(_current_bits);
+      assert(_reg != OptoReg::Bad, "can't be in a bad state");
+      assert(next_bit > 0, "must be");
+      assert(((_current_bits >> next_bit) & 0x1) == 1, "lowest bit must be set after shift");
+      _current_bits = (_current_bits >> next_bit) - 1;
+      _reg = OptoReg::add(_reg, next_bit);
+      return r;
+    }
+
+    // Find the next word with bits
+    while (_next_index <= _rm._hwm) {
+      _current_bits = _rm._RM_UP[_next_index++];
+      if (_current_bits != 0) {
+        // Found a word. Calculate the first register element and
+        // prepare _current_bits by shifting it down and clearing
+        // the lowest bit
+        unsigned int next_bit = find_lowest_bit(_current_bits);
+        assert(((_current_bits >> next_bit) & 0x1) == 1, "lowest bit must be set after shift");
+        _current_bits = (_current_bits >> next_bit) - 1;
+        _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + next_bit);
+        return r;
+      }
+    }
+
+    // No more bits
+    _reg = OptoReg::Name(OptoReg::Bad);
+    return r;
   }
 };
 

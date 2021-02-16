@@ -66,6 +66,10 @@ public class Diagnostics implements javax.tools.DiagnosticListener<JavaFileObjec
         return null;
     }
 
+    public List<Diagnostic<?>> getAllDiags() {
+        return diags.stream().map(d -> (Diagnostic<?>)d).collect(toList());
+    }
+
     /** Do the diagnostics contain the specified error key? */
     public boolean containsErrorKey(String key) {
         return diags.stream()

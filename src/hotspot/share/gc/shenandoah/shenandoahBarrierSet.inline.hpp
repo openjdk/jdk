@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
 
-#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
@@ -35,7 +35,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 
 inline oop ShenandoahBarrierSet::resolve_forwarded_not_null(oop p) {
@@ -113,7 +112,6 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
   if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value || HasDecorator<decorators, ON_UNKNOWN_OOP_REF>::value) &&
       obj != NULL && _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked_strong(obj)) {
-    assert(Thread::current()->is_Java_thread(), "only Java threads get here");
     return NULL;
   }
 
@@ -143,7 +141,8 @@ inline void ShenandoahBarrierSet::enqueue(oop obj) {
   // filtering here helps to avoid wasteful SATB queueing work to begin with.
   if (!_heap->requires_marking(obj)) return;
 
-  ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).enqueue_known_active(obj);
+  SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(Thread::current());
+  _satb_mark_queue_set.enqueue_known_active(queue, obj);
 }
 
 template <DecoratorSet decorators, typename T>
@@ -166,8 +165,8 @@ inline void ShenandoahBarrierSet::satb_enqueue(oop value) {
   }
 }
 
-inline void ShenandoahBarrierSet::storeval_barrier(oop obj) {
-  if (ShenandoahStoreValEnqueueBarrier && obj != NULL && _heap->is_concurrent_mark_in_progress()) {
+inline void ShenandoahBarrierSet::iu_barrier(oop obj) {
+  if (ShenandoahIUBarrier && obj != NULL && _heap->is_concurrent_mark_in_progress()) {
     enqueue(obj);
   }
 }
@@ -228,7 +227,7 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
   shenandoah_assert_marked_if(NULL, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress());
   shenandoah_assert_not_in_cset_if(addr, value, value != NULL && !ShenandoahHeap::heap()->cancelled_gc());
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
-  bs->storeval_barrier(value);
+  bs->iu_barrier(value);
   bs->satb_barrier<decorators>(addr);
   Raw::oop_store(addr, value);
 }
@@ -252,7 +251,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_not_in_heap(T* addr, oop compare_value, oop new_value) {
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-  bs->storeval_barrier(new_value);
+  bs->iu_barrier(new_value);
 
   oop res;
   oop expected = compare_value;
@@ -284,7 +283,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_not_in_heap(T* addr, oop new_value) {
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-  bs->storeval_barrier(new_value);
+  bs->iu_barrier(new_value);
 
   oop previous = Raw::oop_atomic_xchg(addr, new_value);
 
@@ -350,7 +349,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         obj = fwd;
       }
       if (ENQUEUE && !ctx->is_marked_strong(obj)) {
-        queue.enqueue_known_active(obj);
+        _satb_mark_queue_set.enqueue_known_active(queue, obj);
       }
     }
   }

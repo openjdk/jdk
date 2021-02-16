@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public enum ElementKind {
     PACKAGE,
 
     // Declared types
-    /** An enum type. */
+    /** An enum class. */
     ENUM,
     /**
      * A class not described by a more specific kind (like {@code
@@ -52,7 +52,7 @@ public enum ElementKind {
      */
     CLASS,
 
-    /** An annotation type. */
+    /** An annotation interface. (Formerly known as an annotation type.) */
     ANNOTATION_TYPE,
     /**
      * An interface not described by a more specific kind (like
@@ -109,7 +109,7 @@ public enum ElementKind {
      MODULE,
 
     /**
-     * A record type.
+     * A record class.
      * @since 16
      */
     RECORD,

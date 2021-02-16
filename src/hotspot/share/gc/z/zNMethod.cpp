@@ -28,12 +28,12 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zNMethodData.hpp"
 #include "gc/z/zNMethodTable.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
@@ -41,6 +41,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
@@ -243,6 +244,26 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
   }
 }
 
+class ZNMethodOopClosure : public OopClosure {
+public:
+  virtual void do_oop(oop* p) {
+    if (ZResurrection::is_blocked()) {
+      ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(p);
+    } else {
+      ZBarrier::load_barrier_on_root_oop_field(p);
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+void ZNMethod::nmethod_oops_barrier(nmethod* nm) {
+  ZNMethodOopClosure cl;
+  nmethod_oops_do_inner(nm, &cl);
+}
+
 void ZNMethod::nmethods_do_begin() {
   ZNMethodTable::nmethods_do_begin();
 }
@@ -307,8 +328,7 @@ public:
 
     if (ZNMethod::is_armed(nm)) {
       // Heal oops and disarm
-      ZNMethodOopClosure cl;
-      ZNMethod::nmethod_oops_do(nm, &cl);
+      ZNMethod::nmethod_oops_barrier(nm);
       ZNMethod::disarm(nm);
     }
 

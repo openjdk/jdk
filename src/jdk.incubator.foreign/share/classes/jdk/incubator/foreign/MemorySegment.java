@@ -50,11 +50,14 @@ import java.util.Spliterator;
  * operations on a segment cannot occur after a memory segment has been closed (see {@link MemorySegment#close()}).
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
- * use of identity-sensitive operations (including reference equality ({@code ==}), identity hash code, or synchronization) on
- * instances of {@code MemorySegment} may have unpredictable results and should be avoided. The {@code equals} method should
- * be used for comparisons.
+ * programmers should treat instances that are {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may occur. For example, in a future release,
+ * synchronization may fail. The {@code equals} method should be used for comparisons.
  * <p>
  * Non-platform classes should not implement {@linkplain MemorySegment} directly.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
  * <h2>Constructing memory segments</h2>
  *
@@ -323,7 +326,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @param newBase The new segment base address.
      * @param newSize The new segment size, specified in bytes.
      * @return a new memory segment view with updated base/limit addresses.
-     * @throws NullPointerException if {@code newBase == null}.
      * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()}, {@code newSize < 0}, or {@code newSize > byteSize() - offset}
      */
     default MemorySegment asSlice(MemoryAddress newBase, long newSize) {
@@ -367,7 +369,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      *
      * @param newBase The new segment base offset (relative to the current segment base address), specified in bytes.
      * @return a new memory segment view with updated base/limit addresses.
-     * @throws NullPointerException if {@code newBase == null}.
      * @throws IndexOutOfBoundsException if {@code address.segmentOffset(this) < 0}, or {@code address.segmentOffset(this) > byteSize()}.
      */
     default MemorySegment asSlice(MemoryAddress newBase) {
@@ -431,9 +432,35 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment.
      * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
-     * @throws NullPointerException if {@code thread == null}
      */
     MemorySegment handoff(Thread thread);
+
+    /**
+     * Obtains a new confined memory segment backed by the same underlying memory region as this segment, but whose
+     * temporal bounds are controlled by the provided {@link NativeScope} instance.
+     * <p>
+     * This is a <em>terminal operation</em>;
+     * as a side-effect, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
+     * will fail with {@link IllegalStateException}.
+     * <p>
+     * The returned segment will feature only {@link MemorySegment#READ} and {@link MemorySegment#WRITE} access modes
+     * (assuming these were available in the original segment). As such the returned segment cannot be closed directly
+     * using {@link MemorySegment#close()} - but it will be closed indirectly when this native scope is closed. The
+     * returned segment will also be confined by the same thread as the provided native scope (see {@link NativeScope#ownerThread()}).
+     * <p>
+     * In case where the owner thread of the returned segment differs from that of this segment, write accesses to this
+     * segment's content <a href="../../../java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+     * hand-over from the current owner thread to the new owner thread, which in turn <i>happens before</i> read accesses
+     * to the returned segment's contents on the new owner thread.
+     *
+     * @param nativeScope the native scope.
+     * @return a new confined memory segment backed by the same underlying memory region as this segment, but whose life-cycle
+     * is tied to that of {@code nativeScope}.
+     * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
+     * thread owning this segment.
+     * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
+     */
+    MemorySegment handoff(NativeScope nativeScope);
 
     /**
      * Obtains a new shared memory segment backed by the same underlying memory region as this segment. The returned segment will
@@ -691,7 +718,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a new confined array memory segment.
      */
     static MemorySegment ofArray(byte[] arr) {
-        return HeapMemorySegmentImpl.makeArraySegment(arr);
+        return HeapMemorySegmentImpl.OfByte.fromArray(arr);
     }
 
     /**
@@ -705,7 +732,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a new confined array memory segment.
      */
     static MemorySegment ofArray(char[] arr) {
-        return HeapMemorySegmentImpl.makeArraySegment(arr);
+        return HeapMemorySegmentImpl.OfChar.fromArray(arr);
     }
 
     /**
@@ -719,7 +746,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a new confined array memory segment.
      */
     static MemorySegment ofArray(short[] arr) {
-        return HeapMemorySegmentImpl.makeArraySegment(arr);
+        return HeapMemorySegmentImpl.OfShort.fromArray(arr);
     }
 
     /**
@@ -733,7 +760,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a new confined array memory segment.
      */
     static MemorySegment ofArray(int[] arr) {
-        return HeapMemorySegmentImpl.makeArraySegment(arr);
+        return HeapMemorySegmentImpl.OfInt.fromArray(arr);
     }
 
     /**
@@ -747,7 +774,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a new confined array memory segment.
      */
     static MemorySegment ofArray(float[] arr) {
-        return HeapMemorySegmentImpl.makeArraySegment(arr);
+        return HeapMemorySegmentImpl.OfFloat.fromArray(arr);
     }
 
     /**
@@ -761,7 +788,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a new confined array memory segment.
      */
     static MemorySegment ofArray(long[] arr) {
-        return HeapMemorySegmentImpl.makeArraySegment(arr);
+        return HeapMemorySegmentImpl.OfLong.fromArray(arr);
     }
 
     /**
@@ -775,7 +802,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a new confined array memory segment.
      */
     static MemorySegment ofArray(double[] arr) {
-        return HeapMemorySegmentImpl.makeArraySegment(arr);
+        return HeapMemorySegmentImpl.OfDouble.fromArray(arr);
     }
 
     /**
@@ -795,6 +822,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalArgumentException if the specified layout has illegal size or alignment constraint.
      */
     static MemorySegment allocateNative(MemoryLayout layout) {
+        Objects.requireNonNull(layout);
         return allocateNative(layout.byteSize(), layout.byteAlignment());
     }
 
@@ -848,10 +876,9 @@ allocateNative(bytesSize, 1);
      * @param mapMode a file mapping mode, see {@link FileChannel#map(FileChannel.MapMode, long, long)}; the chosen mapping mode
      *                might affect the behavior of the returned memory mapped segment (see {@link MappedMemorySegments#force(MemorySegment)}).
      * @return a new confined mapped memory segment.
-     * @throws IllegalArgumentException if {@code bytesOffset < 0}.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}.
-     * @throws UnsupportedOperationException if an unsupported map mode is specified, or if the {@code path} is associated
-     * with a provider that does not support creating file channels.
+     * @throws IllegalArgumentException if {@code bytesOffset < 0}, {@code bytesSize < 0}, or if {@code path} is not associated
+     * with the default file system.
+     * @throws UnsupportedOperationException if an unsupported map mode is specified.
      * @throws IOException if the specified path does not point to an existing file, or if some other I/O error occurs.
      * @throws  SecurityException If a security manager is installed and it denies an unspecified permission required by the implementation.
      * In the case of the default provider, the {@link SecurityManager#checkRead(String)} method is invoked to check
@@ -946,7 +973,7 @@ allocateNative(bytesSize, 1);
 
     /**
      * Handoff access mode; this segment support serial thread-confinement via thread ownership changes
-     * (see {@link #handoff(Thread)}).
+     * (see {@link #handoff(NativeScope)} and {@link #handoff(Thread)}).
      * @see MemorySegment#accessModes()
      * @see MemorySegment#withAccessModes(int)
      */

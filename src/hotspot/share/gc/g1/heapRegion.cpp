@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/nmethod.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -77,7 +78,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   region_size = clamp(region_size, HeapRegionBounds::min_size(), HeapRegionBounds::max_size());
 
   // Calculate the log for the region size.
-  int region_size_log = exact_log2_long((jlong)region_size);
+  int region_size_log = log2i_exact(region_size);
 
   // Now, set up the globals.
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
@@ -98,7 +99,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
 
-  LogCardsPerRegion = log2_long((jlong) CardsPerRegion);
+  LogCardsPerRegion = log2i(CardsPerRegion);
 
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(G1HeapRegionSize, GrainBytes);
@@ -138,7 +139,7 @@ void HeapRegion::hr_clear(bool clear_space) {
   if (clear_space) clear(SpaceDecorator::Mangle);
 
   _evacuation_failed = false;
-  _gc_efficiency = 0.0;
+  _gc_efficiency = -1.0;
 }
 
 void HeapRegion::clear_cardtable() {
@@ -254,7 +255,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
-  _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(0.0),
+  _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),

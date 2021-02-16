@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compileTask.hpp"
+#include "compiler/compilerThread.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
@@ -33,10 +34,12 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
+#include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
 JVMCIRuntime* JVMCI::_java_runtime = NULL;
 volatile bool JVMCI::_is_initialized = false;
+bool JVMCI::_box_caches_initialized = false;
 void* JVMCI::_shared_library_handle = NULL;
 char* JVMCI::_shared_library_path = NULL;
 volatile bool JVMCI::_in_shutdown = false;
@@ -123,6 +126,32 @@ void JVMCI::initialize_globals() {
     // There is only a single runtime
     _java_runtime = _compiler_runtime = new JVMCIRuntime(0);
   }
+}
+
+void JVMCI::ensure_box_caches_initialized(TRAPS) {
+  if (_box_caches_initialized) {
+    return;
+  }
+
+  // While multiple threads may reach here, that's fine
+  // since class initialization is synchronized.
+  Symbol* box_classes[] = {
+    java_lang_Boolean::symbol(),
+    java_lang_Byte_ByteCache::symbol(),
+    java_lang_Short_ShortCache::symbol(),
+    java_lang_Character_CharacterCache::symbol(),
+    java_lang_Integer_IntegerCache::symbol(),
+    java_lang_Long_LongCache::symbol()
+  };
+
+  for (unsigned i = 0; i < sizeof(box_classes) / sizeof(Symbol*); i++) {
+    Klass* k = SystemDictionary::resolve_or_fail(box_classes[i], true, CHECK);
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->is_not_initialized()) {
+      ik->initialize(CHECK);
+    }
+  }
+  _box_caches_initialized = true;
 }
 
 JavaThread* JVMCI::compilation_tick(JavaThread* thread) {

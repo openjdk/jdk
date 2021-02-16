@@ -44,8 +44,7 @@ ZObjectAllocator::ZObjectAllocator() :
     _used(0),
     _undone(0),
     _shared_medium_page(NULL),
-    _shared_small_page(NULL),
-    _worker_small_page(NULL) {}
+    _shared_small_page(NULL) {}
 
 ZPage** ZObjectAllocator::shared_small_page_addr() {
   return _use_per_cpu_shared_small_pages ? _shared_small_page.addr() : _shared_small_page.addr(0);
@@ -122,8 +121,6 @@ uintptr_t ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
 }
 
 uintptr_t ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags flags) {
-  assert(ZThread::is_java(), "Should be a Java thread");
-
   uintptr_t addr = 0;
 
   // Allocate new large page
@@ -141,43 +138,8 @@ uintptr_t ZObjectAllocator::alloc_medium_object(size_t size, ZAllocationFlags fl
   return alloc_object_in_shared_page(_shared_medium_page.addr(), ZPageTypeMedium, ZPageSizeMedium, size, flags);
 }
 
-uintptr_t ZObjectAllocator::alloc_small_object_from_nonworker(size_t size, ZAllocationFlags flags) {
-  assert(!ZThread::is_worker(), "Should not be a worker thread");
-
-  // Non-worker small page allocation can never use the reserve
-  flags.set_no_reserve();
-
-  return alloc_object_in_shared_page(shared_small_page_addr(), ZPageTypeSmall, ZPageSizeSmall, size, flags);
-}
-
-uintptr_t ZObjectAllocator::alloc_small_object_from_worker(size_t size, ZAllocationFlags flags) {
-  assert(ZThread::is_worker(), "Should be a worker thread");
-
-  ZPage* page = _worker_small_page.get();
-  uintptr_t addr = 0;
-
-  if (page != NULL) {
-    addr = page->alloc_object(size);
-  }
-
-  if (addr == 0) {
-    // Allocate new page
-    page = alloc_page(ZPageTypeSmall, ZPageSizeSmall, flags);
-    if (page != NULL) {
-      addr = page->alloc_object(size);
-    }
-    _worker_small_page.set(page);
-  }
-
-  return addr;
-}
-
 uintptr_t ZObjectAllocator::alloc_small_object(size_t size, ZAllocationFlags flags) {
-  if (flags.worker_thread()) {
-    return alloc_small_object_from_worker(size, flags);
-  } else {
-    return alloc_small_object_from_nonworker(size, flags);
-  }
+  return alloc_object_in_shared_page(shared_small_page_addr(), ZPageTypeSmall, ZPageSizeSmall, size, flags);
 }
 
 uintptr_t ZObjectAllocator::alloc_object(size_t size, ZAllocationFlags flags) {
@@ -194,85 +156,28 @@ uintptr_t ZObjectAllocator::alloc_object(size_t size, ZAllocationFlags flags) {
 }
 
 uintptr_t ZObjectAllocator::alloc_object(size_t size) {
-  assert(ZThread::is_java(), "Must be a Java thread");
-
   ZAllocationFlags flags;
-  flags.set_no_reserve();
-
   return alloc_object(size, flags);
 }
 
-uintptr_t ZObjectAllocator::alloc_object_for_relocation(size_t size) {
+uintptr_t ZObjectAllocator::alloc_object_non_blocking(size_t size) {
   ZAllocationFlags flags;
-  flags.set_relocation();
   flags.set_non_blocking();
-
-  if (ZThread::is_worker()) {
-    flags.set_worker_thread();
-  }
-
   return alloc_object(size, flags);
 }
 
-bool ZObjectAllocator::undo_alloc_large_object(ZPage* page) {
-  assert(page->type() == ZPageTypeLarge, "Invalid page type");
-
-  // Undo page allocation
-  undo_alloc_page(page);
-  return true;
-}
-
-bool ZObjectAllocator::undo_alloc_medium_object(ZPage* page, uintptr_t addr, size_t size) {
-  assert(page->type() == ZPageTypeMedium, "Invalid page type");
-
-  // Try atomic undo on shared page
-  return page->undo_alloc_object_atomic(addr, size);
-}
-
-bool ZObjectAllocator::undo_alloc_small_object_from_nonworker(ZPage* page, uintptr_t addr, size_t size) {
-  assert(page->type() == ZPageTypeSmall, "Invalid page type");
-
-  // Try atomic undo on shared page
-  return page->undo_alloc_object_atomic(addr, size);
-}
-
-bool ZObjectAllocator::undo_alloc_small_object_from_worker(ZPage* page, uintptr_t addr, size_t size) {
-  assert(page->type() == ZPageTypeSmall, "Invalid page type");
-  assert(page == _worker_small_page.get(), "Invalid page");
-
-  // Non-atomic undo on worker-local page
-  const bool success = page->undo_alloc_object(addr, size);
-  assert(success, "Should always succeed");
-  return success;
-}
-
-bool ZObjectAllocator::undo_alloc_small_object(ZPage* page, uintptr_t addr, size_t size) {
-  if (ZThread::is_worker()) {
-    return undo_alloc_small_object_from_worker(page, addr, size);
-  } else {
-    return undo_alloc_small_object_from_nonworker(page, addr, size);
-  }
-}
-
-bool ZObjectAllocator::undo_alloc_object(ZPage* page, uintptr_t addr, size_t size) {
+void ZObjectAllocator::undo_alloc_object(ZPage* page, uintptr_t addr, size_t size) {
   const uint8_t type = page->type();
 
-  if (type == ZPageTypeSmall) {
-    return undo_alloc_small_object(page, addr, size);
-  } else if (type == ZPageTypeMedium) {
-    return undo_alloc_medium_object(page, addr, size);
-  } else {
-    return undo_alloc_large_object(page);
-  }
-}
-
-void ZObjectAllocator::undo_alloc_object_for_relocation(ZPage* page, uintptr_t addr, size_t size) {
-  if (undo_alloc_object(page, addr, size)) {
+  if (type == ZPageTypeLarge) {
+    undo_alloc_page(page);
     ZStatInc(ZCounterUndoObjectAllocationSucceeded);
   } else {
-    ZStatInc(ZCounterUndoObjectAllocationFailed);
-    log_trace(gc)("Failed to undo object allocation: " PTR_FORMAT ", Size: " SIZE_FORMAT ", Thread: " PTR_FORMAT " (%s)",
-                  addr, size, ZThread::id(), ZThread::name());
+    if (page->undo_alloc_object_atomic(addr, size)) {
+      ZStatInc(ZCounterUndoObjectAllocationSucceeded);
+    } else {
+      ZStatInc(ZCounterUndoObjectAllocationFailed);
+    }
   }
 }
 
@@ -314,5 +219,4 @@ void ZObjectAllocator::retire_pages() {
   // Reset allocation pages
   _shared_medium_page.set(NULL);
   _shared_small_page.set_all(NULL);
-  _worker_small_page.set_all(NULL);
 }

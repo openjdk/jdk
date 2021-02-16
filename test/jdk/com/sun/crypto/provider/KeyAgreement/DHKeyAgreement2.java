@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
 import java.security.interfaces.*;
+import java.util.HexFormat;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
@@ -51,6 +52,10 @@ import javax.crypto.interfaces.*;
 public class DHKeyAgreement2 {
 
     private static final String SUNJCE = "SunJCE";
+
+    // Hex formatter to upper case with ":" delimiter
+    private static final HexFormat HEX_FORMATTER = HexFormat.ofDelimiter(":").withUpperCase();
+
     private DHKeyAgreement2() {}
 
     public static void main(String argv[]) throws Exception {
@@ -209,8 +214,8 @@ public class DHKeyAgreement2 {
             System.out.println("EXPECTED:  " + e.getMessage());
         }
 
-        System.out.println("Alice secret: " + toHexString(aliceSharedSecret));
-        System.out.println("Bob secret: " + toHexString(bobSharedSecret));
+        System.out.println("Alice secret: " + HEX_FORMATTER.formatHex(aliceSharedSecret));
+        System.out.println("Bob secret: " + HEX_FORMATTER.formatHex(bobSharedSecret));
 
         if (aliceLen != bobLen) {
             throw new Exception("Shared secrets have different lengths");
@@ -260,23 +265,6 @@ public class DHKeyAgreement2 {
         int low = (b & 0x0f);
         buf.append(hexChars[high]);
         buf.append(hexChars[low]);
-    }
-
-    /*
-     * Converts a byte array to hex string
-     */
-    private String toHexString(byte[] block) {
-        StringBuffer buf = new StringBuffer();
-
-        int len = block.length;
-
-        for (int i = 0; i < len; i++) {
-             byte2hex(block[i], buf);
-             if (i < len-1) {
-                 buf.append(":");
-             }
-        }
-        return buf.toString();
     }
 
     /*

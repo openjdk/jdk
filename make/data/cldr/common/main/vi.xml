@@ -174,7 +174,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ewo">Tiếng Ewondo</language>
 			<language type="ext">Tiếng Extremadura</language>
 			<language type="fa">Tiếng Ba Tư</language>
-			<language type="fa_AF" draft="contributed">Tiếng Dari</language>
+			<language type="fa_AF">Tiếng Dari</language>
 			<language type="fan">Tiếng Fang</language>
 			<language type="fat">Tiếng Fanti</language>
 			<language type="ff">Tiếng Fulah</language>
@@ -227,7 +227,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hif">Tiếng Fiji Hindi</language>
 			<language type="hil">Tiếng Hiligaynon</language>
 			<language type="hit">Tiếng Hittite</language>
-			<language type="hmn">Tiếng Hmông</language>
+			<language type="hmn">Tiếng H’Mông</language>
 			<language type="ho">Tiếng Hiri Motu</language>
 			<language type="hr">Tiếng Croatia</language>
 			<language type="hsb">Tiếng Thượng Sorbia</language>
@@ -886,7 +886,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Guinea-Bissau</territory>
 			<territory type="GY">Guyana</territory>
-			<territory type="HK">Hồng Kông, Trung Quốc</territory>
+			<territory type="HK">Đặc khu Hành chính Hồng Kông, Trung Quốc</territory>
 			<territory type="HK" alt="short">Hồng Kông</territory>
 			<territory type="HM">Quần đảo Heard và McDonald</territory>
 			<territory type="HN">Honduras</territory>
@@ -941,7 +941,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar (Miến Điện)</territory>
 			<territory type="MN">Mông Cổ</territory>
-			<territory type="MO">Macao, Trung Quốc</territory>
+			<territory type="MO">Đặc khu Hành chính Macao, Trung Quốc</territory>
 			<territory type="MO" alt="short">Macao</territory>
 			<territory type="MP">Quần đảo Bắc Mariana</territory>
 			<territory type="MQ">Martinique</territory>
@@ -1009,8 +1009,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SV">El Salvador</territory>
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Syria</territory>
-			<territory type="SZ">Swaziland</territory>
-			<territory type="SZ" alt="variant">Eswatini</territory>
+			<territory type="SZ">Eswatini</territory>
+			<territory type="SZ" alt="variant">Swaziland</territory>
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">Quần đảo Turks và Caicos</territory>
 			<territory type="TD">Chad</territory>
@@ -1040,7 +1040,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="VC">St. Vincent và Grenadines</territory>
 			<territory type="VE">Venezuela</territory>
 			<territory type="VG">Quần đảo Virgin thuộc Anh</territory>
-			<territory type="VI">Quần đảo Virgin thuộc Mỹ</territory>
+			<territory type="VI">Quần đảo Virgin thuộc Hoa Kỳ</territory>
 			<territory type="VN">Việt Nam</territory>
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Wallis và Futuna</territory>
@@ -2344,15 +2344,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">Trước CN</era>
-						<era type="0" alt="variant">trước CN</era>
-						<era type="1">sau CN</era>
-						<era type="1" alt="variant">CN</era>
+						<era type="0">Trước Thiên Chúa</era>
+						<era type="0" alt="variant">Trước Công Nguyên</era>
+						<era type="1">Sau Công Nguyên</era>
+						<era type="1" alt="variant">Công Nguyên</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">Trước CN</era>
 						<era type="0" alt="variant">trước CN</era>
-						<era type="1">sau CN</era>
+						<era type="1">Sau CN</era>
 						<era type="1" alt="variant">CN</era>
 					</eraAbbr>
 					<eraNarrow>
@@ -3043,6 +3043,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="day-short">
 				<displayName>Ngày</displayName>
 				<relative type="-2" draft="contributed">Hôm kia</relative>
+				<relative type="-1">hôm qua</relative>
+				<relative type="0">hôm nay</relative>
+				<relative type="1">ngày mai</relative>
 				<relative type="2" draft="contributed">Ngày kia</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">sau {0} ngày nữa</relativeTimePattern>
@@ -3448,7 +3451,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Thành phố Không xác định</exemplarCity>
+				<exemplarCity>Thành phố không xác định</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity>Andorra</exemplarCity>
@@ -4383,9 +4386,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Mát-xcơ-va</exemplarCity>
 			</zone>
@@ -4580,6 +4580,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporozhye</exemplarCity>
@@ -4945,8 +4948,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Azores">
 				<long>
 					<generic>Giờ Azores</generic>
-					<standard>Giờ Chuẩn Azores</standard>
-					<daylight>Giờ Mùa Hè Azores</daylight>
+					<standard>Giờ chuẩn Azores</standard>
+					<daylight>Giờ mùa hè Azores</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
@@ -5097,7 +5100,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard>Giờ Châu Âu Viễn Đông</standard>
+					<standard>Giờ Viễn đông Châu Âu</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
@@ -5451,9 +5454,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Giờ Đảo Norfolk</generic>
-					<standard draft="contributed">Giờ Chuẩn Đảo Norfolk</standard>
-					<daylight draft="contributed">Giờ Mùa Hè Đảo Norfolk</daylight>
+					<generic>Giờ Đảo Norfolk</generic>
+					<standard>Giờ Chuẩn Đảo Norfolk</standard>
+					<daylight>Giờ Mùa Hè Đảo Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5741,6 +5744,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">+</plusSign>
 			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -6360,6 +6364,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="JPY">
 				<displayName>Yên Nhật</displayName>
 				<displayName count="other">Yên Nhật</displayName>
+				<symbol>¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>Shilling Kenya</displayName>
@@ -7046,12 +7051,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
-		<minimalPairs>
-			<pluralMinimalPairs count="one">Rẽ vào lối rẽ thứ nhất bên phải.</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">Rẽ vào lối rẽ thứ {0} bên phải.</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="one">Rẽ vào lối rẽ thứ nhất bên phải.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">Rẽ vào lối rẽ thứ {0} bên phải.</ordinalMinimalPairs>
-		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -7111,6 +7110,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="other">{0} vuông</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="other">{0} khối</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>lực g</displayName>
@@ -7381,6 +7410,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>chấm/inch</displayName>
 				<unitPattern count="other">{0} chấm/inch</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>chấm</displayName>
+				<unitPattern count="other">{0} chấm</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>bán kính trái đất</displayName>
+				<unitPattern count="other">{0} bán kính trái đất</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilômét</displayName>
 				<unitPattern count="other">{0} kilômét</unitPattern>
@@ -7462,6 +7499,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lux</displayName>
 				<unitPattern count="other">{0} lux</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>candela</displayName>
+				<unitPattern count="other">{0} candela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+				<unitPattern count="other">{0} lumen</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>độ sáng của mặt trời</displayName>
 				<unitPattern count="other">{0} độ sáng của mặt trời</unitPattern>
@@ -7519,6 +7564,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-solar-mass">
 				<displayName>trọng lượng mặt trời</displayName>
 				<unitPattern count="other">{0} trọng lượng mặt trời</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gren</displayName>
+				<unitPattern count="other">{0} gren</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigaoát</displayName>
@@ -7682,6 +7731,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} panh</unitPattern>
 			</unit>
 			<unit type="volume-cup">
+				<displayName>tách</displayName>
 				<unitPattern count="other">{0} cup</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
@@ -7704,6 +7754,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>thùng</displayName>
 				<unitPattern count="other">{0} thùng</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>thìa ăn tráng miệng</displayName>
+				<unitPattern count="other">{0} thìa ăn tráng miệng</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>thìa ăn tráng miệng Anh</displayName>
+				<unitPattern count="other">{0} thìa ăn tráng miệng Anh</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>giọt</displayName>
+				<unitPattern count="other">{0} giọt</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram</displayName>
+				<unitPattern count="other">{0} dram chất lỏng Anh</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jigger</displayName>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>nhúm</displayName>
+				<unitPattern count="other">{0} nhúm</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>lít Anh</displayName>
+				<unitPattern count="other">{0} lít Anh</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>phương trời</displayName>
 				<coordinateUnitPattern type="east">{0}Đ</coordinateUnitPattern>
@@ -7713,6 +7791,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>lực g</displayName>
 			</unit>
@@ -7881,6 +7983,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="graphics-megapixel">
 				<displayName>megapixel</displayName>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>chấm</displayName>
+				<unitPattern count="other">{0} chấm</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 			</unit>
@@ -7927,6 +8037,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>bán kính mặt trời</displayName>
 				<unitPattern count="other">{0} R☉</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>độ sáng của mặt trời</displayName>
 				<unitPattern count="other">{0} L☉</unitPattern>
@@ -7970,6 +8088,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>trọng lượng mặt trời</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gren</displayName>
+				<unitPattern count="other">{0} gren</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -8073,6 +8195,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-cup">
 				<displayName>c</displayName>
+				<unitPattern count="other">{0} tách</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
@@ -8084,13 +8207,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>thìa xúp</displayName>
+				<unitPattern count="other">{0} thìa xúp</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<displayName>tsp</displayName>
+				<unitPattern count="other">{0} thìa cà phê</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>thùng</displayName>
 				<unitPattern count="other">{0} thùng</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>thìa tráng miệng</displayName>
+				<unitPattern count="other">{0} thìa tm</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>thìa tráng miệng Anh</displayName>
+				<unitPattern count="other">{0} thìa tm Anh</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>giọt</displayName>
+				<unitPattern count="other">{0} giọt</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram chất lỏng</displayName>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jigger</displayName>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>nhúm</displayName>
+				<unitPattern count="other">{0} nhúm</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>lít Anh</displayName>
+				<unitPattern count="other">{0} lít Anh</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>hướng</displayName>
@@ -8101,6 +8253,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
@@ -8288,6 +8464,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} {1}</listPatternPart>
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
+		</listPattern>
 	</listPatterns>
 	<posix>
 		<messages>
@@ -8306,6 +8486,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="other">{0} — khác</characterLabelPattern>
 		<characterLabelPattern type="scripts">chữ viết — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} nét</characterLabelPattern>
+		<characterLabelPattern type="subscript">chỉ số dưới {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">chỉ số trên {0}</characterLabelPattern>
 		<characterLabel type="activities">hoạt động</characterLabel>
 		<characterLabel type="african_scripts">chữ viết Châu Phi</characterLabel>
 		<characterLabel type="american_scripts">chữ viết Châu Mỹ</characterLabel>

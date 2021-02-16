@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "assembler_arm.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -108,11 +106,11 @@ char* os::non_memory_address_word() {
 #define ARM_REGS_IN_CONTEXT  16
 
 
-address os::Linux::ucontext_get_pc(const ucontext_t* uc) {
+address os::Posix::ucontext_get_pc(const ucontext_t* uc) {
   return (address)uc->uc_mcontext.arm_pc;
 }
 
-void os::Linux::ucontext_set_pc(ucontext_t* uc, address pc) {
+void os::Posix::ucontext_set_pc(ucontext_t* uc, address pc) {
   uc->uc_mcontext.arm_pc = (uintx)pc;
 }
 
@@ -149,7 +147,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = os::Linux::ucontext_get_pc(uc);
+    epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Linux::ucontext_get_sp(uc);
     if (ret_fp) {
       intptr_t* fp = os::Linux::ucontext_get_fp(uc);
@@ -252,7 +250,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
        || info->si_addr == (caddr_t)check_mp_ext_fault_instr)) {
     // skip faulty instruction + instruction that sets return value to
     // success and set return value to failure.
-    os::Linux::ucontext_set_pc(uc, (address)info->si_addr + 8);
+    os::Posix::ucontext_set_pc(uc, (address)info->si_addr + 8);
     uc->uc_mcontext.arm_r0 = 0;
     return true;
   }
@@ -262,16 +260,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   bool unsafe_access = false;
 
   if (info != NULL && uc != NULL && thread != NULL) {
-    pc = (address) os::Linux::ucontext_get_pc(uc);
+    pc = (address) os::Posix::ucontext_get_pc(uc);
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {
       address addr = (address) info->si_addr;
 
-      if (StubRoutines::is_safefetch_fault(pc)) {
-        os::Linux::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-        return true;
-      }
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
@@ -389,12 +383,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // save all thread context in case we need to restore it
     if (thread != NULL) thread->set_saved_exception_pc(pc);
 
-    os::Linux::ucontext_set_pc(uc, stub);
+    os::Posix::ucontext_set_pc(uc, stub);
     return true;
   }
 
   return false;
-
 }
 
 void os::Linux::init_thread_fpu_state(void) {
@@ -465,7 +458,7 @@ void os::print_context(outputStream *st, const void *context) {
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Linux::ucontext_get_pc(uc);
+  address pc = os::Posix::ucontext_get_pc(uc);
   print_instructions(st, pc, Assembler::InstructionSize);
   st->cr();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -136,8 +137,8 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
       // length input to ArrayCopyNode is constant, length of input
       // array must be too.
 
-      assert((get_length_if_constant(phase) == -1) == !ary_src->size()->is_con() ||
-             phase->is_IterGVN() || StressReflectiveCode, "inconsistent");
+      assert((get_length_if_constant(phase) == -1) != ary_src->size()->is_con() ||
+             phase->is_IterGVN() || phase->C->inlining_incrementally() || StressReflectiveCode, "inconsistent");
 
       if (ary_src->size()->is_con()) {
         return ary_src->size()->get_con();
@@ -684,6 +685,8 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
     assert(c == mb->in(0) || (ac != NULL && ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");
 #endif
     return true;
+  } else if (mb->trailing_partial_array_copy()) {
+    return true;
   }
 
   return false;
@@ -729,4 +732,17 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
     }
   }
   return false;
+}
+
+// As an optimization, choose optimum vector size for copy length known at compile time.
+int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, int const_len) {
+  int lane_count = ArrayCopyPartialInlineSize/type2aelembytes(type);
+  if (const_len > 0) {
+    int size_in_bytes = const_len * type2aelembytes(type);
+    if (size_in_bytes <= 16)
+      lane_count = 16/type2aelembytes(type);
+    else if (size_in_bytes > 16 && size_in_bytes <= 32)
+      lane_count = 32/type2aelembytes(type);
+  }
+  return lane_count;
 }

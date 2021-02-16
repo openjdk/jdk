@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,19 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/arrayOop.inline.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -46,477 +48,63 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiTagMap.hpp"
+#include "prims/jvmtiTagMapTable.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/reflectionUtils.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ZGC
-#include "gc/z/zGlobals.hpp"
-#endif
 
-// JvmtiTagHashmapEntry
-//
-// Each entry encapsulates a reference to the tagged object
-// and the tag value. In addition an entry includes a next pointer which
-// is used to chain entries together.
-
-class JvmtiTagHashmapEntry : public CHeapObj<mtInternal> {
- private:
-  friend class JvmtiTagMap;
-
-  oop _object;                          // tagged object
-  jlong _tag;                           // the tag
-  JvmtiTagHashmapEntry* _next;          // next on the list
-
-  inline void init(oop object, jlong tag) {
-    _object = object;
-    _tag = tag;
-    _next = NULL;
-  }
-
-  // constructor
-  JvmtiTagHashmapEntry(oop object, jlong tag) { init(object, tag); }
-
- public:
-
-  // accessor methods
-  inline oop* object_addr() { return &_object; }
-  inline oop object()       { return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(object_addr()); }
-  // Peek at the object without keeping it alive. The returned object must be
-  // kept alive using a normal access if it leaks out of a thread transition from VM.
-  inline oop object_peek()  {
-    return NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(object_addr());
-  }
-
-  inline oop object_raw() {
-    return RawAccess<>::oop_load(object_addr());
-  }
-
-  inline jlong tag() const  { return _tag; }
-
-  inline void set_tag(jlong tag) {
-    assert(tag != 0, "can't be zero");
-    _tag = tag;
-  }
-
-  inline bool equals(oop object) {
-    return object == object_peek();
-  }
-
-  inline JvmtiTagHashmapEntry* next() const        { return _next; }
-  inline void set_next(JvmtiTagHashmapEntry* next) { _next = next; }
-};
-
-
-// JvmtiTagHashmap
-//
-// A hashmap is essentially a table of pointers to entries. Entries
-// are hashed to a location, or position in the table, and then
-// chained from that location. The "key" for hashing is address of
-// the object, or oop. The "value" is the tag value.
-//
-// A hashmap maintains a count of the number entries in the hashmap
-// and resizes if the number of entries exceeds a given threshold.
-// The threshold is specified as a percentage of the size - for
-// example a threshold of 0.75 will trigger the hashmap to resize
-// if the number of entries is >75% of table size.
-//
-// A hashmap provides functions for adding, removing, and finding
-// entries. It also provides a function to iterate over all entries
-// in the hashmap.
-
-class JvmtiTagHashmap : public CHeapObj<mtInternal> {
- private:
-  friend class JvmtiTagMap;
-
-  enum {
-    small_trace_threshold  = 10000,                  // threshold for tracing
-    medium_trace_threshold = 100000,
-    large_trace_threshold  = 1000000,
-    initial_trace_threshold = small_trace_threshold
-  };
-
-  static int _sizes[];                  // array of possible hashmap sizes
-  int _size;                            // actual size of the table
-  int _size_index;                      // index into size table
-
-  int _entry_count;                     // number of entries in the hashmap
-
-  float _load_factor;                   // load factor as a % of the size
-  int _resize_threshold;                // computed threshold to trigger resizing.
-  bool _resizing_enabled;               // indicates if hashmap can resize
-
-  int _trace_threshold;                 // threshold for trace messages
-
-  JvmtiTagHashmapEntry** _table;        // the table of entries.
-
-  // private accessors
-  int resize_threshold() const                  { return _resize_threshold; }
-  int trace_threshold() const                   { return _trace_threshold; }
-
-  // initialize the hashmap
-  void init(int size_index=0, float load_factor=4.0f) {
-    int initial_size =  _sizes[size_index];
-    _size_index = size_index;
-    _size = initial_size;
-    _entry_count = 0;
-    _trace_threshold = initial_trace_threshold;
-    _load_factor = load_factor;
-    _resize_threshold = (int)(_load_factor * _size);
-    _resizing_enabled = true;
-    size_t s = initial_size * sizeof(JvmtiTagHashmapEntry*);
-    _table = (JvmtiTagHashmapEntry**)os::malloc(s, mtInternal);
-    if (_table == NULL) {
-      vm_exit_out_of_memory(s, OOM_MALLOC_ERROR,
-        "unable to allocate initial hashtable for jvmti object tags");
-    }
-    for (int i=0; i<initial_size; i++) {
-      _table[i] = NULL;
-    }
-  }
-
-  // hash a given key (oop) with the specified size
-  static unsigned int hash(oop key, int size) {
-    const unsigned int hash = Universe::heap()->hash_oop(key);
-    return hash % size;
-  }
-
-  // hash a given key (oop)
-  unsigned int hash(oop key) {
-    return hash(key, _size);
-  }
-
-  // resize the hashmap - allocates a large table and re-hashes
-  // all entries into the new table.
-  void resize() {
-    int new_size_index = _size_index+1;
-    int new_size = _sizes[new_size_index];
-    if (new_size < 0) {
-      // hashmap already at maximum capacity
-      return;
-    }
-
-    // allocate new table
-    size_t s = new_size * sizeof(JvmtiTagHashmapEntry*);
-    JvmtiTagHashmapEntry** new_table = (JvmtiTagHashmapEntry**)os::malloc(s, mtInternal);
-    if (new_table == NULL) {
-      warning("unable to allocate larger hashtable for jvmti object tags");
-      set_resizing_enabled(false);
-      return;
-    }
-
-    // initialize new table
-    int i;
-    for (i=0; i<new_size; i++) {
-      new_table[i] = NULL;
-    }
-
-    // rehash all entries into the new table
-    for (i=0; i<_size; i++) {
-      JvmtiTagHashmapEntry* entry = _table[i];
-      while (entry != NULL) {
-        JvmtiTagHashmapEntry* next = entry->next();
-        oop key = entry->object_peek();
-        assert(key != NULL, "jni weak reference cleared!!");
-        unsigned int h = hash(key, new_size);
-        JvmtiTagHashmapEntry* anchor = new_table[h];
-        if (anchor == NULL) {
-          new_table[h] = entry;
-          entry->set_next(NULL);
-        } else {
-          entry->set_next(anchor);
-          new_table[h] = entry;
-        }
-        entry = next;
-      }
-    }
-
-    // free old table and update settings.
-    os::free((void*)_table);
-    _table = new_table;
-    _size_index = new_size_index;
-    _size = new_size;
-
-    // compute new resize threshold
-    _resize_threshold = (int)(_load_factor * _size);
-  }
-
-
-  // internal remove function - remove an entry at a given position in the
-  // table.
-  inline void remove(JvmtiTagHashmapEntry* prev, int pos, JvmtiTagHashmapEntry* entry) {
-    assert(pos >= 0 && pos < _size, "out of range");
-    if (prev == NULL) {
-      _table[pos] = entry->next();
-    } else {
-      prev->set_next(entry->next());
-    }
-    assert(_entry_count > 0, "checking");
-    _entry_count--;
-  }
-
-  // resizing switch
-  bool is_resizing_enabled() const          { return _resizing_enabled; }
-  void set_resizing_enabled(bool enable)    { _resizing_enabled = enable; }
-
-  // debugging
-  void print_memory_usage();
-  void compute_next_trace_threshold();
-
- public:
-
-  // create a JvmtiTagHashmap of a preferred size and optionally a load factor.
-  // The preferred size is rounded down to an actual size.
-  JvmtiTagHashmap(int size, float load_factor=0.0f) {
-    int i=0;
-    while (_sizes[i] < size) {
-      if (_sizes[i] < 0) {
-        assert(i > 0, "sanity check");
-        i--;
-        break;
-      }
-      i++;
-    }
-
-    // if a load factor is specified then use it, otherwise use default
-    if (load_factor > 0.01f) {
-      init(i, load_factor);
-    } else {
-      init(i);
-    }
-  }
-
-  // create a JvmtiTagHashmap with default settings
-  JvmtiTagHashmap() {
-    init();
-  }
-
-  // release table when JvmtiTagHashmap destroyed
-  ~JvmtiTagHashmap() {
-    if (_table != NULL) {
-      os::free((void*)_table);
-      _table = NULL;
-    }
-  }
-
-  // accessors
-  int size() const                              { return _size; }
-  JvmtiTagHashmapEntry** table() const          { return _table; }
-  int entry_count() const                       { return _entry_count; }
-
-  // find an entry in the hashmap, returns NULL if not found.
-  inline JvmtiTagHashmapEntry* find(oop key) {
-    unsigned int h = hash(key);
-    JvmtiTagHashmapEntry* entry = _table[h];
-    while (entry != NULL) {
-      if (entry->equals(key)) {
-         return entry;
-      }
-      entry = entry->next();
-    }
-    return NULL;
-  }
-
-
-  // add a new entry to hashmap
-  inline void add(oop key, JvmtiTagHashmapEntry* entry) {
-    assert(key != NULL, "checking");
-    assert(find(key) == NULL, "duplicate detected");
-    unsigned int h = hash(key);
-    JvmtiTagHashmapEntry* anchor = _table[h];
-    if (anchor == NULL) {
-      _table[h] = entry;
-      entry->set_next(NULL);
-    } else {
-      entry->set_next(anchor);
-      _table[h] = entry;
-    }
-
-    _entry_count++;
-    if (log_is_enabled(Debug, jvmti, objecttagging) && entry_count() >= trace_threshold()) {
-      print_memory_usage();
-      compute_next_trace_threshold();
-    }
-
-    // if the number of entries exceed the threshold then resize
-    if (entry_count() > resize_threshold() && is_resizing_enabled()) {
-      resize();
-    }
-  }
-
-  // remove an entry with the given key.
-  inline JvmtiTagHashmapEntry* remove(oop key) {
-    unsigned int h = hash(key);
-    JvmtiTagHashmapEntry* entry = _table[h];
-    JvmtiTagHashmapEntry* prev = NULL;
-    while (entry != NULL) {
-      if (entry->equals(key)) {
-        break;
-      }
-      prev = entry;
-      entry = entry->next();
-    }
-    if (entry != NULL) {
-      remove(prev, h, entry);
-    }
-    return entry;
-  }
-
-  // iterate over all entries in the hashmap
-  void entry_iterate(JvmtiTagHashmapEntryClosure* closure);
-};
-
-// possible hashmap sizes - odd primes that roughly double in size.
-// To avoid excessive resizing the odd primes from 4801-76831 and
-// 76831-307261 have been removed. The list must be terminated by -1.
-int JvmtiTagHashmap::_sizes[] =  { 4801, 76831, 307261, 614563, 1228891,
-    2457733, 4915219, 9830479, 19660831, 39321619, 78643219, -1 };
-
-
-// A supporting class for iterating over all entries in Hashmap
-class JvmtiTagHashmapEntryClosure {
- public:
-  virtual void do_entry(JvmtiTagHashmapEntry* entry) = 0;
-};
-
-
-// iterate over all entries in the hashmap
-void JvmtiTagHashmap::entry_iterate(JvmtiTagHashmapEntryClosure* closure) {
-  for (int i=0; i<_size; i++) {
-    JvmtiTagHashmapEntry* entry = _table[i];
-    JvmtiTagHashmapEntry* prev = NULL;
-    while (entry != NULL) {
-      // obtain the next entry before invoking do_entry - this is
-      // necessary because do_entry may remove the entry from the
-      // hashmap.
-      JvmtiTagHashmapEntry* next = entry->next();
-      closure->do_entry(entry);
-      entry = next;
-     }
-  }
-}
-
-// debugging
-void JvmtiTagHashmap::print_memory_usage() {
-  intptr_t p = (intptr_t)this;
-  tty->print("[JvmtiTagHashmap @ " INTPTR_FORMAT, p);
-
-  // table + entries in KB
-  int hashmap_usage = (size()*sizeof(JvmtiTagHashmapEntry*) +
-    entry_count()*sizeof(JvmtiTagHashmapEntry))/K;
-
-  int weak_globals_usage = (int)(JNIHandles::weak_global_handle_memory_usage()/K);
-  tty->print_cr(", %d entries (%d KB) <JNI weak globals: %d KB>]",
-    entry_count(), hashmap_usage, weak_globals_usage);
-}
-
-// compute threshold for the next trace message
-void JvmtiTagHashmap::compute_next_trace_threshold() {
-  _trace_threshold = entry_count();
-  if (trace_threshold() < medium_trace_threshold) {
-    _trace_threshold += small_trace_threshold;
-  } else {
-    if (trace_threshold() < large_trace_threshold) {
-      _trace_threshold += medium_trace_threshold;
-    } else {
-      _trace_threshold += large_trace_threshold;
-    }
-  }
-}
+bool JvmtiTagMap::_has_object_free_events = false;
 
 // create a JvmtiTagMap
 JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   _env(env),
-  _lock(Mutex::nonleaf+2, "JvmtiTagMap._lock", false),
-  _free_entries(NULL),
-  _free_entries_count(0)
-{
+  _lock(Mutex::nonleaf+1, "JvmtiTagMap_lock", Mutex::_allow_vm_block_flag,
+        Mutex::_safepoint_check_never),
+  _needs_rehashing(false),
+  _needs_cleaning(false) {
+
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(((JvmtiEnvBase *)env)->tag_map() == NULL, "tag map already exists for environment");
 
-  _hashmap = new JvmtiTagHashmap();
+  _hashmap = new JvmtiTagMapTable();
 
   // finally add us to the environment
   ((JvmtiEnvBase *)env)->release_set_tag_map(this);
 }
 
-
 // destroy a JvmtiTagMap
 JvmtiTagMap::~JvmtiTagMap() {
 
   // no lock acquired as we assume the enclosing environment is
-  // also being destroryed.
+  // also being destroyed.
   ((JvmtiEnvBase *)_env)->set_tag_map(NULL);
-
-  JvmtiTagHashmapEntry** table = _hashmap->table();
-  for (int j = 0; j < _hashmap->size(); j++) {
-    JvmtiTagHashmapEntry* entry = table[j];
-    while (entry != NULL) {
-      JvmtiTagHashmapEntry* next = entry->next();
-      delete entry;
-      entry = next;
-    }
-  }
 
   // finally destroy the hashmap
   delete _hashmap;
   _hashmap = NULL;
-
-  // remove any entries on the free list
-  JvmtiTagHashmapEntry* entry = _free_entries;
-  while (entry != NULL) {
-    JvmtiTagHashmapEntry* next = entry->next();
-    delete entry;
-    entry = next;
-  }
-  _free_entries = NULL;
 }
 
-// create a hashmap entry
-// - if there's an entry on the (per-environment) free list then this
-// is returned. Otherwise an new entry is allocated.
-JvmtiTagHashmapEntry* JvmtiTagMap::create_entry(oop ref, jlong tag) {
-  assert(Thread::current()->is_VM_thread() || is_locked(), "checking");
-
-  // ref was read with AS_NO_KEEPALIVE, or equivalent.
-  // The object needs to be kept alive when it is published.
-  Universe::heap()->keep_alive(ref);
-
-  JvmtiTagHashmapEntry* entry;
-  if (_free_entries == NULL) {
-    entry = new JvmtiTagHashmapEntry(ref, tag);
-  } else {
-    assert(_free_entries_count > 0, "mismatched _free_entries_count");
-    _free_entries_count--;
-    entry = _free_entries;
-    _free_entries = entry->next();
-    entry->init(ref, tag);
-  }
-  return entry;
-}
-
-// destroy an entry by returning it to the free list
-void JvmtiTagMap::destroy_entry(JvmtiTagHashmapEntry* entry) {
-  assert(SafepointSynchronize::is_at_safepoint() || is_locked(), "checking");
-  // limit the size of the free list
-  if (_free_entries_count >= max_free_entries) {
-    delete entry;
-  } else {
-    entry->set_next(_free_entries);
-    _free_entries = entry;
-    _free_entries_count++;
-  }
+// Called by env_dispose() to reclaim memory before deallocation.
+// Remove all the entries but keep the empty table intact.
+// This needs the table lock.
+void JvmtiTagMap::clear() {
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+  _hashmap->clear();
 }
 
 // returns the tag map for the given environments. If the tag map
@@ -536,25 +124,64 @@ JvmtiTagMap* JvmtiTagMap::tag_map_for(JvmtiEnv* env) {
 }
 
 // iterate over all entries in the tag map.
-void JvmtiTagMap::entry_iterate(JvmtiTagHashmapEntryClosure* closure) {
+void JvmtiTagMap::entry_iterate(JvmtiTagMapEntryClosure* closure) {
   hashmap()->entry_iterate(closure);
 }
 
 // returns true if the hashmaps are empty
 bool JvmtiTagMap::is_empty() {
   assert(SafepointSynchronize::is_at_safepoint() || is_locked(), "checking");
-  return hashmap()->entry_count() == 0;
+  return hashmap()->is_empty();
 }
 
+// This checks for posting and rehashing before operations that
+// this tagmap table.  The calls from a JavaThread only rehash, posting is
+// only done before heap walks.
+void JvmtiTagMap::check_hashmap(bool post_events) {
+  assert(!post_events || SafepointSynchronize::is_at_safepoint(), "precondition");
+  assert(is_locked(), "checking");
+
+  if (is_empty()) { return; }
+
+  if (_needs_cleaning &&
+      post_events &&
+      env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
+    remove_dead_entries_locked(true /* post_object_free */);
+  }
+  if (_needs_rehashing) {
+    log_info(jvmti, table)("TagMap table needs rehashing");
+    hashmap()->rehash();
+    _needs_rehashing = false;
+  }
+}
+
+// This checks for posting and rehashing and is called from the heap walks.
+void JvmtiTagMap::check_hashmaps_for_heapwalk() {
+  assert(SafepointSynchronize::is_at_safepoint(), "called from safepoints");
+
+  // Verify that the tag map tables are valid and unconditionally post events
+  // that are expected to be posted before gc_notification.
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+    JvmtiTagMap* tag_map = env->tag_map_acquire();
+    if (tag_map != NULL) {
+      // The ZDriver may be walking the hashmaps concurrently so this lock is needed.
+      MutexLocker ml(tag_map->lock(), Mutex::_no_safepoint_check_flag);
+      tag_map->check_hashmap(/*post_events*/ true);
+    }
+  }
+}
 
 // Return the tag value for an object, or 0 if the object is
 // not tagged
 //
 static inline jlong tag_for(JvmtiTagMap* tag_map, oop o) {
-  JvmtiTagHashmapEntry* entry = tag_map->hashmap()->find(o);
+  JvmtiTagMapEntry* entry = tag_map->hashmap()->find(o);
   if (entry == NULL) {
     return 0;
   } else {
+    jlong tag = entry->tag();
+    assert(tag != 0, "should not be zero");
     return entry->tag();
   }
 }
@@ -577,8 +204,8 @@ static inline jlong tag_for(JvmtiTagMap* tag_map, oop o) {
 class CallbackWrapper : public StackObj {
  private:
   JvmtiTagMap* _tag_map;
-  JvmtiTagHashmap* _hashmap;
-  JvmtiTagHashmapEntry* _entry;
+  JvmtiTagMapTable* _hashmap;
+  JvmtiTagMapEntry* _entry;
   oop _o;
   jlong _obj_size;
   jlong _obj_tag;
@@ -588,8 +215,8 @@ class CallbackWrapper : public StackObj {
   JvmtiTagMap* tag_map() const      { return _tag_map; }
 
   // invoked post-callback to tag, untag, or update the tag of an object
-  void inline post_callback_tag_update(oop o, JvmtiTagHashmap* hashmap,
-                                       JvmtiTagHashmapEntry* entry, jlong obj_tag);
+  void inline post_callback_tag_update(oop o, JvmtiTagMapTable* hashmap,
+                                       JvmtiTagMapEntry* entry, jlong obj_tag);
  public:
   CallbackWrapper(JvmtiTagMap* tag_map, oop o) {
     assert(Thread::current()->is_VM_thread() || tag_map->is_locked(),
@@ -610,7 +237,7 @@ class CallbackWrapper : public StackObj {
     _obj_tag = (_entry == NULL) ? 0 : _entry->tag();
 
     // get the class and the class's tag value
-    assert(SystemDictionary::Class_klass()->is_mirror_instance_klass(), "Is not?");
+    assert(vmClasses::Class_klass()->is_mirror_instance_klass(), "Is not?");
 
     _klass_tag = tag_for(tag_map, _o->klass()->java_mirror());
   }
@@ -629,25 +256,20 @@ class CallbackWrapper : public StackObj {
 
 // callback post-callback to tag, untag, or update the tag of an object
 void inline CallbackWrapper::post_callback_tag_update(oop o,
-                                                      JvmtiTagHashmap* hashmap,
-                                                      JvmtiTagHashmapEntry* entry,
+                                                      JvmtiTagMapTable* hashmap,
+                                                      JvmtiTagMapEntry* entry,
                                                       jlong obj_tag) {
   if (entry == NULL) {
     if (obj_tag != 0) {
       // callback has tagged the object
       assert(Thread::current()->is_VM_thread(), "must be VMThread");
-      entry = tag_map()->create_entry(o, obj_tag);
-      hashmap->add(o, entry);
+      hashmap->add(o, obj_tag);
     }
   } else {
     // object was previously tagged - the callback may have untagged
     // the object or changed the tag value
     if (obj_tag == 0) {
-
-      JvmtiTagHashmapEntry* entry_removed = hashmap->remove(o);
-      assert(entry_removed == entry, "checking");
-      tag_map()->destroy_entry(entry);
-
+      hashmap->remove(o);
     } else {
       if (obj_tag != entry->tag()) {
          entry->set_tag(obj_tag);
@@ -674,8 +296,8 @@ void inline CallbackWrapper::post_callback_tag_update(oop o,
 class TwoOopCallbackWrapper : public CallbackWrapper {
  private:
   bool _is_reference_to_self;
-  JvmtiTagHashmap* _referrer_hashmap;
-  JvmtiTagHashmapEntry* _referrer_entry;
+  JvmtiTagMapTable* _referrer_hashmap;
+  JvmtiTagMapEntry* _referrer_entry;
   oop _referrer;
   jlong _referrer_obj_tag;
   jlong _referrer_klass_tag;
@@ -731,20 +353,24 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
 // around the same time then it's possible that the Mutex associated with the
 // tag map will be a hot lock.
 void JvmtiTagMap::set_tag(jobject object, jlong tag) {
-  MutexLocker ml(lock());
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+
+  // SetTag should not post events because the JavaThread has to
+  // transition to native for the callback and this cannot stop for
+  // safepoints with the hashmap lock held.
+  check_hashmap(/*post_events*/ false);
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
 
   // see if the object is already tagged
-  JvmtiTagHashmap* hashmap = _hashmap;
-  JvmtiTagHashmapEntry* entry = hashmap->find(o);
+  JvmtiTagMapTable* hashmap = _hashmap;
+  JvmtiTagMapEntry* entry = hashmap->find(o);
 
   // if the object is not already tagged then we tag it
   if (entry == NULL) {
     if (tag != 0) {
-      entry = create_entry(o, tag);
-      hashmap->add(o, entry);
+      hashmap->add(o, tag);
     } else {
       // no-op
     }
@@ -754,7 +380,6 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
     // or remove the object if the new tag value is 0.
     if (tag == 0) {
       hashmap->remove(o);
-      destroy_entry(entry);
     } else {
       entry->set_tag(tag);
     }
@@ -763,7 +388,12 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
 
 // get the tag for an object
 jlong JvmtiTagMap::get_tag(jobject object) {
-  MutexLocker ml(lock());
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+
+  // GetTag should not post events because the JavaThread has to
+  // transition to native for the callback and this cannot stop for
+  // safepoints with the hashmap lock held.
+  check_hashmap(/*post_events*/ false);
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
@@ -1062,7 +692,7 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
                                          oop str,
                                          void* user_data)
 {
-  assert(str->klass() == SystemDictionary::String_klass(), "not a string");
+  assert(str->klass() == vmClasses::String_klass(), "not a string");
 
   typeArrayOop s_value = java_lang_String::value(str);
 
@@ -1143,7 +773,7 @@ static jint invoke_primitive_field_callback_for_static_fields
   // for static fields only the index will be set
   static jvmtiHeapReferenceInfo reference_info = { 0 };
 
-  assert(obj->klass() == SystemDictionary::Class_klass(), "not a class");
+  assert(obj->klass() == vmClasses::Class_klass(), "not a class");
   if (java_lang_Class::is_primitive(obj)) {
     return 0;
   }
@@ -1266,6 +896,8 @@ class VM_HeapIterateOperation: public VM_Operation {
     // allows class files maps to be cached during iteration
     ClassFieldMapCacheMark cm;
 
+    JvmtiTagMap::check_hashmaps_for_heapwalk();
+
     // make sure that heap is parsable (fills TLABs with filler objects)
     Universe::heap()->ensure_parsability(false);  // no need to retire TLABs
 
@@ -1331,6 +963,14 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
   if (klass() != NULL && !o->is_a(klass())) {
     return;
   }
+
+  // skip if object is a dormant shared object whose mirror hasn't been loaded
+  if (o != NULL && o->klass()->java_mirror() == NULL) {
+    log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o),
+                         o->klass()->external_name());
+    return;
+  }
+
   // prepare for the calllback
   CallbackWrapper wrapper(tag_map(), o);
 
@@ -1410,6 +1050,13 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   // apply class filter
   if (is_filtered_by_klass_filter(obj, klass())) return;
 
+  // skip if object is a dormant shared object whose mirror hasn't been loaded
+  if (obj != NULL &&   obj->klass()->java_mirror() == NULL) {
+    log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
+                         obj->klass()->external_name());
+    return;
+  }
+
   // prepare for callback
   CallbackWrapper wrapper(tag_map(), obj);
 
@@ -1437,7 +1084,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   if (callbacks()->primitive_field_callback != NULL && obj->is_instance()) {
     jint res;
     jvmtiPrimitiveFieldCallback cb = callbacks()->primitive_field_callback;
-    if (obj->klass() == SystemDictionary::Class_klass()) {
+    if (obj->klass() == vmClasses::Class_klass()) {
       res = invoke_primitive_field_callback_for_static_fields(&wrapper,
                                                                     obj,
                                                                     cb,
@@ -1454,7 +1101,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   // string callback
   if (!is_array &&
       callbacks()->string_primitive_value_callback != NULL &&
-      obj->klass() == SystemDictionary::String_klass()) {
+      obj->klass() == vmClasses::String_klass()) {
     jint res = invoke_string_value_callback(
                 callbacks()->string_primitive_value_callback,
                 &wrapper,
@@ -1518,36 +1165,95 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
   VMThread::execute(&op);
 }
 
+void JvmtiTagMap::remove_dead_entries_locked(bool post_object_free) {
+  assert(is_locked(), "precondition");
+  if (_needs_cleaning) {
+    // Recheck whether to post object free events under the lock.
+    post_object_free = post_object_free && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE);
+    log_info(jvmti, table)("TagMap table needs cleaning%s",
+                           (post_object_free ? " and posting" : ""));
+    hashmap()->remove_dead_entries(env(), post_object_free);
+    _needs_cleaning = false;
+  }
+}
+
+void JvmtiTagMap::remove_dead_entries(bool post_object_free) {
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+  remove_dead_entries_locked(post_object_free);
+}
+
+class VM_JvmtiPostObjectFree: public VM_Operation {
+  JvmtiTagMap* _tag_map;
+ public:
+  VM_JvmtiPostObjectFree(JvmtiTagMap* tag_map) : _tag_map(tag_map) {}
+  VMOp_Type type() const { return VMOp_Cleanup; }
+  void doit() {
+    _tag_map->remove_dead_entries(true /* post_object_free */);
+  }
+
+  // Doesn't need a safepoint, just the VM thread
+  virtual bool evaluate_at_safepoint() const { return false; }
+};
+
+// PostObjectFree can't be called by JavaThread, so call it from the VM thread.
+void JvmtiTagMap::post_dead_objects_on_vm_thread() {
+  VM_JvmtiPostObjectFree op(this);
+  VMThread::execute(&op);
+}
+
+void JvmtiTagMap::flush_object_free_events() {
+  assert_not_at_safepoint();
+  if (env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
+    {
+      MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+      if (!_needs_cleaning || is_empty()) {
+        _needs_cleaning = false;
+        return;
+      }
+    } // Drop the lock so we can do the cleaning on the VM thread.
+    // Needs both cleaning and event posting (up to some other thread
+    // getting there first after we dropped the lock).
+    post_dead_objects_on_vm_thread();
+  } else {
+    remove_dead_entries(false);
+  }
+}
+
 // support class for get_objects_with_tags
 
-class TagObjectCollector : public JvmtiTagHashmapEntryClosure {
+class TagObjectCollector : public JvmtiTagMapEntryClosure {
  private:
   JvmtiEnv* _env;
+  JavaThread* _thread;
   jlong* _tags;
   jint _tag_count;
+  bool _some_dead_found;
 
   GrowableArray<jobject>* _object_results;  // collected objects (JNI weak refs)
   GrowableArray<uint64_t>* _tag_results;    // collected tags
 
  public:
-  TagObjectCollector(JvmtiEnv* env, const jlong* tags, jint tag_count) {
-    _env = env;
-    _tags = (jlong*)tags;
-    _tag_count = tag_count;
-    _object_results = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jobject>(1, mtServiceability);
-    _tag_results = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<uint64_t>(1, mtServiceability);
-  }
+  TagObjectCollector(JvmtiEnv* env, const jlong* tags, jint tag_count) :
+    _env(env),
+    _thread(JavaThread::current()),
+    _tags((jlong*)tags),
+    _tag_count(tag_count),
+    _some_dead_found(false),
+    _object_results(new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jobject>(1, mtServiceability)),
+    _tag_results(new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<uint64_t>(1, mtServiceability)) { }
 
   ~TagObjectCollector() {
     delete _object_results;
     delete _tag_results;
   }
 
+  bool some_dead_found() const { return _some_dead_found; }
+
   // for each tagged object check if the tag value matches
   // - if it matches then we create a JNI local reference to the object
   // and record the reference and tag value.
   //
-  void do_entry(JvmtiTagHashmapEntry* entry) {
+  void do_entry(JvmtiTagMapEntry* entry) {
     for (int i=0; i<_tag_count; i++) {
       if (_tags[i] == entry->tag()) {
         // The reference in this tag map could be the only (implicitly weak)
@@ -1555,8 +1261,13 @@ class TagObjectCollector : public JvmtiTagHashmapEntryClosure {
         // SATB marking similar to other j.l.ref.Reference referents. This is
         // achieved by using a phantom load in the object() accessor.
         oop o = entry->object();
+        if (o == NULL) {
+          _some_dead_found = true;
+          // skip this whole entry
+          return;
+        }
         assert(o != NULL && Universe::heap()->is_in(o), "sanity check");
-        jobject ref = JNIHandles::make_local(JavaThread::current(), o);
+        jobject ref = JNIHandles::make_local(_thread, o);
         _object_results->append(ref);
         _tag_results->append((uint64_t)entry->tag());
       }
@@ -1609,8 +1320,15 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
   TagObjectCollector collector(env(), tags, count);
   {
     // iterate over all tagged objects
-    MutexLocker ml(lock());
+    MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+    // Can't post ObjectFree events here from a JavaThread, so this
+    // will race with the gc_notification thread in the tiny
+    // window where the object is not marked but hasn't been notified that
+    // it is collected yet.
     entry_iterate(&collector);
+  }
+  if (collector.some_dead_found() && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
+    post_dead_objects_on_vm_thread();
   }
   return collector.result(count_ptr, object_result_ptr, tag_result_ptr);
 }
@@ -1672,6 +1390,7 @@ bool ObjectMarker::_needs_reset = true;  // need to reset mark bits by default
 // initialize ObjectMarker - prepares for object marking
 void ObjectMarker::init() {
   assert(Thread::current()->is_VM_thread(), "must be VMThread");
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   // prepare heap for iteration
   Universe::heap()->ensure_parsability(false);  // no need to retire TLABs
@@ -2312,7 +2031,7 @@ inline bool CallbackInvoker::report_primitive_array_values(oop obj) {
 
 // invoke the string value callback
 inline bool CallbackInvoker::report_string_value(oop str) {
-  assert(str->klass() == SystemDictionary::String_klass(), "not a string");
+  assert(str->klass() == vmClasses::String_klass(), "not a string");
 
   AdvancedHeapWalkContext* context = advanced_context();
   assert(context->string_primitive_value_callback() != NULL, "no callback");
@@ -2834,7 +2553,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
 
     // super (only if something more interesting than java.lang.Object)
     InstanceKlass* java_super = ik->java_super();
-    if (java_super != NULL && java_super != SystemDictionary::Object_klass()) {
+    if (java_super != NULL && java_super != vmClasses::Object_klass()) {
       oop super = java_super->java_mirror();
       if (!CallbackInvoker::report_superclass_reference(mirror, super)) {
         return false;
@@ -2986,7 +2705,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
 
   // if the object is a java.lang.String
   if (is_reporting_string_values() &&
-      o->klass() == SystemDictionary::String_klass()) {
+      o->klass() == vmClasses::String_klass()) {
     if (!CallbackInvoker::report_string_value(o)) {
       return false;
     }
@@ -3184,7 +2903,7 @@ bool VM_HeapWalkOperation::visit(oop o) {
 
   // instance
   if (o->is_instance()) {
-    if (o->klass() == SystemDictionary::Class_klass()) {
+    if (o->klass() == vmClasses::Class_klass()) {
       if (!java_lang_Class::is_primitive(o)) {
         // a java.lang.Class
         return iterate_over_class(o);
@@ -3211,6 +2930,8 @@ void VM_HeapWalkOperation::doit() {
   ResourceMark rm;
   ObjectMarkerController marker;
   ClassFieldMapCacheMark cm;
+
+  JvmtiTagMap::check_hashmaps_for_heapwalk();
 
   assert(visit_stack()->is_empty(), "visit stack must be empty");
 
@@ -3298,117 +3019,81 @@ void JvmtiTagMap::follow_references(jint heap_filter,
   VMThread::execute(&op);
 }
 
+// Concurrent GC needs to call this in relocation pause, so after the objects are moved
+// and have their new addresses, the table can be rehashed.
+void JvmtiTagMap::set_needs_rehashing() {
+  assert(SafepointSynchronize::is_at_safepoint(), "called in gc pause");
+  assert(Thread::current()->is_VM_thread(), "should be the VM thread");
 
-void JvmtiTagMap::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  // No locks during VM bring-up (0 threads) and no safepoints after main
-  // thread creation and before VMThread creation (1 thread); initial GC
-  // verification can happen in that window which gets to here.
-  assert(Threads::number_of_threads() <= 1 ||
-         SafepointSynchronize::is_at_safepoint(),
-         "must be executed at a safepoint");
-  if (JvmtiEnv::environments_might_exist()) {
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+    JvmtiTagMap* tag_map = env->tag_map_acquire();
+    if (tag_map != NULL) {
+      tag_map->_needs_rehashing = true;
+    }
+  }
+}
+
+// Verify gc_notification follows set_needs_cleaning.
+DEBUG_ONLY(static bool notified_needs_cleaning = false;)
+
+void JvmtiTagMap::set_needs_cleaning() {
+  assert(SafepointSynchronize::is_at_safepoint(), "called in gc pause");
+  assert(Thread::current()->is_VM_thread(), "should be the VM thread");
+  // Can't assert !notified_needs_cleaning; a partial GC might be upgraded
+  // to a full GC and do this twice without intervening gc_notification.
+  DEBUG_ONLY(notified_needs_cleaning = true;)
+
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+    JvmtiTagMap* tag_map = env->tag_map_acquire();
+    if (tag_map != NULL) {
+      tag_map->_needs_cleaning = !tag_map->is_empty();
+    }
+  }
+}
+
+void JvmtiTagMap::gc_notification(size_t num_dead_entries) {
+  assert(notified_needs_cleaning, "missing GC notification");
+  DEBUG_ONLY(notified_needs_cleaning = false;)
+
+  // Notify ServiceThread if there's work to do.
+  {
+    MonitorLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    _has_object_free_events = (num_dead_entries != 0);
+    if (_has_object_free_events) ml.notify_all();
+  }
+
+  // If no dead entries then cancel cleaning requests.
+  if (num_dead_entries == 0) {
     JvmtiEnvIterator it;
-    for (JvmtiEnvBase* env = it.first(); env != NULL; env = it.next(env)) {
+    for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
       JvmtiTagMap* tag_map = env->tag_map_acquire();
-      if (tag_map != NULL && !tag_map->is_empty()) {
-        tag_map->do_weak_oops(is_alive, f);
+      if (tag_map != NULL) {
+        MutexLocker ml (tag_map->lock(), Mutex::_no_safepoint_check_flag);
+        tag_map->_needs_cleaning = false;
       }
     }
   }
 }
 
-void JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
+// Used by ServiceThread to discover there is work to do.
+bool JvmtiTagMap::has_object_free_events_and_reset() {
+  assert_lock_strong(Service_lock);
+  bool result = _has_object_free_events;
+  _has_object_free_events = false;
+  return result;
+}
 
-  // does this environment have the OBJECT_FREE event enabled
-  bool post_object_free = env()->is_enabled(JVMTI_EVENT_OBJECT_FREE);
-
-  // counters used for trace message
-  int freed = 0;
-  int moved = 0;
-
-  JvmtiTagHashmap* hashmap = this->hashmap();
-
-  // reenable sizing (if disabled)
-  hashmap->set_resizing_enabled(true);
-
-  // if the hashmap is empty then we can skip it
-  if (hashmap->_entry_count == 0) {
-    return;
-  }
-
-  // now iterate through each entry in the table
-
-  JvmtiTagHashmapEntry** table = hashmap->table();
-  int size = hashmap->size();
-
-  JvmtiTagHashmapEntry* delayed_add = NULL;
-
-  for (int pos = 0; pos < size; ++pos) {
-    JvmtiTagHashmapEntry* entry = table[pos];
-    JvmtiTagHashmapEntry* prev = NULL;
-
-    while (entry != NULL) {
-      JvmtiTagHashmapEntry* next = entry->next();
-
-      // has object been GC'ed
-      if (!is_alive->do_object_b(entry->object_raw())) {
-        // grab the tag
-        jlong tag = entry->tag();
-        guarantee(tag != 0, "checking");
-
-        // remove GC'ed entry from hashmap and return the
-        // entry to the free list
-        hashmap->remove(prev, pos, entry);
-        destroy_entry(entry);
-
-        // post the event to the profiler
-        if (post_object_free) {
-          JvmtiExport::post_object_free(env(), tag);
-        }
-
-        ++freed;
-      } else {
-        f->do_oop(entry->object_addr());
-        oop new_oop = entry->object_raw();
-
-        // if the object has moved then re-hash it and move its
-        // entry to its new location.
-        unsigned int new_pos = JvmtiTagHashmap::hash(new_oop, size);
-        if (new_pos != (unsigned int)pos) {
-          if (prev == NULL) {
-            table[pos] = next;
-          } else {
-            prev->set_next(next);
-          }
-          if (new_pos < (unsigned int)pos) {
-            entry->set_next(table[new_pos]);
-            table[new_pos] = entry;
-          } else {
-            // Delay adding this entry to it's new position as we'd end up
-            // hitting it again during this iteration.
-            entry->set_next(delayed_add);
-            delayed_add = entry;
-          }
-          moved++;
-        } else {
-          // object didn't move
-          prev = entry;
-        }
-      }
-
-      entry = next;
+// Used by ServiceThread to clean up tagmaps.
+void JvmtiTagMap::flush_all_object_free_events() {
+  JavaThread* thread = JavaThread::current();
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+    JvmtiTagMap* tag_map = env->tag_map_acquire();
+    if (tag_map != NULL) {
+      tag_map->flush_object_free_events();
+      ThreadBlockInVM tbiv(thread); // Be safepoint-polite while looping.
     }
   }
-
-  // Re-add all the entries which were kept aside
-  while (delayed_add != NULL) {
-    JvmtiTagHashmapEntry* next = delayed_add->next();
-    unsigned int pos = JvmtiTagHashmap::hash(delayed_add->object_raw(), size);
-    delayed_add->set_next(table[pos]);
-    table[pos] = delayed_add;
-    delayed_add = next;
-  }
-
-  log_debug(jvmti, objecttagging)("(%d->%d, %d freed, %d total moves)",
-                                  hashmap->_entry_count + freed, hashmap->_entry_count, freed, moved);
 }

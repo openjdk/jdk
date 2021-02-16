@@ -51,6 +51,8 @@ public:
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
   static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);
 
+  static void nmethod_oops_barrier(nmethod* nm);
+
   static void nmethods_do_begin();
   static void nmethods_do_end();
   static void nmethods_do(NMethodClosure* cl);

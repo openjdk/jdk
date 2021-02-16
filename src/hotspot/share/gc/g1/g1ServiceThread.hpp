@@ -28,8 +28,6 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
 
-class G1PeriodicGCTask;
-class G1RemSetSamplingTask;
 class G1ServiceTaskQueue;
 class G1ServiceThread;
 
@@ -61,8 +59,9 @@ public:
   virtual void execute() = 0;
 
 protected:
-  // Schedule the task on the associated service thread
-  // using the provided delay in milliseconds.
+  // Schedule the task on the associated service thread using
+  // the provided delay in milliseconds. Can only be used when
+  // currently running on the service thread.
   void schedule(jlong delay_ms);
 
   // These setters are protected for use by testing and the
@@ -105,11 +104,6 @@ class G1ServiceThread: public ConcurrentGCThread {
   Monitor _monitor;
   G1ServiceTaskQueue _task_queue;
 
-  G1RemSetSamplingTask* _remset_task;
-  G1PeriodicGCTask* _periodic_gc_task;
-
-  double _vtime_accum;  // Accumulated virtual time.
-
   void run_service();
   void stop_service();
 
@@ -122,17 +116,25 @@ class G1ServiceThread: public ConcurrentGCThread {
   G1ServiceTask* pop_due_task();
   void run_task(G1ServiceTask* task);
 
-  // Schedule a registered task to run after the given delay.
-  void schedule_task(G1ServiceTask* task, jlong delay);
+  // Helper used by both schedule_task() and G1ServiceTask::schedule()
+  // to schedule a registered task to run after the given delay.
+  void schedule(G1ServiceTask* task, jlong delay);
+
+  // Notify a change to the service thread. Used to either stop
+  // the service or to force check for new tasks.
+  void notify();
 
 public:
   G1ServiceThread();
-  ~G1ServiceThread();
 
-  double vtime_accum() { return _vtime_accum; }
-  // Register a task with the service thread and schedule it. If
-  // no delay is specified the task is scheduled to run directly.
-  void register_task(G1ServiceTask* task, jlong delay = 0);
+  // Register a task with the service thread. The task is guaranteed not to run
+  // until at least `delay_ms` has passed. If no delay is specified or the
+  // delay is 0, the task will run in the earliest time possible.
+  void register_task(G1ServiceTask* task, jlong delay_ms = 0);
+
+  // Schedule an already-registered task to run in at least `delay_ms` time,
+  // and notify the service thread.
+  void schedule_task(G1ServiceTask* task, jlong delay_ms);
 };
 
 #endif // SHARE_GC_G1_G1SERVICETHREAD_HPP

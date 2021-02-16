@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,15 @@
  *
  */
 #include "precompiled.hpp"
-#include "runtime/globals_extension.hpp"
-
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfiguration.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/debug.hpp"
 
 GCName GCConfiguration::young_collector() const {

@@ -32,15 +32,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chn">jargão chinook</language>
 			<language type="chr">cherokee</language>
 			<language type="chy">cheyenne</language>
-			<language type="ckb">sorani curdo</language>
 			<language type="ckb" alt="menu">curdo sorani</language>
+			<language type="ckb" alt="variant">sorani (curdo)</language>
 			<language type="co">córsico</language>
 			<language type="crs">francês crioulo seselwa</language>
 			<language type="cs">checo</language>
 			<language type="cv">chuvash</language>
 			<language type="de_AT">alemão austríaco</language>
 			<language type="de_CH">alto alemão suíço</language>
-			<language type="ee">ewe</language>
 			<language type="efi">efik</language>
 			<language type="egy">egípcio clássico</language>
 			<language type="en_AU">inglês australiano</language>
@@ -74,6 +73,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lou">crioulo de Louisiana</language>
 			<language type="lrc">luri do norte</language>
 			<language type="mak">makassarês</language>
+			<language type="mfe">crioulo mauriciano</language>
 			<language type="mk">macedónio</language>
 			<language type="moh">mohawk</language>
 			<language type="mr">marata</language>
@@ -86,7 +86,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nn">norueguês nynorsk</language>
 			<language type="non">nórdico antigo</language>
 			<language type="oc">occitano</language>
-			<language type="or">oriya</language>
 			<language type="os">ossético</language>
 			<language type="pag">língua pangasinesa</language>
 			<language type="pam">pampango</language>
@@ -105,13 +104,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sma">sami do sul</language>
 			<language type="smn">inari sami</language>
 			<language type="sn">shona</language>
+			<language type="st">sesoto</language>
 			<language type="te">telugu</language>
 			<language type="tem">temne</language>
 			<language type="tg">tajique</language>
 			<language type="tk">turcomano</language>
 			<language type="to">tonga</language>
 			<language type="tt">tatar</language>
-			<language type="tzm">tamazight do Atlas Central</language>
+			<language type="tzm">tamazigue do Atlas Central</language>
 			<language type="uz">usbeque</language>
 			<language type="wo">uólofe</language>
 			<language type="xh">xosa</language>
@@ -181,9 +181,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="EE">Estónia</territory>
 			<territory type="EH">Sara Ocidental</territory>
 			<territory type="EZ">Zona Euro</territory>
-			<territory type="FK">Ilhas Malvinas (Falkland)</territory>
+			<territory type="FK">Ilhas Falkland</territory>
 			<territory type="FK" alt="variant">Ilhas Falkland (Malvinas)</territory>
-			<territory type="FO">Ilhas Faroé</territory>
 			<territory type="GB" alt="short">GB</territory>
 			<territory type="GG">Guernesey</territory>
 			<territory type="GL">Gronelândia</territory>
@@ -198,7 +197,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="LK">Sri Lanca</territory>
 			<territory type="LV">Letónia</territory>
 			<territory type="MC">Mónaco</territory>
-			<territory type="MD">Moldávia</territory>
 			<territory type="MG">Madagáscar</territory>
 			<territory type="MK">Macedónia do Norte</territory>
 			<territory type="MS">Monserrate</territory>
@@ -492,6 +490,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ 'de' y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM/y GGGGG – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/MM/y – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="G">d/MM/y GGGGG – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/MM/y – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/MM/y – d/MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, d/MM/y GGGGG – E, d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d – d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="G">d 'de' MMMM, y G – d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="M">d 'de' MMMM – d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="y">d 'de' MMMM, y – d 'de' MMMM, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d 'de' MMMM – E, d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="G">E, d 'de' MMMM, y G – E, d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="M">E, d 'de' MMMM – E, d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="y">E, d 'de' MMMM, y – E, d 'de' MMMM, y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h–h a</greatestDifference>
@@ -550,6 +586,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu" draft="contributed">Q</day>
 							<day type="fri" draft="contributed">S</day>
 							<day type="sat" draft="contributed">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">dom.</day>
+							<day type="mon">seg.</day>
+							<day type="tue">ter.</day>
+							<day type="wed">qua.</day>
+							<day type="thu">qui.</day>
+							<day type="fri">sex.</day>
+							<day type="sat">sáb.</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
@@ -718,15 +763,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
 							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
 							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
@@ -738,11 +774,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="G">E, d/M/y GGGGG – E, d/M/y GGGGG</greatestDifference>
 							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
 							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">d – d MMM y G</greatestDifference>
@@ -971,15 +1002,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">+{0} dias</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">há {0} dias</relativeTimePattern>
-					<relativeTimePattern count="other">há {0} dias</relativeTimePattern>
+					<relativeTimePattern count="one">-{0} dia</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} dias</relativeTimePattern>
 				</relativeTime>
-			</field>
-			<field type="weekday-short">
-				<displayName>dia da semana</displayName>
-			</field>
-			<field type="weekday-narrow">
-				<displayName>dia da semana</displayName>
 			</field>
 			<field type="sun">
 				<relativeTime type="future">
@@ -1316,6 +1341,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Dominica">
 				<exemplarCity>Domínica</exemplarCity>
 			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity>Talim</exemplarCity>
+			</zone>
 			<zone type="Europe/Madrid">
 				<exemplarCity>Madrid</exemplarCity>
 			</zone>
@@ -1466,9 +1494,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/St_Thomas">
 				<exemplarCity>St. Thomas</exemplarCity>
-			</zone>
-			<zone type="Asia/Saigon">
-				<exemplarCity>Cidade de Ho Chi Minh</exemplarCity>
 			</zone>
 			<zone type="Pacific/Efate">
 				<exemplarCity>Efate</exemplarCity>
@@ -2194,7 +2219,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Hora da Ilha Norfolk</standard>
+					<generic>Hora da Ilha Norfolk</generic>
+					<standard>Hora padrão da Ilha Norfolk</standard>
+					<daylight>Hora de verão da Ilha Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -2481,6 +2508,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<minimumGroupingDigits>2</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<group> </group>
+			<approximatelySign>~</approximatelySign>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
@@ -3453,6 +3481,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</miscPatterns>
 		<minimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}.º lugar</ordinalMinimalPairs>
+			<genderMinimalPairs gender="feminine" draft="contributed">a {0}</genderMinimalPairs>
+			<genderMinimalPairs gender="masculine" draft="contributed">o {0}</genderMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -3636,6 +3666,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-mile-scandinavian">
 				<displayName>milha escandinava</displayName>
 			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="one">{0} lúmen</unitPattern>
+				<unitPattern count="other">{0} lúmenes</unitPattern>
+			</unit>
 			<unit type="mass-earth-mass">
 				<unitPattern count="one">{0} massa da Terra</unitPattern>
 				<unitPattern count="other">{0} massas da Terra</unitPattern>
@@ -3671,6 +3705,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>chávenas</displayName>
 				<unitPattern count="one">{0} chávena</unitPattern>
 				<unitPattern count="other">{0} chávenas</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>colher de sobremesa imperial</displayName>
+			</unit>
+			<unit type="volume-dram">
+				<unitPattern count="one">{0} dracma</unitPattern>
+				<unitPattern count="other">{0} dracmas</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>doseador</displayName>
+				<unitPattern count="one">{0} doseador</unitPattern>
+				<unitPattern count="other">{0} doseadores</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0} este</coordinateUnitPattern>
@@ -3919,6 +3965,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ppp</unitPattern>
 				<unitPattern count="other">{0} ppp</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<unitPattern count="one">{0} p</unitPattern>
+				<unitPattern count="other">{0} p</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
@@ -3974,6 +4024,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>pc</displayName>
 				<unitPattern count="one">{0} pc</unitPattern>
 				<unitPattern count="other">{0} pc</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
@@ -4052,20 +4106,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mW</unitPattern>
 				<unitPattern count="other">{0} mW</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-ofhg">
-				<displayName>mm Hg</displayName>
-				<unitPattern count="one">{0} mm Hg</unitPattern>
-				<unitPattern count="other">{0} mm Hg</unitPattern>
-			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
-			</unit>
-			<unit type="pressure-inch-ofhg">
-				<displayName>in Hg</displayName>
-				<unitPattern count="one">{0} inHg</unitPattern>
-				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
@@ -4190,6 +4234,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>cc</displayName>
 				<unitPattern count="one">{0} cc</unitPattern>
 				<unitPattern count="other">{0} cc</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dracma fluido</displayName>
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>doseador</displayName>
+				<unitPattern count="one">{0} doseadores</unitPattern>
+				<unitPattern count="other">{0} doseadores</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>quarto imp.</displayName>
+				<unitPattern count="one">{0} quarto imp.</unitPattern>
+				<unitPattern count="other">{0} quartos imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
@@ -4393,7 +4452,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</characterLabels>
 	<typographicNames>
 		<axisName type="opsz">tamanho ótico</axisName>
-		<styleName type="wdth" subtype="87.5" alt="compressed">semicompresso</styleName>
+		<styleName type="opsz" subtype="144">póster</styleName>
 		<featureName type="cpsp">espaçamento entre maiúsculas</featureName>
 	</typographicNames>
 </ldml>

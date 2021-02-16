@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ typedef enum {
   JMM_INTERNAL_ATTRIBUTE_INDEX       = 100,
   JMM_CLASS_LOADED_BYTES             = 101,  /* Number of bytes loaded instance classes */
   JMM_CLASS_UNLOADED_BYTES           = 102,  /* Number of bytes unloaded instance classes */
-  JMM_TOTAL_CLASSLOAD_TIME_MS        = 103,  /* Accumulated VM class loader time (TraceClassLoadingTime) */
+  JMM_TOTAL_CLASSLOAD_TIME_MS        = 103,  /* Accumulated VM class loader time */
   JMM_VM_GLOBAL_COUNT                = 104,  /* Number of VM internal flags */
   JMM_SAFEPOINT_COUNT                = 105,  /* Total number of safepoints */
   JMM_TOTAL_SAFEPOINTSYNC_TIME_MS    = 106,  /* Accumulated time spent getting to safepoints */

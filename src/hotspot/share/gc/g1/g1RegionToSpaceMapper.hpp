@@ -66,6 +66,8 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
 
   void set_mapping_changed_listener(G1MappingChangedListener* listener) { _listener = listener; }
 
+  void signal_mapping_changed(uint start_idx, size_t num_regions);
+
   virtual ~G1RegionToSpaceMapper() {}
 
   virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL) = 0;

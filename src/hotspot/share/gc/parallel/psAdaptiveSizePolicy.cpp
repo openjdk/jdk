@@ -60,7 +60,6 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
      _live_at_last_full_gc(init_promo_size),
      _change_old_gen_for_min_pauses(0),
      _change_young_gen_for_maj_pauses(0),
-     _old_gen_policy_is_ready(false),
      _young_gen_size_increment_supplement(YoungGenerationSizeSupplement),
      _old_gen_size_increment_supplement(TenuredGenerationSizeSupplement)
 {
@@ -163,12 +162,6 @@ void PSAdaptiveSizePolicy::major_collection_end(size_t amount_live,
 
   // Update the amount live at the end of a full GC
   _live_at_last_full_gc = amount_live;
-
-  // The policy does not have enough data until at least some major collections
-  // have been done.
-  if (_avg_major_pause->count() >= AdaptiveSizePolicyReadyThreshold) {
-    _old_gen_policy_is_ready = true;
-  }
 
   // Interval times use this timer to measure the interval that
   // the mutator runs.  Reset after the GC pause has been measured.

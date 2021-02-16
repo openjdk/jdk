@@ -210,6 +210,11 @@ public interface JavaLangAccess {
     void addReadsAllUnnamed(Module m);
 
     /**
+     * Updates module m1 to export a package unconditionally.
+     */
+    void addExports(Module m1, String pkg);
+
+    /**
      * Updates module m1 to export a package to module m2. The export does
      * not result in a strong reference to m2 (m2 can be GC'ed).
      */

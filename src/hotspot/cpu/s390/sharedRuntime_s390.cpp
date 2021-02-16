@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,8 +37,11 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "vmreg_s390.inline.hpp"
@@ -919,7 +922,8 @@ static void gen_special_dispatch(MacroAssembler *masm,
     member_reg = Z_R9;                       // Known to be free at this point.
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
   } else {
-    guarantee(special_dispatch == vmIntrinsics::_invokeBasic, "special_dispatch=%d", special_dispatch);
+    guarantee(special_dispatch == vmIntrinsics::_invokeBasic || special_dispatch == vmIntrinsics::_linkToNative,
+              "special_dispatch=%d", vmIntrinsics::as_int(special_dispatch));
     has_receiver = true;
   }
 
@@ -3462,4 +3466,12 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
 extern "C"
 int SpinPause() {
   return 0;
+}
+
+BufferBlob* SharedRuntime::make_native_invoker(address call_target,
+                                               int shadow_space_bytes,
+                                               const GrowableArray<VMReg>& input_registers,
+                                               const GrowableArray<VMReg>& output_registers) {
+  Unimplemented();
+  return nullptr;
 }

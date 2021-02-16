@@ -117,6 +117,37 @@ public class CallerSensitiveAccess {
         MethodHandles.publicLookup().unreflect(method);
     }
 
+    /**
+     * Using a Lookup with no original access that can't lookup caller-sensitive
+     * method
+     */
+    @Test(dataProvider = "callerSensitiveMethods",
+            expectedExceptions = IllegalAccessException.class)
+    public void testLookupNoOriginalAccessFind(@NoInjection Method method, String desc) throws Exception {
+        Lookup lookup = MethodHandles.lookup().dropLookupMode(Lookup.ORIGINAL);
+        assertTrue(lookup.hasFullPrivilegeAccess());
+        Class<?> refc = method.getDeclaringClass();
+        String name = method.getName();
+        MethodType mt = MethodType.methodType(method.getReturnType(), method.getParameterTypes());
+        if (Modifier.isStatic(method.getModifiers())) {
+            lookup.findStatic(refc, name, mt);
+        } else {
+            lookup.findVirtual(refc, name, mt);
+        }
+    }
+
+    /**
+     * Using a Lookup with no original access that can't unreflect caller-sensitive
+     * method
+     */
+    @Test(dataProvider = "callerSensitiveMethods",
+            expectedExceptions = IllegalAccessException.class)
+    public void testLookupNoOriginalAccessUnreflect(@NoInjection Method method, String desc) throws Exception {
+        Lookup lookup = MethodHandles.lookup().dropLookupMode(Lookup.ORIGINAL);
+        assertTrue(lookup.hasFullPrivilegeAccess());
+        lookup.unreflect(method);
+    }
+
     // -- Test method handles to setAccessible --
 
     private int aField;

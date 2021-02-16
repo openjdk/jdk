@@ -122,6 +122,12 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * encoding. For more information on Unicode terminology, refer to the
  * <a href="http://www.unicode.org/glossary/">Unicode Glossary</a>.
  *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ *
  * @author  Lee Boynton
  * @author  Guy Steele
  * @author  Akira Tanaka
@@ -129,6 +135,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @author  Ulf Zibis
  * @since   1.0
  */
+@jdk.internal.ValueBased
 public final
 class Character implements java.io.Serializable, Comparable<Character>, Constable {
     /**
@@ -8501,7 +8508,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * {@link #valueOf(char)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Character(char value) {
         this.value = value;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 
 package java.awt.geom;
 
-import java.awt.Shape;
 import java.awt.Rectangle;
-import java.util.Arrays;
+import java.awt.Shape;
+import java.io.Serial;
 import java.io.Serializable;
+import java.util.Arrays;
+
 import sun.awt.geom.Curve;
 
 import static java.lang.Math.abs;
@@ -326,9 +328,10 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
                                          right - left, bottom - top);
         }
 
-        /*
-         * JDK 1.6 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.6 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -1272015596714244385L;
     }
 
@@ -572,9 +575,10 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
                                           right - left, bottom - top);
         }
 
-        /*
-         * JDK 1.6 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.6 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -4202960122839707295L;
     }
 
