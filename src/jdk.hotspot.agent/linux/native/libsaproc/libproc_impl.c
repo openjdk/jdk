@@ -439,13 +439,13 @@ uintptr_t get_lib_base(struct ps_prochandle* ph, int index) {
 }
 
 // get address range of lib
-void get_lib_addr_range(struct ps_prochandle* ph, int index, uintptr_t* base, uintptr_t* end) {
+void get_lib_addr_range(struct ps_prochandle* ph, int index, uintptr_t* base, uintptr_t* memsz) {
    int count = 0;
    lib_info* lib = ph->libs;
    while (lib) {
       if (count == index) {
          *base = lib->base;
-         *end = lib->end;
+         *memsz = lib->end - lib->base;
          return;
       }
       count++;
