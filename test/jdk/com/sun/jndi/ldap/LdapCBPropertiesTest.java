@@ -30,7 +30,7 @@
  * @run main/othervm LdapCBPropertiesTest true  true  com.sun.jndi.ldap.tls.cbtype tls-server-end-point com.sun.jndi.ldap.connect.timeout 2000
  * @run main/othervm LdapCBPropertiesTest false false com.sun.jndi.ldap.tls.cbtype tls-server-end-point com.sun.jndi.ldap.connect.timeout 2000
  * @run main/othervm LdapCBPropertiesTest false true  com.sun.jndi.ldap.tls.cbtype tls-unknown
- * @run main/othervm LdapCBPropertiesTest false true  jdk.internal.sasl.tlschannelbinding value
+ * @run main/othervm LdapCBPropertiesTest false true  com.sun.sasl.tls.cbdata value
  * @summary test new JNDI property to control the Channel Binding data
  */
 
@@ -151,9 +151,9 @@ public class LdapCBPropertiesTest {
         } finally {
             // test if internal property accessible to application
             if(shouldPass &&
-                    env.get("jdk.internal.sasl.tlschannelbinding") != null) {
+                    env.get("com.sun.sasl.tls.cbdata") != null) {
                 throw new Exception(
-                        "Test FAILED: jdk.internal.sasl.tlschannelbinding should not be accessible");
+                        "Test FAILED: com.sun.sasl.tls.cbdata should not be accessible");
             }
         }
         if (!passed) {

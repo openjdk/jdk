@@ -78,6 +78,7 @@ jmethodID MID_ChannelBinding_getInitiatorAddr;
 jmethodID MID_ChannelBinding_getAcceptorAddr;
 jmethodID MID_ChannelBinding_getAppData;
 jmethodID MID_InetAddress_getAddr;
+jmethodID MID_InetAddress_isAnyLocalAddress;
 jmethodID MID_GSSNameElement_ctor;
 jmethodID MID_GSSCredElement_ctor;
 jmethodID MID_NativeGSSContext_ctor;
@@ -267,6 +268,12 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
                                                 "()[B");
   if (MID_InetAddress_getAddr == NULL) {
     printf("Couldn't find InetAddress.getAddress() method\n");
+    return JNI_ERR;
+  }
+  MID_InetAddress_isAnyLocalAddress = (*env)->GetMethodID(env, cls, "isAnyLocalAddress",
+                                                "()Z");
+  if (MID_InetAddress_isAnyLocalAddress == NULL) {
+    printf("Couldn't find InetAddress.isAnyLocalAddress() method\n");
     return JNI_ERR;
   }
   MID_GSSNameElement_ctor =

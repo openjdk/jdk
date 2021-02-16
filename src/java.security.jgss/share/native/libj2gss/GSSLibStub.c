@@ -34,8 +34,6 @@ const int TYPE_CRED_NAME = 10;
 const int TYPE_CRED_TIME = 11;
 const int TYPE_CRED_USAGE = 12;
 
-static jclass tlsCBCl = NULL;
-
 /*
  * Class:     sun_security_jgss_wrapper_GSSLibStub
  * Method:    init
@@ -70,17 +68,6 @@ Java_sun_security_jgss_wrapper_GSSLibStub_init(JNIEnv *env,
     /* initialize global function table */
     failed = loadNative(libName);
     (*env)->ReleaseStringUTFChars(env, jlibName, libName);
-
-    if (tlsCBCl == NULL) {
-
-        /* initialize TLS Channel Binding class wrapper */
-        jclass cl = (*env)->FindClass(env,
-                    "sun/security/jgss/krb5/internal/TlsChannelBindingImpl");
-        if (cl == NULL) {           /* exception thrown */
-            return JNI_FALSE;
-        }
-        tlsCBCl = (*env)->NewGlobalRef(env, cl);
-    }
 
     if (!failed) {
         return JNI_TRUE;
@@ -203,20 +190,9 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
     return NULL;
   }
 
-  // initialize addrtype in CB first
-  // LDAP TLS Channel Binding requires GSS_C_AF_UNSPEC address type
-  // for unspecified initiator and acceptor addresses.
-  // GSS_C_AF_NULLADDR value should be used for unspecified address
-  // in all other cases.
+  cb->initiator_addrtype = GSS_C_AF_NULLADDR;
+  cb->acceptor_addrtype = GSS_C_AF_NULLADDR;
 
-  if ((*env)->IsInstanceOf(env, jcb, tlsCBCl)) {
-      // TLS Channel Binding requires unspecified addrtype=0
-      cb->initiator_addrtype = GSS_C_AF_UNSPEC;
-      cb->acceptor_addrtype = GSS_C_AF_UNSPEC;
-  } else {
-      cb->initiator_addrtype = GSS_C_AF_NULLADDR;
-      cb->acceptor_addrtype = GSS_C_AF_NULLADDR;
-  }
   // addresses needs to be initialized to empty
   memset(&cb->initiator_address, 0, sizeof(cb->initiator_address));
   memset(&cb->acceptor_address, 0, sizeof(cb->acceptor_address));
@@ -228,15 +204,27 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
     goto cleanup;
   }
   if (jinetAddr != NULL) {
-    value = (*env)->CallObjectMethod(env, jinetAddr,
-                                     MID_InetAddress_getAddr);
+    jboolean isAnyLocal = (*env)->CallBooleanMethod(env, jinetAddr,
+        MID_InetAddress_isAnyLocalAddress);
     if ((*env)->ExceptionCheck(env)) {
       goto cleanup;
     }
-    cb->initiator_addrtype = GSS_C_AF_INET;
-    initGSSBuffer(env, value, &(cb->initiator_address));
-    if ((*env)->ExceptionCheck(env)) {
-      goto cleanup;
+    if (isAnyLocal == JNI_TRUE) {
+      // AnyLocalAddress is used to indicate unspecified initiator addrtype
+      // According to RFC 5801 initiator-address-type field MUST be set to 0
+      // and initiator-address fields MUST be the empty string
+      cb->initiator_addrtype = GSS_C_AF_UNSPEC;
+    } else {
+      value = (*env)->CallObjectMethod(env, jinetAddr,
+                                       MID_InetAddress_getAddr);
+      if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+      }
+      cb->initiator_addrtype = GSS_C_AF_INET;
+      initGSSBuffer(env, value, &(cb->initiator_address));
+      if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+      }
     }
   }
   /* set up acceptor address */
@@ -246,15 +234,27 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
     goto cleanup;
   }
   if (jinetAddr != NULL) {
-    value = (*env)->CallObjectMethod(env, jinetAddr,
-                                     MID_InetAddress_getAddr);
+    jboolean isAnyLocal = (*env)->CallBooleanMethod(env, jinetAddr,
+        MID_InetAddress_isAnyLocalAddress);
     if ((*env)->ExceptionCheck(env)) {
       goto cleanup;
     }
-    cb->acceptor_addrtype = GSS_C_AF_INET;
-    initGSSBuffer(env, value, &(cb->acceptor_address));
-    if ((*env)->ExceptionCheck(env)) {
-      goto cleanup;
+    if (isAnyLocal == JNI_TRUE) {
+      // AnyLocalAddress is used to indicate unspecified acceptor addrtype
+      // According to RFC 5801 acceptor-address-type field MUST be set to 0
+      // and acceptor-address fields MUST be the empty string
+      cb->acceptor_addrtype = GSS_C_AF_UNSPEC;
+    } else {
+      value = (*env)->CallObjectMethod(env, jinetAddr,
+                                       MID_InetAddress_getAddr);
+      if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+      }
+      cb->acceptor_addrtype = GSS_C_AF_INET;
+      initGSSBuffer(env, value, &(cb->acceptor_address));
+      if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+      }
     }
   }
   /* set up application data */

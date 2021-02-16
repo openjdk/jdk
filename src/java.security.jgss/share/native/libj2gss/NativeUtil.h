@@ -70,6 +70,7 @@ extern "C" {
   extern jmethodID MID_ChannelBinding_getAcceptorAddr;
   extern jmethodID MID_ChannelBinding_getAppData;
   extern jmethodID MID_InetAddress_getAddr;
+  extern jmethodID MID_InetAddress_isAnyLocalAddress;
   extern jmethodID MID_GSSNameElement_ctor;
   extern jmethodID MID_GSSCredElement_ctor;
   extern jmethodID MID_NativeGSSContext_ctor;

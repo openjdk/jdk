@@ -25,6 +25,8 @@
 
 package com.sun.security.sasl.gsskerb;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.logging.Level;
 import javax.security.sasl.*;
@@ -35,7 +37,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import javax.security.auth.callback.CallbackHandler;
 
 // JGSS
-import sun.security.jgss.krb5.internal.TlsChannelBindingImpl;
 import org.ietf.jgss.*;
 
 /**
@@ -86,6 +87,18 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
 
     private boolean finalHandshake = false;
     private byte[] authzID;
+
+    private static final InetAddress anyLocalAddress;
+
+    static {
+        InetAddress value = null;
+        try {
+            value = InetAddress.getByAddress(new byte[]{0,0,0,0});
+        }catch(UnknownHostException e) {
+            // ignored
+        };
+        anyLocalAddress = value;
+    }
 
     /**
      * Creates a SASL mechanism with client credentials that it needs
@@ -155,9 +168,15 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
                 // TLS Channel Binding
                 // Property name is defined in the TLSChannelBinding class of
                 // the java.naming module
-                byte[] tlsCB = (byte[])props.get("jdk.internal.sasl.tlschannelbinding");
+                byte[] tlsCB = (byte[])props.get("com.sun.sasl.tls.cbdata");
                 if (tlsCB != null) {
-                    secCtx.setChannelBinding(new TlsChannelBindingImpl(tlsCB));
+                    // According to RFC 5801 initiator and acceptor address
+                    // type fields MUST be set to 0 and address fields MUST
+                    // be the empty string
+                    // Use Any Local Address to indicate unspecified
+                    // address fields
+                    secCtx.setChannelBinding(
+                            new ChannelBinding(anyLocalAddress, anyLocalAddress, tlsCB));
                 }
             }
 

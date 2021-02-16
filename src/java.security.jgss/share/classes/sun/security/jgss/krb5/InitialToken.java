@@ -36,7 +36,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.Krb5;
-import sun.security.jgss.krb5.internal.TlsChannelBindingImpl;
 
 abstract class InitialToken extends Krb5Token {
 
@@ -335,36 +334,44 @@ abstract class InitialToken extends Krb5Token {
         }
     }
 
-    private int getAddrType(InetAddress addr, int defValue) {
-        int addressType = defValue;
+    private int getAddrType(InetAddress addr) {
+        int addressType = CHANNEL_BINDING_AF_NULL_ADDR;
 
-        if (addr instanceof Inet4Address)
+        // AnyLocalAddress is used to indicate unspecified initiator address type
+        // for tls channel binding
+        // According to RFC 5801 initiator-address-type field MUST be set to
+        // CHANNEL_BINDING_AF_UNSPEC instead of CHANNEL_BINDING_AF_NULL_ADDR 
+        if (addr.isAnyLocalAddress())
+            addressType = CHANNEL_BINDING_AF_UNSPEC;
+        else if (addr instanceof Inet4Address)
             addressType = CHANNEL_BINDING_AF_INET;
         else if (addr instanceof Inet6Address)
             addressType = CHANNEL_BINDING_AF_INET6;
         return (addressType);
     }
 
-    private byte[] getAddrBytes(InetAddress addr) throws GSSException {
-        int addressType = getAddrType(addr, CHANNEL_BINDING_AF_NULL_ADDR);
-        byte[] addressBytes = addr.getAddress();
-        if (addressBytes != null) {
-            switch (addressType) {
-                case CHANNEL_BINDING_AF_INET:
-                    if (addressBytes.length != Inet4_ADDRSZ) {
+    private byte[] getAddrBytes(InetAddress addr, int addressType) throws GSSException {
+        if (addressType == CHANNEL_BINDING_AF_INET ||
+            addressType == CHANNEL_BINDING_AF_INET6) {
+            byte[] addressBytes = addr.getAddress();
+            if (addressBytes != null) {
+                switch (addressType) {
+                    case CHANNEL_BINDING_AF_INET:
+                        if (addressBytes.length != Inet4_ADDRSZ) {
+                            throw new GSSException(GSSException.FAILURE, -1,
+                            "Incorrect AF-INET address length in ChannelBinding.");
+                        }
+                        return (addressBytes);
+                    case CHANNEL_BINDING_AF_INET6:
+                        if (addressBytes.length != Inet6_ADDRSZ) {
+                            throw new GSSException(GSSException.FAILURE, -1,
+                            "Incorrect AF-INET6 address length in ChannelBinding.");
+                        }
+                        return (addressBytes);
+                    default:
                         throw new GSSException(GSSException.FAILURE, -1,
-                        "Incorrect AF-INET address length in ChannelBinding.");
-                    }
-                    return (addressBytes);
-                case CHANNEL_BINDING_AF_INET6:
-                    if (addressBytes.length != Inet6_ADDRSZ) {
-                        throw new GSSException(GSSException.FAILURE, -1,
-                        "Incorrect AF-INET6 address length in ChannelBinding.");
-                    }
-                    return (addressBytes);
-                default:
-                    throw new GSSException(GSSException.FAILURE, -1,
-                    "Cannot handle non AF-INET addresses in ChannelBinding.");
+                        "Cannot handle non AF-INET addresses in ChannelBinding.");
+                }
             }
         }
         return null;
@@ -377,28 +384,17 @@ abstract class InitialToken extends Krb5Token {
         InetAddress acceptorAddress = channelBinding.getAcceptorAddress();
         int size = 5*4;
 
-        // LDAP TLS Channel Binding requires CHANNEL_BINDING_AF_UNSPEC address type
-        // for unspecified initiator and acceptor addresses.
-        // CHANNEL_BINDING_AF_NULL_ADDR value should be used for unspecified address
-        // in all other cases.
-        int initiatorAddressType = getAddrType(initiatorAddress,
-                (channelBinding instanceof TlsChannelBindingImpl) ?
-                        CHANNEL_BINDING_AF_UNSPEC : CHANNEL_BINDING_AF_NULL_ADDR);
-        int acceptorAddressType = getAddrType(acceptorAddress,
-                (channelBinding instanceof TlsChannelBindingImpl) ?
-                        CHANNEL_BINDING_AF_UNSPEC : CHANNEL_BINDING_AF_NULL_ADDR);
-
-        byte[] initiatorAddressBytes = null;
-        if (initiatorAddress != null) {
-            initiatorAddressBytes = getAddrBytes(initiatorAddress);
+        int initiatorAddressType = getAddrType(initiatorAddress);
+        int acceptorAddressType = getAddrType(acceptorAddress);
+        byte[] initiatorAddressBytes =
+                getAddrBytes(initiatorAddress, initiatorAddressType);
+        if (initiatorAddressBytes != null)
             size += initiatorAddressBytes.length;
-        }
 
-        byte[] acceptorAddressBytes = null;
-        if (acceptorAddress != null) {
-            acceptorAddressBytes = getAddrBytes(acceptorAddress);
+        byte[] acceptorAddressBytes =
+                getAddrBytes(acceptorAddress, acceptorAddressType);
+        if (acceptorAddressBytes != null)
             size += acceptorAddressBytes.length;
-        }
 
         byte[] appDataBytes = channelBinding.getApplicationData();
         if (appDataBytes != null) {

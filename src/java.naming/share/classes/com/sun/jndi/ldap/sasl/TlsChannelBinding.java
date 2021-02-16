@@ -53,7 +53,7 @@ public class TlsChannelBinding {
 
     // internal TLS channel binding property
     public static final String CHANNEL_BINDING =
-            "jdk.internal.sasl.tlschannelbinding";
+            "com.sun.sasl.tls.cbdata";
 
     public enum TlsChannelBindingType {
 
