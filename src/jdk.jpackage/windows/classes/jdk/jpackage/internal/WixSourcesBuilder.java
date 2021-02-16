@@ -551,9 +551,6 @@ class WixSourcesBuilder {
         }
 
         List<String> componentIds = new ArrayList<>();
-        while (!SYSTEM_DIRS.contains(path = path.getParent())) {
-            componentIds.add(addRemoveDirectoryComponent(xml, path));
-        }
 
         return componentIds;
     }

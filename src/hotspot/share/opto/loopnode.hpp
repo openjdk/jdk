@@ -611,7 +611,7 @@ public:
 
   Node_List _body;              // Loop body for inner loops
 
-  uint8_t _nest;                // Nesting depth
+  uint16_t _nest;               // Nesting depth
   uint8_t _irreducible:1,       // True if irreducible
           _has_call:1,          // True if has call safepoint
           _has_sfpt:1,          // True if has non-call safepoint
@@ -1608,6 +1608,8 @@ public:
   void check_long_counted_loop(IdealLoopTree* loop, Node* x) NOT_DEBUG_RETURN;
 
   LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
+
+  bool is_safe_load_ctrl(Node* ctrl);
 };
 
 

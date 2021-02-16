@@ -24,7 +24,6 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"

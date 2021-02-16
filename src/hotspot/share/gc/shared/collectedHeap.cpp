@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"

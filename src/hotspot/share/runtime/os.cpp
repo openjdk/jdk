@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -52,6 +51,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -1814,6 +1814,10 @@ void os::print_memory_mappings(outputStream* st) {
 
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
   for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
+    // Note: this must be a store, not a load. On many OSes loads from fresh
+    // memory would be satisfied from a single mapped page containing all zeros.
+    // We need to store something to each page to get them backed by their own
+    // memory, which is the effect we want here.
     *p = 0;
   }
 }

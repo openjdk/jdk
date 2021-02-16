@@ -52,6 +52,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 
 static void trace_class_resolution(oop mirror) {
   if (mirror == NULL || java_lang_Class::is_primitive(mirror)) {
