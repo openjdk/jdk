@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  *
  *  . keys and values must be non-null
  *
- *  . maximum size. Replacements are made in LRU order.
+ *  . maximum size. Replacements are made in FIFO order.
  *
  *  . optional lifetime, specified in seconds.
  *
@@ -266,7 +266,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         else
             this.queue = null;
 
-        cacheMap = new LinkedHashMap<>(1, LOAD_FACTOR, true);
+        cacheMap = new LinkedHashMap<>(1, LOAD_FACTOR, false);
     }
 
     /**
@@ -306,9 +306,8 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
     /**
      * Scan entries and remove expired ones.
-     * @param scanAll true to scan all entries, false to stop on first non-expired entry
      */
-    private void expungeExpiredEntries(boolean scanAll) {
+    private void expungeExpiredEntries() {
         emptyQueue();
         if (lifetime == 0) {
             return;
@@ -321,7 +320,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
             if (entry.isValid(time, lifetime) == false) {
                 t.remove();
                 cnt++;
-            } else if (!scanAll) {
+            } else {
                 break;
             }
         }
@@ -334,7 +333,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     public synchronized int size() {
-        expungeExpiredEntries(true);
+        expungeExpiredEntries();
         return cacheMap.size();
     }
 
@@ -348,7 +347,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     public synchronized void put(K key, V value) {
-        expungeExpiredEntries(false);
+        expungeExpiredEntries();
         long insertionTime = System.nanoTime();
         CacheEntry<K,V> newEntry = newEntry(key, value, insertionTime, queue);
         CacheEntry<K,V> oldEntry = cacheMap.put(key, newEntry);
@@ -388,7 +387,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     public synchronized void setCapacity(int size) {
-        expungeExpiredEntries(false);
+        expungeExpiredEntries();
         if (size > 0 && cacheMap.size() > size) {
             Iterator<CacheEntry<K,V>> t = cacheMap.values().iterator();
             for (int i = cacheMap.size() - size; i > 0; i--) {
@@ -419,7 +418,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
     // it is a heavyweight method.
     public synchronized void accept(CacheVisitor<K,V> visitor) {
-        expungeExpiredEntries(true);
+        expungeExpiredEntries();
         Map<K,V> cached = getCachedEntries();
 
         visitor.visit(cached);
