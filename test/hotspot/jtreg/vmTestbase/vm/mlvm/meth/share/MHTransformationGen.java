@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import nsk.share.test.LazyIntArrayToString;
 import nsk.share.test.TestUtils;
@@ -66,19 +68,38 @@ public class MHTransformationGen {
 
     private static final boolean USE_THROW_CATCH = false; // Test bugs
 
-    private static final MemoryPoolMXBean CODE_CACHE_MX_BEAN = ManagementFactory
-        .getMemoryPoolMXBeans().stream()
-        .filter(pool -> pool.getName().equals("CodeCache")).findFirst().get();
+    private static final Optional<MemoryPoolMXBean> NON_SEGMENTED_CODE_CACHE_POOL;
+    private static final Optional<MemoryPoolMXBean> PROFILED_NMETHODS_POOL;
+    private static final Optional<MemoryPoolMXBean> NON_PROFILED_NMETHODS_POOL ;
+
+    static {
+        var pools = ManagementFactory.getMemoryPoolMXBeans();
+        NON_SEGMENTED_CODE_CACHE_POOL = pools.stream()
+            .filter(pool -> pool.getName().equals("CodeCache")).findFirst();
+        PROFILED_NMETHODS_POOL = pools.stream()
+            .filter(pool -> pool.getName().equals("CodeHeap 'profiled nmethods'")).findFirst();
+        NON_PROFILED_NMETHODS_POOL = pools.stream()
+            .filter(pool -> pool.getName().equals("CodeHeap 'non-profiled nmethods'")).findFirst();
+    }
 
     public static class ThrowCatchTestException extends Throwable {
         private static final long serialVersionUID = -6749961303738648241L;
     }
 
     private static final boolean isCodeCacheEffectivelyFull() {
-        MemoryUsage usage = CODE_CACHE_MX_BEAN.getUsage();
+        var result = new Object() { boolean value = false; };
 
-        // Number 2M is arbitrary, can be changed if need arises
-        return usage.getMax() - usage.getUsed() < 2000000;
+        BiConsumer<MemoryPoolMXBean, Integer> check = (pool, limit) -> {
+            var usage = pool.getUsage();
+            result.value |= usage.getMax() - usage.getUsed() < limit;
+        };
+
+        // Limit numbers are arbitrary, feel free to change if arguably necessary
+        NON_SEGMENTED_CODE_CACHE_POOL.ifPresent(pool -> check.accept(pool, 2_000_000));
+        PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, 1_000_000));
+        NON_PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, 1_000_000));
+
+        return result.value;
     }
 
     @SuppressWarnings("unused")
