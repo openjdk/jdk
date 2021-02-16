@@ -975,7 +975,6 @@ static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle*
      jobject loadObjectList;
      jstring nameString;
 
-     base = get_lib_base(ph, i);
      get_lib_addr_range(ph, i, &base, &memsz);
      name = get_lib_name(ph, i);
      nameString = (*env)->NewStringUTF(env, name);
