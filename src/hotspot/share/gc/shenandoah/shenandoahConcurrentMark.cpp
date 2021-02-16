@@ -233,7 +233,7 @@ void ShenandoahConcurrentMark::mark_concurrent_roots(ShenandoahGeneration* gener
       break;
     }
     case GLOBAL: {
-      ShenandoahMarkConcurrentRootsTask<YOUNG> task(this, task_queues(), rp, ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
+      ShenandoahMarkConcurrentRootsTask<GLOBAL> task(this, task_queues(), rp, ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
       workers->run_task(&task);
       break;
     }
