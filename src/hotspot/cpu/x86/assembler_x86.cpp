@@ -5006,6 +5006,65 @@ void Assembler::sahf() {
   emit_int8((unsigned char)0x9E);
 }
 
+void Assembler::sall(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8), "illegal shift count");
+  prefix(dst);
+  if (imm8 == 1) {
+    emit_int8((unsigned char)0xD1);
+    emit_operand(as_Register(4), dst);
+  }
+  else {
+    emit_int8((unsigned char)0xC1);
+    emit_operand(as_Register(4), dst);
+    emit_int8(imm8);
+  }
+}
+
+void Assembler::sall(Address dst) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0xD3);
+  emit_operand(as_Register(4), dst);
+}
+
+void Assembler::sall(Register dst, int imm8) {
+  assert(isShiftCount(imm8), "illegal shift count");
+  int encode = prefix_and_encode(dst->encoding());
+  if (imm8 == 1) {
+    emit_int16((unsigned char)0xD1, (0xE0 | encode));
+  } else {
+    emit_int24((unsigned char)0xC1, (0xE0 | encode), imm8);
+  }
+}
+
+void Assembler::sall(Register dst) {
+  int encode = prefix_and_encode(dst->encoding());
+  emit_int16((unsigned char)0xD3, (0xE0 | encode));
+}
+
+void Assembler::sarl(Address dst, int imm8) {
+  assert(isShiftCount(imm8), "illegal shift count");
+  InstructionMark im(this);
+  prefix(dst);
+  if (imm8 == 1) {
+    emit_int8((unsigned char)0xD1);
+    emit_operand(as_Register(7), dst);
+  }
+  else {
+    emit_int8((unsigned char)0xC1);
+    emit_operand(as_Register(7), dst);
+    emit_int8(imm8);
+  }
+}
+
+void Assembler::sarl(Address dst) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0xD3);
+  emit_operand(as_Register(7), dst);
+}
+
 void Assembler::sarl(Register dst, int imm8) {
   int encode = prefix_and_encode(dst->encoding());
   assert(isShiftCount(imm8), "illegal shift count");
@@ -10434,6 +10493,61 @@ void Assembler::rorxd(Register dst, Register src, int imm8) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_3A, &attributes);
   emit_int24((unsigned char)0xF0, (0xC0 | encode), imm8);
+}
+
+void Assembler::salq(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8), "illegal shift count");
+  if (imm8 == 1) {
+    emit_int16(get_prefixq(dst), (unsigned char)0xD1);
+    emit_operand(as_Register(4), dst);
+  }
+  else {
+    emit_int16(get_prefixq(dst), (unsigned char)0xC1);
+    emit_operand(as_Register(4), dst);
+    emit_int8(imm8);
+  }
+}
+
+void Assembler::salq(Address dst) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst), (unsigned char)0xD3);
+  emit_operand(as_Register(4), dst);
+}
+
+void Assembler::salq(Register dst, int imm8) {
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
+  int encode = prefixq_and_encode(dst->encoding());
+  if (imm8 == 1) {
+    emit_int16((unsigned char)0xD1, (0xE0 | encode));
+  } else {
+    emit_int24((unsigned char)0xC1, (0xE0 | encode), imm8);
+  }
+}
+
+void Assembler::salq(Register dst) {
+  int encode = prefixq_and_encode(dst->encoding());
+  emit_int16((unsigned char)0xD3, (0xE0 | encode));
+}
+
+void Assembler::sarq(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8), "illegal shift count");
+  if (imm8 == 1) {
+    emit_int16(get_prefixq(dst), (unsigned char)0xD1);
+    emit_operand(as_Register(7), dst);
+  }
+  else {
+    emit_int16(get_prefixq(dst), (unsigned char)0xC1);
+    emit_operand(as_Register(7), dst);
+    emit_int8(imm8);
+  }
+}
+
+void Assembler::sarq(Address dst) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst), (unsigned char)0xD3);
+  emit_operand(as_Register(7), dst);
 }
 
 void Assembler::sarq(Register dst, int imm8) {

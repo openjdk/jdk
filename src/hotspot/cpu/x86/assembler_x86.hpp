@@ -1913,11 +1913,29 @@ private:
 
   void sahf();
 
+  void sall(Register dst, int imm8);
+  void sall(Register dst);
+  void sall(Address dst, int imm8);
+  void sall(Address dst);
+
+#ifdef _LP64
+  void salq(Register dst, int imm8);
+  void salq(Register dst);
+  void salq(Address dst, int imm8);
+  void salq(Address dst);
+#endif
+
+  void sarl(Address dst, int imm8);
+  void sarl(Address dst);
   void sarl(Register dst, int imm8);
   void sarl(Register dst);
 
+#ifdef _LP64
+  void sarq(Address dst, int imm8);
+  void sarq(Address dst);
   void sarq(Register dst, int imm8);
   void sarq(Register dst);
+#endif
 
   void sbbl(Address dst, int32_t imm32);
   void sbbl(Register dst, int32_t imm32);

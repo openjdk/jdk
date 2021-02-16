@@ -1819,141 +1819,6 @@ encode %{
     emit_rm(cbuf, 0x3, $dst$$reg & 7, $src$$reg & 7);
   %}
 
-  enc_class cdql_enc(no_rax_rdx_RegI div)
-  %{
-    // Full implementation of Java idiv and irem; checks for
-    // special case as described in JVM spec., p.243 & p.271.
-    //
-    //         normal case                           special case
-    //
-    // input : rax: dividend                         min_int
-    //         reg: divisor                          -1
-    //
-    // output: rax: quotient  (= rax idiv reg)       min_int
-    //         rdx: remainder (= rax irem reg)       0
-    //
-    //  Code sequnce:
-    //
-    //    0:   3d 00 00 00 80          cmp    $0x80000000,%eax
-    //    5:   75 07/08                jne    e <normal>
-    //    7:   33 d2                   xor    %edx,%edx
-    //  [div >= 8 -> offset + 1]
-    //  [REX_B]
-    //    9:   83 f9 ff                cmp    $0xffffffffffffffff,$div
-    //    c:   74 03/04                je     11 <done>
-    // 000000000000000e <normal>:
-    //    e:   99                      cltd
-    //  [div >= 8 -> offset + 1]
-    //  [REX_B]
-    //    f:   f7 f9                   idiv   $div
-    // 0000000000000011 <done>:
-
-    // cmp    $0x80000000,%eax
-    emit_opcode(cbuf, 0x3d);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x80);
-
-    // jne    e <normal>
-    emit_opcode(cbuf, 0x75);
-    emit_d8(cbuf, $div$$reg < 8 ? 0x07 : 0x08);
-
-    // xor    %edx,%edx
-    emit_opcode(cbuf, 0x33);
-    emit_d8(cbuf, 0xD2);
-
-    // cmp    $0xffffffffffffffff,%ecx
-    if ($div$$reg >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x83);
-    emit_rm(cbuf, 0x3, 0x7, $div$$reg & 7);
-    emit_d8(cbuf, 0xFF);
-
-    // je     11 <done>
-    emit_opcode(cbuf, 0x74);
-    emit_d8(cbuf, $div$$reg < 8 ? 0x03 : 0x04);
-
-    // <normal>
-    // cltd
-    emit_opcode(cbuf, 0x99);
-
-    // idivl (note: must be emitted by the user of this rule)
-    // <done>
-  %}
-
-  enc_class cdqq_enc(no_rax_rdx_RegL div)
-  %{
-    // Full implementation of Java ldiv and lrem; checks for
-    // special case as described in JVM spec., p.243 & p.271.
-    //
-    //         normal case                           special case
-    //
-    // input : rax: dividend                         min_long
-    //         reg: divisor                          -1
-    //
-    // output: rax: quotient  (= rax idiv reg)       min_long
-    //         rdx: remainder (= rax irem reg)       0
-    //
-    //  Code sequnce:
-    //
-    //    0:   48 ba 00 00 00 00 00    mov    $0x8000000000000000,%rdx
-    //    7:   00 00 80
-    //    a:   48 39 d0                cmp    %rdx,%rax
-    //    d:   75 08                   jne    17 <normal>
-    //    f:   33 d2                   xor    %edx,%edx
-    //   11:   48 83 f9 ff             cmp    $0xffffffffffffffff,$div
-    //   15:   74 05                   je     1c <done>
-    // 0000000000000017 <normal>:
-    //   17:   48 99                   cqto
-    //   19:   48 f7 f9                idiv   $div
-    // 000000000000001c <done>:
-
-    // mov    $0x8000000000000000,%rdx
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0xBA);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x80);
-
-    // cmp    %rdx,%rax
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x39);
-    emit_d8(cbuf, 0xD0);
-
-    // jne    17 <normal>
-    emit_opcode(cbuf, 0x75);
-    emit_d8(cbuf, 0x08);
-
-    // xor    %edx,%edx
-    emit_opcode(cbuf, 0x33);
-    emit_d8(cbuf, 0xD2);
-
-    // cmp    $0xffffffffffffffff,$div
-    emit_opcode(cbuf, $div$$reg < 8 ? Assembler::REX_W : Assembler::REX_WB);
-    emit_opcode(cbuf, 0x83);
-    emit_rm(cbuf, 0x3, 0x7, $div$$reg & 7);
-    emit_d8(cbuf, 0xFF);
-
-    // je     1e <done>
-    emit_opcode(cbuf, 0x74);
-    emit_d8(cbuf, 0x05);
-
-    // <normal>
-    // cqto
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x99);
-
-    // idivq (note: must be emitted by the user of this rule)
-    // <done>
-  %}
-
   // Opcde enc_class for 8/32 bit immediate instructions with sign-extension
   enc_class OpcSE(immI imm)
   %{
@@ -8383,8 +8248,19 @@ instruct divI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
     "normal: cdql\n\t"
             "idivl   $div\n"
     "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode(cdql_enc(div), REX_reg(div), OpcP, reg_opc(div));
+  ins_encode %{
+    Label normal;
+    Label done;
+    __ cmpl($rax$$Register, 0x80000000);
+    __ jccb(Assembler::notEqual, normal);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ cmpl($div$$Register, -1);
+    __ jccb(Assembler::equal, done);
+    __ bind(normal);
+    __ cdql();
+    __ idivl($div$$Register);
+    __ bind(done);
+  %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
@@ -8404,8 +8280,20 @@ instruct divL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
     "normal: cdqq\n\t"
             "idivq   $div\n"
     "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode(cdqq_enc(div), REX_reg_wide(div), OpcP, reg_opc(div));
+  ins_encode %{
+    Label normal;
+    Label done;
+    __ mov64($rdx$$Register, 0x8000000000000000);
+    __ cmpq($rax$$Register, $rdx$$Register);
+    __ jccb(Assembler::notEqual, normal);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ cmpq($div$$Register, -1);
+    __ jccb(Assembler::equal, done);
+    __ bind(normal);
+    __ cdqq();
+    __ idivq($div$$Register);
+    __ bind(done);
+  %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
@@ -8425,8 +8313,19 @@ instruct divModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
     "normal: cdql\n\t"
             "idivl   $div\n"
     "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode(cdql_enc(div), REX_reg(div), OpcP, reg_opc(div));
+  ins_encode %{
+    Label normal;
+    Label done;
+    __ cmpl($rax$$Register, 0x80000000);
+    __ jccb(Assembler::notEqual, normal);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ cmpl($div$$Register, -1);
+    __ jccb(Assembler::equal, done);
+    __ bind(normal);
+    __ cdql();
+    __ idivl($div$$Register);
+    __ bind(done);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -8447,8 +8346,20 @@ instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
     "normal: cdqq\n\t"
             "idivq   $div\n"
     "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode(cdqq_enc(div), REX_reg_wide(div), OpcP, reg_opc(div));
+  ins_encode %{
+    Label normal;
+    Label done;
+    __ mov64($rdx$$Register, 0x8000000000000000);
+    __ cmpq($rax$$Register, $rdx$$Register);
+    __ jccb(Assembler::notEqual, normal);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ cmpq($div$$Register, -1);
+    __ jccb(Assembler::equal, done);
+    __ bind(normal);
+    __ cdqq();
+    __ idivq($div$$Register);
+    __ bind(done);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -8480,8 +8391,9 @@ instruct sarL_rReg_63(rRegL dst, rFlagsReg cr)
   effect(USE_DEF dst, KILL cr);
 
   format %{ "sarq    $dst, #63\t# Used in div-by-10" %}
-  opcode(0xC1, 0x7); /* C1 /7 ib */
-  ins_encode(reg_opc_imm_wide(dst, 0x3F));
+  ins_encode %{
+    __ sarq($dst$$Register, 63);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8490,8 +8402,9 @@ instruct sarL_rReg_2(rRegL dst, rFlagsReg cr)
   effect(USE_DEF dst, KILL cr);
 
   format %{ "sarq    $dst, #2\t# Used in div-by-10" %}
-  opcode(0xC1, 0x7); /* C1 /7 ib */
-  ins_encode(reg_opc_imm_wide(dst, 0x2));
+  ins_encode %{
+    __ sarq($dst$$Register, 2);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8528,8 +8441,19 @@ instruct modI_rReg(rdx_RegI rdx, rax_RegI rax, no_rax_rdx_RegI div,
     "normal: cdql\n\t"
             "idivl   $div\n"
     "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode(cdql_enc(div), REX_reg(div), OpcP, reg_opc(div));
+  ins_encode %{
+    Label normal;
+    Label done;
+    __ cmpl($rax$$Register, 0x80000000);
+    __ jccb(Assembler::notEqual, normal);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ cmpl($div$$Register, -1);
+    __ jccb(Assembler::equal, done);
+    __ bind(normal);
+    __ cdql();
+    __ idivl($div$$Register);
+    __ bind(done);
+  %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
@@ -8549,8 +8473,20 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
     "normal: cdqq\n\t"
             "idivq   $div\n"
     "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode(cdqq_enc(div), REX_reg_wide(div), OpcP, reg_opc(div));
+  ins_encode %{
+    Label normal;
+    Label done;
+    __ mov64($rdx$$Register, 0x8000000000000000);
+    __ cmpq($rax$$Register, $rdx$$Register);
+    __ jccb(Assembler::notEqual, normal);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ cmpq($div$$Register, -1);
+    __ jccb(Assembler::equal, done);
+    __ bind(normal);
+    __ cdqq();
+    __ idivq($div$$Register);
+    __ bind(done);
+  %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
@@ -8562,8 +8498,9 @@ instruct salI_rReg_1(rRegI dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sall    $dst, $shift" %}
-  opcode(0xD1, 0x4); /* D1 /4 */
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ sall($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8574,8 +8511,9 @@ instruct salI_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sall    $dst, $shift\t" %}
-  opcode(0xD1, 0x4); /* D1 /4 */
-  ins_encode(REX_mem(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ sall($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8586,8 +8524,9 @@ instruct salI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sall    $dst, $shift" %}
-  opcode(0xC1, 0x4); /* C1 /4 ib */
-  ins_encode(reg_opc_imm(dst, shift));
+  ins_encode %{
+    __ sall($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8598,8 +8537,9 @@ instruct salI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sall    $dst, $shift" %}
-  opcode(0xC1, 0x4); /* C1 /4 ib */
-  ins_encode(REX_mem(dst), OpcP, RM_opc_mem(secondary, dst), Con8or32(shift));
+  ins_encode %{
+    __ sall($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8610,8 +8550,9 @@ instruct salI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sall    $dst, $shift" %}
-  opcode(0xD3, 0x4); /* D3 /4 */
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ sall($dst$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -8622,8 +8563,9 @@ instruct salI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sall    $dst, $shift" %}
-  opcode(0xD3, 0x4); /* D3 /4 */
-  ins_encode(REX_mem(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ sall($dst$$Address);
+  %}
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -8647,8 +8589,9 @@ instruct sarI_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarl    $dst, $shift" %}
-  opcode(0xD1, 0x7); /* D1 /7 */
-  ins_encode(REX_mem(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ sarl($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8672,8 +8615,9 @@ instruct sarI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarl    $dst, $shift" %}
-  opcode(0xC1, 0x7); /* C1 /7 ib */
-  ins_encode(REX_mem(dst), OpcP, RM_opc_mem(secondary, dst), Con8or32(shift));
+  ins_encode %{
+    __ sarl($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8682,10 +8626,10 @@ instruct sarI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %{
   match(Set dst (RShiftI dst shift));
   effect(KILL cr);
-
   format %{ "sarl    $dst, $shift" %}
-  opcode(0xD3, 0x7); /* D3 /7 */
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ sarl($dst$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -8696,8 +8640,9 @@ instruct sarI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarl    $dst, $shift" %}
-  opcode(0xD3, 0x7); /* D3 /7 */
-  ins_encode(REX_mem(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ sarl($dst$$Address);
+  %}
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -8783,8 +8728,9 @@ instruct salL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "salq    $dst, $shift" %}
-  opcode(0xD1, 0x4); /* D1 /4 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ salq($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8795,8 +8741,9 @@ instruct salL_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "salq    $dst, $shift" %}
-  opcode(0xD1, 0x4); /* D1 /4 */
-  ins_encode(REX_mem_wide(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ salq($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8807,8 +8754,9 @@ instruct salL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "salq    $dst, $shift" %}
-  opcode(0xC1, 0x4); /* C1 /4 ib */
-  ins_encode(reg_opc_imm_wide(dst, shift));
+  ins_encode %{
+    __ salq($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8819,9 +8767,9 @@ instruct salL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "salq    $dst, $shift" %}
-  opcode(0xC1, 0x4); /* C1 /4 ib */
-  ins_encode(REX_mem_wide(dst), OpcP,
-             RM_opc_mem(secondary, dst), Con8or32(shift));
+  ins_encode %{
+    __ salq($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8832,8 +8780,9 @@ instruct salL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "salq    $dst, $shift" %}
-  opcode(0xD3, 0x4); /* D3 /4 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ salq($dst$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -8844,8 +8793,9 @@ instruct salL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "salq    $dst, $shift" %}
-  opcode(0xD3, 0x4); /* D3 /4 */
-  ins_encode(REX_mem_wide(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ salq($dst$$Address);
+  %}
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -8858,7 +8808,7 @@ instruct sarL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
   format %{ "sarq    $dst, $shift" %}
   ins_encode %{
     __ sarq($dst$$Register, $shift$$constant);
-  }
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8869,8 +8819,9 @@ instruct sarL_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarq    $dst, $shift" %}
-  opcode(0xD1, 0x7); /* D1 /7 */
-  ins_encode(REX_mem_wide(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ sarq($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8894,9 +8845,9 @@ instruct sarL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarq    $dst, $shift" %}
-  opcode(0xC1, 0x7); /* C1 /7 ib */
-  ins_encode(REX_mem_wide(dst), OpcP,
-             RM_opc_mem(secondary, dst), Con8or32(shift));
+  ins_encode %{
+    __ sarq($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8907,8 +8858,9 @@ instruct sarL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarq    $dst, $shift" %}
-  opcode(0xD3, 0x7); /* D3 /7 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ sarq($dst$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -8919,8 +8871,9 @@ instruct sarL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "sarq    $dst, $shift" %}
-  opcode(0xD3, 0x7); /* D3 /7 */
-  ins_encode(REX_mem_wide(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ sarq($dst$$Address);
+  %}
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -8933,7 +8886,7 @@ instruct shrL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
   format %{ "shrq    $dst, $shift" %}
   ins_encode %{
     __ shrq($dst$$Register, $shift$$constant);
-  }
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8958,7 +8911,7 @@ instruct shrL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
   format %{ "shrq    $dst, $shift" %}
   ins_encode %{
     __ shrq($dst$$Register, $shift$$constant);
-  }
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -10029,7 +9982,7 @@ instruct cmpLTMask0(rRegI dst, immI_0 zero, rFlagsReg cr)
   ins_cost(100);
   format %{ "sarl    $dst, #31\t# cmpLTMask0" %}
   ins_encode %{
-  __ sarl($dst$$Register, 31);
+    __ sarl($dst$$Register, 31);
   %}
   ins_pipe(ialu_reg);
 %}
