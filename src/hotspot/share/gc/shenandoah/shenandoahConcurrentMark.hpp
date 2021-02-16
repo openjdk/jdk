@@ -27,7 +27,9 @@
 
 #include "gc/shenandoah/shenandoahMark.hpp"
 
+template <GenerationMode GENERATION>
 class ShenandoahConcurrentMarkingTask;
+template<GenerationMode GENERATION>
 class ShenandoahFinalMarkingTask;
 class ShenandoahGeneration;
 

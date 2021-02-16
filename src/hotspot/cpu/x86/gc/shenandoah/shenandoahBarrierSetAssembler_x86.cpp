@@ -624,9 +624,9 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
   int dirty = CardTable::dirty_card_val();
   if (UseCondCardMark) {
     Label L_already_dirty;
-    if (ct->scanned_concurrently()) {
-      __ membar(Assembler::StoreLoad);
-    }
+//    if (ct->scanned_concurrently()) {
+//      __ membar(Assembler::StoreLoad);
+//    }
     __ cmpb(card_addr, dirty);
     __ jcc(Assembler::equal, L_already_dirty);
     __ movb(card_addr, dirty);

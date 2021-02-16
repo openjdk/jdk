@@ -34,7 +34,7 @@ class ShenandoahCardTable: public CardTable {
   friend class VMStructs;
 
 public:
-  ShenandoahCardTable(MemRegion whole_heap): CardTable(whole_heap, /* conc_scan */ false) { }
+  ShenandoahCardTable(MemRegion whole_heap): CardTable(whole_heap) { }
 
   virtual void initialize();
 
