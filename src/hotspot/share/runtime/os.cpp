@@ -56,7 +56,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"
