@@ -90,7 +90,7 @@ public class JarInputStream extends ZipInputStream {
     {
         if (e != null && JarFile.MANIFEST_NAME.equalsIgnoreCase(e.getName())) {
             man = new Manifest();
-            byte[] bytes = new BufferedInputStream(this).readAllBytes();
+            byte[] bytes = readAllBytes();
             man.read(new ByteArrayInputStream(bytes));
             closeEntry();
             if (doVerify) {

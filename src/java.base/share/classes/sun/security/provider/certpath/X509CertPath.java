@@ -224,12 +224,7 @@ public class X509CertPath extends CertPath {
         }
 
         try {
-            if (is.markSupported() == false) {
-                // Copy the entire input stream into an InputStream that does
-                // support mark
-                is = new ByteArrayInputStream(is.readAllBytes());
-            }
-            PKCS7 pkcs7 = new PKCS7(is);
+            PKCS7 pkcs7 = new PKCS7(is.readAllBytes());
 
             X509Certificate[] certArray = pkcs7.getCertificates();
             // certs are optional in PKCS #7
