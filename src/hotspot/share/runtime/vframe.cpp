@@ -562,15 +562,6 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
   }
 }
 
-
-void vframeStreamCommon::skip_reflection_related_frames() {
-  while (!at_end() &&
-          (method()->method_holder()->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass()) ||
-           method()->method_holder()->is_subclass_of(vmClasses::reflect_ConstructorAccessorImpl_klass()))) {
-    next();
-  }
-}
-
 javaVFrame* vframeStreamCommon::asJavaVFrame() {
   javaVFrame* result = NULL;
   if (_mode == compiled_mode) {

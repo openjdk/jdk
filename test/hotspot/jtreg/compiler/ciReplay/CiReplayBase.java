@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
+import jdk.test.lib.util.CoreUtils;
 
 public abstract class CiReplayBase {
     public static final String REPLAY_FILE_NAME = "test_replay.txt";
@@ -65,17 +66,27 @@ public abstract class CiReplayBase {
         "-XX:MetaspaceSize=4m", "-XX:MaxMetaspaceSize=16m", "-XX:InitialCodeCacheSize=512k",
         "-XX:ReservedCodeCacheSize=4m", "-XX:ThreadStackSize=512", "-XX:VMThreadStackSize=512",
         "-XX:CompilerThreadStackSize=512", "-XX:ParallelGCThreads=1", "-XX:CICompilerCount=2",
-        "-Xcomp", "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
-        "-XX:+PreferInterpreterNativeStubs", "-XX:+PrintCompilation", REPLAY_FILE_OPTION};
+        "-XX:-BackgroundCompilation", "-XX:CompileCommand=inline,java.io.PrintStream::*",
+        "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222", // extra profile data as a stress test
+        "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
+        "-XX:+PreferInterpreterNativeStubs", REPLAY_FILE_OPTION};
     private static final String[] REPLAY_OPTIONS = new String[]{DISABLE_COREDUMP_ON_CRASH,
+        "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222",
         "-XX:+ReplayCompiles", REPLAY_FILE_OPTION};
     protected final Optional<Boolean> runServer;
     private static int dummy;
 
     public static class TestMain {
         public static void main(String[] args) {
-            // Do something because empty methods might not be called/compiled.
-            dummy = 42;
+            for (int i = 0; i < 20_000; i++) {
+                test(i);
+            }
+        }
+
+        static void test(int i) {
+            if ((i % 1000) == 0) {
+                System.out.println("Hello World!");
+            }
         }
     }
 
@@ -103,7 +114,7 @@ public abstract class CiReplayBase {
 
     public void runTest(boolean needCoreDump, String... args) {
         cleanup();
-        if (generateReplay(needCoreDump)) {
+        if (generateReplay(needCoreDump, args)) {
             testAction();
             cleanup();
         } else {
@@ -143,11 +154,16 @@ public abstract class CiReplayBase {
             options.addAll(Arrays.asList(REPLAY_GENERATION_OPTIONS));
             options.addAll(Arrays.asList(vmopts));
             options.add(needCoreDump ? ENABLE_COREDUMP_ON_CRASH : DISABLE_COREDUMP_ON_CRASH);
-            options.add(TestMain.class.getName());
             if (needCoreDump) {
-                crashOut = ProcessTools.executeProcess(getTestJvmCommandlineWithPrefix(
-                        RUN_SHELL_NO_LIMIT, options.toArray(new String[0])));
+                // CiReplayBase$TestMain needs to be quoted because of shell eval
+                options.add("-XX:CompileOnly='" + TestMain.class.getName() + "::test'");
+                options.add("'" + TestMain.class.getName() + "'");
+                crashOut = ProcessTools.executeProcess(
+                        CoreUtils.addCoreUlimitCommand(
+                                ProcessTools.createTestJvm(options.toArray(new String[0]))));
             } else {
+                options.add("-XX:CompileOnly=" + TestMain.class.getName() + "::test");
+                options.add(TestMain.class.getName());
                 crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(options));
             }
             crashOutputString = crashOut.getOutput();
@@ -159,18 +175,8 @@ public abstract class CiReplayBase {
             throw new Error("Can't create replay: " + t, t);
         }
         if (needCoreDump) {
-            String coreFileLocation = getCoreFileLocation(crashOutputString);
-            if (coreFileLocation == null) {
-                if (Platform.isOSX()) {
-                    File coresDir = new File("/cores");
-                    if (!coresDir.isDirectory() || !coresDir.canWrite()) {
-                        return false;
-                    }
-                }
-                throw new Error("Couldn't find core file location in: '" + crashOutputString + "'");
-            }
             try {
-                Asserts.assertGT(new File(coreFileLocation).length(), 0L, "Unexpected core size");
+                String coreFileLocation = CoreUtils.getCoreFileLocation(crashOutputString, crashOut.pid());
                 Files.move(Paths.get(coreFileLocation), Paths.get(TEST_CORE_FILE_NAME));
             } catch (IOException ioe) {
                 throw new Error("Can't move core file: " + ioe, ioe);
@@ -248,48 +254,6 @@ public abstract class CiReplayBase {
         } else {
             negativeTest(TIERED_DISABLED_VM_OPTION);
         }
-    }
-
-    // lets search few possible locations using process output and return existing location
-    private String getCoreFileLocation(String crashOutputString) {
-        Asserts.assertTrue(crashOutputString.contains(LOCATIONS_STRING),
-                "Output doesn't contain the location of core file, see crash.out");
-        String stringWithLocation = Arrays.stream(crashOutputString.split("\\r?\\n"))
-                .filter(str -> str.contains(LOCATIONS_STRING))
-                .findFirst()
-                .get();
-        stringWithLocation = stringWithLocation.substring(stringWithLocation
-                .indexOf(LOCATIONS_STRING) + LOCATIONS_STRING.length());
-        String coreWithPid;
-        if (stringWithLocation.contains("or ") && !Platform.isWindows()) {
-            Matcher m = Pattern.compile("or.* ([^ ]+[^\\)])\\)?").matcher(stringWithLocation);
-            if (!m.find()) {
-                throw new Error("Couldn't find path to core inside location string");
-            }
-            coreWithPid = m.group(1);
-        } else {
-            coreWithPid = stringWithLocation.trim();
-        }
-        if (new File(coreWithPid).exists()) {
-            return coreWithPid;
-        }
-        String justCore = Paths.get("core").toString();
-        if (new File(justCore).exists()) {
-            return justCore;
-        }
-        Path coreWithPidPath = Paths.get(coreWithPid);
-        String justFile = coreWithPidPath.getFileName().toString();
-        if (new File(justFile).exists()) {
-            return justFile;
-        }
-        Path parent = coreWithPidPath.getParent();
-        if (parent != null) {
-            String coreWithoutPid = parent.resolve("core").toString();
-            if (new File(coreWithoutPid).exists()) {
-                return coreWithoutPid;
-            }
-        }
-        return null;
     }
 
     private String[] getTestJvmCommandlineWithPrefix(String prefix, String... args) {

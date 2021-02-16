@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,13 @@
  * questions.
  */
 
-import static java.lang.ProcessBuilder.Redirect.*;
+package pkg1;
 
-class InheritIO {
+import pkg2.UndocumentedParent;
 
-    public static class TestInheritIO {
-        public static void main(String args[]) throws Throwable {
-            int err = new ProcessBuilder(args).inheritIO().start().waitFor();
-            System.err.print("exit value: " + err);
-            System.exit(err);
-        }
-    }
+/**
+ * A visible class, extending invisible classes.
+ */
+public class Child extends UndocumentedParent<Child> {
 
-    public static class TestRedirectInherit {
-        public static void main(String args[]) throws Throwable {
-            int err = new ProcessBuilder(args)
-                    .redirectInput(INHERIT)
-                    .redirectOutput(INHERIT)
-                    .redirectError(INHERIT)
-                    .start().waitFor();
-            System.err.print("exit value: " + err);
-            System.exit(err);
-        }
-    }
 }

@@ -1362,15 +1362,15 @@ var concatObjects = function (o1, o2) {
  * @param patch Override patch version
  * @returns {String} The numeric version string
  */
-var getVersion = function (feature, interim, update, patch) {
+var getVersion = function (feature, interim, update, patch, extra1, extra2, extra3) {
     var version_numbers = getVersionNumbers();
     var version = (feature != null ? feature : version_numbers.get("DEFAULT_VERSION_FEATURE"))
         + "." + (interim != null ? interim : version_numbers.get("DEFAULT_VERSION_INTERIM"))
         + "." + (update != null ? update :  version_numbers.get("DEFAULT_VERSION_UPDATE"))
         + "." + (patch != null ? patch : version_numbers.get("DEFAULT_VERSION_PATCH"))
-        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA1")
-        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA2")
-        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA3");
+        + "." + (extra1 != null ? extra1 : version_numbers.get("DEFAULT_VERSION_EXTRA1"))
+        + "." + (extra2 != null ? extra2 : version_numbers.get("DEFAULT_VERSION_EXTRA2"))
+        + "." + (extra3 != null ? extra3 : version_numbers.get("DEFAULT_VERSION_EXTRA3"));
     while (version.match(".*\\.0$")) {
         version = version.substring(0, version.length - 2);
     }

@@ -821,6 +821,8 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 javax/script/Test7.java                                         8239361 generic-all
 
+jdk/dynalink/TypeConverterFactoryMemoryLeakTest.java            8261483 generic-all
+
 ############################################################################
 
 # jdk_jfr
@@ -828,7 +830,6 @@ javax/script/Test7.java                                         8239361 generic-
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
-jdk/jfr/jmx/streaming/TestRotate.java                           8257215 generic-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 

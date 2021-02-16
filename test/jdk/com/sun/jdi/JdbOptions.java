@@ -34,9 +34,17 @@ import lib.jdb.Jdb;
 import lib.jdb.JdbCommand;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 class JbdOptionsTarg {
     static final String OK_MSG = "JbdOptionsTarg: OK";
@@ -49,47 +57,62 @@ class JbdOptionsTarg {
         return "prop[" + name + "] = >" + value + "<";
     }
 
-    public static void main(String[] args) {
-        System.out.println(OK_MSG);
-        // print all args
-        List<String> vmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
-        for (String s: vmArgs) {
-            System.out.println(argString(s));
-        }
-        // print requested sys.props
-        for (String p: args) {
-            System.out.println(propString(p, System.getProperty(p)));
+    /**
+     * 1st argument is a filename to redirect application output,
+     * the rest are names of the properties to dump.
+     */
+    public static void main(String[] args) throws IOException {
+        String outFile = args[0];
+        try (PrintStream out = new PrintStream(outFile, StandardCharsets.UTF_8)) {
+            out.println(OK_MSG);
+            // print all args
+            List<String> vmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
+            for (String s : vmArgs) {
+                out.println(argString(s));
+            }
+            // print requested sys.props (skip 1st arg which is output filename)
+            for (int i=1; i < args.length; i++) {
+                String p = args[i];
+                out.println(propString(p, System.getProperty(p)));
+            }
         }
     }
 }
 
 public class JdbOptions {
+    private static final String outFilename = UUID.randomUUID().toString() + ".out";
+    private static final Path outPath = Paths.get(outFilename);
     private static final String targ = JbdOptionsTarg.class.getName();
 
     public static void main(String[] args) throws Exception {
         // the simplest case
         test("-connect",
-                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-client -XX:+PrintVMOptions,main=" + targ)
+                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-client -XX:+PrintVMOptions"
+                + ",main=" + targ + " " + outFilename)
             .expectedArg("-XX:+PrintVMOptions");
 
         // pass property through 'options'
         test("-connect",
-                "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-Dboo=foo',main=" + targ + " boo")
+                "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-Dboo=foo'"
+                + ",main=" + targ + " " + outFilename + " boo")
             .expectedProp("boo", "foo");
 
         // property with spaces
         test("-connect",
-                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=\"-Dboo=foo 2\",main=" + targ + " boo")
+                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=\"-Dboo=foo 2\""
+                + ",main=" + targ + " " + outFilename + " boo")
             .expectedProp("boo", "foo 2");
 
         // property with spaces (with single quotes)
         test("-connect",
-                "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-Dboo=foo 2',main=" + targ + " boo")
+                "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-Dboo=foo 2'"
+                + ",main=" + targ + " " + outFilename + " boo")
                 .expectedProp("boo", "foo 2");
 
         // properties with spaces (with single quotes)
         test("-connect",
-                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-Dboo=foo '-Dboo2=foo 2',main=" + targ + " boo boo2")
+                "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-Dboo=foo '-Dboo2=foo 2'"
+                + ",main=" + targ + " " + outFilename + " boo boo2")
                 .expectedProp("boo", "foo")
                 .expectedProp("boo2", "foo 2");
 
@@ -98,7 +121,7 @@ public class JdbOptions {
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options=\"-client\" \"-XX:+PrintVMOptions\""
                 + " -XX:+IgnoreUnrecognizedVMOptions"
                 + " \"-XX:StartFlightRecording=dumponexit=true,maxsize=500M\" \"-XX:FlightRecorderOptions=repository=jfrrep\""
-                + ",main=" + targ)
+                + ",main=" + targ + " " + outFilename)
             .expectedArg("-XX:StartFlightRecording=dumponexit=true,maxsize=500M")
             .expectedArg("-XX:FlightRecorderOptions=repository=jfrrep");
 
@@ -107,7 +130,7 @@ public class JdbOptions {
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-client' '-XX:+PrintVMOptions'"
                         + " -XX:+IgnoreUnrecognizedVMOptions"
                         + " '-XX:StartFlightRecording=dumponexit=true,maxsize=500M' '-XX:FlightRecorderOptions=repository=jfrrep'"
-                        + ",main=" + targ)
+                        + ",main=" + targ + " " + outFilename)
             .expectedArg("-XX:StartFlightRecording=dumponexit=true,maxsize=500M")
             .expectedArg("-XX:FlightRecorderOptions=repository=jfrrep");
 
@@ -120,7 +143,7 @@ public class JdbOptions {
                         + " -XX:+IgnoreUnrecognizedVMOptions"
                         + " \"-XX:StartFlightRecording=dumponexit=true,maxsize=500M\""
                         + " '-XX:FlightRecorderOptions=repository=jfrrep'"
-                        + ",main=" + targ + " prop1 prop2 prop3 prop4")
+                        + ",main=" + targ + " " + outFilename + " prop1 prop2 prop3 prop4")
                 .expectedProp("prop1", "val1")
                 .expectedProp("prop2", "val 2")
                 .expectedProp("prop3", "val3")
@@ -154,12 +177,18 @@ public class JdbOptions {
                     .map(s -> s.replace("\"", "\\\""))
                     .toArray(String[]::new);
         }
+
         try (Jdb jdb = new Jdb(args)) {
             jdb.waitForSimplePrompt(1024, true); // 1024 lines should be enough
             jdb.command(JdbCommand.run().allowExit());
-            OutputAnalyzer out = new OutputAnalyzer(jdb.getJdbOutput());
-            out.shouldContain(JbdOptionsTarg.OK_MSG);
-            return new TestResult(out);
         }
+        String output = Files.readAllLines(outPath, StandardCharsets.UTF_8).stream()
+                .collect(Collectors.joining(System.getProperty("line.separator")));
+        Files.deleteIfExists(outPath);
+        System.out.println("Debuggee output: [");
+        System.out.println(output);
+        System.out.println("]");
+        OutputAnalyzer out = new OutputAnalyzer(output);
+        return new TestResult(out);
     }
 }
