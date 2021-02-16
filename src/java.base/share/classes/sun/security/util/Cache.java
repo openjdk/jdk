@@ -27,6 +27,7 @@ package sun.security.util;
 
 import java.util.*;
 import java.lang.ref.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Abstract base class and factory for caches. A cache is a key-value mapping.
@@ -259,7 +260,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
     public MemoryCache(boolean soft, int maxSize, int lifetime) {
         this.maxSize = maxSize;
-        this.lifetime = lifetime * 1000;
+        this.lifetime = TimeUnit.SECONDS.toNanos(lifetime);
         if (soft)
             this.queue = new ReferenceQueue<>();
         else
@@ -313,11 +314,11 @@ class MemoryCache<K,V> extends Cache<K,V> {
             return;
         }
         int cnt = 0;
-        long time = System.currentTimeMillis();
+        long time = System.nanoTime();
         for (Iterator<CacheEntry<K,V>> t = cacheMap.values().iterator();
                 t.hasNext(); ) {
             CacheEntry<K,V> entry = t.next();
-            if (entry.isValid(time) == false) {
+            if (entry.isValid(time, lifetime) == false) {
                 t.remove();
                 cnt++;
             } else if (!scanAll) {
@@ -348,9 +349,8 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
     public synchronized void put(K key, V value) {
         expungeExpiredEntries(false);
-        long expirationTime = (lifetime == 0) ? 0 :
-                                        System.currentTimeMillis() + lifetime;
-        CacheEntry<K,V> newEntry = newEntry(key, value, expirationTime, queue);
+        long insertionTime = System.nanoTime();
+        CacheEntry<K,V> newEntry = newEntry(key, value, insertionTime, queue);
         CacheEntry<K,V> oldEntry = cacheMap.put(key, newEntry);
         if (oldEntry != null) {
             return;
@@ -372,8 +372,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         if (entry == null) {
             return null;
         }
-        long time = (lifetime == 0) ? 0 : System.currentTimeMillis();
-        if (entry.isValid(time) == false) {
+        if (entry.isValid(System.nanoTime(), lifetime) == false) {
             if (DEBUG) {
                 System.out.println("Ignoring expired entry");
             }
@@ -411,7 +410,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
     public synchronized void setTimeout(int timeout) {
         emptyQueue();
-        lifetime = timeout > 0 ? timeout * 1000L : 0L;
+        lifetime = timeout > 0 ? TimeUnit.SECONDS.toNanos(timeout) : 0L;
 
         if (DEBUG) {
             System.out.println("** lifetime reset to " + timeout);
@@ -437,17 +436,17 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     protected CacheEntry<K,V> newEntry(K key, V value,
-            long expirationTime, ReferenceQueue<V> queue) {
+            long insertionTime, ReferenceQueue<V> queue) {
         if (queue != null) {
-            return new SoftCacheEntry<>(key, value, expirationTime, queue);
+            return new SoftCacheEntry<>(key, value, insertionTime, queue);
         } else {
-            return new HardCacheEntry<>(key, value, expirationTime);
+            return new HardCacheEntry<>(key, value, insertionTime);
         }
     }
 
     private static interface CacheEntry<K,V> {
 
-        boolean isValid(long currentTime);
+        boolean isValid(long currentTime, long lifetime);
 
         K getKey();
 
@@ -459,12 +458,12 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
         private K key;
         private V value;
-        private long expirationTime;
+        private long insertionTime;
 
-        HardCacheEntry(K key, V value, long expirationTime) {
+        HardCacheEntry(K key, V value, long insertionTime) {
             this.key = key;
             this.value = value;
-            this.expirationTime = expirationTime;
+            this.insertionTime = insertionTime;
         }
 
         public K getKey() {
@@ -475,8 +474,8 @@ class MemoryCache<K,V> extends Cache<K,V> {
             return value;
         }
 
-        public boolean isValid(long currentTime) {
-            boolean valid = (currentTime <= expirationTime);
+        public boolean isValid(long currentTime, long lifetime) {
+            boolean valid = (lifetime == 0) || (currentTime - insertionTime <= lifetime);
             return valid;
         }
     }
@@ -486,13 +485,13 @@ class MemoryCache<K,V> extends Cache<K,V> {
             implements CacheEntry<K,V> {
 
         private K key;
-        private long expirationTime;
+        private long insertionTime;
 
-        SoftCacheEntry(K key, V value, long expirationTime,
+        SoftCacheEntry(K key, V value, long insertionTime,
                 ReferenceQueue<V> queue) {
             super(value, queue);
             this.key = key;
-            this.expirationTime = expirationTime;
+            this.insertionTime = insertionTime;
         }
 
         public K getKey() {
@@ -503,8 +502,8 @@ class MemoryCache<K,V> extends Cache<K,V> {
             return get();
         }
 
-        public boolean isValid(long currentTime) {
-            boolean valid = (currentTime <= expirationTime) && (get() != null);
+        public boolean isValid(long currentTime, long lifetime) {
+            boolean valid = ((lifetime == 0) || (currentTime - insertionTime <= lifetime)) && (get() != null);
             return valid;
         }
     }
