@@ -31,6 +31,7 @@
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 
 public class bug6698013 extends JApplet {
 
@@ -43,9 +44,11 @@ public class bug6698013 extends JApplet {
     final static VirtualFile subdirFile = new VirtualFile("testdir/subdir/subtest.txt", false);
 
     public static void main(String[] args) {
-        JFileChooser chooser = new JFileChooser(new VirtualFileSystemView());
-        chooser.setCurrentDirectory(root);
-        chooser.showOpenDialog(null);
+        try {
+            SwingUtilities.invokeAndWait(() -> new bug6698013().init());
+        } catch (InvocationTargetException | InterruptedException e) {
+           e.printStackTrace();
+        }
     }
 
     public void init() {
