@@ -37,10 +37,7 @@ class ShenandoahHeapRegionSetIterator : public StackObj {
 private:
   const ShenandoahHeapRegionSet* _set;
   ShenandoahHeap* const _heap;
-
-  shenandoah_padding(0);
-  volatile jint _current_index;
-  shenandoah_padding(1);
+  size_t _current_index;
 
   // No implicit copying: iterators should be passed by reference to capture the state
   NONCOPYABLE(ShenandoahHeapRegionSetIterator);
@@ -50,9 +47,6 @@ public:
 
   // Reset existing iterator to new set
   void reset(const ShenandoahHeapRegionSet* const set);
-
-  // MT version
-  ShenandoahHeapRegion* claim_next();
 
   // Single-thread version
   ShenandoahHeapRegion* next();
@@ -73,11 +67,7 @@ public:
   ShenandoahHeapRegionSet();
   ~ShenandoahHeapRegionSet();
 
-  // Add region to set
   void add_region(ShenandoahHeapRegion* r);
-  bool add_region_check_for_duplicates(ShenandoahHeapRegion* r);
-
-  // Remove region from set
   void remove_region(ShenandoahHeapRegion* r);
 
   size_t count()  const { return _region_count; }
