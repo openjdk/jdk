@@ -601,28 +601,6 @@ class ReferenceProcessorAtomicMutator: StackObj {
   }
 };
 
-
-// A utility class to temporarily change the MT processing
-// disposition of the given ReferenceProcessor instance
-// in the scope that contains it.
-class ReferenceProcessorMTProcMutator: StackObj {
- private:
-  ReferenceProcessor* _rp;
-  bool  _saved_mt;
-
- public:
-  ReferenceProcessorMTProcMutator(ReferenceProcessor* rp,
-                                  bool mt):
-    _rp(rp) {
-    _saved_mt = _rp->processing_is_mt();
-    _rp->set_mt_processing(mt);
-  }
-
-  ~ReferenceProcessorMTProcMutator() {
-    _rp->set_mt_processing(_saved_mt);
-  }
-};
-
 // This class is an interface used to implement task execution for the
 // reference processing.
 class AbstractRefProcTaskExecutor {
