@@ -260,7 +260,7 @@ class StatisticsWalker : public MallocSiteWalker {
     _stack_depth_distribution[frames - 1] ++;
 
     // hash distribution
-    int hash_bucket = e->hash() % MallocSiteTable::hash_buckets();
+    int hash_bucket = ((unsigned)e->hash()) % MallocSiteTable::hash_buckets();
     if (_current_hash_bucket == -1) {
       _current_hash_bucket = hash_bucket;
       _current_bucket_length = 1;

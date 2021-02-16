@@ -82,7 +82,7 @@ void DefNewYoungerGenClosure::barrier(T* p) {
   oop obj = CompressedOops::decode_not_null(heap_oop);
   // If p points to a younger generation, mark the card.
   if (cast_from_oop<HeapWord*>(obj) < _old_gen_start) {
-    _rs->inline_write_ref_field_gc(p, obj);
+    _rs->inline_write_ref_field_gc(p);
   }
 }
 

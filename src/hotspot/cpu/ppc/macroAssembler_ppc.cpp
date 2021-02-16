@@ -3233,16 +3233,22 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 }
 
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result) {
-  // OopHandle::resolve is an indirection.
-  ld(result, 0, result);
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2,
+                                        MacroAssembler::PreservationLevel preservation_level) {
+  access_load_at(T_OBJECT, IN_NATIVE, result, noreg, result, tmp1, tmp2, preservation_level);
 }
 
-void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
-  ld(mirror, in_bytes(ConstMethod::constants_offset()), const_method);
-  ld(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
-  ld(mirror, in_bytes(Klass::java_mirror_offset()), mirror);
-  resolve_oop_handle(mirror);
+void MacroAssembler::resolve_weak_handle(Register result, Register tmp1, Register tmp2,
+                                         MacroAssembler::PreservationLevel preservation_level) {
+  Label resolved;
+
+  // A null weak handle resolves to null.
+  cmpdi(CCR0, result, 0);
+  beq(CCR0, resolved);
+
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, result, noreg, result, tmp1, tmp2,
+                 preservation_level);
+  bind(resolved);
 }
 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
@@ -3373,7 +3379,7 @@ int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register t
   assert(!VM_Version::has_vpmsumb(), "Vector version should be used instead!");
 
   // Point to 4 byte folding tables (byte-reversed version for Big Endian)
-  // Layout: See StubRoutines::generate_crc_constants.
+  // Layout: See StubRoutines::ppc::generate_crc_constants.
 #ifdef VM_LITTLE_ENDIAN
   const int ix0 = 3 * CRC32_TABLE_SIZE;
   const int ix1 = 2 * CRC32_TABLE_SIZE;

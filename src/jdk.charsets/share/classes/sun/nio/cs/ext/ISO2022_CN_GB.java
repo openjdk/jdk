@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,15 +65,12 @@ public class ISO2022_CN_GB extends ISO2022 implements HistoricallyNamedCharset
 
     private static class Encoder extends ISO2022.Encoder {
 
+        private static final Charset gb2312 = new EUC_CN();
         public Encoder(Charset cs)
         {
             super(cs);
             SODesig = new byte[] { '$', ')', 'A'};
-
-            try {
-                Charset cset = Charset.forName("EUC_CN"); // GB2312
-                ISOEncoder = cset.newEncoder();
-            } catch (Exception e) { }
+            ISOEncoder = gb2312.newEncoder();
         }
 
         /*

@@ -968,14 +968,14 @@ static NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
     }
     DECLARE_CLASS_RETURN(jnumber_Class, "java/lang/Number", nil);
     DECLARE_CLASS_RETURN(jinteger_Class, "java/lang/Integer", nil);
-    DECLARE_METHOD_RETURN(jm_intValue, jnumber_Class, "intValue", "()D", nil);
+    DECLARE_METHOD_RETURN(jm_intValue, jnumber_Class, "intValue", "()I", nil);
     DECLARE_METHOD_RETURN(jm_doubleValue, jnumber_Class, "doubleValue", "()D", nil);
     if ((*env)->IsInstanceOf(env, jnumber, jinteger_Class)) {
-        jint i = (*env)->CallIntMethod(env, jnumber_Class, jm_intValue);
+        jint i = (*env)->CallIntMethod(env, jnumber, jm_intValue);
         CHECK_EXCEPTION();
         return [NSNumber numberWithInteger:i];
     } else {
-        jdouble d = (*env)->CallDoubleMethod(env, jnumber_Class, jm_doubleValue);
+        jdouble d = (*env)->CallDoubleMethod(env, jnumber, jm_doubleValue);
         CHECK_EXCEPTION();
         return [NSNumber numberWithDouble:d];
     }

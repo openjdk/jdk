@@ -23,12 +23,16 @@
  *
  */
 
+#include "nativeInst_ppc.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ masm->
 
@@ -124,4 +128,70 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
                                                         Register obj, Register tmp, Label& slowpath) {
   __ clrrdi(dst, obj, JNIHandles::weak_tag_size);
   __ ld(dst, 0, dst);         // Resolve (untagged) jobject.
+}
+
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register tmp) {
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm == nullptr) {
+    return;
+  }
+
+  assert_different_registers(tmp, R0);
+
+  // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
+  __ calculate_address_from_global_toc(tmp, StubRoutines::ppc::nmethod_entry_barrier(),
+                                       true, true, false); // 2 instructions
+  __ mtctr(tmp);
+
+  // This is a compound instruction. Patching support is provided by NativeMovRegMem.
+  // Actual patching is done in (platform-specific part of) BarrierSetNMethod.
+  __ load_const32(tmp, 0 /* Value is patched */); // 2 instructions
+
+  __ lwz(R0, in_bytes(bs_nm->thread_disarmed_offset()), R16_thread);
+  __ cmpw(CCR0, R0, tmp);
+
+  __ bnectrl(CCR0);
+
+  // Oops may have been changed; exploiting isync semantics (used as acquire) to make those updates observable.
+  __ isync();
+}
+
+void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1, Register tmp2, Register tmp3) {
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm == nullptr) {
+    return;
+  }
+
+  assert_different_registers(tmp1, tmp2, tmp3);
+
+  Register tmp1_class_loader_data = tmp1;
+
+  Label bad_call, skip_barrier;
+
+  // Fast path: If no method is given, the call is definitely bad.
+  __ cmpdi(CCR0, R19_method, 0);
+  __ beq(CCR0, bad_call);
+
+  // Load class loader data to determine whether the method's holder is concurrently unloading.
+  __ load_method_holder(tmp1, R19_method);
+  __ ld(tmp1_class_loader_data, in_bytes(InstanceKlass::class_loader_data_offset()), tmp1);
+
+  // Fast path: If class loader is strong, the holder cannot be unloaded.
+  __ ld(tmp2, in_bytes(ClassLoaderData::keep_alive_offset()), tmp1_class_loader_data);
+  __ cmpdi(CCR0, tmp2, 0);
+  __ bne(CCR0, skip_barrier);
+
+  // Class loader is weak. Determine whether the holder is still alive.
+  __ ld(tmp2, in_bytes(ClassLoaderData::holder_offset()), tmp1_class_loader_data);
+  __ resolve_weak_handle(tmp2, tmp1, tmp3, MacroAssembler::PreservationLevel::PRESERVATION_FRAME_LR_GP_FP_REGS);
+  __ cmpdi(CCR0, tmp2, 0);
+  __ bne(CCR0, skip_barrier);
+
+  __ bind(bad_call);
+
+  __ calculate_address_from_global_toc(tmp1, SharedRuntime::get_handle_wrong_method_stub(), true, true, false);
+  __ mtctr(tmp1);
+  __ bctr();
+
+  __ bind(skip_barrier);
 }
