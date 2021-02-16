@@ -95,7 +95,7 @@ public class ClhsdbInspect {
                 test.run(theApp.getPid(), cmds, expStrMap, null);
             }
 
-            // This part is testing JDK-8261269. When inspecting java object, we want to make
+            // This part is testing JDK-8261269. When inspecting a java object, we want to make
             // sure the address is not prtined twice and that "Oop for ..." is not printed twice.
             //
             // The end goal is to dump the Class instance for java.lang.System. It contains some
