@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,25 +146,6 @@ bool  PSOldGen::is_allocated() {
   return virtual_space()->reserved_size() != 0;
 }
 
-// Allocation. We report all successful allocations to the size policy
-// Note that the perm gen does not use this method, and should not!
-HeapWord* PSOldGen::allocate(size_t word_size) {
-  assert_locked_or_safepoint(Heap_lock);
-  HeapWord* res = allocate_noexpand(word_size);
-
-  if (res == NULL) {
-    res = expand_and_allocate(word_size);
-  }
-
-  // Allocations in the old generation need to be reported
-  if (res != NULL) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    heap->size_policy()->tenured_allocation(word_size * HeapWordSize);
-  }
-
-  return res;
-}
-
 size_t PSOldGen::num_iterable_blocks() const {
   return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
 }
@@ -195,14 +176,6 @@ void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   for (HeapWord* p = start; p < end; p += oop(p)->size()) {
     cl->do_object(oop(p));
   }
-}
-
-HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
-  expand(word_size*HeapWordSize);
-  if (GCExpandToAllocateDelayMillis > 0) {
-    os::naked_sleep(GCExpandToAllocateDelayMillis);
-  }
-  return allocate_noexpand(word_size);
 }
 
 HeapWord* PSOldGen::expand_and_cas_allocate(size_t word_size) {
@@ -380,7 +353,9 @@ void PSOldGen::post_resize() {
   WorkGang* workers = Thread::current()->is_VM_thread() ?
                       &ParallelScavengeHeap::heap()->workers() : NULL;
 
-  // ALWAYS do this last!!
+  // The update of the space's end is done by this call.  As that
+  // makes the new space available for concurrent allocation, this
+  // must be the last step when expanding.
   object_space()->initialize(new_memregion,
                              SpaceDecorator::DontClear,
                              SpaceDecorator::DontMangle,

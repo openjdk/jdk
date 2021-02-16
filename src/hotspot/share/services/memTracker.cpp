@@ -170,7 +170,14 @@ bool MemTracker::transition_to(NMT_TrackingLevel level) {
   return true;
 }
 
+// Report during error reporting.
+void MemTracker::error_report(outputStream* output) {
+  if (tracking_level() >= NMT_summary) {
+    report(true, output, MemReporterBase::default_scale); // just print summary for error case.
+  }
+}
 
+// Report when handling PrintNMTStatistics before VM shutdown.
 static volatile bool g_final_report_did_run = false;
 void MemTracker::final_report(outputStream* output) {
   // This function is called during both error reporting and normal VM exit.
@@ -181,25 +188,25 @@ void MemTracker::final_report(outputStream* output) {
   if (Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
     NMT_TrackingLevel level = tracking_level();
     if (level >= NMT_summary) {
-      report(level == NMT_summary, output);
+      report(level == NMT_summary, output, 1);
     }
   }
 }
 
-void MemTracker::report(bool summary_only, outputStream* output) {
+void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
  assert(output != NULL, "No output stream");
   MemBaseline baseline;
   if (baseline.baseline(summary_only)) {
     if (summary_only) {
-      MemSummaryReporter rpt(baseline, output);
+      MemSummaryReporter rpt(baseline, output, scale);
       rpt.report();
     } else {
-      MemDetailReporter rpt(baseline, output);
+      MemDetailReporter rpt(baseline, output, scale);
       rpt.report();
       output->print("Metaspace:");
       // The basic metaspace report avoids any locking and should be safe to
       // be called at any time.
-      MetaspaceUtils::print_basic_report(output, K);
+      MetaspaceUtils::print_basic_report(output, scale);
     }
   }
 }
@@ -260,7 +267,7 @@ class StatisticsWalker : public MallocSiteWalker {
     _stack_depth_distribution[frames - 1] ++;
 
     // hash distribution
-    int hash_bucket = e->hash() % MallocSiteTable::hash_buckets();
+    int hash_bucket = ((unsigned)e->hash()) % MallocSiteTable::hash_buckets();
     if (_current_hash_bucket == -1) {
       _current_hash_bucket = hash_bucket;
       _current_bucket_length = 1;

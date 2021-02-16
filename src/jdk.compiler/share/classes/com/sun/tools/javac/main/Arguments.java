@@ -853,11 +853,6 @@ public class Arguments {
             doclintOpts.add(DocLint.XCHECK_PACKAGE + checkPackages);
         }
 
-        String format = options.get(Option.DOCLINT_FORMAT);
-        if (format != null) {
-            doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + format);
-        }
-
         return List.from(doclintOpts.toArray(new String[doclintOpts.size()]));
     }
 

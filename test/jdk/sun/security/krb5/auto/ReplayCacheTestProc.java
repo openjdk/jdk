@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -408,20 +408,9 @@ public class ReplayCacheTestProc {
             ps.printf("%s:\nmsg: %s\nMD5: %s\nSHA-256: %s\n\n",
                     label,
                     req.msg,
-                    hex(md5.digest(data)),
-                    hex(sha256.digest(data)));
+                    HexFormat.of().withUpperCase().formatHex(md5.digest(data)),
+                    HexFormat.of().withUpperCase().formatHex(sha256.digest(data)));
         }
-    }
-
-    // Returns a compact hexdump for a byte array
-    private static String hex(byte[] hash) {
-        char[] h = new char[hash.length * 2];
-        char[] hexConst = "0123456789ABCDEF".toCharArray();
-        for (int i=0; i<hash.length; i++) {
-            h[2*i] = hexConst[(hash[i]&0xff)>>4];
-            h[2*i+1] = hexConst[hash[i]&0xf];
-        }
-        return new String(h);
     }
 
     // return size of dfl file, excluding the null hash ones

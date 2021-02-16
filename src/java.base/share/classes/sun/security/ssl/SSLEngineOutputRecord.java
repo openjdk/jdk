@@ -371,7 +371,8 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
     }
 
     final class HandshakeFragment {
-        private LinkedList<RecordMemo> handshakeMemos = new LinkedList<>();
+        private final LinkedList<RecordMemo> handshakeMemos =
+                new LinkedList<>();
 
         void queueUpFragment(byte[] source,
                 int offset, int length) throws IOException {

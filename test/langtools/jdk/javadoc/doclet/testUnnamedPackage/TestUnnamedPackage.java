@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,9 +75,9 @@ public class TestUnnamedPackage extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color all-classes-table-tab2 all-classes-table"><a hre\
-                    f="C.html" title="class in &lt;Unnamed&gt;">C</a></div>
-                    <div class="col-last even-row-color all-classes-table-tab2 all-classes-table">
+                    <div class="col-first even-row-color all-classes-table all-classes-table-tab2"><\
+                    a href="C.html" title="class in &lt;Unnamed&gt;">C</a></div>
+                    <div class="col-last even-row-color all-classes-table all-classes-table-tab2">
                     <div class="block">This is a class in the unnamed package.</div>
                     </div>
                     </div>""");

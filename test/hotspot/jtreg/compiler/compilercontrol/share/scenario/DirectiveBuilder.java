@@ -212,6 +212,9 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
             case PRINT:
                 dirFile.option(DirectiveWriter.Option.PRINT_ASSEMBLY, true);
                 break;
+            case INTRINSIC:
+                dirFile.option(DirectiveWriter.Option.INTRINSIC, "\"" + cmd.argument + "\"");
+                break;
             case NONEXISTENT:
                 dirFile.write(JSONFile.Element.PAIR, command.name);
                 dirFile.write(JSONFile.Element.OBJECT);

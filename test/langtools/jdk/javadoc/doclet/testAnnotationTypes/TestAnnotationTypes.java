@@ -79,13 +79,12 @@ public class TestAnnotationTypes extends JavadocTester {
                     <li>Field&nbsp;|&nbsp;</li>""");
 
         checkOutput("pkg/AnnotationType.html", true,
-                    "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->",
+                    "<!-- ============ ANNOTATION INTERFACE MEMBER DETAIL =========== -->",
                     "<ul class=\"member-list\">",
                     "<li>",
                     """
-                        <section class="details" id="annotation.type.element.detail">""",
+                        <section class="details" id="annotation.interface.element.detail">""",
                     "<h2>Element Details</h2>",
-                    "<!--   -->",
                     "</a>",
                     "<ul class=\"member-list\">",
                     "<li>",

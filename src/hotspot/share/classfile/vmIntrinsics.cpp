@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_constants.h"
+#include "jvm_io.h"
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
@@ -151,7 +153,6 @@ bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
-  case vmIntrinsics::_blackhole:
     return true;
   default:
     return false;
@@ -574,7 +575,7 @@ void vmIntrinsics::init_vm_intrinsic_name_table() {
   const char** nt = &vm_intrinsic_name_table[0];
   char* string = (char*) &vm_intrinsic_name_bodies[0];
 
-  for (vmIntrinsicID index : EnumRange<vmIntrinsicID>{}) {
+  for (auto index : EnumRange<vmIntrinsicID>{}) {
     nt[as_int(index)] = string;
     string += strlen(string); // skip string body
     string += 1;              // skip trailing null
@@ -601,7 +602,7 @@ vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
     init_vm_intrinsic_name_table();
   }
 
-  for (vmIntrinsicID index : EnumRange<vmIntrinsicID>{}) {
+  for (auto index : EnumRange<vmIntrinsicID>{}) {
     if (0 == strcmp(name, nt[as_int(index)])) {
       return index;
     }

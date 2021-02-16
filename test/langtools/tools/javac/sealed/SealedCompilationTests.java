@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -260,30 +258,8 @@ public class SealedCompilationTests extends CompilationTestCase {
                 "class SealedTest { int sealed = 0; int non = 0; int ns = non-sealed; }",
                 "class SealedTest { void test(String sealed) { } }",
                 "class SealedTest { void sealed(String sealed) { } }",
-                "class SealedTest { void test() { String sealed = null; } }"
-        )) {
-            assertOK(s);
-        }
+                "class SealedTest { void test() { String sealed = null; } }",
 
-        for (String s : List.of(
-                "class sealed {}",
-                "enum sealed {}",
-                "record sealed() {}",
-                "interface sealed {}",
-                "@interface sealed {}"
-        )) {
-            assertFail("compiler.err.restricted.type.not.allowed", s);
-        }
-
-        for (String s : List.of(
-                "class Foo { sealed m() {} }",
-                "class Foo { sealed i; }",
-                "class Foo { void m(sealed i) {} }"
-                )) {
-            assertFail("compiler.err.restricted.type.not.allowed.here", s);
-        }
-
-        for (String s : List.of(
                 "class SealedTest { String permits; }",
                 "class SealedTest { int permits = 0; }",
                 "class SealedTest { void test(String permits) { } }",
@@ -294,6 +270,12 @@ public class SealedCompilationTests extends CompilationTestCase {
         }
 
         for (String s : List.of(
+                "class sealed {}",
+                "enum sealed {}",
+                "record sealed() {}",
+                "interface sealed {}",
+                "@interface sealed {}",
+
                 "class permits {}",
                 "enum permits {}",
                 "record permits() {}",
@@ -304,10 +286,16 @@ public class SealedCompilationTests extends CompilationTestCase {
         }
 
         for (String s : List.of(
+                "class Foo { sealed m() {} }",
+                "class Foo { sealed i; }",
+                "class Foo { void m() { sealed i; } }",
+                "class Foo { void m(sealed i) {} }",
+
                 "class Foo { permits m() {} }",
                 "class Foo { permits i; }",
+                "class Foo { void m() { permits i; } }",
                 "class Foo { void m(permits i) {} }"
-        )) {
+                )) {
             assertFail("compiler.err.restricted.type.not.allowed.here", s);
         }
 
@@ -1248,6 +1236,17 @@ public class SealedCompilationTests extends CompilationTestCase {
                   void m(A a, C c) {
                      a = (A)c;
                   }
+                }
+                """,
+                """
+                sealed interface A<T> {
+                    final class B implements A<Object> { }
+                }
+
+                class Test {
+                    void f(A.B a, A<Object> b) {
+                        a = (A.B)b;
+                    }
                 }
                 """
         )) {

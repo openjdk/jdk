@@ -249,9 +249,9 @@ public class TestOrdering extends JavadocTester {
 
         String expectedEnumOrdering[] = {
             """
-                Add.add.html" title="enum in REPLACE_ME\"""",
+                Add.add.html" title="enum class in REPLACE_ME\"""",
             """
-                Add.ADD.html" title="enum in REPLACE_ME\""""
+                Add.ADD.html" title="enum class in REPLACE_ME\""""
         };
 
         String expectedFieldOrdering[] = {
@@ -397,78 +397,78 @@ public class TestOrdering extends JavadocTester {
             checkOrder("index-all.html", composeTestVectors());
             checkOrder("add0/add/package-tree.html",
                     """
-                        <a href="Add.add.html" title="enum in add0.add">""",
+                        <a href="Add.add.html" title="enum class in add0.add">""",
                     """
-                        <a href="Add.ADD.html" title="enum in add0.add">""");
+                        <a href="Add.ADD.html" title="enum class in add0.add">""");
             checkOrder("overview-tree.html",
                     """
-                        <a href="Add.add.html" title="enum in &lt;Unnamed&gt;">""",
+                        <a href="Add.add.html" title="enum class in &lt;Unnamed&gt;">""",
                     """
-                        <a href="add0/Add.add.html" title="enum in add0">""",
+                        <a href="add0/Add.add.html" title="enum class in add0">""",
                     """
-                        <a href="add0/add/Add.add.html" title="enum in add0.add">""",
+                        <a href="add0/add/Add.add.html" title="enum class in add0.add">""",
                     """
-                        <a href="add0/add/add/Add.add.html" title="enum in add0.add.add">""",
+                        <a href="add0/add/add/Add.add.html" title="enum class in add0.add.add">""",
                     """
-                        <a href="add0/add/add/add/Add.add.html" title="enum in add0.add.add.add">""",
+                        <a href="add0/add/add/add/Add.add.html" title="enum class in add0.add.add.add">""",
                     """
-                        <a href="add1/Add.add.html" title="enum in add1">""",
+                        <a href="add1/Add.add.html" title="enum class in add1">""",
                     """
-                        <a href="add1/add/Add.add.html" title="enum in add1.add">""",
+                        <a href="add1/add/Add.add.html" title="enum class in add1.add">""",
                     """
-                        <a href="add1/add/add/Add.add.html" title="enum in add1.add.add">""",
+                        <a href="add1/add/add/Add.add.html" title="enum class in add1.add.add">""",
                     """
-                        <a href="add1/add/add/add/Add.add.html" title="enum in add1.add.add.add">""",
+                        <a href="add1/add/add/add/Add.add.html" title="enum class in add1.add.add.add">""",
                     """
-                        <a href="add2/Add.add.html" title="enum in add2">""",
+                        <a href="add2/Add.add.html" title="enum class in add2">""",
                     """
-                        <a href="add2/add/Add.add.html" title="enum in add2.add">""",
+                        <a href="add2/add/Add.add.html" title="enum class in add2.add">""",
                     """
-                        <a href="add2/add/add/Add.add.html" title="enum in add2.add.add">""",
+                        <a href="add2/add/add/Add.add.html" title="enum class in add2.add.add">""",
                     """
-                        <a href="add2/add/add/add/Add.add.html" title="enum in add2.add.add.add">""",
+                        <a href="add2/add/add/add/Add.add.html" title="enum class in add2.add.add.add">""",
                     """
-                        <a href="add3/Add.add.html" title="enum in add3">""",
+                        <a href="add3/Add.add.html" title="enum class in add3">""",
                     """
-                        <a href="add3/add/Add.add.html" title="enum in add3.add">""",
+                        <a href="add3/add/Add.add.html" title="enum class in add3.add">""",
                     """
-                        <a href="add3/add/add/Add.add.html" title="enum in add3.add.add">""",
+                        <a href="add3/add/add/Add.add.html" title="enum class in add3.add.add">""",
                     """
-                        <a href="add3/add/add/add/Add.add.html" title="enum in add3.add.add.add">""",
+                        <a href="add3/add/add/add/Add.add.html" title="enum class in add3.add.add.add">""",
                     """
-                        <a href="Add.ADD.html" title="enum in &lt;Unnamed&gt;">""",
+                        <a href="Add.ADD.html" title="enum class in &lt;Unnamed&gt;">""",
                     """
-                        <a href="add0/Add.ADD.html" title="enum in add0">""",
+                        <a href="add0/Add.ADD.html" title="enum class in add0">""",
                     """
-                        <a href="add0/add/Add.ADD.html" title="enum in add0.add">""",
+                        <a href="add0/add/Add.ADD.html" title="enum class in add0.add">""",
                     """
-                        <a href="add0/add/add/Add.ADD.html" title="enum in add0.add.add">""",
+                        <a href="add0/add/add/Add.ADD.html" title="enum class in add0.add.add">""",
                     """
-                        <a href="add0/add/add/add/Add.ADD.html" title="enum in add0.add.add.add">""",
+                        <a href="add0/add/add/add/Add.ADD.html" title="enum class in add0.add.add.add">""",
                     """
-                        <a href="add1/Add.ADD.html" title="enum in add1">""",
+                        <a href="add1/Add.ADD.html" title="enum class in add1">""",
                     """
-                        <a href="add1/add/Add.ADD.html" title="enum in add1.add">""",
+                        <a href="add1/add/Add.ADD.html" title="enum class in add1.add">""",
                     """
-                        <a href="add1/add/add/Add.ADD.html" title="enum in add1.add.add">""",
+                        <a href="add1/add/add/Add.ADD.html" title="enum class in add1.add.add">""",
                     """
-                        <a href="add1/add/add/add/Add.ADD.html" title="enum in add1.add.add.add">""",
+                        <a href="add1/add/add/add/Add.ADD.html" title="enum class in add1.add.add.add">""",
                     """
-                        <a href="add2/Add.ADD.html" title="enum in add2">""",
+                        <a href="add2/Add.ADD.html" title="enum class in add2">""",
                     """
-                        <a href="add2/add/Add.ADD.html" title="enum in add2.add">""",
+                        <a href="add2/add/Add.ADD.html" title="enum class in add2.add">""",
                     """
-                        <a href="add2/add/add/Add.ADD.html" title="enum in add2.add.add">""",
+                        <a href="add2/add/add/Add.ADD.html" title="enum class in add2.add.add">""",
                     """
-                        <a href="add2/add/add/add/Add.ADD.html" title="enum in add2.add.add.add">""",
+                        <a href="add2/add/add/add/Add.ADD.html" title="enum class in add2.add.add.add">""",
                     """
-                        <a href="add3/Add.ADD.html" title="enum in add3">""",
+                        <a href="add3/Add.ADD.html" title="enum class in add3">""",
                     """
-                        <a href="add3/add/Add.ADD.html" title="enum in add3.add">""",
+                        <a href="add3/add/Add.ADD.html" title="enum class in add3.add">""",
                     """
-                        <a href="add3/add/add/Add.ADD.html" title="enum in add3.add.add">""",
+                        <a href="add3/add/add/Add.ADD.html" title="enum class in add3.add.add">""",
                     """
-                        <a href="add3/add/add/add/Add.ADD.html" title="enum in add3.add.add.add">""");
+                        <a href="add3/add/add/add/Add.ADD.html" title="enum class in add3.add.add.add">""");
         }
 
         void emitFile(String pkgname, String clsname, ListOrder order) throws IOException {
@@ -558,9 +558,9 @@ public class TestOrdering extends JavadocTester {
             checkOrder("index-all.html",
                     "something</a> - package something</dt>",
                     "something</span></a> - Class in",
-                    "something</span></a> - Enum in",
+                    "something</span></a> - Enum Class in",
                     "something</span></a> - Interface in",
-                    "something</span></a> - Annotation Type in",
+                    "something</span></a> - Annotation Interface in",
                     "something</a></span> - Variable in class",
                     "something()</a></span> - Constructor",
                     """

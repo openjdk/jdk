@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class Check {
         names = Names.instance(context);
         dfltTargetMeta = new Name[] { names.PACKAGE, names.TYPE,
             names.FIELD, names.RECORD_COMPONENT, names.METHOD, names.CONSTRUCTOR,
-            names.ANNOTATION_TYPE, names.LOCAL_VARIABLE, names.PARAMETER};
+            names.ANNOTATION_TYPE, names.LOCAL_VARIABLE, names.PARAMETER, names.MODULE };
         log = Log.instance(context);
         rs = Resolve.instance(context);
         syms = Symtab.instance(context);
@@ -148,13 +148,13 @@ public class Check {
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
         boolean enforceMandatoryWarnings = true;
 
-        deprecationHandler = new MandatoryWarningHandler(log, verboseDeprecated,
+        deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated,
                 enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
-        removalHandler = new MandatoryWarningHandler(log, verboseRemoval,
+        removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval,
                 enforceMandatoryWarnings, "removal", LintCategory.REMOVAL);
-        uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
+        uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked,
                 enforceMandatoryWarnings, "unchecked", LintCategory.UNCHECKED);
-        sunApiHandler = new MandatoryWarningHandler(log, false,
+        sunApiHandler = new MandatoryWarningHandler(log, null, false,
                 enforceMandatoryWarnings, "sunapi", null);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
@@ -239,21 +239,22 @@ public class Check {
         }
     }
 
-    /** Warn about deprecated symbol.
+    /** Log a preview warning.
      *  @param pos        Position to be used for error reporting.
-     *  @param sym        The deprecated symbol.
+     *  @param msg        A Warning describing the problem.
      */
-    void warnPreview(DiagnosticPosition pos, Symbol sym) {
-        warnPreview(pos, Warnings.IsPreview(sym));
+    public void warnPreviewAPI(DiagnosticPosition pos, Warning warnKey) {
+        if (!lint.isSuppressed(LintCategory.PREVIEW))
+            preview.reportPreviewWarning(pos, warnKey);
     }
 
     /** Log a preview warning.
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A Warning describing the problem.
      */
-    public void warnPreview(DiagnosticPosition pos, Warning warnKey) {
+    public void warnDeclaredUsingPreview(DiagnosticPosition pos, Symbol sym) {
         if (!lint.isSuppressed(LintCategory.PREVIEW))
-            preview.reportPreviewWarning(pos, warnKey);
+            preview.reportPreviewWarning(pos, Warnings.DeclaredUsingPreview(kindName(sym), sym));
     }
 
     /** Warn about unchecked operation.
@@ -1216,7 +1217,8 @@ public class Check {
                 implicit |= sym.owner.flags_field & STRICTFP;
             break;
         case TYP:
-            if (sym.owner.kind.matches(KindSelector.VAL_MTH)) {
+            if (sym.owner.kind.matches(KindSelector.VAL_MTH) ||
+                    (sym.isDirectlyOrIndirectlyLocal() && (flags & ANNOTATION) != 0)) {
                 boolean implicitlyStatic = !sym.isAnonymous() &&
                         ((flags & RECORD) != 0 || (flags & ENUM) != 0 || (flags & INTERFACE) != 0);
                 boolean staticOrImplicitlyStatic = (flags & STATIC) != 0 || implicitlyStatic;
@@ -1225,7 +1227,7 @@ public class Check {
                 implicit = implicitlyStatic ? STATIC : implicit;
             } else if (sym.owner.kind == TYP) {
                 // statics in inner classes are allowed only if records are allowed too
-                mask = ((flags & STATIC) != 0) && allowRecords ? ExtendedMemberStaticClassFlags : ExtendedMemberClassFlags;
+                mask = ((flags & STATIC) != 0) && allowRecords && (flags & ANNOTATION) == 0 ? ExtendedMemberStaticClassFlags : ExtendedMemberClassFlags;
                 if (sym.owner.owner.kind == PCK ||
                     (sym.owner.flags_field & STATIC) != 0) {
                     mask |= STATIC;
@@ -2729,7 +2731,7 @@ public class Check {
 
             if (sym.kind == VAR) {
                 if ((sym.flags() & PARAMETER) != 0 ||
-                    sym.isLocal() ||
+                    sym.isDirectlyOrIndirectlyLocal() ||
                     sym.name == names._this ||
                     sym.name == names._super) {
                     return;
@@ -3544,12 +3546,26 @@ public class Check {
         }
     }
 
-    void checkPreview(DiagnosticPosition pos, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0) {
-            if ((s.flags() & PREVIEW_ESSENTIAL_API) != 0 && !preview.isEnabled()) {
-                log.error(pos, Errors.IsPreview(s));
+    void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
+        if ((s.flags() & PREVIEW_API) != 0 && s.packge().modle != other.packge().modle) {
+            if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
+                if (!preview.isEnabled()) {
+                    log.error(pos, Errors.IsPreview(s));
+                } else {
+                    preview.markUsesPreview(pos);
+                    deferredLintHandler.report(() -> warnPreviewAPI(pos, Warnings.IsPreview(s)));
+                }
             } else {
-                deferredLintHandler.report(() -> warnPreview(pos, s));
+                    deferredLintHandler.report(() -> warnPreviewAPI(pos, Warnings.IsPreviewReflective(s)));
+            }
+        }
+        if (preview.declaredUsingPreviewFeature(s)) {
+            if (preview.isEnabled()) {
+                //for preview disabled do presumably so not need to do anything?
+                //If "s" is compiled from source, then there was an error for it already;
+                //if "s" is from classfile, there already was an error for the classfile.
+                preview.markUsesPreview(pos);
+                deferredLintHandler.report(() -> warnDeclaredUsingPreview(pos, s));
             }
         }
     }

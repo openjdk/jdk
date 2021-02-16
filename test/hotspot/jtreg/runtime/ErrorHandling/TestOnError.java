@@ -42,7 +42,7 @@ public class TestOnError {
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
            "-XX:-CreateCoredumpOnCrash",
-           "-XX:ErrorHandlerTest=12", // trigger potential SEGV
+           "-XX:ErrorHandlerTest=14", // trigger potential SEGV
            "-XX:OnError=echo " + msg,
            TestOnError.class.getName());
 

@@ -23,25 +23,17 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import "JNIUtilities.h"
 
 extern NSString *const JavaAccessibilityIgnore;
 
 extern NSMutableDictionary *sRoles;
 extern void initializeRoles();
 
-extern JNFClassInfo sjc_CAccessibility;
-extern JNFClassInfo sjc_AccessibleComponent;
-extern JNFClassInfo sjc_AccessibleContext;
-extern JNFClassInfo sjc_Accessible;
-extern JNFClassInfo sjc_AccessibleRole;
-extern JNFClassInfo sjc_Point;
-extern JNFClassInfo sjc_AccessibleText;
-
-extern JNFMemberInfo *sjm_getAccessibleRole;
-extern JNFMemberInfo *sjf_key;
-extern JNFMemberInfo *sjf_X;
-extern JNFMemberInfo *sjf_Y;
+#define GET_CACCESSIBILITY_CLASS() \
+    GET_CLASS(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility");
+#define GET_CACCESSIBILITY_CLASS_RETURN(ret) \
+    GET_CLASS_RETURN(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility", ret);
 
 NSSize getAxComponentSize(JNIEnv *env, jobject axComponent, jobject component);
 NSString *getJavaRole(JNIEnv *env, jobject axComponent, jobject component);

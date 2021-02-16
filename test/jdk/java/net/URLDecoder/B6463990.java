@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,7 @@ public class B6463990 {
     public static void main(String[] args) {
         boolean except = false;
         try {
-            URLDecoder ud = new java.net.URLDecoder();
-            String s = ud.decode("%-1", "iso-8859-1");
+            String s = URLDecoder.decode("%-1", "iso-8859-1");
             System.out.println((int) s.charAt(0));
         } catch (Exception e) {
             except = true;

@@ -496,14 +496,14 @@ TEST_VM_F(GrowableArrayTest, where) {
 }
 
 TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, copy_with_embedded_cheap,
-    "Copying of CHeap arrays not supported") {
+    "assert.!on_C_heap... failed: Copying of CHeap arrays not supported") {
   WithEmbeddedArray s(1, mtTest);
   // Intentionally asserts that copy of CHeap arrays are not allowed
   WithEmbeddedArray c(s);
 }
 
 TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, assignment_with_embedded_cheap,
-    "Assignment of CHeap arrays not supported") {
+    "assert.!on_C_heap... failed: Assignment of CHeap arrays not supported") {
   WithEmbeddedArray s(1, mtTest);
   WithEmbeddedArray c(1, mtTest);
 

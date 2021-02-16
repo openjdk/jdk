@@ -1112,20 +1112,32 @@ public class CreateSymbols {
 
     private Annotation createAnnotation(List<CPInfo> constantPool, AnnotationDescription desc) {
         String annotationType = desc.annotationType;
+        Map<String, Object> values = desc.values;
 
-        if (PREVIEW_FEATURE_ANNOTATION.equals(annotationType)) {
+        if (PREVIEW_FEATURE_ANNOTATION_NEW.equals(annotationType)) {
             //the non-public PreviewFeature annotation will not be available in ct.sym,
             //replace with purely synthetic javac-internal annotation:
             annotationType = PREVIEW_FEATURE_ANNOTATION_INTERNAL;
         }
 
+        if (PREVIEW_FEATURE_ANNOTATION_OLD.equals(annotationType)) {
+            //the non-public PreviewFeature annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = PREVIEW_FEATURE_ANNOTATION_INTERNAL;
+            values = new HashMap<>(values);
+            Boolean essentialAPI = (Boolean) values.remove("essentialAPI");
+            values.put("reflective", essentialAPI != null && !essentialAPI);
+        }
+
         return new Annotation(null,
                               addString(constantPool, annotationType),
-                              createElementPairs(constantPool, desc.values));
+                              createElementPairs(constantPool, values));
     }
     //where:
-        private static final String PREVIEW_FEATURE_ANNOTATION =
+        private static final String PREVIEW_FEATURE_ANNOTATION_OLD =
                 "Ljdk/internal/PreviewFeature;";
+        private static final String PREVIEW_FEATURE_ANNOTATION_NEW =
+                "Ljdk/internal/javac/PreviewFeature;";
         private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
                 "Ljdk/internal/PreviewFeature+Annotation;";
 

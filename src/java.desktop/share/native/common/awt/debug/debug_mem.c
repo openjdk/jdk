@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,7 @@ void * DMem_AllocateBlock(size_t size, const char * filename, int linenumber) {
     /* add block to list of allocated memory */
     header->listEnter = DMem_TrackBlock(header);
     if ( header->listEnter == NULL ) {
+        DMem_ClientFree(header);
         goto Exit;
     }
 

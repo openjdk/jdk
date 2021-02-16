@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,7 +280,7 @@ DirectiveSet::~DirectiveSet() {
 // 2) cloned() returns a pointer that points to the cloned DirectiveSet.
 // Users should only use cloned() when they need to update DirectiveSet.
 //
-// In the end, users need invoke commit() to finalize the pending changes.
+// In the end, users need to invoke commit() to finalize the pending changes.
 // If cloning happens, the smart pointer will return the new pointer after releasing the original
 // one on DirectivesStack. If cloning doesn't happen, it returns the original intact pointer.
 class DirectiveSetPtr {
@@ -542,7 +542,7 @@ void DirectivesStack::init() {
   _default_directives->_c1_store->EnableOption = true;
 #endif
 #ifdef COMPILER2
-  if (is_server_compilation_mode_vm()) {
+  if (CompilerConfig::is_c2_enabled()) {
     _default_directives->_c2_store->EnableOption = true;
   }
 #endif

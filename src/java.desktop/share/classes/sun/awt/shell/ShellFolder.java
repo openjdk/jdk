@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,23 @@
 
 package sun.awt.shell;
 
-import javax.swing.*;
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.io.*;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Serial;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.text.Format;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.Callable;
+
+import javax.swing.SwingConstants;
 
 /**
  * @author Michael Martak
@@ -75,6 +80,7 @@ public abstract class ShellFolder extends File {
      * @return a java.io.File replacement object, or null
      *         if no suitable replacement can be found.
      */
+    @Serial
     protected abstract Object writeReplace() throws java.io.ObjectStreamException;
 
     /**

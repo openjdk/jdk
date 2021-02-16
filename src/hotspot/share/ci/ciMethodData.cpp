@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
@@ -202,7 +203,12 @@ void ciMethodData::load_data() {
   // _extra_data_size = extra_data_limit - extra_data_base
   // total_size = _data_size + _extra_data_size
   // args_data_limit = data_base + total_size - parameter_data_size
+
+#ifndef ZERO
+  // Some Zero platforms do not have expected alignment, and do not use
+  // this code. static_assert would still fire and fail for them.
   static_assert(sizeof(_orig) % HeapWordSize == 0, "align");
+#endif
   Copy::disjoint_words_atomic((HeapWord*) &mdo->_compiler_counters,
                               (HeapWord*) &_orig,
                               sizeof(_orig) / HeapWordSize);

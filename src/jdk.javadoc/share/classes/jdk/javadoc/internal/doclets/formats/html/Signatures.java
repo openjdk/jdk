@@ -156,7 +156,12 @@ public class Signatures {
                 for (TypeMirror type : linkablePermits) {
                     if (isFirst) {
                         content.add(DocletConstants.NL);
-                        permitsSpan.add("permits ");
+                        permitsSpan.add("permits");
+                        Content link =
+                                classWriter.links.createLink(classWriter.htmlIds.forPreviewSection(typeElement),
+                                                             classWriter.contents.previewMark);
+                        permitsSpan.add(HtmlTree.SUP(link));
+                        permitsSpan.add(" ");
                         isFirst = false;
                     } else {
                         permitsSpan.add(", ");

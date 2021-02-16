@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1198,7 +1198,11 @@ void VectorMaskCmpNode::dump_spec(outputStream *st) const {
 Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
   Node* n = in(1);
   if (n->Opcode() == Op_VectorReinterpret) {
-    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0) {
+    // "VectorReinterpret (VectorReinterpret node) ==> node" if:
+    //   1) Types of 'node' and 'this' are identical
+    //   2) Truncations are not introduced by the first VectorReinterpret
+    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0 &&
+        length_in_bytes() <= n->bottom_type()->is_vect()->length_in_bytes()) {
       return n->in(1);
     }
   }
@@ -1221,25 +1225,30 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       ciKlass* vbox_klass = vbox->box_type()->klass();
       const TypeVect* in_vt = vbox->vec_type();
       const TypeVect* out_vt = type()->is_vect();
-      assert(in_vt->length() == out_vt->length(), "mismatch on number of elements");
-      Node* value = vbox->in(VectorBoxNode::Value);
 
-      bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
-      bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
-      if (is_vector_mask) {
-        // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
-        value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
-        return new VectorLoadMaskNode(value, out_vt);
-      } else if (is_vector_shuffle) {
-        if (is_shuffle_to_vector()) {
-          // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
-          return new VectorCastB2XNode(value, out_vt);
+      if (in_vt->length() == out_vt->length()) {
+        Node* value = vbox->in(VectorBoxNode::Value);
+
+        bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+        bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+        if (is_vector_mask) {
+          // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
+          value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
+          return new VectorLoadMaskNode(value, out_vt);
+        } else if (is_vector_shuffle) {
+          if (is_shuffle_to_vector()) {
+            // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
+            return new VectorCastB2XNode(value, out_vt);
+          } else {
+            // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
+            return new VectorLoadShuffleNode(value, out_vt);
+          }
         } else {
-          // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
-          return new VectorLoadShuffleNode(value, out_vt);
+          // Vector type mismatch is only supported for masks and shuffles, but sometimes it happens in pathological cases.
         }
       } else {
-        assert(false, "type mismatch on vector: %s", vbox_klass->name()->as_utf8());
+        // Vector length mismatch.
+        // Sometimes happen in pathological cases (e.g., when unboxing happens in effectively dead code).
       }
     }
   }

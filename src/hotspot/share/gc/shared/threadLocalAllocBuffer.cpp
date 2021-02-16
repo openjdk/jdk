@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,15 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/copy.hpp"
@@ -57,6 +60,10 @@ ThreadLocalAllocBuffer::ThreadLocalAllocBuffer() :
 
   // do nothing. TLABs must be inited by initialize() calls
 }
+
+size_t ThreadLocalAllocBuffer::initial_refill_waste_limit()     { return desired_size() / TLABRefillWasteFraction; }
+size_t ThreadLocalAllocBuffer::min_size()                       { return align_object_size(MinTLABSize / HeapWordSize) + alignment_reserve(); }
+size_t ThreadLocalAllocBuffer::refill_waste_limit_increment()   { return TLABWasteIncrement; }
 
 size_t ThreadLocalAllocBuffer::remaining() {
   if (end() == NULL) {
@@ -245,7 +252,7 @@ void ThreadLocalAllocBuffer::startup_initialization() {
   // If the C2 compiler is not present, no space is reserved.
 
   // +1 for rounding up to next cache line, +1 to be safe
-  if (is_server_compilation_mode_vm()) {
+  if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
     int lines =  MAX2(AllocatePrefetchLines, AllocateInstancePrefetchLines) + 2;
     _reserve_for_allocation_prefetch = (AllocatePrefetchDistance + AllocatePrefetchStepSize * lines) /
                                        (int)HeapWordSize;

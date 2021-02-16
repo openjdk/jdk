@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -56,6 +57,11 @@ public class LinkInfoImpl extends LinkInfo {
          * Indicate that the link appears in member documentation.
          */
         MEMBER,
+
+        /**
+         * Indicate that the link appears in member documentation on the Deprecated or Preview page.
+         */
+        MEMBER_DEPRECATED_PREVIEW,
 
         /**
          * Indicate that the link appears in class use documentation.
@@ -101,11 +107,6 @@ public class LinkInfoImpl extends LinkInfo {
          * Indicate that the link appears in tree documentation.
          */
         TREE,
-
-        /**
-         * Indicate that the link appears in a class list.
-         */
-        PACKAGE_FRAME,
 
         /**
          * The header in the class documentation.
@@ -236,10 +237,12 @@ public class LinkInfoImpl extends LinkInfo {
     public String where = "";
 
     /**
-     * The value of the target.
+     * The member this link points to (if any).
      */
-    public String target = "";
-    public  final Utils utils;
+    public Element targetMember;
+
+    public final Utils utils;
+
     /**
      * Construct a LinkInfo object.
      *
@@ -313,15 +316,6 @@ public class LinkInfoImpl extends LinkInfo {
     }
 
     /**
-     * Set the target to be used for the link.
-     * @param target the target name.
-     */
-    public LinkInfoImpl target(String target) {
-        this.target = target;
-        return this;
-    }
-
-    /**
      * Set whether or not this is a link to a varargs parameter.
      */
     public LinkInfoImpl varargs(boolean varargs) {
@@ -335,7 +329,23 @@ public class LinkInfoImpl extends LinkInfo {
     public LinkInfoImpl where(String where) {
         this.where = where;
         return this;
-     }
+    }
+
+    /**
+     * Set the member this link points to (if any).
+     */
+    public LinkInfoImpl targetMember(Element el) {
+        this.targetMember = el;
+        return this;
+    }
+
+    /**
+     * Set whether or not the preview flags should be skipped for this link.
+     */
+    public LinkInfoImpl skipPreview(boolean skipPreview) {
+        this.skipPreview = skipPreview;
+        return this;
+    }
 
     public Kind getContext() {
         return context;
@@ -348,22 +358,8 @@ public class LinkInfoImpl extends LinkInfo {
      * @param c the context id to set.
      */
     public final void setContext(Kind c) {
-        //NOTE:  Put context specific link code here.
         switch (c) {
-            case PACKAGE_FRAME:
-            case IMPLEMENTED_CLASSES:
-            case SUBCLASSES:
-            case EXECUTABLE_ELEMENT_COPY:
-            case PROPERTY_COPY:
-            case CLASS_USE_HEADER:
-                includeTypeInClassLinkLabel = false;
-                break;
-
             case ANNOTATION:
-                excludeTypeParameterLinks = true;
-                excludeTypeBounds = true;
-                break;
-
             case IMPLEMENTED_INTERFACES:
             case SUPER_INTERFACES:
             case SUBINTERFACES:
@@ -373,8 +369,6 @@ public class LinkInfoImpl extends LinkInfo {
             case PERMITTED_SUBCLASSES:
                 excludeTypeParameterLinks = true;
                 excludeTypeBounds = true;
-                includeTypeInClassLinkLabel = false;
-                includeTypeAsSepLink = true;
                 break;
 
             case PACKAGE:
@@ -383,13 +377,6 @@ public class LinkInfoImpl extends LinkInfo {
             case CLASS_SIGNATURE:
             case RECEIVER_TYPE:
                 excludeTypeParameterLinks = true;
-                includeTypeAsSepLink = true;
-                includeTypeInClassLinkLabel = false;
-                break;
-
-            case MEMBER_TYPE_PARAMS:
-                includeTypeAsSepLink = true;
-                includeTypeInClassLinkLabel = false;
                 break;
 
             case RETURN_TYPE:
@@ -400,11 +387,6 @@ public class LinkInfoImpl extends LinkInfo {
                 break;
         }
         context = c;
-        if (type != null &&
-            utils.isTypeVariable(type) &&
-            utils.isExecutableElement(utils.asTypeElement(type).getEnclosingElement())) {
-                excludeTypeParameterLinks = true;
-        }
     }
 
     /**
@@ -420,11 +402,37 @@ public class LinkInfoImpl extends LinkInfo {
     }
 
     @Override
+    public boolean includeTypeParameterLinks() {
+        return switch (context) {
+            case IMPLEMENTED_INTERFACES,
+                 SUPER_INTERFACES,
+                 SUBINTERFACES,
+                 CLASS_TREE_PARENT,
+                 TREE,
+                 CLASS_SIGNATURE_PARENT_NAME,
+                 PERMITTED_SUBCLASSES,
+                 PACKAGE,
+                 CLASS_USE,
+                 CLASS_HEADER,
+                 CLASS_SIGNATURE,
+                 RECEIVER_TYPE,
+                 MEMBER_TYPE_PARAMS -> true;
+
+            case IMPLEMENTED_CLASSES,
+                 SUBCLASSES,
+                 EXECUTABLE_ELEMENT_COPY,
+                 PROPERTY_COPY,
+                 CLASS_USE_HEADER -> false;
+
+            default -> label == null || label.isEmpty();
+        };
+    }
+
+    @Override
     public String toString() {
         return "LinkInfoImpl{" +
                 "context=" + context +
                 ", where=" + where +
-                ", target=" + target +
                 super.toString() + '}';
     }
 }

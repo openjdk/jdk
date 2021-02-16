@@ -291,6 +291,7 @@ IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* 
   loop->_parent = outer_ilt;
   loop->_next = NULL;
   loop->_nest++;
+  assert(loop->_nest <= SHRT_MAX, "sanity");
   return outer_ilt;
 }
 
@@ -568,7 +569,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
     const TypePtr* no_memory_effects = NULL;
     JVMState* jvms = sfpt->jvms();
     CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap",
-                                           jvms->bci(), no_memory_effects);
+                                           no_memory_effects);
 
     Node* mem = NULL;
     Node* i_o = NULL;
@@ -1921,8 +1922,9 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Delay following optimizations until all loop optimizations
   // done to keep Ideal graph simple.
-  if (!can_reshape || phase->C->major_progress())
+  if (!can_reshape || !phase->C->post_loop_opts_phase()) {
     return NULL;
+  }
 
   const TypeInt* init_t  = phase->type(in(Init) )->is_int();
   const TypeInt* limit_t = phase->type(in(Limit))->is_int();
@@ -2613,6 +2615,7 @@ bool IdealLoopTree::is_member(const IdealLoopTree *l) const {
 //------------------------------set_nest---------------------------------------
 // Set loop tree nesting depth.  Accumulate _has_call bits.
 int IdealLoopTree::set_nest( uint depth ) {
+  assert(depth <= SHRT_MAX, "sanity");
   _nest = depth;
   int bits = _has_call;
   if( _child ) bits |= _child->set_nest(depth+1);
@@ -3530,8 +3533,7 @@ void PhaseIdealLoop::log_loop_tree() {
 //---------------------collect_potentially_useful_predicates-----------------------
 // Helper function to collect potentially useful predicates to prevent them from
 // being eliminated by PhaseIdealLoop::eliminate_useless_predicates
-void PhaseIdealLoop::collect_potentially_useful_predicates(
-                         IdealLoopTree * loop, Unique_Node_List &useful_predicates) {
+void PhaseIdealLoop::collect_potentially_useful_predicates(IdealLoopTree* loop, Unique_Node_List &useful_predicates) {
   if (loop->_child) { // child
     collect_potentially_useful_predicates(loop->_child, useful_predicates);
   }
@@ -3542,22 +3544,28 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(
       !loop->tail()->is_top()) {
     LoopNode* lpn = loop->_head->as_Loop();
     Node* entry = lpn->in(LoopNode::EntryControl);
-    Node* predicate_proj = find_predicate(entry); // loop_limit_check first
-    if (predicate_proj != NULL) { // right pattern that can be used by loop predication
+
+    Node* predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
+    if (predicate != NULL) { // right pattern that can be used by loop predication
       assert(entry->in(0)->in(1)->in(1)->Opcode() == Op_Opaque1, "must be");
       useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
       entry = skip_loop_predicates(entry);
     }
     if (UseProfiledLoopPredicate) {
-      predicate_proj = find_predicate(entry); // Predicate
-      if (predicate_proj != NULL) {
+      predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
+      if (predicate != NULL) { // right pattern that can be used by loop predication
         useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
+        get_skeleton_predicates(entry, useful_predicates, true);
         entry = skip_loop_predicates(entry);
       }
     }
-    predicate_proj = find_predicate(entry); // Predicate
-    if (predicate_proj != NULL) {
-      useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
+
+    if (UseLoopPredicate) {
+      predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
+      if (predicate != NULL) { // right pattern that can be used by loop predication
+        useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
+        get_skeleton_predicates(entry, useful_predicates, true);
+      }
     }
   }
 
@@ -3571,8 +3579,9 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(
 // Note: it will also eliminates loop limits check predicate since it also uses
 // Opaque1 node (see Parse::add_predicate()).
 void PhaseIdealLoop::eliminate_useless_predicates() {
-  if (C->predicate_count() == 0)
+  if (C->predicate_count() == 0 && C->skeleton_predicate_count() == 0) {
     return; // no predicate left
+  }
 
   Unique_Node_List useful_predicates; // to store useful predicates
   if (C->has_loops()) {
@@ -3580,11 +3589,19 @@ void PhaseIdealLoop::eliminate_useless_predicates() {
   }
 
   for (int i = C->predicate_count(); i > 0; i--) {
-     Node * n = C->predicate_opaque1_node(i-1);
+     Node* n = C->predicate_opaque1_node(i - 1);
      assert(n->Opcode() == Op_Opaque1, "must be");
      if (!useful_predicates.member(n)) { // not in the useful list
        _igvn.replace_node(n, n->in(1));
      }
+  }
+
+  for (int i = C->skeleton_predicate_count(); i > 0; i--) {
+    Node* n = C->skeleton_predicate_opaque4_node(i - 1);
+    assert(n->Opcode() == Op_Opaque4, "must be");
+    if (!useful_predicates.member(n)) { // not in the useful list
+      _igvn.replace_node(n, n->in(2));
+    }
   }
 }
 
@@ -4968,18 +4985,18 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
   if (n->is_Load() && LCA != early) {
     int load_alias_idx = C->get_alias_index(n->adr_type());
     if (C->alias_type(load_alias_idx)->is_rewritable()) {
+      Unique_Node_List worklist;
 
-      Node_List worklist;
-
-      Node *mem = n->in(MemNode::Memory);
+      Node* mem = n->in(MemNode::Memory);
       for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
         Node* s = mem->fast_out(i);
         worklist.push(s);
       }
-      while(worklist.size() != 0 && LCA != early) {
-        Node* s = worklist.pop();
+      for (uint i = 0; i < worklist.size() && LCA != early; i++) {
+        Node* s = worklist.at(i);
         if (s->is_Load() || s->Opcode() == Op_SafePoint ||
-            (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0)) {
+            (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0) ||
+            s->is_Phi()) {
           continue;
         } else if (s->is_MergeMem()) {
           for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
@@ -4987,7 +5004,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
             worklist.push(s1);
           }
         } else {
-          Node *sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
+          Node* sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
           assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
           if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
             const TypePtr* adr_type = s->adr_type();
@@ -5006,6 +5023,22 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
                 if (_igvn.type(s1) == Type::MEMORY) {
                   worklist.push(s1);
                 }
+              }
+            }
+          }
+        }
+      }
+      // For Phis only consider Region's inputs that were reached by following the memory edges
+      if (LCA != early) {
+        for (uint i = 0; i < worklist.size(); i++) {
+          Node* s = worklist.at(i);
+          if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
+            Node* r = s->in(0);
+            for (uint j = 1; j < s->req(); j++) {
+              Node* in = s->in(j);
+              Node* r_in = r->in(j);
+              if ((worklist.member(in) || in == mem) && is_dominator(early, r_in)) {
+                LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
               }
             }
           }

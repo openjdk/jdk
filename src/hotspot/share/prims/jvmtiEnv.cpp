@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -411,7 +413,7 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
     if (k_mirror == NULL) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
-    if (!k_mirror->is_a(SystemDictionary::Class_klass())) {
+    if (!k_mirror->is_a(vmClasses::Class_klass())) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
 
@@ -659,13 +661,6 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
 
-    // lock the loader
-    Thread* thread = Thread::current();
-    HandleMark hm(thread);
-    Handle loader_lock = Handle(thread, SystemDictionary::system_loader_lock());
-
-    ObjectLocker ol(loader_lock, thread);
-
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());
 #if INCLUDE_CDS
@@ -861,7 +856,7 @@ JvmtiEnv::GetThreadState(jthread thread, jint* thread_state_ptr) {
     java_thread = current_thread;
     thread_oop = java_thread->threadObj();
 
-    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
+    if (thread_oop == NULL || !thread_oop->is_a(vmClasses::Thread_klass())) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
   } else {
@@ -1136,7 +1131,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
   oop thread_oop = NULL;
   if (thread == NULL) {
     thread_oop = current_thread->threadObj();
-    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
+    if (thread_oop == NULL || !thread_oop->is_a(vmClasses::Thread_klass())) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
   } else {
@@ -1203,14 +1198,14 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread* calling_thread = JavaThread::current();
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
@@ -1253,14 +1248,14 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread* calling_thread = JavaThread::current();
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.

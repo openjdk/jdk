@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,9 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
 
     @ForceInline
     public final VectorShuffle<E> checkIndexes() {
+        if (VectorIntrinsics.VECTOR_ACCESS_OOB_CHECK == 0) {
+            return this;
+        }
         // FIXME: vectorize this
         for (int index : reorder()) {
             if (index < 0) {

@@ -44,8 +44,8 @@ public interface GenericArrayType extends Type {
      *
      * @return  a {@code Type} object representing the component type
      *     of this array
-     * @throws TypeNotPresentException if the underlying array type's
-     *     component type refers to a non-existent type declaration
+     * @throws TypeNotPresentException if the underlying array type's component
+     *     type refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if  the
      *     underlying array type's component type refers to a
      *     parameterized type that cannot be instantiated for any reason

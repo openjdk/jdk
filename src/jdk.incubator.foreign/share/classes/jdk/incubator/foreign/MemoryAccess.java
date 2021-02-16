@@ -88,6 +88,10 @@ public final class MemoryAccess {
         return MemoryHandles.varHandle(carrier, 1, elementLayout.order());
     }
 
+    // Note: all the accessor methods defined below take advantage of argument type profiling
+    // (see src/hotspot/share/oops/methodData.cpp) which greatly enhances performance when the same accessor
+    // method is used repeatedly with different segment kinds (e.g. on-heap vs. off-heap).
+
     /**
      * Reads a byte from given segment and offset.
      *

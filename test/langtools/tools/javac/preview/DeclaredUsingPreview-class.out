@@ -1,0 +1,5 @@
+- compiler.warn.preview.feature.use.classfile: DeclaredUsingPreviewDeclarations.class, 17
+- compiler.warn.preview.feature.use.classfile: DeclaredUsingPreviewDeclarations$C.class, 17
+- compiler.warn.preview.feature.use.classfile: DeclaredUsingPreviewDeclarations$C2.class, 17
+DeclaredUsingPreview.java:9:37: compiler.warn.declared.using.preview: kindname.class, DeclaredUsingPreviewDeclarations.C
+4 warnings

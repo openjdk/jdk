@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -165,7 +166,7 @@ static void reset_states(oop obj, TRAPS) {
 void HeapShared::reset_archived_object_states(TRAPS) {
   assert(DumpSharedSpaces, "dump-time only");
   log_debug(cds)("Resetting platform loader");
-  reset_states(SystemDictionary::java_platform_loader(), THREAD);
+  reset_states(SystemDictionary::java_platform_loader(), CHECK);
   log_debug(cds)("Resetting system loader");
   reset_states(SystemDictionary::java_system_loader(), THREAD);
 }
@@ -246,7 +247,7 @@ void HeapShared::clear_root(int index) {
   }
 }
 
-oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
+oop HeapShared::archive_heap_object(oop obj) {
   assert(DumpSharedSpaces, "dump-time only");
 
   oop ao = find_archived_heap_object(obj);
@@ -265,7 +266,6 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
   oop archived_oop = (oop)G1CollectedHeap::heap()->archive_mem_allocate(len);
   if (archived_oop != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
-    MetaspaceShared::relocate_klass_ptr(archived_oop);
     // Reinitialize markword to remove age/marking/locking/etc.
     //
     // We need to retain the identity_hash, because it may have been used by some hashtables
@@ -297,19 +297,19 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
   return archived_oop;
 }
 
-void HeapShared::archive_klass_objects(Thread* THREAD) {
+void HeapShared::archive_klass_objects() {
   GrowableArray<Klass*>* klasses = MetaspaceShared::collected_klasses();
   assert(klasses != NULL, "sanity");
   for (int i = 0; i < klasses->length(); i++) {
-    Klass* k = klasses->at(i);
+    Klass* k = ArchiveBuilder::get_relocated_klass(klasses->at(i));
 
     // archive mirror object
-    java_lang_Class::archive_mirror(k, CHECK);
+    java_lang_Class::archive_mirror(k);
 
     // archive the resolved_referenes array
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      ik->constants()->archive_resolved_references(THREAD);
+      ik->constants()->archive_resolved_references();
     }
   }
 }
@@ -369,8 +369,7 @@ void HeapShared::copy_closed_archive_heap_objects(
   archive_object_subgraphs(closed_archive_subgraph_entry_fields,
                            num_closed_archive_subgraph_entry_fields,
                            true /* is_closed_archive */,
-                           false /* is_full_module_graph */,
-                           THREAD);
+                           false /* is_full_module_graph */);
 
   G1CollectedHeap::heap()->end_archive_alloc_range(closed_archive,
                                                    os::vm_allocation_granularity());
@@ -380,24 +379,21 @@ void HeapShared::copy_open_archive_heap_objects(
                                     GrowableArray<MemRegion> * open_archive) {
   assert(is_heap_object_archiving_allowed(), "Cannot archive java heap objects");
 
-  Thread* THREAD = Thread::current();
   G1CollectedHeap::heap()->begin_archive_alloc_range(true /* open */);
 
-  java_lang_Class::archive_basic_type_mirrors(THREAD);
+  java_lang_Class::archive_basic_type_mirrors();
 
-  archive_klass_objects(THREAD);
+  archive_klass_objects();
 
   archive_object_subgraphs(open_archive_subgraph_entry_fields,
                            num_open_archive_subgraph_entry_fields,
                            false /* is_closed_archive */,
-                           false /* is_full_module_graph */,
-                           THREAD);
+                           false /* is_full_module_graph */);
   if (MetaspaceShared::use_full_module_graph()) {
     archive_object_subgraphs(fmg_open_archive_subgraph_entry_fields,
                              num_fmg_open_archive_subgraph_entry_fields,
                              false /* is_closed_archive */,
-                             true /* is_full_module_graph */,
-                             THREAD);
+                             true /* is_full_module_graph */);
     ClassLoaderDataShared::init_archived_oops();
   }
 
@@ -453,7 +449,7 @@ HeapShared::RunTimeKlassSubGraphInfoTable   HeapShared::_run_time_subgraph_info_
 KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_graph) {
   assert(DumpSharedSpaces, "dump time only");
   bool created;
-  Klass* relocated_k = MetaspaceShared::get_relocated_klass(k);
+  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(k);
   KlassSubGraphInfo* info =
     _dump_time_subgraph_info_table->put_if_absent(relocated_k, KlassSubGraphInfo(relocated_k, is_full_module_graph),
                                                   &created);
@@ -463,7 +459,7 @@ KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_
 
 KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
   assert(DumpSharedSpaces, "dump time only");
-  Klass* relocated_k = MetaspaceShared::get_relocated_klass(k);
+  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(k);
   KlassSubGraphInfo* info = _dump_time_subgraph_info_table->get(relocated_k);
   assert(info != NULL, "must have been initialized");
   return info;
@@ -483,17 +479,16 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
 
 // Add the Klass* for an object in the current KlassSubGraphInfo's subgraphs.
 // Only objects of boot classes can be included in sub-graph.
-void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass* relocated_k) {
+void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   assert(DumpSharedSpaces, "dump time only");
-  assert(relocated_k == MetaspaceShared::get_relocated_klass(orig_k),
-         "must be the relocated Klass in the shared space");
+  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(orig_k);
 
   if (_subgraph_object_klasses == NULL) {
     _subgraph_object_klasses =
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
-  assert(ArchiveBuilder::singleton()->is_in_buffer_space(relocated_k), "must be a shared class");
+  assert(ArchiveBuilder::current()->is_in_buffer_space(relocated_k), "must be a shared class");
 
   if (_k == relocated_k) {
     // Don't add the Klass containing the sub-graph to it's own klass
@@ -504,10 +499,10 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass* relocate
   if (relocated_k->is_instance_klass()) {
     assert(InstanceKlass::cast(relocated_k)->is_shared_boot_class(),
           "must be boot class");
-    // SystemDictionary::xxx_klass() are not updated, need to check
+    // vmClasses::xxx_klass() are not updated, need to check
     // the original Klass*
-    if (orig_k == SystemDictionary::String_klass() ||
-        orig_k == SystemDictionary::Object_klass()) {
+    if (orig_k == vmClasses::String_klass() ||
+        orig_k == vmClasses::Object_klass()) {
       // Initialized early during VM initialization. No need to be added
       // to the sub-graph object class list.
       return;
@@ -618,8 +613,8 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
         (ArchivedKlassSubGraphInfoRecord*)MetaspaceShared::read_only_space_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
       record->init(&info);
 
-      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(klass);
-      u4 delta = MetaspaceShared::object_delta_u4(record);
+      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)klass);
+      u4 delta = ArchiveBuilder::current()->any_to_offset_u4(record);
       _writer->add(hash, delta);
     }
     return true; // keep on iterating
@@ -679,34 +674,35 @@ static void verify_the_heap(Klass* k, const char* which) {
 // Note: if a ArchivedKlassSubGraphInfoRecord contains non-early classes, and JVMTI
 // ClassFileLoadHook is enabled, it's possible for this class to be dynamically replaced. In
 // this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
-void HeapShared::resolve_classes(TRAPS) {
+void HeapShared::resolve_classes(Thread* THREAD) {
   if (!is_mapped()) {
     return; // nothing to do
   }
   resolve_classes_for_subgraphs(closed_archive_subgraph_entry_fields,
                                 num_closed_archive_subgraph_entry_fields,
-                                CHECK);
+                                THREAD);
   resolve_classes_for_subgraphs(open_archive_subgraph_entry_fields,
                                 num_open_archive_subgraph_entry_fields,
-                                CHECK);
+                                THREAD);
   resolve_classes_for_subgraphs(fmg_open_archive_subgraph_entry_fields,
                                 num_fmg_open_archive_subgraph_entry_fields,
-                                CHECK);
+                                THREAD);
 }
 
 void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                               int num, TRAPS) {
+                                               int num, Thread* THREAD) {
   for (int i = 0; i < num; i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name = SymbolTable::new_symbol(info->klass_name);
     InstanceKlass* k = SystemDictionaryShared::find_builtin_class(klass_name);
     assert(k != NULL && k->is_shared_boot_class(), "sanity");
-    resolve_classes_for_subgraph_of(k, CHECK);
+    resolve_classes_for_subgraph_of(k, THREAD);
   }
 }
 
-void HeapShared::resolve_classes_for_subgraph_of(Klass* k, TRAPS) {
- const ArchivedKlassSubGraphInfoRecord* record = resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
+void HeapShared::resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD) {
+ const ArchivedKlassSubGraphInfoRecord* record =
+   resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
  if (HAS_PENDING_EXCEPTION) {
    CLEAR_PENDING_EXCEPTION;
  }
@@ -715,7 +711,7 @@ void HeapShared::resolve_classes_for_subgraph_of(Klass* k, TRAPS) {
  }
 }
 
-void HeapShared::initialize_from_archived_subgraph(Klass* k, TRAPS) {
+void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
   if (!is_mapped()) {
     return; // nothing to do
   }
@@ -732,7 +728,7 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k, TRAPS) {
   }
 
   if (record != NULL) {
-    init_archived_fields_for(k, record, THREAD);
+    init_archived_fields_for(k, record);
   }
 }
 
@@ -740,7 +736,10 @@ const ArchivedKlassSubGraphInfoRecord*
 HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS) {
   assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
 
-  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(k);
+  if (!k->is_shared()) {
+    return NULL;
+  }
+  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
 
   // Initialize from archived data. Currently this is done only
@@ -771,7 +770,11 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
     Array<Klass*>* klasses = record->subgraph_object_klasses();
     if (klasses != NULL) {
       for (int i = 0; i < klasses->length(); i++) {
-        resolve_or_init(klasses->at(i), do_init, CHECK_NULL);
+        Klass* klass = klasses->at(i);
+        if (!klass->is_shared()) {
+          return NULL;
+        }
+        resolve_or_init(klass, do_init, CHECK_NULL);
       }
     }
   }
@@ -797,7 +800,7 @@ void HeapShared::resolve_or_init(Klass* k, bool do_init, TRAPS) {
   }
 }
 
-void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphInfoRecord* record, TRAPS) {
+void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphInfoRecord* record) {
   verify_the_heap(k, "before");
 
   // Load the subgraph entry fields from the record and store them back to
@@ -828,7 +831,7 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
 }
 
 void HeapShared::clear_archived_roots_of(Klass* k) {
-  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(k);
+  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
   if (record != NULL) {
     Array<int>* entry_field_records = record->entry_field_records();
@@ -850,18 +853,16 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
   KlassSubGraphInfo* _subgraph_info;
   oop _orig_referencing_obj;
   oop _archived_referencing_obj;
-  Thread* _thread;
  public:
   WalkOopAndArchiveClosure(int level,
                            bool is_closed_archive,
                            bool record_klasses_only,
                            KlassSubGraphInfo* subgraph_info,
-                           oop orig, oop archived, TRAPS) :
+                           oop orig, oop archived) :
     _level(level), _is_closed_archive(is_closed_archive),
     _record_klasses_only(record_klasses_only),
     _subgraph_info(subgraph_info),
-    _orig_referencing_obj(orig), _archived_referencing_obj(archived),
-    _thread(THREAD) {}
+    _orig_referencing_obj(orig), _archived_referencing_obj(archived) {}
   void do_oop(narrowOop *p) { WalkOopAndArchiveClosure::do_oop_work(p); }
   void do_oop(      oop *p) { WalkOopAndArchiveClosure::do_oop_work(p); }
 
@@ -874,7 +875,6 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
 
       size_t field_delta = pointer_delta(p, _orig_referencing_obj, sizeof(char));
       T* new_p = (T*)(cast_from_oop<address>(_archived_referencing_obj) + field_delta);
-      Thread* THREAD = _thread;
 
       if (!_record_klasses_only && log_is_enabled(Debug, cds, heap)) {
         ResourceMark rm;
@@ -887,7 +887,7 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
       }
 
       oop archived = HeapShared::archive_reachable_objects_from(
-          _level + 1, _subgraph_info, obj, _is_closed_archive, THREAD);
+          _level + 1, _subgraph_info, obj, _is_closed_archive);
       assert(archived != NULL, "VM should have exited with unarchivable objects for _level > 1");
       assert(HeapShared::is_archived_object(archived), "must be");
 
@@ -901,14 +901,13 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
   }
 };
 
-void HeapShared::check_closed_archive_heap_region_object(InstanceKlass* k,
-                                                         Thread* THREAD) {
+void HeapShared::check_closed_archive_heap_region_object(InstanceKlass* k) {
   // Check fields in the object
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static()) {
       BasicType ft = fs.field_descriptor().field_type();
       if (!fs.access_flags().is_final() && is_reference_type(ft)) {
-        ResourceMark rm(THREAD);
+        ResourceMark rm;
         log_warning(cds, heap)(
           "Please check reference field in %s instance in closed archive heap region: %s %s",
           k->external_name(), (fs.name())->as_C_string(),
@@ -944,8 +943,7 @@ void HeapShared::check_module_oop(oop orig_module_obj) {
 oop HeapShared::archive_reachable_objects_from(int level,
                                                KlassSubGraphInfo* subgraph_info,
                                                oop orig_obj,
-                                               bool is_closed_archive,
-                                               TRAPS) {
+                                               bool is_closed_archive) {
   assert(orig_obj != NULL, "must be");
   assert(!is_archived_object(orig_obj), "sanity");
 
@@ -985,7 +983,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
   bool record_klasses_only = (archived_obj != NULL);
   if (archived_obj == NULL) {
     ++_num_new_archived_objs;
-    archived_obj = archive_heap_object(orig_obj, THREAD);
+    archived_obj = archive_heap_object(orig_obj);
     if (archived_obj == NULL) {
       // Skip archiving the sub-graph referenced from the current entry field.
       ResourceMark rm;
@@ -1020,14 +1018,13 @@ oop HeapShared::archive_reachable_objects_from(int level,
 
   assert(archived_obj != NULL, "must be");
   Klass *orig_k = orig_obj->klass();
-  Klass *relocated_k = archived_obj->klass();
-  subgraph_info->add_subgraph_object_klass(orig_k, relocated_k);
+  subgraph_info->add_subgraph_object_klass(orig_k);
 
   WalkOopAndArchiveClosure walker(level, is_closed_archive, record_klasses_only,
-                                  subgraph_info, orig_obj, archived_obj, THREAD);
+                                  subgraph_info, orig_obj, archived_obj);
   orig_obj->oop_iterate(&walker);
   if (is_closed_archive && orig_k->is_instance_klass()) {
-    check_closed_archive_heap_region_object(InstanceKlass::cast(orig_k), THREAD);
+    check_closed_archive_heap_region_object(InstanceKlass::cast(orig_k));
   }
   return archived_obj;
 }
@@ -1070,8 +1067,7 @@ void HeapShared::archive_reachable_objects_from_static_field(InstanceKlass *k,
                                                              const char* klass_name,
                                                              int field_offset,
                                                              const char* field_name,
-                                                             bool is_closed_archive,
-                                                             TRAPS) {
+                                                             bool is_closed_archive) {
   assert(DumpSharedSpaces, "dump time only");
   assert(k->is_shared_boot_class(), "must be boot class");
 
@@ -1089,8 +1085,7 @@ void HeapShared::archive_reachable_objects_from_static_field(InstanceKlass *k,
       f->print_on(&out);
     }
 
-    oop af = archive_reachable_objects_from(1, subgraph_info, f,
-                                            is_closed_archive, CHECK);
+    oop af = archive_reachable_objects_from(1, subgraph_info, f, is_closed_archive);
 
     if (af == NULL) {
       log_error(cds, heap)("Archiving failed %s::%s (some reachable objects cannot be archived)",
@@ -1303,8 +1298,7 @@ void HeapShared::init_for_dumping(Thread* THREAD) {
 
 void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                           int num, bool is_closed_archive,
-                                          bool is_full_module_graph,
-                                          Thread* THREAD) {
+                                          bool is_full_module_graph) {
   _num_total_subgraph_recordings = 0;
   _num_total_walked_objs = 0;
   _num_total_archived_objs = 0;
@@ -1335,7 +1329,7 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
 
       archive_reachable_objects_from_static_field(f->klass, f->klass_name,
                                                   f->offset, f->field_name,
-                                                  is_closed_archive, CHECK);
+                                                  is_closed_archive);
     }
     done_recording_subgraph(info->klass, klass_name);
   }
@@ -1404,12 +1398,16 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
   HeapWord* p   = region.start();
   HeapWord* end = region.end();
   FindEmbeddedNonNullPointers finder((narrowOop*)p, &oopmap);
+  ArchiveBuilder* builder = DumpSharedSpaces ? ArchiveBuilder::current() : NULL;
 
   int num_objs = 0;
   while (p < end) {
     oop o = (oop)p;
     o->oop_iterate(&finder);
     p += o->size();
+    if (DumpSharedSpaces) {
+      builder->relocate_klass_ptr(o);
+    }
     ++ num_objs;
   }
 

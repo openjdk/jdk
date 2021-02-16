@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -475,24 +476,16 @@ final class Resolver {
                     if (actualHash == null)
                         findFail("Unable to compute the hash of module %s", dn);
                     if (!Arrays.equals(recordedHash, actualHash)) {
+                        HexFormat hex = HexFormat.of();
                         findFail("Hash of %s (%s) differs to expected hash (%s)" +
-                                 " recorded in %s", dn, toHexString(actualHash),
-                                 toHexString(recordedHash), descriptor.name());
+                                 " recorded in %s", dn, hex.formatHex(actualHash),
+                                hex.formatHex(recordedHash), descriptor.name());
                     }
                 }
             }
 
         }
     }
-
-    private static String toHexString(byte[] ba) {
-        StringBuilder sb = new StringBuilder(ba.length * 2);
-        for (byte b: ba) {
-            sb.append(String.format("%02x", b & 0xff));
-        }
-        return sb.toString();
-    }
-
 
     /**
      * Computes the readability graph for the modules in the given Configuration.

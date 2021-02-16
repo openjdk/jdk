@@ -49,7 +49,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   G1ScannerTasksQueue* _task_queue;
   G1RedirtyCardsLocalQueueSet _rdc_local_qset;
-  G1RedirtyCardsQueue _rdcq;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
 
@@ -88,8 +87,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Used to check whether string dedup should be applied to an object.
   Klass* _string_klass_or_null;
 
-  G1RedirtyCardsQueue& redirty_cards_queue()     { return _rdcq; }
-  G1CardTable* ct()                              { return _ct; }
+  G1CardTable* ct() { return _ct; }
 
   G1HeapRegionAttr dest(G1HeapRegionAttr original) const {
     assert(original.is_valid(),
@@ -149,7 +147,7 @@ public:
     size_t card_index = ct()->index_for(p);
     // If the card hasn't been added to the buffer, do it.
     if (_last_enqueued_card != card_index) {
-      redirty_cards_queue().enqueue(ct()->byte_for_index(card_index));
+      _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
       _last_enqueued_card = card_index;
     }
   }

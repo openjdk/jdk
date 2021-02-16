@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 
 package sun.java2d.loops;
 
-import sun.java2d.loops.GraphicsPrimitive;
+import sun.font.GlyphList;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
-import sun.font.GlyphList;
 
 /**
  *   DrawGlyphListLCD- loops for LCDTextRenderer pipe
@@ -70,23 +69,6 @@ public class DrawGlyphListLCD extends GraphicsPrimitive {
 
     public native void DrawGlyphListLCD(SunGraphics2D sg2d, SurfaceData dest,
                                          GlyphList srcData);
-
-    static {
-        GraphicsPrimitiveMgr.registerGeneral(
-                                   new DrawGlyphListLCD(null, null, null));
-    }
-
-    public GraphicsPrimitive makePrimitive(SurfaceType srctype,
-                                           CompositeType comptype,
-                                           SurfaceType dsttype) {
-        /* Do not return a General loop. SunGraphics2D determines whether
-         * to use LCD or standard AA text based on whether there is an
-         * installed loop.
-         * This can be uncommented once there is a General loop which can
-         * handle one byte per colour component masks properly.
-         */
-        return null;
-    }
 
     public GraphicsPrimitive traceWrap() {
         return new TraceDrawGlyphListLCD(this);

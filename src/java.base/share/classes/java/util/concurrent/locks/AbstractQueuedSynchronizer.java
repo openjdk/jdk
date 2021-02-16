@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RejectedExecutionException;
 import jdk.internal.misc.Unsafe;
 
 /**
@@ -137,13 +138,13 @@ import jdk.internal.misc.Unsafe;
  * of exclusive synchronization takes the form:
  *
  * <pre>
- * Acquire:
+ * <em>Acquire:</em>
  *     while (!tryAcquire(arg)) {
  *        <em>enqueue thread if it is not already queued</em>;
  *        <em>possibly block current thread</em>;
  *     }
  *
- * Release:
+ * <em>Release:</em>
  *     if (tryRelease(arg))
  *        <em>unblock the first queued thread</em>;
  * </pre>
@@ -1565,13 +1566,18 @@ public abstract class AbstractQueuedSynchronizer
             ConditionNode node = new ConditionNode();
             int savedState = enableWait(node);
             LockSupport.setCurrentBlocker(this); // for back-compatibility
-            boolean interrupted = false;
+            boolean interrupted = false, rejected = false;
             while (!canReacquire(node)) {
                 if (Thread.interrupted())
                     interrupted = true;
                 else if ((node.status & COND) != 0) {
                     try {
-                        ForkJoinPool.managedBlock(node);
+                        if (rejected)
+                            node.block();
+                        else
+                            ForkJoinPool.managedBlock(node);
+                    } catch (RejectedExecutionException ex) {
+                        rejected = true;
                     } catch (InterruptedException ie) {
                         interrupted = true;
                     }
@@ -1604,14 +1610,19 @@ public abstract class AbstractQueuedSynchronizer
             ConditionNode node = new ConditionNode();
             int savedState = enableWait(node);
             LockSupport.setCurrentBlocker(this); // for back-compatibility
-            boolean interrupted = false, cancelled = false;
+            boolean interrupted = false, cancelled = false, rejected = false;
             while (!canReacquire(node)) {
                 if (interrupted |= Thread.interrupted()) {
                     if (cancelled = (node.getAndUnsetStatus(COND) & COND) != 0)
                         break;              // else interrupted after signal
                 } else if ((node.status & COND) != 0) {
                     try {
-                        ForkJoinPool.managedBlock(node);
+                        if (rejected)
+                            node.block();
+                        else
+                            ForkJoinPool.managedBlock(node);
+                    } catch (RejectedExecutionException ex) {
+                        rejected = true;
                     } catch (InterruptedException ie) {
                         interrupted = true;
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import jdk.javadoc.internal.doclets.formats.html.AbstractMemberWriter;
 
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
@@ -152,6 +153,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     protected void buildAnnotationTypeMemberChildren(Content annotationDocTree) {
         buildSignature(annotationDocTree);
         buildDeprecationInfo(annotationDocTree);
+        buildPreviewInfo(annotationDocTree);
         buildMemberComments(annotationDocTree);
         buildTagInfo(annotationDocTree);
     }
@@ -172,6 +174,15 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      */
     protected void buildDeprecationInfo(Content annotationDocTree) {
         writer.addDeprecated(currentMember, annotationDocTree);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param annotationDocTree the content tree to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content annotationDocTree) {
+        writer.addPreview(currentMember, annotationDocTree);
     }
 
     /**

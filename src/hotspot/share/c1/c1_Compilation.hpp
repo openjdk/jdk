@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,8 +265,8 @@ class Compilation: public StackObj {
 
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
-  bool is_optimistic() const                             {
-    return !TieredCompilation &&
+  bool is_optimistic() {
+    return CompilerConfig::is_c1_only_no_aot_or_jvmci() && !is_profiling() &&
       (RangeCheckElimination || UseLoopInvariantCodeMotion) &&
       method()->method_data()->trap_count(Deoptimization::Reason_none) == 0;
   }

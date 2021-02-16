@@ -37,20 +37,34 @@ import java.util.Map;
 public class bug4235420 {
 
     public static void main(String[] argv) throws Exception {
-        if ("Nimbus".equals(UIManager.getLookAndFeel().getName())) {
-            System.out.println("The test is skipped for Nimbus");
-
-            return;
-        }
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                Table table = new Table();
-
-                table.test();
+        for (UIManager.LookAndFeelInfo LF :
+                UIManager.getInstalledLookAndFeels()) {
+            try {
+                UIManager.setLookAndFeel(LF.getClassName());
+            } catch (UnsupportedLookAndFeelException ignored) {
+                System.out.println("Unsupported L&F: " + LF.getClassName());
+            } catch (ClassNotFoundException | InstantiationException
+                     | IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
-        });
+            System.out.println("Testing L&F: " + LF.getClassName());
+
+            if ("Nimbus".equals(UIManager.getLookAndFeel().getName()) ||
+                "GTK".equals(UIManager.getLookAndFeel().getName())) {
+                System.out.println("The test is skipped for Nimbus and GTK");
+
+                continue;
+            }
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    Table table = new Table();
+
+                    table.test();
+                }
+            });
+        }
     }
 
     private static class Table extends JTable {

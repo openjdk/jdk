@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.util.*;
 
 public class SoftKeys {
 
-    private static final char[] CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-
     public static void main(String[] args) {
         try {
             // With 4 characters in "language", we'll fill up a 16M heap quickly,
@@ -44,7 +42,7 @@ public class SoftKeys {
             // been cleared.
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 512*1024; j++) {
-                    new Locale(langForInt(j), "", "");
+                    new Locale(HexFormat.of().toHexDigits((short)j), "", "");
                 }
             }
         } catch (OutOfMemoryError e) {
@@ -56,15 +54,6 @@ public class SoftKeys {
             // Do a System.gc() to not throw an OOME again in the jtreg wrapper.
             System.gc();
         }
-    }
-
-    private static String langForInt(int val) {
-        StringBuilder buf = new StringBuilder(4);
-        buf.append(CHARS[(val >> 12) & 0xF]);
-        buf.append(CHARS[(val >>  8) & 0xF]);
-        buf.append(CHARS[(val >>  4) & 0xF]);
-        buf.append(CHARS[(val >>  0) & 0xF]);
-        return buf.toString();
     }
 }
 

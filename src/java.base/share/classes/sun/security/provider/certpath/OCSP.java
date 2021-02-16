@@ -24,12 +24,12 @@
  */
 package sun.security.provider.certpath;
 
-import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
@@ -37,7 +37,7 @@ import java.security.cert.CRLReason;
 import java.security.cert.Extension;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -46,6 +46,7 @@ import java.util.Map;
 import sun.security.action.GetIntegerAction;
 import sun.security.util.Debug;
 import sun.security.util.Event;
+import sun.security.util.IOUtils;
 import sun.security.validator.Validator;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
@@ -224,71 +225,61 @@ public final class OCSP {
         OCSPRequest request = new OCSPRequest(certIds, extensions);
         byte[] bytes = request.encodeBytes();
 
-        InputStream in = null;
-        OutputStream out = null;
-        byte[] response = null;
+        if (debug != null) {
+            debug.println("connecting to OCSP service at: " + responderURI);
+        }
+        Event.report(Event.ReporterCategory.CRLCHECK, "event.ocsp.check",
+                responderURI.toString());
 
+        URL url;
+        HttpURLConnection con = null;
         try {
-            URL url = responderURI.toURL();
-            if (debug != null) {
-                debug.println("connecting to OCSP service at: " + url);
+            String encodedGetReq = responderURI.toString() + "/" +
+                    URLEncoder.encode(Base64.getEncoder().encodeToString(bytes),
+                            "UTF-8");
+
+            if (encodedGetReq.length() <= 255) {
+                url = new URL(encodedGetReq);
+                con = (HttpURLConnection)url.openConnection();
+                con.setDoOutput(true);
+                con.setDoInput(true);
+                con.setRequestMethod("GET");
+            } else {
+                url = responderURI.toURL();
+                con = (HttpURLConnection)url.openConnection();
+                con.setConnectTimeout(CONNECT_TIMEOUT);
+                con.setReadTimeout(CONNECT_TIMEOUT);
+                con.setDoOutput(true);
+                con.setDoInput(true);
+                con.setRequestMethod("POST");
+                con.setRequestProperty
+                    ("Content-type", "application/ocsp-request");
+                con.setRequestProperty
+                    ("Content-length", String.valueOf(bytes.length));
+                OutputStream out = con.getOutputStream();
+                out.write(bytes);
+                out.flush();
             }
 
-            Event.report(Event.ReporterCategory.CRLCHECK, "event.ocsp.check", url.toString());
-            HttpURLConnection con = (HttpURLConnection)url.openConnection();
-            con.setConnectTimeout(CONNECT_TIMEOUT);
-            con.setReadTimeout(CONNECT_TIMEOUT);
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            con.setRequestMethod("POST");
-            con.setRequestProperty
-                ("Content-type", "application/ocsp-request");
-            con.setRequestProperty
-                ("Content-length", String.valueOf(bytes.length));
-            out = con.getOutputStream();
-            out.write(bytes);
-            out.flush();
             // Check the response
             if (debug != null &&
                 con.getResponseCode() != HttpURLConnection.HTTP_OK) {
                 debug.println("Received HTTP error: " + con.getResponseCode()
                     + " - " + con.getResponseMessage());
             }
-            in = con.getInputStream();
+
             int contentLength = con.getContentLength();
             if (contentLength == -1) {
                 contentLength = Integer.MAX_VALUE;
             }
-            response = new byte[contentLength > 2048 ? 2048 : contentLength];
-            int total = 0;
-            while (total < contentLength) {
-                int count = in.read(response, total, response.length - total);
-                if (count < 0)
-                    break;
 
-                total += count;
-                if (total >= response.length && total < contentLength) {
-                    response = Arrays.copyOf(response, total * 2);
-                }
-            }
-            response = Arrays.copyOf(response, total);
+            return IOUtils.readExactlyNBytes(con.getInputStream(),
+                    contentLength);
         } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException ioe) {
-                    throw ioe;
-                }
-            }
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException ioe) {
-                    throw ioe;
-                }
+            if (con != null) {
+                con.disconnect();
             }
         }
-        return response;
     }
 
     /**

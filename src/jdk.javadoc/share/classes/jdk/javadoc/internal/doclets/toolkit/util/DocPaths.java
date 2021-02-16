@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,9 @@ public class DocPaths {
     /** The name of the file for the package usage info. */
     public static final DocPath PACKAGE_USE = DocPath.create("package-use.html");
 
+    /** The name of the fie for preview elements. */
+    public static final DocPath PREVIEW_LIST = DocPath.create("preview-list.html");
+
     /** The name of the file for all system properties. */
     public static final DocPath SYSTEM_PROPERTIES = DocPath.create("system-properties.html");
 
@@ -274,6 +277,9 @@ public class DocPaths {
 
     /** The name of the search javascript file. */
     public static final DocPath SEARCH_JS = DocPath.create("search.js");
+
+    /** The name of the template for the search javascript file. */
+    public static final DocPath SEARCH_JS_TEMPLATE = DocPath.create("search.js.template");
 
     /** The name of the file for the serialized form info. */
     public static final DocPath SERIALIZED_FORM = DocPath.create("serialized-form.html");

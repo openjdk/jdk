@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,10 +181,13 @@ public:
   static bool is_null(Klass* v)      { return v == NULL; }
   static bool is_null(narrowKlass v) { return v == 0; }
 
+  static inline Klass* decode_raw(narrowKlass v, address base);
   static inline Klass* decode_raw(narrowKlass v);
   static inline Klass* decode_not_null(narrowKlass v);
+  static inline Klass* decode_not_null(narrowKlass v, address base);
   static inline Klass* decode(narrowKlass v);
   static inline narrowKlass encode_not_null(Klass* v);
+  static inline narrowKlass encode_not_null(Klass* v, address base);
   static inline narrowKlass encode(Klass* v);
 
 };
