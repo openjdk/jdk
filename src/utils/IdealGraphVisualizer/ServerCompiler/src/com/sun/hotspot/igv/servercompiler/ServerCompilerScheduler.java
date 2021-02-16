@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public class ServerCompilerScheduler implements Scheduler {
         public InputBlock block;
         public boolean isBlockProjection;
         public boolean isBlockStart;
+        public boolean isCFG;
     }
     private InputGraph graph;
     private Collection<Node> nodes;
@@ -618,6 +619,31 @@ public class ServerCompilerScheduler implements Scheduler {
                 Node fromNode = inputNodeToNode.get(fromInputNode);
                 fromNode.succs.add(toNode);
                 toNode.preds.add(fromNode);
+            }
+        }
+
+        // Mark nodes that form the CFG (same as shown by the 'Show control flow
+        // only' filter, plus the Root node).
+        for (Node n : nodes) {
+            String category = n.inputNode.getProperties().get("category");
+            assert category != null :
+                "Node category not found, please use input from a compatible " +
+                "compiler version";
+            if (category.equals("control") || category.equals("mixed")) {
+                // Example: If, IfTrue, CallStaticJava.
+                n.isCFG = true;
+            } else if (n.inputNode.getProperties().get("type").equals("bottom")
+                       && n.preds.size() > 0 &&
+                       n.preds.get(0) != null &&
+                       n.preds.get(0).inputNode.getProperties()
+                       .get("category").equals("control")) {
+                // Example: Halt, Return, Rethrow.
+                n.isCFG = true;
+            } else if (n.isBlockStart || n.isBlockProjection) {
+                // Example: Root.
+                n.isCFG = true;
+            } else {
+                n.isCFG = false;
             }
         }
     }
