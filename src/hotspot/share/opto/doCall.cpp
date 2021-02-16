@@ -1049,24 +1049,24 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
         const TypePtr* addr_type = TypeMetadataPtr::make(method());
         Node* adr1 = makecon(addr_type);
         Node* adr2 = basic_plus_adr(adr1, adr1, in_bytes(Method::compiled_invocation_counter_offset()));
-        increment_counter64(adr2);
+        increment_counter(adr2);
       }
     } else if (is_inline) {
       switch (bc()) {
-      case Bytecodes::_invokevirtual:   increment_counter64(SharedRuntime::nof_inlined_calls_addr()); break;
-      case Bytecodes::_invokeinterface: increment_counter64(SharedRuntime::nof_inlined_interface_calls_addr()); break;
+      case Bytecodes::_invokevirtual:   increment_counter(SharedRuntime::nof_inlined_calls_addr()); break;
+      case Bytecodes::_invokeinterface: increment_counter(SharedRuntime::nof_inlined_interface_calls_addr()); break;
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokedynamic:
-      case Bytecodes::_invokespecial:   increment_counter64(SharedRuntime::nof_inlined_static_calls_addr()); break;
+      case Bytecodes::_invokespecial:   increment_counter(SharedRuntime::nof_inlined_static_calls_addr()); break;
       default: fatal("unexpected call bytecode");
       }
     } else {
       switch (bc()) {
-      case Bytecodes::_invokevirtual:   increment_counter64(SharedRuntime::nof_normal_calls_addr()); break;
-      case Bytecodes::_invokeinterface: increment_counter64(SharedRuntime::nof_interface_calls_addr()); break;
+      case Bytecodes::_invokevirtual:   increment_counter(SharedRuntime::nof_normal_calls_addr()); break;
+      case Bytecodes::_invokeinterface: increment_counter(SharedRuntime::nof_interface_calls_addr()); break;
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokedynamic:
-      case Bytecodes::_invokespecial:   increment_counter64(SharedRuntime::nof_static_calls_addr()); break;
+      case Bytecodes::_invokespecial:   increment_counter(SharedRuntime::nof_static_calls_addr()); break;
       default: fatal("unexpected call bytecode");
       }
     }
