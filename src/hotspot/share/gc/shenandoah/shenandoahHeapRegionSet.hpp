@@ -45,9 +45,6 @@ private:
 public:
   ShenandoahHeapRegionSetIterator(const ShenandoahHeapRegionSet* const set);
 
-  // Reset existing iterator to new set
-  void reset(const ShenandoahHeapRegionSet* const set);
-
   // Single-thread version
   ShenandoahHeapRegion* next();
 };
@@ -57,10 +54,7 @@ class ShenandoahHeapRegionSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   size_t const          _map_size;
-  size_t const          _region_size_bytes_shift;
   jbyte* const          _set_map;
-  // Bias set map's base address for fast test if an oop is in set
-  jbyte* const          _biased_set_map;
   size_t                _region_count;
 
 public:
@@ -75,16 +69,10 @@ public:
 
   inline bool is_in(ShenandoahHeapRegion* r) const;
   inline bool is_in(size_t region_idx)       const;
-  inline bool is_in(oop p)                   const;
 
   void print_on(outputStream* out) const;
 
   void clear();
-
-private:
-  jbyte* biased_map_address() const {
-    return _biased_set_map;
-  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_HPP

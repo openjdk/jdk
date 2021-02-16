@@ -33,17 +33,10 @@
 ShenandoahHeapRegionSetIterator::ShenandoahHeapRegionSetIterator(const ShenandoahHeapRegionSet* const set) :
         _set(set), _heap(ShenandoahHeap::heap()), _current_index(0) {}
 
-void ShenandoahHeapRegionSetIterator::reset(const ShenandoahHeapRegionSet* const set) {
-  _set = set;
-  _current_index = 0;
-}
-
 ShenandoahHeapRegionSet::ShenandoahHeapRegionSet() :
   _heap(ShenandoahHeap::heap()),
   _map_size(_heap->num_regions()),
-  _region_size_bytes_shift(ShenandoahHeapRegion::region_size_bytes_shift()),
   _set_map(NEW_C_HEAP_ARRAY(jbyte, _map_size, mtGC)),
-  _biased_set_map(_set_map - ((uintx)_heap->base() >> _region_size_bytes_shift)),
   _region_count(0)
 {
   // Use 1-byte data type
@@ -78,8 +71,7 @@ void ShenandoahHeapRegionSet::clear() {
 }
 
 ShenandoahHeapRegion* ShenandoahHeapRegionSetIterator::next() {
-  size_t num_regions = _heap->num_regions();
-  for (size_t index = _current_index; index < num_regions; index++) {
+  for (size_t index = _current_index; index < _heap->num_regions(); index++) {
     if (_set->is_in(index)) {
       _current_index = index + 1;
       return _heap->get_region(index);
