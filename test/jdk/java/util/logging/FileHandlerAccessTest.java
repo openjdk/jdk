@@ -25,7 +25,6 @@
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -42,7 +41,7 @@ import java.util.logging.LogRecord;
  */
 
 public class FileHandlerAccessTest {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         if (!(args.length == 2 || args.length == 1)) {
             System.out.println("Usage error: expects java FileHandlerAccessTest [process/thread] <count>");
             return;
@@ -93,14 +92,18 @@ public class FileHandlerAccessTest {
             while ((line = bufferedReader.readLine()) != null) {
                 System.out.println(name + "\t|" + line);
             }
-            childProcess.waitFor();
+
+            int exitCode = childProcess.waitFor();
+            if (exitCode != 0) {
+                throw new RuntimeException("An error occured in the child process.");
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (childProcess != null){
+            if (childProcess != null) {
                 childProcess.destroy();
             }
-            if (bufferedReader != null){
+            if (bufferedReader != null) {
                 try {
                     bufferedReader.close();
                 } catch (Exception ignored) {}
