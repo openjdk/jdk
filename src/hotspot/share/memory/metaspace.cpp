@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,6 +498,15 @@ void Metaspace::print_compressed_class_space(outputStream* st) {
                p2i(base), p2i(top), (top - base) * BytesPerWord);
     st->cr();
   }
+}
+
+// Returns one-past the highest possible class space location, NULL if no class space exists.
+const MetaWord* Metaspace::class_space_end() {
+  if (VirtualSpaceList::vslist_class() != NULL) {
+    return VirtualSpaceList::vslist_class()->base_of_first_node() +
+           VirtualSpaceList::vslist_class()->word_size_of_first_node();
+  }
+  return NULL;
 }
 
 // Given a prereserved space, use that to set up the compressed class space list.

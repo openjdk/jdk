@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +139,8 @@ public:
   static const char* metadata_type_name(Metaspace::MetadataType mdtype);
 
   static void print_compressed_class_space(outputStream* st) NOT_LP64({});
+  // Returns one-past the highest possible class space location, NULL if no class space exists.
+  static const MetaWord* class_space_end();
 
   // Return TRUE only if UseCompressedClassPointers is True.
   static bool using_class_space() {
