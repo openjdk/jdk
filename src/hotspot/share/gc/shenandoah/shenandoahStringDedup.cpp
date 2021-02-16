@@ -47,21 +47,10 @@ void ShenandoahStringDedup::enqueue_candidate(oop java_string) {
   assert(Thread::current()->is_Worker_thread(),
         "Only from a GC worker thread");
 
-  if (java_string->age() <= StringDeduplicationAgeThreshold) {
-    const markWord mark = java_string->mark();
-
-    // Having/had displaced header, too risk to deal with them, skip
-    if (mark == markWord::INFLATING() || mark.has_displaced_mark_helper()) {
-      return;
-    }
-
-    // Increase string age and enqueue it when it rearches age threshold
-    markWord new_mark = mark.incr_age();
-    if (mark == java_string->cas_set_mark(new_mark, mark)) {
-      if (mark.age() == StringDeduplicationAgeThreshold) {
-        StringDedupQueue::push(ShenandoahWorkerSession::worker_id(), java_string);
-      }
-    }
+  // String age is incremented when object is evacuated as with all objects.
+  if (java_string->age() >= StringDeduplicationAgeThreshold) {
+    // Enqueue string for deduplication when age reaches age threshold.
+    StringDedupQueue::push(ShenandoahWorkerSession::worker_id(), java_string);
   }
 }
 

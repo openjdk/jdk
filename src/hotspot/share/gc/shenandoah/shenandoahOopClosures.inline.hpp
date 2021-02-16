@@ -28,18 +28,18 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 
-template<class T, StringDedupMode STRING_DEDUP>
+template<class T, GenerationMode GENERATION, StringDedupMode STRING_DEDUP>
 inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
-  ShenandoahMark::mark_through_ref<T, STRING_DEDUP>(p, _queue, _mark_context, _weak);
+  ShenandoahMark::mark_through_ref<T, GENERATION, STRING_DEDUP>(p, _queue, _mark_context, _weak);
 }
 
-template<class T, StringDedupMode STRING_DEDUP>
+template<class T, GenerationMode GENERATION, StringDedupMode STRING_DEDUP>
 inline void ShenandoahMarkUpdateRefsSuperClosure::work(T* p) {
   // Update the location
   _heap->update_with_forwarded(p);
 
   // ...then do the usual thing
-  ShenandoahMarkRefsSuperClosure::work<T, STRING_DEDUP>(p);
+  ShenandoahMarkRefsSuperClosure::work<T, GENERATION, STRING_DEDUP>(p);
 }
 
 template<class T>

@@ -214,12 +214,21 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size = p->size();
+  ShenandoahRegionAffiliation target_gen = heap_region_containing(p)->affiliation();
+  if (target_gen == YOUNG_GENERATION) {
+    if (ShenandoahForwarding::is_forwarded(p)) {
+      return ShenandoahBarrierSet::resolve_forwarded(p);
+    } else if (p->mark().age() > InitialTenuringThreshold) {
+      //tty->print_cr("promoting object: " PTR_FORMAT, p2i(p));
+      //target_gen = OLD_GEN;
+    }
+  }
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
   bool alloc_from_gclab = true;
   HeapWord* copy = NULL;
+  size_t size = p->size();
 
 #ifdef ASSERT
   if (ShenandoahOOMDuringEvacALot &&
@@ -227,11 +236,11 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
         copy = NULL;
   } else {
 #endif
-    if (UseTLAB) {
+    if (UseTLAB && target_gen == YOUNG_GENERATION) {
       copy = allocate_from_gclab(thread, size);
     }
     if (copy == NULL) {
-      ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size);
+      ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen);
       copy = allocate_memory(req);
       alloc_from_gclab = false;
     }
@@ -256,6 +265,18 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(NULL, copy_val);
+
+    // Hey!  This code showed up in a merge conflict.  It has "nothing" to do with the patch that
+    // was merged, so kdnilsen is leaving it in place as is.  However, it looks to me like the object's
+    // age should be incremented before the copy is committed to avoid the need for synchronization here.
+    //
+    // kdnilsen believes the following code is replaced/relocated in a subsequent commit.
+
+    // Increment age in young copies.
+    if (target_gen == YOUNG_GENERATION) {
+      copy_val->incr_age();
+    }
+
     return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this

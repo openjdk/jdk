@@ -42,7 +42,14 @@ GCName GCConfiguration::young_collector() const {
     return ParallelScavenge;
   }
 
-  if (UseZGC || UseShenandoahGC) {
+  if (UseShenandoahGC) {
+    if (strcmp(ShenandoahGCMode, "generational") == 0) {
+      return Shenandoah;
+    }
+    return NA;
+  }
+
+  if (UseZGC) {
     return NA;
   }
 

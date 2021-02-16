@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,6 +246,8 @@ private:
 
   HeapWord* volatile _update_watermark;
 
+  ShenandoahRegionAffiliation _affiliation;
+
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
@@ -386,6 +388,12 @@ public:
   inline HeapWord* get_update_watermark() const;
   inline void set_update_watermark(HeapWord* w);
   inline void set_update_watermark_at_safepoint(HeapWord* w);
+
+  ShenandoahRegionAffiliation affiliation() const {
+    return _affiliation;
+  }
+
+  void set_affiliation(ShenandoahRegionAffiliation new_affiliation);
 
 private:
   void do_commit();

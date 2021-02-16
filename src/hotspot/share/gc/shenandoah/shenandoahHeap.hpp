@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "memory/metaspace.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -46,6 +47,7 @@ class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
+class ShenandoahGeneration;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
 class ShenandoahMode;
@@ -372,6 +374,8 @@ public:
 //
 // Mark support
 private:
+  ShenandoahGeneration*      _young_generation;
+  ShenandoahGeneration*      _global_generation;
   ShenandoahControlThread*   _control_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
@@ -385,6 +389,8 @@ private:
   ShenandoahControlThread*   control_thread()          { return _control_thread;    }
 
 public:
+  ShenandoahGeneration*      young_generation()  const { return _young_generation;  }
+  ShenandoahGeneration*      global_generation() const { return _global_generation; }
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahHeuristics*      heuristics()        const { return _heuristics;        }
@@ -460,6 +466,8 @@ public:
   bool is_maximal_no_gc() const shenandoah_not_implemented_return(false);
 
   bool is_in(const void* p) const;
+
+  bool is_in_young(const void* p) const;
 
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
@@ -616,6 +624,15 @@ public:
   // Call before/after evacuation.
   inline void enter_evacuation(Thread* t);
   inline void leave_evacuation(Thread* t);
+
+// ---------- Generational support
+//
+private:
+  RememberedScanner* _card_scan;
+
+public:
+  inline RememberedScanner* card_scan() { return _card_scan; }
+
 
 // ---------- Helper functions
 //

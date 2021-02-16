@@ -58,6 +58,9 @@ private:
 
   void iu_barrier_impl(MacroAssembler* masm, Register dst, Register tmp);
 
+  void store_check(MacroAssembler* masm, Register obj, Address dst);
+  void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count, Register tmp);
+
 public:
   void iu_barrier(MacroAssembler* masm, Register dst, Register tmp);
 #ifdef COMPILER1

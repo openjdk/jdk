@@ -99,7 +99,7 @@ void ShenandoahSTWMark::mark() {
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
-  ShenandoahInitMarkRootsClosure  init_mark(task_queues()->queue(worker_id));
+  ShenandoahInitMarkRootsClosure<GLOBAL> init_mark(task_queues()->queue(worker_id));
   _root_scanner.roots_do(&init_mark, worker_id);
 }
 
@@ -108,7 +108,7 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
   ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
 
-  mark_loop(worker_id, &_terminator, rp,
+  mark_loop(GLOBAL, worker_id, &_terminator, rp,
             false, // not cancellable
             ShenandoahStringDedup::is_enabled());
 }

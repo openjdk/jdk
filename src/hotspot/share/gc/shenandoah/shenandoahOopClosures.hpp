@@ -33,6 +33,11 @@
 #include "memory/iterator.hpp"
 #include "runtime/thread.hpp"
 
+enum GenerationMode {
+  YOUNG,
+  GLOBAL
+};
+
 enum StringDedupMode {
   NO_DEDUP,      // Do not do anything for String deduplication
   ENQUEUE_DEDUP  // Enqueue candidate Strings for deduplication
@@ -45,7 +50,7 @@ private:
   bool _weak;
 
 protected:
-  template <class T, StringDedupMode STRING_DEDUP>
+  template <class T, GenerationMode GENERATION, StringDedupMode STRING_DEDUP>
   void work(T *p);
 
 public:
@@ -64,7 +69,7 @@ class ShenandoahMarkUpdateRefsSuperClosure : public ShenandoahMarkRefsSuperClosu
 protected:
   ShenandoahHeap* const _heap;
 
-  template <class T, StringDedupMode STRING_DEDUP>
+  template <class T, GenerationMode GENERATION, StringDedupMode STRING_DEDUP>
   inline void work(T* p);
 
 public:
@@ -75,10 +80,11 @@ public:
   };
 };
 
+template <GenerationMode GENERATION>
 class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkUpdateRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, NO_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, GENERATION, NO_DEDUP>(p); }
 
 public:
   ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -89,10 +95,11 @@ public:
   virtual bool do_metadata()        { return false; }
 };
 
+template <GenerationMode GENERATION>
 class ShenandoahMarkUpdateRefsDedupClosure : public ShenandoahMarkUpdateRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, ENQUEUE_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, GENERATION, ENQUEUE_DEDUP>(p); }
 
 public:
   ShenandoahMarkUpdateRefsDedupClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -103,10 +110,11 @@ public:
   virtual bool do_metadata()        { return false; }
 };
 
+template <GenerationMode GENERATION>
 class ShenandoahMarkUpdateRefsMetadataClosure : public ShenandoahMarkUpdateRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, NO_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, GENERATION, NO_DEDUP>(p); }
 
 public:
   ShenandoahMarkUpdateRefsMetadataClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -117,10 +125,11 @@ public:
   virtual bool do_metadata()        { return true; }
 };
 
+template <GenerationMode GENERATION>
 class ShenandoahMarkUpdateRefsMetadataDedupClosure : public ShenandoahMarkUpdateRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, ENQUEUE_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, GENERATION, ENQUEUE_DEDUP>(p); }
 
 public:
   ShenandoahMarkUpdateRefsMetadataDedupClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -131,10 +140,11 @@ public:
   virtual bool do_metadata()        { return true; }
 };
 
+template <GenerationMode GENERATION>
 class ShenandoahMarkRefsClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, NO_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, GENERATION, NO_DEDUP>(p); }
 
 public:
   ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -145,10 +155,11 @@ public:
   virtual bool do_metadata()        { return false; }
 };
 
+template <GenerationMode GENERATION>
 class ShenandoahMarkRefsDedupClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, ENQUEUE_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, GENERATION, ENQUEUE_DEDUP>(p); }
 
 public:
   ShenandoahMarkRefsDedupClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -159,10 +170,11 @@ public:
   virtual bool do_metadata()        { return false; }
 };
 
+template <GenerationMode GENERATION>
 class ShenandoahMarkRefsMetadataClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, NO_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, GENERATION, NO_DEDUP>(p); }
 
 public:
   ShenandoahMarkRefsMetadataClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -173,10 +185,11 @@ public:
   virtual bool do_metadata()        { return true; }
 };
 
+template <GenerationMode GENERATION>
 class ShenandoahMarkRefsMetadataDedupClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, ENQUEUE_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, GENERATION, ENQUEUE_DEDUP>(p); }
 
 public:
   ShenandoahMarkRefsMetadataDedupClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :

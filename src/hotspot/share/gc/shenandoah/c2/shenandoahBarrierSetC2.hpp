@@ -75,6 +75,18 @@ private:
 
   Node* shenandoah_iu_barrier(GraphKit* kit, Node* obj) const;
 
+  Node* byte_map_base_node(GraphKit* kit) const;
+
+  void post_barrier(GraphKit* kit,
+                    Node* ctl,
+                    Node* store,
+                    Node* obj,
+                    Node* adr,
+                    uint adr_idx,
+                    Node* val,
+                    BasicType bt,
+                    bool use_precise) const;
+
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                           Node* pre_val, bool need_mem_bar) const;
 

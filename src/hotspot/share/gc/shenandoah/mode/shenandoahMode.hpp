@@ -52,6 +52,7 @@ public:
   virtual const char* name() = 0;
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;
+  virtual bool is_generational() { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHMODE_HPP

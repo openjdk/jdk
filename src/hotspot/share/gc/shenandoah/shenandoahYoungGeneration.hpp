@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Amazon.com, Inc. and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,14 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
+#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
 
-#include "gc/shenandoah/shenandoahMark.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 
-class ShenandoahConcurrentMarkingTask;
-class ShenandoahFinalMarkingTask;
-class ShenandoahGeneration;
-
-class ShenandoahConcurrentMark: public ShenandoahMark {
-  template <GenerationMode GENERATION> friend class ShenandoahConcurrentMarkingTask;
-  template <GenerationMode GENERATION> friend class ShenandoahFinalMarkingTask;
-
+class ShenandoahYoungGeneration : public ShenandoahGeneration {
 public:
-  ShenandoahConcurrentMark();
-
-  // Concurrent mark roots
-  void mark_concurrent_roots(ShenandoahGeneration* generation);
-
-  // Concurrent mark
-  void concurrent_mark(ShenandoahGeneration* generation);
-  // Finish mark at a safepoint
-  void finish_mark(ShenandoahGeneration* generation);
-
-  static void cancel();
-
-private:
-  void finish_mark_work(ShenandoahGeneration* generation);
+  ShenandoahYoungGeneration() : ShenandoahGeneration(YOUNG) { }
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP

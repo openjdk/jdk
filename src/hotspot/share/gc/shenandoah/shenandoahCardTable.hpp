@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Amazon.com, Inc. and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,26 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP
+#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP
 
-#include "gc/shenandoah/shenandoahMark.hpp"
+#include "gc/g1/g1RegionToSpaceMapper.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/macros.hpp"
 
-class ShenandoahConcurrentMarkingTask;
-class ShenandoahFinalMarkingTask;
-class ShenandoahGeneration;
-
-class ShenandoahConcurrentMark: public ShenandoahMark {
-  template <GenerationMode GENERATION> friend class ShenandoahConcurrentMarkingTask;
-  template <GenerationMode GENERATION> friend class ShenandoahFinalMarkingTask;
+class ShenandoahCardTable: public CardTable {
+  friend class VMStructs;
 
 public:
-  ShenandoahConcurrentMark();
+  ShenandoahCardTable(MemRegion whole_heap): CardTable(whole_heap, /* conc_scan */ false) { }
 
-  // Concurrent mark roots
-  void mark_concurrent_roots(ShenandoahGeneration* generation);
+  virtual void initialize();
 
-  // Concurrent mark
-  void concurrent_mark(ShenandoahGeneration* generation);
-  // Finish mark at a safepoint
-  void finish_mark(ShenandoahGeneration* generation);
-
-  static void cancel();
-
-private:
-  void finish_mark_work(ShenandoahGeneration* generation);
+  inline bool is_in_young(oop obj) const {
+    ShouldNotReachHere();
+    return false;
+  }
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP

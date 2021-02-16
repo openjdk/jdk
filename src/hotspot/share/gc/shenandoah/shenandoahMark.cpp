@@ -41,11 +41,6 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
   _weak(false)
 { }
 
-ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
-  _queue(q),
-  _mark_context(ShenandoahHeap::heap()->marking_context()) {
-}
-
 ShenandoahMark::ShenandoahMark() :
   _task_queues(ShenandoahHeap::heap()->marking_context()->task_queues()) {
 }
@@ -59,7 +54,7 @@ void ShenandoahMark::clear() {
   ShenandoahBarrierSet::satb_mark_queue_set().abandon_partial_marking();
 }
 
-template <bool CANCELLABLE>
+template <GenerationMode GENERATION, bool CANCELLABLE>
 void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahReferenceProcessor *rp,
                                        bool strdedup) {
   ShenandoahObjToScanQueue* q = get_queue(w);
@@ -72,37 +67,37 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
   if (heap->unload_classes()) {
     if (heap->has_forwarded_objects()) {
       if (strdedup) {
-        ShenandoahMarkUpdateRefsMetadataDedupClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkUpdateRefsMetadataDedupClosure, CANCELLABLE>(&cl, ld, w, t);
+        ShenandoahMarkUpdateRefsMetadataDedupClosure<GENERATION> cl(q, rp);
+        mark_loop_work<ShenandoahMarkUpdateRefsMetadataDedupClosure<GENERATION>, GENERATION, CANCELLABLE>(&cl, ld, w, t);
       } else {
-        ShenandoahMarkUpdateRefsMetadataClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkUpdateRefsMetadataClosure, CANCELLABLE>(&cl, ld, w, t);
+        ShenandoahMarkUpdateRefsMetadataClosure<GENERATION> cl(q, rp);
+        mark_loop_work<ShenandoahMarkUpdateRefsMetadataClosure<GENERATION>, GENERATION, CANCELLABLE>(&cl, ld, w, t);
       }
     } else {
       if (strdedup) {
-        ShenandoahMarkRefsMetadataDedupClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkRefsMetadataDedupClosure, CANCELLABLE>(&cl, ld, w, t);
+        ShenandoahMarkRefsMetadataDedupClosure<GENERATION> cl(q, rp);
+        mark_loop_work<ShenandoahMarkRefsMetadataDedupClosure<GENERATION>, GENERATION, CANCELLABLE>(&cl, ld, w, t);
       } else {
-        ShenandoahMarkRefsMetadataClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkRefsMetadataClosure, CANCELLABLE>(&cl, ld, w, t);
+        ShenandoahMarkRefsMetadataClosure<GENERATION> cl(q, rp);
+        mark_loop_work<ShenandoahMarkRefsMetadataClosure<GENERATION>, GENERATION, CANCELLABLE>(&cl, ld, w, t);
       }
     }
   } else {
     if (heap->has_forwarded_objects()) {
       if (strdedup) {
-        ShenandoahMarkUpdateRefsDedupClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkUpdateRefsDedupClosure, CANCELLABLE>(&cl, ld, w, t);
+        ShenandoahMarkUpdateRefsDedupClosure<GENERATION> cl(q, rp);
+        mark_loop_work<ShenandoahMarkUpdateRefsDedupClosure<GENERATION>, GENERATION, CANCELLABLE>(&cl, ld, w, t);
       } else {
-        ShenandoahMarkUpdateRefsClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkUpdateRefsClosure, CANCELLABLE>(&cl, ld, w, t);
+        ShenandoahMarkUpdateRefsClosure<GENERATION> cl(q, rp);
+        mark_loop_work<ShenandoahMarkUpdateRefsClosure<GENERATION>, GENERATION, CANCELLABLE>(&cl, ld, w, t);
       }
     } else {
       if (strdedup) {
-        ShenandoahMarkRefsDedupClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkRefsDedupClosure, CANCELLABLE>(&cl, ld, w, t);
+        ShenandoahMarkRefsDedupClosure<GENERATION> cl(q, rp);
+        mark_loop_work<ShenandoahMarkRefsDedupClosure<GENERATION>, GENERATION, CANCELLABLE>(&cl, ld, w, t);
       } else {
-        ShenandoahMarkRefsClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkRefsClosure, CANCELLABLE>(&cl, ld, w, t);
+        ShenandoahMarkRefsClosure<GENERATION> cl(q, rp);
+        mark_loop_work<ShenandoahMarkRefsClosure<GENERATION>, GENERATION, CANCELLABLE>(&cl, ld, w, t);
       }
     }
   }
@@ -110,7 +105,7 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
   heap->flush_liveness_cache(w);
 }
 
-template <class T, bool CANCELLABLE>
+template <class T, GenerationMode GENERATION, bool CANCELLABLE>
 void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator) {
   uintx stride = ShenandoahMarkLoopStride;
 
@@ -149,7 +144,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
   }
   q = get_queue(worker_id);
 
-  ShenandoahSATBBufferClosure drain_satb(q);
+  ShenandoahSATBBufferClosure<GENERATION> drain_satb(q);
   SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
 
   /*
@@ -185,11 +180,27 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
   }
 }
 
-void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
+void ShenandoahMark::mark_loop(GenerationMode generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
                bool cancellable, bool strdedup) {
-  if (cancellable) {
-    mark_loop_prework<true>(worker_id, terminator, rp, strdedup);
-  } else {
-    mark_loop_prework<false>(worker_id, terminator, rp, strdedup);
+  switch (generation) {
+    case YOUNG: {
+      if (cancellable) {
+        mark_loop_prework<YOUNG, true>(worker_id, terminator, rp, strdedup);
+      } else {
+        mark_loop_prework<YOUNG, false>(worker_id, terminator, rp, strdedup);
+      }
+      break;
+    }
+    case GLOBAL: {
+      if (cancellable) {
+        mark_loop_prework<GLOBAL, true>(worker_id, terminator, rp, strdedup);
+      } else {
+        mark_loop_prework<GLOBAL, false>(worker_id, terminator, rp, strdedup);
+      }
+      break;
+    }
+    default:
+      ShouldNotReachHere();
+      break;
   }
 }

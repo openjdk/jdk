@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
@@ -45,9 +46,10 @@
 #include "prims/jvmtiTagMap.hpp"
 #include "utilities/events.hpp"
 
-ShenandoahConcurrentGC::ShenandoahConcurrentGC() :
+ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation) :
   _mark(),
-  _degen_point(ShenandoahDegenPoint::_degenerated_unset) {
+  _degen_point(ShenandoahDegenPoint::_degenerated_unset),
+  _generation(generation) {
 }
 
 ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
@@ -506,11 +508,11 @@ void ShenandoahConcurrentGC::op_init_mark() {
 }
 
 void ShenandoahConcurrentGC::op_mark_roots() {
-  _mark.mark_concurrent_roots();
+  _mark.mark_concurrent_roots(_generation);
 }
 
 void ShenandoahConcurrentGC::op_mark() {
-  _mark.concurrent_mark();
+  _mark.concurrent_mark(_generation);
 }
 
 void ShenandoahConcurrentGC::op_final_mark() {
@@ -523,7 +525,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
   }
 
   if (!heap->cancelled_gc()) {
-    _mark.finish_mark();
+    _mark.finish_mark(_generation);
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
 
     // Notify JVMTI that the tagmap table will need cleaning.

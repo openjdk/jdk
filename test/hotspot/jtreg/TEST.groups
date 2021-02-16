@@ -219,6 +219,15 @@ tier1_gc_gcbasher = \
   gc/stress/gcbasher/TestGCBasherWithSerial.java \
   gc/stress/gcbasher/TestGCBasherWithParallel.java
 
+tier1_gc_shenandoah_generational = \
+  gc/shenandoah/generational/
+
+# No tier 2 tests for shenandoah_generational at this time
+tier2_gc_shenandoah_generational =
+
+# No tier 3 tests for shenandoah_generational at this time
+tier3_gc_shenandoah_generational =
+
 tier1_gc_shenandoah = \
   gc/shenandoah/options/ \
   gc/shenandoah/compiler/ \
@@ -252,6 +261,7 @@ tier2_gc_shenandoah = \
   -gc/stress/CriticalNativeStress.java \
   -:tier1_gc_shenandoah
 
+# include shenandoah generational tests in tier3 shenandoah
 tier3_gc_shenandoah = \
   gc/stress/gcold/TestGCOldWithShenandoah.java \
   gc/stress/gcbasher/TestGCBasherWithShenandoah.java \
@@ -259,12 +269,18 @@ tier3_gc_shenandoah = \
   gc/stress/systemgc/TestSystemGCWithShenandoah.java \
   gc/shenandoah/TestStringDedupStress.java \
   gc/stress/CriticalNativeStress.java \
+  :hotspot_gc_shenandoah_generational \
   -:tier2_gc_shenandoah
 
 hotspot_gc_shenandoah = \
   :tier1_gc_shenandoah \
   :tier2_gc_shenandoah \
   :tier3_gc_shenandoah
+
+hotspot_gc_shenandoah_generational = \
+  :tier1_gc_shenandoah_generational \
+  :tier2_gc_shenandoah_generational \
+  :tier3_gc_shenandoah_generational
 
 tier1_runtime = \
   runtime/ \

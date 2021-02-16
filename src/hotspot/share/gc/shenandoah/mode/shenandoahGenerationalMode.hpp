@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,21 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
+#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
 
-#include "gc/shenandoah/shenandoahMark.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 
-class ShenandoahConcurrentMarkingTask;
-class ShenandoahFinalMarkingTask;
-class ShenandoahGeneration;
+class ShenandoahHeuristics;
 
-class ShenandoahConcurrentMark: public ShenandoahMark {
-  template <GenerationMode GENERATION> friend class ShenandoahConcurrentMarkingTask;
-  template <GenerationMode GENERATION> friend class ShenandoahFinalMarkingTask;
-
+class ShenandoahGenerationalMode : public ShenandoahMode {
 public:
-  ShenandoahConcurrentMark();
-
-  // Concurrent mark roots
-  void mark_concurrent_roots(ShenandoahGeneration* generation);
-
-  // Concurrent mark
-  void concurrent_mark(ShenandoahGeneration* generation);
-  // Finish mark at a safepoint
-  void finish_mark(ShenandoahGeneration* generation);
-
-  static void cancel();
-
-private:
-  void finish_mark_work(ShenandoahGeneration* generation);
+  virtual void initialize_flags() const;
+  virtual ShenandoahHeuristics* initialize_heuristics() const;
+  virtual const char* name()     { return "Generational"; }
+  virtual bool is_diagnostic()   { return false; }
+  virtual bool is_experimental() { return false; }
+  virtual bool is_generational() { return true; }
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
