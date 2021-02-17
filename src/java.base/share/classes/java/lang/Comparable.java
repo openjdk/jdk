@@ -62,14 +62,15 @@ import java.util.*;
  * because {@code a} and {@code b} are equivalent from the sorted set's
  * perspective.<p>
  *
- * Virtually all Java core classes that implement {@code Comparable} have natural
- * orderings that are consistent with equals.  One exception is
- * {@link java.math.BigDecimal}, whose {@linkplain java.math.BigDecimal#compareTo natural ordering} equates
- * {@code BigDecimal} objects with equal numerical values and different representations
- * (such as 4.0 and 4.00). For {@link java.math.BigDecimal#equals
- * BigDecimal.equals()} to return true, the representation and
- * numerical value of the two {@code BigDecimal} objects must be the
- * same.<p>
+ * Virtually all Java core classes that implement {@code Comparable}
+ * have natural orderings that are consistent with equals.  One
+ * exception is {@link java.math.BigDecimal}, whose {@linkplain
+ * java.math.BigDecimal#compareTo natural ordering} equates {@code
+ * BigDecimal} objects with equal numerical values and different
+ * representations (such as 4.0 and 4.00). For {@link
+ * java.math.BigDecimal#equals BigDecimal.equals()} to return true,
+ * the representation and numerical value of the two {@code
+ * BigDecimal} objects must be the same.<p>
  *
  * For the mathematically inclined, the <i>relation</i> that defines
  * the natural ordering on a given class C is:<pre>{@code
@@ -107,19 +108,19 @@ public interface Comparable<T> {
      * negative integer, zero, or a positive integer as this object is less
      * than, equal to, or greater than the specified object.
      *
-     * <p>The implementor must ensure
-     * {@link Integer#signum signum}{@code (x.compareTo(y)) == -signum(y.compareTo(x))}
-     * for all {@code x} and {@code y}.  (This
-     * implies that {@code x.compareTo(y)} must throw an exception if and only if
-     * {@code y.compareTo(x)} throws an exception.)
+     * <p>The implementor must ensure {@link Integer#signum
+     * signum}{@code (x.compareTo(y)) == -signum(y.compareTo(x))} for
+     * all {@code x} and {@code y}.  (This implies that {@code
+     * x.compareTo(y)} must throw an exception if and only if {@code
+     * y.compareTo(x)} throws an exception.)
      *
      * <p>The implementor must also ensure that the relation is transitive:
      * {@code (x.compareTo(y) > 0 && y.compareTo(z) > 0)} implies
      * {@code x.compareTo(z) > 0}.
      *
-     * <p>Finally, the implementor must ensure that {@code x.compareTo(y)==0}
-     * implies that {@code signum(x.compareTo(z)) == signum(y.compareTo(z))}, for
-     * all {@code z}.
+     * <p>Finally, the implementor must ensure that {@code
+     * x.compareTo(y)==0} implies that {@code signum(x.compareTo(z))
+     * == signum(y.compareTo(z))}, for all {@code z}.
      *
      * @apiNote
      * It is strongly recommended, but <i>not</i> strictly required that

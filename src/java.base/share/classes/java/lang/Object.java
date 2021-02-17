@@ -78,15 +78,16 @@ public class Object {
      *     used in {@code equals} comparisons on the object is modified.
      *     This integer need not remain consistent from one execution of an
      *     application to another execution of the same application.
-     * <li>If two objects are equal according to the {@link equals(Object) equals}
-     *     method, then calling the {@code hashCode} method on each of
-     *     the two objects must produce the same integer result.
+     * <li>If two objects are equal according to the {@link
+     *     equals(Object) equals} method, then calling the {@code
+     *     hashCode} method on each of the two objects must produce the
+     *     same integer result.
      * <li>It is <em>not</em> required that if two objects are unequal
-     *     according to the {@link equals(Object) equals}
-     *     method, then calling the {@code hashCode} method on each of the
-     *     two objects must produce distinct integer results.  However, the
-     *     programmer should be aware that producing distinct integer results
-     *     for unequal objects may improve the performance of hash tables.
+     *     according to the {@link equals(Object) equals} method, then
+     *     calling the {@code hashCode} method on each of the two objects
+     *     must produce distinct integer results.  However, the programmer
+     *     should be aware that producing distinct integer results for
+     *     unequal objects may improve the performance of hash tables.
      * </ul>
      *
      * @implSpec
@@ -131,8 +132,9 @@ public class Object {
      * <p>
      * An equivalence relation partitions the elements it operates on
      * into <i>equivalence classes</i>; all the members of an
-     * equivalence class are equal to each other. Members of an equivalence class
-     * are substitutable for each other, at least for some purposes.
+     * equivalence class are equal to each other. Members of an
+     * equivalence class are substitutable for each other, at least
+     * for some purposes.
      *
      * @implSpec
      * The {@code equals} method for class {@code Object} implements
@@ -234,7 +236,8 @@ public class Object {
      * be a concise but informative representation that is easy for a
      * person to read.
      * It is recommended that all subclasses override this method.
-     * The string output is not necessarily stable over time or across JVM invocations.
+     * The string output is not necessarily stable over time or across
+     * JVM invocations.
      * @implSpec
      * The {@code toString} method for class {@code Object}
      * returns a string consisting of the name of the class of which the
