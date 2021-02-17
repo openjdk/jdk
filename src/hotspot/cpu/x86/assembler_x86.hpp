@@ -1918,19 +1918,17 @@ private:
   void sall(Address dst, int imm8);
   void sall(Address dst);
 
-#ifdef _LP64
-  void salq(Register dst, int imm8);
-  void salq(Register dst);
-  void salq(Address dst, int imm8);
-  void salq(Address dst);
-#endif
-
   void sarl(Address dst, int imm8);
   void sarl(Address dst);
   void sarl(Register dst, int imm8);
   void sarl(Register dst);
 
 #ifdef _LP64
+  void salq(Register dst, int imm8);
+  void salq(Register dst);
+  void salq(Address dst, int imm8);
+  void salq(Address dst);
+
   void sarq(Address dst, int imm8);
   void sarq(Address dst);
   void sarq(Register dst, int imm8);
@@ -1978,9 +1976,13 @@ private:
 
   void shrl(Register dst, int imm8);
   void shrl(Register dst);
+  void shrl(Address dst);
+  void shrl(Address dst, int imm8);
 
   void shrq(Register dst, int imm8);
   void shrq(Register dst);
+  void shrq(Address dst);
+  void shrq(Address dst, int imm8);
 
   void smovl(); // QQQ generic?
 

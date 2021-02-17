@@ -8666,8 +8666,9 @@ instruct shrI_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrl    $dst, $shift" %}
-  opcode(0xD1, 0x5); /* D1 /5 */
-  ins_encode(REX_mem(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ shrl($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8691,8 +8692,9 @@ instruct shrI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrl    $dst, $shift" %}
-  opcode(0xC1, 0x5); /* C1 /5 ib */
-  ins_encode(REX_mem(dst), OpcP, RM_opc_mem(secondary, dst), Con8or32(shift));
+  ins_encode %{
+    __ shrl($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8715,8 +8717,9 @@ instruct shrI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrl    $dst, $shift" %}
-  opcode(0xD3, 0x5); /* D3 /5 */
-  ins_encode(REX_mem(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ shrl($dst$$Address);
+  %}
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -8897,8 +8900,9 @@ instruct shrL_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrq    $dst, $shift" %}
-  opcode(0xD1, 0x5); /* D1 /5 */
-  ins_encode(REX_mem_wide(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ shrq($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8922,9 +8926,9 @@ instruct shrL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrq    $dst, $shift" %}
-  opcode(0xC1, 0x5); /* C1 /5 ib */
-  ins_encode(REX_mem_wide(dst), OpcP,
-             RM_opc_mem(secondary, dst), Con8or32(shift));
+  ins_encode %{
+    __ shrq($dst$$Address, $shift$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -8935,8 +8939,9 @@ instruct shrL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrq    $dst, $shift" %}
-  opcode(0xD3, 0x5); /* D3 /5 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ shrq($dst$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -8947,8 +8952,9 @@ instruct shrL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "shrq    $dst, $shift" %}
-  opcode(0xD3, 0x5); /* D3 /5 */
-  ins_encode(REX_mem_wide(dst), OpcP, RM_opc_mem(secondary, dst));
+  ins_encode %{
+    __ shrq($dst$$Address);
+  %}
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -9134,8 +9140,9 @@ instruct andI_rReg_imm255(rRegI dst, immI_255 src)
   match(Set dst (AndI dst src));
 
   format %{ "movzbl  $dst, $dst\t# int & 0xFF" %}
-  opcode(0x0F, 0xB6);
-  ins_encode(REX_reg_breg(dst, dst), OpcP, OpcS, reg_reg(dst, dst));
+  ins_encode %{
+    __ movzbl($dst$$Register, $dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -9145,8 +9152,9 @@ instruct andI2L_rReg_imm255(rRegL dst, rRegI src, immI_255 mask)
   match(Set dst (ConvI2L (AndI src mask)));
 
   format %{ "movzbl  $dst, $src\t# int & 0xFF -> long" %}
-  opcode(0x0F, 0xB6);
-  ins_encode(REX_reg_breg(dst, src), OpcP, OpcS, reg_reg(dst, src));
+  ins_encode %{
+    __ movzbl($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -9156,8 +9164,9 @@ instruct andI_rReg_imm65535(rRegI dst, immI_65535 src)
   match(Set dst (AndI dst src));
 
   format %{ "movzwl  $dst, $dst\t# int & 0xFFFF" %}
-  opcode(0x0F, 0xB7);
-  ins_encode(REX_reg_reg(dst, dst), OpcP, OpcS, reg_reg(dst, dst));
+  ins_encode %{
+    __ movzwl($dst$$Register, $dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -9167,8 +9176,9 @@ instruct andI2L_rReg_imm65535(rRegL dst, rRegI src, immI_65535 mask)
   match(Set dst (ConvI2L (AndI src mask)));
 
   format %{ "movzwl  $dst, $src\t# int & 0xFFFF -> long" %}
-  opcode(0x0F, 0xB7);
-  ins_encode(REX_reg_reg(dst, src), OpcP, OpcS, reg_reg(dst, src));
+  ins_encode %{
+    __ movzwl($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -9179,8 +9189,9 @@ instruct andI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "andl    $dst, $src\t# int" %}
-  opcode(0x81, 0x04); /* Opcode 81 /4 */
-  ins_encode(OpcSErm(dst, src), Con8or32(src));
+  ins_encode %{
+    __ andl($dst$$Register, $src$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -9231,9 +9242,9 @@ instruct andI_mem_imm(memory dst, immI src, rFlagsReg cr)
 
   ins_cost(125);
   format %{ "andl    $dst, $src\t# int" %}
-  opcode(0x81, 0x4); /* Opcode 81 /4 id */
-  ins_encode(REX_mem(dst), OpcSE(src),
-             RM_opc_mem(secondary, dst), Con8or32(src));
+  ins_encode %{
+    __ andl($dst$$Address, $src$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -9547,8 +9558,9 @@ instruct andL_rReg_imm255(rRegL dst, immL_255 src)
   match(Set dst (AndL dst src));
 
   format %{ "movzbq  $dst, $dst\t# long & 0xFF" %}
-  opcode(0x0F, 0xB6);
-  ins_encode(REX_reg_reg_wide(dst, dst), OpcP, OpcS, reg_reg(dst, dst));
+  ins_encode %{
+    __ movzbq($dst$$Register, $dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -9558,8 +9570,9 @@ instruct andL_rReg_imm65535(rRegL dst, immL_65535 src)
   match(Set dst (AndL dst src));
 
   format %{ "movzwq  $dst, $dst\t# long & 0xFFFF" %}
-  opcode(0x0F, 0xB7);
-  ins_encode(REX_reg_reg_wide(dst, dst), OpcP, OpcS, reg_reg(dst, dst));
+  ins_encode %{
+    __ movzwq($dst$$Register, $dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -9570,8 +9583,9 @@ instruct andL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "andq    $dst, $src\t# long" %}
-  opcode(0x81, 0x04); /* Opcode 81 /4 */
-  ins_encode(OpcSErm_wide(dst, src), Con8or32(src));
+  ins_encode %{
+    __ andq($dst$$Register, $src$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -9610,9 +9624,9 @@ instruct andL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
 
   ins_cost(125);
   format %{ "andq    $dst, $src\t# long" %}
-  opcode(0x81, 0x4); /* Opcode 81 /4 id */
-  ins_encode(REX_mem_wide(dst), OpcSE(src),
-             RM_opc_mem(secondary, dst), Con8or32(src));
+  ins_encode %{
+    __ andq($dst$$Address, $src$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
@@ -9783,8 +9797,9 @@ instruct orL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "orq     $dst, $src\t# long" %}
-  opcode(0x81, 0x01); /* Opcode 81 /1 id */
-  ins_encode(OpcSErm_wide(dst, src), Con8or32(src));
+  ins_encode %{
+    __ orq($dst$$Register, $src$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -9823,9 +9838,9 @@ instruct orL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
 
   ins_cost(125);
   format %{ "orq     $dst, $src\t# long" %}
-  opcode(0x81, 0x1); /* Opcode 81 /1 id */
-  ins_encode(REX_mem_wide(dst), OpcSE(src),
-             RM_opc_mem(secondary, dst), Con8or32(src));
+  ins_encode %{
+    __ orq($dst$$Address, $src$$constant);
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 

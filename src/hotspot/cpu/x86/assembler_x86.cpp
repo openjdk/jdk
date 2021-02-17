@@ -5211,6 +5211,29 @@ void Assembler::shrl(Register dst) {
   emit_int16((unsigned char)0xD3, (0xE8 | encode));
 }
 
+void Assembler::shrl(Address dst) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0xD3);
+  emit_operand(as_Register(5), dst);
+}
+
+void Assembler::shrl(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8), "illegal shift count");
+  prefix(dst);
+  if (imm8 == 1) {
+    emit_int8((unsigned char)0xD1);
+    emit_operand(as_Register(5), dst);
+  }
+  else {
+    emit_int8((unsigned char)0xC1);
+    emit_operand(as_Register(5), dst);
+    emit_int8(imm8);
+  }
+}
+
+
 void Assembler::shldl(Register dst, Register src) {
   int encode = prefix_and_encode(src->encoding(), dst->encoding());
   emit_int24(0x0F, (unsigned char)0xA5, (0xC0 | encode));
@@ -10495,6 +10518,7 @@ void Assembler::rorxd(Register dst, Register src, int imm8) {
   emit_int24((unsigned char)0xF0, (0xC0 | encode), imm8);
 }
 
+#ifdef _LP64
 void Assembler::salq(Address dst, int imm8) {
   InstructionMark im(this);
   assert(isShiftCount(imm8), "illegal shift count");
@@ -10564,6 +10588,7 @@ void Assembler::sarq(Register dst) {
   int encode = prefixq_and_encode(dst->encoding());
   emit_int16((unsigned char)0xD3, (0xF8 | encode));
 }
+#endif
 
 void Assembler::sbbq(Address dst, int32_t imm32) {
   InstructionMark im(this);
@@ -10611,6 +10636,25 @@ void Assembler::shrq(Register dst, int imm8) {
 void Assembler::shrq(Register dst) {
   int encode = prefixq_and_encode(dst->encoding());
   emit_int16((unsigned char)0xD3, 0xE8 | encode);
+}
+
+void Assembler::shrq(Address dst) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst), (unsigned char)0xD3);
+  emit_operand(as_Register(5), dst);
+}
+
+void Assembler::shrq(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8), "illegal shift count");
+  if (imm8 == 1) {
+    emit_int16(get_prefixq(dst), (unsigned char)0xD1);
+    emit_operand(as_Register(5), dst);
+  }
+  else {
+    emit_int16(get_prefixq(dst), (unsigned char)0xC1);
+    emit_operand(as_Register(5), dst);
+  }
 }
 
 void Assembler::subq(Address dst, int32_t imm32) {
