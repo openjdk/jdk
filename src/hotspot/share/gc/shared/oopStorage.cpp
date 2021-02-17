@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
