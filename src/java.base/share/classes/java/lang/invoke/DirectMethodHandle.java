@@ -954,5 +954,5 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     /* Placeholder class for DirectMethodHandles generated ahead of time */
-    static final class Holder {}
+    final class Holder {}
 }

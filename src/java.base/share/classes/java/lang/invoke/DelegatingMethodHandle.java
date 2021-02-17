@@ -189,5 +189,5 @@ abstract class DelegatingMethodHandle extends MethodHandle {
     }
 
     /* Placeholder class for DelegatingMethodHandles generated ahead of time */
-    static final class Holder {}
+    final class Holder {}
 }

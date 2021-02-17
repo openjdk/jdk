@@ -696,5 +696,5 @@ class Invokers {
     }
 
     /* Placeholder class for Invokers generated ahead of time */
-    static final class Holder {}
+    final class Holder {}
 }
