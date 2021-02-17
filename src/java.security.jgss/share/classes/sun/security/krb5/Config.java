@@ -167,17 +167,16 @@ public class Config {
 
         String osVersion = GetPropertyAction.privilegedGetProperty("os.version");
         String[] fragments = osVersion.split("\\.");
-
-        // sanity check the "10." part of the version
-        if (!fragments[0].equals("10")) return false;
         if (fragments.length < 2) return false;
 
-        // check if Mac OS X 10.7(.y)
+        // check if Mac OS X 10.7(.y) or higher
         try {
+            int majorVers = Integer.parseInt(fragments[0]);
             int minorVers = Integer.parseInt(fragments[1]);
-            if (minorVers >= 7) return true;
+            if (majorVers > 10) return true;
+            if (majorVers == 10 && minorVers >= 7) return true;
         } catch (NumberFormatException e) {
-            // was not an integer
+            // were not integers
         }
 
         return false;

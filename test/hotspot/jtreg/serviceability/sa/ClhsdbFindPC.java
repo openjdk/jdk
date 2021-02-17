@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.ArrayList;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.Platform;
 import jdk.test.lib.util.CoreUtils;
 import jtreg.SkippedException;
 
@@ -75,12 +76,18 @@ import jtreg.SkippedException;
  */
 
 public class ClhsdbFindPC {
+    static LingeredApp theApp = null;
+    static String coreFileName = null;
+    static ClhsdbLauncher test = null;
 
     private static void testFindPC(boolean withXcomp, boolean withCore) throws Exception {
-        LingeredApp theApp = null;
-        String coreFileName = null;
         try {
-            ClhsdbLauncher test = new ClhsdbLauncher();
+            String segvAddress = null;
+            List<String> cmds = null;
+            String cmdStr = null;
+            Map<String, List<String>> expStrMap = null;
+
+            test = new ClhsdbLauncher();
 
             theApp = new LingeredAppWithTrivialMain();
             theApp.setForceCrash(withCore);
@@ -97,24 +104,38 @@ public class ClhsdbFindPC {
             }
             System.out.println("with pid " + theApp.getPid());
 
-            // Get the core file name if we are debugging a core instead of live process
             if (withCore) {
-                coreFileName = CoreUtils.getCoreFileLocation(theApp.getOutput().getStdout(), theApp.getPid());
+                String crashOutput = theApp.getOutput().getStdout();
+                // Get the core file name if we are debugging a core instead of live process
+                coreFileName = CoreUtils.getCoreFileLocation(crashOutput, theApp.getPid());
+                // Get the SEGV Address from the following line:
+                //  #  SIGSEGV (0xb) at pc=0x00007f20a897f7f4, pid=8561, tid=8562
+                String[] parts = crashOutput.split(" pc=");
+                String[] tokens = parts[1].split(",");
+                segvAddress = tokens[0];
+
+                // Test the 'findpc' command passing in the SEGV address
+                cmds = new ArrayList<String>();
+                cmdStr = "findpc " + segvAddress;
+                cmds.add(cmdStr);
+                expStrMap = new HashMap<>();
+                if (Platform.isOSX()) {
+                    // OSX will only find addresses in JVM libraries, not user or system libraries
+                    expStrMap.put(cmdStr, List.of("In unknown location"));
+                } else { // symbol lookups not supported with OSX live process
+                    expStrMap.put(cmdStr, List.of("Java_jdk_test_lib_apps_LingeredApp_crash"));
+                }
+                runTest(withCore, cmds, expStrMap);
             }
 
-            // Run 'jstack -v' command to get the findpc address
-            List<String> cmds = List.of("jstack -v");
-            String output;
-            if (withCore) {
-                output = test.runOnCore(coreFileName, cmds, null, null);
-            } else {
-                output = test.run(theApp.getPid(), cmds, null, null);
-            }
+            // Run 'jstack -v' command to get the pc and other useful values
+            cmds = List.of("jstack -v");
+            String jStackOutput = runTest(withCore, cmds, null);
 
             // Extract pc address from the following line:
             //   - LingeredAppWithTrivialMain.main(java.lang.String[]) @bci=1, line=33, pc=0x00007ff18ff519f0, ...
             String pcAddress = null;
-            String[] parts = output.split("LingeredAppWithTrivialMain.main");
+            String[] parts = jStackOutput.split("LingeredAppWithTrivialMain.main");
             String[] tokens = parts[1].split(" ");
             for (String token : tokens) {
                 if (token.contains("pc")) {
@@ -128,11 +149,11 @@ public class ClhsdbFindPC {
                 throw new RuntimeException("Cannot find LingeredAppWithTrivialMain.main pc in output");
             }
 
-            // Test the 'findpc' command passing in the pc obtained from above
+            // Test the 'findpc' command passing in the pc obtained from jstack above
             cmds = new ArrayList<String>();
-            String cmdStr = "findpc " + pcAddress;
+            cmdStr = "findpc " + pcAddress;
             cmds.add(cmdStr);
-            Map<String, List<String>> expStrMap = new HashMap<>();
+            expStrMap = new HashMap<>();
             if (withXcomp) {
                 expStrMap.put(cmdStr, List.of(
                             "In code in NMethod for LingeredAppWithTrivialMain.main",
@@ -143,12 +164,78 @@ public class ClhsdbFindPC {
                 expStrMap.put(cmdStr, List.of(
                             "In interpreter codelet"));
             }
+            runTest(withCore, cmds, expStrMap);
 
-            if (withCore) {
-                test.runOnCore(coreFileName, cmds, expStrMap, null);
+            // Run findpc on a Method*. We can find one in the jstack output. For example:
+            // - LingeredAppWithTrivialMain.main(java.lang.String[]) @bci=1, line=33, pc=..., Method*=0x0000008041000208 ...
+            // This is testing the PointerFinder support for C++ MetaData types.
+            parts = jStackOutput.split("LingeredAppWithTrivialMain.main");
+            parts = parts[1].split("Method\\*=");
+            parts = parts[1].split(" ");
+            String methodAddr = parts[0];
+            cmdStr = "findpc " + methodAddr;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("Method ",
+                                          "LingeredAppWithTrivialMain.main",
+                                          methodAddr));
+            runTest(withCore, cmds, expStrMap);
+
+            // Run findpc on a JavaThread*. We can find one in the jstack output.
+            // The tid for a thread is it's JavaThread*. For example:
+            //  "main" #1 prio=5 tid=0x00000080263398f0 nid=0x277e0 ...
+            // This is testing the PointerFinder support for all C++ types other than MetaData types.
+            parts = jStackOutput.split("tid=");
+            parts = parts[1].split(" ");
+            String tid = parts[0];  // address of the JavaThread
+            cmdStr = "findpc " + tid;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("Is of type JavaThread"));
+            runTest(withCore, cmds, expStrMap);
+
+            // Run findpc on a java stack address. We can find one in the jstack output.
+            //   "main" #1 prio=5 tid=... nid=0x277e0 waiting on condition [0x0000008025aef000]
+            // The stack address is the last word between the brackets.
+            // This is testing the PointerFinder support for thread stack addresses.
+            parts = jStackOutput.split("tid=");
+            parts = parts[1].split(" \\[");
+            parts = parts[1].split("\\]");
+            String stackAddress = parts[0];  // address of the thread's stack
+            cmdStr = "findpc " + stackAddress;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("In java stack"));
+            runTest(withCore, cmds, expStrMap);
+
+            // Run 'examine <addr>' using a thread's tid as the address. The
+            // examine output will be the of the form:
+            //    <tid>: <value>
+            // Where <value> is the word stored at <tid>. <value> also happens to
+            // be the vtable address. We then run findpc on this vtable address.
+            // This tests PointerFinder support for native C++ symbols.
+            cmds = List.of("examine " + tid);
+            String examineOutput = runTest(withCore, cmds, null);
+            // Extract <value>.
+            parts = examineOutput.split(tid + ": ");
+            String value = parts[1];
+            // Use findpc on <value>. The output should look something like:
+            //    Address 0x00007fed86f610b8: vtable for JavaThread + 0x10
+            cmdStr = "findpc " + value;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            if (Platform.isWindows()) {
+                expStrMap.put(cmdStr, List.of("jvm.+JavaThread"));
+            } else if (Platform.isOSX()) {
+                if (withCore) {
+                    expStrMap.put(cmdStr, List.of("__ZTV10JavaThread"));
+                } else { // symbol lookups not supported with OSX live process
+                    expStrMap.put(cmdStr, List.of("In unknown location"));
+                }
             } else {
-                test.run(theApp.getPid(), cmds, expStrMap, null);
+                expStrMap.put(cmdStr, List.of("vtable for JavaThread"));
             }
+            runTest(withCore, cmds, expStrMap);
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {
@@ -157,6 +244,16 @@ public class ClhsdbFindPC {
             if (!withCore) {
                 LingeredApp.stopApp(theApp);
             }
+        }
+    }
+
+    private static String runTest(boolean withCore, List<String> cmds, Map<String, List<String>> expStrMap)
+        throws Exception
+    {
+        if (withCore) {
+            return test.runOnCore(coreFileName, cmds, expStrMap, null);
+        } else {
+            return test.run(theApp.getPid(), cmds, expStrMap, null);
         }
     }
 
