@@ -37,6 +37,10 @@ import java.util.concurrent.Future;
  * @modules java.base/sun.net.ext:open
  *          jdk.net
  * @run testng/othervm ExtendedSocketOptionsTest
+ * @run testng/othervm ExtendedSocketOptionsTest
+ * @run testng/othervm ExtendedSocketOptionsTest
+ * @run testng/othervm ExtendedSocketOptionsTest
+ * @run testng/othervm ExtendedSocketOptionsTest
  */
 public class ExtendedSocketOptionsTest {
 
