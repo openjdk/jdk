@@ -38,7 +38,7 @@ import static sun.nio.fs.UnixNativeDispatcher.*;
  * Unix implementation of UserDefinedFileAttributeView using extended attributes.
  */
 abstract class UnixUserDefinedFileAttributeView
-        extends AbstractUserDefinedFileAttributeView
+    extends AbstractUserDefinedFileAttributeView
 {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
@@ -55,7 +55,7 @@ abstract class UnixUserDefinedFileAttributeView
         byte[] bytes = Util.toBytes(name);
         if (bytes.length > maxNameLength()) {
             throw new FileSystemException(file.getPathForExceptionMessage(),
-                    null, "'" + name + "' is too big");
+                null, "'" + name + "' is too big");
         }
         return bytes;
     }
@@ -70,7 +70,7 @@ abstract class UnixUserDefinedFileAttributeView
                 int len = pos - start;
                 byte[] value = new byte[len];
                 unsafe.copyMemory(null, address+start, value,
-                        Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
                 String s = Util.toString(value);
                 if (s.startsWith(USER_NAMESPACE)) {
                     s = s.substring(USER_NAMESPACE.length());
@@ -121,8 +121,8 @@ abstract class UnixUserDefinedFileAttributeView
                         continue;
                     }
                     throw new FileSystemException(file.getPathForExceptionMessage(),
-                            null, "Unable to get list of extended attributes: " +
-                            x.getMessage());
+                        null, "Unable to get list of extended attributes: " +
+                        x.getMessage());
                 }
             }
         } finally {
@@ -148,8 +148,8 @@ abstract class UnixUserDefinedFileAttributeView
             return fgetxattr(fd, nameAsBytes(file,name), 0L, 0);
         } catch (UnixException x) {
             throw new FileSystemException(file.getPathForExceptionMessage(),
-                    null, "Unable to get size of extended attribute '" + name +
-                    "': " + x.getMessage());
+                null, "Unable to get size of extended attribute '" + name +
+                "': " + x.getMessage());
         } finally {
             close(fd);
         }
@@ -204,9 +204,9 @@ abstract class UnixUserDefinedFileAttributeView
                 return n;
             } catch (UnixException x) {
                 String msg = (x.errno() == ERANGE) ?
-                        "Insufficient space in buffer" : x.getMessage();
+                    "Insufficient space in buffer" : x.getMessage();
                 throw new FileSystemException(file.getPathForExceptionMessage(),
-                        null, "Error reading extended attribute '" + name + "': " + msg);
+                    null, "Error reading extended attribute '" + name + "': " + msg);
             } finally {
                 close(fd);
             }
@@ -216,7 +216,6 @@ abstract class UnixUserDefinedFileAttributeView
         }
     }
 
-    @Override
     public int write(String name, ByteBuffer src) throws IOException {
         if (System.getSecurityManager() != null)
             checkAccess(file.getPathForPermissionCheck(), false, true);
@@ -246,7 +245,7 @@ abstract class UnixUserDefinedFileAttributeView
                 src.get(tmp);
                 src.position(pos);  // reset position as write may fail
                 unsafe.copyMemory(tmp, Unsafe.ARRAY_BYTE_BASE_OFFSET, null,
-                        address, rem);
+                    address, rem);
             }
         }
 
@@ -263,8 +262,8 @@ abstract class UnixUserDefinedFileAttributeView
                 return rem;
             } catch (UnixException x) {
                 throw new FileSystemException(file.getPathForExceptionMessage(),
-                        null, "Error writing extended attribute '" + name + "': " +
-                        x.getMessage());
+                    null, "Error writing extended attribute '" + name + "': " +
+                    x.getMessage());
             } finally {
                 close(fd);
             }
@@ -289,7 +288,7 @@ abstract class UnixUserDefinedFileAttributeView
             fremovexattr(fd, nameAsBytes(file,name));
         } catch (UnixException x) {
             throw new FileSystemException(file.getPathForExceptionMessage(),
-                    null, "Unable to delete extended attribute '" + name + "': " + x.getMessage());
+                null, "Unable to delete extended attribute '" + name + "': " + x.getMessage());
         } finally {
             close(fd);
         }
@@ -341,7 +340,7 @@ abstract class UnixUserDefinedFileAttributeView
                     int len = pos - start;
                     byte[] name = new byte[len];
                     unsafe.copyMemory(null, address+start, name,
-                            Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
+                        Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
                     try {
                         copyExtendedAttribute(ofd, name, nfd);
                     } catch (UnixException ignore) {
@@ -359,7 +358,7 @@ abstract class UnixUserDefinedFileAttributeView
     }
 
     private static void copyExtendedAttribute(int ofd, byte[] name, int nfd)
-            throws UnixException
+        throws UnixException
     {
         int size = fgetxattr(ofd, name, 0L, 0);
         NativeBuffer buffer = NativeBuffers.getNativeBuffer(size);

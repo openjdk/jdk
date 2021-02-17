@@ -575,7 +575,7 @@ class UnixNativeDispatcher {
     }
 
     private static native int fgetxattr0(int filedes, long nameAddress,
-                                         long valueAddress, int valueLen) throws UnixException;
+        long valueAddress, int valueLen) throws UnixException;
 
     /**
      *  fsetxattr(int filedes, const char *name, const void *value, size_t size, int flags);
@@ -589,7 +589,7 @@ class UnixNativeDispatcher {
     }
 
     private static native void fsetxattr0(int filedes, long nameAddress,
-                                          long valueAddress, int valueLen) throws UnixException;
+        long valueAddress, int valueLen) throws UnixException;
 
     /**
      * fremovexattr(int filedes, const char *name);
@@ -601,13 +601,13 @@ class UnixNativeDispatcher {
     }
 
     private static native void fremovexattr0(int filedes, long nameAddress)
-            throws UnixException;
+        throws UnixException;
 
     /**
      * size_t flistxattr(int filedes, const char *list, size_t size)
      */
     static native int flistxattr(int filedes, long listAddress, int size)
-            throws UnixException;
+        throws UnixException;
 
     /**
      * Capabilities
