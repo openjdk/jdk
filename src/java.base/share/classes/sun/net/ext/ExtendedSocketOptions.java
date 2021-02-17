@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,25 +167,32 @@ public abstract class ExtendedSocketOptions {
 
     private static volatile ExtendedSocketOptions instance;
 
-    public static final ExtendedSocketOptions getInstance() { return instance; }
+    public static ExtendedSocketOptions getInstance() {
+        if (instance != null) {
+            return instance;
+        }
+        synchronized (ExtendedSocketOptions.class) {
+            if (instance != null) {
+                return instance;
+            }
+            try {
+                // If the class is present, it will be initialized which
+                // triggers registration of the extended socket options.
+                Class<?> c = Class.forName("jdk.net.ExtendedSocketOptions");
+            } catch (ClassNotFoundException e) {
+                // the jdk.net module is not present => no extended socket options
+                instance = new NoExtendedSocketOptions();
+            }
+        }
+        return instance;
+    }
 
     /** Registers support for extended socket options. Invoked by the jdk.net module. */
-    public static final void register(ExtendedSocketOptions extOptions) {
+    public static synchronized void register(ExtendedSocketOptions extOptions) {
         if (instance != null)
             throw new InternalError("Attempting to reregister extended options");
 
         instance = extOptions;
-    }
-
-    static {
-        try {
-            // If the class is present, it will be initialized which
-            // triggers registration of the extended socket options.
-            Class<?> c = Class.forName("jdk.net.ExtendedSocketOptions");
-        } catch (ClassNotFoundException e) {
-            // the jdk.net module is not present => no extended socket options
-            instance = new NoExtendedSocketOptions();
-        }
     }
 
     static final class NoExtendedSocketOptions extends ExtendedSocketOptions {
