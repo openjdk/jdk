@@ -807,14 +807,14 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
 
 // Semantically compare two sigaction structures. Return true if they are referring to
 // the same handler, using the same flags.
-static bool compare_handler_info(const struct sigaction* sa,
-                                 const struct sigaction* expected_sa) {
+static bool are_handlers_equal(const struct sigaction* sa,
+                               const struct sigaction* expected_sa) {
   address this_handler = get_signal_handler(sa);
   address expected_handler = get_signal_handler(expected_sa);
   const int this_flags = get_sanitized_sa_flags(sa);
   const int expected_flags = get_sanitized_sa_flags(expected_sa);
-  return this_handler == expected_handler &&
-         this_flags == expected_flags;
+  return (this_handler == expected_handler) &&
+         (this_flags == expected_flags);
 }
 
 // If we installed one of our signal handlers for sig, check that the current
@@ -842,10 +842,10 @@ static void check_signal_handler(int sig) {
   os_sigaction(sig, (struct sigaction*)NULL, &act);
 
   // Compare both sigaction structures (intelligently; only the members we care about).
-  if (!compare_handler_info(&act, expected_act)) {
+  if (!are_handlers_equal(&act, expected_act)) {
     tty->print_cr("Warning: %s handler modified!", os::exception_name(sig, buf, sizeof(buf)));
     // If we had a mismatch:
-    // - print all signal handlers. As part of that printout details will be printed
+    // - print all signal handlers. As part of that printout, details will be printed
     //   about any modified handlers.
     // - Disable any further checks for this signal - we do not want to flood stdout. Though
     //   depending on which signal had been overwritten, we may die very soon anyway.
@@ -1263,7 +1263,6 @@ void set_signal_handler(int sig) {
 
   void* oldhand2  = get_signal_handler(&oldAct);
   assert(oldhand2 == oldhand, "no concurrent signal handler installation");
-
 }
 
 // install signal handlers for signals that HotSpot needs to
@@ -1407,7 +1406,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   if (expected_act != NULL) {
     const address current_handler = get_signal_handler(&current_act);
     if (!(HANDLER_IS(current_handler, VMError::crash_handler_address))) {
-      if (!compare_handler_info(&current_act, expected_act)) {
+      if (!are_handlers_equal(&current_act, expected_act)) {
         st->print_cr("  *** Handler was modified!");
         st->print   ("  *** Expected: ");
         print_single_signal_handler(st, expected_act, buf, buflen);
