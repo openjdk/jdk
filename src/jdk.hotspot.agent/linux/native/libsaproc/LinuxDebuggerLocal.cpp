@@ -68,7 +68,7 @@ class AutoJavaString {
 public:
   // check env->ExceptionOccurred() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
-    : m_env(env), m_str(str), m_buf(env->GetStringUTFChars(str, NULL)) {
+    : m_env(env), m_str(str), m_buf(str == NULL ? NULL : env->GetStringUTFChars(str, NULL)) {
   }
 
   ~AutoJavaString() {
@@ -347,8 +347,8 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_l
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   // Note, objectName is ignored, and may in fact be NULL.
   // lookup_symbol will always search all objects/libs
-  //AutoJavaString objectName_cstr(env, objectName);
-  //CHECK_EXCEPTION_(0);
+  AutoJavaString objectName_cstr(env, objectName);
+  CHECK_EXCEPTION_(0);
   AutoJavaString symbolName_cstr(env, symbolName);
   CHECK_EXCEPTION_(0);
 
