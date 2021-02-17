@@ -64,6 +64,7 @@ public class ServerCompilerScheduler implements Scheduler {
 
     public void buildBlocks() {
 
+        // Initialize data structures.
         blocks = new Vector<>();
         Node root = findRoot();
         if (root == null) {
@@ -71,98 +72,106 @@ public class ServerCompilerScheduler implements Scheduler {
         }
         Stack<Node> stack = new Stack<>();
         Set<Node> visited = new HashSet<>();
+        Map<InputBlock, Set<Node>> terminators = new HashMap<>();
+        // Pre-compute control successors of each node, excluding self edges.
+        Map<Node, Set<Node>> controlSuccs = new HashMap<>();
+        for (Node n : nodes) {
+            if (n.isCFG) {
+                Set<Node> nControlSuccs = new HashSet<>();
+                for (Node s : n.succs) {
+                    if (s.isCFG && s != n) {
+                        nControlSuccs.add(s);
+                    }
+                }
+                controlSuccs.put(n, nControlSuccs);
+            }
+        }
         stack.add(root);
-        int blockCount = 0;
+        // Start from 1 to follow the style of compiler-generated CFGs.
+        int blockCount = 1;
         InputBlock rootBlock = null;
 
-
+        // Traverse the control-flow subgraph forwards, starting from the root.
         while (!stack.isEmpty()) {
-            Node proj = stack.pop();
-            Node parent = proj;
-            if (proj.isBlockProjection && proj.preds.size() > 0) {
-                parent = proj.preds.get(0);
+            // Pop a node, mark it as visited, and create a new block.
+            Node n = stack.pop();
+            if (visited.contains(n)) {
+                continue;
             }
-
-            if (!visited.contains(parent)) {
-                visited.add(parent);
-                InputBlock block = graph.addBlock(Integer.toString(blockCount));
-                blocks.add(block);
-                if (parent == root) {
-                    rootBlock = block;
-                }
-                blockCount++;
-                parent.block = block;
-                if (proj != parent && proj.succs.size() == 1 && proj.succs.contains(root)) {
-                    // Special treatment of Halt-nodes
-                    proj.block = block;
-                }
-
-                Node p = proj;
-                do {
-                    if (p.preds.size() == 0 || p.preds.get(0) == null) {
-                        p = parent;
+            visited.add(n);
+            InputBlock block = graph.addBlock(Integer.toString(blockCount));
+            blocks.add(block);
+            if (n == root) {
+                rootBlock = block;
+            }
+            blockCount++;
+            Set<Node> blockTerminators = new HashSet<Node>();
+            // Move forwards until a terminator node is found, assigning all
+            // visited nodes to the current block.
+            while (true) {
+                // Assign n to current block.
+                n.block = block;
+                if (controlSuccs.get(n).size() == 0) {
+                    // No successors: end the block.
+                    blockTerminators.add(n);
+                    break;
+                } else if (controlSuccs.get(n).size() == 1) {
+                    // One successor: end the block if it is a block start node.
+                    Node s = controlSuccs.get(n).iterator().next();
+                    if (s.isBlockStart) {
+                        // Block start: end the block.
+                        blockTerminators.add(n);
+                        stack.push(s);
                         break;
-                    }
-
-                    p = p.preds.get(0);
-                    if (p == proj) {
-                        // Cycle, stop
-                        break;
-                    }
-
-                    if (p.block == null) {
-                        p.block = block;
-                    }
-                } while (!p.isBlockProjection && !p.isBlockStart);
-
-                if (block != rootBlock) {
-                    for (Node n : p.preds) {
-                        if (n != null && n != p) {
-                            if (n.isBlockProjection) {
-                                n = n.preds.get(0);
-                            }
-                            if (n.block != null) {
-                                graph.addBlockEdge(n.block, block);
-                            }
-                        }
-                    }
-                }
-
-                for (Node n : parent.succs) {
-                    if (n != root && n.isBlockProjection) {
-                        for (Node n2 : n.succs) {
-
-                            if (n2 != parent && n2.block != null && n2.block != rootBlock) {
-                                graph.addBlockEdge(block, n2.block);
-                            }
-                        }
                     } else {
-                        if (n != parent && n.block != null && n.block != rootBlock) {
-                            graph.addBlockEdge(block, n.block);
+                        // Not a block start: keep filling the current block.
+                        n = s;
+                    }
+                } else {
+                    // Multiple successors: end the block.
+                    for (Node s : controlSuccs.get(n)) {
+                        if (s.isBlockProjection && s != root) {
+                            // Assign block projections to the current block,
+                            // and push their successors to the stack. In the
+                            // normal case, we would expect control projections
+                            // to have only one successor, but there are some
+                            // intermediate graphs (e.g. 'Before RemoveUseless')
+                            // where 'IfX' nodes flow both to 'Region' and
+                            // (dead) 'Safepoint' nodes.
+                            s.block = block;
+                            blockTerminators.add(s);
+                            for (Node ps : controlSuccs.get(s)) {
+                                stack.push(ps);
+                            }
+                        } else {
+                            blockTerminators.add(n);
+                            stack.push(s);
                         }
                     }
+                    break;
                 }
+            }
+            terminators.put(block, blockTerminators);
+        }
 
-                int num_preds = p.preds.size();
-                int bottom = -1;
-                if (isRegion(p) || isPhi(p)) {
-                    bottom = 0;
-                }
-
-                int pushed = 0;
-                for (int i = num_preds - 1; i > bottom; i--) {
-                    if (p.preds.get(i) != null && p.preds.get(i) != p) {
-                        stack.push(p.preds.get(i));
-                        pushed++;
+        // Add block edges based on terminator successors. Note that a block
+        // might have multiple terminators preceding the same successor block.
+        for (Map.Entry<InputBlock, Set<Node>> terms : terminators.entrySet()) {
+            // Unique set of terminator successors.
+            Set<Node> uniqueSuccs = new HashSet<>();
+            for (Node t : terms.getValue()) {
+                for (Node s : controlSuccs.get(t)) {
+                    if (s.block != rootBlock) {
+                        uniqueSuccs.add(s);
                     }
                 }
-
-                if (pushed == 0 && p == root) {
-                    // TODO: special handling when root backedges are not built yet
-                }
+            }
+            for (Node s : uniqueSuccs) {
+                graph.addBlockEdge(terms.getKey(), s.block);
             }
         }
 
+        // Fill the blocks.
         for (Node n : nodes) {
             InputBlock block = n.block;
             if (block != null) {
@@ -170,6 +179,7 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
 
+        // Compute block index map for dominator computation.
         int z = 0;
         blockIndex = new HashMap<>(blocks.size());
         for (InputBlock b : blocks) {
