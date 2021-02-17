@@ -338,7 +338,6 @@ void NodeHash::check_no_speculative_types() {
     if(n != NULL &&
        n != sentinel_node &&
        n->is_Type() &&
-       n->outcnt() > 0 &&
        live_nodes.member(n)) {
       TypeNode* tn = n->as_Type();
       const Type* t = tn->type();
