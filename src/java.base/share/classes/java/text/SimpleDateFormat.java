@@ -427,7 +427,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * Date formats are not synchronized.
  * It is recommended to create separate format instances for each thread.
  * If multiple threads access a format concurrently, it must be synchronized
- * externally. Consider using {@link java.time.format.DateTimeFormatter} as an
+ * externally.
+ * @apiNote Consider using {@link java.time.format.DateTimeFormatter} as an
  * immutable and thread-safe alternative.
  *
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/simpleDateFormat.html">Java Tutorial</a>
