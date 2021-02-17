@@ -64,7 +64,7 @@ class HandshakeOperation : public CHeapObj<mtThread> {
     _target(target),
     _requester(requester) {}
   virtual ~HandshakeOperation() {}
-  void prepare(JavaThread* current_target, Thread* executioner);
+  void prepare(JavaThread* current_target, Thread* executing_thread);
   void do_handshake(JavaThread* thread);
   bool is_completed() {
     int32_t val = Atomic::load(&_pending_threads);
@@ -280,14 +280,17 @@ class VM_HandshakeAllThreads: public VM_Handshake {
   VMOp_Type type() const { return VMOp_HandshakeAllThreads; }
 };
 
-void HandshakeOperation::prepare(JavaThread* current_target, Thread* executioner) {
+void HandshakeOperation::prepare(JavaThread* current_target, Thread* executing_thread) {
   if (current_target->is_terminated()) {
     // Will never execute any handshakes on this thread.
     return;
   }
-  StackWatermarkSet::start_processing(current_target, StackWatermarkKind::gc);
-  if (_requester != NULL && _requester != executioner && _requester->is_Java_thread()) {
-    // The handshake closure may contains oop Handles from the _requester.
+  if (current_target != executing_thread) {
+    // Only when the target is not executing the handshake it self.
+    StackWatermarkSet::start_processing(current_target, StackWatermarkKind::gc);
+  }
+  if (_requester != NULL && _requester != executing_thread && _requester->is_Java_thread()) {
+    // The handshake closure may contain oop Handles from the _requester.
     // We must make sure we can use them.
     StackWatermarkSet::start_processing(_requester->as_Java_thread(), StackWatermarkKind::gc);
   }
@@ -447,6 +450,7 @@ void HandshakeState::process_self_inner() {
       bool async = op->is_async();
       log_trace(handshake)("Proc handshake %s " INTPTR_FORMAT " on " INTPTR_FORMAT " by self",
                            async ? "asynchronous" : "synchronous", p2i(op), p2i(_handshakee));
+      op->prepare(_handshakee, _handshakee);
       op->do_handshake(_handshakee);
       if (async) {
         log_handshake_info(((AsyncHandshakeOperation*)op)->start_time(), op->name(), 1, 0, "asynchronous");
