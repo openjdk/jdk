@@ -507,7 +507,11 @@ static uintptr_t read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehd
         result = exec_php->p_vaddr;
         ph->core->dynamic_addr = exec_php->p_vaddr;
       } else { // ET_DYN
+        // Base address of executable is based on entry point (AT_ENTRY).
         result = ph->core->dynamic_addr - exec_ehdr->e_entry;
+
+        // dynamic_addr has entry point of executable.
+        // Thus we should subtract it.
         ph->core->dynamic_addr += exec_php->p_vaddr - exec_ehdr->e_entry;
       }
       print_debug("address of _DYNAMIC is 0x%lx\n", ph->core->dynamic_addr);
