@@ -172,6 +172,27 @@ abstract class UnixFileStore
         throw new UnsupportedOperationException("'" + attribute + "' not recognized");
     }
 
+    // returns true if extended attributes enabled on file system where given
+    // file resides, returns false if disabled or unable to determine.
+    protected boolean isExtendedAttributesEnabled(UnixPath path) {
+        int fd = -1;
+        try {
+            fd = path.openForAttributeAccess(false);
+
+            // fgetxattr returns size if called with size==0
+            byte[] name = Util.toBytes("user.java");
+            UnixNativeDispatcher.fgetxattr(fd, name, 0L, 0);
+            return true;
+        } catch (UnixException e) {
+            // attribute does not exist
+            if (e.errno() == UnixConstants.XATTR_NOT_FOUND)
+                return true;
+        } finally {
+            UnixNativeDispatcher.close(fd);
+        }
+        return false;
+    }
+
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
         if (type == null)
