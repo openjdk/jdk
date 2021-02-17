@@ -1379,7 +1379,8 @@ public class File
      * that the rename operation was successful.  As instances of {@code File}
      * are immutable, the abstract pathname represented by this {@code File}
      * object does not itself change although the filesystem object it denoted
-     * might have moved.
+     * might have moved to the abstract pathname provided in the {@code dest}
+     * parameter.
      *
      * <p> Note that the {@link java.nio.file.Files} class defines the {@link
      * java.nio.file.Files#move move} method to move or rename a file in a
