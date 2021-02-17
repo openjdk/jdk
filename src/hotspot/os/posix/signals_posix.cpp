@@ -150,7 +150,7 @@ static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
 //  To check that, and to aid with diagnostics, store a copy of the handler setup
 //  and compare it periodically against reality (see os::run_periodic_checks()).
 static bool check_signals = true;
-static SavedSignalHandlers expected_handlers;
+static SavedSignalHandlers vm_handlers;
 static bool do_check_signal_periodically[NSIG] = { 0 };
 
 // For signal-chaining:
@@ -827,7 +827,7 @@ static void check_signal_handler(int sig) {
     return;
   }
 
-  const struct sigaction* expected_act = expected_handlers.get(sig);
+  const struct sigaction* expected_act = vm_handlers.get(sig);
   assert(expected_act != NULL, "Sanity");
 
   // Retrieve current signal setup.
@@ -1255,7 +1255,7 @@ void set_signal_handler(int sig) {
 #endif
 
   // Save handler setup for later checking
-  expected_handlers.set(sig, &sigAct);
+  vm_handlers.set(sig, &sigAct);
   do_check_signal_periodically[sig] = true;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
@@ -1403,7 +1403,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   // If we expected to see our own hotspot signal handler but found a different one,
   //  print a warning (unless the handler replacing it is our own crash handler, which can
   //  happen if this function is called during error reporting).
-  const struct sigaction* expected_act = expected_handlers.get(sig);
+  const struct sigaction* expected_act = vm_handlers.get(sig);
   if (expected_act != NULL) {
     const address current_handler = get_signal_handler(&current_act);
     if (!(HANDLER_IS(current_handler, VMError::crash_handler_address))) {
@@ -1702,7 +1702,7 @@ int SR_initialize() {
   }
 
   // Save signal setup information for later checking.
-  expected_handlers.set(PosixSignals::SR_signum, &act);
+  vm_handlers.set(PosixSignals::SR_signum, &act);
   do_check_signal_periodically[PosixSignals::SR_signum] = true;
 
   return 0;
