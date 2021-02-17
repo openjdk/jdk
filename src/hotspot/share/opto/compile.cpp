@@ -2169,6 +2169,9 @@ void Compile::Optimize() {
   // safepoints
   remove_root_to_sfpts_edges(igvn);
 
+  // Remove unreachable nodes that may keep speculative types alive
+  PhaseRemoveUseless(&igvn, for_igvn(), Remove_Useless);
+
   // Remove the speculative part of types and clean up the graph from
   // the extra CastPP nodes whose only purpose is to carry them. Do
   // that early so that optimizations are not disrupted by the extra
