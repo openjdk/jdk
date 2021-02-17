@@ -34,7 +34,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -717,17 +717,18 @@ oop StringTable::lookup_shared(const jchar* name, int len, unsigned int hash) {
   return _shared_table.lookup(name, hash, len);
 }
 
-oop StringTable::create_archived_string(oop s, Thread* THREAD) {
+oop StringTable::create_archived_string(oop s) {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
+  assert(java_lang_String::is_instance(s), "sanity");
   assert(!HeapShared::is_archived_object(s), "sanity");
 
   oop new_s = NULL;
   typeArrayOop v = java_lang_String::value_no_keepalive(s);
-  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v, THREAD);
+  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v);
   if (new_v == NULL) {
     return NULL;
   }
-  new_s = HeapShared::archive_heap_object(s, THREAD);
+  new_s = HeapShared::archive_heap_object(s);
   if (new_s == NULL) {
     return NULL;
   }
@@ -744,7 +745,7 @@ public:
   bool do_entry(oop s, bool value_ignored) {
     assert(s != NULL, "sanity");
     unsigned int hash = java_lang_String::hash_code(s);
-    oop new_s = StringTable::create_archived_string(s, Thread::current());
+    oop new_s = StringTable::create_archived_string(s);
     if (new_s == NULL) {
       return true;
     }
@@ -759,7 +760,7 @@ void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_
   assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
 
   _shared_table.reset();
-  CompactHashtableWriter writer(_items_count, &MetaspaceShared::stats()->string);
+  CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
 
   // Copy the interned strings into the "string space" within the java heap
   CopyToArchive copier(&writer);

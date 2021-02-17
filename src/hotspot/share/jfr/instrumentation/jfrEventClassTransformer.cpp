@@ -52,6 +52,7 @@
 #include "oops/method.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/exceptions.hpp"

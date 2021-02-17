@@ -37,6 +37,7 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"

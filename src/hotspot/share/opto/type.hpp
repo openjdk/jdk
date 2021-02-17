@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,6 +364,17 @@ public:
   }
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
   static  void dump_stats();
+  // Groups of types, for debugging and visualization only.
+  enum class Category {
+    Data,
+    Memory,
+    Mixed,   // Tuples with types of different categories.
+    Control,
+    Other,   // {Type::Top, Type::Abio, Type::Bottom}.
+    Undef    // {Type::Bad, Type::lastype}, for completeness.
+  };
+  // Return the category of this type.
+  Category category() const;
 
   static const char* str(const Type* t);
 #endif

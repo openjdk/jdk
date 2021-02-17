@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -965,6 +965,10 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
     called from Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2Ljava_lang_String_2 */
 static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) {
   int n = 0, i = 0;
+  jobject loadObjectList;
+
+  loadObjectList = (*env)->GetObjectField(env, this_obj, loadObjectList_ID);
+  CHECK_EXCEPTION;
 
   // add load objects
   n = get_num_libs(ph);
@@ -972,7 +976,6 @@ static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle*
      uintptr_t base;
      const char* name;
      jobject loadObject;
-     jobject loadObjectList;
      jstring nameString;
 
      base = get_lib_base(ph, i);
@@ -982,10 +985,10 @@ static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle*
      loadObject = (*env)->CallObjectMethod(env, this_obj, createLoadObject_ID,
                                             nameString, (jlong)0, (jlong)base);
      CHECK_EXCEPTION;
-     loadObjectList = (*env)->GetObjectField(env, this_obj, loadObjectList_ID);
-     CHECK_EXCEPTION;
      (*env)->CallBooleanMethod(env, loadObjectList, listAdd_ID, loadObject);
      CHECK_EXCEPTION;
+     (*env)->DeleteLocalRef(env, nameString);
+     (*env)->DeleteLocalRef(env, loadObject);
   }
 }
 

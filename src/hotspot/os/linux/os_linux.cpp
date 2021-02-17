@@ -2195,29 +2195,35 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   int num_found = 0;
   FILE* f = ::fopen("/proc/self/status", "r");
   char buf[256];
-  while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
-    if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
-         (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
-         (vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &vmswap) == 1) ||
-         (vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &vmhwm) == 1) ||
-         (vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &vmrss) == 1) ||
-         (rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &rssanon) == 1) ||
-         (rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &rssfile) == 1) ||
-         (rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &rssshmem) == 1)
-         )
-    {
-      num_found ++;
+  if (f != NULL) {
+    while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
+      if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
+           (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
+           (vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &vmswap) == 1) ||
+           (vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &vmhwm) == 1) ||
+           (vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &vmrss) == 1) ||
+           (rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &rssanon) == 1) ||
+           (rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &rssfile) == 1) ||
+           (rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &rssshmem) == 1)
+           )
+      {
+        num_found ++;
+      }
     }
-  }
-  st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmsize, vmpeak);
-  st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmrss, vmhwm);
-  if (rssanon != -1) { // requires kernel >= 4.5
-    st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
-                rssanon, rssfile, rssshmem);
-  }
-  st->cr();
-  if (vmswap != -1) { // requires kernel >= 2.6.34
-    st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
+    fclose(f);
+
+    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmsize, vmpeak);
+    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmrss, vmhwm);
+    if (rssanon != -1) { // requires kernel >= 4.5
+      st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
+                  rssanon, rssfile, rssshmem);
+    }
+    st->cr();
+    if (vmswap != -1) { // requires kernel >= 2.6.34
+      st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
+    }
+  } else {
+    st->print_cr("Could not open /proc/self/status to get process memory related information");
   }
 
   // Print glibc outstanding allocations.
@@ -3558,6 +3564,30 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   return result;
 }
 
+bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
+  // Try to create a large shared memory segment.
+  int shmid = shmget(IPC_PRIVATE, page_size, SHM_HUGETLB|IPC_CREAT|SHM_R|SHM_W);
+  if (shmid == -1) {
+    // Possible reasons for shmget failure:
+    // 1. shmmax is too small for the request.
+    //    > check shmmax value: cat /proc/sys/kernel/shmmax
+    //    > increase shmmax value: echo "new_value" > /proc/sys/kernel/shmmax
+    // 2. not enough large page memory.
+    //    > check available large pages: cat /proc/meminfo
+    //    > increase amount of large pages:
+    //          sysctl -w vm.nr_hugepages=new_value
+    //    > For more information regarding large pages please refer to:
+    //      https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt
+    if (warn) {
+      warning("Large pages using UseSHM are not configured on this system.");
+    }
+    return false;
+  }
+  // Managed to create a segment, now delete it.
+  shmctl(shmid, IPC_RMID, NULL);
+  return true;
+}
+
 // From the coredump_filter documentation:
 //
 // - (bit 0) anonymous private memory
@@ -3742,7 +3772,18 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
     UseHugeTLBFS = false;
   }
 
-  return UseSHM;
+  if (UseSHM) {
+    bool warn_on_failure = !FLAG_IS_DEFAULT(UseSHM);
+    if (shm_hugetlbfs_sanity_check(warn_on_failure, page_size)) {
+      return true;
+    }
+    UseSHM = false;
+  }
+
+  if (!FLAG_IS_DEFAULT(UseLargePages)) {
+    log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
+  }
+  return false;
 }
 
 void os::large_page_init() {
@@ -3882,13 +3923,15 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
   int shmid = shmget(IPC_PRIVATE, bytes, SHM_HUGETLB|IPC_CREAT|SHM_R|SHM_W);
   if (shmid == -1) {
     // Possible reasons for shmget failure:
-    // 1. shmmax is too small for Java heap.
+    // 1. shmmax is too small for the request.
     //    > check shmmax value: cat /proc/sys/kernel/shmmax
-    //    > increase shmmax value: echo "0xffffffff" > /proc/sys/kernel/shmmax
+    //    > increase shmmax value: echo "new_value" > /proc/sys/kernel/shmmax
     // 2. not enough large page memory.
     //    > check available large pages: cat /proc/meminfo
     //    > increase amount of large pages:
-    //          echo new_value > /proc/sys/vm/nr_hugepages
+    //          sysctl -w vm.nr_hugepages=new_value
+    //    > For more information regarding large pages please refer to:
+    //      https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt
     //      Note 1: different Linux may use different name for this property,
     //            e.g. on Redhat AS-3 it is "hugetlb_pool".
     //      Note 2: it's possible there's enough physical memory available but
