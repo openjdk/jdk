@@ -1195,12 +1195,13 @@ public abstract class Graphics2D extends Graphics {
      * {@code Clip}.  This method is used to make the current
      * {@code Clip} smaller.
      * To make the {@code Clip} larger, use {@code setClip}.
-     * The <i>user clip</i> modified by this method is independent of the
+     * <p>The <i>user clip</i> modified by this method is independent of the
      * clipping associated with device bounds and visibility.  If no clip has
      * previously been set, or if the clip has been cleared using
      * {@link Graphics#setClip(Shape) setClip} with a {@code null}
      * argument, the specified {@code Shape} becomes the new
-     * user clip. Since this method intersects the specified shape
+     * user clip.
+     * <p>Since this method intersects the specified shape
      * with the current clip, it will throw {@code NullPointerException}
      * for a null shape unless the user clip is also {@code null}.
      * So calling this method with a null argument is not recommended.
