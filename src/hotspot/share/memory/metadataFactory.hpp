@@ -27,7 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/classLoaderMetaspace.hpp"
-#include "oops/array.hpp"
+#include "oops/array.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 

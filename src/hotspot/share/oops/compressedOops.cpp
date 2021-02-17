@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/compressedOops.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "runtime/arguments.hpp"

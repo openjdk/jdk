@@ -25,9 +25,7 @@
 #define SHARE_MEMORY_METASPACE_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/memRegion.hpp"
 #include "memory/metaspaceChunkFreeListSummary.hpp"
-#include "memory/virtualspace.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -37,6 +35,7 @@ class MetaspaceShared;
 class MetaspaceTracer;
 class Mutex;
 class outputStream;
+class ReservedSpace;
 
 namespace metaspace {
   class MetaspaceSizesSnapshot;
