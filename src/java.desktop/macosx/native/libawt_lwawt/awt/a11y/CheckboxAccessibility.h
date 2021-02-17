@@ -23,19 +23,10 @@
  * questions.
  */
 
-#import "RadiobuttonAccessibility.h"
-#import "JNIUtilities.h"
-#import "ThreadUtilities.h"
+#import "ButtonAccessibility.h"
 
-/*
- * Implementation of the accessibility peer for the radiobutton role
- */
-@implementation RadiobuttonAccessibility
+@interface CheckboxAccessibility : ButtonAccessibility <NSAccessibilityCheckBox> {
 
-- (id) accessibilityValue
-{
-    AWT_ASSERT_APPKIT_THREAD;
-    return [self accessibilityValueAttribute];
-}
-
+};
+- (id)accessibilityValue;
 @end
