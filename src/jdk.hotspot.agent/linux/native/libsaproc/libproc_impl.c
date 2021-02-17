@@ -159,13 +159,20 @@ lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t 
    return add_lib_info_fd(ph, libname, -1, base);
 }
 
+static inline uintptr_t align_down(uintptr_t ptr, size_t size) {
+  return (ptr & ~(size - 1));
+}
+
+static inline uintptr_t align_up(uintptr_t ptr, size_t size) {
+  return ((ptr + size - 1) & ~(size - 1));
+}
+
 static bool fill_addr_info(lib_info* lib) {
   off_t current_pos;
   ELF_EHDR ehdr;
   ELF_PHDR* phbuf = NULL;
   ELF_PHDR* ph = NULL;
   int cnt;
-  long align = sysconf(_SC_PAGE_SIZE);
 
   current_pos = lseek(lib->fd, (off_t)0L, SEEK_CUR);
   lseek(lib->fd, (off_t)0L, SEEK_SET);
@@ -180,17 +187,18 @@ static bool fill_addr_info(lib_info* lib) {
   lib->exec_end = (uintptr_t)-1L;
   for (ph = phbuf, cnt = 0; cnt < ehdr.e_phnum; cnt++, ph++) {
     if (ph->p_type == PT_LOAD) {
-      align = ph->p_align;
-      if ((lib->end == (uintptr_t)-1L) || (lib->end < (ph->p_vaddr + ph->p_memsz))) {
-        lib->end = ph->p_vaddr + ph->p_memsz;
+      uintptr_t aligned_start = align_down(lib->base + ph->p_vaddr, ph->p_align);
+      uintptr_t aligned_end = align_up(aligned_start + ph->p_filesz, ph->p_align);
+      if ((lib->end == (uintptr_t)-1L) || (lib->end < aligned_end)) {
+        lib->end = aligned_end;
       }
+      print_debug("%s [%d] 0x%lx-0x%lx: base = 0x%lx, vaddr = 0x%lx, memsz = 0x%lx, filesz = 0x%lx\n", lib->name, cnt, aligned_start, aligned_end, lib->base, ph->p_vaddr, ph->p_memsz, ph->p_filesz);
       if (ph->p_flags & PF_X) {
-        print_debug("[%d] vaddr = 0x%lx, memsz = 0x%lx, filesz = 0x%lx\n", cnt, ph->p_vaddr, ph->p_memsz, ph->p_filesz);
-        if ((lib->exec_start == -1L) || (lib->exec_start > ph->p_vaddr)) {
-          lib->exec_start = ph->p_vaddr;
+        if ((lib->exec_start == -1L) || (lib->exec_start > aligned_start)) {
+          lib->exec_start = aligned_start;
         }
-        if ((lib->exec_end == (uintptr_t)-1L) || (lib->exec_end < (ph->p_vaddr + ph->p_memsz))) {
-          lib->exec_end = ph->p_vaddr + ph->p_memsz;
+        if ((lib->exec_end == (uintptr_t)-1L) || (lib->exec_end < aligned_end)) {
+          lib->exec_end = aligned_end;
         }
       }
     }
@@ -199,15 +207,7 @@ static bool fill_addr_info(lib_info* lib) {
   free(phbuf);
   lseek(lib->fd, current_pos, SEEK_SET);
 
-  if ((lib->end == -1L) || (lib->exec_start == -1L) || (lib->exec_end == -1L)) {
-    return false;
-  } else {
-    lib->end = (lib->end + lib->base + align) & ~(align - 1);
-    lib->exec_start = (lib->exec_start + lib->base) & ~(align - 1);
-    lib->exec_end = (lib->exec_end + lib->base + align) & ~(align - 1);
-    return true;
-  }
-
+  return (lib->end != -1L) && (lib->exec_start != -1L) && (lib->exec_end != -1L);
 }
 
 bool read_eh_frame(struct ps_prochandle* ph, lib_info* lib) {
