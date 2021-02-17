@@ -69,6 +69,7 @@ public class MHTransformationGen {
     private static final boolean USE_THROW_CATCH = false; // Test bugs
 
     private static final Optional<MemoryPoolMXBean> NON_SEGMENTED_CODE_CACHE_POOL;
+    private static final Optional<MemoryPoolMXBean> NON_NMETHODS_POOL;
     private static final Optional<MemoryPoolMXBean> PROFILED_NMETHODS_POOL;
     private static final Optional<MemoryPoolMXBean> NON_PROFILED_NMETHODS_POOL ;
 
@@ -76,6 +77,8 @@ public class MHTransformationGen {
         var pools = ManagementFactory.getMemoryPoolMXBeans();
         NON_SEGMENTED_CODE_CACHE_POOL = pools.stream()
             .filter(pool -> pool.getName().equals("CodeCache")).findFirst();
+        NON_NMETHODS_POOL = pools.stream()
+            .filter(pool -> pool.getName().equals("CodeHeap 'non-nmethods'")).findFirst();
         PROFILED_NMETHODS_POOL = pools.stream()
             .filter(pool -> pool.getName().equals("CodeHeap 'profiled nmethods'")).findFirst();
         NON_PROFILED_NMETHODS_POOL = pools.stream()
@@ -96,6 +99,7 @@ public class MHTransformationGen {
 
         // Limit numbers are arbitrary, feel free to change if arguably necessary
         NON_SEGMENTED_CODE_CACHE_POOL.ifPresent(pool -> check.accept(pool, 2_000_000));
+        NON_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, 1_000_000));
         PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, 1_000_000));
         NON_PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, 1_000_000));
 
