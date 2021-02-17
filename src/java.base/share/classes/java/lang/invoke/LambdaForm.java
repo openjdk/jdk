@@ -1853,7 +1853,7 @@ class LambdaForm {
     }
 
     /* Placeholder class for zero and identity forms generated ahead of time */
-    final class Holder {}
+    static final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER
     // during execution of the static initializes of this class.

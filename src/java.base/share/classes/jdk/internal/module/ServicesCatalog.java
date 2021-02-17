@@ -48,7 +48,7 @@ public final class ServicesCatalog {
     /**
      * Represents a service provider in the services catalog.
      */
-    public final class ServiceProvider {
+    public static final class ServiceProvider {
         private final Module module;
         private final String providerName;
 

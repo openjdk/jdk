@@ -884,7 +884,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
 /*
  * Utility class that holds the components used to construct a KeyStore.Builder
  */
-class KeyStoreBuilderComponents {
+static class KeyStoreBuilderComponents {
     String name;
     String type;
     Provider provider;

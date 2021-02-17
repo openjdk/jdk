@@ -64,7 +64,7 @@ class PipeImpl
     private final SourceChannel source;
     private final SinkChannel sink;
 
-    private class Initializer
+    private static class Initializer
         implements PrivilegedExceptionAction<Void>
     {
 
