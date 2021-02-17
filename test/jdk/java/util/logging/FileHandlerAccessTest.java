@@ -41,10 +41,8 @@ import java.util.logging.LogRecord;
 public class FileHandlerAccessTest {
     public static void main(String[] args) {
         if (!(args.length == 2 || args.length == 1)) {
-            System.out.println("Usage error: expects java FileHandlerAccessTest [process/thread] <count>");
-            return;
-        }
-        else if (args.length == 2) {
+            throw new IllegalArgumentException("Usage error: expects java FileHandlerAccessTest [process/thread] <count>");
+        } else if (args.length == 2) {
             var type = args[0];
             var count = Integer.parseInt(args[1]);
 
@@ -57,8 +55,7 @@ public class FileHandlerAccessTest {
                     new Thread(FileHandlerAccessTest::access).start();
                 }
             }
-        }
-        else {
+        } else {
             access();
         }
     }
