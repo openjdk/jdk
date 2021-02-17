@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/thread.hpp"
 
