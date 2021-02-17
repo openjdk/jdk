@@ -138,18 +138,6 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
-     *
-     * @implNote Availability is determined by RandomGeneratorFactory using the
-     * service provider API to locate implementations of the RandomGenerator interface.
-     *
-     * @return Stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
-     */
-    static Stream<RandomGeneratorFactory<RandomGenerator>> all() {
-        return RandomGeneratorFactory.all(RandomGenerator.class);
-    }
-
-    /**
      * Returns an effectively unlimited stream of (pseudo)randomly chosen
      * {@code double} values.
      *
@@ -771,19 +759,6 @@ public interface RandomGenerator {
     interface StreamableGenerator extends RandomGenerator {
 
         /**
-         * Returns a stream of all available {@link StreamableGenerator} factories.
-         *
-         * @implNote Availability is determined by RandomGeneratorFactory using the
-         * service provider API to locate implementations of the RandomGenerator
-         * interface and filtering on the StreamableGenerator interface.
-         *
-         * @return Stream of all available {@link StreamableGenerator} factories.
-         */
-        static Stream<RandomGeneratorFactory<StreamableGenerator>> all() {
-            return RandomGeneratorFactory.all(StreamableGenerator.class);
-        }
-
-        /**
          * Returns an instance of {@link StreamableGenerator} that utilizes the
          * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
          *
@@ -868,15 +843,6 @@ public interface RandomGenerator {
      * @since   17
      */
     interface SplittableGenerator extends StreamableGenerator {
-
-        /**
-         * Returns a stream of all available {@link SplittableGenerator} factories.
-         *
-         * @return Stream of all available {@link SplittableGenerator} factories.
-         */
-        static Stream<RandomGeneratorFactory<SplittableGenerator>> all() {
-            return RandomGeneratorFactory.all(SplittableGenerator.class);
-        }
 
         /**
          * Returns an instance of {@link SplittableGenerator} that utilizes the
@@ -1074,19 +1040,6 @@ public interface RandomGenerator {
     interface JumpableGenerator extends StreamableGenerator {
 
         /**
-         * Returns a stream of all available {@link JumpableGenerator} factories.
-         *
-         * @implNote Availability is determined by RandomGeneratorFactory using the
-         * service provider API to locate implementations of the RandomGenerator
-         * interface and filtering on the JumpableGenerator interface.
-         *
-         * @return Stream of all available {@link JumpableGenerator} factories.
-         */
-        static Stream<RandomGeneratorFactory<JumpableGenerator>> all() {
-            return RandomGeneratorFactory.all(JumpableGenerator.class);
-        }
-
-        /**
          * Returns an instance of {@link JumpableGenerator} that utilizes the
          * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
          *
@@ -1259,19 +1212,6 @@ public interface RandomGenerator {
     interface LeapableGenerator extends JumpableGenerator {
 
         /**
-         * Returns a stream of all available {@link LeapableGenerator} factories.
-         *
-         * @implNote Availability is determined by RandomGeneratorFactory using the
-         * service provider API to locate implementations of the RandomGenerator
-         * interface and filtering on the LeapableGenerator interface.
-         *
-         * @return Stream of all available {@link LeapableGenerator} factories.
-         */
-        static Stream<RandomGeneratorFactory<LeapableGenerator>> all() {
-            return RandomGeneratorFactory.all(LeapableGenerator.class);
-        }
-
-        /**
          * Returns an instance of {@link LeapableGenerator} that utilizes the
          * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
          *
@@ -1408,21 +1348,6 @@ public interface RandomGenerator {
      * @since   17
      */
     interface ArbitrarilyJumpableGenerator extends LeapableGenerator {
-
-        /**
-         * Returns a stream of all available {@link ArbitrarilyJumpableGenerator}
-         * factories.
-         *
-         * @implNote Availability is determined by RandomGeneratorFactory using the
-         * service provider API to locate implementations of the RandomGenerator
-         * interface and filtering on the ArbitrarilyJumpableGenerator interface.
-         *
-         * @return Stream of all available {@link ArbitrarilyJumpableGenerator}
-         * factories.
-         */
-        static Stream<RandomGeneratorFactory<ArbitrarilyJumpableGenerator>> all() {
-            return RandomGeneratorFactory.all(ArbitrarilyJumpableGenerator.class);
-        }
 
         /**
          * Returns an instance of {@link ArbitrarilyJumpableGenerator} that

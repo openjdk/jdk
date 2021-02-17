@@ -55,9 +55,9 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * {@link RandomGenerator#factoryOf(String)} method, where the argument string
  * is the name of the <a href="package-summary.html#algorithms">algorithm</a>
  * required. The method
- * {@link RandomGenerator#all()} produces a {@link Stream} of all available
- * {@link RandomGenerator RandomGenerators} that can be searched to locate a
- * {@link RandomGeneratorFactory} suitable to the task.
+ * {@link RandomGeneratorFactory#all()} produces a {@link Stream} of all available
+ * {@link RandomGeneratorFactory RandomGeneratorFactorys} that can be searched
+ * to locate a {@link RandomGeneratorFactory} suitable to the task.
  *
  * There are three methods for constructing a RandomGenerator instance,
  * depending on the type of initial seed required.
@@ -69,7 +69,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * construction. Example;
  *
  * <pre>{@code
- *    RandomGeneratorFactory<RandomGenerator> factory = RandomGenerator.factoryOf("Random");
+ *    RandomGeneratorFactory<RandomGenerator> factory = RandomGeneratorFactory.of("Random");
  *
  *     for (int i = 0; i < 10; i++) {
  *         new Thread(() -> {
@@ -83,15 +83,16 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * of a generator and can be used to select random number generator
  * <a href="package-summary.html#algorithms">algorithms</a>.
  * These methods are typically used in
- * conjunction with {@link RandomGenerator#all()}. In this example, the code locates the
- * {@link RandomGeneratorFactory} that produces {@link RandomGenerator RandomGenerators}
+ * conjunction with {@link RandomGeneratorFactory#all()}. In this example, the code
+ * locates the {@link RandomGeneratorFactory} that produces
+ * {@link RandomGenerator RandomGenerators}
  * with the highest number of state bits.
  *
  * <pre>{@code
- *     RandomGeneratorFactory<RandomGenerator> best = RandomGenerator.all()
+ *     RandomGeneratorFactory<RandomGenerator> best = RandomGeneratorFactory.all()
  *         .sorted(Comparator.comparingInt(RandomGenerator::stateBits).reversed())
  *         .findFirst()
- *         .orElse(RandomGenerator.factoryOf("Random"));
+ *         .orElse(RandomGeneratorFactory.of("Random"));
  *     System.out.println(best.name() + " in " + best.group() + " was selected");
  *
  *     RandomGenerator rng = best.create();
@@ -234,22 +235,6 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Returns a stream of matching Providers.
-     *
-     * @param category  Sub-interface of {@link RandomGenerator} to type check
-     * @param <T>       Sub-interface of {@link RandomGenerator} to produce
-     *
-     * @return Stream of matching Providers.
-     */
-    static <T extends RandomGenerator> Stream<RandomGeneratorFactory<T>> all(Class<T> category) {
-        Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
-        return fm.values()
-                 .stream()
-                 .filter(p -> isSubclass(category, p))
-                 .map(RandomGeneratorFactory::new);
-    }
-
-    /**
      * Returns a {@link RandomGenerator} that utilizes the {@code name}
      * <a href="package-summary.html#algorithms">algorithm</a>.
      *
@@ -381,6 +366,25 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
+     * Returns a stream of matching Providers.
+     *
+     * @param category  {@link RandomGenerator} sub-interface class to filter
+     * @param <T>       {@link RandomGenerator} sub-interface return type
+     *
+     * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
+     * to locate implementations of the RandomGenerator interface.
+     *
+     * @return Stream of matching {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
+     */
+    public static <T extends RandomGenerator> Stream<RandomGeneratorFactory<T>> all(Class<T> category) {
+        Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
+        return fm.values()
+                 .stream()
+                 .filter(p -> isSubclass(category, p))
+                 .map(RandomGeneratorFactory::new);
+    }
+
+    /**
      * Returns a stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
      * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
@@ -389,7 +393,10 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return Stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
     public static Stream<RandomGeneratorFactory<RandomGenerator>> all() {
-        return all(RandomGenerator.class);
+        Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
+        return fm.values()
+                 .stream()
+                 .map(RandomGeneratorFactory::new);
     }
 
     /**
