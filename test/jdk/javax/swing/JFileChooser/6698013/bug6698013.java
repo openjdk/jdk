@@ -43,12 +43,8 @@ public class bug6698013 extends JApplet {
 
     final static VirtualFile subdirFile = new VirtualFile("testdir/subdir/subtest.txt", false);
 
-    public static void main(String[] args) {
-        try {
-            SwingUtilities.invokeAndWait(() -> new bug6698013().init());
-        } catch (InvocationTargetException | InterruptedException e) {
-           e.printStackTrace();
-        }
+    public static void main(String[] args) throws InvocationTargetException, InterruptedException {
+        SwingUtilities.invokeAndWait(() -> new bug6698013().init());
     }
 
     public void init() {
