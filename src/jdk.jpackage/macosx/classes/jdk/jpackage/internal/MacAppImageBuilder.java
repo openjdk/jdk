@@ -338,6 +338,14 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     .get();
             Files.copy(jli, runtimeMacOSDir.resolve(jliName));
         }
+        // if building for app store remove jspawnhelper
+        if (APP_STORE.fetchFrom(params).equals(Boolean.TRUE)) {
+            try {
+                Files.deleteIfExists(runtimeRoot.resolve("lib/jspawnhelper"));
+            } catch (IOException ioe) {
+                Log.verbose(ioe);
+            }
+        }
     }
 
     private void sign(Map<String, ? super Object> params) throws IOException {

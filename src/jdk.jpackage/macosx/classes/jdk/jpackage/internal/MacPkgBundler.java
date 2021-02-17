@@ -103,12 +103,20 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             "mac.signing-key-developer-id-installer",
             String.class,
             params -> {
-                    String prefix = APP_STORE.fetchFrom(params) ?
-                            "3rd Party Mac Developer Installer: " :
-                            "Developer ID Installer: ";
-                    String result = MacBaseInstallerBundler.findKey(prefix,
-                            SIGNING_KEY_USER.fetchFrom(params),
-                            SIGNING_KEYCHAIN.fetchFrom(params));
+                    String user = SIGNING_KEY_USER.fetchFrom(params);
+                    String keychain = SIGNING_KEYCHAIN.fetchFrom(params);
+                    String result = null;
+                    if (APP_STORE.fetchFrom(params)) {
+                        result = MacBaseInstallerBundler.findKey(
+                            "3rd Party Mac Developer Installer: ",
+                            user, keychain);
+                    }
+                    // if either not signing for app store or couldn't find
+                    if (result == null) {
+                        result = MacBaseInstallerBundler.findKey(
+                            "Developer ID Installer: ", user, keychain);
+                    }
+
                     if (result != null) {
                         MacCertificate certificate = new MacCertificate(result);
 
