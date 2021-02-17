@@ -33,7 +33,7 @@ ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(Car
   _heap = ShenandoahHeap::heap();
   _card_table = card_table;
   _total_card_count = total_card_count;
-  _cluster_count = (total_card_count / ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster);
+  _cluster_count = uint32_t(total_card_count / ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster);
   _card_shift = CardTable::card_shift;
 
   _byte_map = _card_table->byte_for_index(0);
