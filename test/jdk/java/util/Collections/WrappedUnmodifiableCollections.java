@@ -46,27 +46,19 @@ public class WrappedUnmodifiableCollections {
     static final Class<?> UNMODIFIABLESORTEDMAP;
     static final Class<?> UNMODIFIABLENAVIGABLEMAP;
     static final Class<?> UNMODIFIABLECOLLECTION;
-    static final Class<?> LIST12, LISTN, MAP1, MAPN, SET12, SETN, SUBLIST;
 
     static {
         try {
             UNMODIFIABLESET = Class.forName("java.util.Collections$UnmodifiableSet");
             UNMODIFIABLESORTEDSET = Class.forName("java.util.Collections$UnmodifiableSortedSet");
             UNMODIFIABLENAVIGABLESET = Class.forName("java.util.Collections$UnmodifiableNavigableSet");
-            SET12 = Class.forName("java.util.ImmutableCollections$Set12");
-            SETN = Class.forName("java.util.ImmutableCollections$SetN");
 
             UNMODIFIABLELIST = Class.forName("java.util.Collections$UnmodifiableList");
             UNMODIFIABLERANDOMACCESSLIST = Class.forName("java.util.Collections$UnmodifiableRandomAccessList");
-            LIST12 = Class.forName("java.util.ImmutableCollections$List12");
-            LISTN = Class.forName("java.util.ImmutableCollections$ListN");
-            SUBLIST = Class.forName("java.util.ImmutableCollections$SubList");
 
             UNMODIFIABLEMAP = Class.forName("java.util.Collections$UnmodifiableMap");
             UNMODIFIABLESORTEDMAP = Class.forName("java.util.Collections$UnmodifiableSortedMap");
             UNMODIFIABLENAVIGABLEMAP = Class.forName("java.util.Collections$UnmodifiableNavigableMap");
-            MAP1 = Class.forName("java.util.ImmutableCollections$Map1");
-            MAPN = Class.forName("java.util.ImmutableCollections$MapN");
 
             UNMODIFIABLECOLLECTION= Class.forName("java.util.Collections$UnmodifiableCollection");
 
@@ -79,28 +71,33 @@ public class WrappedUnmodifiableCollections {
 
     public void testUnmodifiableListsDontWrap() {
         List<Integer> list = List.of(1,2,3);
+        assertNotSame(list.getClass(), UNMODIFIABLERANDOMACCESSLIST);
         List<Integer> result = Collections.unmodifiableList(list);
-        assertSame(list, result);
+        assertSame(result.getClass(), UNMODIFIABLERANDOMACCESSLIST);
 
         //Empty List
         List<?> list2 = List.of();
+        assertNotSame(list2.getClass(), UNMODIFIABLERANDOMACCESSLIST);
         List<?> result2 = Collections.unmodifiableList(list2);
-        assertSame(list2, result2);
+        assertSame(result2.getClass(), UNMODIFIABLERANDOMACCESSLIST);
 
         //ImmutableCollections.List12
         List<?> list12 = List.of(1);
+        assertNotSame(list12.getClass(), UNMODIFIABLERANDOMACCESSLIST);
         List<?> result3 = Collections.unmodifiableList(list12);
-        assertSame(list12, result3);
+        assertSame(result3.getClass(), UNMODIFIABLERANDOMACCESSLIST);
 
         //ImmutableCollections.ListN
         List<?> listN = List.of(1,2,3,4,5,6);
+        assertNotSame(listN.getClass(), UNMODIFIABLERANDOMACCESSLIST);
         List<?> result4 = Collections.unmodifiableList(listN);
-        assertSame(listN, result4);
+        assertSame(result4.getClass(), UNMODIFIABLERANDOMACCESSLIST);
 
         //ImmutableCollections.Sublist
         List<?> subList = list.subList(0,1);
+        assertNotSame(subList.getClass(), UNMODIFIABLERANDOMACCESSLIST);
         List<?> subListResult = Collections.unmodifiableList(subList);
-        assertSame(subList, subListResult);
+        assertSame(subListResult.getClass(), UNMODIFIABLERANDOMACCESSLIST);
 
         //Collections.UnmodifiableList
         List<Integer> linkedList = new LinkedList<>();
@@ -178,15 +175,15 @@ public class WrappedUnmodifiableCollections {
 
         //SET12
         Set<Integer> set12 = Set.of(1,2);
+        assertNotSame(set12.getClass(), UNMODIFIABLESET);
         Set<Integer> reWrappedSet12 = Collections.unmodifiableSet(set12);
-        assertSame(reWrappedSet12.getClass(), SET12);
-        assertSame(set12, reWrappedSet12);
+        assertSame(reWrappedSet12.getClass(), UNMODIFIABLESET);
 
         //SETN
         Set<Integer> setN = Set.of(1,2,3,4,5,6);
+        assertNotSame(setN.getClass(), UNMODIFIABLESET);
         Set<Integer> reWrappedSetN = Collections.unmodifiableSet(setN);
-        assertSame(reWrappedSetN.getClass(), SETN);
-        assertSame(setN, reWrappedSetN);
+        assertSame(reWrappedSetN.getClass(), UNMODIFIABLESET);
 
 
     }
@@ -223,17 +220,17 @@ public class WrappedUnmodifiableCollections {
 
         //ImmutableCollections.Map1
         Map<Integer,Integer> map1 = Map.of(1,1);
-        assertSame(map1.getClass(), MAP1);
+        assertNotSame(map1.getClass(), UNMODIFIABLEMAP);
 
         Map<Integer,Integer> reWrappedMap1 = Collections.unmodifiableMap(map1);
-        assertSame(map1, reWrappedMap1);
+        assertSame(reWrappedMap1.getClass(), UNMODIFIABLEMAP);
 
         //ImmutableCollections.MapN
         Map<Integer,Integer> mapN = Map.of(1,1, 2, 2, 3, 3, 4, 4);
-        assertSame(mapN.getClass(), MAPN);
+        assertNotSame(mapN.getClass(), UNMODIFIABLEMAP);
 
         Map<Integer,Integer> reWrappedMapN = Collections.unmodifiableMap(mapN);
-        assertSame(mapN, reWrappedMapN);
+        assertSame(reWrappedMapN.getClass(), UNMODIFIABLEMAP);
 
 
 

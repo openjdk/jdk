@@ -1126,9 +1126,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> unmodifiableSet(Set<? extends T> s) {
-        if (s.getClass() == UnmodifiableSet.class ||
-           s.getClass() == ImmutableCollections.Set12.class ||
-           s.getClass() == ImmutableCollections.SetN.class) {
+        if (s.getClass() == UnmodifiableSet.class) {
             return (Set<T>) s;
         }
         return new UnmodifiableSet<>(s);
@@ -1311,10 +1309,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <T> List<T> unmodifiableList(List<? extends T> list) {
-        if (list.getClass() == UnmodifiableList.class || list.getClass() == UnmodifiableRandomAccessList.class ||
-            list.getClass() == ImmutableCollections.List12.class ||
-            list.getClass() == ImmutableCollections.ListN.class ||
-            list.getClass() == ImmutableCollections.SubList.class) {
+        if (list.getClass() == UnmodifiableList.class || list.getClass() == UnmodifiableRandomAccessList.class) {
            return (List<T>) list;
         }
 
@@ -1469,9 +1464,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <K,V> Map<K,V> unmodifiableMap(Map<? extends K, ? extends V> m) {
-        if (m.getClass() == UnmodifiableMap.class ||
-           m.getClass() == ImmutableCollections.Map1.class ||
-           m.getClass() == ImmutableCollections.MapN.class) {
+        if (m.getClass() == UnmodifiableMap.class) {
             return (Map<K,V>) m;
         }
         return new UnmodifiableMap<>(m);
