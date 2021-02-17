@@ -437,7 +437,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             pb = new ProcessBuilder(
                     hdiutil,
                     "detach",
-                    "-force",
                     hdiUtilVerbosityFlag,
                     mountedRoot.toAbsolutePath().toString());
             // "hdiutil detach" might not work right away due to resource busy error, so
@@ -451,12 +450,21 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 }
             });
             try {
-                // 10 times with 3 second delays.
-                retryExecutor.setMaxAttemptsCount(10).setAttemptTimeoutMillis(3000)
+                // 10 times with 6 second delays.
+                retryExecutor.setMaxAttemptsCount(10).setAttemptTimeoutMillis(6000)
                         .execute(pb);
             } catch (IOException ex) {
                 if (!retryExecutor.isAborted()) {
-                    throw ex;
+                    // Now force to detach if it still attached
+                    if (Files.exists(mountedRoot)) {
+                        pb = new ProcessBuilder(
+                                hdiutil,
+                                "detach",
+                                "-force",
+                                hdiUtilVerbosityFlag,
+                                mountedRoot.toAbsolutePath().toString());
+                        IOUtils.exec(pb);
+                    }
                 }
             }
         }
@@ -469,10 +477,29 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 hdiUtilVerbosityFlag,
                 "-format", "UDZO",
                 "-o", finalDMG.toAbsolutePath().toString());
-        new RetryExecutor()
+        try {
+            new RetryExecutor()
                 .setMaxAttemptsCount(10)
                 .setAttemptTimeoutMillis(3000)
                 .execute(pb);
+        } catch (Exception ex) {
+            // Convert might failed if something holds file. Try to convert copy.
+            Path protoDMG2 = imagesRoot
+                    .resolve(APP_NAME.fetchFrom(params) + "-tmp2.dmg");
+            Files.copy(protoDMG, protoDMG2);
+            try {
+                pb = new ProcessBuilder(
+                        hdiutil,
+                        "convert",
+                        protoDMG2.toAbsolutePath().toString(),
+                        hdiUtilVerbosityFlag,
+                        "-format", "UDZO",
+                        "-o", finalDMG.toAbsolutePath().toString());
+                IOUtils.exec(pb);
+            } finally {
+                Files.deleteIfExists(protoDMG2);
+            }
+        }
 
         //add license if needed
         if (Files.exists(getConfig_LicenseFile(params))) {

@@ -189,8 +189,10 @@ ifeq ($(OPENJDK_TARGET_CPU), x86_64)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  FIXPATH := $(BASH) $(TOPDIR)/make/scripts/fixpath.sh exec
+  FIXPATH_BASE := $(BASH) $(TOPDIR)/make/scripts/fixpath.sh
+  FIXPATH := $(FIXPATH_BASE) exec
 else
+  FIXPATH_BASE :=
   FIXPATH :=
 endif
 
@@ -273,6 +275,7 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     MAKE := $(MAKE), \
     BASH := $(BASH), \
     JIB_JAR := $(JIB_JAR), \
+    FIXPATH_BASE := $(FIXPATH_BASE), \
     FIXPATH := $(FIXPATH), \
     OPENJDK_TARGET_OS := $(OPENJDK_TARGET_OS), \
     OPENJDK_TARGET_OS_TYPE := $(OPENJDK_TARGET_OS_TYPE), \

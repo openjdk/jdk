@@ -24,16 +24,9 @@
 
 #include "precompiled.hpp"
 
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
-
-#include "gc/shared/weakProcessor.inline.hpp"
-#include "gc/shared/gcTimer.hpp"
-#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
@@ -46,13 +39,8 @@
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-
 #include "memory/iterator.inline.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/handles.inline.hpp"
-
 
 class ShenandoahUpdateRootsTask : public AbstractGangTask {
 private:

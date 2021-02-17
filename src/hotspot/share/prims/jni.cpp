@@ -29,7 +29,6 @@
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -37,8 +36,10 @@
 #include "classfile/modules.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -365,11 +366,11 @@ JNI_ENTRY(jmethodID, jni_FromReflectedMethod(JNIEnv *env, jobject method))
   oop mirror     = NULL;
   int slot       = 0;
 
-  if (reflected->klass() == SystemDictionary::reflect_Constructor_klass()) {
+  if (reflected->klass() == vmClasses::reflect_Constructor_klass()) {
     mirror = java_lang_reflect_Constructor::clazz(reflected);
     slot   = java_lang_reflect_Constructor::slot(reflected);
   } else {
-    assert(reflected->klass() == SystemDictionary::reflect_Method_klass(), "wrong type");
+    assert(reflected->klass() == vmClasses::reflect_Method_klass(), "wrong type");
     mirror = java_lang_reflect_Method::clazz(reflected);
     slot   = java_lang_reflect_Method::slot(reflected);
   }
@@ -467,7 +468,7 @@ JNI_ENTRY(jclass, jni_GetSuperclass(JNIEnv *env, jclass sub))
   Klass* super = k->java_super();
   // super2 is the value computed by the compiler's getSuperClass intrinsic:
   debug_only(Klass* super2 = ( k->is_array_klass()
-                                 ? SystemDictionary::Object_klass()
+                                 ? vmClasses::Object_klass()
                                  : k->super() ) );
   assert(super == super2,
          "java_super computation depends on interface, array, other super");
@@ -564,7 +565,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
   if (thread->has_pending_exception()) {
     Handle ex(thread, thread->pending_exception());
     thread->clear_pending_exception();
-    if (ex->is_a(SystemDictionary::ThreadDeath_klass())) {
+    if (ex->is_a(vmClasses::ThreadDeath_klass())) {
       // Don't print anything if we are being killed.
     } else {
       jio_fprintf(defaultStream::error_stream(), "Exception ");
@@ -573,11 +574,11 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
         jio_fprintf(defaultStream::error_stream(),
         "in thread \"%s\" ", thread->get_thread_name());
       }
-      if (ex->is_a(SystemDictionary::Throwable_klass())) {
+      if (ex->is_a(vmClasses::Throwable_klass())) {
         JavaValue result(T_VOID);
         JavaCalls::call_virtual(&result,
                                 ex,
-                                SystemDictionary::Throwable_klass(),
+                                vmClasses::Throwable_klass(),
                                 vmSymbols::printStackTrace_name(),
                                 vmSymbols::void_method_signature(),
                                 THREAD);

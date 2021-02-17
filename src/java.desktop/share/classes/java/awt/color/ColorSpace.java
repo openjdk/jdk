@@ -39,8 +39,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.lang.annotation.Native;
 
-import sun.java2d.cmm.CMSManager;
-
 /**
  * This abstract class is used to serve as a color space tag to identify the
  * specific color space of a {@code Color} object or, via a {@code ColorModel}
@@ -112,12 +110,22 @@ public abstract class ColorSpace implements Serializable {
     private final int numComponents;
     private transient String [] compName = null;
 
-    // Cache of singletons for the predefined color spaces.
-    private static ColorSpace sRGBspace;
-    private static ColorSpace XYZspace;
-    private static ColorSpace PYCCspace;
-    private static ColorSpace GRAYspace;
-    private static ColorSpace LINEAR_RGBspace;
+    /**
+     * The lazy cache of singletons for the predefined built-in color spaces.
+     */
+    private interface BuiltInSpace {
+
+        ColorSpace SRGB = new ICC_ColorSpace(ICC_Profile.getInstance(CS_sRGB));
+
+        ColorSpace LRGB =
+                new ICC_ColorSpace(ICC_Profile.getInstance(CS_LINEAR_RGB));
+
+        ColorSpace XYZ = new ICC_ColorSpace(ICC_Profile.getInstance(CS_CIEXYZ));
+
+        ColorSpace PYCC = new ICC_ColorSpace(ICC_Profile.getInstance(CS_PYCC));
+
+        ColorSpace GRAY = new ICC_ColorSpace(ICC_Profile.getInstance(CS_GRAY));
+    }
 
     /**
      * Any of the family of XYZ color spaces.
@@ -289,88 +297,24 @@ public abstract class ColorSpace implements Serializable {
      * Returns a {@code ColorSpace} representing one of the specific predefined
      * color spaces.
      *
-     * @param  colorspace a specific color space identified by one of the
-     *         predefined class constants (e.g. {@code CS_sRGB},
-     *         {@code CS_LINEAR_RGB}, {@code CS_CIEXYZ}, {@code CS_GRAY}, or
-     *         {@code CS_PYCC})
+     * @param  cspace a specific color space identified by one of the predefined
+     *         class constants (e.g. {@code CS_sRGB}, {@code CS_LINEAR_RGB},
+     *         {@code CS_CIEXYZ}, {@code CS_GRAY}, or {@code CS_PYCC})
      * @return the requested {@code ColorSpace} object
      */
     // NOTE: This method may be called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
-    public static ColorSpace getInstance (int colorspace)
-    {
-    ColorSpace    theColorSpace;
-
-        switch (colorspace) {
-        case CS_sRGB:
-            synchronized(ColorSpace.class) {
-                if (sRGBspace == null) {
-                    ICC_Profile theProfile = ICC_Profile.getInstance (CS_sRGB);
-                    sRGBspace = new ICC_ColorSpace (theProfile);
-                }
-
-                theColorSpace = sRGBspace;
+    public static ColorSpace getInstance(int cspace) {
+        return switch (cspace) {
+            case CS_sRGB -> BuiltInSpace.SRGB;
+            case CS_LINEAR_RGB -> BuiltInSpace.LRGB;
+            case CS_CIEXYZ -> BuiltInSpace.XYZ;
+            case CS_PYCC -> BuiltInSpace.PYCC;
+            case CS_GRAY -> BuiltInSpace.GRAY;
+            default -> {
+                throw new IllegalArgumentException("Unknown color space");
             }
-            break;
-
-        case CS_CIEXYZ:
-            synchronized(ColorSpace.class) {
-                if (XYZspace == null) {
-                    ICC_Profile theProfile =
-                        ICC_Profile.getInstance (CS_CIEXYZ);
-                    XYZspace = new ICC_ColorSpace (theProfile);
-                }
-
-                theColorSpace = XYZspace;
-            }
-            break;
-
-        case CS_PYCC:
-            synchronized(ColorSpace.class) {
-                if (PYCCspace == null) {
-                    ICC_Profile theProfile = ICC_Profile.getInstance (CS_PYCC);
-                    PYCCspace = new ICC_ColorSpace (theProfile);
-                }
-
-                theColorSpace = PYCCspace;
-            }
-            break;
-
-
-        case CS_GRAY:
-            synchronized(ColorSpace.class) {
-                if (GRAYspace == null) {
-                    ICC_Profile theProfile = ICC_Profile.getInstance (CS_GRAY);
-                    GRAYspace = new ICC_ColorSpace (theProfile);
-                    /* to allow access from java.awt.ColorModel */
-                    CMSManager.GRAYspace = GRAYspace;
-                }
-
-                theColorSpace = GRAYspace;
-            }
-            break;
-
-
-        case CS_LINEAR_RGB:
-            synchronized(ColorSpace.class) {
-                if (LINEAR_RGBspace == null) {
-                    ICC_Profile theProfile =
-                        ICC_Profile.getInstance(CS_LINEAR_RGB);
-                    LINEAR_RGBspace = new ICC_ColorSpace (theProfile);
-                    /* to allow access from java.awt.ColorModel */
-                    CMSManager.LINEAR_RGBspace = LINEAR_RGBspace;
-                }
-
-                theColorSpace = LINEAR_RGBspace;
-            }
-            break;
-
-
-        default:
-            throw new IllegalArgumentException ("Unknown color space");
-        }
-
-        return theColorSpace;
+        };
     }
 
     /**
@@ -380,8 +324,7 @@ public abstract class ColorSpace implements Serializable {
      *         {@code false} if it is not
      */
     public boolean isCS_sRGB () {
-        /* REMIND - make sure we know sRGBspace exists already */
-        return (this == sRGBspace);
+        return this == BuiltInSpace.SRGB;
     }
 
     /**

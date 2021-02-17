@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "classfile/placeholders.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/nmethod.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -120,7 +121,7 @@ static int literal_size(Symbol *symbol) {
 static int literal_size(oop obj) {
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == SystemDictionary::String_klass()) {
+  } else if (obj->klass() == vmClasses::String_klass()) {
     // This may overcount if String.value arrays are shared.
     return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
   } else {

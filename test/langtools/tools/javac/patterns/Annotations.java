@@ -70,8 +70,8 @@ public class Annotations extends JavacTestingAbstractProcessor {
                         codeAttr.attributes.map.get(Attribute.RuntimeInvisibleTypeAnnotations);
                 RuntimeInvisibleTypeAnnotations_attribute annotations =
                         (RuntimeInvisibleTypeAnnotations_attribute) annoAttr;
-                String expected = "[@Annotations$DTA; pos: [LOCAL_VARIABLE, {start_pc = 35, length = 7, index = 1}, pos = -1], " +
-                                  "@Annotations$TA; pos: [LOCAL_VARIABLE, {start_pc = 56, length = 7, index = 1}, pos = -1]]";
+                String expected = "[@Annotations$DTA; pos: [LOCAL_VARIABLE, {start_pc = 31, length = 7, index = 1}, pos = -1], " +
+                                  "@Annotations$TA; pos: [LOCAL_VARIABLE, {start_pc = 50, length = 7, index = 1}, pos = -1]]";
                 String actual = Arrays.toString(annotations.annotations);
                 if (!expected.equals(actual)) {
                     throw new AssertionError("Unexpected type annotations: " +

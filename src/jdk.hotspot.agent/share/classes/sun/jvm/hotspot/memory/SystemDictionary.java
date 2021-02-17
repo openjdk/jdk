@@ -54,7 +54,7 @@ public class SystemDictionary {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("vmClasses");
 
-    // Note, vmStructs contains a field with the name "_klasses[static_cast<int>(VMClassID::Object_klass_knum)]"
+    // Note, vmStructs contains a field with the name "_klasses[static_cast<int>(vmClassID::Object_klass_knum)]"
     objectKlassField = type.getAddressField(VM_CLASS_AT("Object_klass"));
     classLoaderKlassField = type.getAddressField(VM_CLASS_AT("ClassLoader_klass"));
     stringKlassField = type.getAddressField(VM_CLASS_AT("String_klass"));
@@ -71,8 +71,8 @@ public class SystemDictionary {
   }
 
   private static String VM_CLASS_ID(String kname) {
-    // #define VM_CLASS_ID(kname)      VMClassID::_VM_CLASS_ENUM(kname)
-    return "VMClassID::" + _VM_CLASS_ENUM(kname);
+    // #define VM_CLASS_ID(kname)      vmClassID::_VM_CLASS_ENUM(kname)
+    return "vmClassID::" + _VM_CLASS_ENUM(kname);
   }
 
   private static String VM_CLASS_AT(String name) {

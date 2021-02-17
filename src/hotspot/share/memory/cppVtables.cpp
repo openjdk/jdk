@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/archiveUtils.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/cppVtables.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
@@ -100,7 +101,7 @@ template <class T>
 CppVtableInfo* CppVtableCloner<T>::allocate_and_initialize(const char* name) {
   int n = get_vtable_length(name);
   CppVtableInfo* info =
-      (CppVtableInfo*)MetaspaceShared::misc_code_dump_space()->allocate(CppVtableInfo::byte_size(n));
+      (CppVtableInfo*)ArchiveBuilder::current()->mc_region()->allocate(CppVtableInfo::byte_size(n));
   info->set_vtable_size(n);
   initialize(name, info);
   return info;
@@ -214,7 +215,7 @@ CppVtableInfo** CppVtables::_index = NULL;
 char* CppVtables::dumptime_init() {
   assert(DumpSharedSpaces, "must");
   size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(CppVtableInfo*);
-  _index = (CppVtableInfo**)MetaspaceShared::misc_code_dump_space()->allocate(vtptrs_bytes);
+  _index = (CppVtableInfo**)ArchiveBuilder::current()->mc_region()->allocate(vtptrs_bytes);
 
   CPP_VTABLE_TYPES_DO(ALLOCATE_AND_INITIALIZE_VTABLE);
 

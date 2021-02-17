@@ -24,7 +24,6 @@
  */
 #include "precompiled.hpp"
 #include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
 #include "oops/reflectionAccessorImplKlassHelper.hpp"

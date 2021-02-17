@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -78,7 +79,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   }
   jlong start = os::javaTimeNanos();
 
-  Array<Method*>* objectMethods = SystemDictionary::Object_klass()->methods();
+  Array<Method*>* objectMethods = vmClasses::Object_klass()->methods();
   // Initialize compile queue with a selected set of methods.
   int len = objectMethods->length();
   for (int i = 0; i < len; i++) {

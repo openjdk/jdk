@@ -28,10 +28,12 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/referenceProcessorStats.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "utilities/debug.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
@@ -65,6 +67,7 @@ ShenandoahGCSession::~ShenandoahGCSession() {
   _heap->heuristics()->record_cycle_end();
   _timer->register_gc_end();
   _heap->trace_heap_after_gc(_tracer);
+  _tracer->report_gc_reference_stats(_heap->ref_processor()->reference_process_stats());
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
   _heap->set_gc_cause(GCCause::_no_gc);
