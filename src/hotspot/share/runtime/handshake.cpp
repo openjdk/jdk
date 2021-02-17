@@ -286,7 +286,7 @@ void HandshakeOperation::prepare(JavaThread* current_target, Thread* executing_t
     return;
   }
   if (current_target != executing_thread) {
-    // Only when the target is not executing the handshake it self.
+    // Only when the target is not executing the handshake itself.
     StackWatermarkSet::start_processing(current_target, StackWatermarkKind::gc);
   }
   if (_requester != NULL && _requester != executing_thread && _requester->is_Java_thread()) {
