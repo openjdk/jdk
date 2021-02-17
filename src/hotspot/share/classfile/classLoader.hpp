@@ -366,7 +366,6 @@ class ClassLoader: AllStatic {
   static void  exit_with_path_failure(const char* error, const char* message);
   static char* skip_uri_protocol(char* source);
   static void  record_result(InstanceKlass* ik, const ClassFileStream* stream, TRAPS);
-  static char* get_native_path(char* path);
 #endif
 
   static char* lookup_vm_options();

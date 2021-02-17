@@ -1286,12 +1286,6 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
 }
 
 #if INCLUDE_CDS
-char* ClassLoader::get_native_path(char* path) {
-  char* native_path = os::strdup(path);
-  assert(native_path != NULL, "sanity");
-  return os::native_path(native_path);
-}
-
 char* ClassLoader::skip_uri_protocol(char* source) {
   if (strncmp(source, "file:", 5) == 0) {
     // file: protocol path could start with file:/ or file:///
@@ -1340,22 +1334,22 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
   PackageEntry* pkg_entry = ik->package();
 
   if (FileMapInfo::get_number_of_shared_paths() > 0) {
-    // save the path from the file: protocol or the module name from the jrt: protocol
-    // if no protocol prefix is found, path is the same as stream->source()
+    // Save the path from the file: protocol or the module name from the jrt: protocol
+    // if no protocol prefix is found, path is the same as stream->source(). This path
+    // must be valid since the class has been successfully parsed.
     char* path = skip_uri_protocol(src);
-    char* native_path = get_native_path(path);
-    // The path is from the ClassFileStream. Since a ClassFileStream has been created successfully in functions
-    // such as ClassLoader::load_class(), its source path must be valid.
-    assert(native_path != NULL, "sanity");
+    assert(path != NULL, "sanity");
     for (int i = 0; i < FileMapInfo::get_number_of_shared_paths(); i++) {
       SharedClassPathEntry* ent = FileMapInfo::shared_path(i);
-      char* native_path_table_entry = get_native_path((char*)ent->name());
       // A shared path has been validated during its creation in ClassLoader::create_class_path_entry(),
       // it must be valid here.
-      assert(native_path_table_entry != NULL, "sanity");
+      assert(ent->name() != NULL, "sanity");
       // If the path (from the class stream source) is the same as the shared
       // class or module path, then we have a match.
-      if (os::same_files(native_path_table_entry, native_path)) {
+      // src may come from the App/Platform class loaders, which would canonicalize
+      // the file name. We cannot use strcmp to check for equality against ent->name().
+      // We must use os::same_files (which is faster than canonicalizing ent->name()).
+      if (os::same_files(ent->name(), path)) {
         // NULL pkg_entry and pkg_entry in an unnamed module implies the class
         // is from the -cp or boot loader append path which consists of -Xbootclasspath/a
         // and jvmti appended entries.
@@ -1389,7 +1383,6 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
           }
         }
       }
-      os::free(native_path_table_entry);
       // for index 0 and the stream->source() is the modules image or has the jrt: protocol.
       // The class must be from the runtime modules image.
       if (i == 0 && (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:"))) {
@@ -1397,8 +1390,6 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
         break;
       }
     }
-
-    os::free(native_path);
 
     // No path entry found for this class. Must be a shared class loaded by the
     // user defined classloader.
