@@ -472,7 +472,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
 #ifdef AMD64
       if (sig == SIGFPE  &&
-          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV || info->si_code == FPE_FLTINV)) {
+          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV MACOS_ONLY(|| info->si_code == FPE_FLTINV))) {
         stub =
           SharedRuntime::
           continuation_for_implicit_exception(thread,
