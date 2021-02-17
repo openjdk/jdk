@@ -2311,6 +2311,20 @@ public final class System {
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }
+
+            public boolean isLatin1(String str) {
+                return str.isLatin1();
+            }
+
+            public void getBytes(String source, byte[] dst, int dstBegin, boolean allLatin1) {
+                var coder = allLatin1 ? String.LATIN1 : String.UTF16;
+                source.getBytes(dst, 0, dstBegin, coder, source.length());
+            }
+
+            public String newString(byte[] bytes, boolean isLatin1) {
+                var coder = isLatin1 ? String.LATIN1 : String.UTF16;
+                return new String(bytes, coder);
+            }
         });
     }
 }
