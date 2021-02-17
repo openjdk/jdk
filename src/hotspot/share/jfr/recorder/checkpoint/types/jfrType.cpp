@@ -42,6 +42,7 @@
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"

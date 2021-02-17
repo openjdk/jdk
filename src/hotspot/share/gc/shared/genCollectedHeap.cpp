@@ -60,6 +60,7 @@
 #include "memory/iterator.hpp"
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"

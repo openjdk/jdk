@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/annotations.hpp"
 #include "oops/instanceKlass.hpp"

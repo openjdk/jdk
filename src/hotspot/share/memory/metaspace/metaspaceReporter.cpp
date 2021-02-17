@@ -37,6 +37,7 @@
 #include "memory/metaspace/printCLDMetaspaceInfoClosure.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "runtime/os.hpp"
 
 namespace metaspace {

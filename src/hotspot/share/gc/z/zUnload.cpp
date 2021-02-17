@@ -34,7 +34,7 @@
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUnload.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "oops/access.inline.hpp"
 
 static const ZStatSubPhase ZSubPhaseConcurrentClassesUnlink("Concurrent Classes Unlink");

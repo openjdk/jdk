@@ -62,6 +62,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"

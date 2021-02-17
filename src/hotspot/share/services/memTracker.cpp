@@ -23,7 +23,7 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
-
+#include "memory/metaspaceUtils.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmThread.hpp"

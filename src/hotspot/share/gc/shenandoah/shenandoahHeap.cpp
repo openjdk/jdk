@@ -73,6 +73,7 @@
 
 #include "classfile/systemDictionary.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"

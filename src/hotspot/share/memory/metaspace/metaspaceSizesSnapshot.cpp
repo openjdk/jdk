@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
+#include "memory/metaspaceUtils.hpp"
 
 namespace metaspace {
 

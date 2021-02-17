@@ -33,6 +33,7 @@
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"

@@ -22,9 +22,9 @@
  *
  */
 #include "precompiled.hpp"
-
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/memTracker.hpp"

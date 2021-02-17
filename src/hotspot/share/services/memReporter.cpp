@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memReporter.hpp"
 #include "services/threadStackTracker.hpp"

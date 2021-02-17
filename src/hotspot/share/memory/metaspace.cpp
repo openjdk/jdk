@@ -43,6 +43,7 @@
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceTracer.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"

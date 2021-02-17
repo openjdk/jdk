@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/serial/cSpaceCounters.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 
 CSpaceCounters::CSpaceCounters(const char* name, int ordinal, size_t max_size,
