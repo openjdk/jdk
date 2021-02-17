@@ -1015,7 +1015,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <T> Collection<T> unmodifiableCollection(Collection<? extends T> c) {
-        if(c.getClass() == UnmodifiableCollection.class) {
+        if (c.getClass() == UnmodifiableCollection.class) {
             return (Collection<T>) c;
         }
         return new UnmodifiableCollection<>(c);
@@ -1126,7 +1126,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> unmodifiableSet(Set<? extends T> s) {
-        if(s.getClass() == UnmodifiableSet.class ||
+        if (s.getClass() == UnmodifiableSet.class ||
            s.getClass() == ImmutableCollections.Set12.class ||
            s.getClass() == ImmutableCollections.SetN.class) {
             return (Set<T>) s;
@@ -1164,7 +1164,7 @@ public class Collections {
      * @return an unmodifiable view of the specified sorted set.
      */
     public static <T> SortedSet<T> unmodifiableSortedSet(SortedSet<T> s) {
-        if(s.getClass() == UnmodifiableSortedSet.class) {
+        if (s.getClass() == UnmodifiableSortedSet.class) {
             return s;
         }
         return new UnmodifiableSortedSet<>(s);
@@ -1217,7 +1217,7 @@ public class Collections {
      * @since 1.8
      */
     public static <T> NavigableSet<T> unmodifiableNavigableSet(NavigableSet<T> s) {
-        if(s.getClass() == UnmodifiableNavigableSet.class) {
+        if (s.getClass() == UnmodifiableNavigableSet.class) {
             return s;
         }
         return new UnmodifiableNavigableSet<>(s);
@@ -1469,7 +1469,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <K,V> Map<K,V> unmodifiableMap(Map<? extends K, ? extends V> m) {
-        if(m.getClass() == UnmodifiableMap.class ||
+        if (m.getClass() == UnmodifiableMap.class ||
            m.getClass() == ImmutableCollections.Map1.class ||
            m.getClass() == ImmutableCollections.MapN.class) {
             return (Map<K,V>) m;
@@ -1833,7 +1833,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <K,V> SortedMap<K,V> unmodifiableSortedMap(SortedMap<K, ? extends V> m) {
-        if(m.getClass() == UnmodifiableSortedMap.class) {
+        if (m.getClass() == UnmodifiableSortedMap.class) {
             return (SortedMap<K,V>) m;
         }
         return new UnmodifiableSortedMap<>(m);
@@ -1883,7 +1883,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <K,V> NavigableMap<K,V> unmodifiableNavigableMap(NavigableMap<K, ? extends V> m) {
-        if(m.getClass() == UnmodifiableNavigableMap.class) {
+        if (m.getClass() == UnmodifiableNavigableMap.class) {
             return (NavigableMap<K,V>) m;
         }
         return new UnmodifiableNavigableMap<>(m);
