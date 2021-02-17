@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.SocketException;
 import java.security.Security;
 import java.util.Arrays;
 
@@ -63,6 +65,7 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
         this.clientProtocols = clientProtocols;
         this.exceptionExpected = exceptionExpected;
         this.selectedProtocol = selectedProtocol;
+        this.serverAddress = InetAddress.getLoopbackAddress();
     }
 
     @Override
@@ -126,23 +129,38 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             out.write(280);
         } catch (SSLHandshakeException e) {
             if (!exceptionExpected) {
-                System.out.println(
-                        "Client got UNEXPECTED SSLHandshakeException:");
-                e.printStackTrace(System.out);
-                System.out.println("** FAILURE **");
-                throw new RuntimeException(e);
+                failTest(e, "Client got UNEXPECTED SSLHandshakeException:");
             } else {
                 System.out.println(
                         "Client got expected SSLHandshakeException:");
                 e.printStackTrace(System.out);
                 System.out.println("** Success **");
             }
+        } catch (SSLException ssle) {
+            // The server side may have closed the socket.
+            if (isConnectionReset(ssle)) {
+                System.out.println("Client SSLException:");
+                ssle.printStackTrace(System.out);
+            } else {
+                failTest(ssle, "Client got UNEXPECTED SSLException:");
+            }
+
         } catch (Exception e) {
-            System.out.println("Client got UNEXPECTED Exception:");
-            e.printStackTrace(System.out);
-            System.out.println("** FAILURE **");
-            throw new RuntimeException(e);
+            failTest(e, "Client got UNEXPECTED Exception:");
         }
+    }
+
+    private boolean isConnectionReset(SSLException ssle) {
+        Throwable cause = ssle.getCause();
+        return cause instanceof SocketException
+                && "Connection reset".equals(cause.getMessage());
+    }
+
+    private void failTest(Exception e, String message) {
+        System.out.println(message);
+        e.printStackTrace(System.out);
+        System.out.println("** FAILURE **");
+        throw new RuntimeException(e);
     }
 
     public static void main(String[] args) throws Exception {

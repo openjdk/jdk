@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,23 +21,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_INLINE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_INLINE_HPP
+#import "RadiobuttonAccessibility.h"
+#import "JNIUtilities.h"
+#import "ThreadUtilities.h"
 
-#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+/*
+ * Implementation of the accessibility peer for the pushbutton role
+ */
+@implementation RadiobuttonAccessibility
 
-bool ShenandoahHeapRegionSet::is_in(size_t region_idx) const {
-  assert(region_idx < _heap->num_regions(), "Sanity");
-  return _set_map[region_idx] == 1;
+- (id) accessibilityValue
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    return [self accessibilityValueAttribute];
 }
 
-bool ShenandoahHeapRegionSet::is_in(ShenandoahHeapRegion* r) const {
-  return is_in(r->index());
-}
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_INLINE_HPP
+@end
