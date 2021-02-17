@@ -34,7 +34,9 @@ import java.util.concurrent.Future;
  * @bug 8260366
  * @summary Verify that concurrent classloading of sun.net.ext.ExtendedSocketOptions and
  * jdk.net.ExtendedSocketOptions doesn't lead to a deadlock
- * @run testng/othervm --add-exports=java.base/sun.net.ext=ALL-UNNAMED ExtendedSocketOptionsTest
+ * @modules java.base/sun.net.ext:open
+ *          jdk.net
+ * @run testng/othervm ExtendedSocketOptionsTest
  */
 public class ExtendedSocketOptionsTest {
 
