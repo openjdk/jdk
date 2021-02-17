@@ -9169,7 +9169,7 @@ instruct andI2L_rReg_imm65535(rRegL dst, rRegI src, immI_65535 mask)
 // Can skip int2long conversions after AND with small bitmask
 instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src, immI_bitmask mask, rRegI tmp, rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_bmi2() && VM_Version::is_intel());
+  predicate(VM_Version::supports_bmi2());
   ins_cost(125);
   effect(TEMP tmp, KILL cr);
   match(Set dst (ConvI2L (AndI src mask)));
