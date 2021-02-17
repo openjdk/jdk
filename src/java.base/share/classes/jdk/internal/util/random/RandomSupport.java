@@ -108,11 +108,11 @@ public class RandomSupport {
      */
 
     // IllegalArgumentException messages
-    static final String BAD_SIZE = "size must be non-negative";
-    static final String BAD_DISTANCE = "jump distance must be finite, positive, and an exact integer";
-    static final String BAD_BOUND = "bound must be positive";
-    static final String BAD_FLOATING_BOUND = "bound must be finite and positive";
-    static final String BAD_RANGE = "bound must be greater than origin";
+    public static final String BAD_SIZE = "size must be non-negative";
+    public static final String BAD_DISTANCE = "jump distance must be finite, positive, and an exact integer";
+    public static final String BAD_BOUND = "bound must be positive";
+    public static final String BAD_FLOATING_BOUND = "bound must be finite and positive";
+    public static final String BAD_RANGE = "bound must be greater than origin";
 
     /* ---------------- explicit constructor ---------------- */
 
@@ -134,21 +134,6 @@ public class RandomSupport {
     public static void checkStreamSize(long streamSize) {
         if (streamSize < 0L) {
             throw new IllegalArgumentException(BAD_SIZE);
-        }
-    }
-
-    /**
-     * Check a {@code double} proposed jump distance for validity.
-     *
-     * @param distance the proposed jump distance
-     *
-     * @throws IllegalArgumentException if {@code size} fails to be positive,
-     *         finite, and an exact integer
-     */
-    public static void checkJumpDistance(double distance) {
-        if (!(distance > 0.0 && distance < Float.POSITIVE_INFINITY
-                && distance == Math.floor(distance))) {
-            throw new IllegalArgumentException(BAD_DISTANCE);
         }
     }
 
@@ -1528,6 +1513,7 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
+        @Override
         public IntStream ints(long streamSize) {
             RandomSupport.checkStreamSize(streamSize);
             return intStream(makeIntsSpliterator(0L, streamSize, Integer.MAX_VALUE, 0));
@@ -1545,7 +1531,7 @@ public class RandomSupport {
          *
          * @return a stream of (pseudo)randomly chosen {@code int} values
          */
-
+        @Override
         public IntStream ints() {
             return intStream(makeIntsSpliterator(0L, Long.MAX_VALUE, Integer.MAX_VALUE, 0));
         }
@@ -1584,6 +1570,7 @@ public class RandomSupport {
          *                                  randomNumberOrigin} is greater than or equal to {@code
          *                                  randomNumberBound}
          */
+        @Override
         public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
             RandomSupport.checkStreamSize(streamSize);
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -1624,6 +1611,7 @@ public class RandomSupport {
          * @throws IllegalArgumentException if {@code randomNumberOrigin} is greater than or equal to
          *                                  {@code randomNumberBound}
          */
+        @Override
         public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
             return intStream(makeIntsSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
@@ -1643,6 +1631,7 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
+        @Override
         public LongStream longs(long streamSize) {
             RandomSupport.checkStreamSize(streamSize);
             return longStream(makeLongsSpliterator(0L, streamSize, Long.MAX_VALUE, 0L));
@@ -1660,6 +1649,7 @@ public class RandomSupport {
          * @implNote This method is implemented to be equivalent to {@code
          *         longs(Long.MAX_VALUE)}.
          */
+        @Override
         public LongStream longs() {
             return longStream(makeLongsSpliterator(0L, Long.MAX_VALUE, Long.MAX_VALUE, 0L));
         }
@@ -1703,6 +1693,7 @@ public class RandomSupport {
          *                                  randomNumberOrigin} is greater than or equal to {@code
          *                                  randomNumberBound}
          */
+        @Override
         public LongStream longs(long streamSize, long randomNumberOrigin,
                                 long randomNumberBound) {
             RandomSupport.checkStreamSize(streamSize);
@@ -1750,6 +1741,7 @@ public class RandomSupport {
          * @throws IllegalArgumentException if {@code randomNumberOrigin} is greater than or equal to
          *                                  {@code randomNumberBound}
          */
+        @Override
         public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
             return StreamSupport.longStream
@@ -1772,6 +1764,7 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
+        @Override
         public DoubleStream doubles(long streamSize) {
             RandomSupport.checkStreamSize(streamSize);
             return doubleStream(makeDoublesSpliterator(0L, streamSize, Double.MAX_VALUE, 0.0));
@@ -1790,6 +1783,7 @@ public class RandomSupport {
          *
          * @return a stream of (pseudo)random {@code double} values
          */
+        @Override
         public DoubleStream doubles() {
             return doubleStream(makeDoublesSpliterator(0L, Long.MAX_VALUE, Double.MAX_VALUE, 0.0));
         }
@@ -1822,6 +1816,7 @@ public class RandomSupport {
          * @throws IllegalArgumentException if {@code randomNumberOrigin} is greater than or equal to
          *                                  {@code randomNumberBound}
          */
+        @Override
         public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
             RandomSupport.checkStreamSize(streamSize);
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -1857,6 +1852,7 @@ public class RandomSupport {
          * @throws IllegalArgumentException if {@code randomNumberOrigin} is greater than or equal to
          *                                  {@code randomNumberBound}
          */
+        @Override
         public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
             return doubleStream(makeDoublesSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
@@ -1939,9 +1935,6 @@ public class RandomSupport {
         protected AbstractArbitrarilyJumpableGenerator() {
         }
 
-        // IllegalArgumentException messages
-        static final String BadLogDistance  = "logDistance must be non-negative";
-
         // Methods required by class AbstractSpliteratorGenerator
 
         public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
@@ -1998,6 +1991,7 @@ public class RandomSupport {
          * @implNote This method is implemented to be equivalent to {@code
          *         jumps(Long.MAX_VALUE)}.
          */
+        @Override
         public Stream<RandomGenerator> jumps() {
             return stream(makeJumpsSpliterator(0L, Long.MAX_VALUE, jumpDistance()));
         }
@@ -2015,6 +2009,7 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
+        @Override
         public Stream<RandomGenerator> jumps(long streamSize) {
             RandomSupport.checkStreamSize(streamSize);
             return stream(makeJumpsSpliterator(0L, streamSize, jumpDistance()));
@@ -2033,6 +2028,7 @@ public class RandomSupport {
          * @implNote This method is implemented to be equivalent to {@code
          *         jumps(Long.MAX_VALUE)}.
          */
+        @Override
         public Stream<ArbitrarilyJumpableGenerator> jumps(double distance) {
             return stream(makeArbitraryJumpsSpliterator(0L, Long.MAX_VALUE, distance));
         }
@@ -2051,6 +2047,7 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
+        @Override
         public Stream<ArbitrarilyJumpableGenerator> jumps(long streamSize, double distance) {
             RandomSupport.checkStreamSize(streamSize);
             return stream(makeArbitraryJumpsSpliterator(0L, streamSize, distance));
@@ -2063,6 +2060,7 @@ public class RandomSupport {
          * method
          * {@link LeapableGenerator#leapDistance() leapDistance}().
          */
+        @Override
         public void leap() {
             jump(leapDistance());
         }
@@ -2079,6 +2077,7 @@ public class RandomSupport {
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          */
+        @Override
         public Stream<JumpableGenerator> leaps() {
             return stream(makeLeapsSpliterator(0L, Long.MAX_VALUE, leapDistance()));
         }
@@ -2096,6 +2095,7 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
+        @Override
         public Stream<JumpableGenerator> leaps(long streamSize) {
             return stream(makeLeapsSpliterator(0L, streamSize, leapDistance()));
         }
@@ -2500,6 +2500,7 @@ public class RandomSupport {
          *
          * @implNote This method is implemented to be equivalent to {@code splits(Long.MAX_VALUE)}.
          */
+        @Override
         public Stream<SplittableGenerator> splits() {
             return this.splits(Long.MAX_VALUE, this);
         }
@@ -2518,6 +2519,7 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
+        @Override
         public Stream<SplittableGenerator> splits(long streamSize) {
             return this.splits(streamSize, this);
         }
@@ -2534,6 +2536,7 @@ public class RandomSupport {
          *
          * @implNote This method is implemented to be equivalent to {@code splits(Long.MAX_VALUE)}.
          */
+        @Override
         public Stream<SplittableGenerator> splits(SplittableGenerator source) {
             return this.splits(Long.MAX_VALUE, source);
         }
@@ -2551,6 +2554,7 @@ public class RandomSupport {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
+        @Override
         public Stream<SplittableGenerator> splits(long streamSize, SplittableGenerator source) {
             RandomSupport.checkStreamSize(streamSize);
             return StreamSupport.stream(makeSplitsSpliterator(0L, streamSize, source), false);
@@ -2893,6 +2897,7 @@ public class RandomSupport {
          *               initialize the state of the new ones.
          * @return the new {@code SplittableGenerator} instance
          */
+        @Override
         public SplittableGenerator split(SplittableGenerator source) {
             // It's a one-off: supply randomly chosen brine
             return this.split(source, source.nextLong());
@@ -3000,7 +3005,6 @@ public class RandomSupport {
                 }
             }
         }
-
     }
 
     /**

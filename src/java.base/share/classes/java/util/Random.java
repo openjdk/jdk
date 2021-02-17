@@ -26,7 +26,6 @@
 package java.util;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -37,6 +36,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
+import static jdk.internal.util.random.RandomSupport.*;
 
 import jdk.internal.misc.Unsafe;
 
@@ -102,11 +102,6 @@ public class Random extends AbstractSpliteratorGenerator
     private static final long mask = (1L << 48) - 1;
 
     private static final double DOUBLE_UNIT = 0x1.0p-53; // 1.0 / (1L << 53)
-
-    // IllegalArgumentException messages
-    static final String BadBound = "bound must be positive";
-    static final String BadRange = "bound must be greater than origin";
-    static final String BadSize  = "size must be non-negative";
 
     /**
      * Creates a new random number generator. This constructor sets
@@ -324,7 +319,7 @@ public class Random extends AbstractSpliteratorGenerator
     @Override
     public int nextInt(int bound) {
         if (bound <= 0)
-            throw new IllegalArgumentException(BadBound);
+            throw new IllegalArgumentException(BAD_BOUND);
         int r = next(31);
         int m = bound - 1;
         if ((bound & m) == 0)  // i.e., bound is a power of 2

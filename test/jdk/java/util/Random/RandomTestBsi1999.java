@@ -224,12 +224,12 @@ public class RandomTestBsi1999 {
 
     static int checkRunStats(int[] stats) {
        int runFailure = 0;
-           runFailure |= ((2267 <= stats[1]) || (stats[1] <= 2733)) ? 0 : 1;
-       runFailure |= ((1079 <= stats[2]) || (stats[2] <= 1421)) ? 0 : 1;
-       runFailure |= (( 502 <= stats[3]) || (stats[3] <=  748)) ? 0 : 1;
-       runFailure |= (( 223 <= stats[4]) || (stats[4] <=  402)) ? 0 : 1;
-       runFailure |= ((  90 <= stats[5]) || (stats[5] <=  223)) ? 0 : 1;
-       runFailure |= ((  90 <= stats[6]) || (stats[6] <=  223)) ? 0 : 1;
+       runFailure |= ((2267 <= stats[1]) && (stats[1] <= 2733)) ? 0 : 1;
+       runFailure |= ((1079 <= stats[2]) && (stats[2] <= 1421)) ? 0 : 1;
+       runFailure |= (( 502 <= stats[3]) && (stats[3] <=  748)) ? 0 : 1;
+       runFailure |= (( 223 <= stats[4]) && (stats[4] <=  402)) ? 0 : 1;
+       runFailure |= ((  90 <= stats[5]) && (stats[5] <=  223)) ? 0 : 1;
+       runFailure |= ((  90 <= stats[6]) && (stats[6] <=  223)) ? 0 : 1;
        return runFailure;
         }
 
