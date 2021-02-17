@@ -75,7 +75,7 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) 
   }
 
   // CodeCache is already processed in java roots
-  _process_strong_tasks.all_tasks_completed(n_workers(), G1RP_PS_CodeCache_oops_do);
+  _process_strong_tasks.all_tasks_claimed(G1RP_PS_CodeCache_oops_do);
 }
 
 // Adaptor to pass the closures to the strong roots in the VM.
@@ -106,9 +106,8 @@ void G1RootProcessor::process_strong_roots(OopClosure* oops,
 
   // CodeCache is already processed in java roots
   // refProcessor is not needed since we are inside a safe point
-  _process_strong_tasks.all_tasks_completed(n_workers(),
-                                            G1RP_PS_CodeCache_oops_do,
-                                            G1RP_PS_refProcessor_oops_do);
+  _process_strong_tasks.all_tasks_claimed(G1RP_PS_CodeCache_oops_do,
+                                          G1RP_PS_refProcessor_oops_do);
 }
 
 // Adaptor to pass the closures to all the roots in the VM.
@@ -144,7 +143,7 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
   process_code_cache_roots(blobs, NULL, 0);
 
   // refProcessor is not needed since we are inside a safe point
-  _process_strong_tasks.all_tasks_completed(n_workers(), G1RP_PS_refProcessor_oops_do);
+  _process_strong_tasks.all_tasks_claimed(G1RP_PS_refProcessor_oops_do);
 }
 
 void G1RootProcessor::process_java_roots(G1RootClosures* closures,
