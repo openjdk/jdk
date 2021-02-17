@@ -440,7 +440,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
             patchCPLFile(cpl);
 
-            preparePackageScripts(params);
+            if (!APP_STORE.fetchFrom(params)) {
+                preparePackageScripts(params);
+            }
+else Log.info("   ---   skipping preparePackageScripts");
 
             // build application package
             pb = new ProcessBuilder("/usr/bin/pkgbuild",
