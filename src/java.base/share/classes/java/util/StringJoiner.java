@@ -180,7 +180,9 @@ public final class StringJoiner {
 
     private String toString(String[] elts, int size, int addLen) {
         final String delimiter = this.delimiter;
-        var allLatin1 = isLatin1(elts);
+        var prefix = this.prefix;
+        var suffix = this.suffix;
+        var allLatin1 = isLatin1(delimiter) && isLatin1(prefix) && isLatin1(suffix) && isLatin1(elts);
         var totalLength = allLatin1 ? len + addLen : (len + addLen) * 2;
         var bytes = new byte[totalLength];
         int k = getBytes(prefix, bytes, 0, allLatin1);
