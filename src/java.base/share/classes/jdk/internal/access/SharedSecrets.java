@@ -88,7 +88,7 @@ public class SharedSecrets {
             try {
                 Class.forName("java.util.ImmutableCollections$Access", true, null);
                 access = javaUtilCollectionAccess;
-            } catch (ClassNotFoundException e) {};
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }
@@ -113,14 +113,7 @@ public class SharedSecrets {
     }
 
     public static JavaLangAccess getJavaLangAccess() {
-        var access = javaLangAccess;
-        if (access == null) {
-            try {
-                Class.forName("java.lang.System$JavaLangAccessImpl", true, null);
-                access = javaLangAccess;
-            } catch (ClassNotFoundException e) {}
-        }
-        return access;
+        return javaLangAccess;
     }
 
     public static void setJavaLangInvokeAccess(JavaLangInvokeAccess jlia) {
