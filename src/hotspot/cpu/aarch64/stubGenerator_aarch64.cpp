@@ -5649,10 +5649,14 @@ class StubGenerator: public StubCodeGenerator {
       exchange_val = c_rarg2;
     bool acquire, release;
     switch (order) {
-    case memory_order_relaxed:
-      acquire = false, release = false; break;
-    default:
-      acquire = true, release = true; break;
+      case memory_order_relaxed:
+        acquire = false;
+        release = false;
+        break;
+      default:
+        acquire = true;
+        release = true;
+        break;
     }
     __ mov(prev, compare_val);
     __ lse_cas(prev, exchange_val, ptr, size, acquire, release, /*not_pair*/true);
