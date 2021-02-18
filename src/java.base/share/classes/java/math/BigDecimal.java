@@ -4219,7 +4219,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * deserialize it).
      *
      * @param  s the stream being read.
-     * @throws IOException if an I/O error occurs
+     * @throws java.io.IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
@@ -4240,7 +4240,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     * Serialize this {@code BigDecimal} to the stream in question
     *
     * @param  s the stream to serialize to.
-    * @throws IOException if an I/O error occurs
+    * @throws java.io.IOException if an I/O error occurs
     */
     @java.io.Serial
    private void writeObject(java.io.ObjectOutputStream s)
