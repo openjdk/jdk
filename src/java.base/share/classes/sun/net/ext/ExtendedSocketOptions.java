@@ -168,12 +168,14 @@ public abstract class ExtendedSocketOptions {
     private static volatile ExtendedSocketOptions instance;
 
     public static ExtendedSocketOptions getInstance() {
-        if (instance != null) {
-            return instance;
+        ExtendedSocketOptions ext = instance;
+        if (ext != null) {
+            return ext;
         }
         synchronized (ExtendedSocketOptions.class) {
-            if (instance != null) {
-                return instance;
+            ext = instance;
+            if (ext != null) {
+                return ext;
             }
             try {
                 // If the class is present, it will be initialized which
