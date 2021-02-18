@@ -214,6 +214,8 @@ public class ServerCompilerScheduler implements Scheduler {
 
             this.graph = graph;
             buildUpGraph();
+            markCFGNodes();
+            connectOrphansAndWidows();
             buildBlocks();
             buildDominators();
             buildCommonDominators();
@@ -631,9 +633,11 @@ public class ServerCompilerScheduler implements Scheduler {
                 toNode.preds.add(fromNode);
             }
         }
+    }
 
-        // Mark nodes that form the CFG (same as shown by the 'Show control flow
-        // only' filter, plus the Root node).
+    // Mark nodes that form the CFG (same as shown by the 'Show control flow
+    // only' filter, plus the Root node).
+    public void markCFGNodes() {
         for (Node n : nodes) {
             String category = n.inputNode.getProperties().get("category");
             assert category != null :
@@ -656,11 +660,13 @@ public class ServerCompilerScheduler implements Scheduler {
                 n.isCFG = false;
             }
         }
+    }
 
-        // Fix ill-formed graphs with orphan/widow control-flow nodes by adding
-        // edges from/to the Root node. Such edges are assumed by different
-        // parts of the scheduling algorithm, but are not always present, e.g.
-        // for certain 'Safepoint' nodes in the 'Before RemoveUseless' phase.
+    // Fix ill-formed graphs with orphan/widow control-flow nodes by adding
+    // edges from/to the Root node. Such edges are assumed by different parts of
+    // the scheduling algorithm, but are not always present, e.g. for certain
+    // 'Safepoint' nodes in the 'Before RemoveUseless' phase.
+    public void connectOrphansAndWidows() {
         Node root = findRoot();
         if (root == null) {
             return;
