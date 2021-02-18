@@ -335,10 +335,10 @@ void NodeHash::check_no_speculative_types() {
   Node *sentinel_node = sentinel();
   for (uint i = 0; i < max; ++i) {
     Node *n = at(i);
-    if(n != NULL &&
-       n != sentinel_node &&
-       n->is_Type() &&
-       live_nodes.member(n)) {
+    if (n != NULL &&
+        n != sentinel_node &&
+        n->is_Type() &&
+        live_nodes.member(n)) {
       TypeNode* tn = n->as_Type();
       const Type* t = tn->type();
       const Type* t_no_spec = t->remove_speculative();
