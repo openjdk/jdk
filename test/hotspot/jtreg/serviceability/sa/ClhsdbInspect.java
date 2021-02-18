@@ -172,17 +172,19 @@ public class ClhsdbInspect {
             examineResult = lines[0].trim(); // examine leaves a trailing space
 
             // inspect the Class instance
+            String instanceOfString = "instance of Oop for java/lang/Class @ ";
+            String staticFieldString = "Oop for java/io/BufferedInputStream @";
             cmd = "inspect " + examineResult;
             cmds = List.of(cmd);
             expStrMap = new HashMap<>();
-            expStrMap.put(cmd, List.of("instance of Oop for java/lang/Class @ " + examineResult,
-                                       "in: Oop for java/io/BufferedInputStream @"));
+            expStrMap.put(cmd, List.of(instanceOfString + examineResult,
+                                       "in: " + staticFieldString));
             unexpStrMap = new HashMap<>();
-            // Make sure we don't see the address of the class twice and make sure we don't see
-            // "Oop for ..." twice for the "in" static field.
+            // Make sure we don't see the address of the class intance twice, and make sure
+            // we don't see "Oop for ..." twice for the "in" static field.
             unexpStrMap.put(cmd, List.of(
-                    "instance of Oop for java/lang/Class @ "  + examineResult + " @ " + examineResult,
-                    "in: Oop for java/io/BufferedInputStream .* Oop for java/io/BufferedInputStream"));
+                    instanceOfString  + examineResult + " @ " + examineResult,
+                    "in: " + staticFieldString + " .* " + staticFieldString));
             inspectCmdOutput = test.run(theApp.getPid(), cmds, expStrMap, unexpStrMap);
         } catch (SkippedException e) {
             throw e;
