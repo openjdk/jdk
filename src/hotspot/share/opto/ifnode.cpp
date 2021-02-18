@@ -908,18 +908,22 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
       if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
       }
-    } else {
-      assert(hi_test == BoolTest::le, "bad test");
+    } else if (hi_test == BoolTest::le) {
       if (lo_test == BoolTest::ge || lo_test == BoolTest::lt) {
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
         adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
         cond = BoolTest::lt;
-      } else {
-        assert(lo_test == BoolTest::gt || lo_test == BoolTest::le, "bad test");
+      } else if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
         cond = BoolTest::lt;
+      } else {
+        assert(false, "unhandled lo_test: %d", lo_test);
+        return false;
       }
+    } else {
+      assert(false, "unhandled hi_test: %d", hi_test);
+      return false;
     }
   } else if (lo_type != NULL && hi_type != NULL && lo_type->_lo > hi_type->_hi &&
              lo_type->_hi == max_jint && hi_type->_lo == min_jint && lo_test != BoolTest::ne) {
@@ -955,22 +959,29 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     if (lo_test == BoolTest::lt) {
       if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
         cond = BoolTest::ge;
-      } else {
-        assert(hi_test == BoolTest::le || hi_test == BoolTest::gt, "bad test");
+      } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
         adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
         cond = BoolTest::ge;
+      } else {
+        assert(false, "unhandled hi_test: %d", hi_test);
+        return false;
       }
     } else if (lo_test == BoolTest::le) {
       if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
         cond = BoolTest::ge;
-      } else {
-        assert(hi_test == BoolTest::le || hi_test == BoolTest::gt, "bad test");
+      } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
         cond = BoolTest::ge;
+      } else {
+        assert(false, "unhandled hi_test: %d", hi_test);
+        return false;
       }
+    } else {
+      assert(false, "unhandled lo_test: %d", lo_test);
+      return false;
     }
   } else {
     const TypeInt* failtype = filtered_int_type(igvn, n, proj);
