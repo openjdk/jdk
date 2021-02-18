@@ -94,7 +94,6 @@
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
@@ -227,15 +226,6 @@ void trace_class_resolution(Klass* to_class) {
     CLEAR_PENDING_EXCEPTION;
   }
 }
-
-
-// Interface version /////////////////////////////////////////////////////////////////////
-
-
-JVM_LEAF(jint, JVM_GetInterfaceVersion())
-  return JVM_INTERFACE_VERSION;
-JVM_END
-
 
 // java.lang.System //////////////////////////////////////////////////////////////////////
 
@@ -3297,10 +3287,14 @@ JVM_END
 
 JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
   for (vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
-    vfst.skip_reflection_related_frames(); // Only needed for 1.4 reflection
-    oop loader = vfst.method()->method_holder()->class_loader();
+    InstanceKlass* ik = vfst.method()->method_holder();
+    oop loader = ik->class_loader();
     if (loader != NULL && !SystemDictionary::is_platform_class_loader(loader)) {
-      return JNIHandles::make_local(THREAD, loader);
+      // Skip reflection related frames
+      if (!ik->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass()) &&
+          !ik->is_subclass_of(vmClasses::reflect_ConstructorAccessorImpl_klass())) {
+        return JNIHandles::make_local(THREAD, loader);
+      }
     }
   }
   return NULL;

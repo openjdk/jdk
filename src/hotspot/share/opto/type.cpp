@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1110,6 +1110,73 @@ bool Type::empty(void) const {
 #ifndef PRODUCT
 void Type::dump_stats() {
   tty->print("Types made: %d\n", type_dict()->Size());
+}
+#endif
+
+//------------------------------category---------------------------------------
+#ifndef PRODUCT
+Type::Category Type::category() const {
+  const TypeTuple* tuple;
+  switch (base()) {
+    case Type::Int:
+    case Type::Long:
+    case Type::Half:
+    case Type::NarrowOop:
+    case Type::NarrowKlass:
+    case Type::Array:
+    case Type::VectorA:
+    case Type::VectorS:
+    case Type::VectorD:
+    case Type::VectorX:
+    case Type::VectorY:
+    case Type::VectorZ:
+    case Type::AnyPtr:
+    case Type::RawPtr:
+    case Type::OopPtr:
+    case Type::InstPtr:
+    case Type::AryPtr:
+    case Type::MetadataPtr:
+    case Type::KlassPtr:
+    case Type::Function:
+    case Type::Return_Address:
+    case Type::FloatTop:
+    case Type::FloatCon:
+    case Type::FloatBot:
+    case Type::DoubleTop:
+    case Type::DoubleCon:
+    case Type::DoubleBot:
+      return Category::Data;
+    case Type::Memory:
+      return Category::Memory;
+    case Type::Control:
+      return Category::Control;
+    case Type::Top:
+    case Type::Abio:
+    case Type::Bottom:
+      return Category::Other;
+    case Type::Bad:
+    case Type::lastype:
+      return Category::Undef;
+    case Type::Tuple:
+      // Recursive case. Return CatMixed if the tuple contains types of
+      // different categories (e.g. CallStaticJavaNode's type), or the specific
+      // category if all types are of the same category (e.g. IfNode's type).
+      tuple = is_tuple();
+      if (tuple->cnt() == 0) {
+        return Category::Undef;
+      } else {
+        Category first = tuple->field_at(0)->category();
+        for (uint i = 1; i < tuple->cnt(); i++) {
+          if (tuple->field_at(i)->category() != first) {
+            return Category::Mixed;
+          }
+        }
+        return first;
+      }
+    default:
+      assert(false, "unmatched base type: all base types must be categorized");
+  }
+  return Category::Undef;
 }
 #endif
 

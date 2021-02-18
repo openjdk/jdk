@@ -39,6 +39,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/nonJavaThread.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -242,11 +243,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   {
     RefProcTotalPhaseTimesTracker tt(RefPhase4, phase_times, this);
     process_phantom_refs(is_alive, keep_alive, complete_gc, task_executor, phase_times);
-  }
-
-  if (task_executor != NULL) {
-    // Record the work done by the parallel workers.
-    task_executor->set_single_threaded_mode();
   }
 
   phase_times->set_total_time_ms((os::elapsedTime() - start_time) * 1000);

@@ -66,6 +66,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/memoryService.hpp"
@@ -1227,7 +1228,6 @@ Method* LatestMethodCache::get_method() {
   return m;
 }
 
-
 #ifdef ASSERT
 // Release dummy object(s) at bottom of heap
 bool Universe::release_fullgc_alot_dummy() {
@@ -1244,6 +1244,14 @@ bool Universe::release_fullgc_alot_dummy() {
     fullgc_alot_dummy_array->obj_at_put(_fullgc_alot_dummy_next++, NULL);
   }
   return true;
+}
+
+bool Universe::is_gc_active() {
+  return heap()->is_gc_active();
+}
+
+bool Universe::is_in_heap(const void* p) {
+  return heap()->is_in(p);
 }
 
 #endif // ASSERT

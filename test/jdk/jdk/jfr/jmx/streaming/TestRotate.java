@@ -44,7 +44,7 @@ import jdk.management.jfr.RemoteRecordingStream;
  * @summary Tests that streaming can work over chunk rotations
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.jmx.streaming.TestRotate
+ * @run main/othervm -Xlog:jfr=debug jdk.jfr.jmx.streaming.TestRotate
  */
 public class TestRotate {
 

@@ -217,9 +217,7 @@
  * <th scope="row" style="font-weight:normal" id="ISSTANDALONE">isStandalone</th>
  * <td>indicates that the serializer should treat the output as a
  * standalone document. The property can be used to ensure a newline is written
- * after the XML declaration when the property
- * {@link org.w3c.dom.ls.LSSerializer#getDomConfig() format-pretty-print} is set
- * to true. Unlike the property
+ * after the XML declaration. Unlike the property
  * {@link org.w3c.dom.ls.LSSerializer#getDomConfig() xml-declaration}, this property
  * does not have an effect on whether an XML declaration should be written out.
  * </td>

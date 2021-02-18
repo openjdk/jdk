@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,15 +69,15 @@ public class getvalues001 {
 
     // names and expected values of the tested fields
     static final Object fields [][] = {
-                    { "booleanValue", "boolean",  new Boolean(true),           "own"},
-                    { "byteValue",    "byte",     new Byte((byte)0x0F),        "own"},
-                    { "charValue",    "char",     new Character('Z'),          "own"},
-                    { "intValue",     "int",      new Integer(100),            "own"},
-                    { "shortValue",   "short",    new Short((short)10),        "own"},
-                    { "longValue",    "long",     new Long((long)1000000),     "own"},
-                    { "floatValue",   "float",    new Float((float)3.14),      "own"},
-                    { "doubleValue",  "double",   new Double((double)2.8e-12), "own"},
-                    { "objectValue",  "objectID", new Long((long)0),           "own"},
+                    { "booleanValue", "boolean",  Boolean.valueOf(true),           "own"},
+                    { "byteValue",    "byte",     Byte.valueOf((byte)0x0F),        "own"},
+                    { "charValue",    "char",     Character.valueOf('Z'),          "own"},
+                    { "intValue",     "int",      Integer.valueOf(100),            "own"},
+                    { "shortValue",   "short",    Short.valueOf((short)10),        "own"},
+                    { "longValue",    "long",     Long.valueOf((long)1000000),     "own"},
+                    { "floatValue",   "float",    Float.valueOf((float)3.14),      "own"},
+                    { "doubleValue",  "double",   Double.valueOf((double)2.8e-12), "own"},
+                    { "objectValue",  "objectID", Long.valueOf((long)0),           "own"},
 
                 };
     static final int FIELDS_COUNT = fields.length;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -815,8 +815,8 @@ public final class KeychainStore extends KeyStoreSpi {
      * Callback method from _scanKeychain.  If an identity is found, this method will be called to create Java certificate
      * and private key objects from the keychain data.
      */
-    private void createKeyEntry(String alias, long creationDate, long secKeyRef, long[] secCertificateRefs, byte[][] rawCertData)
-        throws IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
+    private void createKeyEntry(String alias, long creationDate, long secKeyRef,
+                                long[] secCertificateRefs, byte[][] rawCertData) {
         KeyEntry ke = new KeyEntry();
 
         // First, store off the private key information.  This is the easy part.

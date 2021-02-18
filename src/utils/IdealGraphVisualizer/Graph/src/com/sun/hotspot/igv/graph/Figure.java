@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,6 +274,13 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     public String[] getLines() {
         if (lines == null) {
             updateLines();
+            // Set the "label" property of each input node, so that by default
+            // search is done on the node label (without line breaks). See also
+            // class NodeQuickSearch in the View module.
+            for (InputNode n : getSource().getSourceNodes()) {
+                String label = resolveString(diagram.getNodeText(), n.getProperties());
+                n.getProperties().setProperty("label", label);
+            }
         }
         return lines;
     }

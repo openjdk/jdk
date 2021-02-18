@@ -1429,7 +1429,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
         // If n is a load, and the late control is the same as the current
         // control, then the cloning of n is a pointless exercise, because
         // GVN will ensure that we end up where we started.
-        if (!n->is_Load() || late_load_ctrl != n_ctrl) {
+        if (!n->is_Load() || (late_load_ctrl != n_ctrl && is_safe_load_ctrl(late_load_ctrl))) {
           Node* outer_loop_clone = NULL;
           for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin; ) {
             Node *u = n->last_out(j); // Clone private computation per use
@@ -1532,6 +1532,13 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       get_loop(get_ctrl(n)) == get_loop(get_ctrl(n->in(1))) ) {
     _igvn.replace_node( n, n->in(1) );
   }
+}
+
+bool PhaseIdealLoop::is_safe_load_ctrl(Node* ctrl) {
+  if (ctrl->is_Proj() && ctrl->in(0)->is_Call() && ctrl->has_out_with(Op_Catch)) {
+    return false;
+  }
+  return true;
 }
 
 //------------------------------split_if_with_blocks---------------------------

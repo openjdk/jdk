@@ -32,7 +32,6 @@
 
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "BufImgSurfaceData.h"
 
