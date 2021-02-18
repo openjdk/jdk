@@ -589,8 +589,11 @@ char* fileStream::readln(char *data, int count ) {
   char * ret = NULL;
   if (_file != NULL) {
     ret = ::fgets(data, count, _file);
-    //Get rid of annoying \n char
-    data[::strlen(data)-1] = '\0';
+    // Get rid of annoying \n char only if it presents, it works for Posix
+    // and Windows since the last character of these systems is always '\n'
+    if (data[::strlen(data)-1] == '\n') {
+      data[::strlen(data)-1] = '\0';
+    }
   }
   return ret;
 }
