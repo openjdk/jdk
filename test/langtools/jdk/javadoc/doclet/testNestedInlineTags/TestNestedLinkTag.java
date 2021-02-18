@@ -78,7 +78,7 @@ public class TestNestedLinkTag extends JavadocTester {
         }
     }
 
-    void testLinkLinkCombo(Path base, TagKind outer, TagKind inner, DocLintKind dl) throws IOException {
+    void testLinkLinkCombo(Path base, TagKind outer, TagKind inner, DocLintKind dlk) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 """
@@ -97,7 +97,7 @@ public class TestNestedLinkTag extends JavadocTester {
 
         javadoc("-d", base.resolve("api").toString(),
                 "-sourcepath", src.toString(),
-                dl.option,
+                dlk.option,
                 "p");
         checkExit(Exit.OK);
 
@@ -106,6 +106,8 @@ public class TestNestedLinkTag extends JavadocTester {
                 "ABC <a href=\"#m2()\"");
         checkOutput("p/C.html", true,
                 "ABC DEF GHI");
+        checkOutput(Output.OUT, dlk == DocLintKind.DOCLINT,
+                "C.java:2: warning: nested tag: @link");
     }
 
     @Test

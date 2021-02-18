@@ -81,6 +81,8 @@ public class TestNestedSummaryTag extends JavadocTester {
 
         checkOutput("p/C.html", false,
                 "{@summary");
+        checkOutput(Output.OUT, dlk == DocLintKind.DOCLINT,
+                "C.java:2: warning: nested tag: @summary");
     }
 
     @Test

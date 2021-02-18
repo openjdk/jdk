@@ -162,14 +162,7 @@ public class TagletWriterImpl extends TagletWriter {
      *                        of a {@code {@summary ...}} tag, and {@code false} otherwise
      */
     public TagletWriterImpl(HtmlDocletWriter htmlWriter, boolean isFirstSentence, boolean inSummary) {
-        super(isFirstSentence);
-        this.htmlWriter = htmlWriter;
-        this.context = new Context(isFirstSentence, inSummary);
-        configuration = htmlWriter.configuration;
-        options = configuration.getOptions();
-        utils = configuration.utils;
-        resources = configuration.getDocResources();
-        contents = configuration.getContents();
+        this(htmlWriter, new Context(isFirstSentence, inSummary));
     }
 
     /**

@@ -1044,17 +1044,13 @@ public class HtmlDocletWriter {
                         label = ref.subList(1, ref.size());
                         break;
                     }
-                    default -> {
-                        assert false;
-                        return HtmlTree.EMPTY;
-                    }
+                    default ->
+                        throw new IllegalStateException(ref.get(0).getKind().toString());
                 }
             }
 
-            default -> {
-                assert false;
-                return HtmlTree.EMPTY;
-            }
+            default ->
+                throw new IllegalStateException(kind.toString());
         }
 
         boolean isLinkPlain = kind == LINK_PLAIN;
@@ -1600,8 +1596,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitSee(SeeTree node, Content c) {
-                    // we need to pass the DocTreeImpl here, so ignore node
-                    result.add(seeTagToContent(element, tag, context));
+                    result.add(seeTagToContent(element, node, context));
                     return false;
                 }
 
