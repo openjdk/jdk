@@ -369,8 +369,8 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
     // Special processing for handling UNREGISTERED shared classes.
-    InstanceKlass* k = SystemDictionaryShared::dump_time_resolve_super_or_fail(class_name,
-        super_name, class_loader, protection_domain, is_superclass, CHECK_NULL);
+    InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
+                           super_name, is_superclass);
     if (k) {
       return k;
     }
