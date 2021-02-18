@@ -49,13 +49,13 @@
 #include "utilities/events.hpp"
 
 // Breakpoint support
-class ShenandoahBreakpointScope : public StackObj {
+class ShenandoahBreakpointGCScope : public StackObj {
 public:
-  ShenandoahBreakpointScope() {
+  ShenandoahBreakpointGCScope() {
     ShenandoahBreakpoint::at_before_gc();
   }
 
-  ~ShenandoahBreakpointScope() {
+  ~ShenandoahBreakpointGCScope() {
     ShenandoahBreakpoint::at_after_gc();
   }
 };
@@ -89,7 +89,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   if (cause == GCCause::_wb_breakpoint) {
     ShenandoahBreakpoint::start_gc();
   }
-  ShenandoahBreakpointScope breakpoint_scope;
+  ShenandoahBreakpointGCScope breakpoint_gc_scope;
 
   // Reset for upcoming marking
   entry_reset();
@@ -98,7 +98,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   vmop_entry_init_mark();
 
   {
-    ShenandoahBreakpointMarkScope conc_mark_scope;
+    ShenandoahBreakpointMarkScope breakpoint_mark_scope;
     // Concurrent mark roots
     entry_mark_roots();
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_outside_cycle)) return false;
