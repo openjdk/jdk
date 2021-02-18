@@ -30,6 +30,7 @@
 package java.math;
 
 import static java.math.BigInteger.LONG_MASK;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -4219,12 +4220,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * deserialize it).
      *
      * @param  s the stream being read.
-     * @throws java.io.IOException if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
+        throws IOException, ClassNotFoundException {
         // Read in all fields
         s.defaultReadObject();
         // validate possibly bad fields
@@ -4240,11 +4241,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     * Serialize this {@code BigDecimal} to the stream in question
     *
     * @param  s the stream to serialize to.
-    * @throws java.io.IOException if an I/O error occurs
+    * @throws IOException if an I/O error occurs
     */
     @java.io.Serial
    private void writeObject(java.io.ObjectOutputStream s)
-       throws java.io.IOException {
+       throws IOException {
        // Must inflate to maintain compatible serial form.
        if (this.intVal == null)
            UnsafeHolder.setIntValVolatile(this, BigInteger.valueOf(this.intCompact));
