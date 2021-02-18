@@ -769,10 +769,6 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
 #endif
 }
 
-bool ReferenceProcessor::is_mt_processing_set_up(AbstractRefProcTaskExecutor* task_executor) const {
-  return task_executor != NULL && _processing_is_mt;
-}
-
 void ReferenceProcessor::process_soft_ref_reconsider(BoolObjectClosure* is_alive,
                                                      OopClosure* keep_alive,
                                                      VoidClosure* complete_gc,
@@ -782,7 +778,6 @@ void ReferenceProcessor::process_soft_ref_reconsider(BoolObjectClosure* is_alive
 
   size_t const num_soft_refs = total_count(_discoveredSoftRefs);
   phase_times->set_ref_discovered(REF_SOFT, num_soft_refs);
-
   phase_times->set_processing_is_mt(_processing_is_mt);
 
   if (num_soft_refs == 0) {

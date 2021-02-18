@@ -63,6 +63,14 @@ vframe::vframe(const frame* fr, JavaThread* thread)
   _fr = *fr;
 }
 
+vframe* vframe::new_vframe(StackFrameStream& fst, JavaThread* thread) {
+  if (fst.current()->is_runtime_frame()) {
+    fst.next();
+  }
+  guarantee(!fst.is_done(), "missing caller");
+  return new_vframe(fst.current(), fst.register_map(), thread);
+}
+
 vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThread* thread) {
   // Interpreter frame
   if (f->is_interpreted_frame()) {
