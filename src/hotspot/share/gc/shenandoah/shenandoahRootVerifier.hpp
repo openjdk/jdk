@@ -44,7 +44,6 @@ public:
   // Used to seed ShenandoahVerifier, do not honor root type filter
   static void roots_do(OopClosure* cl);
   static void strong_roots_do(OopClosure* cl);
-  static void oops_do(OopClosure* oops);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP

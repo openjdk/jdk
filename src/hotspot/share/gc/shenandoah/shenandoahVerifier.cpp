@@ -953,10 +953,10 @@ public:
 
 void ShenandoahVerifier::verify_roots_in_to_space() {
   ShenandoahVerifyInToSpaceClosure cl;
-  ShenandoahRootVerifier::oops_do(&cl);
+  ShenandoahRootVerifier::roots_do(&cl);
 }
 
 void ShenandoahVerifier::verify_roots_no_forwarded() {
   ShenandoahVerifyNoForwared cl;
-  ShenandoahRootVerifier::oops_do(&cl);
+  ShenandoahRootVerifier::roots_do(&cl);
 }

@@ -65,6 +65,10 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::cld_do(&clds);
 
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahStringDedup::oops_do_slow(oops);
+  }
+
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     OopStorageSet::storage(id)->oops_do(oops);
   }
@@ -72,49 +76,26 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
-  Threads::possibly_parallel_oops_do(true, oops, &blobs);
+  Threads::possibly_parallel_oops_do(true, oops, NULL);
 }
 
 void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
-  CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
-  ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
+  ClassLoaderDataGraph::always_strong_cld_do(&clds);
+
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahStringDedup::oops_do_slow(oops);
+  }
 
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     OopStorageSet::storage(id)->oops_do(oops);
   }
-
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
-  Threads::possibly_parallel_oops_do(true, oops, &blobs);
-}
-
-void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
-  ShenandoahGCStateResetter resetter;
-  shenandoah_assert_safepoint();
-
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-  CodeCache::blobs_do(&blobs);
-
-  CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
-  ClassLoaderDataGraph::cld_do(&clds);
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    shenandoah_assert_safepoint();
-    ShenandoahStringDedup::oops_do_slow(oops);
-  }
-
-  for (auto id : EnumRange<OopStorageSet::Id>()) {
-    OopStorageSet::storage(id)->oops_do(oops);
-  }
-
-  // Do thread roots the last. This allows verification code to find
-  // any broken objects from those special roots first, not the accidental
-  // dangling reference from the thread root.
-  Threads::possibly_parallel_oops_do(false, oops, &blobs);
+  Threads::possibly_parallel_oops_do(true, oops, &blobs);
 }
