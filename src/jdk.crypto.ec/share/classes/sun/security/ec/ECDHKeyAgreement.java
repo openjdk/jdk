@@ -25,21 +25,34 @@
 
 package sun.security.ec;
 
-import java.math.*;
-import java.security.*;
-import java.security.interfaces.*;
-import java.security.spec.*;
-import java.util.Optional;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
-
+import sun.security.ec.point.AffinePoint;
+import sun.security.ec.point.Point;
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
-import sun.security.util.ECUtil;
 import sun.security.util.NamedCurve;
-import sun.security.util.math.*;
-import sun.security.ec.point.*;
+import sun.security.util.math.ImmutableIntegerModuloP;
+import sun.security.util.math.IntegerFieldModuloP;
+import sun.security.util.math.MutableIntegerModuloP;
+import sun.security.util.math.SmallValue;
+
+import javax.crypto.KeyAgreementSpi;
+import javax.crypto.SecretKey;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.SecretKeySpec;
+import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.ProviderException;
+import java.security.SecureRandom;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.EllipticCurve;
+import java.util.Optional;
 
 /**
  * KeyAgreement implementation for ECDH.
@@ -127,7 +140,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     }
 
     /*
-     * Check whether a public key is valid. Throw ProviderException
+     * Check whether a public key is valid. Throw exception
      * if it is not valid or could not be validated.
      */
     private static void validate(ECOperations ops, ECPublicKey key)
@@ -236,8 +249,6 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         }
         byte[] sArr = privImpl.getArrayS();
 
-        // to match the native implementation, validate the public key here
-        // and throw ProviderException if it is invalid
         validate(ops, pubKey);
 
         IntegerFieldModuloP field = ops.getField();
