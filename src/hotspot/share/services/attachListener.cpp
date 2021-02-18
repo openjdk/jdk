@@ -281,13 +281,13 @@ static int parse_args(char* line, const char** args, uint args_count, const char
   return count;
 }
 
-// Implementation of "dumpheap" command with extra options.
+// Implementation of "dumpheapext" command.
 // See also: HeapDumpDCmd class
 //
 // Input arguments :-
 //   arg0: Name of the dump file
 //   arg1: "-live" or "-all"
-//   arg2: more_args: "compress_level,noparallel"
+//   arg2: more_args: "compress_level,parallel"
 jint dump_heap_ext(AttachOperation* op, outputStream* out) {
   // Possible argument number for op->arg(2).
   const int MAX_EXTRA_ARGS_COUNT = 2;
@@ -315,7 +315,7 @@ jint dump_heap_ext(AttachOperation* op, outputStream* out) {
   }
 
   // Then parse arguments from op->arg(2).
-  // Format: "compress_level,noparallel".
+  // Format: "compress_level,parallel".
   if (arg_str != NULL && arg_str[0] != '\0') {
     int args_len = strlen(arg_str);
     char* args_line = NEW_C_HEAP_ARRAY(char, args_len + 1, mtInternal);
@@ -333,11 +333,16 @@ jint dump_heap_ext(AttachOperation* op, outputStream* out) {
         return JNI_ERR;
       }
     }
-    // noparallel
+    // parallel
     uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
     const char* par_str = extra_args[1];
-    if (par_str != NULL && par_str[0] != '\0' && (strcmp("true", par_str) == 0)) {
-      parallel_thread_num = 1;
+    if (par_str != NULL && par_str[0] != '\0') {
+      uintx num;
+      if (!Arguments::parse_uintx(par_str, &num, 0)) {
+        out->print_cr("Invalid parallel thread number: [%s]", par_str);
+        return JNI_ERR;
+      }
+      parallel_thread_num = num == 0 ? parallel_thread_num : (uint)num;
     }
 
     // Request a full GC before heap dump if live_objects_only = true
