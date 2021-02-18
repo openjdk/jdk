@@ -27,7 +27,7 @@ package gc.g1;
  * @test TestHumongousRemSetsMatch
  * @bug 8205426
  * @summary Test to make sure that humongous object remset states are in sync
- * @requires vm.gc.G1
+ * @requires vm.gc.G1 & os.maxMemory >= 2G
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

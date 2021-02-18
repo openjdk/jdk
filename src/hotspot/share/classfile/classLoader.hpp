@@ -222,11 +222,12 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static ClassPathEntry* _last_app_classpath_entry;)
   CDS_ONLY(static ClassPathEntry* _module_path_entries;)
   CDS_ONLY(static ClassPathEntry* _last_module_path_entry;)
-  CDS_ONLY(static void setup_app_search_path(const char* class_path);)
+  CDS_ONLY(static void setup_app_search_path(const char* class_path, TRAPS);)
   CDS_ONLY(static void setup_module_search_path(const char* path, TRAPS);)
   static void add_to_app_classpath_entries(const char* path,
                                            ClassPathEntry* entry,
-                                           bool check_for_duplicates);
+                                           bool check_for_duplicates,
+                                           TRAPS);
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
                                            ClassPathEntry* entry);)
  public:
@@ -240,8 +241,8 @@ class ClassLoader: AllStatic {
   //   - setup the boot loader's system class path
   //   - setup the boot loader's patch mod entries, if present
   //   - create the ModuleEntry for java.base
-  static void setup_bootstrap_search_path();
-  static void setup_boot_search_path(const char *class_path);
+  static void setup_bootstrap_search_path(TRAPS);
+  static void setup_bootstrap_search_path_impl(const char *class_path, TRAPS);
   static void setup_patch_mod_entries();
   static void create_javabase();
 
@@ -272,8 +273,7 @@ class ClassLoader: AllStatic {
                                            bool check_for_duplicates,
                                            bool is_boot_append,
                                            bool from_class_path_attr,
-                                           bool throw_exception=true);
-  CDS_ONLY(static void update_module_path_entry_list(const char *path, TRAPS);)
+                                           TRAPS);
   static void print_bootclasspath();
 
   // Timing
@@ -335,9 +335,9 @@ class ClassLoader: AllStatic {
   static objArrayOop get_system_packages(TRAPS);
 
   // Initialization
-  static void initialize();
+  static void initialize(TRAPS);
   static void classLoader_init2(TRAPS);
-  CDS_ONLY(static void initialize_shared_path();)
+  CDS_ONLY(static void initialize_shared_path(TRAPS);)
   CDS_ONLY(static void initialize_module_path(TRAPS);)
 
   static int compute_Object_vtable();

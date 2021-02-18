@@ -192,5 +192,5 @@ void CardTableBarrierSet::on_thread_detach(Thread* thread) {
 }
 
 bool CardTableBarrierSet::card_mark_must_follow_store() const {
- return _card_table->scanned_concurrently();
+  return false;
 }

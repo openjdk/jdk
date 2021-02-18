@@ -312,7 +312,7 @@ char* getJvmLauncherLibPath(void) {
     } else {
         if (PACKAGE_TYPE_RPM == pkg->type) {
             pkgQueryCmd = "rpm -ql '%s' 2>/dev/null";
-        } else if (PACKAGE_TYPE_RPM == pkg->type) {
+        } else if (PACKAGE_TYPE_DEB == pkg->type) {
             pkgQueryCmd = "dpkg -L '%s' 2>/dev/null";
         } else {
             /* Should never happen */
@@ -324,6 +324,7 @@ char* getJvmLauncherLibPath(void) {
                                                         &launcherLibPath);
         if (popenStatus) {
             free(launcherLibPath);
+            launcherLibPath = NULL;
             goto cleanup;
         }
     }

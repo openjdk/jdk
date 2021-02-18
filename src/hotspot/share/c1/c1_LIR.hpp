@@ -231,8 +231,8 @@ class LIR_OprDesc: public CompilationResourceObj {
     , is_xmm_bits    = 1
     , last_use_bits  = 1
     , is_fpu_stack_offset_bits = 1        // used in assertion checking on x86 for FPU stack slot allocation
-    , non_data_bits  = kind_bits + type_bits + size_bits + destroys_bits + last_use_bits +
-                       is_fpu_stack_offset_bits + virtual_bits + is_xmm_bits
+    , non_data_bits  = pointer_bits + kind_bits + type_bits + size_bits + destroys_bits + virtual_bits
+                       + is_xmm_bits + last_use_bits + is_fpu_stack_offset_bits
     , data_bits      = BitsPerInt - non_data_bits
     , reg_bits       = data_bits / 2      // for two registers in one value encoding
   };
@@ -649,6 +649,11 @@ class LIR_OprFact: public AllStatic {
 #endif // X86
 
   static LIR_Opr virtual_register(int index, BasicType type) {
+    if (index > LIR_OprDesc::vreg_max) {
+      // Running out of virtual registers. Caller should bailout.
+      return illegalOpr;
+    }
+
     LIR_Opr res;
     switch (type) {
       case T_OBJECT: // fall through

@@ -3361,6 +3361,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #if INCLUDE_CDS
   // capture the module path info from the ModuleEntryTable
   ClassLoader::initialize_module_path(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
+    vm_exit_during_initialization("ClassLoader::initialize_module_path() failed unexpectedly");
+  }
 #endif
 
 #if INCLUDE_JVMCI
