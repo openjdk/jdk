@@ -159,12 +159,12 @@ lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t 
    return add_lib_info_fd(ph, libname, -1, base);
 }
 
-static inline uintptr_t align_down(uintptr_t ptr, size_t size) {
-  return (ptr & ~(size - 1));
+static inline uintptr_t align_down(uintptr_t ptr, size_t page_size) {
+  return (ptr & ~(page_size - 1));
 }
 
-static inline uintptr_t align_up(uintptr_t ptr, size_t size) {
-  return ((ptr + size - 1) & ~(size - 1));
+static inline uintptr_t align_up(uintptr_t ptr, size_t page_size) {
+  return ((ptr + page_size - 1) & ~(page_size - 1));
 }
 
 static bool fill_addr_info(lib_info* lib) {
@@ -192,7 +192,10 @@ static bool fill_addr_info(lib_info* lib) {
       if ((lib->end == (uintptr_t)-1L) || (lib->end < aligned_end)) {
         lib->end = aligned_end;
       }
-      print_debug("%s [%d] 0x%lx-0x%lx: base = 0x%lx, vaddr = 0x%lx, memsz = 0x%lx, filesz = 0x%lx\n", lib->name, cnt, aligned_start, aligned_end, lib->base, ph->p_vaddr, ph->p_memsz, ph->p_filesz);
+      print_debug("%s [%d] 0x%lx-0x%lx: base = 0x%lx, "
+                  "vaddr = 0x%lx, memsz = 0x%lx, filesz = 0x%lx\n",
+                  lib->name, cnt, aligned_start, aligned_end, lib->base,
+                  ph->p_vaddr, ph->p_memsz, ph->p_filesz);
       if (ph->p_flags & PF_X) {
         if ((lib->exec_start == -1L) || (lib->exec_start > aligned_start)) {
           lib->exec_start = aligned_start;
