@@ -844,8 +844,8 @@ void VmThreadCountClosure::do_thread(Thread* thread) {
 static jint get_vm_thread_count() {
   VmThreadCountClosure vmtcc;
   {
-    MutexLocker ml(Threads_lock);
-    Threads::threads_do(&vmtcc);
+    JavaThreadIteratorWithHandle jtiwh;
+    Threads::threads_do(&jtiwh, &vmtcc);
   }
 
   return vmtcc.count();
@@ -1616,7 +1616,7 @@ class ThreadTimesClosure: public ThreadClosure {
   ThreadTimesClosure(objArrayHandle names, typeArrayHandle times);
   ~ThreadTimesClosure();
   virtual void do_thread(Thread* thread);
-  void do_unlocked();
+  void do_string_allocs();
   int count() { return _count; }
 };
 
@@ -1632,11 +1632,7 @@ ThreadTimesClosure::ThreadTimesClosure(objArrayHandle names,
   _count = 0;
 }
 
-//
-// Called with Threads_lock held
-//
 void ThreadTimesClosure::do_thread(Thread* thread) {
-  assert(Threads_lock->owned_by_self(), "Must hold Threads_lock");
   assert(thread != NULL, "thread was NULL");
 
   // exclude externally visible JavaThreads
@@ -1659,8 +1655,7 @@ void ThreadTimesClosure::do_thread(Thread* thread) {
   _count++;
 }
 
-// Called without Threads_lock, we can allocate String objects.
-void ThreadTimesClosure::do_unlocked() {
+void ThreadTimesClosure::do_string_allocs() {
 
   EXCEPTION_MARK;
   for (int i = 0; i < _count; i++) {
@@ -1704,10 +1699,10 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
 
   ThreadTimesClosure ttc(names_ah, times_ah);
   {
-    MutexLocker ml(THREAD, Threads_lock);
-    Threads::threads_do(&ttc);
+    JavaThreadIteratorWithHandle jtiwh;
+    Threads::threads_do(&jtiwh, &ttc);
   }
-  ttc.do_unlocked();
+  ttc.do_string_allocs();
   return ttc.count();
 JVM_END
 

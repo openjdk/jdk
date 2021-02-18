@@ -54,6 +54,7 @@
 #endif
 
 
+class JavaThreadIteratorWithHandle;
 class SafeThreadsListPtr;
 class ThreadSafepointState;
 class ThreadsList;
@@ -200,8 +201,8 @@ class Thread: public ThreadShadow {
     return _nested_threads_hazard_ptr_cnt;
   }
  public:
-  // Is the target JavaThread protected by this Thread:
-  bool is_JavaThread_protected(const JavaThread* p);
+  // Is the target JavaThread protected by the calling Thread:
+  static bool is_JavaThread_protected(const JavaThread* p);
 
   void* operator new(size_t size) throw() { return allocate(size, true); }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
@@ -1538,7 +1539,7 @@ class JavaThread: public Thread {
   void print_on_error(outputStream* st, char* buf, int buflen) const;
   void print_name_on_error(outputStream* st, char* buf, int buflen) const;
   void verify();
-  const char* get_thread_name(const char* default_name = NULL) const;
+  const char* get_thread_name() const;
  protected:
   // factor out low-level mechanics for use in both normal and error cases
   virtual const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
@@ -1784,8 +1785,10 @@ class Threads: AllStatic {
   static void remove(JavaThread* p, bool is_daemon);
   static void non_java_threads_do(ThreadClosure* tc);
   static void java_threads_do(ThreadClosure* tc);
+  static void java_threads_do(JavaThreadIteratorWithHandle* jtiwh_p, ThreadClosure* tc);
   static void java_threads_and_vm_thread_do(ThreadClosure* tc);
   static void threads_do(ThreadClosure* tc);
+  static void threads_do(JavaThreadIteratorWithHandle* jtiwh_p, ThreadClosure* tc);
   static void possibly_parallel_threads_do(bool is_par, ThreadClosure* tc);
 
   // Initializes the vm and creates the vm thread
