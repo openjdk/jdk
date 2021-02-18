@@ -411,7 +411,7 @@ public final class RSACore {
                     !v.equals(BigInteger.ZERO)) {
 
                     brp = new BlindingRandomPair(u, v);
-                    if (needsReset()) {
+                    if (isReusable()) {
                         u = u.modPow(BIG_TWO, n);
                         v = v.modPow(BIG_TWO, n);
                     }
@@ -423,7 +423,7 @@ public final class RSACore {
             return null;
         }
 
-        boolean needsReset() {
+        boolean isReusable() {
             return u.compareTo(BigInteger.ONE) > 0 && v.compareTo(
                 BigInteger.ONE) > 0;
         }
@@ -435,7 +435,7 @@ public final class RSACore {
         ConcurrentLinkedQueue<BlindingParameters> queue = blindingCache.get(n);
 
         if (queue == null) {
-            // Overwriting an existing queue is ok.
+            // Synchronizing not needed, if a queue is overwritten it is ok
             queue = new ConcurrentLinkedQueue<>();
             blindingCache.putIfAbsent(n, queue);
         }
@@ -453,7 +453,7 @@ public final class RSACore {
             brp = bps.getBlindingRandomPair(e, d, n);
         }
 
-        if (bps.needsReset()) {
+        if (bps.isReusable()) {
             queue.add(bps);
         }
         return brp;
