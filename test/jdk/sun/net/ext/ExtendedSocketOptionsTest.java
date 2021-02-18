@@ -25,6 +25,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -53,8 +54,9 @@ public class ExtendedSocketOptionsTest {
      */
     @Test
     public void testConcurrentClassLoad() throws Exception {
-        final Callable<Class<?>> task1 = new Task("jdk.net.ExtendedSocketOptions");
-        final Callable<Class<?>> task2 = new Task("sun.net.ext.ExtendedSocketOptions");
+        final CountDownLatch classLoadingTriggerLatch = new CountDownLatch(2);
+        final Callable<Class<?>> task1 = new Task("jdk.net.ExtendedSocketOptions", classLoadingTriggerLatch);
+        final Callable<Class<?>> task2 = new Task("sun.net.ext.ExtendedSocketOptions", classLoadingTriggerLatch);
         final ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
             final Future<Class<?>>[] results = new Future[2];
@@ -80,14 +82,20 @@ public class ExtendedSocketOptionsTest {
 
     private static class Task implements Callable<Class<?>> {
         private final String className;
+        private final CountDownLatch classLoadingTriggerLatch;
 
-        private Task(final String className) {
+        private Task(final String className, final CountDownLatch classLoadingTriggerLatch) {
             this.className = className;
+            this.classLoadingTriggerLatch = classLoadingTriggerLatch;
         }
 
         public Class<?> call() {
             System.out.println(Thread.currentThread().getName() + " loading " + this.className);
             try {
+                // let the other task know we are ready to load the class
+                classLoadingTriggerLatch.countDown();
+                // wait for the other task to let us know it's ready too, to load the class
+                classLoadingTriggerLatch.await();
                 return Class.forName(this.className);
             } catch (Exception e) {
                 System.err.println("Failed to load " + this.className);
