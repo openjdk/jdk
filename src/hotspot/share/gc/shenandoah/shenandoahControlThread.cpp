@@ -471,10 +471,6 @@ bool ShenandoahControlThread::is_explicit_gc(GCCause::Cause cause) const {
          GCCause::is_serviceability_requested_gc(cause);
 }
 
-bool ShenandoahControlThread::is_async_gc(GCCause::Cause cause) const {
-  return cause == GCCause::_wb_breakpoint;
-}
-
 void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   assert(GCCause::is_user_requested_gc(cause) ||
          GCCause::is_serviceability_requested_gc(cause) ||
@@ -510,7 +506,8 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   while (current_gc_id < required_gc_id) {
     _gc_requested.set();
     _requested_gc_cause = cause;
-    if (!is_async_gc(cause)) {
+
+    if (cause != GCCause::_wb_breakpoint) {
       ml.wait();
     }
     current_gc_id = get_gc_id();

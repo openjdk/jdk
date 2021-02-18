@@ -49,24 +49,24 @@
 #include "utilities/events.hpp"
 
 // Breakpoint support
-class ShenandoahConcurrentGCScope : public StackObj {
+class ShenandoahBreakpointScope : public StackObj {
 public:
-  ShenandoahConcurrentGCScope() {
+  ShenandoahBreakpointScope() {
     ShenandoahBreakpoint::at_before_gc();
   }
 
-  ~ShenandoahConcurrentGCScope() {
+  ~ShenandoahBreakpointScope() {
     ShenandoahBreakpoint::at_after_gc();
   }
 };
 
-class ShenandoahConcurrentMarkScope : public StackObj {
+class ShenandoahBreakpointMarkScope : public StackObj {
 public:
-  ShenandoahConcurrentMarkScope() {
+  ShenandoahBreakpointMarkScope() {
     ShenandoahBreakpoint::at_after_marking_started();
   }
 
-  ~ShenandoahConcurrentMarkScope() {
+  ~ShenandoahBreakpointMarkScope() {
     ShenandoahBreakpoint::at_before_marking_completed();
   }
 };
@@ -89,7 +89,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   if (cause == GCCause::_wb_breakpoint) {
     ShenandoahBreakpoint::start_gc();
   }
-  ShenandoahConcurrentGCScope gc_scope;
+  ShenandoahBreakpointScope breakpoint_scope;
 
   // Reset for upcoming marking
   entry_reset();
@@ -98,7 +98,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   vmop_entry_init_mark();
 
   {
-    ShenandoahConcurrentMarkScope conc_mark_scope;
+    ShenandoahBreakpointMarkScope conc_mark_scope;
     // Concurrent mark roots
     entry_mark_roots();
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_outside_cycle)) return false;
@@ -654,6 +654,7 @@ void ShenandoahConcurrentGC::op_weak_refs() {
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
   // Concurrent weak refs processing
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs);
+  ShenandoahBreakpoint::at_after_reference_processing_started();
   heap->ref_processor()->process_references(ShenandoahPhaseTimings::conc_weak_refs, heap->workers(), true /* concurrent */);
 }
 
