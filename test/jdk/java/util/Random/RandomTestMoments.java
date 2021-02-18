@@ -193,7 +193,7 @@ public class RandomTestMoments {
     }
 
     public static void main(String[] args) {
-        RandomGenerator.all()
+        RandomGeneratorFactory.all()
              .forEach(factory -> {
                 setRNG(factory.name());
                 testOneRng(factory.create(325) );

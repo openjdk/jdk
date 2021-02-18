@@ -54,7 +54,7 @@ public class RandomCanaryPi {
     static int failed = 0;
 
     public static void main(String[] args) {
-        RandomGenerator.all()
+        RandomGeneratorFactory.all()
                 .sorted(Comparator.comparing(RandomGeneratorFactory::name))
                 .forEach(factory -> {
                     RandomGenerator rng = factory.create();

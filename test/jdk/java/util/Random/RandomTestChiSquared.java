@@ -224,7 +224,7 @@ public class RandomTestChiSquared {
     }
 
     public static void main(String[] args) {
-        RandomGenerator.all().forEach(factory -> {
+        RandomGeneratorFactory.all().forEach(factory -> {
             setRNG(factory.name());
 
             if (factory.name().equals("Random")) {

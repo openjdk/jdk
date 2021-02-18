@@ -140,28 +140,28 @@ public class RandomTestCoverage {
     }
 
     public static void main(String[] args) throws Throwable {
-        RandomGenerator.all()
+        RandomGeneratorFactory.all()
                 .forEach(factory -> {
                     coverFactory(factory);
                     coverOf(factory.name());
                  });
-        StreamableGenerator.all()
+        RandomGeneratorFactory.all(StreamableGenerator.class)
                 .forEach(factory -> {
                     coverStreamable(factory.create());
                 });
-        SplittableGenerator.all()
+        RandomGeneratorFactory.all(SplittableGenerator.class)
                 .forEach(factory -> {
                     coverSplittable(factory.create());
                 });
-        JumpableGenerator.all()
+        RandomGeneratorFactory.all(JumpableGenerator.class)
                 .forEach(factory -> {
                     coverJumpable(factory.create());
                 });
-        LeapableGenerator.all()
+        RandomGeneratorFactory.all(LeapableGenerator.class)
                 .forEach(factory -> {
                     coverLeapable(factory.create());
                 });
-        ArbitrarilyJumpableGenerator.all()
+        RandomGeneratorFactory.all(ArbitrarilyJumpableGenerator.class)
                 .forEach(factory -> {
                     coverArbitrarilyJumpable(factory.create());
                 });
