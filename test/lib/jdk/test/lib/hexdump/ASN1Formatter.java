@@ -114,11 +114,8 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      */
     public String annotate(DataInputStream in) throws IOException {
         StringBuilder sb = new StringBuilder();
-        try {
-            this.annotate(in, sb);
-        } finally {
-            return sb.toString();
-        }
+        this.annotate(in, sb);
+        return sb.toString();
     }
 
     /**
