@@ -1430,8 +1430,12 @@ class InnerClassesIterator : public StackObj {
   }
 };
 
-// Iterator over class hierarchy under a particular class.
-// Implements depth-first preoder traversal.
+// Iterator over class hierarchy under a particular class. Implements depth-first pre-order traversal.
+// Usage:
+//  for (ClassHierarchyIterator iter(root_klass); !iter.done(); iter.next()) {
+//    Klass* k = iter.klass();
+//    ...
+//  }
 class ClassHierarchyIterator : public StackObj {
  private:
   InstanceKlass* _root;
@@ -1439,41 +1443,38 @@ class ClassHierarchyIterator : public StackObj {
   bool           _visit_subclasses;
 
  public:
-  ClassHierarchyIterator(InstanceKlass* root) : _root(root), _current(NULL), _visit_subclasses(true) {
+  ClassHierarchyIterator(InstanceKlass* root) : _root(root), _current(root), _visit_subclasses(true) {
     assert(!root->is_interface(), "no subclasses");
+    assert(_root == _current, "required"); // initial state
   }
 
-  bool next() {
-    if (_current == NULL) {
-      // Either initial (_root != NULL) or final state (_root == NULL).
-      // Visit root class first or fail-fast when iteration is over.
-      _current = _root;
-      return (_current != NULL);
-    } else {
-      // Make a step iterating over the class hierarchy under the root class.
-      // Skip subclasses if requested.
-      if (_visit_subclasses && _current->subklass() != NULL) {
-        _current = _current->subklass();
-        return true; // visit next subclass
-      } else {
-        _visit_subclasses = true; // reset
+  bool done() {
+    return (_current == NULL);
+  }
 
-        while (_current->next_sibling() == NULL && _current != _root) {
-          _current = _current->superklass(); // backtrack; no more sibling subclasses left
-        }
-        if (_current != _root) {
-          _current = _current->next_sibling();
-          return true; // visit next sibling subclass
-        } else {
-          // Iteration is over (back at root after backtracking). Invalidate the iterator.
-          _current = _root = NULL;
-          return false;
-        }
-      }
+  // Make a step iterating over the class hierarchy under the root class.
+  // Skips subclasses if requested.
+  void next() {
+    assert(_current != NULL, "required");
+    if (_visit_subclasses && _current->subklass() != NULL) {
+      _current = _current->subklass();
+      return; // visit next subclass
     }
+    _visit_subclasses = true; // reset
+    while (_current->next_sibling() == NULL && _current != _root) {
+      _current = _current->superklass(); // backtrack; no more sibling subclasses left
+    }
+    if (_current == _root) {
+      // Iteration is over (back at root after backtracking). Invalidate the iterator.
+      _current = NULL;
+      return;
+    }
+    _current = _current->next_sibling();
+    return; // visit next sibling subclass
   }
 
   Klass* klass() {
+    assert(!done(), "sanity");
     return _current;
   }
 

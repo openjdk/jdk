@@ -1356,7 +1356,7 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
 
   assert(!context_type->is_interface(), "not allowed");
 
-  for (ClassHierarchyIterator iter(context_type); iter.next();) {
+  for (ClassHierarchyIterator iter(context_type); !iter.done(); iter.next()) {
     Klass* sub = iter.klass();
 
     if (do_counts) { NOT_PRODUCT(deps_find_witness_steps++); }
