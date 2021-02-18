@@ -28,6 +28,9 @@
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 
 void ShenandoahGenerationalMode::initialize_flags() const {
