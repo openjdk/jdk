@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ class JfrThreadSampling : public JfrCHeapObj {
   static void set_java_sample_interval(size_t period);
   static void set_native_sample_interval(size_t period);
   static void on_javathread_suspend(JavaThread* thread);
+  static void enroll_thread_sampler();
+  static void disenroll_thread_sampler();
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLER_HPP
