@@ -27,6 +27,7 @@
 
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/virtualspace.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.hpp"
 
@@ -39,15 +40,18 @@ class VirtualSpace;
 // mark_pointer(/*ptr_loc=*/&k->_name). It's required that (_prt_base <= ptr_loc < _ptr_end). _ptr_base is
 // fixed, but _ptr_end can be expanded as more objects are dumped.
 class ArchivePtrMarker : AllStatic {
-  static CHeapBitMap* _ptrmap;
-  static address*     _ptr_base;
-  static address*     _ptr_end;
+  static CHeapBitMap*  _ptrmap;
+  static VirtualSpace* _vs;
 
   // Once _ptrmap is compacted, we don't allow bit marking anymore. This is to
   // avoid unintentional copy operations after the bitmap has been finalized and written.
   static bool         _compacted;
+
+  static address* ptr_base() { return (address*)_vs->low();  } // committed lower bound (inclusive)
+  static address* ptr_end()  { return (address*)_vs->high(); } // committed upper bound (exclusive)
+
 public:
-  static void initialize(CHeapBitMap* ptrmap, address* ptr_base, address* ptr_end);
+  static void initialize(CHeapBitMap* ptrmap, VirtualSpace* vs);
   static void mark_pointer(address* ptr_loc);
   static void clear_pointer(address* ptr_loc);
   static void compact(address relocatable_base, address relocatable_end);
@@ -62,11 +66,6 @@ public:
   static void set_and_mark_pointer(T* ptr_loc, T ptr_value) {
     *ptr_loc = ptr_value;
     mark_pointer(ptr_loc);
-  }
-
-  static void expand_ptr_end(address *new_ptr_end) {
-    assert(_ptr_end <= new_ptr_end, "must be");
-    _ptr_end = new_ptr_end;
   }
 
   static CHeapBitMap* ptrmap() {
@@ -128,12 +127,17 @@ private:
   char* _base;
   char* _top;
   char* _end;
+  uintx _max_delta;
   bool _is_packed;
   ReservedSpace* _rs;
   VirtualSpace* _vs;
 
+  void commit_to(char* newtop);
+
 public:
-  DumpRegion(const char* name) : _name(name), _base(NULL), _top(NULL), _end(NULL), _is_packed(false) {}
+  DumpRegion(const char* name, uintx max_delta = 0)
+    : _name(name), _base(NULL), _top(NULL), _end(NULL),
+      _max_delta(max_delta), _is_packed(false) {}
 
   char* expand_top_to(char* newtop);
   char* allocate(size_t num_bytes);

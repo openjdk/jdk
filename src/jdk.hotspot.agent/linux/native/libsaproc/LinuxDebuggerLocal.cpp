@@ -183,6 +183,8 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
     CHECK_EXCEPTION;
     env->CallBooleanMethod(threadList, listAdd_ID, thread);
     CHECK_EXCEPTION;
+    env->DeleteLocalRef(thread);
+    env->DeleteLocalRef(threadList);
   }
 
   // add load objects
@@ -205,6 +207,9 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
      CHECK_EXCEPTION;
      env->CallBooleanMethod(loadObjectList, listAdd_ID, loadObject);
      CHECK_EXCEPTION;
+     env->DeleteLocalRef(str);
+     env->DeleteLocalRef(loadObject);
+     env->DeleteLocalRef(loadObjectList);
   }
 }
 
