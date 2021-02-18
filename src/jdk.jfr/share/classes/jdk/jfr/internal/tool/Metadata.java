@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import jdk.jfr.EventType;
+import jdk.jfr.FlightRecorder;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PrivateAccess;
@@ -203,37 +204,40 @@ final class Metadata extends Command {
                 filter = addCache(filter, type -> type.getId());
             }
 
-            List<Type> types = getAllTypes(file);
+            List<Type> types = findTypes(file);
             Collections.sort(types, new TypeComparator());
             for (Type type : types) {
-                // if it's an event type, apply filter on it
-                if (Type.SUPER_TYPE_EVENT.equals(type.getSuperType())) {
-                    EventType et = PrivateAccess.getInstance().newEventType((PlatformEventType) type);
-                    if (filter != null && !filter.test(et)) {
-                        continue;
+                if (filter != null) {
+                    // If --events or --categories, only operate on events
+                    if (Type.SUPER_TYPE_EVENT.equals(type.getSuperType())) {
+                        EventType et = PrivateAccess.getInstance().newEventType((PlatformEventType) type);
+                        if (filter.test(et)) {
+                            prettyWriter.printType(type);
+                        }
                     }
+                } else {
+                    prettyWriter.printType(type);
                 }
-
-                prettyWriter.printType(type);
             }
             prettyWriter.flush(true);
             pw.flush();
         }
     }
 
-    private List<Type> getAllTypes(Path file) throws UserDataException {
+    private List<Type> findTypes(Path file) throws UserDataException {
         // Determine whether reading from recording file or reading from the JDK where
         // the jfr tool is located will be used
         if (file == null) {
+            // Force initialization
+            FlightRecorder.getFlightRecorder().getEventTypes();
             return TypeLibrary.getInstance().getTypes();
         }
-        List<Type> types = null;
         try (RecordingFile rf = new RecordingFile(file)) {
-            types = PRIVATE_ACCESS.readTypes(rf);
+            return PRIVATE_ACCESS.readTypes(rf);
         } catch (IOException ioe) {
             couldNotReadError(file, ioe);
         }
-        return types;
+        return null; // Can't reach
     }
 
     private Path getOptionalJFRInputFile(Deque<String> options) throws UserDataException {
