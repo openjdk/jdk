@@ -34,6 +34,7 @@ import java.util.Collection;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
+import com.sun.tools.attach.AttachOperationFailedException;
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
 
@@ -211,6 +212,7 @@ public class JMap {
         String liveopt = "-all";
         String compress_level = "";
         String parallel = "";
+        String extraArgKV = ""; /* whole key=value string of extra argument, e.g. parallel=1 */
         boolean hasExtraArgs = false;
 
         for (int i = 0; i < subopts.length; i++) {
@@ -240,6 +242,7 @@ public class JMap {
                     usage(1);
                 }
                 hasExtraArgs = true;
+                extraArgKV = subopt;
             } else {
                 System.err.println("Fail: invalid option: '" + subopt + "'");
                 usage(1);
@@ -264,7 +267,13 @@ public class JMap {
             // See AttachOperation::arg_count_max in attachListener.hpp for argument count limitation.
             String more_args = compress_level + "," + parallel;
             // dumpHeap is not the same as jcmd GC.heap_dump
-            executeCommandForPid(pid, "dumpheapext", filename, liveopt, more_args);
+            try {
+              executeCommandForPid(pid, "dumpheapext", filename, liveopt, more_args);
+            } catch (AttachOperationFailedException e) {
+                // target to an old jvm which could not accept extra arguments.
+                System.err.println("Fail: invalid option: '" + extraArgKV +"'");
+                usage(1);
+            }
         } else {
             // dumpHeap is not the same as jcmd GC.heap_dump
             executeCommandForPid(pid, "dumpheap", filename, liveopt, compress_level);
