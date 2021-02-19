@@ -54,6 +54,7 @@ public class ProxyServer extends Thread implements Closeable {
         String osName = AccessController.doPrivileged(action);
         IS_WINDOWS = osName.toLowerCase(Locale.ROOT).startsWith("win");
     }
+
     public static boolean isWindows() {
         return IS_WINDOWS;
     }
