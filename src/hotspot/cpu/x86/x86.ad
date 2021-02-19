@@ -7562,6 +7562,7 @@ instruct loadShuffleS(vec dst, vec src, vec vtmp, rRegP scratch) %{
       __ movdqu($vtmp$$XMMRegister, ExternalAddress(vector_short_shufflemask()), $scratch$$Register);
       __ paddb($dst$$XMMRegister, $vtmp$$XMMRegister);
     } else {
+      assert(UseAVX > 1 || vlen_in_bytes <= 16, "required");
       int vlen_enc = vector_length_encoding(this);
       // Multiply each shuffle by two to get byte index
       __ vpmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
