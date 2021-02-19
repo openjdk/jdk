@@ -84,11 +84,13 @@ public class JdwpAttachTest {
             }
         }
 
-        // by using "localhost" or empty hostname
-        // we should be able to attach to both IPv4 and IPv6 addresses (127.0.0.1 & ::1).
+        // By using "localhost" or empty hostname we should be able to attach
+        // to both IPv4 and IPv6 addresses (127.0.0.1 & ::1).
+        // By default test verifies only "preferred" family (IPv4 or IPv6).
+        // Need to set testPotentiallyUnstableCases to true to perform full testing.
         InetAddress localAddresses[] = InetAddress.getAllByName("localhost");
         for (int i = 0; i < localAddresses.length; i++) {
-            if (testPotentiallyUnstableCases || addressIfSafeToConnectToLocalhost(localAddresses[i])) {
+            if (testPotentiallyUnstableCases || addressIsSafeToConnectToLocalhost(localAddresses[i])) {
                 attachTest(localAddresses[i].getHostAddress(), "", true);
             }
         }
@@ -174,10 +176,10 @@ public class JdwpAttachTest {
     }
 
     // Attach to localhost tries to connect to both IPv4 and IPv6 loopback addresses.
-    // But sometimes it causes interference with other processes which can listen on the same port but different
-    // loopback address.
+    // But sometimes it causes interference with other processes which can listen
+    // on the same port but different loopback address.
     // The method checks if the address is safe to test with current network config.
-    private static boolean addressIfSafeToConnectToLocalhost(InetAddress addr) {
+    private static boolean addressIsSafeToConnectToLocalhost(InetAddress addr) {
         boolean ipv6 = Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"));
         return ipv6 == (addr instanceof Inet6Address);
     }
