@@ -122,8 +122,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             Content classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInType, contents.packageLabel);
             Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classPackageLabel);
             pkgNameDiv.add(Entity.NO_BREAK_SPACE);
-            Content pkgNameContent = getPackageLink(pkg,
-                    new StringContent(utils.getPackageName(pkg)));
+            Content pkgNameContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
             pkgNameDiv.add(pkgNameContent);
             div.add(pkgNameDiv);
         }

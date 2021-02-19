@@ -565,12 +565,14 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Returns a packagename content.
+     * Returns a content object containing the package name. A localized content object is
+     * returned for an unnamed package. Use {@link Utils#getPackageName(PackageElement)} to
+     * get a static string for the unnamed package instead.
      *
      * @param packageElement the package to check
      * @return package name content
      */
-    public Content getPackageName(PackageElement packageElement) {
+    public Content getLocalizedPackageName(PackageElement packageElement) {
         return packageElement == null || packageElement.isUnnamed()
                 ? contents.defaultPackageLabel
                 : getPackageLabel(packageElement.getQualifiedName());
@@ -607,24 +609,6 @@ public class HtmlDocletWriter {
      */
     protected DocPath pathString(PackageElement packageElement, DocPath name) {
         return pathToRoot.resolve(docPaths.forPackage(packageElement).resolve(name));
-    }
-
-    /**
-     * Return the link to the given package.
-     *
-     * @param packageElement the package to link to.
-     * @param label the label for the link.
-     * @return a content tree for the package link.
-     */
-    public Content getPackageLink(PackageElement packageElement, CharSequence label) {
-        return getPackageLink(packageElement, new StringContent(label));
-    }
-
-    public Content getPackageLink(PackageElement packageElement) {
-        StringContent content =  packageElement.isUnnamed()
-                ? new StringContent()
-                : new StringContent(utils.getPackageName(packageElement));
-        return getPackageLink(packageElement, content);
     }
 
     /**
@@ -800,7 +784,7 @@ public class HtmlDocletWriter {
                 return links.createLink(link,
                     (label == null) || label.isEmpty() ? defaultLabel : label, style,
                     resources.getText("doclet.Href_Class_Or_Interface_Title",
-                        utils.getPackageName(packageElement)), true);
+                        getLocalizedPackageName(packageElement)), true);
             }
         }
         return null;
