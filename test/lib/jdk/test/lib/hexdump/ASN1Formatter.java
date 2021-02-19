@@ -110,11 +110,23 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * A single well formed tagged-value is read and annotated.
      *
      * @param in  a DataInputStream
-     * @throws IOException if an I/O error occurs
      */
-    public String annotate(DataInputStream in) throws IOException {
+    public String annotate(DataInputStream in) {
         StringBuilder sb = new StringBuilder();
-        this.annotate(in, sb);
+        try {
+            this.annotate(in, sb);
+        } catch (IOException e) {
+            /*
+             * Formatters are designed to be nested, where one formatter can call another and the valuable output
+             * is the formatted string that has been accumulated from the beginning of the stream.
+             *
+             * The choice of DataInputStream was chosen for the convenience of the methods to read different types.
+             * and (declared) exceptions are an unwelcome artifact.
+             *
+             * If an exception was percolated up and the formatted output discarded, it would defeat the purpose.
+             * So we just catch it here and still return useful information about the stream to this point.
+             */
+        }
         return sb.toString();
     }
 
