@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ import sun.jvm.hotspot.ci.ciEnv;
 import sun.jvm.hotspot.code.CodeBlob;
 import sun.jvm.hotspot.code.CodeCacheVisitor;
 import sun.jvm.hotspot.code.NMethod;
+import sun.jvm.hotspot.debugger.cdbg.CDebugger;
+import sun.jvm.hotspot.debugger.cdbg.LoadObject;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
@@ -607,6 +609,40 @@ public class CommandProcessor {
                 }
             }
         },
+        new Command("findsym", "findsym name", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    String symbol = t.nextToken();
+                    Address addr = VM.getVM().getDebugger().lookup(null, symbol);
+                    if (addr == null && VM.getVM().getDebugger().getOS().equals("win32")) {
+                        // On win32 symbols are prefixed with the dll name. Do the user
+                        // a favor and see if this is a symbol in jvm.dll or java.dll.
+                        addr = VM.getVM().getDebugger().lookup(null, "jvm!" + symbol);
+                        if (addr == null) {
+                            addr = VM.getVM().getDebugger().lookup(null, "java!" + symbol);
+                        }
+                    }
+                    if (addr == null) {
+                        out.println("Symbol not found");
+                        return;
+                    }
+                    out.print(addr);  // Print the address of the symbol.
+                    CDebugger cdbg = VM.getVM().getDebugger().getCDebugger();
+                    LoadObject loadObject = cdbg.loadObjectContainingPC(addr);
+                    // Print the shared library path and the offset of the symbol.
+                    if (loadObject != null) {
+                        out.print(": " + loadObject.getName());
+                        long diff = addr.minus(loadObject.getBase());
+                        if (diff != 0L) {
+                            out.print(" + 0x" + Long.toHexString(diff));
+                        }
+                    }
+                    out.println();
+                }
+            }
+        },
         new Command("findpc", "findpc address", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1) {
@@ -892,7 +928,7 @@ public class CommandProcessor {
             }
         },
         new Command("dumpideal", "dumpideal { -a | id }", false) {
-            // Do a full dump of the nodes reachabile from root in each compiler thread.
+            // Do a full dump of the nodes reachable from root in each compiler thread.
             public void doit(Tokens t) {
                 if (t.countTokens() != 1) {
                     usage();
