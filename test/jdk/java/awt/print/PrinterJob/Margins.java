@@ -56,13 +56,6 @@ public class Margins implements Printable {
         }
         PrintService psrv = PrintServiceLookup.lookupDefaultPrintService();
         System.out.println("PrintService " + psrv.getName());
-        if (psrv.getName().contains("Print to PDF") ||
-            psrv.getName().contains("OneNote") ||
-            psrv.getName().contains("XPS Document Writer")) {
-            System.out.println("Please use real printer.");
-            System.out.println("Please avoid Microsoft Print to PDF or OneNote printer or XPS Writer");
-            return;
-        }
 
         PageFormat pageFormat = job.defaultPage();
         Paper paper = pageFormat.getPaper();
