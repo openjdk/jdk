@@ -527,6 +527,32 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
+  // NEON shift instructions
+#define WRAP(INSN)                                                                \
+  void INSN(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift) {  \
+    if (shift == 0) {                                                             \
+        SIMD_Arrangement arrange = (T & 1) == 0 ? T8B : T16B;                     \
+        Assembler::orr(Vd, arrange, Vn, Vn);                                      \
+    } else {                                                                      \
+      Assembler::INSN(Vd, T, Vn, shift);                                          \
+    }                                                                             \
+  }                                                                               \
+
+  WRAP(shl) WRAP(sshr) WRAP(ushr)
+#undef WRAP
+
+#define WRAP(INSN)                                                                \
+  void INSN(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift) {  \
+    if (shift == 0) {                                                             \
+      Assembler::addv(Vd, T, Vd, Vn);                                             \
+    } else {                                                                      \
+      Assembler::INSN(Vd, T, Vn, shift);                                          \
+    }                                                                             \
+  }                                                                               \
+
+  WRAP(usra) WRAP(ssra)
+#undef WRAP
+
 public:
 
   // Generalized Test Bit And Branch, including a "far" variety which
