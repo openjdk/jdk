@@ -704,7 +704,7 @@ Log.verbose("   ---   SignAppBundle with entitlements: " + entitlements);
                                 return;
                             }
                         }
-                    } else {
+
                         if (isFileSigned(p)) {
                             // executable or lib already signed
                             Log.verbose(MessageFormat.format(I18N.getString(
