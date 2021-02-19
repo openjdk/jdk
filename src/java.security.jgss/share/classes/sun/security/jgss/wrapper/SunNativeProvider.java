@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,9 @@ public final class SunNativeProvider extends Provider {
                         DEBUG = Boolean.parseBoolean(
                             System.getProperty("sun.security.nativegss.debug"));
                         try {
+                            Class.forName("java.net.InetAddress");
                             System.loadLibrary("j2gss");
-                        } catch (Error err) {
+                        } catch (ClassNotFoundException | Error err) {
                             debug("No j2gss library found!");
                             if (DEBUG) err.printStackTrace();
                             return null;
