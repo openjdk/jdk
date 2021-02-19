@@ -7548,7 +7548,7 @@ instruct loadShuffleS(vec dst, vec src, vec vtmp, rRegP scratch) %{
     // only byte shuffle instruction available on these platforms
     int vlen_in_bytes = vector_length_in_bytes(this);
     if (UseAVX == 0) {
-      assert(vlen_in_bytes <= 16, "required");
+      assert(vlen_in_bytes < 16, "required");
       // Multiply each shuffle by two to get byte index
       __ pmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister);
       __ psllw($vtmp$$XMMRegister, 1);
