@@ -87,6 +87,7 @@ intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
 bool MetaspaceShared::_use_full_module_graph = true;
+size_t MetaspaceShared::_core_region_alignment = 0;
 
 // The CDS archive is divided into the following regions:
 //     mc  - misc code (the method entry trampolines, c++ vtables)
@@ -101,7 +102,7 @@ bool MetaspaceShared::_use_full_module_graph = true;
 //     bm  - bitmap for relocating the above 7 regions.
 //
 // The mc, rw, and ro regions are linearly allocated, in the order of mc->rw->ro.
-// These regions are aligned with MetaspaceShared::reserved_space_alignment().
+// These regions are aligned with MetaspaceShared::core_region_alignment().
 //
 // These 3 regions are populated in the following steps:
 // [0] All classes are loaded in MetaspaceShared::preload_classes(). All metadata are
@@ -122,7 +123,27 @@ char* MetaspaceShared::symbol_space_alloc(size_t num_bytes) {
   return _symbol_region.allocate(num_bytes);
 }
 
-size_t MetaspaceShared::reserved_space_alignment() { return os::vm_allocation_granularity(); }
+void MetaspaceShared::init_alignments() {
+  assert(_core_region_alignment == 0, "call this only once");
+  _core_region_alignment = (size_t)os::vm_allocation_granularity();
+  if (DumpSharedSpaces) {
+    // os::vm_allocation_granularity() is usually 4K for most OSes. However, on Linux/aarch64,
+    // it can be either 4K or 64K. To generate archives that are compatible for
+    // both settings, always dump the static archive with 64K alignment.
+    // The dynamic archive will always use the same value as the base archive.
+    if (_core_region_alignment < 64*K) {
+      log_info(cds)("Set core region alignment to 64K for all platforms");
+      _core_region_alignment = 64*K;
+    }
+  } else {
+    assert(UseSharedSpaces, "don't call this if not mapping at least the base archive");
+    assert(FileMapInfo::current_info() != NULL, "Call init_alignments() after base archive is opened");
+    _core_region_alignment = FileMapInfo::current_info()->region_alignment();
+    assert(_core_region_alignment == 64*K, "CDS always use 64K region alignment");
+  }
+
+  log_info(cds)("core_region_alignment = " SIZE_FORMAT, _core_region_alignment);
+}
 
 static bool shared_base_valid(char* shared_base) {
 #ifdef _LP64
@@ -135,7 +156,7 @@ static bool shared_base_valid(char* shared_base) {
 static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
   if (specified_base != NULL && aligned_base < specified_base) {
     // SharedBaseAddress is very high (e.g., 0xffffffffffffff00) so
-    // align_up(SharedBaseAddress, MetaspaceShared::reserved_space_alignment()) has wrapped around.
+    // align_up(SharedBaseAddress, MetaspaceShared::core_region_alignment()) has wrapped around.
     return true;
   }
   if (max_uintx - uintx(aligned_base) < uintx(cds_max)) {
@@ -148,7 +169,7 @@ static bool shared_base_too_high(char* specified_base, char* aligned_base, size_
 
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
-  char* aligned_base = align_up(specified_base, MetaspaceShared::reserved_space_alignment());
+  char* aligned_base = align_up(specified_base, MetaspaceShared::core_region_alignment());
 
   const char* err = NULL;
   if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
@@ -164,7 +185,7 @@ static char* compute_shared_base(size_t cds_max) {
                    p2i((void*)Arguments::default_SharedBaseAddress()));
 
   specified_base = (char*)Arguments::default_SharedBaseAddress();
-  aligned_base = align_up(specified_base, MetaspaceShared::reserved_space_alignment());
+  aligned_base = align_up(specified_base, MetaspaceShared::core_region_alignment());
 
   // Make sure the default value of SharedBaseAddress specified in globals.hpp is sane.
   assert(!shared_base_too_high(specified_base, aligned_base, cds_max), "Sanity");
@@ -174,11 +195,11 @@ static char* compute_shared_base(size_t cds_max) {
 
 void MetaspaceShared::initialize_for_static_dump() {
   assert(DumpSharedSpaces, "should be called for dump time only");
-
+  init_alignments();
   // The max allowed size for CDS archive. We use this to limit SharedBaseAddress
   // to avoid address space wrap around.
   size_t cds_max;
-  const size_t reserve_alignment = MetaspaceShared::reserved_space_alignment();
+  const size_t reserve_alignment = core_region_alignment();
 
 #ifdef _LP64
   const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
@@ -509,7 +530,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Write the archive file
   FileMapInfo* mapinfo = new FileMapInfo(true);
-  mapinfo->populate_header(os::vm_allocation_granularity());
+  mapinfo->populate_header(MetaspaceShared::core_region_alignment());
   mapinfo->set_serialized_data(serialized_data);
   mapinfo->set_cloned_vtables(cloned_vtables);
   mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers());
@@ -880,6 +901,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   FileMapInfo* dynamic_mapinfo = NULL;
 
   if (static_mapinfo != NULL) {
+    init_alignments();
     dynamic_mapinfo = open_dynamic_archive();
 
     // First try to map at the requested address
@@ -1000,7 +1022,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
       assert(class_space_rs.base() >= archive_space_rs.end(),
              "class space should follow the cds archive space");
       assert(is_aligned(archive_space_rs.base(),
-                        MetaspaceShared::reserved_space_alignment()),
+                        core_region_alignment()),
              "Archive space misaligned");
       assert(is_aligned(class_space_rs.base(),
                         Metaspace::reserve_alignment()),
@@ -1008,9 +1030,9 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     }
 #endif // ASSERT
 
-    log_debug(cds)("Reserved archive_space_rs     [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
+    log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
                    p2i(archive_space_rs.base()), p2i(archive_space_rs.end()), archive_space_rs.size());
-    log_debug(cds)("Reserved class_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
+    log_info(cds)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
                    p2i(class_space_rs.base()), p2i(class_space_rs.end()), class_space_rs.size());
 
     if (MetaspaceShared::use_windows_memory_mapping()) {
@@ -1172,7 +1194,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
                                                           ReservedSpace& class_space_rs) {
 
   address const base_address = (address) (use_archive_base_addr ? static_mapinfo->requested_base_address() : NULL);
-  const size_t archive_space_alignment = MetaspaceShared::reserved_space_alignment();
+  const size_t archive_space_alignment = core_region_alignment();
 
   // Size and requested location of the archive_space_rs (for both static and dynamic archives)
   assert(static_mapinfo->mapping_base_offset() == 0, "Must be");
@@ -1230,8 +1252,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   const size_t gap_size = ccs_begin_offset - archive_space_size;
 
   const size_t total_range_size =
-      align_up(archive_space_size + gap_size + class_space_size,
-               os::vm_allocation_granularity());
+      align_up(archive_space_size + gap_size + class_space_size, core_region_alignment());
 
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
@@ -1274,7 +1295,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     // Now split up the space into ccs and cds archive. For simplicity, just leave
     //  the gap reserved at the end of the archive space. Do not do real splitting.
     archive_space_rs = total_space_rs.first_part(ccs_begin_offset,
-                                                 (size_t)os::vm_allocation_granularity());
+                                                 (size_t)archive_space_alignment);
     class_space_rs = total_space_rs.last_part(ccs_begin_offset);
     MemTracker::record_virtual_memory_split_reserved(total_space_rs.base(), total_space_rs.size(),
                                                      ccs_begin_offset);
@@ -1327,10 +1348,10 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
   }
 
   mapinfo->set_is_mapped(false);
-
-  if (mapinfo->alignment() != (size_t)os::vm_allocation_granularity()) {
-    log_info(cds)("Unable to map CDS archive -- os::vm_allocation_granularity() expected: " SIZE_FORMAT
-                  " actual: %d", mapinfo->alignment(), os::vm_allocation_granularity());
+  assert(mapinfo->region_alignment() == 64*K, "Should always use 64K alignment");
+  if (mapinfo->region_alignment() != (size_t)core_region_alignment()) {
+    log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: " SIZE_FORMAT
+                  " actual: " SIZE_FORMAT, mapinfo->region_alignment(), core_region_alignment());
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 

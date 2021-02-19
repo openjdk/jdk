@@ -226,8 +226,7 @@ private:
   static ArchiveBuilder* _current;
 
 public:
-  // Use this when you allocate space with MetaspaceShare::read_only_space_alloc()
-  // outside of ArchiveBuilder::dump_{rw,ro}_region. These are usually for misc tables
+  // Use this when you allocate space outside of ArchiveBuilder::dump_{rw,ro}_region. These are usually for misc tables
   // that are allocated in the RO space.
   class OtherROAllocMark {
     char* _oldtop;
@@ -268,10 +267,6 @@ protected:
   static const int _total_dump_regions = 3;
 
   size_t estimate_archive_size();
-
-  static size_t reserve_alignment() {
-    return os::vm_allocation_granularity();
-  }
 
   void start_dump_space(DumpRegion* next);
   void verify_estimate_size(size_t estimate, const char* which);

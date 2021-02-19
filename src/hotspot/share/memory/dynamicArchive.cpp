@@ -48,12 +48,6 @@
 
 class DynamicArchiveBuilder : public ArchiveBuilder {
 public:
-
-  static size_t reserve_alignment() {
-    return os::vm_allocation_granularity();
-  }
-
-public:
   void mark_pointer(address* ptr_loc) {
     ArchivePtrMarker::mark_pointer(ptr_loc);
   }
@@ -183,7 +177,7 @@ void DynamicArchiveBuilder::init_header() {
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     _header->set_base_region_crc(i, base_info->space_crc(i));
   }
-  _header->populate(base_info, os::vm_allocation_granularity());
+  _header->populate(base_info, base_info->region_alignment());
 }
 
 void DynamicArchiveBuilder::release_header() {
