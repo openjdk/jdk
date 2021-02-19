@@ -146,7 +146,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   if (prt == NULL) {
     MutexLocker x(_m, Mutex::_no_safepoint_check_flag);
 
-    // Make sure region hasn't been coarsened by another thread.
+    // Rechecking if the region is coarsened, while holding the lock.
     if (is_region_coarsened(from_hrm_ind)) {
       assert(contains_reference(from), "We just found " PTR_FORMAT " in the Coarse table", p2i(from));
       return;
