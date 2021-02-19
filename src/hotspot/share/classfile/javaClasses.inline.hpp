@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
@@ -96,7 +97,7 @@ int java_lang_String::length(oop java_string) {
 }
 
 bool java_lang_String::is_instance_inlined(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::String_klass();
+  return obj != NULL && obj->klass() == vmClasses::String_klass();
 }
 
 // Accessors
@@ -190,15 +191,15 @@ inline bool java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(oo
 }
 
 inline bool java_lang_invoke_MemberName::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::MemberName_klass();
+  return obj != NULL && obj->klass() == vmClasses::MemberName_klass();
 }
 
 inline bool java_lang_invoke_ResolvedMethodName::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::ResolvedMethodName_klass();
+  return obj != NULL && obj->klass() == vmClasses::ResolvedMethodName_klass();
 }
 
 inline bool java_lang_invoke_MethodType::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::MethodType_klass();
+  return obj != NULL && obj->klass() == vmClasses::MethodType_klass();
 }
 
 inline bool java_lang_invoke_MethodHandle::is_instance(oop obj) {
@@ -206,7 +207,7 @@ inline bool java_lang_invoke_MethodHandle::is_instance(oop obj) {
 }
 
 inline bool java_lang_Class::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::Class_klass();
+  return obj != NULL && obj->klass() == vmClasses::Class_klass();
 }
 
 inline Klass* java_lang_Class::as_Klass(oop java_class) {
@@ -245,7 +246,7 @@ inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
 }
 
 inline bool java_lang_Module::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::Module_klass();
+  return obj != NULL && obj->klass() == vmClasses::Module_klass();
 }
 
 inline int Backtrace::merge_bci_and_version(int bci, int version) {

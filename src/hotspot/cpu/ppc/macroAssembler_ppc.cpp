@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -707,6 +707,30 @@ address MacroAssembler::get_dest_of_bxx64_patchable_at(address instruction_addr,
   }
 }
 
+void MacroAssembler::clobber_volatile_gprs(Register excluded_register) {
+  const int magic_number = 0x42;
+
+  // Preserve stack pointer register (R1_SP) and system thread id register (R13);
+  // although they're technically volatile
+  for (int i = 2; i < 13; i++) {
+    Register reg = as_Register(i);
+    if (reg == excluded_register) {
+      continue;
+    }
+
+    li(reg, magic_number);
+  }
+}
+
+void MacroAssembler::clobber_carg_stack_slots(Register tmp) {
+  const int magic_number = 0x43;
+
+  li(tmp, magic_number);
+  for (int m = 0; m <= 7; m++) {
+    std(tmp, frame::abi_minframe_size + m * 8, R1_SP);
+  }
+}
+
 // Uses ordering which corresponds to ABI:
 //    _savegpr0_14:  std  r14,-144(r1)
 //    _savegpr0_15:  std  r15,-136(r1)
@@ -797,9 +821,11 @@ void MacroAssembler::restore_nonvolatile_gprs(Register src, int offset) {
 }
 
 // For verify_oops.
-void MacroAssembler::save_volatile_gprs(Register dst, int offset) {
+void MacroAssembler::save_volatile_gprs(Register dst, int offset, bool include_fp_regs, bool include_R3_RET_reg) {
   std(R2,  offset, dst);   offset += 8;
-  std(R3,  offset, dst);   offset += 8;
+  if (include_R3_RET_reg) {
+    std(R3, offset, dst);  offset += 8;
+  }
   std(R4,  offset, dst);   offset += 8;
   std(R5,  offset, dst);   offset += 8;
   std(R6,  offset, dst);   offset += 8;
@@ -810,26 +836,30 @@ void MacroAssembler::save_volatile_gprs(Register dst, int offset) {
   std(R11, offset, dst);   offset += 8;
   std(R12, offset, dst);   offset += 8;
 
-  stfd(F0, offset, dst);   offset += 8;
-  stfd(F1, offset, dst);   offset += 8;
-  stfd(F2, offset, dst);   offset += 8;
-  stfd(F3, offset, dst);   offset += 8;
-  stfd(F4, offset, dst);   offset += 8;
-  stfd(F5, offset, dst);   offset += 8;
-  stfd(F6, offset, dst);   offset += 8;
-  stfd(F7, offset, dst);   offset += 8;
-  stfd(F8, offset, dst);   offset += 8;
-  stfd(F9, offset, dst);   offset += 8;
-  stfd(F10, offset, dst);  offset += 8;
-  stfd(F11, offset, dst);  offset += 8;
-  stfd(F12, offset, dst);  offset += 8;
-  stfd(F13, offset, dst);
+  if (include_fp_regs) {
+    stfd(F0, offset, dst);   offset += 8;
+    stfd(F1, offset, dst);   offset += 8;
+    stfd(F2, offset, dst);   offset += 8;
+    stfd(F3, offset, dst);   offset += 8;
+    stfd(F4, offset, dst);   offset += 8;
+    stfd(F5, offset, dst);   offset += 8;
+    stfd(F6, offset, dst);   offset += 8;
+    stfd(F7, offset, dst);   offset += 8;
+    stfd(F8, offset, dst);   offset += 8;
+    stfd(F9, offset, dst);   offset += 8;
+    stfd(F10, offset, dst);  offset += 8;
+    stfd(F11, offset, dst);  offset += 8;
+    stfd(F12, offset, dst);  offset += 8;
+    stfd(F13, offset, dst);
+  }
 }
 
 // For verify_oops.
-void MacroAssembler::restore_volatile_gprs(Register src, int offset) {
+void MacroAssembler::restore_volatile_gprs(Register src, int offset, bool include_fp_regs, bool include_R3_RET_reg) {
   ld(R2,  offset, src);   offset += 8;
-  ld(R3,  offset, src);   offset += 8;
+  if (include_R3_RET_reg) {
+    ld(R3,  offset, src);   offset += 8;
+  }
   ld(R4,  offset, src);   offset += 8;
   ld(R5,  offset, src);   offset += 8;
   ld(R6,  offset, src);   offset += 8;
@@ -840,20 +870,22 @@ void MacroAssembler::restore_volatile_gprs(Register src, int offset) {
   ld(R11, offset, src);   offset += 8;
   ld(R12, offset, src);   offset += 8;
 
-  lfd(F0, offset, src);   offset += 8;
-  lfd(F1, offset, src);   offset += 8;
-  lfd(F2, offset, src);   offset += 8;
-  lfd(F3, offset, src);   offset += 8;
-  lfd(F4, offset, src);   offset += 8;
-  lfd(F5, offset, src);   offset += 8;
-  lfd(F6, offset, src);   offset += 8;
-  lfd(F7, offset, src);   offset += 8;
-  lfd(F8, offset, src);   offset += 8;
-  lfd(F9, offset, src);   offset += 8;
-  lfd(F10, offset, src);  offset += 8;
-  lfd(F11, offset, src);  offset += 8;
-  lfd(F12, offset, src);  offset += 8;
-  lfd(F13, offset, src);
+  if (include_fp_regs) {
+    lfd(F0, offset, src);   offset += 8;
+    lfd(F1, offset, src);   offset += 8;
+    lfd(F2, offset, src);   offset += 8;
+    lfd(F3, offset, src);   offset += 8;
+    lfd(F4, offset, src);   offset += 8;
+    lfd(F5, offset, src);   offset += 8;
+    lfd(F6, offset, src);   offset += 8;
+    lfd(F7, offset, src);   offset += 8;
+    lfd(F8, offset, src);   offset += 8;
+    lfd(F9, offset, src);   offset += 8;
+    lfd(F10, offset, src);  offset += 8;
+    lfd(F11, offset, src);  offset += 8;
+    lfd(F12, offset, src);  offset += 8;
+    lfd(F13, offset, src);
+  }
 }
 
 void MacroAssembler::save_LR_CR(Register tmp) {
@@ -3032,9 +3064,10 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
   bne(CCR0, slow_path);
 }
 
-void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame) {
+void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2,
+                                     MacroAssembler::PreservationLevel preservation_level) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->resolve_jobject(this, value, tmp1, tmp2, needs_frame);
+  bs->resolve_jobject(this, value, tmp1, tmp2, preservation_level);
 }
 
 // Values for last_Java_pc, and last_Java_sp must comply to the rules
@@ -3200,16 +3233,22 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 }
 
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result) {
-  // OopHandle::resolve is an indirection.
-  ld(result, 0, result);
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2,
+                                        MacroAssembler::PreservationLevel preservation_level) {
+  access_load_at(T_OBJECT, IN_NATIVE, result, noreg, result, tmp1, tmp2, preservation_level);
 }
 
-void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
-  ld(mirror, in_bytes(ConstMethod::constants_offset()), const_method);
-  ld(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
-  ld(mirror, in_bytes(Klass::java_mirror_offset()), mirror);
-  resolve_oop_handle(mirror);
+void MacroAssembler::resolve_weak_handle(Register result, Register tmp1, Register tmp2,
+                                         MacroAssembler::PreservationLevel preservation_level) {
+  Label resolved;
+
+  // A null weak handle resolves to null.
+  cmpdi(CCR0, result, 0);
+  beq(CCR0, resolved);
+
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, result, noreg, result, tmp1, tmp2,
+                 preservation_level);
+  bind(resolved);
 }
 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
@@ -3340,7 +3379,7 @@ int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register t
   assert(!VM_Version::has_vpmsumb(), "Vector version should be used instead!");
 
   // Point to 4 byte folding tables (byte-reversed version for Big Endian)
-  // Layout: See StubRoutines::generate_crc_constants.
+  // Layout: See StubRoutines::ppc::generate_crc_constants.
 #ifdef VM_LITTLE_ENDIAN
   const int ix0 = 3 * CRC32_TABLE_SIZE;
   const int ix1 = 2 * CRC32_TABLE_SIZE;

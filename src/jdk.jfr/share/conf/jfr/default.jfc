@@ -665,6 +665,11 @@
       <setting name="threshold" control="socket-io-threshold">20 ms</setting>
     </event>
 
+    <event name="jdk.Deserialization">
+       <setting name="enabled">false</setting>
+       <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.SecurityPropertyModification">
        <setting name="enabled">false</setting>
        <setting name="stackTrace">true</setting>

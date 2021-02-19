@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,8 @@
 package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CoderResult;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.*;
 
@@ -64,22 +61,24 @@ public class ISO2022_CN_CNS extends ISO2022 implements HistoricallyNamedCharset
 
     private static class Encoder extends ISO2022.Encoder {
 
+        private static final Charset cns = new EUC_TW();
+
+        private static final byte[] SOD = new byte[] {'$', ')', 'G' };
+        private static final byte[] SS2D = new byte[] {'$', '*', 'H' };
+        private static final byte[] SS3D = new byte[] {'$', '+', 'I' };
+
         public Encoder(Charset cs)
         {
             super(cs);
-            SODesig =  new byte[] {'$', ')', 'G' };
-            SS2Desig = new byte[] {'$', '*', 'H' };
-            SS3Desig = new byte[] {'$', '+', 'I' };
-
-            try {
-                Charset cset = Charset.forName("EUC_TW"); // CNS11643
-                ISOEncoder = cset.newEncoder();
-            } catch (Exception e) { }
+            SODesig = SOD;
+            SS2Desig = SS2D;
+            SS3Desig = SS3D;
+            ISOEncoder = cns.newEncoder();
         }
 
-        private byte[] bb = new byte[4];
+        private final byte[] bb = new byte[4];
         public boolean canEncode(char c) {
-            int n = 0;
+            int n;
             return (c <= '\u007f' ||
                     (n = ((EUC_TW.Encoder)ISOEncoder).toEUC(c, bb)) == 2 ||
                     (n == 4 && bb[0] == SS2 &&

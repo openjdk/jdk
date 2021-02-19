@@ -20,10 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.openjdk.bench.java.math;
 
 import org.openjdk.jmh.annotations.Benchmark;

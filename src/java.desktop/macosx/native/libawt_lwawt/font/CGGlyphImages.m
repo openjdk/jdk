@@ -24,8 +24,8 @@
  */
 
 #import <Accelerate/Accelerate.h> // for vImage_Buffer
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
+#import "JNIUtilities.h"
 #import "CGGlyphImages.h"
 #import "CoreTextSupport.h"
 #import "fontscalerdefs.h" // contains the definition of GlyphInfo struct

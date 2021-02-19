@@ -28,3 +28,5 @@
 #############################################################################
 
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
+compiler/jvmci/compilerToVM/IsMatureTest.java 8219555 generic-all
+compiler/jvmci/compilerToVM/IsMatureVsReprofileTest.java 8219555 generic-all

@@ -37,6 +37,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -149,10 +150,10 @@ static inline bool is_class_loader(const Symbol* class_name,
     return true;
   }
 
-  if (SystemDictionary::ClassLoader_klass_loaded()) {
+  if (vmClasses::ClassLoader_klass_loaded()) {
     const Klass* const super_klass = parser.super_klass();
     if (super_klass != NULL) {
-      if (super_klass->is_subtype_of(SystemDictionary::ClassLoader_klass())) {
+      if (super_klass->is_subtype_of(vmClasses::ClassLoader_klass())) {
         return true;
       }
     }
@@ -186,7 +187,7 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
     int cp_index = _nest_members->at(i);
     if (_constants->tag_at(cp_index).is_klass()) {
       Klass* k2 = _constants->klass_at(cp_index, THREAD);
-      assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass()),
+      assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass()),
              "Exceptions should not be possible here");
       if (k2 == k) {
         log_trace(class, nestmates)("- class is listed at nest_members[%d] => cp[%d]", i, cp_index);
@@ -204,7 +205,7 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
         // able to perform that loading but we can't exclude the compiler threads from
         // executing this logic. But it should actually be impossible to trigger loading here.
         Klass* k2 = _constants->klass_at(cp_index, THREAD);
-        assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass()),
+        assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass()),
                "Exceptions should not be possible here");
         if (k2 == k) {
           log_trace(class, nestmates)("- class is listed as a nest member");
@@ -299,7 +300,7 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
 
     Klass* k = _constants->klass_at(_nest_host_index, THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      if (PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass())) {
+      if (PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass())) {
         return NULL; // propagate VMEs
       }
       stringStream ss;
@@ -338,7 +339,7 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
               error = "current type is not listed as a nest member";
             }
           } else {
-            if (PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass())) {
+            if (PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass())) {
               return NULL; // propagate VMEs
             }
             stringStream ss;
@@ -732,7 +733,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 bool InstanceKlass::is_record() const {
   return _record_components != NULL &&
          is_final() &&
-         java_super() == SystemDictionary::Record_klass();
+         java_super() == vmClasses::Record_klass();
 }
 
 bool InstanceKlass::is_sealed() const {
@@ -1194,7 +1195,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       JvmtiExport::clear_detected_exception(jt);
     }
     DTRACE_CLASSINIT_PROBE_WAIT(error, -1, wait);
-    if (e->is_a(SystemDictionary::Error_klass())) {
+    if (e->is_a(vmClasses::Error_klass())) {
       THROW_OOP(e());
     } else {
       JavaCallArguments args(e);
@@ -1424,7 +1425,7 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
     THROW_MSG(throwError ? vmSymbols::java_lang_InstantiationError()
               : vmSymbols::java_lang_InstantiationException(), external_name());
   }
-  if (this == SystemDictionary::Class_klass()) {
+  if (this == vmClasses::Class_klass()) {
     ResourceMark rm(THREAD);
     THROW_MSG(throwError ? vmSymbols::java_lang_IllegalAccessError()
               : vmSymbols::java_lang_IllegalAccessException(), external_name());
@@ -2933,7 +2934,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
 // in an unnamed module.  It is also used to indicate (for all packages whose
 // classes are loaded by the boot loader) that at least one of the package's
 // classes has been loaded.
-void InstanceKlass::set_classpath_index(s2 path_index, TRAPS) {
+void InstanceKlass::set_classpath_index(s2 path_index) {
   if (_package_entry != NULL) {
     DEBUG_ONLY(PackageEntryTable* pkg_entry_tbl = ClassLoaderData::the_null_class_loader_data()->packages();)
     assert(pkg_entry_tbl->lookup_only(_package_entry->name()) == _package_entry, "Should be same");
@@ -3522,7 +3523,7 @@ void FieldPrinter::do_field(fieldDescriptor* fd) {
 void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
   Klass::oop_print_on(obj, st);
 
-  if (this == SystemDictionary::String_klass()) {
+  if (this == vmClasses::String_klass()) {
     typeArrayOop value  = java_lang_String::value(obj);
     juint        length = java_lang_String::length(obj);
     if (value != NULL &&
@@ -3539,7 +3540,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
   FieldPrinter print_field(st, obj);
   do_nonstatic_fields(&print_field);
 
-  if (this == SystemDictionary::Class_klass()) {
+  if (this == vmClasses::Class_klass()) {
     st->print(BULLET"signature: ");
     java_lang_Class::print_signature(obj, st);
     st->cr();
@@ -3557,7 +3558,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     if (real_klass != NULL && real_klass->is_instance_klass()) {
       InstanceKlass::cast(real_klass)->do_local_static_fields(&print_field);
     }
-  } else if (this == SystemDictionary::MethodType_klass()) {
+  } else if (this == vmClasses::MethodType_klass()) {
     st->print(BULLET"signature: ");
     java_lang_invoke_MethodType::print_signature(obj, st);
     st->cr();
@@ -3576,7 +3577,7 @@ void InstanceKlass::oop_print_value_on(oop obj, outputStream* st) {
   st->print("a ");
   name()->print_value_on(st);
   obj->print_address_on(st);
-  if (this == SystemDictionary::String_klass()
+  if (this == vmClasses::String_klass()
       && java_lang_String::value(obj) != NULL) {
     ResourceMark rm;
     int len = java_lang_String::length(obj);
@@ -3585,7 +3586,7 @@ void InstanceKlass::oop_print_value_on(oop obj, outputStream* st) {
     st->print(" = \"%s\"", str);
     if (len > plen)
       st->print("...[%d]", len);
-  } else if (this == SystemDictionary::Class_klass()) {
+  } else if (this == vmClasses::Class_klass()) {
     Klass* k = java_lang_Class::as_Klass(obj);
     st->print(" = ");
     if (k != NULL) {
@@ -3594,19 +3595,19 @@ void InstanceKlass::oop_print_value_on(oop obj, outputStream* st) {
       const char* tname = type2name(java_lang_Class::primitive_type(obj));
       st->print("%s", tname ? tname : "type?");
     }
-  } else if (this == SystemDictionary::MethodType_klass()) {
+  } else if (this == vmClasses::MethodType_klass()) {
     st->print(" = ");
     java_lang_invoke_MethodType::print_signature(obj, st);
   } else if (java_lang_boxing_object::is_instance(obj)) {
     st->print(" = ");
     java_lang_boxing_object::print(obj, st);
-  } else if (this == SystemDictionary::LambdaForm_klass()) {
+  } else if (this == vmClasses::LambdaForm_klass()) {
     oop vmentry = java_lang_invoke_LambdaForm::vmentry(obj);
     if (vmentry != NULL) {
       st->print(" => ");
       vmentry->print_value_on(st);
     }
-  } else if (this == SystemDictionary::MemberName_klass()) {
+  } else if (this == vmClasses::MemberName_klass()) {
     Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(obj);
     if (vmtarget != NULL) {
       st->print(" = ");

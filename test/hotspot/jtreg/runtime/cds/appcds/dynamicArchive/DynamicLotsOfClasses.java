@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,13 +75,12 @@ public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
              "ALL-SYSTEM",
              "-Xlog:hashtables",
              "-Xmx500m",
-             "-Xlog:cds,cds+dynamic",
+             "-Xlog:cds=debug", // test detailed metadata info printing
+             "-Xlog:cds+dynamic=info",
              bootClassPath,
              "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
              "-cp", appJar, mainClass, classList)
-             .assertNormalExit(output -> {
-                 output.shouldContain("Buffer-space to target-space delta")
-                        .shouldContain("Written dynamic archive 0x");
-             });
+            .assertNormalExit("Written dynamic archive 0x",
+                              "Detailed metadata info");
     }
 }

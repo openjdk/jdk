@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,15 +57,18 @@ class NativeCallStack : public StackObj {
 private:
   address       _stack[NMT_TrackingStackDepth];
   unsigned int  _hash_value;
-
+  static const NativeCallStack _empty_stack;
 public:
-  NativeCallStack(int toSkip = 0, bool fillStack = false);
+  // Default ctor creates an empty stack.
+  // (it may make sense to remove this altogether but its used in a few places).
+  NativeCallStack() : _hash_value(0) {
+    memset(_stack, 0, sizeof(_stack));
+  }
+
+  NativeCallStack(int toSkip);
   NativeCallStack(address* pc, int frameCount);
 
-  static inline const NativeCallStack& empty_stack() {
-    static const NativeCallStack EMPTY_STACK(0, false);
-    return EMPTY_STACK;
-  }
+  static inline const NativeCallStack& empty_stack() { return _empty_stack; }
 
   // if it is an empty stack
   inline bool is_empty() const {
@@ -91,8 +94,7 @@ public:
     return _stack[index];
   }
 
-  // Hash code. Any better algorithm?
-  unsigned int hash() const;
+  unsigned int hash() const { return _hash_value; }
 
   void print_on(outputStream* out) const;
   void print_on(outputStream* out, int indent) const;

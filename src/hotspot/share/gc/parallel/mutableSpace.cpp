@@ -133,7 +133,11 @@ void MutableSpace::initialize(MemRegion mr,
   }
 
   set_bottom(mr.start());
-  set_end(mr.end());
+  // When expanding concurrently with callers of cas_allocate, setting end
+  // makes the new space available for allocation by other threads.  So this
+  // assignment must follow all other configuration and initialization that
+  // might be done for expansion.
+  Atomic::release_store(end_addr(), mr.end());
 
   if (clear_space) {
     clear(mangle_space);
@@ -209,6 +213,15 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
 bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
   HeapWord* expected_top = obj + size;
   return Atomic::cmpxchg(top_addr(), expected_top, obj) == expected_top;
+}
+
+// Only used by oldgen allocation.
+bool MutableSpace::needs_expand(size_t word_size) const {
+  assert_lock_strong(ExpandHeap_lock);
+  // Holding the lock means end is stable.  So while top may be advancing
+  // via concurrent allocations, there is no need to order the reads of top
+  // and end here, unlike in cas_allocate.
+  return pointer_delta(end(), top()) < word_size;
 }
 
 void MutableSpace::oop_iterate(OopIterateClosure* cl) {

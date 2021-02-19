@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
@@ -40,6 +39,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/nonJavaThread.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -243,11 +243,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   {
     RefProcTotalPhaseTimesTracker tt(RefPhase4, phase_times, this);
     process_phantom_refs(is_alive, keep_alive, complete_gc, task_executor, phase_times);
-  }
-
-  if (task_executor != NULL) {
-    // Record the work done by the parallel workers.
-    task_executor->set_single_threaded_mode();
   }
 
   phase_times->set_total_time_ms((os::elapsedTime() - start_time) * 1000);
@@ -774,10 +769,6 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
 #endif
 }
 
-bool ReferenceProcessor::is_mt_processing_set_up(AbstractRefProcTaskExecutor* task_executor) const {
-  return task_executor != NULL && _processing_is_mt;
-}
-
 void ReferenceProcessor::process_soft_ref_reconsider(BoolObjectClosure* is_alive,
                                                      OopClosure* keep_alive,
                                                      VoidClosure* complete_gc,
@@ -787,7 +778,6 @@ void ReferenceProcessor::process_soft_ref_reconsider(BoolObjectClosure* is_alive
 
   size_t const num_soft_refs = total_count(_discoveredSoftRefs);
   phase_times->set_ref_discovered(REF_SOFT, num_soft_refs);
-
   phase_times->set_processing_is_mt(_processing_is_mt);
 
   if (num_soft_refs == 0) {
