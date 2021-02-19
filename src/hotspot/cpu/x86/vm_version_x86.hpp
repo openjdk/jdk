@@ -1063,6 +1063,10 @@ public:
   static bool supports_clflushopt() { return ((_features & CPU_FLUSHOPT) != 0); }
   static bool supports_clwb() { return ((_features & CPU_CLWB) != 0); }
 
+#ifdef __APPLE__
+  static bool is_cpu_emulated();
+#endif
+
   // support functions for virtualization detection
  private:
   static void check_virtualizations();

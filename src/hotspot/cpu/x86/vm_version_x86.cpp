@@ -39,6 +39,11 @@
 
 #include OS_HEADER_INLINE(os)
 
+#ifdef __APPLE__
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
+
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_stepping;
@@ -1868,3 +1873,18 @@ void VM_Version::initialize() {
     check_virtualizations();
   }
 }
+
+#ifdef __APPLE__
+bool VM_Version::is_cpu_emulated() {
+  int ret = 0;
+  size_t size = sizeof(ret);
+  // Is this process being ran in Rosetta (i.e. emulation) mode on macOS?
+  if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1) {
+    // errno == ENOENT is a valid response, but anything else is a real error
+    if (errno != ENOENT) {
+      warning("unable to lookup sysctl.proc_translated");
+    }
+  }
+  return (ret==1);
+}
+#endif
