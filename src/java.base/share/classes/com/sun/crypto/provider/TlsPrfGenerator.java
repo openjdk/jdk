@@ -369,6 +369,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
             }
             remaining -= k;
         }
+        Arrays.fill(tmp, (byte)0);
     }
 
     /**

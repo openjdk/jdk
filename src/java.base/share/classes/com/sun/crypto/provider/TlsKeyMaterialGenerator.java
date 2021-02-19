@@ -172,18 +172,11 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
         int ofs = 0;
         if (macLength != 0) {
-            byte[] tmp = new byte[macLength];
-
             // mac keys
-            System.arraycopy(keyBlock, ofs, tmp, 0, macLength);
+            clientMacKey = new SecretKeySpec(keyBlock, ofs, macLength, "Mac");
             ofs += macLength;
-            clientMacKey = new SecretKeySpec(tmp, "Mac");
-
-            System.arraycopy(keyBlock, ofs, tmp, 0, macLength);
+            serverMacKey = new SecretKeySpec(keyBlock, ofs, macLength, "Mac");
             ofs += macLength;
-            serverMacKey = new SecretKeySpec(tmp, "Mac");
-
-            Arrays.fill(tmp, (byte)0);
         }
 
         if (keyLength == 0) { // SSL_RSA_WITH_NULL_* ciphersuites
@@ -209,15 +202,10 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
                 // IV keys if needed.
                 if (ivLength != 0) {
-                    byte[] tmp = new byte[ivLength];
-
-                    System.arraycopy(keyBlock, ofs, tmp, 0, ivLength);
+                    clientIv = new IvParameterSpec(keyBlock, ofs, ivLength);
                     ofs += ivLength;
-                    clientIv = new IvParameterSpec(tmp);
-
-                    System.arraycopy(keyBlock, ofs, tmp, 0, ivLength);
+                    serverIv = new IvParameterSpec(keyBlock, ofs, ivLength);
                     ofs += ivLength;
-                    serverIv = new IvParameterSpec(tmp);
                 }
             } else {
                 // if exportable suites, calculate the alternate
@@ -242,13 +230,10 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
                     Arrays.fill(tmp, (byte) 0);
 
                     if (ivLength != 0) {
-                        tmp = new byte[ivLength];
                         byte[] block = doTLS10PRF(null, LABEL_IV_BLOCK, seed,
                                 ivLength << 1, md5, sha);
-                        System.arraycopy(block, 0, tmp, 0, ivLength);
-                        clientIv = new IvParameterSpec(tmp);
-                        System.arraycopy(block, ivLength, tmp, 0, ivLength);
-                        serverIv = new IvParameterSpec(tmp);
+                        clientIv = new IvParameterSpec(block, 0, ivLength);
+                        serverIv = new IvParameterSpec(block, ivLength, ivLength);
                     }
                 } else {
                     // SSLv3
