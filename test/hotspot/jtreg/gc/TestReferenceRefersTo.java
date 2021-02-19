@@ -162,6 +162,10 @@ public class TestReferenceRefersTo {
         testObject4 = null;
     }
 
+    private static boolean isShenandoahIUMode() {
+        return WB.getBooleanVMFlag("UseShenandoahGC") && "iu".equals(WB.getStringVMFlag("ShenandoahGCMode"));
+    }
+
     private static void testConcurrentCollection() throws Exception {
         progress("setup concurrent collection test");
         setup();
@@ -197,8 +201,14 @@ public class TestReferenceRefersTo {
             expectCleared(testPhantom1, "testPhantom1");
             expectCleared(testWeak2, "testWeak2");
             expectValue(testWeak3, testObject3, "testWeak3");
-            // This is true for all currently supported concurrent collectors.
-            expectNotCleared(testWeak4, "testWeak4");
+            // This is true for all currently supported concurrent collectors,
+            // except Shenandoah+IU, which allows clearing refs even when
+            // accessed during concurrent marking.
+            if (isShenandoahIUMode()) {
+              expectCleared(testWeak4, "testWeak4");
+            } else {
+              expectNotCleared(testWeak4, "testWeak4");
+            }
 
             progress("verify get returns expected values");
             if (testWeak2.get() != null) {
@@ -213,10 +223,12 @@ public class TestReferenceRefersTo {
             }
 
             TestObject obj4 = testWeak4.get();
-            if (obj4 == null) {
-                fail("testWeak4.get() returned null");
-            } else if (obj4.value != 4) {
-                fail("testWeak4.get().value is " + obj4.value);
+            if (!isShenandoahIUMode()) {
+                if (obj4 == null) {
+                    fail("testWeak4.get() returned null");
+                } else if (obj4.value != 4) {
+                    fail("testWeak4.get().value is " + obj4.value);
+                }
             }
 
             progress("verify queue entries");
