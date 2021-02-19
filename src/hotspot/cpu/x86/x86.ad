@@ -1526,7 +1526,7 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorMaskGen:
     case Op_LoadVectorMasked:
     case Op_StoreVectorMasked:
-      if (UseAVX < 3) {
+      if (UseAVX < 3 || !VM_Version::supports_bmi2()) {
         return false;
       }
       break;

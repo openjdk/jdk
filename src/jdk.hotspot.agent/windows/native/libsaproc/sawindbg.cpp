@@ -101,7 +101,7 @@ class AutoJavaString {
 public:
   // check env->ExceptionOccurred() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
-    : m_env(env), m_str(str), m_buf(env->GetStringUTFChars(str, nullptr)) {
+    : m_env(env), m_str(str), m_buf(str == nullptr ? nullptr : env->GetStringUTFChars(str, nullptr)) {
   }
 
   ~AutoJavaString() {

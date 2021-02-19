@@ -1556,8 +1556,8 @@ update. This might speed up the build, but comes at the risk of an incorrect
 build result. This is only recommended if you know what you're doing.
 
 From time to time, you will also need to modify the command line to `configure`
-due to changes. Use `make print-configure` to show the command line used for
-your current configuration.
+due to changes. Use `make print-configuration` to show the command line used
+for your current configuration.
 
 ### Using Fine-Grained Make Targets
 
