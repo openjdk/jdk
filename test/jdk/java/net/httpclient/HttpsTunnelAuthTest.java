@@ -271,14 +271,7 @@ public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
             if (!pAuthenticate.equals("Basic realm=\"proxy realm\"")) {
                 throw new RuntimeException("Unexpected proxy-authenticate: " + pAuthenticate);
             }
-
-            if ("http".equals(scheme)) {
-                // The proxy server will close the connection.
-                // Wait a bit for the client to receive the close
-                // notification.
-                // Thread.sleep(500);
-            }
-
+            
             // Second request will have Proxy-Authorization, no Authorization.
             // We should get 401 from the server this time.
             out.printf("%nPosting with Proxy-Authorization to %s server at: %s%n", expectedVersion(scheme, version), req1);
