@@ -21,9 +21,6 @@
  * questions.
  */
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -33,30 +30,16 @@ import java.util.logging.LogRecord;
  * @bug 8252883
  * @summary tests the handling of AccessDeniedException due to delay in Windows deletion.
  * @modules java.logging/java.util.logging:open
- * @run main/othervm FileHandlerAccessTest process 20
- * @run main/othervm FileHandlerAccessTest thread 20
+ * @run main/othervm FileHandlerAccessTest 20
  * @author evwhelan
  */
 
 public class FileHandlerAccessTest {
     public static void main(String[] args) {
-        if (!(args.length == 2 || args.length == 1)) {
-            throw new IllegalArgumentException("Usage error: expects java FileHandlerAccessTest [process/thread] <count>");
-        } else if (args.length == 2) {
-            var type = args[0];
-            var count = Integer.parseInt(args[1]);
-
-            for (var i = 0; i < count; i++) {
-                System.out.println("Testing with arguments: type=" + type + ", count="+count);
-                if (type.equals("process")) {
-                    new Thread(FileHandlerAccessTest::accessProcess).start();
-                }
-                else if (type.equals("thread")) {
-                    new Thread(FileHandlerAccessTest::access).start();
-                }
-            }
-        } else {
-            access();
+        var count = Integer.parseInt(args[0]);
+        System.out.println("Testing with " + count + " threads");
+        for (var i = 0; i < count; i++) {
+            new Thread(FileHandlerAccessTest::access).start();
         }
     }
 
@@ -67,42 +50,6 @@ public class FileHandlerAccessTest {
             handler.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static void accessProcess() {
-        final var javaHome = System.getProperty("java.home");
-        var name = Thread.currentThread().getName();
-        BufferedReader bufferedReader = null;
-        Process childProcess = null;
-        final String className = new Object(){}.getClass().getEnclosingClass().getName();
-
-        try {
-            ProcessBuilder processBuilder = new ProcessBuilder(javaHome + File.separator + "bin" + File.separator + "java", "-cp", ".", className, "doProcess");
-            processBuilder.redirectErrorStream(true);
-            childProcess = processBuilder.start();
-
-            bufferedReader = new BufferedReader(new InputStreamReader(childProcess.getInputStream()));
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                System.out.println(name + "\t|" + line);
-            }
-
-            int exitCode = childProcess.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException("An error occured in the child process.");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (childProcess != null) {
-                childProcess.destroy();
-            }
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                } catch (Exception ignored) {}
-            }
         }
     }
 }
