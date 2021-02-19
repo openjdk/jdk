@@ -172,21 +172,22 @@ public abstract class ExtendedSocketOptions {
         if (ext != null) {
             return ext;
         }
-        synchronized (ExtendedSocketOptions.class) {
+        try {
+            // If the class is present, it will be initialized which
+            // triggers registration of the extended socket options.
+            Class<?> c = Class.forName("jdk.net.ExtendedSocketOptions");
             ext = instance;
-            if (ext != null) {
-                return ext;
-            }
-            try {
-                // If the class is present, it will be initialized which
-                // triggers registration of the extended socket options.
-                Class<?> c = Class.forName("jdk.net.ExtendedSocketOptions");
-            } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
+            synchronized (ExtendedSocketOptions.class) {
+                ext = instance;
+                if (ext != null) {
+                    return ext;
+                }
                 // the jdk.net module is not present => no extended socket options
-                instance = new NoExtendedSocketOptions();
+                ext = instance = new NoExtendedSocketOptions();
             }
         }
-        return instance;
+        return ext;
     }
 
     /** Registers support for extended socket options. Invoked by the jdk.net module. */
