@@ -318,7 +318,7 @@ jint dump_heap_ext(AttachOperation* op, outputStream* out) {
   // Then parse arguments from op->arg(2).
   // Format: "compress_level,parallel".
   if (arg_str != NULL && arg_str[0] != '\0') {
-    int args_len = strlen(arg_str);
+    size_t args_len = strlen(arg_str);
     char* args_line = NEW_C_HEAP_ARRAY(char, args_len + 1, mtInternal);
     snprintf(args_line, args_len + 1, "%s", arg_str);
     int args_count = parse_args(args_line, extra_args, MAX_EXTRA_ARGS_COUNT, ',');
