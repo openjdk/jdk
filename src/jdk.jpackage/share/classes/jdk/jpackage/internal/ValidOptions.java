@@ -111,6 +111,7 @@ class ValidOptions {
             options.put(CLIOptions.MAC_SIGNING_KEYCHAIN.getId(), USE.ALL);
             options.put(CLIOptions.MAC_APP_STORE.getId(), USE.ALL);
             options.put(CLIOptions.MAC_CATEGORY.getId(), USE.ALL);
+            options.put(CLIOptions.MAC_ENTITLEMENTS.getId(), USE.ALL);
         }
 
         if (Platform.getPlatform() == Platform.LINUX) {

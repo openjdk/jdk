@@ -58,6 +58,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             "jdk.jpackage.internal.resources.MacResources");
 
     private static final String DEFAULT_BACKGROUND_IMAGE = "background_pkg.png";
+    private static final String DEFAULT_PDF = "product-def.plist";
 
     private static final String TEMPLATE_PREINSTALL_SCRIPT =
             "preinstall.template";
@@ -172,6 +173,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     private Path getConfig_DistributionXMLFile(
             Map<String, ? super Object> params) {
         return CONFIG_ROOT.fetchFrom(params).resolve("distribution.dist");
+    }
+
+    private Path getConfig_PDF(Map<String, ? super Object> params) {
+        return CONFIG_ROOT.fetchFrom(params).resolve("product-def.plist");
     }
 
     private Path getConfig_BackgroundImage(Map<String, ? super Object> params) {
@@ -324,6 +329,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         createResource(DEFAULT_BACKGROUND_IMAGE, params)
                 .setCategory(I18N.getString("resource.pkg-background-image"))
                 .saveToFile(getConfig_BackgroundImageDarkAqua(params));
+
+        createResource(DEFAULT_PDF, params)
+                .setCategory(I18N.getString("resource.pkg-pdf"))
+                .saveToFile(getConfig_PDF(params));
 
         prepareDistributionXMLFile(params);
 
@@ -496,12 +505,24 @@ else Log.info("   ---   skipping preparePackageScripts");
                 }
             }
 
-            commandLine.add("--distribution");
-            commandLine.add(
-                    getConfig_DistributionXMLFile(params).toAbsolutePath().toString());
-            commandLine.add("--package-path");
-            commandLine.add(PACKAGES_ROOT.fetchFrom(params).toAbsolutePath().toString());
-
+            if (APP_STORE.fetchFrom(params)) {
+Log.info("   ---   creating pkg for Mac App Store");
+                commandLine.add("--product");
+                commandLine.add(getConfig_PDF(params)
+                        .toAbsolutePath().toString());
+                commandLine.add("--component");
+                Path p = Path.of(root, APP_NAME.fetchFrom(params) + ".app");
+                commandLine.add(p.toAbsolutePath().toString());
+                commandLine.add(getInstallDir(params));
+            } else {
+Log.info("   ---   creating normal pkg ");
+                commandLine.add("--distribution");
+                commandLine.add(getConfig_DistributionXMLFile(params)
+                        .toAbsolutePath().toString());
+                commandLine.add("--package-path");
+                commandLine.add(PACKAGES_ROOT.fetchFrom(params)
+                        .toAbsolutePath().toString());
+            }
             commandLine.add(finalPKG.toAbsolutePath().toString());
 
             pb = new ProcessBuilder(commandLine);
