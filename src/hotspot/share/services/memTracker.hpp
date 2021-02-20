@@ -87,9 +87,9 @@ class MemTracker : AllStatic {
 #include "services/virtualMemoryTracker.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
-                    NativeCallStack(0, true) : NativeCallStack::empty_stack())
+                    NativeCallStack(0) : NativeCallStack::empty_stack())
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail) ?  \
-                    NativeCallStack(1, true) : NativeCallStack::empty_stack())
+                    NativeCallStack(1) : NativeCallStack::empty_stack())
 
 class MemBaseline;
 

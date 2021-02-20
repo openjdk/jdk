@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,29 @@
  * questions.
  *
  */
+class Outer{
+    static final class Inner{
+        static {
+            doit(() -> {
+                System.out.println("Hello from Inner");
+            });
+        }
+        static void doit(Runnable t) {
+            t.run();
+        }
+    }
+}
 
-#ifndef SHARE_SERVICES_ALLOCATIONSITE_HPP
-#define SHARE_SERVICES_ALLOCATIONSITE_HPP
+class MyShutdown extends Thread {
+    public void run() {
+        Outer.Inner inner = new Outer.Inner();
+    }
+}
 
-#include "memory/allocation.hpp"
-#include "utilities/nativeCallStack.hpp"
-
-// Allocation site represents a code path that makes a memory
-// allocation
-class AllocationSite {
- private:
-  const NativeCallStack  _call_stack;
-  const MEMFLAGS         _flag;
- public:
-  AllocationSite(const NativeCallStack& stack, MEMFLAGS flag) : _call_stack(stack), _flag(flag) { }
-  int hash() const { return _call_stack.hash(); }
-
-  bool equals(const NativeCallStack& stack) const {
-    return _call_stack.equals(stack);
+public class LambdaProxyDuringShutdownApp {
+  public static void main(String[] args) throws Exception {
+      Runtime r = Runtime.getRuntime();
+      r.addShutdownHook(new MyShutdown());
+      System.exit(0);
   }
-
-  bool equals(const AllocationSite& other) const {
-    return other.equals(_call_stack);
-  }
-
-  const NativeCallStack* call_stack() const {
-    return &_call_stack;
-  }
-
-  MEMFLAGS flag() const { return _flag; }
-};
-
-#endif // SHARE_SERVICES_ALLOCATIONSITE_HPP
+}
