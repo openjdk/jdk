@@ -35,12 +35,12 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
 import java.io.FileInputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.nio.file.*;
 import java.util.*;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 public class LoaderLeakTest {
 
@@ -96,7 +96,7 @@ class Main {
     }
 }
 
-@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+@java.lang.annotation.Retention(RUNTIME)
 @interface A {
     B b();
 }
