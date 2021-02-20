@@ -147,7 +147,7 @@ public class TestVectorShiftImmAndAccumulate {
             vba128.add(vbb128.lanewise(VectorOperators.LSHR, 24)).intoArray(arrBytes[op + 5], 16 * i);
         }
 
-        if (verify) {     
+        if (verify) {
             for (int i = NUM_OPS * MAX_TESTS_PER_OP; i < VLENS * NUM_OPS * MAX_TESTS_PER_OP; i++) {
                 assertTrue(Arrays.equals(tBytes[i], gBytes[i]), i, 128);
             }
