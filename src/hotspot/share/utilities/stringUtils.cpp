@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,33 @@ int StringUtils::replace_no_expand(char* string, const char* from, const char* t
   }
 
   return replace_count;
+}
+
+int StringUtils::tr_delete(char* s, const char* charset) {
+  if (s == nullptr || charset == nullptr)
+    return 0;
+
+  size_t nums = strlen(charset);
+  size_t len = strlen(s);
+  int k = 0;
+
+  for (size_t i = 0; i < len; ++i) {
+    bool matched = false;
+
+    for (size_t j = 0; j < nums; ++j) {
+      if (s[i] == charset[j]) {
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      s[k++] = s[i];
+    }
+  }
+
+  s[k] = '\0';
+  return len - k;
 }
 
 double StringUtils::similarity(const char* str1, size_t len1, const char* str2, size_t len2) {

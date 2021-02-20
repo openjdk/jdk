@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/resourceArea.hpp"
 #include "utilities/stringUtils.hpp"
 #include "unittest.hpp"
 
@@ -30,4 +31,35 @@ TEST(StringUtils, similarity) {
   const char* str1 = "the quick brown fox jumps over the lazy dog";
   const char* str2 = "the quick brown fox jumps over the lazy doh";
   EXPECT_NEAR(0.95349, StringUtils::similarity(str1, strlen(str1), str2, strlen(str2)), 1e-5);
+}
+
+TEST_VM(StringUtils, tr_delete) {
+  ResourceMark rm;
+  const char* str = "the quick brown fox jumps over the lazy dog.";
+  char* buf = os::strdup(str);
+  int sz;
+
+  sz = StringUtils::tr_delete(buf, " \n.");
+  EXPECT_EQ(sz, 9);
+  EXPECT_STREQ(buf, "thequickbrownfoxjumpsoverthelazydog");
+
+  sz = StringUtils::tr_delete(buf, "");
+  EXPECT_EQ(sz, 0);
+
+  sz = StringUtils::tr_delete(NULL, NULL);
+  EXPECT_EQ(sz, 0);
+
+  char buf2[4] = {'a', 'b', 'c', '\0'};
+  sz = StringUtils::tr_delete(buf2, "efg");
+  EXPECT_EQ(sz, 0);
+  EXPECT_STREQ(buf2, "abc");
+
+  sz = StringUtils::tr_delete(buf2, "abc");
+  EXPECT_EQ(sz, 3);
+  EXPECT_STREQ(buf2, "");
+
+  sz = StringUtils::tr_delete(buf2, "abc");
+  EXPECT_EQ(sz, 0);
+
+  os::free(buf);
 }

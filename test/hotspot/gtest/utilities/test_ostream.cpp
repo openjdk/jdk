@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/stringUtils.hpp"
 
 #include "unittest.hpp"
 
@@ -50,24 +51,41 @@ static void test_stringStream_is_zero_terminated(const stringStream* ss) {
   ASSERT_EQ(ss->base()[ss->size()], '\0');
 }
 
-static size_t count_char(const stringStream* ss, char ch) {
+static size_t count_char(const char* s, size_t len, char ch) {
   size_t cnt = 0;
 
-  for (size_t i = 0; i < ss->size(); ++i) {
-    if (ss->base()[i] == ch) {
+  for (size_t i = 0; i < len; ++i) {
+    if (s[i] == ch) {
       cnt++;
     }
   }
   return cnt;
 }
 
+static size_t count_char(const stringStream* ss, char ch) {
+  return count_char(ss->as_string(), ss->size(), ch);
+}
+
 static void test_stringStream_tr_delete(stringStream* ss) {
+  ResourceMark rm;
   size_t whitespaces = count_char(ss, ' ');
-  size_t deleted = ss->tr_delete(' ');
+
+  char* s2 = os::strdup(ss->as_string());
+  size_t deleted = StringUtils::tr_delete(s2, " ");
   ASSERT_EQ(whitespaces, deleted);
 
-  whitespaces = count_char(ss, ' ');
+  whitespaces = count_char(s2, strlen(s2), ' ');
   ASSERT_EQ(whitespaces, (size_t)0);
+
+  StringUtils::tr_delete(s2, "mno");
+  size_t t = count_char(s2, strlen(s2), 'm');
+  ASSERT_EQ(t, (size_t)0);
+  t = count_char(s2, strlen(s2), 'n');
+  ASSERT_EQ(t, (size_t)0);
+  t = count_char(s2, strlen(s2), 'o');
+  ASSERT_EQ(t, (size_t)0);
+
+  os::free(s2);
 }
 
 static void do_test_stringStream(stringStream* ss, size_t expected_cap) {
@@ -85,7 +103,6 @@ static void do_test_stringStream(stringStream* ss, size_t expected_cap) {
   }
 
   test_stringStream_tr_delete(ss);
-  test_stringStream_is_zero_terminated(ss);
 
   // Reset should zero terminate too
   ss->reset();

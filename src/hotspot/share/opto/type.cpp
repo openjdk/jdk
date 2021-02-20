@@ -40,6 +40,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/stringUtils.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -4043,11 +4044,17 @@ void TypeInstPtr::dump2( Dict &d, uint depth, outputStream* st ) const {
   switch( _ptr ) {
   case Constant:
     if (WizardMode || Verbose) {
+      st->print(" ");
       stringStream ss;
-      ss.print(" ");
       const_oop()->print_oop(&ss);
-      ss.tr_delete('\n');
-      st->print_raw(ss.as_string());
+
+      {
+        ResourceMark rm;
+        char* buf = os::strdup(ss.as_string());
+        StringUtils::tr_delete(buf, "\n");
+        st->print_raw(buf);
+        os::free(buf);
+      }
     }
   case BotPTR:
     if (!WizardMode && !Verbose) {

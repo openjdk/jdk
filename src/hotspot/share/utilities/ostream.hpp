@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,8 +219,6 @@ class stringStream : public outputStream {
   void  reset();
   // copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
-  // delete all appearances of ch
-  size_t tr_delete(char ch);
 };
 
 class fileStream : public outputStream {

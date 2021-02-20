@@ -417,21 +417,6 @@ stringStream::~stringStream() {
   }
 }
 
-size_t stringStream::tr_delete(char ch) {
-  size_t cnt = _written;
-
-  for (size_t i = 0; i < _written; ++i) {
-    if (_buffer[i] == ch) {
-      for (size_t j = i; j < _written - 1; ++j) {
-        _buffer[j] = _buffer[j + 1];
-      }
-      _written--;
-    }
-  }
-
-  zero_terminate();
-  return cnt - _written;
-}
 xmlStream*   xtty;
 outputStream* tty;
 extern Mutex* tty_lock;
