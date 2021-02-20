@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,9 @@ public class LoaderLeakTest {
     }
 
     private void runJavaProcessExpectSuccessExitCode(String ... command) throws Throwable {
-        ProcessTools
-                .executeCommand(
-                        ProcessTools
-                                .createJavaProcessBuilder(command)
-                                .directory(Paths.get(Utils.TEST_CLASSES).toFile()
-                        )
-                ).shouldHaveExitValue(0);
+        var processBuilder = ProcessTools.createJavaProcessBuilder(command)
+                                                        .directory(Paths.get(Utils.TEST_CLASSES).toFile());
+        ProcessTools.executeCommand(processBuilder).shouldHaveExitValue(0);
     }
 
 }
@@ -73,9 +69,6 @@ class Main {
     }
 
     static void doTest(boolean readAnn) throws Exception {
-        // URL classes = new URL("file://" + System.getProperty("user.dir") + "/classes");
-        // URL[] path = { classes };
-        // URLClassLoader loader = new URLClassLoader(path);
         ClassLoader loader = new SimpleClassLoader();
         WeakReference<Class<?>> c = new WeakReference<Class<?>>(loader.loadClass("C"));
         if (c.get() == null) throw new AssertionError();
@@ -116,23 +109,21 @@ class SimpleClassLoader extends ClassLoader {
     public SimpleClassLoader() { }
 
     private byte[] getClassImplFromDataBase(String className) {
-        byte result[];
         try {
             return Files.readAllBytes(Paths.get(className + ".class"));
         } catch (Exception e) {
-            throw new Error(e);
+            throw new Error("could not load class " + className, e);
         }
     }
 
     @Override
-    public synchronized Class<?> loadClass(String className, boolean resolveIt)
+    public Class<?> loadClass(String className, boolean resolveIt)
             throws ClassNotFoundException {
         switch (className) {
-            case "A":
-            case "B":
-            case "C":
+            case "A", "B", "C" -> {
                 var classData = getClassImplFromDataBase(className);
                 return defineClass(className, classData, 0, classData.length);
+            }
         }
         return super.loadClass(className, resolveIt);
     }
