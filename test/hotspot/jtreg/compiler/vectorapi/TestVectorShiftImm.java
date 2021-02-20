@@ -41,7 +41,7 @@ public class TestVectorShiftImm {
     private static final int LARGE_LEN = 128;
     private static final int NUM_ITERS = 200000;
 
-    private static final int NUM_OPS          = 5;
+    private static final int NUM_OPS          = 3;
     private static final int MAX_TESTS_PER_OP = 6;
 
     private static byte[]  bytesA,    bytesB;
@@ -67,7 +67,7 @@ public class TestVectorShiftImm {
 
     static final VectorSpecies<Long> long128SPECIES = LongVector.SPECIES_128;
 
-    static String[] opNames = {"LSHL", "ASHR", "LSHR", "ASHRACC", "LSHRACC"};
+    static String[] opNames = {"LSHL", "ASHR", "LSHR"};
 
     public static void main(String args[]) {
         test_init();
@@ -114,22 +114,6 @@ public class TestVectorShiftImm {
             vbb.lanewise(VectorOperators.LSHR, 16).intoArray(arrBytes[op + 3], 8 * i);
             vbb.lanewise(VectorOperators.LSHR, 19).intoArray(arrBytes[op + 4], 8 * i);
             vbb.lanewise(VectorOperators.LSHR, 24).intoArray(arrBytes[op + 5], 8 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 1)).intoArray(arrBytes[op], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 8)).intoArray(arrBytes[op  + 1], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 13)).intoArray(arrBytes[op + 2], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 16)).intoArray(arrBytes[op + 3], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 19)).intoArray(arrBytes[op + 4], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 24)).intoArray(arrBytes[op + 5], 8 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 1)).intoArray(arrBytes[op], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 8)).intoArray(arrBytes[op  + 1], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 13)).intoArray(arrBytes[op + 2], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 16)).intoArray(arrBytes[op + 3], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 19)).intoArray(arrBytes[op + 4], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 24)).intoArray(arrBytes[op + 5], 8 * i);
         }
 
         if (verify) {
@@ -165,22 +149,6 @@ public class TestVectorShiftImm {
             vbb.lanewise(VectorOperators.LSHR, 16).intoArray(arrBytes[op + 3], 16 * i);
             vbb.lanewise(VectorOperators.LSHR, 19).intoArray(arrBytes[op + 4], 16 * i);
             vbb.lanewise(VectorOperators.LSHR, 24).intoArray(arrBytes[op + 5], 16 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 1)).intoArray(arrBytes[op], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 8)).intoArray(arrBytes[op  + 1], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 13)).intoArray(arrBytes[op + 2], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 16)).intoArray(arrBytes[op + 3], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 19)).intoArray(arrBytes[op + 4], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 24)).intoArray(arrBytes[op + 5], 16 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 1)).intoArray(arrBytes[op], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 8)).intoArray(arrBytes[op  + 1], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 13)).intoArray(arrBytes[op + 2], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 16)).intoArray(arrBytes[op + 3], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 19)).intoArray(arrBytes[op + 4], 16 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 24)).intoArray(arrBytes[op + 5], 16 * i);
         }
 
         if (verify) {
@@ -222,22 +190,6 @@ public class TestVectorShiftImm {
             vbb.lanewise(VectorOperators.LSHR, 32).intoArray(arrShorts[op + 3], 4 * i);
             vbb.lanewise(VectorOperators.LSHR, 35).intoArray(arrShorts[op + 4], 4 * i);
             vbb.lanewise(VectorOperators.LSHR, 48).intoArray(arrShorts[op + 5], 4 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 9)).intoArray(arrShorts[op], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 16)).intoArray(arrShorts[op + 1], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 27)).intoArray(arrShorts[op + 2], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 32)).intoArray(arrShorts[op + 3], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 35)).intoArray(arrShorts[op + 4], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 48)).intoArray(arrShorts[op + 5], 4 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 9)).intoArray(arrShorts[op], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 16)).intoArray(arrShorts[op + 1], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 27)).intoArray(arrShorts[op + 2], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 32)).intoArray(arrShorts[op + 3], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 35)).intoArray(arrShorts[op + 4], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 48)).intoArray(arrShorts[op + 5], 4 * i);
         }
 
         if (verify) {
@@ -273,22 +225,6 @@ public class TestVectorShiftImm {
             vbb.lanewise(VectorOperators.LSHR, 32).intoArray(arrShorts[op + 3], 8 * i);
             vbb.lanewise(VectorOperators.LSHR, 35).intoArray(arrShorts[op + 4], 8 * i);
             vbb.lanewise(VectorOperators.LSHR, 48).intoArray(arrShorts[op + 5], 8 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 9)).intoArray(arrShorts[op], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 16)).intoArray(arrShorts[op + 1], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 27)).intoArray(arrShorts[op + 2], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 32)).intoArray(arrShorts[op + 3], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 35)).intoArray(arrShorts[op + 4], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 48)).intoArray(arrShorts[op + 5], 8 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 9)).intoArray(arrShorts[op], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 16)).intoArray(arrShorts[op + 1], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 27)).intoArray(arrShorts[op + 2], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 32)).intoArray(arrShorts[op + 3], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 35)).intoArray(arrShorts[op + 4], 8 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 48)).intoArray(arrShorts[op + 5], 8 * i);
         }
 
         if (verify) {
@@ -330,22 +266,6 @@ public class TestVectorShiftImm {
             vbb.lanewise(VectorOperators.LSHR, 32).intoArray(arrIntegers[op + 3], 2 * i);
             vbb.lanewise(VectorOperators.LSHR, 35).intoArray(arrIntegers[op + 4], 2 * i);
             vbb.lanewise(VectorOperators.LSHR, 48).intoArray(arrIntegers[op + 5], 2 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 9)).intoArray(arrIntegers[op], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 16)).intoArray(arrIntegers[op + 1], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 27)).intoArray(arrIntegers[op + 2], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 32)).intoArray(arrIntegers[op + 3], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 35)).intoArray(arrIntegers[op + 4], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 48)).intoArray(arrIntegers[op + 5], 2 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 9)).intoArray(arrIntegers[op], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 16)).intoArray(arrIntegers[op + 1], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 27)).intoArray(arrIntegers[op + 2], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 32)).intoArray(arrIntegers[op + 3], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 35)).intoArray(arrIntegers[op + 4], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 48)).intoArray(arrIntegers[op + 5], 2 * i);
         }
 
         if (verify) {
@@ -381,22 +301,6 @@ public class TestVectorShiftImm {
             vbb.lanewise(VectorOperators.LSHR, 32).intoArray(arrIntegers[op + 3], 4 * i);
             vbb.lanewise(VectorOperators.LSHR, 35).intoArray(arrIntegers[op + 4], 4 * i);
             vbb.lanewise(VectorOperators.LSHR, 48).intoArray(arrIntegers[op + 5], 4 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 9)).intoArray(arrIntegers[op], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 16)).intoArray(arrIntegers[op + 1], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 27)).intoArray(arrIntegers[op + 2], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 32)).intoArray(arrIntegers[op + 3], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 35)).intoArray(arrIntegers[op + 4], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 48)).intoArray(arrIntegers[op + 5], 4 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 9)).intoArray(arrIntegers[op], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 16)).intoArray(arrIntegers[op + 1], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 27)).intoArray(arrIntegers[op + 2], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 32)).intoArray(arrIntegers[op + 3], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 35)).intoArray(arrIntegers[op + 4], 4 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 48)).intoArray(arrIntegers[op + 5], 4 * i);
         }
 
         if (verify) {
@@ -438,22 +342,6 @@ public class TestVectorShiftImm {
             vbb.lanewise(VectorOperators.LSHR, 128).intoArray(arrLongs[op + 3], 2 * i);
             vbb.lanewise(VectorOperators.LSHR, 157).intoArray(arrLongs[op + 4], 2 * i);
             vbb.lanewise(VectorOperators.LSHR, 192).intoArray(arrLongs[op + 5], 2 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 37)).intoArray(arrLongs[op], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 64)).intoArray(arrLongs[op  + 1], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 99)).intoArray(arrLongs[op  + 2], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 128)).intoArray(arrLongs[op + 3], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 157)).intoArray(arrLongs[op + 4], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.ASHR, 192)).intoArray(arrLongs[op + 5], 2 * i);
-            op += MAX_TESTS_PER_OP;
-
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 37)).intoArray(arrLongs[op], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 64)).intoArray(arrLongs[op  + 1], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 99)).intoArray(arrLongs[op  + 2], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 128)).intoArray(arrLongs[op + 3], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 157)).intoArray(arrLongs[op + 4], 2 * i);
-            vba.add(vbb.lanewise(VectorOperators.LSHR, 192)).intoArray(arrLongs[op + 5], 2 * i);
         }
 
         if (verify) {

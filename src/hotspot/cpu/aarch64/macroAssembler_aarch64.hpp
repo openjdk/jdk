@@ -527,12 +527,13 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
-  // NEON shift instructions
+  // AdvSIMD shift by immediate.
+  // These are "user friendly" variants which allow a shift count of 0.
 #define WRAP(INSN)                                                                \
   void INSN(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift) {  \
     if (shift == 0) {                                                             \
-        SIMD_Arrangement arrange = (T & 1) == 0 ? T8B : T16B;                     \
-        Assembler::orr(Vd, arrange, Vn, Vn);                                      \
+      SIMD_Arrangement arrange = (T & 1) == 0 ? T8B : T16B;                       \
+      Assembler::orr(Vd, arrange, Vn, Vn);                                        \
     } else {                                                                      \
       Assembler::INSN(Vd, T, Vn, shift);                                          \
     }                                                                             \
