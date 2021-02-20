@@ -1251,10 +1251,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     // Convert integer to byte array with BIG_ENDIAN byte order.
-    private static byte[] genByteArrayFromInt(int integer) {
+    private static byte[] genByteArrayFromInt(int value) {
         ByteBuffer intBuffer = ByteBuffer.allocate(4);
         intBuffer.order(ByteOrder.BIG_ENDIAN);
-        intBuffer.putInt(integer);
+        intBuffer.putInt(value);
         return intBuffer.array();
     }
 
@@ -1501,8 +1501,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          * Writes an {@code int} to the internal segment buffer
          * {@code written} is incremented by {@code 4}.
          */
-        private final void writeInteger(int v) {
-            byte[] intBytes = genByteArrayFromInt(v);
+        private final void writeInteger(int value) {
+            byte[] intBytes = genByteArrayFromInt(value);
             System.arraycopy(intBytes, 0, segmentBuffer, segmentWritten, 4);
             segmentWritten += 4;
         }
