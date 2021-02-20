@@ -60,8 +60,16 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       assert(hr->is_closed_archive(), "Only closed archive regions can also be pinned.");
     }
   } else {
-    assert(!hr->is_humongous(), "moving humongous objects not supported.");
-    prepare_for_compaction(hr);
+    size_t live_bytes = hr->live_bytes_after_full_gc_mark();
+    if(live_bytes <= _hr_live_bytes_threshold) {
+      // low survivor ratio prepare compaction
+      assert(!hr->is_humongous(), "moving humongous objects not supported.");
+      prepare_for_compaction(hr);
+    } else {
+      // deal with skipping compaction regions
+      prepare_for_skipping_compaction(hr);
+      log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live bytes: " SIZE_FORMAT, hr->hrm_index(), live_bytes);
+    }
   }
 
   // Reset data structures not valid after Full GC.
@@ -91,7 +99,8 @@ bool G1FullGCPrepareTask::has_freed_regions() {
 void G1FullGCPrepareTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   G1FullGCCompactionPoint* compaction_point = collector()->compaction_point(worker_id);
-  G1CalculatePointersClosure closure(collector(), compaction_point);
+  GrowableArray<HeapRegion*>* skipping_compaction_set = collector()->skipping_compaction_set(worker_id);
+  G1CalculatePointersClosure closure(collector(), compaction_point, skipping_compaction_set);
   G1CollectedHeap::heap()->heap_region_par_iterate_from_start(&closure, &_hrclaimer);
 
   compaction_point->update();
@@ -104,12 +113,15 @@ void G1FullGCPrepareTask::work(uint worker_id) {
 }
 
 G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1FullCollector* collector,
-                                                                            G1FullGCCompactionPoint* cp) :
+                                                                            G1FullGCCompactionPoint* cp,
+                                                                            GrowableArray<HeapRegion*>* skipping_compaction_set) :
     _g1h(G1CollectedHeap::heap()),
     _collector(collector),
     _bitmap(collector->mark_bitmap()),
     _cp(cp),
-    _regions_freed(false) { }
+    _skipping_compaction_set(skipping_compaction_set),
+    _regions_freed(false),
+    _hr_live_bytes_threshold((size_t)HeapRegion::GrainBytes * G1SkipCompactionLiveBytesLowerThreshold / 100) { }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(HeapRegion* hr) {
   assert(hr->is_humongous(), "must be but region %u is %s", hr->hrm_index(), hr->get_short_type_str());
@@ -143,7 +155,7 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_open_archive_region(H
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
   hr->rem_set()->clear();
   hr->clear_cardtable();
-
+  hr->set_live_words_after_full_gc_mark((size_t)0);
   G1HotCardCache* hcc = _g1h->hot_card_cache();
   if (hcc->use_cache()) {
     hcc->reset_card_counts(hr);
@@ -189,6 +201,35 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(Hea
   // Add region to the compaction queue and prepare it.
   _cp->add(hr);
   prepare_for_compaction_work(_cp, hr);
+}
+
+void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_skipping_compaction(HeapRegion* hr) {
+  HeapRegion* current = hr;
+  assert(!current->is_humongous(), "Should be no humongous regions");
+  HeapWord* limit = current->top();
+  HeapWord* next_addr = current->bottom();
+  _skipping_compaction_set->append(current);
+
+  while (next_addr < limit) {
+    Prefetch::write(next_addr, PrefetchScanIntervalInBytes);
+    oop obj = oop(next_addr);
+    size_t obj_size = obj->size();
+    if (_bitmap->is_marked(next_addr)) {
+      // Object should not move but mark-word is used so it looks like the
+      // object is forwarded. Need to clear the mark and it's no problem
+      // since it will be restored by preserved marks. There is an exception
+      // with BiasedLocking, in this case forwardee() will return NULL
+      // even if the mark-word is used. This is no problem since
+      // forwardee() will return NULL in the compaction phase as well.
+      if (obj->forwardee() != NULL) {
+        obj->init_mark();
+      }
+    } else {
+      // Fill dummy object to replace dead object
+      Universe::heap()->fill_with_dummy_object(next_addr, next_addr + obj_size, true);
+    }
+    next_addr += obj_size;
+  }
 }
 
 void G1FullGCPrepareTask::prepare_serial_compaction() {

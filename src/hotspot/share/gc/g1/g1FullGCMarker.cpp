@@ -42,7 +42,12 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _mark_closure(worker_id, this, G1CollectedHeap::heap()->ref_processor_stw()),
     _verify_closure(VerifyOption_G1UseFullMarking),
     _stack_closure(this),
-    _cld_closure(mark_closure(), ClassLoaderData::_claim_strong) {
+    _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
+    _mark_region_cache(NULL) {
+  if (G1SkipCompactionLiveBytesLowerThreshold < 100) {
+    _mark_region_cache = new G1FullGCMarkRegionCache();
+  }
+
   _oop_stack.initialize();
   _objarray_stack.initialize();
 }

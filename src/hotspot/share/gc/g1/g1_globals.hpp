@@ -302,8 +302,12 @@
           "of getloadavg() at which G1 triggers a periodic GC. A load "     \
           "above this value cancels a given periodic GC. A value of zero "  \
           "disables this check.")                                           \
-          range(0.0, (double)max_uintx)
-
+          range(0.0, (double)max_uintx)                                     \
+                                                                            \
+  product(double, G1SkipCompactionLiveBytesLowerThreshold, 100.0,           \
+          "The lower threshold of heap region live bytes percent"           \
+          "in G1 full GC")                                                  \
+          range(50.0, 100.0)
 // end of GC_G1_FLAGS
 
 #endif // SHARE_GC_G1_G1_GLOBALS_HPP

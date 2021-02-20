@@ -82,6 +82,11 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
   hr->reset_compacted_after_full_gc();
 }
 
+void G1FullGCCompactTask::process_skipping_compaction_region(HeapRegion* hr) {
+  collector()->mark_bitmap()->clear_region(hr);
+  hr->reset_no_compaction_region_during_compaction();
+}
+
 void G1FullGCCompactTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   GrowableArray<HeapRegion*>* compaction_queue = collector()->compaction_point(worker_id)->regions();
@@ -89,6 +94,15 @@ void G1FullGCCompactTask::work(uint worker_id) {
        it != compaction_queue->end();
        ++it) {
     compact_region(*it);
+  }
+
+  if (G1SkipCompactionLiveBytesLowerThreshold < 100) {
+    GrowableArray<HeapRegion*>* skipping_compaction_queue = collector()->skipping_compaction_set(worker_id);
+    for (GrowableArrayIterator<HeapRegion*> it = skipping_compaction_queue->begin();
+         it != skipping_compaction_queue->end();
+         ++it) {
+      process_skipping_compaction_region(*it);
+    }
   }
 
   G1ResetPinnedClosure hc(collector()->mark_bitmap());

@@ -235,6 +235,7 @@ private:
   // in each heap region.
   size_t _prev_marked_bytes;    // Bytes known to be live via last completed marking.
   size_t _next_marked_bytes;    // Bytes known to be live via in-progress marking.
+  size_t _live_words;
 
   void init_top_at_mark_start() {
     assert(_prev_marked_bytes == 0 &&
@@ -329,7 +330,9 @@ public:
   size_t live_bytes() {
     return (top() - prev_top_at_mark_start()) * HeapWordSize + marked_bytes();
   }
-
+  size_t* live_words_after_full_gc_mark_addr() { return &_live_words; }
+  size_t live_bytes_after_full_gc_mark() { return _live_words * HeapWordSize; }
+  void set_live_words_after_full_gc_mark(size_t live_words) { _live_words = live_words; }
   // The number of bytes counted in the next marking.
   size_t next_marked_bytes() { return _next_marked_bytes; }
   // The number of bytes live wrt the next marking.
@@ -488,6 +491,10 @@ public:
   // to provide a dummy version of it.
 #endif // ASSERT
 
+  void reset_no_compaction_region_during_compaction() {
+    zero_marked_bytes();
+    init_top_at_mark_start();
+  }
 
   // Reset the HeapRegion to default values and clear its remembered set.
   // If clear_space is true, clear the HeapRegion's memory.

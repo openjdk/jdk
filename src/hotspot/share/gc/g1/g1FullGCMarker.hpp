@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1FULLGCMARKER_HPP
 
 #include "gc/g1/g1FullGCOopClosures.hpp"
+#include "gc/g1/g1FullGCMarkRegionCache.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -63,6 +64,8 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   G1FollowStackClosure _stack_closure;
   CLDToOopClosure      _cld_closure;
 
+  G1FullGCMarkRegionCache*   _mark_region_cache;
+
   inline bool is_empty();
   inline bool pop_object(oop& obj);
   inline bool pop_objarray(ObjArrayTask& array);
@@ -96,6 +99,11 @@ public:
   CLDToOopClosure*      cld_closure()   { return &_cld_closure; }
   G1MarkAndPushClosure* mark_closure()  { return &_mark_closure; }
   G1FollowStackClosure* stack_closure() { return &_stack_closure; }
+
+  void flush_mark_region_cache() {
+    delete _mark_region_cache;
+    _mark_region_cache = NULL;
+  }
 };
 
 #endif // SHARE_GC_G1_G1FULLGCMARKER_HPP

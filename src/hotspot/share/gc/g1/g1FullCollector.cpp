@@ -121,9 +121,11 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool c
   _preserved_marks_set.init(_num_workers);
   _markers = NEW_C_HEAP_ARRAY(G1FullGCMarker*, _num_workers, mtGC);
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
+  _skipping_compaction_sets = NEW_C_HEAP_ARRAY(GrowableArray<HeapRegion*>*, _num_workers, mtGC);
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i));
     _compaction_points[i] = new G1FullGCCompactionPoint();
+    _skipping_compaction_sets[i] = new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(32, mtGC);
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
@@ -134,9 +136,11 @@ G1FullCollector::~G1FullCollector() {
   for (uint i = 0; i < _num_workers; i++) {
     delete _markers[i];
     delete _compaction_points[i];
+    delete _skipping_compaction_sets[i];
   }
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
+  FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _skipping_compaction_sets);
 }
 
 class PrepareRegionsClosure : public HeapRegionClosure {
