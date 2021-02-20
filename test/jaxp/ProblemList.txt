@@ -23,4 +23,3 @@
 #
 ###########################################################################
 
-javax/xml/jaxp/unittest/common/prettyprint/PrettyPrintTest.java 8262041 windows-all
