@@ -40,7 +40,7 @@ public:
 
   // Simulate tr --delete, which deletes all apperances of charset in the C-String s
   // Return the number of deleted characters.
-  static int tr_delete(char* s, const char* charset);
+  static size_t tr_delete(char* s, const char* charset);
 
   // Compute string similarity based on Dice's coefficient
   static double similarity(const char* str1, size_t len1, const char* str2, size_t len2);

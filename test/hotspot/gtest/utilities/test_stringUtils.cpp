@@ -37,29 +37,29 @@ TEST_VM(StringUtils, tr_delete) {
   ResourceMark rm;
   const char* str = "the quick brown fox jumps over the lazy dog.";
   char* buf = os::strdup(str);
-  int sz;
+  size_t sz;
 
   sz = StringUtils::tr_delete(buf, " \n.");
-  EXPECT_EQ(sz, 9);
+  EXPECT_EQ(sz, (size_t)9);
   EXPECT_STREQ(buf, "thequickbrownfoxjumpsoverthelazydog");
 
   sz = StringUtils::tr_delete(buf, "");
-  EXPECT_EQ(sz, 0);
+  EXPECT_EQ(sz, (size_t)0);
 
   sz = StringUtils::tr_delete(NULL, NULL);
-  EXPECT_EQ(sz, 0);
+  EXPECT_EQ(sz, (size_t)0);
 
   char buf2[4] = {'a', 'b', 'c', '\0'};
   sz = StringUtils::tr_delete(buf2, "efg");
-  EXPECT_EQ(sz, 0);
+  EXPECT_EQ(sz, (size_t)0);
   EXPECT_STREQ(buf2, "abc");
 
   sz = StringUtils::tr_delete(buf2, "abc");
-  EXPECT_EQ(sz, 3);
+  EXPECT_EQ(sz, (size_t)3);
   EXPECT_STREQ(buf2, "");
 
   sz = StringUtils::tr_delete(buf2, "abc");
-  EXPECT_EQ(sz, 0);
+  EXPECT_EQ(sz, (size_t)0);
 
   os::free(buf);
 }

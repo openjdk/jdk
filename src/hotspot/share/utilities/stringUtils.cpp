@@ -43,13 +43,13 @@ int StringUtils::replace_no_expand(char* string, const char* from, const char* t
   return replace_count;
 }
 
-int StringUtils::tr_delete(char* s, const char* charset) {
+size_t StringUtils::tr_delete(char* s, const char* charset) {
   if (s == nullptr || charset == nullptr)
     return 0;
 
   size_t nums = strlen(charset);
   size_t len = strlen(s);
-  int k = 0;
+  size_t k = 0;
 
   for (size_t i = 0; i < len; ++i) {
     bool matched = false;
