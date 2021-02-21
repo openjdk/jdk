@@ -81,7 +81,7 @@ bool MallocSiteTable::initialize() {
   _hash_entry_allocation_site = &entry;
 
   // Add the allocation site to hashtable.
-  int index = hash_to_index(stack.hash());
+  int index = hash_to_index(entry.hash());
   _table[index] = const_cast<MallocSiteHashtableEntry*>(&entry);
 
   return true;
@@ -117,7 +117,8 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
 MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* bucket_idx,
   size_t* pos_idx, MEMFLAGS flags) {
   assert(flags != mtNone, "Should have a real memory type");
-  unsigned int index = hash_to_index(key.hash());
+  const unsigned int hash = key.calculate_hash();
+  const unsigned int index = hash_to_index(hash);
   *bucket_idx = (size_t)index;
   *pos_idx = 0;
 
@@ -137,9 +138,11 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* b
 
   MallocSiteHashtableEntry* head = _table[index];
   while (head != NULL && (*pos_idx) <= MAX_BUCKET_LENGTH) {
-    MallocSite* site = head->data();
-    if (site->flag() == flags && site->equals(key)) {
-      return head->data();
+    if (head->hash() == hash) {
+      MallocSite* site = head->data();
+      if (site->flag() == flags && site->equals(key)) {
+        return head->data();
+      }
     }
 
     if (head->next() == NULL && (*pos_idx) < MAX_BUCKET_LENGTH) {
