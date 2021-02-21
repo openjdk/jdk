@@ -162,7 +162,8 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
     const int dw = dx2 - dx1;
     const int dh = dy2 - dy1;
     if (dw < sw || dh < sh) {
-        J2dTraceLn4(J2D_TRACE_WARNING, "replaceTextureRegion: dest size: (%d, %d) less than source size: (%d, %d)", dw, dh, sw, sh);
+        J2dTraceLn4(J2D_TRACE_ERROR, "replaceTextureRegion: dest size: (%d, %d) less than source size: (%d, %d)", dw, dh, sw, sh);
+        return;
     }
 
     const void *raster = srcInfo->rasBase;
