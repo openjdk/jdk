@@ -752,27 +752,47 @@ MTLBlitLoops_CopyArea(JNIEnv *env,
     J2dTraceImpl(J2D_TRACE_VERBOSE, JNI_TRUE, "MTLBlitLoops_CopyArea: bdst=%p [tex=%p] %dx%d | src (%d, %d), %dx%d -> dst (%d, %d)",
             dstOps, dstOps->pTexture, ((id<MTLTexture>)dstOps->pTexture).width, ((id<MTLTexture>)dstOps->pTexture).height, x, y, width, height, dx, dy);
 #endif //DEBUG
+    jint texWidth = ((id<MTLTexture>)dstOps->pTexture).width;
+    jint texHeight = ((id<MTLTexture>)dstOps->pTexture).height;
 
-    @autoreleasepool {
-        id<MTLCommandBuffer> cb = [mtlc createCommandBuffer];
-        id<MTLBlitCommandEncoder> blitEncoder = [cb blitCommandEncoder];
+    SurfaceDataBounds srcBounds, dstBounds;
+    srcBounds.x1 = x;
+    srcBounds.y1 = y;
+    srcBounds.x2 = srcBounds.x1 + width;
+    srcBounds.y2 = srcBounds.y1 + height;
+    dstBounds.x1 = x + dx;
+    dstBounds.y1 = y + dy;
+    dstBounds.x2 = dstBounds.x1 + width;
+    dstBounds.y2 = dstBounds.y1 + height;
 
-        // Create an intrermediate buffer
-        int totalBuffsize = width * height * 4;
-        id <MTLBuffer> buff = [[mtlc.device newBufferWithLength:totalBuffsize options:MTLResourceStorageModePrivate] autorelease];
+    SurfaceData_IntersectBoundsXYXY(&srcBounds, 0, 0, texWidth, texHeight);
+    SurfaceData_IntersectBoundsXYXY(&dstBounds, 0, 0, texWidth, texHeight);
+    SurfaceData_IntersectBlitBounds(&dstBounds, &srcBounds, -dx, -dy);
 
-        [blitEncoder copyFromTexture:dstOps->pTexture
-                sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(x, y, 0) sourceSize:MTLSizeMake(width, height, 1)
-                 toBuffer:buff destinationOffset:0 destinationBytesPerRow:(width * 4) destinationBytesPerImage:totalBuffsize];
+    int srcWidth = (srcBounds.x2 - srcBounds.x1);
+    int srcHeight = (srcBounds.y2 - srcBounds.y1);
 
-        [blitEncoder copyFromBuffer:buff
-                sourceOffset:0 sourceBytesPerRow:width*4 sourceBytesPerImage:totalBuffsize sourceSize:MTLSizeMake(width, height, 1)
-                toTexture:dstOps->pTexture destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(x + dx, y + dy, 0)];
-        [blitEncoder endEncoding];
+   if ((srcBounds.x1 < srcBounds.x2 && srcBounds.y1 < srcBounds.y2) &&
+       (dstBounds.x1 < dstBounds.x2 && dstBounds.y1 < dstBounds.y2))
+   {
+        @autoreleasepool {
+            id<MTLCommandBuffer> cb = [mtlc createCommandBuffer];
+            id<MTLBlitCommandEncoder> blitEncoder = [cb blitCommandEncoder];
 
-        [cb commit];
-    }
+            // Create an intrermediate buffer
+            int totalBuffsize = srcWidth * srcHeight * 4;
+            id <MTLBuffer> buff = [[mtlc.device newBufferWithLength:totalBuffsize options:MTLResourceStorageModePrivate] autorelease];
 
-    // TODO:
-    //  1. check rect bounds
+            [blitEncoder copyFromTexture:dstOps->pTexture
+                    sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(srcBounds.x1, srcBounds.y1, 0) sourceSize:MTLSizeMake(srcWidth, srcHeight, 1)
+                     toBuffer:buff destinationOffset:0 destinationBytesPerRow:(srcWidth * 4) destinationBytesPerImage:totalBuffsize];
+
+            [blitEncoder copyFromBuffer:buff
+                    sourceOffset:0 sourceBytesPerRow:srcWidth*4 sourceBytesPerImage:totalBuffsize sourceSize:MTLSizeMake(srcWidth, srcHeight, 1)
+                    toTexture:dstOps->pTexture destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(dstBounds.x1, dstBounds.y1, 0)];
+            [blitEncoder endEncoding];
+
+            [cb commit];
+        }
+   }
 }
