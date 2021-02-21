@@ -214,6 +214,14 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
                           toTexture:dest
                    destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(dx1, dy1, 0)];
         [blitEncoder endEncoding];
+        [mtlc.encoderManager endEncoder];
+
+        MTLCommandBufferWrapper * cbwrapper = [mtlc pullCommandBufferWrapper];
+        id<MTLCommandBuffer> commandbuf = [cbwrapper getCommandBuffer];
+        [commandbuf addCompletedHandler:^(id <MTLCommandBuffer> commandbuf) {
+            [cbwrapper release];
+        }];
+        [commandbuf commit];
     }
 }
 
