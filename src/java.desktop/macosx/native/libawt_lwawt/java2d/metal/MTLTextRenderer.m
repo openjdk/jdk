@@ -247,55 +247,15 @@ MTLTR_AddToGlyphCache(GlyphInfo *glyph, MTLContext *mtlc,
     }
 }
 
-static MTLRenderPipelineDescriptor * templateLCDPipelineDesc = nil;
-
-/**
- * Enables the LCD text shader and updates any related state, such as the
- * gamma lookup table textures.
- */
 static jboolean
-MTLTR_EnableLCDGlyphModeState(id<MTLRenderCommandEncoder> encoder,
-                              MTLContext *mtlc,
-                              MTLSDOps *dstOps,
-                              jint contrast)
+MTLTR_SetLCDContrast(MTLContext *mtlc,
+                     jint contrast,
+                     id<MTLRenderCommandEncoder> encoder)
 {
     if (![mtlc.paint isKindOfClass:[MTLColorPaint class]]) {
         return JNI_FALSE;
     }
     MTLColorPaint* cPaint = (MTLColorPaint *) mtlc.paint;
-    // create the LCD text shader, if necessary
-    if (templateLCDPipelineDesc == nil) {
-
-        MTLVertexDescriptor *vertDesc = [[MTLVertexDescriptor new] autorelease];
-        vertDesc.attributes[VertexAttributePosition].format = MTLVertexFormatFloat2;
-        vertDesc.attributes[VertexAttributePosition].offset = 0;
-        vertDesc.attributes[VertexAttributePosition].bufferIndex = MeshVertexBuffer;
-        vertDesc.layouts[MeshVertexBuffer].stride = sizeof(struct Vertex);
-        vertDesc.layouts[MeshVertexBuffer].stepRate = 1;
-        vertDesc.layouts[MeshVertexBuffer].stepFunction = MTLVertexStepFunctionPerVertex;
-
-        templateLCDPipelineDesc = [MTLRenderPipelineDescriptor new];
-        templateLCDPipelineDesc.sampleCount = 1;
-        templateLCDPipelineDesc.vertexDescriptor = vertDesc;
-        templateLCDPipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
-        templateLCDPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].format = MTLVertexFormatFloat2;
-        templateLCDPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].offset = 2*sizeof(float);
-        templateLCDPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].bufferIndex = MeshVertexBuffer;
-        templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stride = sizeof(struct TxtVertex);
-        templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stepRate = 1;
-        templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stepFunction = MTLVertexStepFunctionPerVertex;
-        templateLCDPipelineDesc.label = @"template_lcd";
-    }
-
-    id<MTLRenderPipelineState> pipelineState =
-                [mtlc.pipelineStateStorage
-                    getPipelineState:templateLCDPipelineDesc
-                    vertexShaderId:@"vert_txt_lcd"
-                    fragmentShaderId:@"lcd_color"
-                   ];
-
-    [encoder setRenderPipelineState:pipelineState];
-
     // update the current color settings
     double gamma = ((double)contrast) / 100.0;
     double invgamma = 1.0/gamma;
@@ -320,79 +280,6 @@ MTLTR_EnableLCDGlyphModeState(id<MTLRenderCommandEncoder> encoder,
             {gamma, gamma, gamma},
             {invgamma, invgamma, invgamma}};
     [encoder setFragmentBytes:&uf length:sizeof(uf) atIndex:FrameUniformBuffer];
-
-    return JNI_TRUE;
-}
-
-static jboolean
-MTLTR_SetLCDCachePipelineState(MTLContext *mtlc)
-{
-    if (templateLCDPipelineDesc == nil) {
-
-        MTLVertexDescriptor *vertDesc = [[MTLVertexDescriptor new] autorelease];
-        vertDesc.attributes[VertexAttributePosition].format = MTLVertexFormatFloat2;
-        vertDesc.attributes[VertexAttributePosition].offset = 0;
-        vertDesc.attributes[VertexAttributePosition].bufferIndex = MeshVertexBuffer;
-        vertDesc.layouts[MeshVertexBuffer].stride = sizeof(struct Vertex);
-        vertDesc.layouts[MeshVertexBuffer].stepRate = 1;
-        vertDesc.layouts[MeshVertexBuffer].stepFunction = MTLVertexStepFunctionPerVertex;
-
-        templateLCDPipelineDesc = [MTLRenderPipelineDescriptor new];
-        templateLCDPipelineDesc.sampleCount = 1;
-        templateLCDPipelineDesc.vertexDescriptor = vertDesc;
-        templateLCDPipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
-        templateLCDPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].format = MTLVertexFormatFloat2;
-        templateLCDPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].offset = 2*sizeof(float);
-        templateLCDPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].bufferIndex = MeshVertexBuffer;
-        templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stride = sizeof(struct TxtVertex);
-        templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stepRate = 1;
-        templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stepFunction = MTLVertexStepFunctionPerVertex;
-        templateLCDPipelineDesc.label = @"template_lcd";
-    }
-
-    id<MTLRenderPipelineState> pipelineState =
-                [mtlc.pipelineStateStorage
-                    getPipelineState:templateLCDPipelineDesc
-                    vertexShaderId:@"vert_txt_lcd"
-                    fragmentShaderId:@"lcd_color"
-                   ];
-
-    [lcdCacheEncoder setRenderPipelineState:pipelineState];
-    return JNI_TRUE;
-}
-
-static jboolean
-MTLTR_SetLCDContrast(MTLContext *mtlc,
-                     jint contrast)
-{
-    if (![mtlc.paint isKindOfClass:[MTLColorPaint class]]) {
-        return JNI_FALSE;
-    }
-    MTLColorPaint* cPaint = (MTLColorPaint *) mtlc.paint;
-    // update the current color settings
-    double gamma = ((double)contrast) / 100.0;
-    double invgamma = 1.0/gamma;
-    jfloat radj, gadj, badj;
-    jfloat clr[4];
-    jint col = cPaint.color;
-
-    J2dTraceLn2(J2D_TRACE_INFO, "primary color %x, contrast %d", col, contrast);
-    J2dTraceLn2(J2D_TRACE_INFO, "gamma %f, invgamma %f", gamma, invgamma);
-
-    clr[0] = ((col >> 16) & 0xFF)/255.0f;
-    clr[1] = ((col >> 8) & 0xFF)/255.0f;
-    clr[2] = ((col) & 0xFF)/255.0f;
-
-    // gamma adjust the primary color
-    radj = (float)pow(clr[0], gamma);
-    gadj = (float)pow(clr[1], gamma);
-    badj = (float)pow(clr[2], gamma);
-
-    struct LCDFrameUniforms uf = {
-            {radj, gadj, badj},
-            {gamma, gamma, gamma},
-            {invgamma, invgamma, invgamma}};
-    [lcdCacheEncoder setFragmentBytes:&uf length:sizeof(uf) atIndex:FrameUniformBuffer];
     return JNI_TRUE;
 }
 
@@ -504,8 +391,7 @@ MTLTR_DrawLCDGlyphViaCache(MTLContext *mtlc, BMTLSDOps *dstOps,
             }
         }
         if (lcdCacheEncoder == nil) {
-            lcdCacheEncoder = [mtlc.encoderManager getTextureEncoder:dstOps->pTexture isSrcOpaque:YES isDstOpaque:YES];
-            MTLTR_SetLCDCachePipelineState(mtlc);
+            lcdCacheEncoder = [mtlc.encoderManager getLCDEncoder:dstOps->pTexture isSrcOpaque:YES isDstOpaque:YES];
         }
         if (rgbOrder != lastRGBOrder) {
             // need to invalidate the cache in this case; see comments
@@ -530,7 +416,7 @@ MTLTR_DrawLCDGlyphViaCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     cell = (CacheCellInfo *) (ginfo->cellInfo);
     cell->timesRendered++;
 
-    MTLTR_SetLCDContrast(mtlc, contrast);
+    MTLTR_SetLCDContrast(mtlc, contrast, lcdCacheEncoder);
     tx1 = cell->tx1;
     ty1 = cell->ty1;
     tx2 = cell->tx2;
@@ -641,11 +527,8 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
 
         glyphMode = MODE_NO_CACHE_LCD;
     }
-    encoder = [mtlc.encoderManager getTextureEncoder:dstOps->pTexture isSrcOpaque:YES isDstOpaque:YES];
-    if (!MTLTR_EnableLCDGlyphModeState(encoder, mtlc, dstOps,contrast))
-    {
-        return JNI_FALSE;
-    }
+    encoder = [mtlc.encoderManager getLCDEncoder:dstOps->pTexture isSrcOpaque:YES isDstOpaque:YES];
+    MTLTR_SetLCDContrast(mtlc, contrast, encoder);
 
     unsigned int imageBytes = w * h *4;
     unsigned char imageData[imageBytes];

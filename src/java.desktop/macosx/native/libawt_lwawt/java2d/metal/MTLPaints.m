@@ -52,6 +52,7 @@
 static MTLRenderPipelineDescriptor * templateRenderPipelineDesc = nil;
 static MTLRenderPipelineDescriptor * templateTexturePipelineDesc = nil;
 static MTLRenderPipelineDescriptor * templateAATexturePipelineDesc = nil;
+static MTLRenderPipelineDescriptor * templateLCDPipelineDesc = nil;
 static void setTxtUniforms(
         id<MTLRenderCommandEncoder> encoder, int color, int mode, int interpolation, bool repeat, jfloat extraAlpha,
         const SurfaceRasterFlags * srcFlags, const SurfaceRasterFlags * dstFlags
@@ -93,6 +94,17 @@ static void initTemplatePipelineDescriptors() {
     templateAATexturePipelineDesc = [templateTexturePipelineDesc copy];
     templateAATexturePipelineDesc.label = @"template_aa_texture";
 
+    templateLCDPipelineDesc = [MTLRenderPipelineDescriptor new];
+    templateLCDPipelineDesc.sampleCount = 1;
+    templateLCDPipelineDesc.vertexDescriptor = vertDesc;
+    templateLCDPipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+    templateLCDPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].format = MTLVertexFormatFloat2;
+    templateLCDPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].offset = 2*sizeof(float);
+    templateLCDPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].bufferIndex = MeshVertexBuffer;
+    templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stride = sizeof(struct TxtVertex);
+    templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stepRate = 1;
+    templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stepFunction = MTLVertexStepFunctionPerVertex;
+    templateLCDPipelineDesc.label = @"template_lcd";
 }
 
 
@@ -159,6 +171,11 @@ jint _color;
         }
         if (renderOptions->isText) {
             fragShader = @"frag_text";
+        }
+        if (renderOptions->isLCD) {
+            vertShader = @"vert_txt_lcd";
+            fragShader = @"lcd_color";
+            rpDesc = [[templateLCDPipelineDesc copy] autorelease];
         }
         setTxtUniforms(encoder, _color, 1,
                        renderOptions->interpolation, NO, [mtlc.composite getExtraAlpha], &renderOptions->srcFlags,

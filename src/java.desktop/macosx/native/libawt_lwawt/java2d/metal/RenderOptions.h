@@ -37,6 +37,7 @@ typedef struct {
     SurfaceRasterFlags srcFlags;
     SurfaceRasterFlags dstFlags;
     jboolean isText;
+    jboolean isLCD;
 } RenderOptions;
 
 

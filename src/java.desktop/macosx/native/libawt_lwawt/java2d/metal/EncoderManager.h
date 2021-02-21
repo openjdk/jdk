@@ -68,6 +68,10 @@
                                                isSrcOpaque:(bool)isSrcOpaque
                                                isDstOpaque:(bool)isDstOpaque;
 
+- (id<MTLRenderCommandEncoder> _Nonnull) getLCDEncoder:(id<MTLTexture> _Nonnull)dest
+                                               isSrcOpaque:(bool)isSrcOpaque
+                                               isDstOpaque:(bool)isDstOpaque;
+
 - (id<MTLRenderCommandEncoder> _Nonnull)getTextureEncoder:(id<MTLTexture> _Nonnull)dest
                                       isSrcOpaque:(bool)isSrcOpaque
                                       isDstOpaque:(bool)isDstOpaque
