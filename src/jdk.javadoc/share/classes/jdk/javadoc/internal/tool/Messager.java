@@ -248,7 +248,7 @@ public class Messager extends Log implements Reporter {
     }
 
     // print the error and increment count
-    private void printError(String prefix, String msg) {
+    private synchronized void printError(String prefix, String msg) {
         if (nerrors < MaxErrors) {
             PrintWriter errWriter = getWriter(WriterKind.ERROR);
             printRawLines(errWriter, prefix + ": " + getText("javadoc.error") + " - " + msg);
@@ -295,7 +295,7 @@ public class Messager extends Log implements Reporter {
     }
 
     // print the warning and increment count
-    private void printWarning(String prefix, String msg) {
+    private synchronized void printWarning(String prefix, String msg) {
         if (nwarnings < MaxWarnings) {
             PrintWriter warnWriter = getWriter(WriterKind.WARNING);
             printRawLines(warnWriter, prefix + ": " + getText("javadoc.warning") + " - " + msg);

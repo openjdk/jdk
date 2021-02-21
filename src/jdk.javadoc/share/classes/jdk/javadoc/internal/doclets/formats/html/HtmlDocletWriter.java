@@ -476,7 +476,12 @@ public class HtmlDocletWriter {
 
         HtmlDocument htmlDocument = new HtmlDocument(
                 HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body));
-        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
+        DocFile file = DocFile.createFileForOutput(configuration, path);
+        if (configuration.backgroundWriter == null) {
+            htmlDocument.write(file);
+        } else {
+            configuration.backgroundWriter.writeLater(htmlDocument, file);
+        }
     }
 
     /**

@@ -377,4 +377,11 @@ public class HtmlDoclet extends AbstractDoclet {
                 fromfile.toString(), path.getPath());
         toFile.copyFile(fromfile);
     }
+
+    @Override
+    protected void finish() {
+        if (configuration.backgroundWriter != null) {
+            configuration.backgroundWriter.finish();
+        }
+    }
 }

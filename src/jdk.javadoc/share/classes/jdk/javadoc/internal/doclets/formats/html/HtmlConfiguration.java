@@ -205,7 +205,12 @@ public class HtmlConfiguration extends BaseConfiguration {
         docletVersion = v;
 
         conditionalPages = EnumSet.noneOf(ConditionalPage.class);
+
+        if (options.isBackgroundWriterEnabled()) {
+            backgroundWriter = new BackgroundWriter(messages, options.isBackgroundWriterVerbose());
+        }
     }
+
     protected void initConfiguration(DocletEnvironment docEnv,
                                      Function<String, String> resourceKeyMapper) {
         super.initConfiguration(docEnv, resourceKeyMapper);
@@ -225,6 +230,8 @@ public class HtmlConfiguration extends BaseConfiguration {
     public Resources getDocResources() {
         return docResources;
     }
+
+    protected BackgroundWriter backgroundWriter;
 
     /**
      * Returns a utility object providing commonly used fragments of content.

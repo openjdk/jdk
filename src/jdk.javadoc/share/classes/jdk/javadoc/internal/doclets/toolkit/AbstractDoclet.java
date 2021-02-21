@@ -146,6 +146,9 @@ public abstract class AbstractDoclet implements Doclet {
         } catch (DocletException | RuntimeException | Error e) {
             messages.error("doclet.internal.exception", e);
             reportInternalError(e);
+
+        } finally {
+            finish();
         }
 
         return false;
@@ -280,4 +283,6 @@ public abstract class AbstractDoclet implements Doclet {
             generateClassFiles(utils.getAllClasses(pkg), classtree);
         }
     }
+
+    protected void finish() { }
 }
