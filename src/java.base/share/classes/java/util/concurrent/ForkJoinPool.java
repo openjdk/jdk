@@ -523,7 +523,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * checking isQuiescent before triggering the "STOP" phase of
      * termination. To conform to ExecutorService invoke, invokeAll,
      * and invokeAny specs, we must track pool status while waiting,
-     * and interrupt interruptable callers on termination (see
+     * and interrupt interruptible callers on termination (see
      * ForkJoinTask.joinForPoolInvoke etc).
      *
      * Joining Tasks
