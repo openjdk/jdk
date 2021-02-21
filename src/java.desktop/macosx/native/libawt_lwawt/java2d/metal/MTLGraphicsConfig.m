@@ -194,16 +194,6 @@ Java_sun_java2d_metal_MTLGraphicsConfig_getMTLConfigInfo
         return;
     }
 
-    NSView *scratchSurface =
-        [[NSView alloc]
-            initWithFrame: contentRect];
-    if (scratchSurface == nil) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLGraphicsConfig_getMTLConfigInfo: NSView is NULL");
-        [argValue addObject: [NSNumber numberWithLong: 0L]];
-        return;
-    }
-    [window setContentView: scratchSurface];
-
     MTLContext *mtlc = [[MTLContext alloc] initWithDevice:CGDirectDisplayCopyCurrentMetalDevice(displayID)
                         shadersLib:mtlShadersLib];
     if (mtlc == 0L) {
