@@ -272,7 +272,26 @@ static id<MTLDepthStencilState> getStencilState(id<MTLDevice> device) {
         _clipRect.height = dh;
     }
 
-    [encoder setScissorRect:_clipRect];
+    // Clamping clip rect to the destination area
+    MTLScissorRect rect = _clipRect;
+
+    if (rect.x > dw) {
+        rect.x = dw;
+    }
+
+    if (rect.y > dh) {
+        rect.y = dh;
+    }
+
+    if (rect.x + rect.width > dw) {
+        rect.width = dw - rect.x;
+    }
+
+    if (rect.y + rect.height > dh) {
+        rect.height = dh - rect.y;
+    }
+
+    [encoder setScissorRect:rect];
     if (_clipType == NO_CLIP || _clipType == RECT_CLIP) {
         // NOTE: It seems that we can use the same encoder (with disabled stencil test) when mode changes from SHAPE to RECT.
         // But [encoder setDepthStencilState:nil] causes crash, so we have to recreate encoder in such case.
