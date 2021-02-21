@@ -652,7 +652,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         AtomicReference<IOException> toThrow = new AtomicReference<>();
         String appExecutable = "/Contents/MacOS/" + APP_NAME.fetchFrom(params);
         String keyChain = SIGNING_KEYCHAIN.fetchFrom(params);
-Log.verbose("   ---   SignAppBundle with entitlements: " + entitlements);
+
         // sign all dylibs and executables
         try (Stream<Path> stream = Files.walk(appLocation)) {
             stream.peek(path -> { // fix permissions
@@ -669,8 +669,8 @@ Log.verbose("   ---   SignAppBundle with entitlements: " + entitlements);
                 }
             }).filter(p -> Files.isRegularFile(p) &&
                       (Files.isExecutable(p) || p.toString().endsWith(".dylib"))
-                      && !(p.toString().endsWith(appExecutable)
-                     )
+                      && !(p.toString().contains("dylib.dSYM/Contents"))
+                      && !(p.toString().endsWith(appExecutable))
                      ).forEach(p -> {
                 // noinspection ThrowableResultOfMethodCallIgnored
                 if (toThrow.get() != null) return;
@@ -686,58 +686,49 @@ Log.verbose("   ---   SignAppBundle with entitlements: " + entitlements);
                     if ((p.toString().contains("/Contents/runtime")) ||
                         (p.toString().contains("/Contents/Frameworks"))) {
 
-                        if (isFileSigned(p) &&
-                                !p.toString().contains("dylib.dSYM/Contents")) {
-                            args = new ArrayList<>();
-                            args.addAll(Arrays.asList("/usr/bin/codesign",
-                                    "--remove-signature", p.toString()));
-                            try {
-                                Set<PosixFilePermission> oldPermissions =
-                                        Files.getPosixFilePermissions(p);
-                                p.toFile().setWritable(true, true);
-                                ProcessBuilder pb = new ProcessBuilder(args);
-                                IOUtils.exec(pb);
-                                Files.setPosixFilePermissions(p,oldPermissions);
-                            } catch (IOException ioe) {
-                                Log.verbose(ioe);
-                                toThrow.set(ioe);
-                                return;
-                            }
-                        }
-
-                        if (isFileSigned(p)) {
-                            // executable or lib already signed
-                            Log.verbose(MessageFormat.format(I18N.getString(
-                                    "message.already.signed"), p.toString()));
-                        }
                         args = new ArrayList<>();
                         args.addAll(Arrays.asList("/usr/bin/codesign",
-                                "--timestamp",
-                                "--options", "runtime",
-                                "-s", signingIdentity,
-                                "--prefix", identifierPrefix,
-                                "-vvvv"));
-                        if (keyChain != null && !keyChain.isEmpty()) {
-                            args.add("--keychain");
-                            args.add(keyChain);
-                        }
-                        if (Files.isExecutable(p)) {
-                            if (entitlements != null) {
-                                args.add("--entitlements");
-                                args.add(entitlements.toString());
-                            }
-                        }
-                        args.add(p.toString());
+                                "--remove-signature", p.toString()));
                         try {
                             Set<PosixFilePermission> oldPermissions =
                                     Files.getPosixFilePermissions(p);
                             p.toFile().setWritable(true, true);
                             ProcessBuilder pb = new ProcessBuilder(args);
                             IOUtils.exec(pb);
-                            Files.setPosixFilePermissions(p, oldPermissions);
+                            Files.setPosixFilePermissions(p,oldPermissions);
                         } catch (IOException ioe) {
+                            Log.verbose(ioe);
                             toThrow.set(ioe);
+                            return;
                         }
+                    }
+                    args = new ArrayList<>();
+                    args.addAll(Arrays.asList("/usr/bin/codesign",
+                            "--timestamp",
+                            "--options", "runtime",
+                            "-s", signingIdentity,
+                            "--prefix", identifierPrefix,
+                            "-vvvv"));
+                    if (keyChain != null && !keyChain.isEmpty()) {
+                        args.add("--keychain");
+                        args.add(keyChain);
+                    }
+                    if (Files.isExecutable(p)) {
+                        if (entitlements != null) {
+                            args.add("--entitlements");
+                            args.add(entitlements.toString());
+                        }
+                    }
+                    args.add(p.toString());
+                    try {
+                        Set<PosixFilePermission> oldPermissions =
+                                Files.getPosixFilePermissions(p);
+                        p.toFile().setWritable(true, true);
+                        ProcessBuilder pb = new ProcessBuilder(args);
+                        IOUtils.exec(pb);
+                        Files.setPosixFilePermissions(p, oldPermissions);
+                    } catch (IOException ioe) {
+                        toThrow.set(ioe);
                     }
                 }
             });
@@ -826,18 +817,6 @@ Log.verbose("   ---   SignAppBundle with entitlements: " + entitlements);
                 new ProcessBuilder(args.toArray(new String[args.size()]));
 
         IOUtils.exec(pb);
-    }
-
-    private static boolean isFileSigned(Path file) {
-        ProcessBuilder pb = new ProcessBuilder("/usr/bin/codesign",
-                "--verify", file.toString());
-
-        try {
-            IOUtils.exec(pb);
-        } catch (IOException ex) {
-            return false;
-        }
-        return true;
     }
 
     private static String extractBundleIdentifier(Map<String, Object> params) {

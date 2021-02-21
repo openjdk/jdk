@@ -506,7 +506,6 @@ else Log.info("   ---   skipping preparePackageScripts");
             }
 
             if (APP_STORE.fetchFrom(params)) {
-Log.info("   ---   creating pkg for Mac App Store");
                 commandLine.add("--product");
                 commandLine.add(getConfig_PDF(params)
                         .toAbsolutePath().toString());
@@ -515,7 +514,6 @@ Log.info("   ---   creating pkg for Mac App Store");
                 commandLine.add(p.toAbsolutePath().toString());
                 commandLine.add(getInstallDir(params));
             } else {
-Log.info("   ---   creating normal pkg ");
                 commandLine.add("--distribution");
                 commandLine.add(getConfig_DistributionXMLFile(params)
                         .toAbsolutePath().toString());
