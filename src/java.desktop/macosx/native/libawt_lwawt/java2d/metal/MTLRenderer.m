@@ -317,7 +317,7 @@ Java_sun_java2d_metal_MTLRenderer_drawPoly
 
 const int SCANLINE_MAX_VERTEX_SIZE = 4096;
 const int VERTEX_STRUCT_SIZE = 8;
-const int NUM_OF_VERTICES_PER_SCANLINE = 3;
+const int NUM_OF_VERTICES_PER_SCANLINE = 2;
 
 void
 MTLRenderer_DrawScanlines(MTLContext *mtlc, BMTLSDOps * dstOps,
