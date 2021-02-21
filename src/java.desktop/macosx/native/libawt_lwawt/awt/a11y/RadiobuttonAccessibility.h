@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,10 @@
  * questions.
  */
 
-package sun.net.www;
+#import "ButtonAccessibility.h"
 
-/**
- * An exception thrown by the MimeLauncher when it is unable to launch
- * an external content viewer.
- *
- * @author      Sunita Mani
- */
+@interface RadiobuttonAccessibility : ButtonAccessibility <NSAccessibilityRadioButton> {
 
-public class ApplicationLaunchException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = -4782286141289536883L;
-
-    public ApplicationLaunchException(String reason) {
-        super(reason);
-    }
-}
+};
+- (id)accessibilityValue;
+@end

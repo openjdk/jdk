@@ -330,10 +330,15 @@ void NodeHash::remove_useless_nodes(VectorSet &useful) {
 void NodeHash::check_no_speculative_types() {
 #ifdef ASSERT
   uint max = size();
+  Unique_Node_List live_nodes;
+  Compile::current()->identify_useful_nodes(live_nodes);
   Node *sentinel_node = sentinel();
   for (uint i = 0; i < max; ++i) {
     Node *n = at(i);
-    if(n != NULL && n != sentinel_node && n->is_Type() && n->outcnt() > 0) {
+    if (n != NULL &&
+        n != sentinel_node &&
+        n->is_Type() &&
+        live_nodes.member(n)) {
       TypeNode* tn = n->as_Type();
       const Type* t = tn->type();
       const Type* t_no_spec = t->remove_speculative();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,31 +105,35 @@ public class StringReader extends Reader {
     }
 
     /**
-     * Skips the specified number of characters in the stream. Returns
-     * the number of characters that were skipped.
+     * Skips characters. If the stream is already at its end before this method
+     * is invoked, then no characters are skipped and zero is returned.
      *
-     * <p>The {@code ns} parameter may be negative, even though the
+     * <p>The {@code n} parameter may be negative, even though the
      * {@code skip} method of the {@link Reader} superclass throws
-     * an exception in this case. Negative values of {@code ns} cause the
+     * an exception in this case. Negative values of {@code n} cause the
      * stream to skip backwards. Negative return values indicate a skip
      * backwards. It is not possible to skip backwards past the beginning of
      * the string.
      *
      * <p>If the entire string has been read or skipped, then this method has
-     * no effect and always returns 0.
+     * no effect and always returns {@code 0}.
      *
-     * @throws     IOException  If an I/O error occurs
+     * @param n {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     *
+     * @throws IOException {@inheritDoc}
      */
-    public long skip(long ns) throws IOException {
+    public long skip(long n) throws IOException {
         synchronized (lock) {
             ensureOpen();
             if (next >= length)
                 return 0;
             // Bound skip by beginning and end of the source
-            long n = Math.min(length - next, ns);
-            n = Math.max(-next, n);
-            next += n;
-            return n;
+            long r = Math.min(length - next, n);
+            r = Math.max(-next, r);
+            next += r;
+            return r;
         }
     }
 

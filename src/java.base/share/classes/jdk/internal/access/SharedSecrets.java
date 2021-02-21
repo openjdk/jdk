@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class SharedSecrets {
             try {
                 Class.forName("java.util.ImmutableCollections$Access", true, null);
                 access = javaUtilCollectionAccess;
-            } catch (ClassNotFoundException e) {};
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }
@@ -126,7 +126,7 @@ public class SharedSecrets {
             try {
                 Class.forName("java.lang.invoke.MethodHandleImpl", true, null);
                 access = javaLangInvokeAccess;
-            } catch (ClassNotFoundException e) {};
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }

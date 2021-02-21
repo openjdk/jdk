@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,21 +21,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_MEMORY_METASPACESHARED_INLINE_HPP
-#define SHARE_MEMORY_METASPACESHARED_INLINE_HPP
+#import "RadiobuttonAccessibility.h"
+#import "JNIUtilities.h"
+#import "ThreadUtilities.h"
 
-#include "memory/metaspaceShared.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1Allocator.inline.hpp"
-#endif
+/*
+ * Implementation of the accessibility peer for the radiobutton role
+ */
+@implementation RadiobuttonAccessibility
 
-#if INCLUDE_CDS_JAVA_HEAP
-bool MetaspaceShared::is_archive_object(oop p) {
-  return (p == NULL) ? false : G1ArchiveAllocator::is_archive_object(p);
+- (id) accessibilityValue
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    return [self accessibilityValueAttribute];
 }
-#endif
 
-#endif // SHARE_MEMORY_METASPACESHARED_INLINE_HPP
+@end

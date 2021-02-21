@@ -1600,7 +1600,9 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
   InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
 
   DumpTimeSharedClassInfo* info = _dumptime_table->get(lambda_ik);
-  if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)) {
+  if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)
+      // Don't include the lambda proxy if its nest host is not in the "linked" state.
+      && nest_host->is_linked()) {
     // Set _is_archived_lambda_proxy in DumpTimeSharedClassInfo so that the lambda_ik
     // won't be excluded during dumping of shared archive. See ExcludeDumpTimeSharedClasses.
     info->_is_archived_lambda_proxy = true;
@@ -2038,7 +2040,7 @@ public:
     log_info(cds,dynamic)("Archiving hidden %s", info._proxy_klasses->at(0)->external_name());
     size_t byte_size = sizeof(RunTimeLambdaProxyClassInfo);
     RunTimeLambdaProxyClassInfo* runtime_info =
-        (RunTimeLambdaProxyClassInfo*)MetaspaceShared::read_only_space_alloc(byte_size);
+        (RunTimeLambdaProxyClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
     runtime_info->init(key, info);
     unsigned int hash = runtime_info->hash();
     u4 delta = _builder->any_to_offset_u4((void*)runtime_info);
@@ -2086,7 +2088,7 @@ public:
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
       size_t byte_size = RunTimeSharedClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
       RunTimeSharedClassInfo* record;
-      record = (RunTimeSharedClassInfo*)MetaspaceShared::read_only_space_alloc(byte_size);
+      record = (RunTimeSharedClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
       record->init(info);
 
       unsigned int hash;

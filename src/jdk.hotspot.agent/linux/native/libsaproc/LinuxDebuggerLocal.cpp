@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2020, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -68,7 +68,7 @@ class AutoJavaString {
 public:
   // check env->ExceptionOccurred() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
-    : m_env(env), m_str(str), m_buf(env->GetStringUTFChars(str, NULL)) {
+    : m_env(env), m_str(str), m_buf(str == NULL ? NULL : env->GetStringUTFChars(str, NULL)) {
   }
 
   ~AutoJavaString() {
@@ -183,6 +183,8 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
     CHECK_EXCEPTION;
     env->CallBooleanMethod(threadList, listAdd_ID, thread);
     CHECK_EXCEPTION;
+    env->DeleteLocalRef(thread);
+    env->DeleteLocalRef(threadList);
   }
 
   // add load objects
@@ -205,6 +207,9 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
      CHECK_EXCEPTION;
      env->CallBooleanMethod(loadObjectList, listAdd_ID, loadObject);
      CHECK_EXCEPTION;
+     env->DeleteLocalRef(str);
+     env->DeleteLocalRef(loadObject);
+     env->DeleteLocalRef(loadObjectList);
   }
 }
 
@@ -345,12 +350,14 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_l
   jlong addr;
   jboolean isCopy;
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
+  // Note, objectName is ignored, and may in fact be NULL.
+  // lookup_symbol will always search all objects/libs
   AutoJavaString objectName_cstr(env, objectName);
   CHECK_EXCEPTION_(0);
   AutoJavaString symbolName_cstr(env, symbolName);
   CHECK_EXCEPTION_(0);
 
-  addr = (jlong) lookup_symbol(ph, objectName_cstr, symbolName_cstr);
+  addr = (jlong) lookup_symbol(ph, NULL, symbolName_cstr);
   return addr;
 }
 
