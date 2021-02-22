@@ -310,28 +310,6 @@ public class ProxyServer extends Thread implements Closeable {
             return false;
         }
 
-        private long drain(SocketChannel socket) throws IOException {
-            boolean isBlocking = socket.isBlocking();
-            if (isBlocking) {
-                socket.configureBlocking(false);
-            }
-            try {
-                ByteBuffer buffer = ByteBuffer.allocate(1024);
-                int read;
-                long drained = 0;
-                while ((read = socket.read(buffer)) > 0) {
-                    drained += read;
-                    buffer.position(0);
-                    buffer.limit(buffer.capacity());
-                }
-                return drained;
-            } finally {
-                if (isBlocking) {
-                    socket.configureBlocking(true);
-                }
-            }
-        }
-
         public void init() {
             try {
                 byte[] buf;
@@ -349,12 +327,7 @@ public class ProxyServer extends Thread implements Closeable {
                     }
 
                     headers = asList(new String(buf, ISO_8859_1).split("\r\n"));
-                    host = headers.stream()
-                            .filter((s) -> s.toLowerCase().startsWith("host: "))
-                            .findFirst()
-                            .map((s) -> s.substring("host: ".length()))
-                            .map(String::trim)
-                            .orElse(null);
+                    host = findFirst(headers, "host");
                     // check authorization credentials, if required by the server
                     if (credentials != null) {
                         if (!authorized(credentials, headers)) {
@@ -362,33 +335,20 @@ public class ProxyServer extends Thread implements Closeable {
                                     "Content-Length: 0\r\n" +
                                     "Proxy-Authenticate: Basic realm=\"proxy realm\"\r\n\r\n";
                             clientSocket.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                            clientSocket.setOption(StandardSocketOptions.SO_LINGER, 5);
+                            clientSocket.setOption(StandardSocketOptions.SO_LINGER, 2);
                             var buffer = ByteBuffer.wrap(resp.getBytes(ISO_8859_1));
                             clientSocket.write(buffer);
                             if (debug) {
                                 var linger = clientSocket.getOption(StandardSocketOptions.SO_LINGER);
                                 var nodelay = clientSocket.getOption(StandardSocketOptions.TCP_NODELAY);
-                                System.out.printf("Proxy: unauthorized, 407 sent back (%s/%s bytes); linger: %s, nodelay: %s%n",
-                                                  buffer.position(), buffer.limit(), linger, nodelay);
+                                System.out.printf("Proxy: unauthorized; 407 sent (%s/%s), linger: %s, nodelay: %s%n",
+                                        buffer.position(), buffer.position() + buffer.remaining(), linger, nodelay);
                             }
-                            long drained = drain(clientSocket);
-                            if (debug) {
-                                System.out.printf("Proxy: drained: %s%n", drained);
+                            if (shouldCloseAfter407(headers)) {
+                                closeConnection();
+                                return;
                             }
-                            clientSocket.shutdownOutput();
-                            try {
-                                // On windows, we additionally need to delay before
-                                // closing the socket. Otherwise we get a reset on the
-                                // client side (The connection was aborted by a software
-                                // on the host machine).
-                                // Delay 500ms before actually closing the socket
-                                if (isWindows()) Thread.sleep(500);
-                            } catch (InterruptedException x) {
-                                // OK
-                            }
-                            clientSocket.shutdownInput();
-                            close();
-                            return;
+                            continue;
                         }
                         authorized = true;
                         break;
@@ -421,6 +381,118 @@ public class ProxyServer extends Thread implements Closeable {
                     e.printStackTrace();
                 }
                 try {close(); } catch (IOException e1) {}
+            }
+        }
+
+        String findFirst(List<String> headers, String key) {
+            var h = key.toLowerCase(Locale.ROOT) + ": ";
+            return headers.stream()
+                    .filter((s) -> s.toLowerCase(Locale.ROOT).startsWith(h))
+                    .findFirst()
+                    .map((s) -> s.substring(h.length()))
+                    .map(String::trim)
+                    .orElse(null);
+        }
+
+        private long drain(SocketChannel socket) throws IOException {
+            boolean isBlocking = socket.isBlocking();
+            if (isBlocking) {
+                socket.configureBlocking(false);
+            }
+            try {
+                ByteBuffer buffer = ByteBuffer.allocate(1024);
+                int read;
+                long drained = 0;
+                while ((read = socket.read(buffer)) > 0) {
+                    drained += read;
+                    buffer.position(0);
+                    buffer.limit(buffer.capacity());
+                }
+                return drained;
+            } finally {
+                if (isBlocking) {
+                    socket.configureBlocking(true);
+                }
+            }
+        }
+
+        void closeConnection() throws IOException {
+            if (debug) {
+                var linger = clientSocket.getOption(StandardSocketOptions.SO_LINGER);
+                var nodelay = clientSocket.getOption(StandardSocketOptions.TCP_NODELAY);
+                System.out.printf("Proxy: closing connection id=%s, linger: %s, nodelay: %s%n",
+                        id, linger, nodelay);
+            }
+            long drained = drain(clientSocket);
+            if (debug) {
+                System.out.printf("Proxy: drained: %s%n", drained);
+            }
+            clientSocket.shutdownOutput();
+            try {
+                // On windows, we additionally need to delay before
+                // closing the socket. Otherwise we get a reset on the
+                // client side (The connection was aborted by a software
+                // on the host machine).
+                // Delay 500ms before actually closing the socket
+                if (isWindows()) Thread.sleep(500);
+            } catch (InterruptedException x) {
+                // OK
+            }
+            clientSocket.shutdownInput();
+            close();
+        }
+
+        // If the client sends a request body we will need to close the connection
+        // otherwise, we can keep it open.
+        private boolean shouldCloseAfter407(List<String> headers) throws IOException {
+            var te = findFirst(headers, "transfer-encoding");
+            if (te != null) {
+                // processing transfer encoding not implemented
+                if (debug) {
+                    System.out.println("Proxy: transfer-encoding with 407, closing connection");
+                }
+                return true; // should close
+            }
+            var cl = findFirst(headers, "content-length");
+            int n = -1;
+            try {
+                n = Integer.parseInt(cl);
+                if (debug) {
+                    System.out.printf("Proxy: content-length: %d%n", cl);
+                }
+            } catch (IllegalFormatException x) {
+                if (debug) {
+                    System.out.println("Proxy: bad content-length, closing connection");
+                }
+                return true;  // should close
+            }
+            if (n > 0 || n < -1) {
+                if (debug) {
+                    System.out.println("Proxy: request body with 407, closing connection");
+                }
+                return true;  // should close
+            }
+            var cmdline = headers.get(0);
+            int m = cmdline.indexOf(' ');
+            var method = (m > 0) ? cmdline.substring(0, m) : null;
+            var nobody = List.of("GET", "HEAD");
+            if (n == 0 || nobody.contains(m)) {
+                var available = clientIn.available();
+                var drained = drain(clientSocket);
+                if (drained > 0 || available > 0) {
+                    if (debug) {
+                        System.out.printf("Proxy: unexpected bytes (%d) with 407, closing connection%n",
+                                drained + available);
+                    }
+                    return true;  // should close
+                }
+                // can keep open: CL=0 or no CL and GET or HEAD
+                return false;
+            } else {
+                if (debug) {
+                    System.out.println("Proxy: possible body with 407, closing connection");
+                }
+                return true; // should close
             }
         }
 
