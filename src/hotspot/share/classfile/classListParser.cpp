@@ -51,7 +51,7 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
-Thread* ClassListParser::_parsing_thread = NULL;
+volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
 ClassListParser::ClassListParser(const char* file) {
@@ -81,8 +81,7 @@ ClassListParser::ClassListParser(const char* file) {
 }
 
 bool ClassListParser::is_parsing_thread() {
-  Thread* t = Atomic::load(&_parsing_thread);
-  return (t == Thread::current());
+  return (Atomic::load(&_parsing_thread) == Thread::current());
 }
 
 ClassListParser::~ClassListParser() {

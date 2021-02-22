@@ -83,7 +83,7 @@ class ClassListParser : public StackObj {
     _line_buf_size        = _max_allowed_line_len + _line_buf_extra
   };
 
-  static Thread* _parsing_thread;    // the thread that created _instance
+  static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
   FILE* _file;

@@ -248,7 +248,7 @@ public:
 
   static bool add_unregistered_class(InstanceKlass* k, TRAPS);
   static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
-                            Symbol* super_name,  bool is_superclass);
+                                                            Symbol* super_name,  bool is_superclass);
 
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
