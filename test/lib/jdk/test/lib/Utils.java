@@ -361,8 +361,8 @@ public final class Utils {
             // So on Windows test only addresses with numeric scope.
             // On other platforms test both symbolic and numeric scopes.
             conf.ip6Addresses()
-                    // test only IPv6 link-local addresses (JDK-8224775)
-                    .filter(Inet6Address::isLinkLocalAddress)
+                    // test only IPv6 loopback and link-local addresses (JDK-8224775)
+                    .filter(addr -> addr.isLinkLocalAddress() || addr.isLoopbackAddress())
                     .forEach(addr6 -> {
                         try {
                             result.add(Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
