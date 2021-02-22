@@ -25,7 +25,6 @@
  * @test
  * @bug 5040740
  * @summary annotations cause memory leak
- * @author gafter
  * @library /test/lib
  * @build jdk.test.lib.process.*
  * @run testng LoaderLeakTest
@@ -36,6 +35,7 @@ import jdk.test.lib.process.ProcessTools;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import java.io.FileInputStream;
+import java.lang.annotation.Retention;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.nio.file.*;
@@ -56,28 +56,30 @@ public class LoaderLeakTest {
 
     private void runJavaProcessExpectSuccessExitCode(String ... command) throws Throwable {
         var processBuilder = ProcessTools.createJavaProcessBuilder(command)
-                                                        .directory(Paths.get(Utils.TEST_CLASSES).toFile());
+                                                      .directory(Paths.get(Utils.TEST_CLASSES).toFile());
         ProcessTools.executeCommand(processBuilder).shouldHaveExitValue(0);
     }
 
 }
 
 class Main {
+
     public static void main(String[] args) throws Exception {
-        for (int i=0; i<100; i++)
+        for (int i = 0; i < 100; i++) {
             doTest(args.length != 0);
+        }
     }
 
     static void doTest(boolean readAnn) throws Exception {
         ClassLoader loader = new SimpleClassLoader();
         var c = new WeakReference<Class<?>>(loader.loadClass("C"));
-        if (c.get() == null) throw new AssertionError();
+        if (c.get() == null) throw new AssertionError("class missing after loadClass");
         if (c.get().getClassLoader() != loader) throw new AssertionError("wrong classloader");
         if (readAnn) System.out.println(c.get().getAnnotations()[0]);
-        if (c.get() == null) throw new AssertionError("class missing");
+        if (c.get() == null) throw new AssertionError("class missing before GC");
         System.gc();
         System.gc();
-        if (c.get() == null) throw new AssertionError("class missing");
+        if (c.get() == null) throw new AssertionError("class missing after GC but before loader is unreachable");
         System.gc();
         System.gc();
         Reference.reachabilityFence(loader);
@@ -96,7 +98,7 @@ class Main {
     }
 }
 
-@java.lang.annotation.Retention(RUNTIME)
+@Retention(RUNTIME)
 @interface A {
     B b();
 }
@@ -106,6 +108,7 @@ class Main {
 @A(b=@B()) class C { }
 
 class SimpleClassLoader extends ClassLoader {
+    
     public SimpleClassLoader() { }
 
     private byte[] getClassImplFromDataBase(String className) {
@@ -127,4 +130,5 @@ class SimpleClassLoader extends ClassLoader {
         }
         return super.loadClass(className, resolveIt);
     }
+
 }
