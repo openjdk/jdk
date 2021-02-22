@@ -215,7 +215,7 @@ void JvmtiTagMapTable::remove_dead_entries(JvmtiEnv* env, bool post_object_free)
 
       }
       // get next entry
-      entry = (JvmtiTagMapEntry*)HashtableEntry<WeakHandle, mtServiceability>::make_ptr(*p);
+      entry = *p;
     }
   }
 
@@ -252,7 +252,7 @@ void JvmtiTagMapTable::rehash() {
         p = entry->next_addr();
       }
       // get next entry
-      entry = (JvmtiTagMapEntry*)HashtableEntry<WeakHandle, mtServiceability>::make_ptr(*p);
+      entry = *p;
     }
   }
 

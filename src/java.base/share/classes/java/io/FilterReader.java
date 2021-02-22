@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,11 @@ public abstract class FilterReader extends Reader {
     }
 
     /**
-     * Skips characters.
+     * {@inheritDoc}
      *
-     * @throws     IOException  If an I/O error occurs
+     * @throws     IllegalArgumentException  If {@code n} is negative and the
+     *             contained {@code Reader}'s {@code skip} method throws an
+     *             IllegalArgumentException for a negative parameter
      */
     public long skip(long n) throws IOException {
         return in.skip(n);

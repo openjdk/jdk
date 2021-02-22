@@ -162,6 +162,11 @@ public:
   void prepare_for_verify();
   void verify(VerifyOption vo);
 
+// WhiteBox testing support.
+  bool supports_concurrent_gc_breakpoints() const {
+    return true;
+  }
+
 // ---------- Heap counters and metrics
 //
 private:
