@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,22 +398,31 @@ public class LocaleProviders {
     }
 
     static void bug8245241Test(String expected) {
-        LogRecord[] lra = new LogRecord[1];
-        StreamHandler handler = new StreamHandler() {
+        // this will ensure LocaleProviderAdapter initialization
+        DateFormat.getDateInstance();
+        LogConfig.handler.flush();
+
+        var r = LogConfig.lra[0];
+        if (r == null ||
+            r.getLevel() != Level.INFO ||
+            !r.getMessage().equals(expected)) {
+            throw new RuntimeException("Expected log was not emitted. LogRecord: " +
+                    (r == null ? null : r.getMessage()));
+        }
+    }
+
+    // Set the root logger on loading the logging class
+    public static class LogConfig {
+        final static LogRecord[] lra = new LogRecord[1];
+        final static StreamHandler handler = new StreamHandler() {
             @Override
             public void publish(LogRecord record) {
                 lra[0] = record;
+                System.out.println("LogRecord: " + record.getMessage());
             }
         };
-        getLogManager().getLogger("").addHandler(handler);
-
-        DateFormat.getDateInstance(); // this will init LocaleProviderAdapter
-        handler.flush();
-
-        if (lra[0] == null ||
-            lra[0].getLevel() != Level.INFO ||
-            !lra[0].getMessage().equals(expected)) {
-            throw new RuntimeException("Expected log was not emitted. LogRecord: " + lra[0]);
+        static {
+            getLogManager().getLogger("").addHandler(handler);
         }
     }
 
