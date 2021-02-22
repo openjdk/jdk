@@ -58,7 +58,7 @@ public class TestReferenceRefersToDuringConcMark {
 
     private static ReferenceQueue<TestObject> queue = null;
 
-    private static WeakReference<TestObject> testWeak4 = null;
+    private static WeakReference<TestObject> testWeak = null;
 
     private static void setup() {
         testObjectNone = new TestObject(0);
@@ -66,7 +66,7 @@ public class TestReferenceRefersToDuringConcMark {
 
         queue = new ReferenceQueue<TestObject>();
 
-        testWeak4 = new WeakReference<TestObject>(testObject, queue);
+        testWeak = new WeakReference<TestObject>(testObject, queue);
     }
 
     private static void gcUntilOld(Object o) throws Exception {
@@ -128,7 +128,7 @@ public class TestReferenceRefersToDuringConcMark {
     }
 
     private static void checkInitialStates() throws Exception {
-        expectValue(testWeak4, testObject, "testWeak");
+        expectValue(testWeak, testObject, "testWeak");
     }
 
     private static void discardStrongReferences() {
@@ -179,15 +179,15 @@ public class TestReferenceRefersToDuringConcMark {
                 Reference<? extends TestObject> ref = queue.remove(timeout);
                 if (ref == null) {
                     break;
-                } else if (ref == testWeak4) {
-                    testWeak4 = null;
+                } else if (ref == testWeak) {
+                    testWeak = null;
                 } else {
                     fail("unexpected reference in queue");
                 }
             }
-            if (testWeak4 == null) {
-                if (obj4 != null) {
-                    fail("testWeak4 notified");
+            if (testWeak == null) {
+                if (obj != null) {
+                    fail("testWeak notified");
                 }
             }
 
