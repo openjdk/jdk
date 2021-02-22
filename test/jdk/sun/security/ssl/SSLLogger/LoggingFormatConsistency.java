@@ -24,8 +24,7 @@
 /**
  * @test
  * @bug 8211227
- * @library ../../
- * @library /test/lib
+ * @library /test/lib /javax/net/ssl/templates ../../
  * @summary Tests for consistency in logging format of TLS Versions
  * @run main/othervm LoggingFormatConsistency
  */
@@ -39,54 +38,25 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.security.SecurityUtils;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import java.io.PrintStream;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.URL;
 
-public class LoggingFormatConsistency {
-    /*
-     * Should we run the client or server in a separate thread?
-     * Both sides can throw exceptions, but do you have a preference
-     * as to which side should be the main thread.
-     */
-    static boolean separateServerThread = true;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-    static char[] passphrase = "passphrase".toCharArray();
+public class LoggingFormatConsistency extends SSLSocketTemplate {
 
-    /*
-     * Is the server ready to serve?
-     */
-    volatile static boolean serverReady = false;
-
-    /*
-     * Is the connection ready to close?
-     */
-    volatile static boolean closeReady = false;
-
-    /*
-     * Turn on SSL debugging?
-     */
-
-    // use any free port by default
-    volatile int serverPort = 0;
-
-    volatile Exception serverException = null;
-    volatile Exception clientException = null;
-
-    Thread clientThread = null;
-    Thread serverThread = null;
-
-    private static final String pathToStores = "../../../../javax/net/ssl/etc";
-    private static final String keyStoreFile = "keystore";
-    private static final String trustStoreFile = "truststore";
-    private static final String password = "passphrase";
+    LoggingFormatConsistency () {
+        serverAddress = InetAddress.getLoopbackAddress();
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length != 0) {
@@ -96,40 +66,32 @@ public class LoggingFormatConsistency {
             // This is done because an OutputAnalyzer is unable to read
             // the output of the current running JVM, and must therefore create
             // a test JVM. When this case occurs, it will inherit all specified
-            // JVM properties (keyStore, trustStore, tls protocols, etc.)
-            new LoggingFormatConsistency();
+            // properties passed to the test JVM - debug flags, tls version, etc.
+            new LoggingFormatConsistency().run();
         } else {
-            // We are in the main JVM that the test is being ran in.
-            var keyStoreFileName = System.getProperty("test.src", "./") + "/" + pathToStores + "/" + keyStoreFile;
-            var trustStoreFileName = System.getProperty("test.src", "./") + "/" + pathToStores + "/" + trustStoreFile;
-
-            // Setting up JVM system properties
-            var keyStoreArg = "-Djavax.net.ssl.keyStore=" + keyStoreFileName;
-            var keyStorePassword = "-Djavax.net.ssl.keyStorePassword=" + password;
-            var trustStoreArg = "-Djavax.net.ssl.trustStore=" + trustStoreFileName;
-            var trustStorePassword = "-Djavax.net.ssl.trustStorePassword=" + password;
+            // We are in the test JVM that the test is being ran in.
             var testSrc = "-Dtest.src=" + System.getProperty("test.src");
             var javaxNetDebug = "-Djavax.net.debug=all";
 
             var correctTlsVersionsFormat = new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
             var incorrectTLSVersionsFormat = new String[]{"TLS10", "TLS11", "TLS12", "TLS13"};
 
-            for (int i = 0; i < correctTlsVersionsFormat.length; i++) {
-                String expectedTLSVersion = correctTlsVersionsFormat[i];
-                String incorrectTLSVersion = incorrectTLSVersionsFormat[i];
+            for (var i = 0; i < correctTlsVersionsFormat.length; i++) {
+                var expectedTLSVersion = correctTlsVersionsFormat[i];
+                var incorrectTLSVersion = incorrectTLSVersionsFormat[i];
 
                 System.out.println("TESTING " + expectedTLSVersion);
-                String activeTLSProtocol = "-Djdk.tls.client.protocols=" + expectedTLSVersion;
+                var activeTLSProtocol = "-Djdk.tls.client.protocols=" + expectedTLSVersion;
                 var output = ProcessTools.executeTestJvm(
                         testSrc,
-                        keyStoreArg,
-                        keyStorePassword,
-                        trustStoreArg,
-                        trustStorePassword,
                         activeTLSProtocol,
                         javaxNetDebug,
                         "LoggingFormatConsistency",
-                        "runTest"); // Ensuring args.length is greater than 0
+                        "runTest"); // Ensuring args.length is greater than 0 when test JVM starts
+
+                if (output.getExitValue() != 0) {
+                    throw new RuntimeException("Test JVM process failed. JVM stderr= " + output.getStderr());
+                }
 
                 output.shouldContain(expectedTLSVersion);
                 output.shouldNotContain(incorrectTLSVersion);
@@ -137,164 +99,53 @@ public class LoggingFormatConsistency {
         }
     }
 
-    /*
-     * Primary constructor, used to drive remainder of the test.
-     *
-     * Fork off the other side, then do your work.
-     */
-    LoggingFormatConsistency() throws Exception {
-        // Test depends on these being enabled
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
-        if (separateServerThread) {
-            startServer(true);
-            startClient(false);
-        } else {
-            startClient(true);
-            startServer(false);
-        }
+    @Override
+    protected boolean isCustomizedClientConnection() { return true; }
 
-        /*
-         * Wait for other side to close down.
-         */
-        if (separateServerThread) {
-            serverThread.join();
-        } else {
-            clientThread.join();
-        }
-
-        /*
-         * When we get here, the test is pretty much over.
-         *
-         * If the main thread excepted, that propagates back
-         * immediately.  If the other thread threw an exception, we
-         * should report back.
-         */
-        if (serverException != null) {
-            throw serverException;
-        }
-        if (clientException != null) {
-            throw clientException;
-        }
-    }
-
-    /*
-     * Define the server side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doServerSide() throws Exception {
-
-        SSLServerSocketFactory sslServerSocketFactory = SSLContext.getDefault().getServerSocketFactory();
-
-        InetAddress localHost = InetAddress.getByName("localhost");
-        InetSocketAddress address = new InetSocketAddress(localHost, serverPort);
-
-        SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket();
-        sslServerSocket.bind(address);
-        serverPort = sslServerSocket.getLocalPort();
-
-        /*
-         * Signal Client, we're ready for its connect.
-         */
-        serverReady = true;
-
-        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-        sslSocket.setNeedClientAuth(true);
-
-        PrintStream out =
-                new PrintStream(sslSocket.getOutputStream());
-
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
+        var response = "Hello World!";
+        var out = new DataOutputStream(socket.getOutputStream());
         try {
-            // ignore request data
+            // We don't need to process the data from the socket
+            // Simply sending a response right away is sufficient
+            // to generate the desired debug output
+            var responseBytes = response.getBytes(UTF_8);
 
-            // send the response
-            out.print("HTTP/1.1 200 OK\r\n");
-            out.print("Content-Type: text/html; charset=iso-8859-1\r\n");
-            out.print("Content-Length: "+ 9 +"\r\n");
-            out.print("\r\n");
-            out.print("Testing\r\n");
+            out.writeBytes("HTTP/1.0 200 OK\r\n");
+            out.writeBytes("Content-Length: " + responseBytes.length + "\r\n");
+            out.writeBytes("Content-Type: text/html\r\n\r\n");
+            out.write(responseBytes);
             out.flush();
-        } finally {
-            // close the socket
-            while (!closeReady) {
-                Thread.sleep(50);
-            }
-
-            System.out.println("Server closing socket");
-            sslSocket.close();
-            serverReady = false;
+        } catch (IOException e) {
+            out.writeBytes("HTTP/1.0 400 " + e.getMessage() + "\r\n");
+            out.writeBytes("Content-Type: text/html\r\n\r\n");
+            out.flush();
         }
     }
 
-    /*
-     * Define the client side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doClientSide() throws Exception {
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
+    @Override
+    protected void runClientApplication(int serverPort) throws Exception {
+        var context = createClientSSLContext();
+        HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
+        HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
 
-        HttpsURLConnection http = null;
-
-        /* establish http connection to server */
-        URL url = new URL("https://localhost:" + serverPort+"/");
-        System.out.println("url is "+url.toString());
-
-        try {
-            http = (HttpsURLConnection)url.openConnection(Proxy.NO_PROXY);
-
-            int responseCode = http.getResponseCode();
-            System.out.println("respCode = " + responseCode);
-        } finally {
-            if (http != null) {
-                http.disconnect();
-            }
-            closeReady = true;
+        var host = serverAddress == null ? "localhost" : serverAddress.getHostAddress();
+        var url = new URL("https://" + host + ":" + serverPort + "/");
+        var httpsConnection = (HttpsURLConnection) url.openConnection();
+        httpsConnection.disconnect();
+        try (var in = new BufferedReader(new InputStreamReader(httpsConnection.getInputStream()))) {
+            // Getting the input stream from the BufferedReader is sufficient to generate the desired debug output
+            // We don't need to process the data
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    void startServer(boolean newThread) throws Exception {
-        if (newThread) {
-            serverThread = new Thread(() -> {
-                try {
-                    doServerSide();
-                } catch (Exception e) {
-                    /*
-                     * Our server thread just died.
-                     *
-                     * Release the client, if not active already...
-                     */
-                    System.err.println("Server died...");
-                    serverReady = true;
-                    serverException = e;
-                }
-            });
-            serverThread.start();
-        } else {
-            doServerSide();
-        }
-    }
-
-    void startClient(boolean newThread) throws Exception {
-        if (newThread) {
-            clientThread = new Thread(() -> {
-                try {
-                    doClientSide();
-                } catch (Exception e) {
-                    /*
-                     * Our client thread just died.
-                     */
-                    System.err.println("Client died...");
-                    clientException = e;
-                }
-            });
-            clientThread.start();
-        } else {
-            doClientSide();
+    private static class NameVerifier implements HostnameVerifier {
+        @Override
+        public boolean verify(String s, SSLSession sslSession) {
+            return true;
         }
     }
 }
