@@ -1908,6 +1908,12 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             } else if ("componentOrientation" == propertyName) {
                 // Changes in ComponentOrientation require the views to be
                 // rebuilt.
+                Document document = editor.getDocument();
+                final String I18NProperty = "i18n";
+                if (ComponentOrientation.RIGHT_TO_LEFT == newValue
+                    && ! Boolean.TRUE.equals(document.getProperty(I18NProperty))) {
+                    document.putProperty(I18NProperty, Boolean.TRUE);
+                }
                 modelChanged();
             } else if ("font" == propertyName) {
                 modelChanged();
