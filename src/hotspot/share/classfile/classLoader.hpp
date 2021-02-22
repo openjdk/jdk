@@ -255,6 +255,7 @@ class ClassLoader: AllStatic {
   static int  _libzip_loaded; // used to sync loading zip.
   static void release_load_zip_library();
   static inline void load_zip_library_if_needed();
+  static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
 
  public:
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
@@ -264,7 +265,7 @@ class ClassLoader: AllStatic {
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
-  static bool get_canonical_path(const char* orig, char* out, int len);
+  static char* get_canonical_path(const char* orig, Thread* thread);
   static const char* file_name_for_class_name(const char* class_name,
                                               int class_name_len);
   static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data);

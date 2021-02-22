@@ -57,10 +57,10 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
@@ -4481,8 +4481,18 @@ bool os::same_files(const char* file1, const char* file2) {
     return true;
   }
 
-  HANDLE handle1 = create_read_only_file_handle(file1);
-  HANDLE handle2 = create_read_only_file_handle(file2);
+  char* native_file1 = os::strdup_check_oom(file1);
+  native_file1 = os::native_path(native_file1);
+  char* native_file2 = os::strdup_check_oom(file2);
+  native_file2 = os::native_path(native_file2);
+  if (strcmp(native_file1, native_file2) == 0) {
+    os::free(native_file1);
+    os::free(native_file2);
+    return true;
+  }
+
+  HANDLE handle1 = create_read_only_file_handle(native_file1);
+  HANDLE handle2 = create_read_only_file_handle(native_file2);
   bool result = false;
 
   // if we could open both paths...
@@ -4508,6 +4518,9 @@ bool os::same_files(const char* file1, const char* file2) {
   if (handle2 != INVALID_HANDLE_VALUE) {
     ::CloseHandle(handle2);
   }
+
+  os::free(native_file1);
+  os::free(native_file2);
 
   return result;
 }

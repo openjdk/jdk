@@ -436,6 +436,7 @@ class MoveResolver: public StackObj {
   void append_insertion_buffer();
   void insert_move(Interval* from_interval, Interval* to_interval);
   void insert_move(LIR_Opr from_opr, Interval* to_interval);
+  LIR_Opr get_virtual_register(Interval* interval);
 
   DEBUG_ONLY(void verify_before_resolve();)
   void resolve_mappings();
