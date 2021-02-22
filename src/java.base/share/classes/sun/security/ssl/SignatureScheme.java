@@ -383,8 +383,8 @@ enum SignatureScheme {
         // Otherwise, use the enum constants (converted to a List).
         List<SignatureScheme> schemesToCheck =
                 config.signatureSchemes.isEmpty() ?
-                Arrays.asList(SignatureScheme.values()) :
-                config.signatureSchemes;
+                    Arrays.asList(SignatureScheme.values()) :
+                    config.signatureSchemes;
 
         for (SignatureScheme ss: schemesToCheck) {
             if (!ss.isAvailable) {

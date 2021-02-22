@@ -32,22 +32,17 @@
  * @test
  * @bug 8255867
  * @summary SignatureScheme JSSE property does not preserve ordering in handshake messages
+ * @library /javax/net/ssl/templates
  * @run main/othervm SigSchemePropOrdering
  */
 
 import java.nio.ByteBuffer;
+import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 
-public class SigSchemePropOrdering {
+public class SigSchemePropOrdering extends SSLEngineTemplate {
 
     // Helper map to correlate integral SignatureScheme identifiers to
     // their IANA string name counterparts.
@@ -80,55 +75,42 @@ public class SigSchemePropOrdering {
     private static final int TLS_HS_CERT_REQ = 13;
     private static final int HELLO_EXT_SIG_ALGS = 13;
 
-    // Other definitions we'll need for the test
-    static String STOREPATH = "../../../../javax/net/ssl/etc/";
-    static String KSNAME = "keystore";
-    static String TSNAME = "truststore";
-    static String PASS = "passphrase";
     private static final String SIG_SCHEME_STR =
             "rsa_pkcs1_sha256,rsa_pss_rsae_sha256,rsa_pss_pss_sha256," +
             "ed448,ed25519,ecdsa_secp256r1_sha256";
 
+    SigSchemePropOrdering() throws Exception {
+        super();
+    }
+
     public static void main(String[] args) throws Exception {
-        String basePath = System.getProperty("test.src", "./") + "/" +
-                STOREPATH + "/";
-        System.setProperty("javax.net.ssl.keyStore", basePath + KSNAME);
-        System.setProperty("javax.net.ssl.keyStorePassword", PASS);
-        System.setProperty("javax.net.ssl.trustStore", basePath + TSNAME);
-        System.setProperty("javax.net.ssl.trustStorePassword", PASS);
         System.setProperty("javax.net.debug", "ssl:handshake");
         System.setProperty("jdk.tls.client.SignatureSchemes", SIG_SCHEME_STR);
         System.setProperty("jdk.tls.server.SignatureSchemes", SIG_SCHEME_STR);
-
-        SSLContext sslc = SSLContext.getDefault();
-        runHandshakeChkSigSchemes(sslc);
+        new SigSchemePropOrdering().run();
     }
 
-    private static void runHandshakeChkSigSchemes(SSLContext sslc)
-            throws Exception {
-        List<String> expectedSS = Arrays.asList(SIG_SCHEME_STR.split(","));
+    @Override
+    protected SSLEngine configureClientEngine(SSLEngine clientEngine) {
+        clientEngine.setUseClientMode(true);
+        clientEngine.setEnabledProtocols(new String[] { "TLSv1.2" });
+        return clientEngine;
+    }
 
-        // Set up Client and Server Engines and buffers
-        SSLEngine cliEng = sslc.createSSLEngine();
-        SSLEngine servEng = sslc.createSSLEngine();
-        cliEng.setUseClientMode(true);
-        cliEng.setEnabledProtocols(new String[] { "TLSv1.2" });
-        servEng.setUseClientMode(false);
-        servEng.setWantClientAuth(true);
+    @Override
+    protected SSLEngine configureServerEngine(SSLEngine serverEngine) {
+        serverEngine.setUseClientMode(false);
+        serverEngine.setWantClientAuth(true);
+        return serverEngine;
+    }
 
-        ByteBuffer cTOs = ByteBuffer.allocate(
-                cliEng.getSession().getPacketBufferSize());
-        ByteBuffer sTOc = ByteBuffer.allocate(
-                servEng.getSession().getPacketBufferSize());
-        ByteBuffer serverIn = ByteBuffer.allocate(
-                servEng.getSession().getApplicationBufferSize());
-        ByteBuffer cliDataBuf = ByteBuffer.wrap("ClientData".getBytes());
-        ByteBuffer servDataBuf = ByteBuffer.wrap("ServerData".getBytes());
-
+    private void run() throws Exception {
         // Start the handshake.  Check the ClientHello's signature_algorithms
         // extension and make sure the ordering matches what we specified
         // in the property above.
-        cliEng.wrap(cliDataBuf, cTOs);
+        List<String> expectedSS = Arrays.asList(SIG_SCHEME_STR.split(","));
+
+        clientEngine.wrap(clientOut, cTOs);
         cTOs.flip();
 
         List<String> actualSS = getSigSchemesCliHello(
@@ -151,11 +133,11 @@ public class SigSchemePropOrdering {
         // Consume the ClientHello and get the server flight of handshake
         // messages.  We expect that it will be one TLS record containing
         // multiple handshake messages, one of which is a CertificateRequest.
-        servEng.unwrap(cTOs, serverIn);
-        runDelegatedTasks(servEng);
+        serverEngine.unwrap(cTOs, serverIn);
+        runDelegatedTasks(serverEngine);
 
         // Wrap the server flight
-        servEng.wrap(servDataBuf, sTOc);
+        serverEngine.wrap(serverOut, sTOc);
         sTOc.flip();
 
         actualSS = getSigSchemesCertReq(
@@ -173,25 +155,6 @@ public class SigSchemePropOrdering {
             System.out.println();
             throw new RuntimeException(
                     "FAIL: Expected and Actual values differ.");
-        }
-    }
-
-    // If the result indicates that we have outstanding tasks to do,
-    // go ahead and run them in this thread.
-    private static void runDelegatedTasks(SSLEngine engine) throws Exception {
-        if (engine.getHandshakeStatus() ==
-                SSLEngineResult.HandshakeStatus.NEED_TASK) {
-            Runnable runnable;
-            while ((runnable = engine.getDelegatedTask()) != null) {
-                System.out.println("    running delegated task...");
-                runnable.run();
-            }
-            SSLEngineResult.HandshakeStatus hsStatus =
-                    engine.getHandshakeStatus();
-            if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
-                throw new Exception(
-                        "handshake shouldn't need additional tasks");
-            }
         }
     }
 
