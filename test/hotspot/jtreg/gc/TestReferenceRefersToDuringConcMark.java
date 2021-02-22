@@ -25,6 +25,7 @@ package gc;
 
 /* @test
  * @requires vm.gc != "Epsilon"
+ * @requires vm.gc != "Shenandoah"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @modules java.base
@@ -32,7 +33,7 @@ package gc;
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      gc.TestReferenceRefersTo
+ *      gc.TestReferenceRefersToDuringConcMark
  */
 
 import java.lang.ref.PhantomReference;
@@ -41,7 +42,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import sun.hotspot.WhiteBox;
 
-public class TestReferenceRefersTo {
+public class TestReferenceRefersToDuringConcMark {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     private static final class TestObject {
@@ -53,33 +54,19 @@ public class TestReferenceRefersTo {
     }
 
     private static volatile TestObject testObjectNone = null;
-    private static volatile TestObject testObject1 = null;
-    private static volatile TestObject testObject2 = null;
-    private static volatile TestObject testObject3 = null;
-    private static volatile TestObject testObject4 = null;
+    private static volatile TestObject testObject = null;
 
     private static ReferenceQueue<TestObject> queue = null;
 
-    private static PhantomReference<TestObject> testPhantom1 = null;
-
-    private static WeakReference<TestObject> testWeak2 = null;
-    private static WeakReference<TestObject> testWeak3 = null;
     private static WeakReference<TestObject> testWeak4 = null;
 
     private static void setup() {
         testObjectNone = new TestObject(0);
-        testObject1 = new TestObject(1);
-        testObject2 = new TestObject(2);
-        testObject3 = new TestObject(3);
-        testObject4 = new TestObject(4);
+        testObject = new TestObject(4);
 
         queue = new ReferenceQueue<TestObject>();
 
-        testPhantom1 = new PhantomReference<TestObject>(testObject1, queue);
-
-        testWeak2 = new WeakReference<TestObject>(testObject2, queue);
-        testWeak3 = new WeakReference<TestObject>(testObject3, queue);
-        testWeak4 = new WeakReference<TestObject>(testObject4, queue);
+        testWeak4 = new WeakReference<TestObject>(testObject, queue);
     }
 
     private static void gcUntilOld(Object o) throws Exception {
@@ -93,16 +80,9 @@ public class TestReferenceRefersTo {
 
     private static void gcUntilOld() throws Exception {
         gcUntilOld(testObjectNone);
-        gcUntilOld(testObject1);
-        gcUntilOld(testObject2);
-        gcUntilOld(testObject3);
-        gcUntilOld(testObject4);
+        gcUntilOld(testObject);
 
-        gcUntilOld(testPhantom1);
-
-        gcUntilOld(testWeak2);
-        gcUntilOld(testWeak3);
-        gcUntilOld(testWeak4);
+        gcUntilOld(testWeak);
     }
 
     private static void progress(String msg) {
@@ -148,18 +128,11 @@ public class TestReferenceRefersTo {
     }
 
     private static void checkInitialStates() throws Exception {
-        expectValue(testPhantom1, testObject1, "testPhantom1");
-        expectValue(testWeak2, testObject2, "testWeak2");
-        expectValue(testWeak3, testObject3, "testWeak3");
-        expectValue(testWeak4, testObject4, "testWeak4");
+        expectValue(testWeak4, testObject, "testWeak");
     }
 
     private static void discardStrongReferences() {
-        // testObjectNone not dropped
-        testObject1 = null;
-        testObject2 = null;
-        // testObject3 not dropped
-        testObject4 = null;
+        testObject = null;
     }
 
     private static void testConcurrentCollection() throws Exception {
@@ -181,36 +154,24 @@ public class TestReferenceRefersTo {
             WB.concurrentGCRunTo(WB.BEFORE_MARKING_COMPLETED);
 
             progress("fetch test objects, possibly keeping some alive");
-            expectNotCleared(testPhantom1, "testPhantom1");
-            expectNotCleared(testWeak2, "testWeak2");
-            expectValue(testWeak3, testObject3, "testWeak3");
-
-            // For some collectors, calling get() will keep testObject4 alive.
-            if (testWeak4.get() == null) {
-                fail("testWeak4 unexpectedly == null");
+            // For some collectors, calling get() will keep testObject alive.
+            if (testWeak.get() == null) {
+                fail("testWeak unexpectedly == null");
             }
 
             progress("finish collection");
             WB.concurrentGCRunToIdle();
 
             progress("verify expected clears");
-            expectCleared(testPhantom1, "testPhantom1");
-            expectCleared(testWeak2, "testWeak2");
-            expectValue(testWeak3, testObject3, "testWeak3");
+            expectNotCleared(testWeak, "testWeak");
 
             progress("verify get returns expected values");
-            if (testWeak2.get() != null) {
-                fail("testWeak2.get() != null");
+            TestObject obj = testWeak.get();
+            if (obj == null) {
+                fail("testWeak.get() returned null");
+            } else if (obj.value != 4) {
+                fail("testWeak.get().value is " + obj.value);
             }
-
-            TestObject obj3 = testWeak3.get();
-            if (obj3 == null) {
-                fail("testWeak3.get() returned null");
-            } else if (obj3.value != 3) {
-                fail("testWeak3.get().value is " + obj3.value);
-            }
-
-            TestObject obj4 = testWeak4.get();
 
             progress("verify queue entries");
             long timeout = 60000; // 1 minute of milliseconds.
@@ -218,27 +179,16 @@ public class TestReferenceRefersTo {
                 Reference<? extends TestObject> ref = queue.remove(timeout);
                 if (ref == null) {
                     break;
-                } else if (ref == testPhantom1) {
-                    testPhantom1 = null;
-                } else if (ref == testWeak2) {
-                    testWeak2 = null;
-                } else if (ref == testWeak3) {
-                    testWeak3 = null;
                 } else if (ref == testWeak4) {
                     testWeak4 = null;
                 } else {
                     fail("unexpected reference in queue");
                 }
             }
-            if (testPhantom1 != null) {
-                fail("testPhantom1 not notified");
-            } else if (testWeak2 != null) {
-                fail("testWeak2 not notified");
-            } else if (testWeak3 == null) {
-                fail("testWeak3 notified");
-            }
-            if ((testWeak4 == null) != (obj4 == null)) {
-                fail("either referent is cleared and we got notified, or neither of this happened");
+            if (testWeak4 == null) {
+                if (obj4 != null) {
+                    fail("testWeak4 notified");
+                }
             }
 
         } finally {
@@ -248,44 +198,9 @@ public class TestReferenceRefersTo {
         progress("finished concurrent collection test");
     }
 
-    private static void testSimpleCollection() throws Exception {
-        progress("setup simple collection test");
-        setup();
-        progress("gcUntilOld");
-        gcUntilOld();
-
-        progress("check initial states");
-        checkInitialStates();
-
-        progress("discard strong references");
-        TestObject tw4 = testWeak4.get(); // Keep testObject4 alive.
-        discardStrongReferences();
-
-        progress("collect garbage");
-        WB.fullGC();
-
-        progress("verify expected clears");
-        expectCleared(testPhantom1, "testPhantom1");
-        expectCleared(testWeak2, "testWeak2");
-        expectValue(testWeak3, testObject3, "testWeak3");
-        expectNotCleared(testWeak4, "testWeak4");
-
-        progress("verify get returns expected values");
-        if (testWeak2.get() != null) {
-            fail("testWeak2.get() != null");
-        } else if (testWeak3.get() != testObject3) {
-            fail("testWeak3.get() is not expected value");
-        } else if (testWeak4.get() != tw4) {
-            fail("testWeak4.get() is not expected value");
-        }
-
-        progress("finished simple collection test");
-    }
-
     public static void main(String[] args) throws Exception {
         if (WB.supportsConcurrentGCBreakpoints()) {
             testConcurrentCollection();
         }
-        testSimpleCollection();
     }
 }
