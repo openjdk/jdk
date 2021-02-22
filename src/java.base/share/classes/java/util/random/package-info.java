@@ -190,7 +190,14 @@
  * permutations.)
  *
  *
- * <h2><a id="algorithms">Random Number Generator Algorithms Available in Java SE</a></h2>
+ * <h2><a id="algorithms">Random Number Generator Algorithms Available.</a></h2>
+ *
+ * @implSpec These algorithms must be found with the current version of Java SE.
+ *           An implementation may recognize additional algorithms.
+ *           Availability of certain algorithms is subject to change in the future;
+ *           new algorithms may be added, older algorithms may be deprecated.
+ *           Accordingly, user should code fallback to alternate algorithms or
+ *           the default provided by RandomGeneratorFactory.getDefault().
  *
  * <table style="padding:0px 20px 0px 0px">
  *  <thead>

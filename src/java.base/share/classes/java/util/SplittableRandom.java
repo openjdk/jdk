@@ -51,8 +51,8 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * 3.31.1</a>.) These tests validate only the methods for certain
  * types and ranges, but similar properties are expected to hold, at
  * least approximately, for others as well. The <em>period</em>
- * (length of any series of generated values before it repeats) is at
- * least 2<sup>64</sup>. </li>
+ * (length of any series of generated values before it repeats) is
+ * 2<sup>64</sup>. </li>
  *
  * <li> Method {@link #split} constructs and returns a new
  * SplittableRandom instance that shares no mutable state with the
