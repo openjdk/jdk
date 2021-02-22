@@ -365,7 +365,7 @@ JVM_ENTRY(jint, VectorSupport_GetMaxLaneCount(JNIEnv *env, jclass vsclazz, jobje
   oop mirror = JNIHandles::resolve_non_null(clazz);
   if (java_lang_Class::is_primitive(mirror)) {
     BasicType bt = java_lang_Class::primitive_type(mirror);
-    return COMPILER2_PRESENT(Matcher::max_vector_size(bt)) NOT_COMPILER2(MaxVectorSize / type2aelembytes(bt));
+    return COMPILER2_PRESENT(Matcher::max_vector_size(bt)) NOT_COMPILER2(64 / type2aelembytes(bt));
   }
   return -1;
 } JVM_END
