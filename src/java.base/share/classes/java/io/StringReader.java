@@ -75,7 +75,7 @@ public class StringReader extends Reader {
     }
 
     /**
-     * Reads characters into a portion of an array.  
+     * Reads characters into a portion of an array.
      *
      * <p> If {@code len} is zero, then no characters are read and {@code 0} is
      * returned; otherwise, there is an attempt to read at least one character.
@@ -95,7 +95,7 @@ public class StringReader extends Reader {
     public int read(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
             ensureOpen();
-            Objects.checkFromIndexSize(off, len, cbuf.length); 
+            Objects.checkFromIndexSize(off, len, cbuf.length);
             if (len == 0) {
                 return 0;
             }
