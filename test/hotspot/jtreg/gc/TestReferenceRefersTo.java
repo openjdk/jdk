@@ -239,7 +239,7 @@ public class TestReferenceRefersTo {
             }
             if ((testWeak4 == null) != (obj4 == null)) {
                 fail("either referent is cleared and we got notified, or neither of this happened: referent: "
-                     + obj4 + ", notified: " + (testWeak == null));
+                     + obj4 + ", notified: " + (testWeak4 == null));
             }
 
         } finally {
