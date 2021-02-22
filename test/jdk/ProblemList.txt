@@ -796,7 +796,7 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 
 # jdk_util
 
-java/util/Locale/LocaleProvidersRun.java                        8261919 generic-all
+java/util/Locale/LocaleProvidersRun.java                        8261919 linux-x64
 
 ############################################################################
 
