@@ -40,7 +40,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
