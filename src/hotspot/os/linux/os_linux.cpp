@@ -2229,17 +2229,11 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // Print glibc outstanding allocations.
   // (note: there is no implementation of mallinfo for muslc)
 #ifdef __GLIBC__
-  struct mallinfo mi = ::mallinfo();
+  struct mallinfo2 mi = ::mallinfo2();
 
-  // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
-  // So values may have wrapped around. Still useful enough to see how much glibc thinks
-  // we allocated.
-  const size_t total_allocated = (size_t)(unsigned)mi.uordblks;
+  const size_t total_allocated = mi.uordblks;
   st->print("C-Heap outstanding allocations: " SIZE_FORMAT "K", total_allocated / K);
-  // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-  if ((vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX)) {
-    st->print(" (may have wrapped)");
-  }
+
   st->cr();
 
 #endif // __GLIBC__
