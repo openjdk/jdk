@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "interpreter/interpreter.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -3620,38 +3619,15 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   bind(ok);
 #endif
 
-  // Do Klass pointers always fit into 32bit?
-  const MetaWord* ccs_end = Metaspace::class_space_end();
-  assert(ccs_end != NULL, "Sanity");
-  const bool klass_pointers_are_32_bit = ((uintptr_t)ccs_end <= 0xFFFFFFFF);
-
-#ifdef ASSERT
-  if (klass_pointers_are_32_bit) {
-    // Assert that Klass pointers are < 32bit
-    Label ok2;
-    z_tmhl(current, 0xFFFF);
-    z_brc(Assembler::bcondAllZero, ok2);
-    z_illtrap(0xee);
-    z_illtrap(0xee);
-    bind(ok2);
-    Label ok3;
-    z_tmhh(current, 0xFFFF);
-    z_brc(Assembler::bcondAllZero, ok3);
-    z_illtrap(0xee);
-    z_illtrap(0xee);
-    bind(ok3);
-  }
-#endif
-
   if (base != NULL) {
     unsigned int base_h = ((unsigned long)base)>>32;
     unsigned int base_l = (unsigned int)((unsigned long)base);
     if ((base_h != 0) && (base_l == 0) && VM_Version::has_HighWordInstr()) {
       lgr_if_needed(dst, current);
       z_aih(dst, -((int)base_h));     // Base has no set bits in lower half.
-    } else if ((base_h == 0) && (base_l != 0) && klass_pointers_are_32_bit) {
+    } else if ((base_h == 0) && (base_l != 0)) {
       lgr_if_needed(dst, current);
-      z_afi(dst, -(int)base_l); // Note: 32bit add
+      z_agfi(dst, -(int)base_l);
     } else {
       load_const(Z_R0, base);
       lgr_if_needed(dst, current);
