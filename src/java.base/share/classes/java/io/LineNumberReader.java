@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,18 +267,7 @@ public class LineNumberReader extends BufferedReader {
     private char skipBuffer[] = null;
 
     /**
-     * Skip characters.
-     *
-     * @param  n
-     *         The number of characters to skip
-     *
-     * @return  The number of characters actually skipped
-     *
-     * @throws  IOException
-     *          If an I/O error occurs
-     *
-     * @throws  IllegalArgumentException
-     *          If {@code n} is negative
+     * {@inheritDoc}
      */
     public long skip(long n) throws IOException {
         if (n < 0)

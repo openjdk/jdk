@@ -158,7 +158,7 @@ public:
   static bool is_c1_only() {
     if (!is_interpreter_only() && has_c1()) {
       const bool c1_only = !has_c2() && !is_jvmci_compiler();
-      const bool tiered_degraded_to_c1_only = TieredStopAtLevel >= CompLevel_simple && TieredStopAtLevel < CompLevel_full_optimization;
+      const bool tiered_degraded_to_c1_only = TieredCompilation && TieredStopAtLevel >= CompLevel_simple && TieredStopAtLevel < CompLevel_full_optimization;
       const bool c1_only_compilation_mode = CompilationModeFlag::quick_only();
       return c1_only || tiered_degraded_to_c1_only || c1_only_compilation_mode;
     }
@@ -177,9 +177,10 @@ public:
   // Is the JVM in a configuration that permits only c1-compiled methods at level 1?
   static bool is_c1_simple_only() {
     if (is_c1_only()) {
-      const bool tiered_degraded_to_level_1 = TieredStopAtLevel == CompLevel_simple;
+      const bool tiered_degraded_to_level_1 = TieredCompilation && TieredStopAtLevel == CompLevel_simple;
       const bool c1_only_compilation_mode = CompilationModeFlag::quick_only();
-      return tiered_degraded_to_level_1 || c1_only_compilation_mode;
+      const bool tiered_off = !TieredCompilation;
+      return tiered_degraded_to_level_1 || c1_only_compilation_mode || tiered_off;
     }
     return false;
   }

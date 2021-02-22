@@ -1938,7 +1938,7 @@ public class CommandProcessor {
         }
     }
 
-    static Pattern historyPattern = Pattern.compile("((!\\*)|(!\\$)|(!!-?)|(!-?[0-9][0-9]*)|(![a-zA-Z][^ ]*))");
+    static Pattern historyPattern = Pattern.compile("([\\\\]?)((!\\*)|(!\\$)|(!!-?)|(!-?[0-9][0-9]*)|(![a-zA-Z][^ ]*))");
 
     public void executeCommand(String ln, boolean putInHistory) {
         if (ln.indexOf('!') != -1) {
@@ -1951,12 +1951,20 @@ public class CommandProcessor {
                 Matcher m = historyPattern.matcher(ln);
                 int start = 0;
                 while (m.find()) {
+                    // Capture the text preceding the matched text.
                     if (m.start() > start) {
-                        result.append(ln.substring(start, m.start() - start));
+                        result.append(ln.substring(start, m.start()));
                     }
                     start = m.end();
 
-                    String cmd = m.group();
+                    if (m.group(1).length() != 0) {
+                        // This means we matched a `\` before the '!'. Don't do any history
+                        // expansion in this case. Just capture what matched after the `\`.
+                        result.append(m.group(2));
+                        continue;
+                    }
+
+                    String cmd = m.group(2);
                     if (cmd.equals("!!")) {
                         result.append((String)history.get(history.size() - 1));
                     } else if (cmd.equals("!!-")) {
@@ -2000,6 +2008,7 @@ public class CommandProcessor {
                                 String s = (String)history.get(i);
                                 if (s.startsWith(tail)) {
                                     result.append(s);
+                                    break; // only capture the most recent match in the history
                                 }
                             }
                         }
