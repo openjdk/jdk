@@ -70,14 +70,14 @@ class Main {
 
     static void doTest(boolean readAnn) throws Exception {
         ClassLoader loader = new SimpleClassLoader();
-        WeakReference<Class<?>> c = new WeakReference<Class<?>>(loader.loadClass("C"));
+        var c = new WeakReference<Class<?>>(loader.loadClass("C"));
         if (c.get() == null) throw new AssertionError();
-        if (c.get().getClassLoader() != loader) throw new AssertionError();
+        if (c.get().getClassLoader() != loader) throw new AssertionError("wrong classloader");
         if (readAnn) System.out.println(c.get().getAnnotations()[0]);
-        if (c.get() == null) throw new AssertionError();
+        if (c.get() == null) throw new AssertionError("class missing");
         System.gc();
         System.gc();
-        if (c.get() == null) throw new AssertionError();
+        if (c.get() == null) throw new AssertionError("class missing");
         System.gc();
         System.gc();
         Reference.reachabilityFence(loader);
