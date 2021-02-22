@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build jdk.test.lib.process.*
  * @run testng LoaderLeakTest
-*/
+ */
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
@@ -108,7 +108,6 @@ class Main {
 @A(b=@B()) class C { }
 
 class SimpleClassLoader extends ClassLoader {
-    
     public SimpleClassLoader() { }
 
     private byte[] getClassImplFromDataBase(String className) {
