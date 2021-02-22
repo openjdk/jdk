@@ -71,6 +71,9 @@ public final class SunNativeProvider extends Provider {
                         DEBUG = Boolean.parseBoolean(
                             System.getProperty("sun.security.nativegss.debug"));
                         try {
+                            // Ensure the InetAddress class is loaded before
+                            // loading j2gss. The library will access this class
+                            // and a deadlock might happen. See JDK-8210373.
                             Class.forName("java.net.InetAddress");
                             System.loadLibrary("j2gss");
                         } catch (ClassNotFoundException | Error err) {
