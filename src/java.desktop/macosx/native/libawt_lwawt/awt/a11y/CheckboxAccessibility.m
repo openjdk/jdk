@@ -23,14 +23,14 @@
  * questions.
  */
 
-#import "RadiobuttonAccessibility.h"
+#import "CheckboxAccessibility.h"
 #import "JNIUtilities.h"
 #import "ThreadUtilities.h"
 
 /*
- * Implementation of the accessibility peer for the radiobutton role
+ * Implementation of the accessibility peer for the checkbox role
  */
-@implementation RadiobuttonAccessibility
+@implementation CheckboxAccessibility
 
 - (id) accessibilityValue
 {
