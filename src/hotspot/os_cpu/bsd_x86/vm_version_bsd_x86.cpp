@@ -26,6 +26,8 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
+#ifdef __APPLE__
+
 #include <sys/types.h>
 #include <sys/sysctl.h>
 
@@ -41,3 +43,6 @@ bool VM_Version::is_cpu_emulated() {
   }
   return (ret==1);
 }
+
+#endif
+
