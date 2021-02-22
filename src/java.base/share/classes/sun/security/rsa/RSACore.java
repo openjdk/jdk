@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,13 +435,15 @@ public final class RSACore {
         ConcurrentLinkedQueue<BlindingParameters> queue = blindingCache.get(n);
 
         if (queue == null) {
-            // Synchronizing not needed, if a queue is overwritten it is ok
+            // Synchronizing is not needed as threads overwriting the queue is
+            // just a few extra CPU cycles during startup.  Once the queue is
+            // established, it controls thread safety of the blinding objects.
+            // The WeakHashMap will clear all the objects when idle.
             queue = new ConcurrentLinkedQueue<>();
             blindingCache.putIfAbsent(n, queue);
         }
 
-        BlindingParameters bps;
-        bps = queue.poll();
+        BlindingParameters bps = queue.poll();
         if (bps == null) {
             bps = new BlindingParameters(e, d, n);
         }
