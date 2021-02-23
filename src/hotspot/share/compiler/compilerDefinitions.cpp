@@ -80,7 +80,7 @@ bool CompilationModeFlag::initialize() {
 
   // Now that the flag is parsed, we can use any methods of CompilerConfig.
   if (normal()) {
-    if (CompilerConfig::is_c1_only()) {
+    if (CompilerConfig::is_c1_simple_only()) {
       _mode = Mode::QUICK_ONLY;
     } else if (CompilerConfig::is_c2_or_jvmci_compiler_only()) {
       _mode = Mode::HIGH_ONLY;
@@ -555,6 +555,8 @@ void CompilerConfig::ergo_initialize() {
     if (NeverActAsServerClassMachine) {
       set_client_emulation_mode_flags();
     }
+  } else if (!has_c2() && !is_jvmci_compiler()) {
+    set_client_emulation_mode_flags();
   }
 
   set_legacy_emulation_flags();

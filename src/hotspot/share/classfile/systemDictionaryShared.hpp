@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/filemap.hpp"
@@ -246,12 +247,8 @@ public:
   static bool is_sharing_possible(ClassLoaderData* loader_data);
 
   static bool add_unregistered_class(InstanceKlass* k, TRAPS);
-  static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* class_name,
-                                                Symbol* super_name,
-                                                Handle class_loader,
-                                                Handle protection_domain,
-                                                bool is_superclass,
-                                                TRAPS);
+  static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
+                                                            Symbol* super_name,  bool is_superclass);
 
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
@@ -341,11 +338,14 @@ public:
 #endif
 
   template <typename T>
-  static unsigned int hash_for_shared_dictionary(T* ptr) {
+  static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
+    assert(MetaspaceObj::is_shared((const MetaspaceObj*)ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
-    address p = address(ptr) - SharedBaseAddress;
-    return primitive_hash<address>(p);
+    uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
+    return primitive_hash<uintx>(offset);
   }
+
+  static unsigned int hash_for_shared_dictionary(address ptr);
 
 #if INCLUDE_CDS_JAVA_HEAP
 private:
