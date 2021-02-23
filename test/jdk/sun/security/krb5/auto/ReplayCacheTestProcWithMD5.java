@@ -34,9 +34,4 @@
  *           -Djdk.net.hosts.file=TestHosts
  *           -Dtest.service=host
  *           -Dtest.libs=J ReplayCacheTestProc
- * @run main/othervm/timeout=300 -Djdk.krb5.rcache.useMD5=true
- *           -Djdk.net.hosts.file=TestHosts
- *           -Dtest.service=host
- *           -Dtest.libs=N ReplayCacheTestProc
- *
  */
