@@ -1356,6 +1356,7 @@ Assembler::Width widthForType(BasicType bt) {
   static address vector_long_sign_mask() { return StubRoutines::x86::vector_long_sign_mask(); }
   static address vector_all_bits_set() { return StubRoutines::x86::vector_all_bits_set(); }
   static address vector_int_to_short_mask() { return StubRoutines::x86::vector_int_to_short_mask(); }
+  static address vector_byte_shufflemask() { return StubRoutines::x86::vector_byte_shuffle_mask(); }
   static address vector_short_shufflemask() { return StubRoutines::x86::vector_short_shuffle_mask(); }
   static address vector_int_shufflemask() { return StubRoutines::x86::vector_int_shuffle_mask(); }
   static address vector_long_shufflemask() { return StubRoutines::x86::vector_long_shuffle_mask(); }
@@ -1693,9 +1694,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false; // Implementation limitation due to how shuffle is loaded
       } else if (size_in_bits == 256 && UseAVX < 2) {
         return false; // Implementation limitation
-      } else if (bt == T_BYTE && size_in_bits >= 256 && !VM_Version::supports_avx512_vbmi())  {
+      } else if (bt == T_BYTE && size_in_bits > 256 && !VM_Version::supports_avx512_vbmi())  {
         return false; // Implementation limitation
-      } else if (bt == T_SHORT && size_in_bits >= 256 && !VM_Version::supports_avx512bw())  {
+      } else if (bt == T_SHORT && size_in_bits > 256 && !VM_Version::supports_avx512bw())  {
         return false; // Implementation limitation
       }
       break;
@@ -7500,13 +7501,24 @@ instruct rearrangeB(vec dst, vec shuffle) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct rearrangeB_avx(vec dst, vec src, vec shuffle) %{
+instruct rearrangeB_avx(legVec dst, legVec src, vec shuffle, legVec vtmp1, legVec vtmp2, rRegP scratch) %{
   predicate(vector_element_basic_type(n) == T_BYTE &&
             vector_length(n) == 32 && !VM_Version::supports_avx512_vbmi());
   match(Set dst (VectorRearrange src shuffle));
-  format %{ "vector_rearrange $dst, $shuffle, $src" %}
+  effect(TEMP dst, TEMP vtmp1, TEMP vtmp2, TEMP scratch);
+  format %{ "vector_rearrange $dst, $shuffle, $src\t! using $vtmp1, $vtmp2, $scratch as TEMP" %}
   ins_encode %{
-    __ vpshufb($dst$$XMMRegister, $shuffle$$XMMRegister, $src$$XMMRegister, Assembler::AVX_256bit);
+    assert(UseAVX >= 2, "required");
+    // Swap src into vtmp1
+    __ vperm2i128($vtmp1$$XMMRegister, $src$$XMMRegister, $src$$XMMRegister, 1);
+    // Shuffle swapped src to get entries from other 128 bit lane
+    __ vpshufb($vtmp1$$XMMRegister, $vtmp1$$XMMRegister, $shuffle$$XMMRegister, Assembler::AVX_256bit);
+    // Shuffle original src to get entries from self 128 bit lane
+    __ vpshufb($dst$$XMMRegister, $src$$XMMRegister, $shuffle$$XMMRegister, Assembler::AVX_256bit);
+    // Create a blend mask by setting high bits for entries coming from other lane in shuffle
+    __ vpaddb($vtmp2$$XMMRegister, $shuffle$$XMMRegister, ExternalAddress(vector_byte_shufflemask()), Assembler::AVX_256bit, $scratch$$Register);
+    // Perform the blend
+    __ vpblendvb($dst$$XMMRegister, $dst$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister, Assembler::AVX_256bit);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7527,26 +7539,42 @@ instruct rearrangeB_evex(vec dst, vec src, vec shuffle) %{
 
 instruct loadShuffleS(vec dst, vec src, vec vtmp, rRegP scratch) %{
   predicate(vector_element_basic_type(n) == T_SHORT &&
-            vector_length(n) <= 8 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
+            vector_length(n) <= 16 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
   match(Set dst (VectorLoadShuffle src));
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
   format %{ "vector_load_shuffle $dst, $src\t! using $vtmp and $scratch as TEMP" %}
   ins_encode %{
     // Create a byte shuffle mask from short shuffle mask
     // only byte shuffle instruction available on these platforms
+    int vlen_in_bytes = vector_length_in_bytes(this);
+    if (UseAVX == 0) {
+      assert(vlen_in_bytes <= 16, "required");
+      // Multiply each shuffle by two to get byte index
+      __ pmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister);
+      __ psllw($vtmp$$XMMRegister, 1);
 
-    // Multiply each shuffle by two to get byte index
-    __ pmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister);
-    __ psllw($vtmp$$XMMRegister, 1);
+      // Duplicate to create 2 copies of byte index
+      __ movdqu($dst$$XMMRegister, $vtmp$$XMMRegister);
+      __ psllw($dst$$XMMRegister, 8);
+      __ por($dst$$XMMRegister, $vtmp$$XMMRegister);
 
-    // Duplicate to create 2 copies of byte index
-    __ movdqu($dst$$XMMRegister, $vtmp$$XMMRegister);
-    __ psllw($dst$$XMMRegister, 8);
-    __ por($dst$$XMMRegister, $vtmp$$XMMRegister);
+      // Add one to get alternate byte index
+      __ movdqu($vtmp$$XMMRegister, ExternalAddress(vector_short_shufflemask()), $scratch$$Register);
+      __ paddb($dst$$XMMRegister, $vtmp$$XMMRegister);
+    } else {
+      assert(UseAVX > 1 || vlen_in_bytes <= 16, "required");
+      int vlen_enc = vector_length_encoding(this);
+      // Multiply each shuffle by two to get byte index
+      __ vpmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
+      __ vpsllw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 1, vlen_enc);
 
-    // Add one to get alternate byte index
-    __ movdqu($vtmp$$XMMRegister, ExternalAddress(vector_short_shufflemask()), $scratch$$Register);
-    __ paddb($dst$$XMMRegister, $vtmp$$XMMRegister);
+      // Duplicate to create 2 copies of byte index
+      __ vpsllw($dst$$XMMRegister, $vtmp$$XMMRegister,  8, vlen_enc);
+      __ vpor($dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
+
+      // Add one to get alternate byte index
+      __ vpaddb($dst$$XMMRegister, $dst$$XMMRegister, ExternalAddress(vector_short_shufflemask()), vlen_enc, $scratch$$Register);
+    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7559,6 +7587,28 @@ instruct rearrangeS(vec dst, vec shuffle) %{
   ins_encode %{
     assert(UseSSE >= 4, "required");
     __ pshufb($dst$$XMMRegister, $shuffle$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rearrangeS_avx(legVec dst, legVec src, vec shuffle, legVec vtmp1, legVec vtmp2, rRegP scratch) %{
+  predicate(vector_element_basic_type(n) == T_SHORT &&
+            vector_length(n) == 16 && !VM_Version::supports_avx512bw());
+  match(Set dst (VectorRearrange src shuffle));
+  effect(TEMP dst, TEMP vtmp1, TEMP vtmp2, TEMP scratch);
+  format %{ "vector_rearrange $dst, $shuffle, $src\t! using $vtmp1, $vtmp2, $scratch as TEMP" %}
+  ins_encode %{
+    assert(UseAVX >= 2, "required");
+    // Swap src into vtmp1
+    __ vperm2i128($vtmp1$$XMMRegister, $src$$XMMRegister, $src$$XMMRegister, 1);
+    // Shuffle swapped src to get entries from other 128 bit lane
+    __ vpshufb($vtmp1$$XMMRegister, $vtmp1$$XMMRegister, $shuffle$$XMMRegister, Assembler::AVX_256bit);
+    // Shuffle original src to get entries from self 128 bit lane
+    __ vpshufb($dst$$XMMRegister, $src$$XMMRegister, $shuffle$$XMMRegister, Assembler::AVX_256bit);
+    // Create a blend mask by setting high bits for entries coming from other lane in shuffle
+    __ vpaddb($vtmp2$$XMMRegister, $shuffle$$XMMRegister, ExternalAddress(vector_byte_shufflemask()), Assembler::AVX_256bit, $scratch$$Register);
+    // Perform the blend
+    __ vpblendvb($dst$$XMMRegister, $dst$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister, Assembler::AVX_256bit);
   %}
   ins_pipe( pipe_slow );
 %}

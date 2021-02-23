@@ -82,6 +82,7 @@ public class ClhsdbFindPC {
 
     private static void testFindPC(boolean withXcomp, boolean withCore) throws Exception {
         try {
+            String linesep = System.getProperty("line.separator");
             String segvAddress = null;
             List<String> cmds = null;
             String cmdStr = null;
@@ -202,11 +203,15 @@ public class ClhsdbFindPC {
             parts = parts[1].split(" \\[");
             parts = parts[1].split("\\]");
             String stackAddress = parts[0];  // address of the thread's stack
-            cmdStr = "findpc " + stackAddress;
-            cmds = List.of(cmdStr);
-            expStrMap = new HashMap<>();
-            expStrMap.put(cmdStr, List.of("In java stack"));
-            runTest(withCore, cmds, expStrMap);
+            if (Long.decode(stackAddress) == 0L) {
+                System.out.println("Stack address is " + stackAddress + ". Skipping test.");
+            } else {
+                cmdStr = "findpc " + stackAddress;
+                cmds = List.of(cmdStr);
+                expStrMap = new HashMap<>();
+                expStrMap.put(cmdStr, List.of("In java stack"));
+                runTest(withCore, cmds, expStrMap);
+            }
 
             // Run 'examine <addr>' using a thread's tid as the address. The
             // examine output will be the of the form:
@@ -218,7 +223,7 @@ public class ClhsdbFindPC {
             String examineOutput = runTest(withCore, cmds, null);
             // Extract <value>.
             parts = examineOutput.split(tid + ": ");
-            String value = parts[1];
+            String value = parts[1].split(linesep)[0];
             // Use findpc on <value>. The output should look something like:
             //    Address 0x00007fed86f610b8: vtable for JavaThread + 0x10
             cmdStr = "findpc " + value;
@@ -229,13 +234,49 @@ public class ClhsdbFindPC {
             } else if (Platform.isOSX()) {
                 if (withCore) {
                     expStrMap.put(cmdStr, List.of("__ZTV10JavaThread"));
-                } else { // symbol lookups not supported with OSX live process
+                } else { // address -> symbol lookups not supported with OSX live process
                     expStrMap.put(cmdStr, List.of("In unknown location"));
                 }
             } else {
                 expStrMap.put(cmdStr, List.of("vtable for JavaThread"));
             }
-            runTest(withCore, cmds, expStrMap);
+            String findpcOutput = runTest(withCore, cmds, expStrMap);
+
+            // Determine if we have symbol support. Currently we assume yes except on windows.
+            boolean hasSymbols = true;
+            if (Platform.isWindows()) {
+                if (findpcOutput.indexOf("jvm!JavaThread::`vftable'") == -1) {
+                    hasSymbols = false;
+                }
+            }
+
+            // Run "findsym MaxJNILocalCapacity". The output should look something like:
+            //   0x00007eff8e1a0da0: <jdk-dir>/lib/server/libjvm.so + 0x1d81da0
+            String symbol = "MaxJNILocalCapacity";
+            cmds = List.of("findsym " + symbol);
+            expStrMap = new HashMap<>();
+            if (!hasSymbols) {
+                expStrMap.put(cmdStr, List.of("Symbol not found"));
+            }
+            String findsymOutput = runTest(withCore, cmds, expStrMap);
+            // Run findpc on the result of "findsym MaxJNILocalCapacity". The output
+            // should look something like:
+            //   Address 0x00007eff8e1a0da0: MaxJNILocalCapacity
+            if (hasSymbols) {
+                parts = findsymOutput.split("findsym " + symbol + linesep);
+                parts = parts[1].split(":");
+                String findsymAddress = parts[0].split(linesep)[0];
+                cmdStr = "findpc " + findsymAddress;
+                cmds = List.of(cmdStr);
+                expStrMap = new HashMap<>();
+                if (Platform.isOSX() && !withCore) {
+                    // address -> symbol lookups not supported with OSX live process
+                    expStrMap.put(cmdStr, List.of("Address " + findsymAddress + ": In unknown location"));
+                } else {
+                    expStrMap.put(cmdStr, List.of("Address " + findsymAddress + ": .*" + symbol));
+                }
+                runTest(withCore, cmds, expStrMap);
+            }
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {

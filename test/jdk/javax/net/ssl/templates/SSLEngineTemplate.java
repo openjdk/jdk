@@ -52,21 +52,21 @@ import java.nio.ByteBuffer;
  * produced.
  */
 public class SSLEngineTemplate implements SSLContextTemplate {
-    private final SSLEngine clientEngine;     // client Engine
-    private final ByteBuffer clientOut;       // write side of clientEngine
-    private final ByteBuffer clientIn;        // read side of clientEngine
+    protected final SSLEngine clientEngine;     // client Engine
+    protected final ByteBuffer clientOut;       // write side of clientEngine
+    protected final ByteBuffer clientIn;        // read side of clientEngine
 
-    private final SSLEngine serverEngine;     // server Engine
-    private final ByteBuffer serverOut;       // write side of serverEngine
-    private final ByteBuffer serverIn;        // read side of serverEngine
+    protected final SSLEngine serverEngine;     // server Engine
+    protected final ByteBuffer serverOut;       // write side of serverEngine
+    protected final ByteBuffer serverIn;        // read side of serverEngine
 
     // For data transport, this example uses local ByteBuffers.  This
     // isn't really useful, but the purpose of this example is to show
     // SSLEngine concepts, not how to do network transport.
-    private final ByteBuffer cTOs;      // "reliable" transport client->server
-    private final ByteBuffer sTOc;      // "reliable" transport server->client
+    protected final ByteBuffer cTOs;      // "reliable" transport client->server
+    protected final ByteBuffer sTOc;      // "reliable" transport server->client
 
-    private SSLEngineTemplate() throws Exception {
+    protected SSLEngineTemplate() throws Exception {
         serverEngine = configureServerEngine(
                 createServerSSLContext().createSSLEngine());
 
@@ -223,7 +223,7 @@ public class SSLEngineTemplate implements SSLContextTemplate {
 
     // If the result indicates that we have outstanding tasks to do,
     // go ahead and run them in this thread.
-    private static void runDelegatedTasks(SSLEngine engine) throws Exception {
+    protected static void runDelegatedTasks(SSLEngine engine) throws Exception {
         if (engine.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
             Runnable runnable;
             while ((runnable = engine.getDelegatedTask()) != null) {

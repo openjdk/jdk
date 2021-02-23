@@ -174,6 +174,13 @@
  * {@code factory.setAttribute(name, value);}
  * </td>
  * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XSLTCSerializer">XSLTC Serializer</th>
+ * <td>XSLTC Serializer</td>
+ * <td>
+ * {@code Transformer transformer = TransformerFactory.newInstance().newTransformer();}<br>
+ * {@code transformer.setOutputProperty(name, value);}
+ * </td>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="DOMLS">DOMLS</th>
@@ -230,6 +237,28 @@
  * <td><a href="#DOMLS">DOMLS</a></td>
  * <td>17</td>
  * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XSLTCISSTANDALONE">xsltcIsStandalone</th>
+ * <td>indicates that the <a href="#XSLTCSerializer">XSLTC serializer</a> should
+ * treat the output as a standalone document. The property can be used to ensure
+ * a newline is written after the XML declaration. Unlike the property
+ * {@link javax.xml.transform.OutputKeys#OMIT_XML_DECLARATION OMIT_XML_DECLARATION},
+ * this property does not have an effect on whether an XML declaration should be
+ * written out.
+ * <p>
+ * This property behaves similar to that for <a href="#DOMLS">DOMLS</a> above,
+ * except that it is for the <a href="#XSLTCSerializer">XSLTC Serializer</a>
+ * and its value is a String.
+ * </td>
+ * <td>yes</td>
+ * <td>yes</td>
+ * <td>String</td>
+ * <th id="Value" scope="row" style="font-weight:normal">yes/no</th>
+ * <th id="Default" scope="row" style="font-weight:normal">no</th>
+ * <td>No</td>
+ * <td><a href="#XSLTCSerializer">XSLTC Serializer</a></td>
+ * <td>17</td>
+ * </tr>
  * </tbody>
  * </table>
  * <p>
@@ -241,8 +270,12 @@
  *
  * <p>
  * <b>[3]</b> The value must be exactly as listed in this table, case-sensitive.
- * The value type for the corresponding System Property is String. For boolean
- * type, the system property is true only if it is "true" and false otherwise.
+ * The value of the corresponding System Property is the String representation of
+ * the property value. If the type is boolean, the system property is true only
+ * if it is "true"; If the type is String, the system property is true only if
+ * it is exactly the same string representing the positive value (e.g. "yes" for
+ * {@code xsltcIsStandalone}); The system property is false otherwise.
+ *
  * <p>
  * <b>[4]</b> A value "yes" indicates the property is a Security Property. Refer
  * to the <a href="#ScopeAndOrder">Scope and Order</a> on how secure processing
