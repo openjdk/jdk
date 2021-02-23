@@ -151,8 +151,9 @@ abstract class HttpConnection implements Closeable {
     }
 
     /**
-     * Forces a call to the native implementation of the connection
-     * channel to verify that this channel is still open.
+     * Forces a call to the native implementation of the
+     * connection's channel to verify that this channel is still
+     * open.
      * <p>
      * This method should only be called just after an HTTP/1.1
      * connection is retrieved from the HTTP/1.1 connection pool.
@@ -186,6 +187,8 @@ abstract class HttpConnection implements Closeable {
                 if (read == 0) return true;
                 close();
             } catch (IOException x) {
+                debug.log("Pooled connection is no longer operational: %s",
+                        x.toString());
                 return false;
             }
         }
