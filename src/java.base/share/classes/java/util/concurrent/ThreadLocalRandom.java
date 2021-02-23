@@ -47,6 +47,9 @@ import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.random.RandomGenerator;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
 import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
@@ -234,16 +237,6 @@ public class ThreadLocalRandom extends Random {
      */
     protected int next(int bits) {
         return nextInt() >>> (32 - bits);
-    }
-
-    @Override
-    public int nextInt() {
-        return mix32(nextSeed());
-    }
-
-    @Override
-    public long nextLong() {
-        return RandomSupport.mixMurmur64(nextSeed());
     }
 
     // Within-package utilities
@@ -449,4 +442,293 @@ public class ThreadLocalRandom extends Random {
             seeder.set(s);
         }
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     */
+    @Override
+    public boolean nextBoolean() {
+        return super.nextBoolean();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     */
+    @Override
+    public double nextDouble() {
+        return super.nextDouble();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     */
+    @Override
+    public double nextDouble(double bound) {
+        return super.nextDouble(bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     */
+    @Override
+    public double nextDouble(double origin, double bound) {
+        return super.nextDouble(origin, bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     */
+    @Override
+    public float nextFloat() {
+        return super.nextFloat();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     */
+    @Override
+    public float nextFloat(float bound) {
+        return super.nextFloat(bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     */
+    @Override
+    public float nextFloat(float origin, float bound) {
+        return super.nextFloat(origin, bound);
+    }
+
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     */
+    @Override
+    public int nextInt() {
+        return mix32(nextSeed());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     */
+    @Override
+    public int nextInt(int bound) {
+        return super.nextInt(bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     */
+    @Override
+    public int nextInt(int origin, int bound) {
+        return super.nextInt(origin, bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     */
+    @Override
+    public long nextLong() {
+        return RandomSupport.mixMurmur64(nextSeed());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     */
+    @Override
+    public long nextLong(long bound) {
+        return super.nextLong(bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     */
+    @Override
+    public long nextLong(long origin, long bound) {
+        return super.nextLong(origin, bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public IntStream ints(long streamSize) {
+        return super.ints(streamSize);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     *
+     * @since 1.8
+     */
+    @Override
+    public IntStream ints() {
+        return super.ints();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
+        return super.ints(streamSize, randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
+        return super.ints(randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public LongStream longs(long streamSize) {
+        return super.longs(streamSize);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public LongStream longs() {
+        return super.longs();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
+        return super.longs(streamSize, randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
+        return super.longs(randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public DoubleStream doubles(long streamSize) {
+        return super.doubles(streamSize);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public DoubleStream doubles() {
+        return super.doubles();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
+        return super.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.8
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote  {@inheritDoc}
+     */
+    @Override
+    public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
+        return super.doubles(randomNumberOrigin, randomNumberBound);
+    }
+
 }
