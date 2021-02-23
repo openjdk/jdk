@@ -37,7 +37,7 @@ public class IllegalSNIName {
     private static void checkHostname(String hostname) throws Exception {
         try {
             new SNIHostName(hostname);
-            throw new Exception("Expected to get IllegalArgumentException for "
+            throw new RuntimeException("Expected to get IllegalArgumentException for "
                     + hostname);
         } catch (IllegalArgumentException iae) {
             // That's the right behavior.
@@ -47,7 +47,7 @@ public class IllegalSNIName {
     private static void checkHostname(byte[] encodedHostname) throws Exception {
         try {
             new SNIHostName(encodedHostname);
-            throw new Exception("Expected to get IllegalArgumentException for "
+            throw new RuntimeException("Expected to get IllegalArgumentException for "
                     + HexFormat.ofDelimiter(":").formatHex(encodedHostname));
         } catch (IllegalArgumentException iae) {
             // That's the right behavior.
