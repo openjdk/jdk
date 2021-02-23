@@ -148,7 +148,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
     // Rechecking if the region is coarsened, while holding the lock.
     if (is_region_coarsened(from_hrm_ind)) {
-      assert(contains_reference(from), "We just found " PTR_FORMAT " in the Coarse table", p2i(from));
+      assert(contains_reference_locked(from), "We just found " PTR_FORMAT " in the Coarse table", p2i(from));
       return;
     }
 
