@@ -180,11 +180,6 @@ public class HtmlOptions extends BaseOptions {
      */
     private String windowTitle = "";
 
-    /**
-     * Values for the hidden {@code --background-writer} option.
-     */
-    private BackgroundWriter.Options backgroundWriterOptions = new BackgroundWriter.Options();
-
     //</editor-fold>
 
     private HtmlConfiguration config;
@@ -453,14 +448,6 @@ public class HtmlOptions extends BaseOptions {
                         messages.warning("doclet.NoFrames_specified");
                         return true;
                     }
-                },
-
-                new Hidden(resources, "--background-writer", 1) {
-                    @Override
-                    public boolean process(String option, List<String> args) {
-                        // delegate to BackgroundWriter
-                        return getBackgroundWriterOptions().process(messages, args.get(0));
-                    }
                 }
         );
         Set<BaseOptions.Option> allOptions = new TreeSet<>();
@@ -691,12 +678,5 @@ public class HtmlOptions extends BaseOptions {
      */
     String windowTitle() {
         return windowTitle;
-    }
-
-    /**
-     * Default or parsed values for the command-line option {@code --background-writer}.
-     */
-    public BackgroundWriter.Options getBackgroundWriterOptions() {
-        return backgroundWriterOptions;
     }
 }

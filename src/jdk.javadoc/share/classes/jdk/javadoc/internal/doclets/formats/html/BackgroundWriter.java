@@ -32,6 +32,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.tools.Diagnostic;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -46,6 +48,11 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
  *  deletion without notice.</b>
  */
 public class BackgroundWriter {
+    /**
+     * Whether or not the feature is enabled. By default, the feature is enabled.
+     */
+    public static final boolean IS_ENABLED =
+            !Boolean.getBoolean("javadoc.internal.bgWriter.disabled");
 
     /**
      * The number of background threads to create, to write out files.
@@ -55,7 +62,8 @@ public class BackgroundWriter {
      * warrant more threads. This may change if we ever start to
      * generate pages on multiple threads.
      */
-    private static final int DEFAULT_BACKGROUND_THREADS = 1;
+    private final int BACKGROUND_THREADS =
+            Integer.getInteger("javadoc.internal.bgWriter.threads", 1);
 
     /**
      * The number of tasks awaiting execution.
@@ -64,64 +72,8 @@ public class BackgroundWriter {
      * That just uses up memory, and so has a regressive impact on
      * performance, by causing more GC cycles.
      */
-    private static final int DEFAULT_QUEUED_TASKS = DEFAULT_BACKGROUND_THREADS;
-
-    /**
-     * Options to configure the background writer.
-     * This is an internal class, for testing only.
-     * The default options should be sufficient for normal use.
-     */
-    static class Options {
-        public boolean enabled = true;
-        public boolean verbose = false;
-        public int backgroundThreads = DEFAULT_BACKGROUND_THREADS;
-        public int queuedTasks = DEFAULT_QUEUED_TASKS;
-
-        public boolean process(Messages messages, String opts) {
-            boolean ok = true;
-            for (String opt : opts.split(",")) {
-                String value;
-                int sep = opt.indexOf("=");
-                if (sep == -1) {
-                    value = null;
-                } else {
-                    value = opt.substring(sep + 1);
-                    opt = opt.substring(0, sep);
-                }
-                switch (opt) {
-                    case "off" -> enabled = false;
-                    case "verbose" -> verbose = true;
-                    case "queue" -> {
-                        if (value == null) {
-                            messages.error("doclet.bgWriter.no_value", opt);
-                            ok = false;
-                        } else if (value.matches("[0-9]+")) { // 0 or more
-                            queuedTasks = Integer.parseInt(value);
-                        } else {
-                            messages.error("doclet.bgWriter.bad_value", opt, value);
-                            ok = false;
-                        }
-                    }
-                    case "threads" -> {
-                        if (value == null) {
-                            messages.error("doclet.bgWriter.no_value", opt);
-                            ok = false;
-                        } else if (value.matches("[1-9]+")) { // 1 or more
-                            backgroundThreads = Integer.parseInt(value);
-                        } else {
-                            messages.error("doclet.bgWriter.bad_value", opt, value);
-                            ok = false;
-                        }
-                    }
-                    default -> {
-                        messages.warning("doclet.bgWriter.unknown_option", opt);
-                        ok = false;
-                    }
-                }
-            }
-            return ok;
-        }
-    }
+    private final int QUEUED_TASKS =
+            Integer.getInteger("javadoc.internal.bgWriter.queue", 1);
 
     /**
      * A messages object, used to write messages should any errors occur.
@@ -147,11 +99,6 @@ public class BackgroundWriter {
     // The following members are just used to help monitor execution.
 
     /**
-     * The options used to configure the writer.
-     */
-    private final Options options;
-
-    /**
      * Indicates whether tasks have been submitted to the executor.
      * Set when the first task is scheduled, at which point {@link #start}
      * will be initialized.
@@ -173,25 +120,22 @@ public class BackgroundWriter {
      * Whether to report additional information, such as the overall utilization of the
      * executor.
      */
-    private final boolean verbose;
+    private final boolean verbose = Boolean.getBoolean("javadoc.internal.bgWriter.verbose");
 
     /**
      * Creates a {@code BackgroundWriter}.
      *
      * @implNote
      * The writer uses a {@link Executors#newFixedThreadPool fixed thread pool} of
-     * {@link Options#backgroundThreads} background threads and a queue that is
-     * restricted to {@link Options#queuedTasks} queued tasks.
+     * {@link #BACKGROUND_THREADS} background threads and a queue that is
+     * restricted to {@link #QUEUED_TASKS} queued tasks.
      *
      * @param messages used to write out any error messages and other output
-     * @param options  the options to configure the writer
      */
-    public BackgroundWriter(Messages messages, Options options) {
+    public BackgroundWriter(Messages messages) {
         this.messages = messages;
-        this.verbose = options.verbose;
-        executor = Executors.newFixedThreadPool(options.backgroundThreads);
-        semaphore = new Semaphore(options.queuedTasks + options.backgroundThreads);
-        this.options = options;
+        executor = Executors.newFixedThreadPool(BACKGROUND_THREADS);
+        semaphore = new Semaphore(QUEUED_TASKS + BACKGROUND_THREADS);
     }
 
     /**
@@ -241,9 +185,10 @@ public class BackgroundWriter {
             boolean ok = executor.awaitTermination(5, TimeUnit.MINUTES);
             if (ok && started && verbose) {
                 double elapsed = System.nanoTime() - start;
-                double utilization = ((double) taskBusy.get()) / options.backgroundThreads / elapsed * 100;
-                messages.noticeAlways("doclet.bgWriter.utilization",
-                        options.backgroundThreads, options.queuedTasks, ((int) utilization) + "%");
+                double utilization = ((double) taskBusy.get()) / BACKGROUND_THREADS / elapsed * 100;
+                messages.getReporter().print(Diagnostic.Kind.NOTE,
+                        String.format("Background writer: threads: %d, queue: %d, utilization: %d%%",
+                            BACKGROUND_THREADS, QUEUED_TASKS, ((int) utilization)));
             }
 
         } catch (InterruptedException e) {

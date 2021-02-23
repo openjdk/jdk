@@ -271,9 +271,8 @@ public class HtmlConfiguration extends BaseConfiguration {
         setTopFile();
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
 
-        BackgroundWriter.Options bgWriterOptions = options.getBackgroundWriterOptions();
-        if (bgWriterOptions.enabled) {
-            backgroundWriter = new BackgroundWriter(messages, bgWriterOptions);
+        if (BackgroundWriter.IS_ENABLED) {
+            backgroundWriter = new BackgroundWriter(messages);
         }
 
         return true;

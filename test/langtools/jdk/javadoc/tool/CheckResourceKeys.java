@@ -166,6 +166,12 @@ public class CheckResourceKeys {
      * a resource key, verify that a key exists.
      */
     void findMissingKeys(Set<String> codeKeys, Set<String> resourceKeys) {
+        Set<String> sysProps = Set.of(
+                "javadoc.internal.bgWriter.disabled",
+                "javadoc.internal.bgWriter.threads",
+                "javadoc.internal.bgWriter.queue",
+                "javadoc.internal.bgWriter.verbose",
+                "javadoc.internal.show.taglets");
         for (String ck: codeKeys) {
             // ignore these synthesized keys, tested by usageTests
             if (ck.startsWith("doclet.usage.") || ck.startsWith("doclet.xusage."))
@@ -173,8 +179,8 @@ public class CheckResourceKeys {
             // ignore this partial key, tested by usageTests
             if (ck.equals("main.opt."))
                 continue;
-            // ignore this system property name
-            if (ck.equals("javadoc.internal.show.taglets"))
+            // ignore these system property names
+            if (sysProps.contains(ck))
                 continue;
             if (resourceKeys.contains(ck))
                 continue;
