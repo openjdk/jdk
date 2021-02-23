@@ -3531,9 +3531,13 @@ bool os::Linux::transparent_huge_pages_sanity_check(bool warn,
 
 bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   bool result = false;
-  void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE,
-                 MAP_ANONYMOUS|MAP_PRIVATE|MAP_HUGETLB,
-                 -1, 0);
+
+  int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB;
+  if (page_size != default_large_page_size()) {
+    flags |= (exact_log2(page_size) << MAP_HUGE_SHIFT);
+  }
+
+  void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
 
   if (p != MAP_FAILED) {
     // We don't know if this really is a huge page or not.
