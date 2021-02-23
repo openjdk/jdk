@@ -292,22 +292,18 @@ public:
   static const char* flag_error_str(JVMFlag::Error error);
 
   // type checking
+#define CHECK_COMPATIBLE(type) \
+  case TYPE_##type: \
+    assert(sizeof(T) == sizeof(type) && \
+           std::is_integral<T>::value == std::is_integral<type>::value && \
+           std::is_signed  <T>::value == std::is_signed  <type>::value, "must be"); break;
+
   template <typename T>
-  static void assert_compatible_type(int flag_enum) {
+  static void assert_compatible_type(int type_enum) {
 #ifndef PRODUCT
-    if (std::is_integral<T>::value) {
-      switch (flag_enum) {
-      case TYPE_bool:     assert(sizeof(T) == sizeof(bool)     && std::is_signed<T>::value == std::is_signed<bool>    ::value, "must be"); break;
-      case TYPE_int:      assert(sizeof(T) == sizeof(int)      && std::is_signed<T>::value == std::is_signed<int>     ::value, "must be"); break;
-      case TYPE_uint:     assert(sizeof(T) == sizeof(uint)     && std::is_signed<T>::value == std::is_signed<uint>    ::value, "must be"); break;
-      case TYPE_intx:     assert(sizeof(T) == sizeof(intx)     && std::is_signed<T>::value == std::is_signed<intx>    ::value, "must be"); break;
-      case TYPE_uintx:    assert(sizeof(T) == sizeof(uintx)    && std::is_signed<T>::value == std::is_signed<uintx>   ::value, "must be"); break;
-      case TYPE_uint64_t: assert(sizeof(T) == sizeof(uint64_t) && std::is_signed<T>::value == std::is_signed<uint64_t>::value, "must be"); break;
-      case TYPE_size_t:   assert(sizeof(T) == sizeof(size_t)   && std::is_signed<T>::value == std::is_signed<size_t>  ::value, "must be"); break;
+    switch (type_enum) {
+      JVM_FLAG_NON_STRING_TYPES_DO(CHECK_COMPATIBLE);
       default: ShouldNotReachHere();
-      }
-    } else {
-      assert(flag_enum == JVMFlag::TYPE_double, "must be double");
     }
 #endif
   }

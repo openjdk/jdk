@@ -140,26 +140,6 @@ public:
 
   template <typename T>
   const JVMTypedFlagLimit<T>* cast() const;
-
-  template <typename T>
-  static void assert_compatible_type(int flag_enum) {
-#ifndef PRODUCT
-    if (std::is_integral<T>::value) {
-      switch (flag_enum) {
-      case JVMFlag::TYPE_bool:     assert(sizeof(T) == sizeof(bool)     && std::is_signed<T>::value == std::is_signed<bool>    ::value, "must be"); break;
-      case JVMFlag::TYPE_int:      assert(sizeof(T) == sizeof(int)      && std::is_signed<T>::value == std::is_signed<int>     ::value, "must be"); break;
-      case JVMFlag::TYPE_uint:     assert(sizeof(T) == sizeof(uint)     && std::is_signed<T>::value == std::is_signed<uint>    ::value, "must be"); break;
-      case JVMFlag::TYPE_intx:     assert(sizeof(T) == sizeof(intx)     && std::is_signed<T>::value == std::is_signed<intx>    ::value, "must be"); break;
-      case JVMFlag::TYPE_uintx:    assert(sizeof(T) == sizeof(uintx)    && std::is_signed<T>::value == std::is_signed<uintx>   ::value, "must be"); break;
-      case JVMFlag::TYPE_uint64_t: assert(sizeof(T) == sizeof(uint64_t) && std::is_signed<T>::value == std::is_signed<uint64_t>::value, "must be"); break;
-      case JVMFlag::TYPE_size_t:   assert(sizeof(T) == sizeof(size_t)   && std::is_signed<T>::value == std::is_signed<size_t>  ::value, "must be"); break;
-      default: ShouldNotReachHere();
-      }
-    } else {
-      assert(flag_enum == JVMFlag::TYPE_double, "must be double");
-    }
-#endif
-  }
 };
 
 enum ConstraintMarker {
