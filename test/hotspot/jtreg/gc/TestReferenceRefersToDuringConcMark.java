@@ -24,7 +24,7 @@
 package gc;
 
 /* @test
- * @requires vm.gc != "Shenandoah"
+ * @requires vm.gc != "Shenandoah" | vm.opt.ShenandoahGCMode != "iu"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @modules java.base
