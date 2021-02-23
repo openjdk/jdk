@@ -422,6 +422,7 @@ public class LingeredApp {
             theApp.runAppExactJvmOpts(jvmOpts);
             theApp.waitAppReady();
         } catch (Exception ex) {
+            System.out.println("LingeredApp failed to start: " + ex);
             theApp.finishApp();
             theApp.deleteLock();
             throw ex;
@@ -448,14 +449,7 @@ public class LingeredApp {
      */
     public static LingeredApp startApp(String... additionalJvmOpts) throws IOException {
         LingeredApp a = new LingeredApp();
-        try {
-            startApp(a, additionalJvmOpts);
-        } catch (Exception ex) {
-            System.out.println("LingeredApp failed to start: " + ex);
-            a.finishApp();
-            throw ex;
-        }
-
+        startApp(a, additionalJvmOpts);
         return a;
     }
 
