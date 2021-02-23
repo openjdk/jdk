@@ -89,7 +89,6 @@ inline D Atomic::PlatformAdd<4>::fetch_and_add(D volatile* dest, I add_value,
   STATIC_ASSERT(4 == sizeof(D));
   D old_value
     = atomic_fastcall(aarch64_atomic_fetch_add_4_impl, dest, add_value);
-    FULL_MEM_BARRIER;
   return old_value;
 }
 
@@ -101,7 +100,6 @@ inline D Atomic::PlatformAdd<8>::fetch_and_add(D volatile* dest, I add_value,
   STATIC_ASSERT(8 == sizeof(D));
   D old_value
     = atomic_fastcall(aarch64_atomic_fetch_add_8_impl, dest, add_value);
-    FULL_MEM_BARRIER;
   return old_value;
 }
 
@@ -112,7 +110,6 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   T old_value = atomic_fastcall(aarch64_atomic_xchg_4_impl, dest, exchange_value);
-  FULL_MEM_BARRIER;
   return old_value;
 }
 
@@ -122,7 +119,6 @@ inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest, T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   T old_value = atomic_fastcall(aarch64_atomic_xchg_8_impl, dest, exchange_value);
-  FULL_MEM_BARRIER;
   return old_value;
 }
 
@@ -133,18 +129,15 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(1 == sizeof(T));
-  aarch64_atomic_stub_t stub = aarch64_atomic_cmpxchg_1_impl;
-  if (order == memory_order_relaxed) {
-    T old_value = atomic_fastcall(stub, dest,
-                                  compare_value, exchange_value);
-    return old_value;
-  } else {
-    FULL_MEM_BARRIER;
-    T old_value = atomic_fastcall(stub, dest,
-                                  compare_value, exchange_value);
-    FULL_MEM_BARRIER;
-    return old_value;
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_cmpxchg_1_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_cmpxchg_1_impl; break;
   }
+
+  return atomic_fastcall(stub, dest, compare_value, exchange_value);
 }
 
 template<>
@@ -154,18 +147,15 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-  aarch64_atomic_stub_t stub = aarch64_atomic_cmpxchg_4_impl;
-  if (order == memory_order_relaxed) {
-    T old_value = atomic_fastcall(stub, dest,
-                                  compare_value, exchange_value);
-    return old_value;
-  } else {
-    FULL_MEM_BARRIER;
-    T old_value = atomic_fastcall(stub, dest,
-                                  compare_value, exchange_value);
-    FULL_MEM_BARRIER;
-    return old_value;
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_cmpxchg_4_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_cmpxchg_4_impl; break;
   }
+
+  return atomic_fastcall(stub, dest, compare_value, exchange_value);
 }
 
 template<>
@@ -175,18 +165,15 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-  aarch64_atomic_stub_t stub = aarch64_atomic_cmpxchg_8_impl;
-  if (order == memory_order_relaxed) {
-    T old_value = atomic_fastcall(stub, dest,
-                                  compare_value, exchange_value);
-    return old_value;
-  } else {
-    FULL_MEM_BARRIER;
-    T old_value = atomic_fastcall(stub, dest,
-                                  compare_value, exchange_value);
-    FULL_MEM_BARRIER;
-    return old_value;
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_cmpxchg_8_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_cmpxchg_8_impl; break;
   }
+
+  return atomic_fastcall(stub, dest, compare_value, exchange_value);
 }
 
 template<size_t byte_size>

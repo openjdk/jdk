@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8157000 8192850 8182765 8223607
+ * @bug 8157000 8192850 8182765 8223607 8261976
  * @summary  test the behavior of --override-methods option
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -376,7 +376,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     """,
                 """
                     <div class="inherited-list">
-                    <h3 id="methods.inherited.from.class.pkg6.Base">Methods declared in class&nbsp;p\
+                    <h3 id="methods-inherited-from-class-pkg6.Base">Methods declared in class&nbsp;p\
                     kg6.<a href="Base.html" title="class in pkg6">Base</a></h3>
                     <code><a href="Base.html#m1()">m1</a>, <a href="Base.html#m3()">m3</a>, <a href="Base.html#m9()">m9</a></code></div>
                     """);
@@ -398,7 +398,7 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg7/AnnotatedSub1.html", true,
                 """
                     <div class="inherited-list">
-                    <h3 id="methods.inherited.from.class.pkg7.AnnotatedBase">Methods declared in int\
+                    <h3 id="methods-inherited-from-class-pkg7.AnnotatedBase">Methods declared in int\
                     erface&nbsp;pkg7.<a href="AnnotatedBase.html" title="interface in pkg7">Annotate\
                     dBase</a></h3>
                     <code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></code></div>""");

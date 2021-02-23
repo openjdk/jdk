@@ -223,7 +223,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
                         break;
                     case PACKAGE:
                         PackageElement pkg = (PackageElement) e;
-                        link = getPackageLink(pkg, getPackageName(pkg));
+                        link = getPackageLink(pkg, getLocalizedPackageName(pkg));
                         break;
                     default:
                         link = getSummaryLink(e);

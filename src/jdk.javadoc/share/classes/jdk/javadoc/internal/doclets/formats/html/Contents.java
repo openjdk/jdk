@@ -222,7 +222,7 @@ public class Contents {
         constructorSummaryLabel = getContent("doclet.Constructor_Summary");
         constructors = getContent("doclet.Constructors");
         contentsHeading = getContent("doclet.Contents");
-        defaultPackageLabel = Text.of(DocletConstants.DEFAULT_PACKAGE_NAME);
+        defaultPackageLabel = getContent("doclet.Unnamed_Package");
         default_ = getContent("doclet.Default");
         deprecatedAPI = getContent("doclet.Deprecated_API");
         deprecatedLabel = getContent("doclet.navDeprecated");

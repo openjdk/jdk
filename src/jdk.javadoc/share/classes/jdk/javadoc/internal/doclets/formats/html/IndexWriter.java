@@ -254,7 +254,7 @@ public class IndexWriter extends HtmlDocletWriter {
         contentTree.add(contents.getContent("doclet.in",
                 utils.getTypeElementKindName(te, false),
                 getPackageLink(utils.containingPackage(te),
-                    utils.getPackageName(utils.containingPackage(te)))
+                    getLocalizedPackageName(utils.containingPackage(te)))
                 ));
     }
 

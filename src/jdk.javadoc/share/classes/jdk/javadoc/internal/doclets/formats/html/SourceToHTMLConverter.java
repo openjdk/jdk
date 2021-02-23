@@ -38,6 +38,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -338,7 +339,7 @@ public class SourceToHTMLConverter {
      * @param e the element to check.
      * @return the name of the anchor.
      */
-    public static String getAnchorName(Utils utils, Element e) {
-        return "line." + utils.getLineNumber(e);
+    public static HtmlId getAnchorName(Utils utils, Element e) {
+        return HtmlIds.forLine((int) utils.getLineNumber(e));
     }
 }

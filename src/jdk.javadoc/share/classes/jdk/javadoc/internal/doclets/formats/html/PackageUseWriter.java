@@ -119,7 +119,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         HtmlTree body = getPackageUseHeader();
         Content mainContent = new ContentBuilder();
         if (usingPackageToUsedClasses.isEmpty()) {
-            mainContent.add(contents.getContent("doclet.ClassUse_No.usage.of.0", utils.getPackageName(packageElement)));
+            mainContent.add(contents.getContent("doclet.ClassUse_No.usage.of.0", getLocalizedPackageName(packageElement)));
         } else {
             addPackageUse(mainContent);
         }
@@ -153,7 +153,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void addPackageList(Content contentTree) {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
-                getPackageLink(packageElement, utils.getPackageName(packageElement)));
+                getPackageLink(packageElement, getLocalizedPackageName(packageElement)));
         Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
@@ -161,7 +161,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         for (String pkgname: usingPackageToUsedClasses.keySet()) {
             PackageElement pkg = utils.elementUtils.getPackageElement(pkgname);
             Content packageLink = links.createLink(htmlIds.forPackage(pkg),
-                    Text.of(utils.getPackageName(pkg)));
+                    getLocalizedPackageName(pkg));
             Content summary = new ContentBuilder();
             if (pkg != null && !pkg.isUnnamed()) {
                 addSummaryComment(pkg, summary);
@@ -189,8 +189,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     .setId(htmlIds.forPackage(usingPackage));
             Content caption = contents.getContent(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
-                    getPackageLink(packageElement, utils.getPackageName(packageElement)),
-                    getPackageLink(usingPackage, utils.getPackageName(usingPackage)));
+                    getPackageLink(packageElement, getLocalizedPackageName(packageElement)),
+                    getPackageLink(usingPackage, getLocalizedPackageName(usingPackage)));
             Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(classTableHeader)

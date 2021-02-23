@@ -31,7 +31,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/vmOperations.hpp"
+#include "runtime/vmOperation.hpp"
 
 // The following class hierarchy represents
 // a set of operations (VM_Operation) related to GC.

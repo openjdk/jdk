@@ -25,7 +25,9 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -77,14 +79,67 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  */
 
 public class TagletWriterImpl extends TagletWriter {
+    /**
+     * A class that provides the information about the enclosing context for
+     * a series of {@code DocTree} nodes.
+     * This context may be used to determine the content that should be generated from the tree nodes.
+     */
+    static class Context {
+        /**
+         * Whether or not the trees are appearing in a context of just the first sentence,
+         * such as in the summary table of the enclosing element.
+         */
+        final boolean isFirstSentence;
+        /**
+         * Whether or not the trees are appearing in the "summary" section of the
+         * page for a declaration.
+         */
+        final boolean inSummary;
+        /**
+         * The set of enclosing kinds of tags.
+         */
+        final Set<DocTree.Kind> inTags;
+
+        /**
+         * Creates an outermost context, with no enclosing tags.
+         *
+         * @param isFirstSentence {@code true} if the trees are appearing in a context of just the
+         *                        first sentence and {@code false} otherwise
+         * @param inSummary       {@code true} if the trees are appearing in the "summary" section
+         *                        of the page for a declaration and {@code false} otherwise
+         */
+        Context(boolean isFirstSentence, boolean inSummary) {
+            this(isFirstSentence, inSummary, EnumSet.noneOf(DocTree.Kind.class));
+        }
+
+        private Context(boolean isFirstSentence, boolean inSummary, Set<DocTree.Kind> inTags) {
+            this.isFirstSentence = isFirstSentence;
+            this.inSummary = inSummary;
+            this.inTags = inTags;
+        }
+
+        /**
+         * Creates a new {@code Context} that includes an extra tag kind in the set of enclosing
+         * kinds of tags.
+         *
+         * @param tree the enclosing tree
+         *
+         * @return the new {@code Context}
+         */
+        Context within(DocTree tree) {
+            var newInTags = EnumSet.copyOf(inTags);
+            newInTags.add(tree.getKind());
+            return new Context(isFirstSentence, inSummary, newInTags);
+        }
+    }
 
     private final HtmlDocletWriter htmlWriter;
     private final HtmlConfiguration configuration;
     private final HtmlOptions options;
     private final Utils utils;
-    private final boolean inSummary;
     private final Resources resources;
     private final Contents contents;
+    private final Context context;
 
     /**
      * Creates a taglet writer.
@@ -107,9 +162,19 @@ public class TagletWriterImpl extends TagletWriter {
      *                        of a {@code {@summary ...}} tag, and {@code false} otherwise
      */
     public TagletWriterImpl(HtmlDocletWriter htmlWriter, boolean isFirstSentence, boolean inSummary) {
-        super(isFirstSentence);
+        this(htmlWriter, new Context(isFirstSentence, inSummary));
+    }
+
+    /**
+     * Creates a taglet writer.
+     *
+     * @param htmlWriter the {@code HtmlDocletWriter} for the page
+     * @param context    the enclosing context for any tags
+     */
+    public TagletWriterImpl(HtmlDocletWriter htmlWriter, Context context) {
+        super(context.isFirstSentence);
         this.htmlWriter = htmlWriter;
-        this.inSummary = inSummary;
+        this.context = context;
         configuration = htmlWriter.configuration;
         options = configuration.getOptions();
         utils = configuration.utils;
@@ -138,9 +203,17 @@ public class TagletWriterImpl extends TagletWriter {
             tagText = tagText.substring(1, tagText.length() - 1)
                              .replaceAll("\\s+", " ");
         }
-        String desc = ch.getText(tag.getDescription());
 
-        return createAnchorAndSearchIndex(element, tagText, desc, tag);
+        Content desc = htmlWriter.commentTagsToContent(tag, element, tag.getDescription(), context.within(tag));
+        String descText = extractText(desc);
+
+        return createAnchorAndSearchIndex(element, tagText, descText, tag);
+    }
+
+    // ugly but simple;
+    // alternatives would be to walk the Content tree, or to add new functionality to Content
+    private String extractText(Content c) {
+        return c.toString().replaceAll("<[^>]+>", "");
     }
 
     @Override
@@ -221,7 +294,7 @@ public class TagletWriterImpl extends TagletWriter {
         body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameTree) : nameTree));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(paramTag);
-        body.add(htmlWriter.commentTagsToContent(paramTag, element, description, false, inSummary));
+        body.add(htmlWriter.commentTagsToContent(paramTag, element, description, context.within(paramTag)));
         return HtmlTree.DD(body);
     }
 
@@ -229,7 +302,7 @@ public class TagletWriterImpl extends TagletWriter {
     public Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> desc = ch.getDescription(returnTag);
-        Content content = htmlWriter.commentTagsToContent(returnTag, element, desc , false, inSummary);
+        Content content = htmlWriter.commentTagsToContent(returnTag, element, desc , context.within(returnTag));
         return inline
                 ? new ContentBuilder(contents.getContent("doclet.Returns_0", content))
                 : new ContentBuilder(HtmlTree.DT(contents.returns), HtmlTree.DD(content));
@@ -240,7 +313,7 @@ public class TagletWriterImpl extends TagletWriter {
         ContentBuilder body = new ContentBuilder();
         for (DocTree dt : seeTags) {
             appendSeparatorIfNotEmpty(body);
-            body.add(htmlWriter.seeTagToContent(holder, dt));
+            body.add(htmlWriter.seeTagToContent(holder, dt, context.within(dt)));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
                 htmlWriter instanceof ClassWriterImpl) {
@@ -291,7 +364,7 @@ public class TagletWriterImpl extends TagletWriter {
                 body.add(", ");
             }
             List<? extends DocTree> bodyTags = ch.getBody(simpleTag);
-            body.add(htmlWriter.commentTagsToContent(simpleTag, element, bodyTags, false, inSummary));
+            body.add(htmlWriter.commentTagsToContent(simpleTag, element, bodyTags, context.within(simpleTag)));
             many = true;
         }
         return new ContentBuilder(
@@ -332,7 +405,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
         body.add(HtmlTree.CODE(excName));
         List<? extends DocTree> description = ch.getDescription(throwsTag);
-        Content desc = htmlWriter.commentTagsToContent(throwsTag, element, description, false, inSummary);
+        Content desc = htmlWriter.commentTagsToContent(throwsTag, element, description, context.within(throwsTag));
         if (desc != null && !desc.isEmpty()) {
             body.add(" - ");
             body.add(desc);
@@ -372,7 +445,7 @@ public class TagletWriterImpl extends TagletWriter {
                                        boolean isFirstSentence)
     {
         return htmlWriter.commentTagsToContent(holderTag, holder,
-                tags, isFirstSentence, inSummary);
+                tags, holderTag == null ? context : context.within(holderTag));
     }
 
     @Override
@@ -388,7 +461,7 @@ public class TagletWriterImpl extends TagletWriter {
     @SuppressWarnings("preview")
     private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, DocTree tree) {
         Content result = null;
-        if (isFirstSentence && inSummary) {
+        if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)) {
             result = Text.of(tagText);
         } else {
             HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);

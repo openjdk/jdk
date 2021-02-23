@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
@@ -100,7 +99,7 @@ void ShenandoahControlThread::run_service() {
     bool implicit_gc_requested = _gc_requested.is_set() && !is_explicit_gc(_requested_gc_cause);
 
     // This control loop iteration have seen this much allocations.
-    size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0);
+    size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
 
     // Check if we have seen a new target for soft max heap size.
     bool soft_max_changed = check_soft_max_changed();
@@ -478,6 +477,7 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
          cause == GCCause::_metadata_GC_clear_soft_refs ||
          cause == GCCause::_full_gc_alot ||
          cause == GCCause::_wb_full_gc ||
+         cause == GCCause::_wb_breakpoint ||
          cause == GCCause::_scavenge_alot,
          "only requested GCs here");
 
@@ -506,7 +506,10 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   while (current_gc_id < required_gc_id) {
     _gc_requested.set();
     _requested_gc_cause = cause;
-    ml.wait();
+
+    if (cause != GCCause::_wb_breakpoint) {
+      ml.wait();
+    }
     current_gc_id = get_gc_id();
   }
 }
@@ -595,7 +598,7 @@ void ShenandoahControlThread::notify_heap_changed() {
 
 void ShenandoahControlThread::pacing_notify_alloc(size_t words) {
   assert(ShenandoahPacing, "should only call when pacing is enabled");
-  Atomic::add(&_allocs_seen, words);
+  Atomic::add(&_allocs_seen, words, memory_order_relaxed);
 }
 
 void ShenandoahControlThread::set_forced_counters_update(bool value) {

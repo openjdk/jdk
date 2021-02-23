@@ -149,7 +149,7 @@ public class TreeWriter extends AbstractTreeWriter {
                 }
                 DocPath link = pathString(pkg, DocPaths.PACKAGE_TREE);
                 Content li = HtmlTree.LI(links.createLink(link,
-                        Text.of(utils.getPackageName(pkg))));
+                        getLocalizedPackageName(pkg)));
                 if (i < packages.size() - 1) {
                     li.add(", ");
                 }

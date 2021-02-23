@@ -50,7 +50,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
@@ -183,13 +182,12 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         HtmlTree bodyTree = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
-        Content label = mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
-                ? contents.openModuleLabel : contents.moduleLabel;
+        Content moduleHead = new ContentBuilder();
+        moduleHead.add(mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
+                ? contents.openModuleLabel : contents.moduleLabel);
+        moduleHead.add(" ").add(heading);
         Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, label);
-        tHeading.add(Entity.NO_BREAK_SPACE);
-        Content moduleHead = new RawHtml(heading);
-        tHeading.add(moduleHead);
+                HtmlStyle.title, moduleHead);
         div.add(tHeading);
         bodyContents.setHeader(getHeader(PageMode.MODULE, mdle))
                 .addMainContent(div);
@@ -605,7 +603,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             PackageElement pkg = e.getKey();
             PackageEntry entry = e.getValue();
             List<Content> row = new ArrayList<>();
-            Content pkgLinkContent = getPackageLink(pkg, Text.of(utils.getPackageName(pkg)));
+            Content pkgLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
             row.add(pkgLinkContent);
 
             if (showExportedTo) {
@@ -675,7 +673,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             String sep = "";
             for (PackageElement pkg : pkgList) {
                 list.add(sep);
-                list.add(getPackageLink(pkg, Text.of(utils.getPackageName(pkg))));
+                list.add(getPackageLink(pkg, getLocalizedPackageName(pkg)));
                 sep = " ";
             }
             table.addRow(moduleLinkContent, list);

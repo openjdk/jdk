@@ -100,7 +100,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (PackageElement pkg : configuration.packages) {
             if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
+                Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
                 Content summaryContent = new ContentBuilder();
                 addSummaryComment(pkg, summaryContent);
                 table.addRow(pkg, packageLinkContent, summaryContent);

@@ -2419,13 +2419,15 @@ public class Utils {
 
     /**
      * Get the package name for a given package element. An unnamed package is returned as &lt;Unnamed&gt;
+     * Use {@link jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter#getLocalizedPackageName(PackageElement)}
+     * to get a localized string for the unnamed package instead.
      *
      * @param pkg
      * @return
      */
     public String getPackageName(PackageElement pkg) {
         if (pkg == null || pkg.isUnnamed()) {
-            return DocletConstants.DEFAULT_PACKAGE_NAME;
+            return DocletConstants.DEFAULT_ELEMENT_NAME;
         }
         return pkg.getQualifiedName().toString();
     }
