@@ -118,7 +118,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 // initialized (which should not occur), or if it was
                 // initialized with bogus parameters, which should have
                 // been detected when init was called.
-                assert false;
             }
         }
     }
@@ -180,7 +179,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
         bytes.putOID(algid);
         // Setup params from algParams since no DER encoding is given
         if (constructedFromDer == false) {
-            if (encodedParams != null) {
+            if (algParams != null) {
+                if (encodedParams == null) {
+                    // call getEncoded again in case algParams were initialized
+                    // after being passed in to ctor.
+                    encodedParams = algParams.getEncoded();
+                }
                 params = new DerValue(encodedParams);
             } else {
                 params = null;
