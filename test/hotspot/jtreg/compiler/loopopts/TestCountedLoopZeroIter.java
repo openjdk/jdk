@@ -55,7 +55,7 @@ public class TestCountedLoopZeroIter {
     while (++i19 < 173);
     System.out.println();
   }
-    
+
   public static void main(String[] strArr) {
       for (int i = 0; i < 10; i++) {
         test();
