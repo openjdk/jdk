@@ -67,6 +67,7 @@ public abstract class FilterReader extends Reader {
 
     /**
      * {@inheritDoc}
+     * @throws     IndexOutOfBoundsException  {@inheritDoc}
      */
     public int read(char[] cbuf, int off, int len) throws IOException {
         return in.read(cbuf, off, len);
