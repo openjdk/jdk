@@ -102,7 +102,7 @@ public final class DESedeKeyFactory extends SecretKeyFactorySpi {
                 && (key.getFormat().equalsIgnoreCase("RAW"))) {
 
                 // Check if requested key spec is amongst the valid ones
-                if (DESedeKeySpec.class.isAssignableFrom(keySpec)) {
+                if (keySpec.isAssignableFrom(DESedeKeySpec.class)) {
                     return new DESedeKeySpec(key.getEncoded());
 
                 } else {

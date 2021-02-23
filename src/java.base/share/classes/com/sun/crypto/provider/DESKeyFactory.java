@@ -106,7 +106,7 @@ public final class DESKeyFactory extends SecretKeyFactorySpi {
 
                 // Check if requested key spec is amongst the valid ones
                 if ((keySpec != null) &&
-                    DESKeySpec.class.isAssignableFrom(keySpec)) {
+                    keySpec.isAssignableFrom(DESKeySpec.class)) {
                     return new DESKeySpec(key.getEncoded());
 
                 } else {

@@ -182,12 +182,12 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
             checkLockedParams(InvalidKeySpecException::new,
                 ((EdECPublicKey) key).getParams());
 
-            if (X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            if (keySpec.isAssignableFrom(X509EncodedKeySpec.class)) {
                 if (!key.getFormat().equals("X.509")) {
                     throw new InvalidKeySpecException("Format is not X.509");
                 }
                 return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
-            } else if (EdECPublicKeySpec.class.isAssignableFrom(keySpec)) {
+            } else if (keySpec.isAssignableFrom(EdECPublicKeySpec.class)) {
                 EdECPublicKey edKey = (EdECPublicKey) key;
                 return keySpec.cast(
                     new EdECPublicKeySpec(edKey.getParams(), edKey.getPoint()));
@@ -199,12 +199,12 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
             checkLockedParams(InvalidKeySpecException::new,
                 ((EdECPrivateKey) key).getParams());
 
-            if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            if (keySpec.isAssignableFrom(PKCS8EncodedKeySpec.class)) {
                 if (!key.getFormat().equals("PKCS#8")) {
                     throw new InvalidKeySpecException("Format is not PKCS#8");
                 }
                 return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
-            } else if (EdECPrivateKeySpec.class.isAssignableFrom(keySpec)) {
+            } else if (keySpec.isAssignableFrom(EdECPrivateKeySpec.class)) {
                 EdECPrivateKey edKey = (EdECPrivateKey) key;
                 byte[] scalar = edKey.getBytes().orElseThrow(
                     () -> new InvalidKeySpecException("No private key value")

@@ -73,8 +73,8 @@ abstract class P11KeyFactory extends KeyFactorySpi {
                 ("key and keySpec must not be null");
         }
         // delegate to our Java based providers for PKCS#8 and X.509
-        if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)
-                || X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+        if (keySpec.isAssignableFrom(PKCS8EncodedKeySpec.class)
+                || keySpec.isAssignableFrom(X509EncodedKeySpec.class)) {
             try {
                 return implGetSoftwareFactory().getKeySpec(key, keySpec);
             } catch (GeneralSecurityException e) {
