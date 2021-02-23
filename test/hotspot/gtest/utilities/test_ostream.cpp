@@ -69,23 +69,12 @@ static size_t count_char(const stringStream* ss, char ch) {
 static void test_stringStream_tr_delete(stringStream* ss) {
   ResourceMark rm;
   size_t whitespaces = count_char(ss, ' ');
-
-  char* s2 = os::strdup(ss->as_string());
-  size_t deleted = StringUtils::tr_delete(s2, " ");
-  ASSERT_EQ(whitespaces, deleted);
+  char* s2 = ss->as_string(false);
+  int deleted = StringUtils::replace_no_expand(s2, " ", "");
+  ASSERT_EQ(whitespaces, (size_t)deleted);
 
   whitespaces = count_char(s2, strlen(s2), ' ');
   ASSERT_EQ(whitespaces, (size_t)0);
-
-  StringUtils::tr_delete(s2, "mno");
-  size_t t = count_char(s2, strlen(s2), 'm');
-  ASSERT_EQ(t, (size_t)0);
-  t = count_char(s2, strlen(s2), 'n');
-  ASSERT_EQ(t, (size_t)0);
-  t = count_char(s2, strlen(s2), 'o');
-  ASSERT_EQ(t, (size_t)0);
-
-  os::free(s2);
 }
 
 static void do_test_stringStream(stringStream* ss, size_t expected_cap) {

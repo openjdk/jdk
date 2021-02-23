@@ -4050,10 +4050,9 @@ void TypeInstPtr::dump2( Dict &d, uint depth, outputStream* st ) const {
 
       {
         ResourceMark rm;
-        char* buf = os::strdup(ss.as_string());
-        StringUtils::tr_delete(buf, "\n");
+        char* buf = ss.as_string(false);
+        StringUtils::replace_no_expand(buf, "\n", "");
         st->print_raw(buf);
-        os::free(buf);
       }
     }
   case BotPTR:
