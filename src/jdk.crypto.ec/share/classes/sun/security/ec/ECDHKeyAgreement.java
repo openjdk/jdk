@@ -61,7 +61,7 @@ import java.util.Optional;
 public final class ECDHKeyAgreement extends KeyAgreementSpi {
 
     // private key, if initialized
-    private ECPrivateKeyImpl privateKey;
+    private ECPrivateKey privateKey;
     ECOperations privateKeyOps;
 
     // public key, non-null between doPhase() & generateSecret() only
@@ -82,8 +82,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         if (!(key instanceof PrivateKey)) {
             throw new InvalidKeyException("Key must be instance of PrivateKey");
         }
-        privateKey = new ECPrivateKeyImpl(
-            ((ECPrivateKey)ECKeyFactory.toECKey(key)).getEncoded());
+        privateKey = (ECPrivateKey)ECKeyFactory.toECKey(key);
         publicKey = null;
         Optional<ECOperations> opsOpt =
             ECOperations.forParameters(privateKey.getParams());
@@ -246,12 +245,12 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     }
 
     private static
-    byte[] deriveKeyImpl(ECPrivateKeyImpl priv, ECOperations ops,
+    byte[] deriveKeyImpl(ECPrivateKey priv, ECOperations ops,
         ECPublicKey pubKey) throws InvalidKeyException {
 
         IntegerFieldModuloP field = ops.getField();
         // convert s array into field element and multiply by the cofactor
-        MutableIntegerModuloP scalar = field.getElement(priv.getArrayS()).mutable();
+        MutableIntegerModuloP scalar = field.getElement(priv.getS()).mutable();
         SmallValue cofactor =
             field.getSmallValue(priv.getParams().getCofactor());
         scalar.setProduct(cofactor);
