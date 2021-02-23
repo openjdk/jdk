@@ -205,10 +205,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         docletVersion = v;
 
         conditionalPages = EnumSet.noneOf(ConditionalPage.class);
-
-        if (options.isBackgroundWriterEnabled()) {
-            backgroundWriter = new BackgroundWriter(messages, options.isBackgroundWriterVerbose());
-        }
     }
 
     protected void initConfiguration(DocletEnvironment docEnv,
@@ -274,6 +270,12 @@ public class HtmlConfiguration extends BaseConfiguration {
         setCreateOverview();
         setTopFile();
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
+
+        BackgroundWriter.Options bgWriterOptions = options.getBackgroundWriterOptions();
+        if (bgWriterOptions.enabled) {
+            backgroundWriter = new BackgroundWriter(messages, bgWriterOptions);
+        }
+
         return true;
     }
 

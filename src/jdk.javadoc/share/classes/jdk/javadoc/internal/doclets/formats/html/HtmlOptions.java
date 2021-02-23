@@ -29,7 +29,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -181,9 +180,11 @@ public class HtmlOptions extends BaseOptions {
      */
     private String windowTitle = "";
 
-    private boolean backgroundWriterEnabled = true;
+    /**
+     * Values for the hidden {@code --background-writer} option.
+     */
+    private BackgroundWriter.Options backgroundWriterOptions = new BackgroundWriter.Options();
 
-    private boolean backgroundWriterVerbose = false;
     //</editor-fold>
 
     private HtmlConfiguration config;
@@ -457,18 +458,8 @@ public class HtmlOptions extends BaseOptions {
                 new Hidden(resources, "--background-writer", 1) {
                     @Override
                     public boolean process(String option, List<String> args) {
-                        // if we add more options, we should introduce BackgroundWriter.Options
-                        String flags = args.get(0);
-                        for (String f : flags.split(",")) {
-                            switch (f.toLowerCase(Locale.US)) {
-                                case "off" -> backgroundWriterEnabled = false;
-                                case "verbose" -> backgroundWriterVerbose = true;
-                                default -> {
-                                    messages.warning("doclet.bgWriter.unknown_option", f);
-                                }
-                            }
-                        }
-                        return true;
+                        // delegate to BackgroundWriter
+                        return getBackgroundWriterOptions().process(messages, args.get(0));
                     }
                 }
         );
@@ -702,20 +693,10 @@ public class HtmlOptions extends BaseOptions {
         return windowTitle;
     }
 
-
     /**
-     * Whether or not to use the background writer.
-     * Set by command-lione option {@code --background-writer}.
+     * Default or parsed values for the command-line option {@code --background-writer}.
      */
-    public boolean isBackgroundWriterEnabled() {
-        return backgroundWriterEnabled;
-    }
-
-    /**
-     * Whether or not the background writer should be verbose.
-     * Set by command-lione option {@code --background-writer}.
-     */
-    public boolean isBackgroundWriterVerbose() {
-        return backgroundWriterVerbose;
+    public BackgroundWriter.Options getBackgroundWriterOptions() {
+        return backgroundWriterOptions;
     }
 }
