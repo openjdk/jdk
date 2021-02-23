@@ -719,7 +719,7 @@ public class HtmlDocletWriter {
                     .resolve(DocPaths.SOURCE_OUTPUT)
                     .resolve(docPaths.forClass(te));
             Content content = links.createLink(href
-                    .fragment(SourceToHTMLConverter.getAnchorName(utils, element)), label, "");
+                    .fragment(SourceToHTMLConverter.getAnchorName(utils, element).name()), label, "");
             htmltree.add(content);
         } else {
             htmltree.add(label);
