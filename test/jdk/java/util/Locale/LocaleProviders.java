@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.WeekFields;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
@@ -402,22 +403,20 @@ public class LocaleProviders {
         DateFormat.getDateInstance();
         LogConfig.handler.flush();
 
-        var r = LogConfig.lra[0];
-        if (r == null ||
-            r.getLevel() != Level.INFO ||
-            !r.getMessage().equals(expected)) {
-            throw new RuntimeException("Expected log was not emitted. LogRecord: " +
-                    (r == null ? null : r.getMessage()));
+        if (LogConfig.logRecordList.stream()
+                .noneMatch(r -> r.getLevel() == Level.INFO &&
+                                r.getMessage().equals(expected))) {
+            throw new RuntimeException("Expected log was not emitted.");
         }
     }
 
     // Set the root logger on loading the logging class
     public static class LogConfig {
-        final static LogRecord[] lra = new LogRecord[1];
+        final static CopyOnWriteArrayList<LogRecord> logRecordList = new CopyOnWriteArrayList<>();
         final static StreamHandler handler = new StreamHandler() {
             @Override
             public void publish(LogRecord record) {
-                lra[0] = record;
+                logRecordList.add(record);
                 System.out.println("LogRecord: " + record.getMessage());
             }
         };
