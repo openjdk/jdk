@@ -26,6 +26,9 @@
  * @requires vm.cds
  * @requires vm.gc != "Z"
  * @summary Testing handling of CDS region alignment
+ * @comment ZGC may exit the VM if -XX:+UseLargePages is specified but
+ *          unavailable. Since this test is independent of the actual GC type, let's
+ *          disable it if ZGC is used.
  * @bug 8236847
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello

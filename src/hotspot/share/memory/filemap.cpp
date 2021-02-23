@@ -198,18 +198,18 @@ FileMapInfo::~FileMapInfo() {
   }
 }
 
-void FileMapInfo::populate_header(size_t region_alignment) {
-  header()->populate(this, region_alignment);
+void FileMapInfo::populate_header(size_t core_region_alignment) {
+  header()->populate(this, core_region_alignment);
 }
 
-void FileMapHeader::populate(FileMapInfo* mapinfo, size_t region_alignment) {
+void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment) {
   if (DynamicDumpSharedSpaces) {
     _magic = CDS_DYNAMIC_ARCHIVE_MAGIC;
   } else {
     _magic = CDS_ARCHIVE_MAGIC;
   }
   _version = CURRENT_CDS_ARCHIVE_VERSION;
-  _region_alignment = region_alignment;
+  _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
   if (HeapShared::is_heap_object_archiving_allowed()) {
@@ -267,7 +267,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("============ end regions ======== ");
 
   st->print_cr("- header_size:                    " SIZE_FORMAT, _header_size);
-  st->print_cr("- region_alignment:               " SIZE_FORMAT, _region_alignment);
+  st->print_cr("- core_region_alignment:          " SIZE_FORMAT, _core_region_alignment);
   st->print_cr("- obj_alignment:                  %d", _obj_alignment);
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));

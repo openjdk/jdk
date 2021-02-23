@@ -226,8 +226,8 @@ private:
   static ArchiveBuilder* _current;
 
 public:
-  // Use this when you allocate space outside of ArchiveBuilder::dump_{rw,ro}_region. These are usually for misc tables
-  // that are allocated in the RO space.
+  // Use this when you allocate space outside of ArchiveBuilder::dump_{rw,ro}_region.
+  // These are usually for misc tables that are allocated in the RO space.
   class OtherROAllocMark {
     char* _oldtop;
   public:

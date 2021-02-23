@@ -125,21 +125,25 @@ char* MetaspaceShared::symbol_space_alloc(size_t num_bytes) {
 
 void MetaspaceShared::init_alignments() {
   assert(_core_region_alignment == 0, "call this only once");
-  _core_region_alignment = (size_t)os::vm_allocation_granularity();
   if (DumpSharedSpaces) {
-    // os::vm_allocation_granularity() is usually 4K for most OSes. However, on Linux/aarch64,
-    // it can be either 4K or 64K. To generate archives that are compatible for
-    // both settings, always dump the static archive with 64K alignment.
-    // The dynamic archive will always use the same value as the base archive.
+    _core_region_alignment = (size_t)os::vm_allocation_granularity();
+#if (defined(LINUX) && defined(AARCH64)) || (defined(__APPLE__) && defined(AMD64))
+    // If a CDS archive is created on one machine, and used on another, and the two
+    // machines have different page sizes, make sure the archive can be used on
+    // both machines.
+    //
+    // (a) Linux/aarch64 can be configured to have either 4KB or 64KB page sizes.
+    // (b) macOS/x64 uses 4KB, but macOS/aarch64 uses 64KB (note: you can run a x64 JDK
+    //     on a M1-based MacBook using Rosetta).
     if (_core_region_alignment < 64*K) {
-      log_info(cds)("Set core region alignment to 64K for all platforms");
+      log_info(cds)("Force core region alignment to 64K");
       _core_region_alignment = 64*K;
     }
+#endif
   } else {
     assert(UseSharedSpaces, "don't call this if not mapping at least the base archive");
     assert(FileMapInfo::current_info() != NULL, "Call init_alignments() after base archive is opened");
-    _core_region_alignment = FileMapInfo::current_info()->region_alignment();
-    assert(_core_region_alignment == 64*K, "CDS always use 64K region alignment");
+    _core_region_alignment = FileMapInfo::current_info()->core_region_alignment();
   }
 
   log_info(cds)("core_region_alignment = " SIZE_FORMAT, _core_region_alignment);
@@ -1348,10 +1352,9 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
   }
 
   mapinfo->set_is_mapped(false);
-  assert(mapinfo->region_alignment() == 64*K, "Should always use 64K alignment");
-  if (mapinfo->region_alignment() != (size_t)core_region_alignment()) {
+  if (mapinfo->core_region_alignment() != (size_t)core_region_alignment()) {
     log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: " SIZE_FORMAT
-                  " actual: " SIZE_FORMAT, mapinfo->region_alignment(), core_region_alignment());
+                  " actual: " SIZE_FORMAT, mapinfo->core_region_alignment(), core_region_alignment());
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 

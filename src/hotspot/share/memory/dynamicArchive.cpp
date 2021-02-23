@@ -177,7 +177,7 @@ void DynamicArchiveBuilder::init_header() {
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     _header->set_base_region_crc(i, base_info->space_crc(i));
   }
-  _header->populate(base_info, base_info->region_alignment());
+  _header->populate(base_info, base_info->core_region_alignment());
 }
 
 void DynamicArchiveBuilder::release_header() {

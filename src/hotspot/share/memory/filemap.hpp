@@ -191,7 +191,7 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   // The following fields record the states of the VM during dump time.
   // They are compared with the runtime states to see if the archive
   // can be used.
-  size_t _region_alignment;         // how shared archive should be aligned
+  size_t _core_region_alignment;    // how shared archive should be aligned
   int    _obj_alignment;            // value of ObjectAlignmentInBytes
   address _narrow_oop_base;         // compressed oop encoding base
   int    _narrow_oop_shift;         // compressed oop encoding shift
@@ -256,7 +256,7 @@ public:
   // Accessors -- fields declared in FileMapHeader
 
   size_t header_size()                     const { return _header_size; }
-  size_t region_alignment()                const { return _region_alignment; }
+  size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }
   int narrow_oop_shift()                   const { return _narrow_oop_shift; }
@@ -321,7 +321,7 @@ public:
     return FileMapRegion::cast(&_space[i]);
   }
 
-  void populate(FileMapInfo* info, size_t region_alignment);
+  void populate(FileMapInfo* info, size_t core_region_alignment);
 
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
@@ -387,17 +387,17 @@ public:
   int    compute_header_crc()  const { return header()->compute_crc(); }
   void   set_header_crc(int crc)     { header()->set_crc(crc); }
   int    space_crc(int i)      const { return space_at(i)->crc(); }
-  void   populate_header(size_t region_alignment);
+  void   populate_header(size_t core_region_alignment);
   bool   validate_header();
   void   invalidate();
   int    crc()                 const { return header()->crc(); }
   int    version()             const { return header()->version(); }
-  size_t region_alignment()    const { return header()->region_alignment(); }
   address narrow_oop_base()    const { return header()->narrow_oop_base(); }
   int     narrow_oop_shift()   const { return header()->narrow_oop_shift(); }
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
   address narrow_klass_base()  const { return header()->narrow_klass_base(); }
   int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
+  size_t  core_region_alignment() const { return header()->core_region_alignment(); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }
