@@ -354,42 +354,38 @@ static JLI_List readArgFile(FILE *file) {
     return rv;
 }
 
+static void reportFcloseExit(FILE *fptr, const char* fmt, const char* arg) {
+    if (fmt != NULL) JLI_ReportMessage(fmt, arg);
+    if (fptr != NULL) fclose(fptr);
+    exit(1);
+}
 /*
  * if the arg represent a file, that is, prefix with a single '@',
  * return a list of arguments from the file.
  * otherwise, return NULL.
  */
 static JLI_List expandArgFile(const char *arg) {
-    FILE *fptr;
-    struct stat st;
     JLI_List rv;
+    struct stat st;
+    FILE *fptr = fopen(arg, "r");
 
-    /* failed to access the file */
-    if (stat(arg, &st) != 0) {
-        JLI_ReportMessage(CFG_ERROR6, arg);
-        exit(1);
-    }
-
-    if (st.st_size > MAX_ARGF_SIZE) {
-        JLI_ReportMessage(CFG_ERROR10, MAX_ARGF_SIZE);
-        exit(1);
-    }
-
-    fptr = fopen(arg, "r");
     /* arg file cannot be openned */
-    if (fptr == NULL) {
-        JLI_ReportMessage(CFG_ERROR6, arg);
-        exit(1);
+    if (fptr == NULL || fstat(fileno(fptr), &st) != 0) {
+        reportFcloseExit(fptr, CFG_ERROR6, arg);
+    } else {
+        if (st.st_size > MAX_ARGF_SIZE) {
+            JLI_ReportMessage(CFG_ERROR10, MAX_ARGF_SIZE);
+            reportFcloseExit(fptr, NULL, NULL);
+        }
     }
 
     rv = readArgFile(fptr);
-    fclose(fptr);
 
     /* error occurred reading the file */
     if (rv == NULL) {
-        JLI_ReportMessage(DLL_ERROR4, arg);
-        exit(1);
+        reportFcloseExit(fptr, DLL_ERROR4, arg);
     }
+    fclose(fptr);
 
     return rv;
 }
