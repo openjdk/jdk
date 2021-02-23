@@ -415,8 +415,17 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         String name = StandardBundlerParam.isRuntimeInstaller(params) ?
                 getBundleName(params): "Java Runtime Image";
         data.put("CF_BUNDLE_NAME", name);
-        data.put("CF_BUNDLE_VERSION", VERSION.fetchFrom(params));
-        data.put("CF_BUNDLE_SHORT_VERSION_STRING", VERSION.fetchFrom(params));
+        String ver = VERSION.fetchFrom(params);
+        String sver = ver;
+        int index = ver.indexOf(".");
+        if (index > 0 && ((index + 1) < ver.length())) {
+            index = ver.indexOf(".", index + 1);
+            if (index > 0 ) {
+                sver = ver.substring(0, index);
+            }
+        }
+        data.put("CF_BUNDLE_VERSION", ver);
+        data.put("CF_BUNDLE_SHORT_VERSION_STRING", sver);
 
         createResource(TEMPLATE_RUNTIME_INFO_PLIST, params)
                 .setPublicName("Runtime-Info.plist")
