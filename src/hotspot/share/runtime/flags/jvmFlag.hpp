@@ -311,7 +311,7 @@ public:
     }
 #endif
   }
- 
+
 public:
   static void printSetFlags(outputStream* out);
 
