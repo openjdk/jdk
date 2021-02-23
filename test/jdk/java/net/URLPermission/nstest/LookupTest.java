@@ -26,7 +26,7 @@
  * @summary A simple smoke test of the HttpURLPermission mechanism, which checks
  *          for either IOException (due to unknown host) or SecurityException
  *          due to lack of permission to connect
- * @run main/othervm LookupTest
+ * @run main/othervm -Djdk.net.hosts.file=LookupTestHosts LookupTest
  */
 
 import java.io.BufferedWriter;
@@ -100,18 +100,16 @@ public class LookupTest {
         }
     }
 
-    static final String CWD = System.getProperty("user.dir", ".");
+    static final String HOSTS_FILE_NAME = System.getProperty("jdk.net.hosts.file");
 
     public static void main(String args[]) throws Exception {
-        String hostsFileName = CWD + "/LookupTestHosts";
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
         addMappingToHostsFile("allowedAndFound.com",
                               InetAddress.getLoopbackAddress().getHostAddress(),
-                              hostsFileName,
+                              HOSTS_FILE_NAME,
                               false);
         addMappingToHostsFile("notAllowedButFound.com",
                               "99.99.99.99",
-                              hostsFileName,
+                              HOSTS_FILE_NAME,
                               true);
         // name "notAllowedAndNotFound.com" is not in map
         // name "allowedButNotfound.com" is not in map
