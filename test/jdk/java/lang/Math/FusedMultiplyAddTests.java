@@ -28,6 +28,7 @@
  * @build Tests
  * @build FusedMultiplyAddTests
  * @run main FusedMultiplyAddTests
+ * @run main/othervm -XX:-UseFMA FusedMultiplyAddTests
  */
 
 /**
