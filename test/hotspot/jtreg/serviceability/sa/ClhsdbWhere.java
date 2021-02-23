@@ -59,7 +59,7 @@ public class ClhsdbWhere {
                     "Java Stack Trace for Finalizer",
                     "Java Stack Trace for Signal Dispatcher",
                     "Java Stack Trace for Reference Handler",
-                    "Java Stack Trace for SteadyState",
+                    "Java Stack Trace for SteadyStateThread",
                     "private static void steadyState"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
