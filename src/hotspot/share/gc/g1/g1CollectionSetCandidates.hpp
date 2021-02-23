@@ -74,6 +74,12 @@ public:
     return res;
   }
 
+  // Remove collection set candidates which would reclaim at most prune_total_bytes
+  // bytes and keeping at least keep_min_regions beginning the least efficient
+  // collection set candidates regions.
+  void prune(uint keep_min_regions, size_t prune_total_bytes);
+
+  // Remove num_regions from the front of the collection set candidate list.
   void remove(uint num_regions);
 
   // Iterate over all remaining collection set candidate regions.

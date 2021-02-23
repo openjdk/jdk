@@ -265,6 +265,8 @@ G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkGang* workers, uint
   workers->run_task(&cl, num_workers);
 
   G1CollectionSetCandidates* result = cl.get_sorted_candidates();
+  G1Policy* p = G1CollectedHeap::heap()->policy();
+  p->prune_collection_set(result);
   result->verify();
   return result;
 }

@@ -246,7 +246,7 @@ public:
 
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
-  uint calc_min_old_cset_length() const;
+  uint calc_min_old_cset_length(G1CollectionSetCandidates* candidates) const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
@@ -347,6 +347,10 @@ public:
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
 
+  // Prune collection set candidates according to G1HeapWastePercent heuristics
+  // during selection. Guarantee some forward progress by always keeping a minimum
+  // of old collection set candidates for a single GC.
+  void prune_collection_set(G1CollectionSetCandidates* candidates);
   // Calculate and return the number of initial and optional old gen regions from
   // the given collection set candidates and the remaining time.
   void calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,

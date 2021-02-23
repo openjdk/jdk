@@ -1278,22 +1278,27 @@ bool G1Policy::next_gc_should_be_mixed(const char* true_action_str,
     log_debug(gc, ergo)("%s (candidate old regions not available)", false_action_str);
     return false;
   }
-
-  // Is the amount of uncollected reclaimable space above G1HeapWastePercent?
-  size_t reclaimable_bytes = candidates->remaining_reclaimable_bytes();
-  double reclaimable_percent = reclaimable_bytes_percent(reclaimable_bytes);
-  double threshold = (double) G1HeapWastePercent;
-  if (reclaimable_percent <= threshold) {
-    log_debug(gc, ergo)("%s (reclaimable percentage not over threshold). candidate old regions: %u reclaimable: " SIZE_FORMAT " (%1.2f) threshold: " UINTX_FORMAT,
-                        false_action_str, candidates->num_remaining(), reclaimable_bytes, reclaimable_percent, G1HeapWastePercent);
-    return false;
-  }
-  log_debug(gc, ergo)("%s (candidate old regions available). candidate old regions: %u reclaimable: " SIZE_FORMAT " (%1.2f) threshold: " UINTX_FORMAT,
-                      true_action_str, candidates->num_remaining(), reclaimable_bytes, reclaimable_percent, G1HeapWastePercent);
+  // Go through all regions - we already pruned regions not worth collecting
+  // during candidate selection.
   return true;
 }
 
-uint G1Policy::calc_min_old_cset_length() const {
+void G1Policy::prune_collection_set(G1CollectionSetCandidates* candidates) {
+  uint num_candidates_before = candidates->num_remaining();
+  size_t reclaimable_bytes_before = candidates->remaining_reclaimable_bytes();
+
+  size_t accepted_waste = G1HeapWastePercent * _g1h->capacity() / 100;
+
+  candidates->prune(calc_min_old_cset_length(candidates), accepted_waste);
+
+  log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (accepted " SIZE_FORMAT ")",
+                            num_candidates_before - candidates->num_remaining(),
+                            candidates->num_regions(),
+                            reclaimable_bytes_before - candidates->remaining_reclaimable_bytes(),
+                            accepted_waste);
+}
+
+uint G1Policy::calc_min_old_cset_length(G1CollectionSetCandidates* candidates) const {
   // The min old CSet region bound is based on the maximum desired
   // number of mixed GCs after a cycle. I.e., even if some old regions
   // look expensive, we should add them to the CSet anyway to make
@@ -1304,7 +1309,7 @@ uint G1Policy::calc_min_old_cset_length() const {
   // to the CSet candidates in the first place, not how many remain, so
   // that the result is the same during all mixed GCs that follow a cycle.
 
-  const size_t region_num = _collection_set->candidates()->num_regions();
+  const size_t region_num = candidates->num_regions();
   const size_t gc_num = (size_t) MAX2(G1MixedGCCountTarget, (uintx) 1);
   size_t result = region_num / gc_num;
   // emulate ceiling
@@ -1347,7 +1352,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
 
   double optional_threshold_ms = time_remaining_ms * optional_prediction_fraction();
 
-  const uint min_old_cset_length = calc_min_old_cset_length();
+  const uint min_old_cset_length = calc_min_old_cset_length(candidates);
   const uint max_old_cset_length = MAX2(min_old_cset_length, calc_max_old_cset_length());
   const uint max_optional_regions = max_old_cset_length - min_old_cset_length;
   bool check_time_remaining = use_adaptive_young_list_length();
