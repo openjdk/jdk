@@ -1112,7 +1112,7 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
       JavaThread *ct = make_thread(compiler_t, compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
       if (ct == NULL) break;
       ThreadsListHandle tlh;
-      assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
+      if (!tlh.includes(ct)) break;
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
@@ -1133,7 +1133,7 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
       JavaThread *ct = make_thread(compiler_t, compiler1_object(i), _c1_compile_queue, _compilers[0], THREAD);
       if (ct == NULL) break;
       ThreadsListHandle tlh;
-      assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
+      if (!tlh.includes(ct)) break;
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
