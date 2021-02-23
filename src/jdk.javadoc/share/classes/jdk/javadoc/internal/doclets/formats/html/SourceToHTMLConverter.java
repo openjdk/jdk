@@ -27,7 +27,9 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.Reader;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -35,13 +37,12 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 
-import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -314,7 +315,7 @@ public class SourceToHTMLConverter {
         if (line != null) {
             Content anchor = HtmlTree.SPAN_ID(
                     HtmlIds.forLine(currentLineNo),
-                    new StringContent(utils.replaceTabs(line)));
+                    Text.of(utils.replaceTabs(line)));
             pre.add(anchor);
             pre.add(NEW_LINE);
         }

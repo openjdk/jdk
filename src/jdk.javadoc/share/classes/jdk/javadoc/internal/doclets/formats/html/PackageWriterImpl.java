@@ -42,7 +42,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -105,7 +105,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
             moduleNameDiv.add(Entity.NO_BREAK_SPACE);
             moduleNameDiv.add(getModuleLink(mdle,
-                    new StringContent(mdle.getQualifiedName().toString())));
+                    Text.of(mdle.getQualifiedName().toString())));
             div.add(moduleNameDiv);
         }
         Content packageHead = new ContentBuilder();
@@ -208,7 +208,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             TableHeader tableHeader, Content summaryContentTree) {
         if(!classes.isEmpty()) {
             Table table = new Table(HtmlStyle.summaryTable)
-                    .setCaption(new StringContent(label))
+                    .setCaption(Text.of(label))
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
 

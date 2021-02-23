@@ -50,7 +50,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -242,14 +242,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         // required modules.
         dependentModules.forEach((module, mod) -> {
             if (shouldDocument(module)) {
-                indirectModules.put(module, new StringContent(mod));
+                indirectModules.put(module, Text.of(mod));
             }
         });
         ElementFilter.requiresIn(mdle.getDirectives()).forEach(directive -> {
             ModuleElement m = directive.getDependency();
             if (shouldDocument(m)) {
                 if (moduleMode == ModuleMode.ALL || directive.isTransitive()) {
-                    requires.put(m, new StringContent(utils.getModifiers(directive)));
+                    requires.put(m, Text.of(utils.getModifiers(directive)));
                 } else {
                     // For api mode, just keep the public requires in dependentModules for display of
                     // indirect packages in the "Packages" section.
@@ -477,7 +477,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             addSummaryHeader(MarkerComments.START_OF_MODULES_SUMMARY, contents.navModules, section);
             if (display(requires)) {
                 String text = resources.getText("doclet.Requires_Summary");
-                Content caption = new StringContent(text);
+                Content caption = Text.of(text);
                 Table table = getTable3(caption, requiresTableHeader);
                 addModulesList(requires, table);
                 section.add(table);
@@ -485,7 +485,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             // Display indirect modules table in both "api" and "all" mode.
             if (display(indirectModules)) {
                 String amrText = resources.getText("doclet.Indirect_Requires_Summary");
-                Content amrCaption = new StringContent(amrText);
+                Content amrCaption = Text.of(amrText);
                 Table amrTable = getTable3(amrCaption, requiresTableHeader);
                 addModulesList(indirectModules, amrTable);
                 section.add(amrTable);
@@ -503,7 +503,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     private void addModulesList(Map<ModuleElement, Content> mdleMap, Table table) {
         for (ModuleElement m : mdleMap.keySet()) {
             Content modifiers = mdleMap.get(m);
-            Content moduleLink = getModuleLink(m, new StringContent(m.getQualifiedName()));
+            Content moduleLink = getModuleLink(m, Text.of(m.getQualifiedName()));
             Content moduleSummary = new ContentBuilder();
             addSummaryComment(m, moduleSummary);
             table.addRow(modifiers, moduleLink, moduleSummary);
@@ -524,13 +524,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     new TableHeader(contents.fromLabel, contents.packagesLabel);
             if (display(indirectPackages)) {
                 String aepText = resources.getText("doclet.Indirect_Exports_Summary");
-                Table aepTable = getTable2(new StringContent(aepText), indirectPackagesHeader);
+                Table aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
                 addIndirectPackages(aepTable, indirectPackages);
                 section.add(aepTable);
             }
             if (display(indirectOpenPackages)) {
                 String aopText = resources.getText("doclet.Indirect_Opens_Summary");
-                Table aopTable = getTable2(new StringContent(aopText), indirectPackagesHeader);
+                Table aopTable = getTable2(Text.of(aopText), indirectPackagesHeader);
                 addIndirectPackages(aopTable, indirectOpenPackages);
                 section.add(aopTable);
             }
@@ -643,16 +643,16 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
     private Content getPackageExportOpensTo(Set<ModuleElement> modules) {
         if (modules == null) {
-            return new StringContent(resources.getText("doclet.None"));
+            return Text.of(resources.getText("doclet.None"));
         } else if (modules.isEmpty()) {
-            return new StringContent(resources.getText("doclet.All_Modules"));
+            return Text.of(resources.getText("doclet.All_Modules"));
         } else {
             Content list = new ContentBuilder();
             for (ModuleElement m : modules) {
                 if (!list.isEmpty()) {
-                    list.add(new StringContent(", "));
+                    list.add(Text.of(", "));
                 }
-                list.add(getModuleLink(m, new StringContent(m.getQualifiedName())));
+                list.add(getModuleLink(m, Text.of(m.getQualifiedName())));
             }
             return list;
         }
@@ -668,7 +668,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         for (Map.Entry<ModuleElement, SortedSet<PackageElement>> entry : ip.entrySet()) {
             ModuleElement m = entry.getKey();
             SortedSet<PackageElement> pkgList = entry.getValue();
-            Content moduleLinkContent = getModuleLink(m, new StringContent(m.getQualifiedName()));
+            Content moduleLinkContent = getModuleLink(m, Text.of(m.getQualifiedName()));
             Content list = new ContentBuilder();
             String sep = "";
             for (PackageElement pkg : pkgList) {
@@ -694,7 +694,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     new TableHeader(contents.typeLabel, contents.descriptionLabel);
             if (haveProvides) {
                 String label = resources.getText("doclet.Provides_Summary");
-                Table table = getTable2(new StringContent(label), usesProvidesTableHeader);
+                Table table = getTable2(Text.of(label), usesProvidesTableHeader);
                 addProvidesList(table);
                 if (!table.isEmpty()) {
                     section.add(table);
@@ -702,7 +702,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             }
             if (haveUses){
                 String label = resources.getText("doclet.Uses_Summary");
-                Table table = getTable2(new StringContent(label), usesProvidesTableHeader);
+                Table table = getTable2(Text.of(label), usesProvidesTableHeader);
                 addUsesList(table);
                 if (!table.isEmpty()) {
                     section.add(table);

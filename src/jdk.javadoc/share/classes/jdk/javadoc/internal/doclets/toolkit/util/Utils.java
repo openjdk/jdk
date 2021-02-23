@@ -1115,20 +1115,6 @@ public class Utils {
     }
 
     /**
-     * Given a string, replace all occurrences of 'newStr' with 'oldStr'.
-     * @param originalStr the string to modify.
-     * @param oldStr the string to replace.
-     * @param newStr the string to insert in place of the old string.
-     */
-    public String replaceText(String originalStr, String oldStr,
-            String newStr) {
-        if (oldStr == null || newStr == null || oldStr.equals(newStr)) {
-            return originalStr;
-        }
-        return originalStr.replace(oldStr, newStr);
-    }
-
-    /**
      * Given an annotation, return true if it should be documented and false
      * otherwise.
      *
