@@ -94,8 +94,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     @Override
-    public Content getPackageHeader(String heading) {
-        HtmlTree bodyTree = getBody(getWindowTitle(utils.getPackageName(packageElement)));
+    public Content getPackageHeader() {
+        String packageName = getLocalizedPackageName(packageElement).toString();
+        HtmlTree bodyTree = getBody(getWindowTitle(packageName));
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -107,11 +108,13 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     new StringContent(mdle.getQualifiedName().toString())));
             div.add(moduleNameDiv);
         }
+        Content packageHead = new ContentBuilder();
+        if (!packageElement.isUnnamed()) {
+            packageHead.add(contents.packageLabel).add(" ");
+        }
+        packageHead.add(packageName);
         Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, contents.packageLabel);
-        tHeading.add(Entity.NO_BREAK_SPACE);
-        Content packageHead = new StringContent(heading);
-        tHeading.add(packageHead);
+                HtmlStyle.title, packageHead);
         div.add(tHeading);
         bodyContents.setHeader(getHeader(PageMode.PACKAGE, packageElement))
                 .addMainContent(div);

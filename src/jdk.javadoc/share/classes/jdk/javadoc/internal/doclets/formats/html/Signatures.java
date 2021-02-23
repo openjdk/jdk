@@ -74,6 +74,9 @@ public class Signatures {
     }
 
     public static Content getPackageSignature(PackageElement pkg, PackageWriterImpl pkgWriter) {
+        if (pkg.isUnnamed()) {
+            return new StringContent();
+        }
         Content signature = HtmlTree.DIV(HtmlStyle.packageSignature);
         Content annotations = pkgWriter.getAnnotationInfo(pkg, true);
         if (!annotations.isEmpty()) {
