@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,8 @@ public class HeapDumpTest {
     public static void printStackTraces(String file) throws IOException {
         try {
             String output = HprofReader.getStack(file, 0);
-            if (!output.contains("LingeredAppWithExtendedChars.main")) {
-                throw new RuntimeException("'LingeredAppWithExtendedChars.main' missing from stdout/stderr");
+            if (!output.contains("LingeredApp.steadyState")) {
+                throw new RuntimeException("'LingeredApp.steadyState' missing from stdout/stderr");
             }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);

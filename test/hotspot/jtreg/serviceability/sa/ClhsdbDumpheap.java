@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,8 @@ public class ClhsdbDumpheap {
         try {
             System.out.println("HprofReader.getStack() output:");
             String output = HprofReader.getStack(file, 0);
-            if (!output.contains("LingeredApp.main")) {
-                throw new RuntimeException("'LingeredApp.main' missing from stdout/stderr");
+            if (!output.contains("LingeredApp.steadyState")) {
+                throw new RuntimeException("'LingeredApp.steadyState' missing from stdout/stderr");
             }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
