@@ -23,8 +23,8 @@
 
 /*
  * @test id=no-options
- * @summary Run test with 1g pages on x86. Excluding ZGC since it fail
- *          initialization if no large pages are available on the system.
+ * @summary Run test with no arguments apart from the ones required by
+ *          the test.
  * @requires os.family == "linux"
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log TestTracePageSizes
  */
@@ -41,8 +41,8 @@
 
 /*
  * @test id=compiler-options
- * @summary Run test with default/user options. Excluding ZGC since it fail
- *          initialization if no large pages are available on the system.
+ * @summary Run test without segmented code cache. Excluding ZGC since it
+ *          fail initialization if no large pages are available on the system.
  * @requires os.family == "linux"
  * @requires vm.gc != "Z"
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
@@ -86,11 +86,9 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/* Check that page sizes logged match what is recorded in /proc/self/smaps.
- * The file smaps file is parsed and compared against what's logged by the
- * JVM. For transparent huge pages the matching is best effort since we
- * can't know for sure what the underlying page size is.
- */
+// Check that page sizes logged match what is recorded in /proc/self/smaps.
+// For transparent huge pages the matching is best effort since we can't
+// know for sure what the underlying page size is.
 public class TestTracePageSizes {
     // Store address ranges with known page size.
     private static LinkedList<RangeWithPageSize> ranges = new LinkedList<>();
@@ -102,10 +100,9 @@ public class TestTracePageSizes {
     // match as little as possible so each "segment" in the file
     // will generate a match.
     private static void parseSmaps() throws Exception {
-        // Now use the pattern to create a list of all memory rages used
-        // by the JVM running the test.
         Pattern smapsPattern = Pattern.compile(RangeWithPageSize.smapsPatternString, Pattern.DOTALL);
         Scanner smapsScanner = new Scanner(new File("/proc/self/smaps"));
+        // Find all memory segments in the smaps-file.
         smapsScanner.findAll(smapsPattern).forEach(mr -> {
             String start = mr.group(1);
             String end = mr.group(2);
@@ -147,12 +144,13 @@ public class TestTracePageSizes {
         return 0;
     }
 
-    // This test needs to be run with:
+    // The test needs to be run with:
     //  * -Xlog:pagesize:ps-%p.log - To generate the log file parsed
+    //    by the test itself.
     //  * -XX:+AlwaysPreTouch - To make sure mapped memory is touched
-    //    so the relevant information is recorded in the smaps file.
+    //    so the relevant information is recorded in the smaps-file.
     public static void main(String args[]) throws Exception {
-        // Check if we should do debug printing.
+        // Check if debug printing is enabled.
         if (args.length > 0 && args[0].equals("-debug")) {
             debug = true;
         } else {
@@ -244,9 +242,11 @@ class RangeWithPageSize {
         this.end = Long.parseUnsignedLong(end, 16);;
         this.pageSize = Long.parseLong(pageSize);
 
-        // Check for vmFlags
         vmFlagHG = false;
         vmFlagHT = false;
+        // Check if the vmFlags line include:
+        // * ht - Meaning the range is mapped using explicit huge pages.
+        // * hg - Meaning the range is madvised huge.
         for (String flag : vmFlags.split(" ")) {
             if (flag.equals("ht")) {
                 vmFlagHT = true;
@@ -273,7 +273,7 @@ class RangeWithPageSize {
     }
 
     public String toString() {
-        return "[" + Long.toHexString(start) + ", " + Long.toHexString(end) + ") pageSize=" + pageSize +
-               "KB isTHP=" + vmFlagHG + " isHUGETLB="+vmFlagHT;
+        return "[" + Long.toHexString(start) + ", " + Long.toHexString(end) + ") " +
+               "pageSize=" + pageSize + "KB isTHP=" + vmFlagHG + " isHUGETLB=" + vmFlagHT;
     }
 }
