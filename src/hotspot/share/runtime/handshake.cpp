@@ -38,6 +38,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/filterQueue.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 
 class HandshakeOperation : public CHeapObj<mtThread> {
@@ -182,7 +183,7 @@ class VM_Handshake: public VM_Operation {
   HandshakeOperation* const _op;
 
   VM_Handshake(HandshakeOperation* op) :
-      _handshake_timeout(TimeHelper::millis_to_counter(HandshakeTimeout)), _op(op) {}
+      _handshake_timeout(millis_to_nanos(HandshakeTimeout)), _op(op) {}
 
   bool handshake_has_timed_out(jlong start_time);
   static void handle_timeout();
