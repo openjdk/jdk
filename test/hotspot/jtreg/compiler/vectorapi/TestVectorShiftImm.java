@@ -98,7 +98,7 @@ public class TestVectorShiftImm {
         if (allTestsPassed) {
             System.out.println("Test PASSED");
         } else {
-            throw new RuntimeException("Test Failed, failed tests:\n" + errMsg.toString()); 
+            throw new RuntimeException("Test Failed, failed tests:\n" + errMsg.toString());
         }
     }
 
