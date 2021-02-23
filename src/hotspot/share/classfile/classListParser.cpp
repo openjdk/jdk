@@ -81,7 +81,7 @@ ClassListParser::ClassListParser(const char* file) {
 }
 
 bool ClassListParser::is_parsing_thread() {
-  return (Atomic::load(&_parsing_thread) == Thread::current());
+  return Atomic::load(&_parsing_thread) == Thread::current();
 }
 
 ClassListParser::~ClassListParser() {
