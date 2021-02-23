@@ -47,7 +47,7 @@ private:
   size_t                _region_count;
 
   shenandoah_padding(0);
-  volatile jint         _current_index;
+  volatile size_t       _current_index;
   shenandoah_padding(1);
 
 public:

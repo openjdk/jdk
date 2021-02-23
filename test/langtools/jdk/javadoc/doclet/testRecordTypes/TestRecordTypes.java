@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8225055 8239804 8246774 8258338
+ * @bug      8225055 8239804 8246774 8258338 8261976
  * @summary  Record types
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -206,11 +206,11 @@ public class TestRecordTypes extends JavadocTester {
         // the documentation for the generated members.
         checkOrder("p/R.html",
                 """
-                    <section class="constructor-summary" id="constructor.summary">""",
+                    <section class="constructor-summary" id="constructor-summary">""",
                 "<a href=\"#%3Cinit%3E(int)\" class=\"member-name-link\">R</a>",
                 "Creates an instance of a <code>R</code> record class.",
                 """
-                    <section class="method-summary" id="method.summary">""",
+                    <section class="method-summary" id="method-summary">""",
                 """
                     <a href="#equals(java.lang.Object)" class="member-name-link">equals</a>""",
                 """
@@ -269,11 +269,11 @@ public class TestRecordTypes extends JavadocTester {
         // the documentation for the generated members.
         checkOrder("p/R.html",
                 """
-                    <section class="constructor-summary" id="constructor.summary">""",
+                    <section class="constructor-summary" id="constructor-summary">""",
                 "<a href=\"#%3Cinit%3E(int)\" class=\"member-name-link\">R</a>",
                 "Creates an instance of a <code>R</code> record class.",
                 """
-                    <section class="method-summary" id="method.summary">""",
+                    <section class="method-summary" id="method-summary">""",
                 """
                     <a href="#equals(java.lang.Object)" class="member-name-link">equals</a>""",
                 """
@@ -371,11 +371,11 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOrder("p/R.html",
                 """
-                    <section class="constructor-summary" id="constructor.summary">""",
+                    <section class="constructor-summary" id="constructor-summary">""",
                 "<a href=\"#%3Cinit%3E(int)\" class=\"member-name-link\">R</a>",
                 "User constructor.",
                 """
-                    <section class="method-summary" id="method.summary">""",
+                    <section class="method-summary" id="method-summary">""",
                 """
                     <a href="#equals(java.lang.Object)" class="member-name-link">equals</a>""",
                 "User equals.",
@@ -516,10 +516,10 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h2 title="Contents">Contents</h2>
                     <ul>
-                    <li><a href="#record.class">Record Classes</a></li>
+                    <li><a href="#record-class">Record Classes</a></li>
                     </ul>""",
                 """
-                    <div id="record.class">
+                    <div id="record-class">
                     <div class="caption"><span>Record Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Record Class</div>

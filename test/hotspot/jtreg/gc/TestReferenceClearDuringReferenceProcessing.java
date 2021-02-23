@@ -25,7 +25,7 @@ package gc;
 
 /* @test
  * @bug 8256517
- * @requires vm.gc.Z
+ * @requires vm.gc.Z | vm.gc.Shenandoah
  * @requires vm.gc != "null"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

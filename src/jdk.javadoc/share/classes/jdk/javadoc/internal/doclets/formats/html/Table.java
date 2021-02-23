@@ -43,7 +43,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
@@ -381,7 +381,7 @@ public class Table extends Content {
                 main.add(caption);
             } else {
                 String tabName = tabs.iterator().next();
-                main.add(getCaption(new StringContent(tabName)));
+                main.add(getCaption(Text.of(tabName)));
             }
             table.add(getTableBody());
             main.add(table);
