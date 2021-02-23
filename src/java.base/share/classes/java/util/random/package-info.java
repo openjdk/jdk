@@ -212,56 +212,56 @@
  *  <tbody>
  *  <tr>
  *      <td style="text-align:left">L128X1024MixRandom</td>
- *      <td style="text-align:left">LMX</td>
+ *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(N*64).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">1152</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">L128X128MixRandom</td>
- *      <td style="text-align:left">LMX</td>
+ *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">256</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">L128X256MixRandom</td>
- *      <td style="text-align:left">LMX</td>
+ *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">384</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">L32X64StarStarRandom</td>
- *      <td style="text-align:left">LMX</td>
+ *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE).shiftLeft(32)</td>
  *      <td style="text-align:right">96</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">L64X1024MixRandom</td>
- *      <td style="text-align:left">LMX</td>
+ *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(N*64).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">1088</td>
  *      <td style="text-align:right">16</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">L64X128MixRandom</td>
- *      <td style="text-align:left">LMX</td>
+ *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">192</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">L64X128StarStarRandom</td>
- *      <td style="text-align:left">LMX</td>
+ *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">192</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">L64X256MixRandom</td>
- *      <td style="text-align:left">LMX</td>
+ *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">320</td>
  *      <td style="text-align:right">4</td>

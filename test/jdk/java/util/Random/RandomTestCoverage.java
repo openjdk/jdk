@@ -64,6 +64,25 @@ public class RandomTestCoverage {
         DoubleStream doubleStream4 = rng.doubles(5, 0.5, 1.0);
     }
 
+    static void checkPredicates(RandomGeneratorFactory factory) {
+        RandomGenerator rng = factory.create();
+        if (rng instanceof ArbitrarilyJumpableGenerator != factory.isArbitrarilyJumpable()) {
+            throw new RuntimeException("isArbitrarilyJumpable failing");
+        }
+        if (rng instanceof JumpableGenerator != factory.isJumpable()) {
+            throw new RuntimeException("isJumpable failing");
+        }
+        if (rng instanceof LeapableGenerator != factory.isLeapable()) {
+            throw new RuntimeException("isLeapable failing");
+        }
+        if (rng instanceof SplittableGenerator != factory.isSplittable()) {
+            throw new RuntimeException("isArbitrarilyJumpable failing");
+        }
+        if (rng instanceof StreamableGenerator != factory.isStreamable()) {
+            throw new RuntimeException("isArbitrarilyJumpable failing");
+        }
+    }
+
     static void coverStreamable(StreamableGenerator rng) {
         Stream<RandomGenerator> rngs1 = rng.rngs();
         Stream<RandomGenerator> rngs2 = rng.rngs(5L);

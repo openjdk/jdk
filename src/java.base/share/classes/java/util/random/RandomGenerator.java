@@ -1024,7 +1024,7 @@ public interface RandomGenerator {
      * produced by the {@link JumpableGenerator#jump jump}() method, because the
      * result may be a generator identical to another generator already produce
      * by that call to the {@link JumpableGenerator#jump jump}() method. For
-     * this reason, the return type of the {@link JumpableGenerator#jump jump}()
+     * this reason, the return type of the {@link JumpableGenerator#jumps jumps}()
      * method is {@link Stream<RandomGenerator>} rather than
      * {@link Stream<JumpableGenerator>}, even though the actual generator
      * objects in that stream likely do also implement the

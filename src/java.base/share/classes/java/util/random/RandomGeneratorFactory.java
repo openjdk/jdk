@@ -501,7 +501,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is arbitrarily jumpable.
      */
     public boolean isArbitrarilyJumpable() {
-        return provider instanceof ArbitrarilyJumpableGenerator;
+        return isSubclass(ArbitrarilyJumpableGenerator.class);
     }
 
     /**
@@ -511,7 +511,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is jumpable.
      */
     public boolean isJumpable() {
-        return provider instanceof JumpableGenerator;
+        return isSubclass(JumpableGenerator.class);
     }
 
     /**
@@ -521,7 +521,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is leapable.
      */
     public boolean isLeapable() {
-        return provider instanceof LeapableGenerator;
+        return isSubclass(LeapableGenerator.class);
     }
 
     /**
@@ -531,7 +531,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is splittable.
      */
     public boolean isSplittable() {
-        return provider instanceof SplittableGenerator;
+        return isSubclass(SplittableGenerator.class);
     }
 
     /**
@@ -541,7 +541,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is streamable.
      */
     public boolean isStreamable() {
-        return provider instanceof StreamableGenerator;
+        return isSubclass(StreamableGenerator.class);
     }
 
     /**
@@ -594,6 +594,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @throws NullPointerException if seed is null.
      */
     public T create(byte[] seed) {
+        Objects.requireNonNull(seed, "seed must not be null");
         try {
             ensureConstructors();
             return ctorBytes.newInstance((Object)seed);
