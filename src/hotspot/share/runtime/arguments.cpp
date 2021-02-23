@@ -2268,7 +2268,7 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   // size doesn't change the max value, which makes the conversions
   // back and forth between Xss value and ThreadStackSize value easier.
   // The values have also been chosen to fit inside a 32-bit signed type.
-  const JVMTypedFlagLimit<intx>* limit = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(ThreadStackSize))->as_intx();
+  const JVMTypedFlagLimit<intx>* limit = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(ThreadStackSize))->cast<intx>();
   const julong min_size = limit->min() * K;
   const julong max_size = limit->max() * K;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,14 +190,3 @@ bool JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase phase) {
 void JVMFlagLimit::print_range(outputStream* st, const JVMFlag* flag) const {
   JVMFlagAccess::print_range(st, flag, this);
 }
-
-#define CHECK_FLAG_ENUM(t) assert(_type_enum == JVMFlag::TYPE_##t, "wrong type")
-
-const JVMTypedFlagLimit<bool>*     JVMFlagLimit::as_bool()     const { CHECK_FLAG_ENUM(bool);     return static_cast<const JVMTypedFlagLimit<bool>*>    (this); }
-const JVMTypedFlagLimit<int>*      JVMFlagLimit::as_int()      const { CHECK_FLAG_ENUM(int);      return static_cast<const JVMTypedFlagLimit<int>*>     (this); }
-const JVMTypedFlagLimit<uint>*     JVMFlagLimit::as_uint()     const { CHECK_FLAG_ENUM(uint);     return static_cast<const JVMTypedFlagLimit<uint>*>    (this); }
-const JVMTypedFlagLimit<intx>*     JVMFlagLimit::as_intx()     const { CHECK_FLAG_ENUM(intx);     return static_cast<const JVMTypedFlagLimit<intx>*>    (this); }
-const JVMTypedFlagLimit<uintx>*    JVMFlagLimit::as_uintx()    const { CHECK_FLAG_ENUM(uintx);    return static_cast<const JVMTypedFlagLimit<uintx>*>   (this); }
-const JVMTypedFlagLimit<uint64_t>* JVMFlagLimit::as_uint64_t() const { CHECK_FLAG_ENUM(uint64_t); return static_cast<const JVMTypedFlagLimit<uint64_t>*>(this); }
-const JVMTypedFlagLimit<size_t>*   JVMFlagLimit::as_size_t()   const { CHECK_FLAG_ENUM(size_t);   return static_cast<const JVMTypedFlagLimit<size_t>*>  (this); }
-const JVMTypedFlagLimit<double>*   JVMFlagLimit::as_double()   const { CHECK_FLAG_ENUM(double);   return static_cast<const JVMTypedFlagLimit<double>*>  (this); }
