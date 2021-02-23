@@ -26,7 +26,8 @@
  * @summary Check that InetAddress doesn't continue to throw UHE
  *          after the name service has recovered and the negative ttl
  *          on the initial lookup has expired.
- * @run main/othervm/timeout=200 CacheTest
+ * @run main/othervm/timeout=200 -Djdk.net.hosts.file=${test.src}/CacheTestHosts
+ *      CacheTest
  */
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -59,8 +60,7 @@ public class CacheTest {
             return;
 
         }
-        String hostsFileName = System.getProperty("test.src", ".") + "/CacheTestHosts";
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
+        String hostsFileName = System.getProperty("jdk.net.hosts.file");
 
         /*
          * The following outlines how the test works :-

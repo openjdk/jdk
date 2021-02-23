@@ -25,7 +25,7 @@
  * @test
  * @bug 4749938 8087190
  * @summary Bug in the parsing IPv4 literal addresses
- * @run main/othervm  textToNumericFormat
+ * @run main/othervm -Djdk.net.hosts.file=TestToNumericFormatHosts textToNumericFormat
 */
 
 /**
@@ -66,8 +66,6 @@ public class textToNumericFormat {
                            "1..1.1",
                            "1.1.1.",
                            "..." };
-        String hostsFileName = System.getProperty("test.src", ".") + "/TestToNumericFormatHosts";
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
 
         for (int i=0; i<goodAddrs.length; i++) {
             try {
