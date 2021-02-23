@@ -335,15 +335,17 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
   if (Matcher::match_rule_supported(Op_RotateRight) &&
       ((op1 == Op_URShiftI && op2 == Op_LShiftI) || (op1 == Op_LShiftI && op2 == Op_URShiftI)) &&
-      in(1)->in(1) == in(2)->in(1)) {
-    Node* rshift = op1 == Op_URShiftI ? in(1)->in(2) : in(2)->in(2);
-    Node* lshift = op1 == Op_URShiftI ? in(2)->in(2) : in(1)->in(2);
-    const TypeInt* rshift_t = phase->type(rshift)->isa_int();
-    const TypeInt* lshift_t = phase->type(lshift)->isa_int();
-    if (lshift_t != NULL && lshift_t->is_con() &&
-        rshift_t != NULL && rshift_t->is_con() &&
-        ((lshift_t->get_con() & 0x1F) == (32 - (rshift_t->get_con() & 0x1F)))) {
-      return new RotateRightNode(in(1)->in(1), phase->intcon(rshift_t->get_con() & 0x1F), TypeInt::INT);
+      in1->in(1) != NULL && in1->in(1) == in2->in(1)) {
+    Node* rshift = op1 == Op_URShiftI ? in1->in(2) : in2->in(2);
+    Node* lshift = op1 == Op_URShiftI ? in2->in(2) : in1->in(2);
+    if (rshift != NULL && lshift != NULL) {
+      const TypeInt* rshift_t = phase->type(rshift)->isa_int();
+      const TypeInt* lshift_t = phase->type(lshift)->isa_int();
+      if (lshift_t != NULL && lshift_t->is_con() &&
+          rshift_t != NULL && rshift_t->is_con() &&
+          ((lshift_t->get_con() & 0x1F) == (32 - (rshift_t->get_con() & 0x1F)))) {
+        return new RotateRightNode(in1->in(1), phase->intcon(rshift_t->get_con() & 0x1F), TypeInt::INT);
+      }
     }
   }
 
@@ -466,15 +468,17 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
   if (Matcher::match_rule_supported(Op_RotateRight) &&
       ((op1 == Op_URShiftL && op2 == Op_LShiftL) || (op1 == Op_LShiftL && op2 == Op_URShiftL)) &&
-      in(1)->in(1) == in(2)->in(1)) {
-    Node* rshift = op1 == Op_URShiftL ? in(1)->in(2) : in(2)->in(2);
-    Node* lshift = op1 == Op_URShiftL ? in(2)->in(2) : in(1)->in(2);
-    const TypeInt* rshift_t = phase->type(rshift)->isa_int();
-    const TypeInt* lshift_t = phase->type(lshift)->isa_int();
-    if (lshift_t != NULL && lshift_t->is_con() &&
-        rshift_t != NULL && rshift_t->is_con() &&
-        ((lshift_t->get_con() & 0x3F) == (64 - (rshift_t->get_con() & 0x3F)))) {
-      return new RotateRightNode(in(1)->in(1), phase->intcon(rshift_t->get_con() & 0x3F), TypeLong::LONG);
+      in1->in(1) != NULL && in1->in(1) == in2->in(1)) {
+    Node* rshift = op1 == Op_URShiftL ? in1->in(2) : in2->in(2);
+    Node* lshift = op1 == Op_URShiftL ? in2->in(2) : in1->in(2);
+    if (rshift != NULL && lshift != NULL) {
+      const TypeInt* rshift_t = phase->type(rshift)->isa_int();
+      const TypeInt* lshift_t = phase->type(lshift)->isa_int();
+      if (lshift_t != NULL && lshift_t->is_con() &&
+          rshift_t != NULL && rshift_t->is_con() &&
+          ((lshift_t->get_con() & 0x3F) == (64 - (rshift_t->get_con() & 0x3F)))) {
+        return new RotateRightNode(in1->in(1), phase->intcon(rshift_t->get_con() & 0x3F), TypeLong::LONG);
+      }
     }
   }
 
