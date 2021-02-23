@@ -88,6 +88,7 @@ public class LingeredApp {
     private ByteArrayOutputStream stdoutBuffer;
     private Thread outPumperThread;
     private Thread errPumperThread;
+    private boolean finishAppCalled = false;
 
     protected Process appProcess;
     protected OutputBuffer output;
@@ -367,6 +368,11 @@ public class LingeredApp {
 
     private void finishApp() {
         if (appProcess != null) {
+            if (finishAppCalled) {
+                return;
+            } else {
+                finishAppCalled = true;
+            }
             OutputBuffer output = getOutput();
             String msg =
                     " LingeredApp stdout: [" + output.getStdout() + "];\n" +
