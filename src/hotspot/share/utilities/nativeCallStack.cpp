@@ -28,6 +28,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 
+const NativeCallStack NativeCallStack::_empty_stack; // Uses default ctor
+
 static unsigned int calculate_hash(address stack[NMT_TrackingStackDepth]) {
   uintptr_t hash = 0;
   for (int i = 0; i < NMT_TrackingStackDepth; i++) {
@@ -36,29 +38,23 @@ static unsigned int calculate_hash(address stack[NMT_TrackingStackDepth]) {
   return hash;
 }
 
-NativeCallStack::NativeCallStack(int toSkip, bool fillStack) :
+NativeCallStack::NativeCallStack(int toSkip) :
   _hash_value(0) {
 
-  if (fillStack) {
-    // We need to skip the NativeCallStack::NativeCallStack frame if a tail call is NOT used
-    // to call os::get_native_stack. A tail call is used if _NMT_NOINLINE_ is not defined
-    // (which means this is not a slowdebug build), and we are on 64-bit (except Windows).
-    // This is not necessarily a rule, but what has been obvserved to date.
+  // We need to skip the NativeCallStack::NativeCallStack frame if a tail call is NOT used
+  // to call os::get_native_stack. A tail call is used if _NMT_NOINLINE_ is not defined
+  // (which means this is not a slowdebug build), and we are on 64-bit (except Windows).
+  // This is not necessarily a rule, but what has been obvserved to date.
 #if (defined(_NMT_NOINLINE_) || defined(_WINDOWS) || !defined(_LP64) || defined(PPC64))
-    // Not a tail call.
-    toSkip++;
+  // Not a tail call.
+  toSkip++;
 #if (defined(_NMT_NOINLINE_) && defined(BSD) && defined(_LP64))
-    // Mac OS X slowdebug builds have this odd behavior where NativeCallStack::NativeCallStack
-    // appears as two frames, so we need to skip an extra frame.
-    toSkip++;
+  // Mac OS X slowdebug builds have this odd behavior where NativeCallStack::NativeCallStack
+  // appears as two frames, so we need to skip an extra frame.
+  toSkip++;
 #endif // Special-case for BSD.
 #endif // Not a tail call.
-    os::get_native_stack(_stack, NMT_TrackingStackDepth, toSkip);
-  } else {
-    for (int index = 0; index < NMT_TrackingStackDepth; index ++) {
-      _stack[index] = NULL;
-    }
-  }
+  os::get_native_stack(_stack, NMT_TrackingStackDepth, toSkip);
   _hash_value = calculate_hash(_stack);
 }
 

@@ -33,39 +33,14 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/linkedlist.hpp"
 
-class SimpleThreadStackSite;
-
-class SimpleThreadStack {
-  friend class SimpleThreadStackSite;
-private:
-  address _base;
-  size_t  _size;
-public:
-  SimpleThreadStack() : _base(NULL), _size(0) { }
-  bool equals(const SimpleThreadStack& s) const {
-    return base() == s.base();
-  }
-
-  size_t  size() const { return _size; }
-  address base() const { return _base; }
-private:
-  void set_size(size_t size)  { _size = size; }
-  void set_base(address base) { _base = base; }
-};
-
-class SimpleThreadStackSite : public AllocationSite<SimpleThreadStack> {
+class SimpleThreadStackSite : public AllocationSite {
+  const address _base;
+  const size_t  _size;
 public:
   SimpleThreadStackSite(address base, size_t size, const NativeCallStack& stack) :
-    AllocationSite<SimpleThreadStack>(stack, mtThreadStack) {
-    data()->set_size(size);
-    data()->set_base(base);
-  }
-
-  SimpleThreadStackSite(address base, size_t size) :
-    AllocationSite<SimpleThreadStack>(NativeCallStack::empty_stack(), mtThreadStack) {
-    data()->set_base(base);
-    data()->set_size(size);
-  }
+    AllocationSite(stack, mtThreadStack),
+    _base(base),
+    _size(size) {}
 
   bool equals(const SimpleThreadStackSite& mts) const {
     bool eq = base() == mts.base();
@@ -73,8 +48,8 @@ public:
     return eq;
   }
 
-  size_t  size() const { return peek()->size(); }
-  address base() const { return peek()->base(); }
+  size_t  size() const { return _size; }
+  address base() const { return _base; }
 };
 
   /*

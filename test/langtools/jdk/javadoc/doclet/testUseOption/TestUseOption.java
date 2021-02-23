@@ -156,8 +156,8 @@ public class TestUseOption extends JavadocTester {
 
         checkOutput("class-use/UsedInC.html", true,
                 """
-                    Uses of <a href="../UsedInC.html" title="class in &lt;Unnamed&gt;">UsedInC</a> i\
-                    n <a href="../package-summary.html">&lt;Unnamed&gt;</a>"""
+                    Uses of <a href="../UsedInC.html" title="class in Unnamed Package">UsedInC</a> i\
+                    n <a href="../package-summary.html">Unnamed Package</a>"""
         );
         checkOutput("class-use/UsedInC.html", true,
                 """
@@ -169,7 +169,7 @@ public class TestUseOption extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="class-use/UsedInC.html#unnamed.package">UsedInC</a></div>""",
                 """
-                    <div class="col-first even-row-color"><a href="#unnamed.package">&lt;Unnamed&gt;</a></div>
+                    <div class="col-first even-row-color"><a href="#unnamed.package">Unnamed Package</a></div>
                     <div class="col-last even-row-color">&nbsp;</div>"""
         );
     }

@@ -555,6 +555,8 @@ void CompilerConfig::ergo_initialize() {
     if (NeverActAsServerClassMachine) {
       set_client_emulation_mode_flags();
     }
+  } else if (!has_c2() && !is_jvmci_compiler()) {
+    set_client_emulation_mode_flags();
   }
 
   set_legacy_emulation_flags();
