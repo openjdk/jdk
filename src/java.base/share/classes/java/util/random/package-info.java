@@ -232,7 +232,7 @@
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L32X64StarStarRandom</td>
+ *      <td style="text-align:left">L32X64MixRandom</td>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE).shiftLeft(32)</td>
  *      <td style="text-align:right">96</td>
