@@ -1497,7 +1497,7 @@ final class SocketPermissionCollection extends PermissionCollection
     /**
      * Writes the state of this object to the stream.
      * @serialData "permissions" field (a Vector containing the SocketPermissions).
-     * 
+     *
      * @param  out the {@code ObjectOutputStream} to which data is written
      * @throws IOException if an I/O error occurs
      */
