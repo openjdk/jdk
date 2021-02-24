@@ -903,12 +903,11 @@ Deoptimization::DeoptAction Deoptimization::_unloaded_action
 template<typename CacheType>
 class BoxCacheBase : public CHeapObj<mtCompiler> {
 protected:
-  static InstanceKlass* find_cache_klass(Symbol* klass_name, TRAPS) {
+  static InstanceKlass* find_cache_klass(Symbol* klass_name) {
     ResourceMark rm;
     char* klass_name_str = klass_name->as_C_string();
-    Klass* k = SystemDictionary::find(klass_name, Handle(), Handle(), THREAD);
-    guarantee(k != NULL, "%s must be loaded", klass_name_str);
-    InstanceKlass* ik = InstanceKlass::cast(k);
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(klass_name, Handle(), Handle());
+    guarantee(ik != NULL, "%s must be loaded", klass_name_str);
     guarantee(ik->is_initialized(), "%s must be initialized", klass_name_str);
     CacheType::compute_offsets(ik);
     return ik;
@@ -922,7 +921,7 @@ template<typename PrimitiveType, typename CacheType, typename BoxType> class Box
 protected:
   static BoxCache<PrimitiveType, CacheType, BoxType> *_singleton;
   BoxCache(Thread* thread) {
-    InstanceKlass* ik = BoxCacheBase<CacheType>::find_cache_klass(CacheType::symbol(), thread);
+    InstanceKlass* ik = BoxCacheBase<CacheType>::find_cache_klass(CacheType::symbol());
     objArrayOop cache = CacheType::cache(ik);
     assert(cache->length() > 0, "Empty cache");
     _low = BoxType::value(cache->obj_at(0));
@@ -978,7 +977,7 @@ class BooleanBoxCache : public BoxCacheBase<java_lang_Boolean> {
 protected:
   static BooleanBoxCache *_singleton;
   BooleanBoxCache(Thread *thread) {
-    InstanceKlass* ik = find_cache_klass(java_lang_Boolean::symbol(), thread);
+    InstanceKlass* ik = find_cache_klass(java_lang_Boolean::symbol());
     _true_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_TRUE(ik)));
     _false_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_FALSE(ik)));
   }

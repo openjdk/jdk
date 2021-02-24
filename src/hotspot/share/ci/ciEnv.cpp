@@ -304,10 +304,10 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
   VM_ENTRY_MARK;
   if (handle == NULL) {
     // Cf. universe.cpp, creation of Universe::_null_ptr_exception_instance.
-    Klass* k = SystemDictionary::find(name, Handle(), Handle(), THREAD);
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(name, Handle(), Handle());
     jobject objh = NULL;
-    if (!HAS_PENDING_EXCEPTION && k != NULL) {
-      oop obj = InstanceKlass::cast(k)->allocate_instance(THREAD);
+    if (ik != NULL) {
+      oop obj = ik->allocate_instance(THREAD);
       if (!HAS_PENDING_EXCEPTION)
         objh = JNIHandles::make_global(Handle(THREAD, obj));
     }
@@ -448,8 +448,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
       kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader,
                                                                        CHECK_AND_CLEAR_(fail_type));
     } else {
-      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain,
-                                                           CHECK_AND_CLEAR_(fail_type));
+      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
     found_klass = kls;
   }

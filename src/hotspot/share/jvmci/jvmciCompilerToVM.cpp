@@ -547,16 +547,17 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jcla
       // This is a name from a signature.  Strip off the trimmings.
       // Call recursive to keep scope of strippedsym.
       TempNewSymbol strippedsym = Signature::strip_envelope(class_name);
-      resolved_klass = SystemDictionary::find(strippedsym, class_loader, protection_domain, CHECK_NULL);
+      resolved_klass = SystemDictionary::find_instance_klass(strippedsym,
+                                                             class_loader,
+                                                             protection_domain);
     } else if (Signature::is_array(class_name)) {
       SignatureStream ss(class_name, false);
       int ndim = ss.skip_array_prefix();
       if (ss.type() == T_OBJECT) {
         Symbol* strippedsym = ss.as_symbol();
-        resolved_klass = SystemDictionary::find(strippedsym,
-                                                class_loader,
-                                                protection_domain,
-                                                CHECK_NULL);
+        resolved_klass = SystemDictionary::find_instance_klass(strippedsym,
+                                                               class_loader,
+                                                               protection_domain);
         if (!resolved_klass.is_null()) {
           resolved_klass = resolved_klass->array_klass(ndim, CHECK_NULL);
         }
@@ -564,7 +565,9 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jcla
         resolved_klass = TypeArrayKlass::cast(Universe::typeArrayKlassObj(ss.type()))->array_klass(ndim, CHECK_NULL);
       }
     } else {
-      resolved_klass = SystemDictionary::find(class_name, class_loader, protection_domain, CHECK_NULL);
+      resolved_klass = SystemDictionary::find_instance_klass(class_name,
+                                                             class_loader,
+                                                             protection_domain);
     }
   }
   JVMCIObject result = JVMCIENV->get_jvmci_type(resolved_klass, JVMCI_CHECK_NULL);
