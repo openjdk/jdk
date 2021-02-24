@@ -47,13 +47,13 @@ import static jdk.incubator.foreign.CLinker.C_INT;
 
 public class TestLinkToNativeRBP {
     final static CLinker abi = CLinker.getInstance();
-    static final LibraryLookup lookup = LibraryLookup.ofDefault();
-    final static MethodHandle rand = abi.downcallHandle(lookup.lookup("rand").get(),
+    static final LibraryLookup lookup = LibraryLookup.ofLibrary("LinkToNativeRBP");
+    final static MethodHandle foo = abi.downcallHandle(lookup.lookup("foo").get(),
             MethodType.methodType(int.class),
             FunctionDescriptor.of(C_INT));
 
-    static int rand() throws Throwable {
-        return (int)rand.invokeExact();
+    static int foo() throws Throwable {
+        return (int)foo.invokeExact();
     }
     public static void main(String[] args) throws Throwable {
         for (int i = 0; i < 20_000; i++) {
@@ -70,7 +70,7 @@ public class TestLinkToNativeRBP {
         int res = 0;
         for (int i = 0; i < stop; i++) {
             Integer v = field;
-            res = rand() + v.intValue();
+            res = foo() + v.intValue();
         }
         return res;
     }
