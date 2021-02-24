@@ -25,7 +25,7 @@
  * @bug 6442088
  * @summary Change default DNS caching behavior for code not running under
  *          security manager.
- * @run main/othervm/timeout=200 -Djdk.net.hosts.file=${user.dir}/DefaultCachingHosts
+ * @run main/othervm/timeout=200 -Djdk.net.hosts.file=DefaultCachingHosts
  *      -Dsun.net.inetaddr.ttl=20  DefaultCaching
  */
 import java.net.InetAddress;
