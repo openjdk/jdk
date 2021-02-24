@@ -63,6 +63,7 @@ public class TestGeneratedClasses extends JavadocTester {
                 """
                     Building tree for all the packages and classes...
                     Generating testClasses/out/m/p/C.html...
-                    Generating testClasses/out/m/p/package-summary.html...""");
+                    Generating testClasses/out/m/p/package-summary.html..."""
+                    .replace("/", FS));
     }
 }
