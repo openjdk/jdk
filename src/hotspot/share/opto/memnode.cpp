@@ -533,7 +533,23 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
 Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const {
   ArrayCopyNode* ac = find_array_copy_clone(phase, ld_alloc, mem);
   if (ac != NULL) {
-    return ac;
+    Node* ld_addp = in(MemNode::Address);
+    Node* ld_offs = ld_addp->in(AddPNode::Offset);
+    Node* src = ac->in(ArrayCopyNode::Src);
+    const TypeAryPtr* ary_t = phase->type(src)->isa_aryptr();
+
+    if (ary_t != NULL) {
+      BasicType ary_elem = ary_t->klass()->as_array_klass()->element_type()->basic_type();
+      int header = arrayOopDesc::base_offset_in_bytes(ary_elem);
+      int elemsize = type2aelembytes(ary_elem);
+
+      const TypeX*   ld_offs_t = phase->type(ld_offs)->isa_intptr_t();
+      const TypeInt* sizetype  = ary_t->size();
+
+      if (ld_offs_t->_lo >= header && ld_offs_t->_hi < sizetype->_lo * elemsize + header) {
+        return ac;
+      }
+    }
   } else if (mem->is_Proj() && mem->in(0) != NULL && mem->in(0)->is_ArrayCopy()) {
     ArrayCopyNode* ac = mem->in(0)->as_ArrayCopy();
 
