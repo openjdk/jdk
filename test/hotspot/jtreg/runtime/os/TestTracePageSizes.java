@@ -30,14 +30,15 @@
  */
 
 /*
- * @test id=large-page-size-1g
- * @summary Run test with 1g pages on x64. Excluding ZGC since it fail
- *          initialization if no large pages are available on the system.
+ * @test id=explicit-large-page-size
+ * @summary Run test explicitly with both 2m and 1g pages on x64. Excluding ZGC since
+ *          it fail initialization if no large pages are available on the system.
  * @requires os.family == "linux"
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.gc != "Z"
+ * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:+UseLargePages -XX:LargePageSizeInBytes=2m TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:+UseLargePages -XX:LargePageSizeInBytes=1g TestTracePageSizes
-*/
+ */
 
 /*
  * @test id=compiler-options
@@ -100,7 +101,10 @@ public class TestTracePageSizes {
     // match as little as possible so each "segment" in the file
     // will generate a match.
     private static void parseSmaps() throws Exception {
-        Pattern smapsPattern = Pattern.compile(RangeWithPageSize.smapsPatternString, Pattern.DOTALL);
+        String smapsPatternString = "(\\w+)-(\\w+).*?" +
+                                    "KernelPageSize:\\s*(\\d*) kB.*?" +
+                                    "VmFlags: ([\\w ]*)";
+        Pattern smapsPattern = Pattern.compile(smapsPatternString, Pattern.DOTALL);
         Scanner smapsScanner = new Scanner(new File("/proc/self/smaps"));
         // Find all memory segments in the smaps-file.
         smapsScanner.findAll(smapsPattern).forEach(mr -> {
@@ -226,11 +230,6 @@ public class TestTracePageSizes {
 // For transparent huge pages the KernelPageSize field will not
 // report the large page size.
 class RangeWithPageSize {
-    // Pattern used for parsing the smaps-file.
-    static String smapsPatternString = "(\\w+)-(\\w+).*?" +
-                                       "KernelPageSize:\\s*(\\d*) kB.*?" +
-                                       "VmFlags: ([\\w ]*)";
-
     private long start;
     private long end;
     private long pageSize;
