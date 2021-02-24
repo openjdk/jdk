@@ -124,6 +124,7 @@ public class ReplayCacheTestProc {
             Asserts.assertNotNull(userLibs, "test.libs property must be provided");
             libs = userLibs.split(",");
             if (Arrays.asList(libs).contains("N") && !isNativeLibAvailable()) {
+                // Skip test when native GSS libs are not available in running platform
                 System.out.println("Native mode not available - skipped");
                 return;
             }
