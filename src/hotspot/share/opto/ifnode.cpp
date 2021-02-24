@@ -884,8 +884,6 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
       hi_type->_hi == max_jint && lo_type->_lo == min_jint && lo_test != BoolTest::ne) {
     assert((dom_bool->_test.is_less() && !proj->_con) ||
            (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
-    // this test was canonicalized
-    assert(this_bool->_test.is_less() && fail->_con, "incorrect test");
 
     // this_bool = <
     //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
@@ -922,9 +920,11 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
         return false;
       }
     } else {
-      assert(false, "unhandled hi_test: %d", hi_test);
+      assert(igvn->_worklist.member(in(1)) && in(1)->Value(igvn) != igvn->type(in(1)), "unhandled hi_test: %d", hi_test);
       return false;
     }
+    // this test was canonicalized
+    assert(this_bool->_test.is_less() && fail->_con, "incorrect test");
   } else if (lo_type != NULL && hi_type != NULL && lo_type->_lo > hi_type->_hi &&
              lo_type->_hi == max_jint && hi_type->_lo == min_jint && lo_test != BoolTest::ne) {
 
@@ -951,8 +951,6 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
 
     assert((dom_bool->_test.is_less() && proj->_con) ||
            (dom_bool->_test.is_greater() && !proj->_con), "incorrect test");
-    // this test was canonicalized
-    assert(this_bool->_test.is_less() && !fail->_con, "incorrect test");
 
     cond = (hi_test == BoolTest::le || hi_test == BoolTest::gt) ? BoolTest::gt : BoolTest::ge;
 
@@ -980,9 +978,10 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
         return false;
       }
     } else {
-      assert(false, "unhandled lo_test: %d", lo_test);
+      assert(igvn->_worklist.member(in(1)) && in(1)->Value(igvn) != igvn->type(in(1)), "unhandled lo_test: %d", lo_test);
       return false;
     }
+    assert(this_bool->_test.is_less() && !fail->_con, "incorrect test");
   } else {
     const TypeInt* failtype = filtered_int_type(igvn, n, proj);
     if (failtype != NULL) {
