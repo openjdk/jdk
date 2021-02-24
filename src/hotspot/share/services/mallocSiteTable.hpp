@@ -57,7 +57,7 @@ class MallocSite : public AllocationSite {
 class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  private:
   MallocSite                         _malloc_site;
-  const unsigned                     _hash;
+  const unsigned int                 _hash;
   MallocSiteHashtableEntry* volatile _next;
 
  public:
@@ -76,7 +76,7 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
   // The operation can be failed due to contention from other thread.
   bool atomic_insert(MallocSiteHashtableEntry* entry);
 
-  unsigned hash() const { return _hash; }
+  unsigned int hash() const { return _hash; }
 
   inline const MallocSite* peek() const { return &_malloc_site; }
   inline MallocSite* data()             { return &_malloc_site; }
