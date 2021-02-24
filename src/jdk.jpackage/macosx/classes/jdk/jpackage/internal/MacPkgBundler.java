@@ -48,6 +48,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 
@@ -57,6 +58,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             "jdk.jpackage.internal.resources.MacResources");
 
     private static final String DEFAULT_BACKGROUND_IMAGE = "background_pkg.png";
+    private static final String DEFAULT_PDF = "product-def.plist";
 
     private static final String TEMPLATE_PREINSTALL_SCRIPT =
             "preinstall.template";
@@ -102,11 +104,20 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             "mac.signing-key-developer-id-installer",
             String.class,
             params -> {
-                    String result = MacBaseInstallerBundler.findKey(
-                            "Developer ID Installer: ",
-                            SIGNING_KEY_USER.fetchFrom(params),
-                            SIGNING_KEYCHAIN.fetchFrom(params),
-                            VERBOSE.fetchFrom(params));
+                    String user = SIGNING_KEY_USER.fetchFrom(params);
+                    String keychain = SIGNING_KEYCHAIN.fetchFrom(params);
+                    String result = null;
+                    if (APP_STORE.fetchFrom(params)) {
+                        result = MacBaseInstallerBundler.findKey(
+                            "3rd Party Mac Developer Installer: ",
+                            user, keychain);
+                    }
+                    // if either not signing for app store or couldn't find
+                    if (result == null) {
+                        result = MacBaseInstallerBundler.findKey(
+                            "Developer ID Installer: ", user, keychain);
+                    }
+
                     if (result != null) {
                         MacCertificate certificate = new MacCertificate(result);
 
@@ -162,6 +173,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     private Path getConfig_DistributionXMLFile(
             Map<String, ? super Object> params) {
         return CONFIG_ROOT.fetchFrom(params).resolve("distribution.dist");
+    }
+
+    private Path getConfig_PDF(Map<String, ? super Object> params) {
+        return CONFIG_ROOT.fetchFrom(params).resolve("product-def.plist");
     }
 
     private Path getConfig_BackgroundImage(Map<String, ? super Object> params) {
@@ -315,6 +330,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 .setCategory(I18N.getString("resource.pkg-background-image"))
                 .saveToFile(getConfig_BackgroundImageDarkAqua(params));
 
+        createResource(DEFAULT_PDF, params)
+                .setCategory(I18N.getString("resource.pkg-pdf"))
+                .saveToFile(getConfig_PDF(params));
+
         prepareDistributionXMLFile(params);
 
         createResource(null, params)
@@ -430,7 +449,9 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
             patchCPLFile(cpl);
 
-            preparePackageScripts(params);
+            if (!APP_STORE.fetchFrom(params)) {
+                preparePackageScripts(params);
+            }
 
             // build application package
             pb = new ProcessBuilder("/usr/bin/pkgbuild",
@@ -483,12 +504,22 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 }
             }
 
-            commandLine.add("--distribution");
-            commandLine.add(
-                    getConfig_DistributionXMLFile(params).toAbsolutePath().toString());
-            commandLine.add("--package-path");
-            commandLine.add(PACKAGES_ROOT.fetchFrom(params).toAbsolutePath().toString());
-
+            if (APP_STORE.fetchFrom(params)) {
+                commandLine.add("--product");
+                commandLine.add(getConfig_PDF(params)
+                        .toAbsolutePath().toString());
+                commandLine.add("--component");
+                Path p = Path.of(root, APP_NAME.fetchFrom(params) + ".app");
+                commandLine.add(p.toAbsolutePath().toString());
+                commandLine.add(getInstallDir(params));
+            } else {
+                commandLine.add("--distribution");
+                commandLine.add(getConfig_DistributionXMLFile(params)
+                        .toAbsolutePath().toString());
+                commandLine.add("--package-path");
+                commandLine.add(PACKAGES_ROOT.fetchFrom(params)
+                        .toAbsolutePath().toString());
+            }
             commandLine.add(finalPKG.toAbsolutePath().toString());
 
             pb = new ProcessBuilder(commandLine);

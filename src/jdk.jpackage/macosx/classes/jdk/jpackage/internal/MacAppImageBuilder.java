@@ -72,7 +72,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.MacResources");
 
-    private static final String TEMPLATE_BUNDLE_ICON = "java.icns";
+    private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
     private static final String OS_TYPE_CODE = "APPL";
     private static final String TEMPLATE_INFO_PLIST_LITE =
             "Info-lite.plist.template";
@@ -100,6 +100,13 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     Arguments.CLIOptions.MAC_BUNDLE_NAME.getId(),
                     String.class,
                     params -> null,
+                    (s, p) -> s);
+
+    public static final BundlerParamInfo<String> APP_CATEGORY =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.MAC_CATEGORY.getId(),
+                    String.class,
+                    params -> "utilities",
                     (s, p) -> s);
 
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_IDENTIFIER =
@@ -142,6 +149,38 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             // valueOf(null) is false, we actually do want null in some cases
             (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
                     null : Boolean.valueOf(s)
+        );
+
+    public static final StandardBundlerParam<Boolean> APP_STORE =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.MAC_APP_STORE.getId(),
+            Boolean.class,
+            params -> false,
+            // valueOf(null) is false, we actually do want null in some cases
+            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                    null : Boolean.valueOf(s)
+        );
+
+    public static final BundlerParamInfo<Path> ENTITLEMENTS =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.MAC_ENTITLEMENTS.getId(),
+            Path.class,
+            params -> {
+                try {
+                    Path path = CONFIG_ROOT.fetchFrom(params).resolve(
+                        getLauncherName(params) + ".entitlements");
+                    String defPath = (APP_STORE.fetchFrom(params) ?
+                        "sandbox.plist" : "entitlements.plist");
+                    createResource(defPath, params)
+                        .setCategory(I18N.getString("resource.entitlements"))
+                        .saveToFile(path);
+                    return path;
+                } catch (IOException ioe) {
+                   Log.verbose(ioe);
+                }
+                return null;
+            },
+            (s, p) -> Path.of(s)
         );
 
     private static final StandardBundlerParam<String> FA_MAC_CFBUNDLETYPEROLE =
@@ -334,25 +373,12 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             String signingIdentity =
                     DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
             if (signingIdentity != null) {
-                prepareEntitlements(params);
                 signAppBundle(params, root, signingIdentity,
                         BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params),
-                        getConfig_Entitlements(params));
+                        ENTITLEMENTS.fetchFrom(params));
             }
             restoreKeychainList(params);
         }
-    }
-
-    static Path getConfig_Entitlements(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                getLauncherName(params) + ".entitlements");
-    }
-
-    static void prepareEntitlements(Map<String, ? super Object> params)
-            throws IOException {
-        createResource("entitlements.plist", params)
-                .setCategory(I18N.getString("resource.entitlements"))
-                .saveToFile(getConfig_Entitlements(params));
     }
 
     private static String getLauncherName(Map<String, ? super Object> params) {
@@ -389,8 +415,17 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         String name = StandardBundlerParam.isRuntimeInstaller(params) ?
                 getBundleName(params): "Java Runtime Image";
         data.put("CF_BUNDLE_NAME", name);
-        data.put("CF_BUNDLE_VERSION", VERSION.fetchFrom(params));
-        data.put("CF_BUNDLE_SHORT_VERSION_STRING", VERSION.fetchFrom(params));
+        String ver = VERSION.fetchFrom(params);
+        String sver = ver;
+        int index = ver.indexOf(".");
+        if (index > 0 && ((index + 1) < ver.length())) {
+            index = ver.indexOf(".", index + 1);
+            if (index > 0 ) {
+                sver = ver.substring(0, index);
+            }
+        }
+        data.put("CF_BUNDLE_VERSION", ver);
+        data.put("CF_BUNDLE_SHORT_VERSION_STRING", sver);
 
         createResource(TEMPLATE_RUNTIME_INFO_PLIST, params)
                 .setPublicName("Runtime-Info.plist")
@@ -441,6 +476,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         data.put("DEPLOY_LAUNCHER_NAME", getLauncherName(params));
         data.put("DEPLOY_BUNDLE_SHORT_VERSION", VERSION.fetchFrom(params));
         data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", VERSION.fetchFrom(params));
+        data.put("DEPLOY_APP_CATEGORY", "public.app-category." +
+                APP_CATEGORY.fetchFrom(params));
 
         StringBuilder bundleDocumentTypes = new StringBuilder();
         StringBuilder exportedTypes = new StringBuilder();
@@ -641,9 +678,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 }
             }).filter(p -> Files.isRegularFile(p) &&
                       (Files.isExecutable(p) || p.toString().endsWith(".dylib"))
-                      && !(p.toString().endsWith(appExecutable)
-                      || p.toString().contains("/Contents/runtime")
-                      || p.toString().contains("/Contents/Frameworks"))
+                      && !(p.toString().contains("dylib.dSYM/Contents"))
+                      && !(p.toString().endsWith(appExecutable))
                      ).forEach(p -> {
                 // noinspection ThrowableResultOfMethodCallIgnored
                 if (toThrow.get() != null) return;
@@ -652,12 +688,30 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 if (Files.isSymbolicLink(p)) {
                     Log.verbose(MessageFormat.format(I18N.getString(
                             "message.ignoring.symlink"), p.toString()));
-                } else if (isFileSigned(p)) {
-                    // executable or lib already signed
-                    Log.verbose(MessageFormat.format(I18N.getString(
-                            "message.already.signed"), p.toString()));
                 } else {
-                    List<String> args = new ArrayList<>();
+                    List<String> args;
+                    // runtime and Framework files will be signed below
+                    // but they need to be unsigned first here
+                    if ((p.toString().contains("/Contents/runtime")) ||
+                        (p.toString().contains("/Contents/Frameworks"))) {
+
+                        args = new ArrayList<>();
+                        args.addAll(Arrays.asList("/usr/bin/codesign",
+                                "--remove-signature", p.toString()));
+                        try {
+                            Set<PosixFilePermission> oldPermissions =
+                                    Files.getPosixFilePermissions(p);
+                            p.toFile().setWritable(true, true);
+                            ProcessBuilder pb = new ProcessBuilder(args);
+                            IOUtils.exec(pb);
+                            Files.setPosixFilePermissions(p,oldPermissions);
+                        } catch (IOException ioe) {
+                            Log.verbose(ioe);
+                            toThrow.set(ioe);
+                            return;
+                        }
+                    }
+                    args = new ArrayList<>();
                     args.addAll(Arrays.asList("/usr/bin/codesign",
                             "--timestamp",
                             "--options", "runtime",
@@ -668,25 +722,19 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         args.add("--keychain");
                         args.add(keyChain);
                     }
-
                     if (Files.isExecutable(p)) {
                         if (entitlements != null) {
                             args.add("--entitlements");
                             args.add(entitlements.toString());
                         }
                     }
-
                     args.add(p.toString());
-
                     try {
                         Set<PosixFilePermission> oldPermissions =
                                 Files.getPosixFilePermissions(p);
                         p.toFile().setWritable(true, true);
-
                         ProcessBuilder pb = new ProcessBuilder(args);
-
                         IOUtils.exec(pb);
-
                         Files.setPosixFilePermissions(p, oldPermissions);
                     } catch (IOException ioe) {
                         toThrow.set(ioe);
@@ -718,6 +766,10 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 if (keyChain != null && !keyChain.isEmpty()) {
                     args.add("--keychain");
                     args.add(keyChain);
+                }
+                if (entitlements != null) {
+                    args.add("--entitlements");
+                    args.add(entitlements.toString());
                 }
                 args.add(path.toString());
                 ProcessBuilder pb = new ProcessBuilder(args);
@@ -774,20 +826,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 new ProcessBuilder(args.toArray(new String[args.size()]));
 
         IOUtils.exec(pb);
-    }
-
-    private static boolean isFileSigned(Path file) {
-        ProcessBuilder pb =
-                new ProcessBuilder("/usr/bin/codesign",
-                        "--verify", file.toString());
-
-        try {
-            IOUtils.exec(pb);
-        } catch (IOException ex) {
-            return false;
-        }
-
-        return true;
     }
 
     private static String extractBundleIdentifier(Map<String, Object> params) {
