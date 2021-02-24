@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test JFR recording controlled via JMX across container boundary.
- * @requires docker.support
+ * @requires docker.support & (container.engine != "podman")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
