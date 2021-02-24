@@ -36,7 +36,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
 /**
  * @test
  * @key headful
- * @bug 8040291
+ * @bug 8040291 8257500
  * @requires os.family == "mac"
  * @summary [macosx] Http-Images are not fully loaded when using ImageIcon
  * @modules java.desktop/sun.awt

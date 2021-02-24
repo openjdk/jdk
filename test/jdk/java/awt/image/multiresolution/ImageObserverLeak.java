@@ -31,7 +31,7 @@ import java.lang.ref.WeakReference;
 
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
-/*
+/**
  * @test
  * @bug 8257500
  * @summary Drawing MultiResolutionImage with ImageObserver may "leaks" memory

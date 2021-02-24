@@ -126,6 +126,10 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
             ImageObserver observer = observerRef.get();
             Image image = imageRef.get();
 
+            if (observer == null || image == null) {
+                return false;
+            }
+
             if ((infoflags & (ImageObserver.WIDTH | BITS_INFO)) != 0) {
                 width = (width + 1) / 2;
             }
