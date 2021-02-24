@@ -3005,6 +3005,16 @@ void MacroAssembler::vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
+void MacroAssembler::vpaddb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(UseAVX > 0, "requires some form of AVX");
+  if (reachable(src)) {
+    Assembler::vpaddb(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpaddb(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
 void MacroAssembler::vpaddd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
   assert(UseAVX > 0, "requires some form of AVX");
   if (reachable(src)) {

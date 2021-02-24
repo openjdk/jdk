@@ -190,7 +190,7 @@ public class PrettyPrintTest {
             boolean val, String expected)
             throws Exception {
         String result = transform(null, expected, false, pretty, p, sp, val);
-        Assert.assertEquals(result, expected);
+        Assert.assertEquals(result.replaceAll("\r\n", "\n"), expected);
     }
 
     /*
@@ -203,7 +203,7 @@ public class PrettyPrintTest {
             boolean sp, boolean val, String expected)
             throws Exception {
         String result = transform(xsl, expected, false, pretty, p, sp, val);
-        Assert.assertEquals(result, expected);
+        Assert.assertEquals(result.replaceAll("\r\n", "\n"), expected);
     }
 
     /*

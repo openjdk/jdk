@@ -35,8 +35,8 @@ define(`BASE_SHIFT_INSN',
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct $2$1_reg_$4_reg(iReg$1NoSp dst,
                          iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2,
-                         immI src3, rFlagsReg cr) %{
-  match(Set dst ($2$1 src1 ($4$1 src2 src3)));
+                         immI src3) %{
+  match(Set dst ($2$1 src1 (ifelse($4, RotateRight, $4, $4$1) src2 src3)));
 
   ins_cost(1.9 * INSN_COST);
   format %{ "$3  $dst, $src1, $src2, $5 $src3" %}
@@ -56,8 +56,7 @@ define(`BASE_INVERTED_INSN',
 `// This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct $2$1_reg_not_reg(iReg$1NoSp dst,
-                         iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2, imm$1_M1 m1,
-                         rFlagsReg cr) %{
+                         iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2, imm$1_M1 m1) %{
 dnl This ifelse is because hotspot reassociates (xor (xor ..)..)
 dnl into this canonical form.
   ifelse($2,Xor,
@@ -79,14 +78,15 @@ dnl into this canonical form.
 define(`INVERTED_SHIFT_INSN',
 `// This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+// val ifelse($2, Xor, ^, $2, And, &, |) (-1 ^ (val ifelse($4, RShift, >>, $4, LShift, <<, $4, URShift, >>>, ror) shift)) ==> $3
 instruct $2$1_reg_$4_not_reg(iReg$1NoSp dst,
                          iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2,
-                         immI src3, imm$1_M1 src4, rFlagsReg cr) %{
+                         immI src3, imm$1_M1 src4) %{
 dnl This ifelse is because hotspot reassociates (xor (xor ..)..)
 dnl into this canonical form.
   ifelse($2,Xor,
-    match(Set dst ($2$1 src4 (Xor$1($4$1 src2 src3) src1)));,
-    match(Set dst ($2$1 src1 (Xor$1($4$1 src2 src3) src4)));)
+    match(Set dst ($2$1 src4 (Xor$1(ifelse($4, RotateRight, $4, $4$1) src2 src3) src1)));,
+    match(Set dst ($2$1 src1 (Xor$1(ifelse($4, RotateRight, $4, $4$1) src2 src3) src4)));)
   ins_cost(1.9 * INSN_COST);
   format %{ "$3  $dst, $src1, $src2, $5 $src3" %}
 
@@ -131,17 +131,22 @@ define(`BOTH_INVERTED_INSNS',
 BASE_INVERTED_INSN(L, $1, $2, $3, $4)')dnl
 dnl
 define(`BOTH_INVERTED_SHIFT_INSNS',
-`INVERTED_SHIFT_INSN(I, $1, $2w, $3, $4, ~0, int)
-INVERTED_SHIFT_INSN(L, $1, $2, $3, $4, ~0l, jlong)')dnl
+`INVERTED_SHIFT_INSN(I, $1, $2w, $3, $4)
+INVERTED_SHIFT_INSN(L, $1, $2, $3, $4)')dnl
 dnl
-define(`ALL_SHIFT_KINDS',
+define(`ALL_SHIFT_KINDS_WITHOUT_ROR',
 `BOTH_SHIFT_INSNS($1, $2, URShift, LSR)
 BOTH_SHIFT_INSNS($1, $2, RShift, ASR)
 BOTH_SHIFT_INSNS($1, $2, LShift, LSL)')dnl
 dnl
+define(`ALL_SHIFT_KINDS',
+`ALL_SHIFT_KINDS_WITHOUT_ROR($1, $2)
+BOTH_SHIFT_INSNS($1, $2, RotateRight, ROR)')dnl
+dnl
 define(`ALL_INVERTED_SHIFT_KINDS',
 `BOTH_INVERTED_SHIFT_INSNS($1, $2, URShift, LSR)
 BOTH_INVERTED_SHIFT_INSNS($1, $2, RShift, ASR)
+BOTH_INVERTED_SHIFT_INSNS($1, $2, RotateRight, ROR)
 BOTH_INVERTED_SHIFT_INSNS($1, $2, LShift, LSL)')dnl
 dnl
 NOT_INSN(L, eon)
@@ -155,8 +160,8 @@ ALL_INVERTED_SHIFT_KINDS(Or, orn)
 ALL_SHIFT_KINDS(And, andr)
 ALL_SHIFT_KINDS(Xor, eor)
 ALL_SHIFT_KINDS(Or, orr)
-ALL_SHIFT_KINDS(Add, add)
-ALL_SHIFT_KINDS(Sub, sub)
+ALL_SHIFT_KINDS_WITHOUT_ROR(Add, add)
+ALL_SHIFT_KINDS_WITHOUT_ROR(Sub, sub)
 dnl
 dnl EXTEND mode, rshift_op, src, lshift_count, rshift_count
 define(`EXTEND', `($2$1 (LShift$1 $3 $4) $5)') dnl
