@@ -87,7 +87,6 @@ runtime/cds/DeterministicDump.java 8253495 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/NMT/CheckForProperDetailStackTrace.java 8261520 generic-all
 runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
-containers/docker/TestJFRWithJMX.java 8256417 linux-5.4.17-2011.5.3.el8uek.x86_64
 
 #############################################################################
 
