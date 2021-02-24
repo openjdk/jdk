@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6960894 8194486 8139348
+ * @bug 6960894 8194486
  * @summary Better AS-REQ creation and processing
  * @library /test/lib
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts

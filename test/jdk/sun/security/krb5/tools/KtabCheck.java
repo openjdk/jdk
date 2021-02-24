@@ -49,8 +49,9 @@ public class KtabCheck {
 
         Files.deleteIfExists(Path.of(KEYTAB));
 
-        // This test uses a krb5.conf file that only permits
-        // 3 etypes: aes128-cts(17) aes256-cts(18) aes128-sha2(19).
+        // This test uses a krb5.conf file (onlythree.conf) in which
+        // only 3 etypes in the default_tkt_enctypes setting are enabled
+        // by default: aes128-cts(17), aes256-cts(18), and aes128-sha2(19).
 
         ktab("-a me mine");
         check(1,17,1,18,1,19);
