@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"

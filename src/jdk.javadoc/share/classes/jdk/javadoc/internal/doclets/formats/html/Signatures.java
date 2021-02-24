@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.doclet.DocletEnvironment;
@@ -5,7 +30,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
@@ -49,6 +74,9 @@ public class Signatures {
     }
 
     public static Content getPackageSignature(PackageElement pkg, PackageWriterImpl pkgWriter) {
+        if (pkg.isUnnamed()) {
+            return Text.EMPTY;
+        }
         Content signature = HtmlTree.DIV(HtmlStyle.packageSignature);
         Content annotations = pkgWriter.getAnnotationInfo(pkg, true);
         if (!annotations.isEmpty()) {
@@ -91,7 +119,7 @@ public class Signatures {
             content.add(HtmlTree.SPAN(HtmlStyle.modifiers, modifiers));
 
             HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
-            Content className = new StringContent(utils.getSimpleName(typeElement));
+            Content className = Text.of(utils.getSimpleName(typeElement));
             if (classWriter.options.linkSource()) {
                 classWriter.addSrcLink(typeElement, className, nameSpan);
             } else {
@@ -172,7 +200,7 @@ public class Signatures {
                     permitsSpan.add(link);
                 }
                 if (linkablePermits.size() < permits.size()) {
-                    Content c = new StringContent(classWriter.resources.getText("doclet.not.exhaustive"));
+                    Content c = Text.of(classWriter.resources.getText("doclet.not.exhaustive"));
                     permitsSpan.add(" ");
                     permitsSpan.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
                 }
@@ -335,7 +363,7 @@ public class Signatures {
             // Name
             HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
             if (memberWriter.options.linkSource()) {
-                Content name = new StringContent(memberWriter.name(element));
+                Content name = Text.of(memberWriter.name(element));
                 memberWriter.writer.addSrcLink(element, name, nameSpan);
             } else {
                 nameSpan.add(memberWriter.name(element));
@@ -378,7 +406,7 @@ public class Signatures {
             }
             if (!set.isEmpty()) {
                 String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
-                htmlTree.add(HtmlTree.SPAN(HtmlStyle.modifiers, new StringContent(mods)))
+                htmlTree.add(HtmlTree.SPAN(HtmlStyle.modifiers, Text.of(mods)))
                         .add(Entity.NO_BREAK_SPACE);
             }
         }

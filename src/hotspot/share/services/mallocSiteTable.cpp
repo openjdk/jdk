@@ -242,6 +242,82 @@ void MallocSiteTable::AccessLock::exclusiveLock() {
   _lock_state = ExclusiveLock;
 }
 
+void MallocSiteTable::print_tuning_statistics(outputStream* st) {
+
+  AccessLock locker(&_access_count);
+  if (locker.sharedLock()) {
+      // Total number of allocation sites, include empty sites
+    int total_entries = 0;
+    // Number of allocation sites that have all memory freed
+    int empty_entries = 0;
+    // Number of captured call stack distribution
+    int stack_depth_distribution[NMT_TrackingStackDepth + 1] = { 0 };
+    // Chain lengths
+    int lengths[table_size] = { 0 };
+
+    for (int i = 0; i < table_size; i ++) {
+      int this_chain_length = 0;
+      const MallocSiteHashtableEntry* head = _table[i];
+      while (head != NULL) {
+        total_entries ++;
+        this_chain_length ++;
+        if (head->size() == 0) {
+          empty_entries ++;
+        }
+        const int callstack_depth = head->peek()->call_stack()->frames();
+        assert(callstack_depth >= 0 && callstack_depth <= NMT_TrackingStackDepth,
+               "Sanity (%d)", callstack_depth);
+        stack_depth_distribution[callstack_depth] ++;
+        head = head->next();
+      }
+      lengths[i] = this_chain_length;
+    }
+
+    st->print_cr("Malloc allocation site table:");
+    st->print_cr("\tTotal entries: %d", total_entries);
+    st->print_cr("\tEmpty entries: %d (%2.2f%%)", empty_entries, ((float)empty_entries * 100) / total_entries);
+    st->cr();
+
+    // We report the hash distribution (chain length distribution) of the n shortest chains
+    //  - under the assumption that this usually contains all lengths. Reporting threshold
+    //  is 20, and the expected avg chain length is 5..6 (see table size).
+    static const int chain_length_threshold = 20;
+    int chain_length_distribution[chain_length_threshold] = { 0 };
+    int over_threshold = 0;
+    int longest_chain_length = 0;
+    for (int i = 0; i < table_size; i ++) {
+      if (lengths[i] >= chain_length_threshold) {
+        over_threshold ++;
+      } else {
+        chain_length_distribution[lengths[i]] ++;
+      }
+      longest_chain_length = MAX2(longest_chain_length, lengths[i]);
+    }
+
+    st->print_cr("Hash distribution:");
+    if (chain_length_distribution[0] == 0) {
+      st->print_cr("no empty buckets.");
+    } else {
+      st->print_cr("%d buckets are empty.", chain_length_distribution[0]);
+    }
+    for (int len = 1; len < MIN2(longest_chain_length + 1, chain_length_threshold); len ++) {
+      st->print_cr("%2d %s: %d.", len, (len == 1 ? "  entry" : "entries"), chain_length_distribution[len]);
+    }
+    if (longest_chain_length >= chain_length_threshold) {
+      st->print_cr(">=%2d entries: %d.", chain_length_threshold, over_threshold);
+    }
+    st->print_cr("most entries: %d.", longest_chain_length);
+    st->cr();
+
+    st->print_cr("Call stack depth distribution:");
+    for (int i = 0; i <= NMT_TrackingStackDepth; i ++) {
+      st->print_cr("\t%d: %d", i, stack_depth_distribution[i]);
+    }
+    st->cr();
+  } // lock
+}
+
+
 bool MallocSiteHashtableEntry::atomic_insert(MallocSiteHashtableEntry* entry) {
   return Atomic::replace_if_null(&_next, entry);
 }

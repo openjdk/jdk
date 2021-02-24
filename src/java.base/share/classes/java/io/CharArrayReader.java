@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,16 +146,19 @@ public class CharArrayReader extends Reader {
     }
 
     /**
-     * Skips characters.  Returns the number of characters that were skipped.
+     * Skips characters. If the stream is already at its end before this method
+     * is invoked, then no characters are skipped and zero is returned.
      *
      * <p>The {@code n} parameter may be negative, even though the
      * {@code skip} method of the {@link Reader} superclass throws
      * an exception in this case. If {@code n} is negative, then
      * this method does nothing and returns {@code 0}.
      *
-     * @param      n The number of characters to skip
-     * @return     The number of characters actually skipped
-     * @throws     IOException If the stream is closed, or an I/O error occurs
+     * @param n {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     *
+     * @throws IOException {@inheritDoc}
      */
     public long skip(long n) throws IOException {
         synchronized (lock) {

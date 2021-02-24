@@ -25,7 +25,6 @@
 #ifndef SHARE_MEMORY_FILEMAP_HPP
 #define SHARE_MEMORY_FILEMAP_HPP
 
-#include "classfile/classLoader.hpp"
 #include "include/cds.h"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspace.hpp"
@@ -44,6 +43,9 @@
 static const int JVM_IDENT_MAX = 256;
 
 class CHeapBitMap;
+class ClassFileStream;
+class ClassLoaderData;
+class ClassPathEntry;
 class outputStream;
 
 class SharedClassPathEntry {

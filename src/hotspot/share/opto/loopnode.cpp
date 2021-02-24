@@ -5301,7 +5301,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_HasNegatives:
       pinned = false;
     }
-    if (n->is_CMove()) {
+    if (n->is_CMove() || n->is_ConstraintCast()) {
       pinned = false;
     }
     if( pinned ) {

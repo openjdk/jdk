@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,21 +21,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_MEMORY_METASPACESHARED_INLINE_HPP
-#define SHARE_MEMORY_METASPACESHARED_INLINE_HPP
+package jdk.internal.event;
 
-#include "memory/metaspaceShared.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1Allocator.inline.hpp"
-#endif
+/**
+ * Event details relating to deserialization.
+ */
 
-#if INCLUDE_CDS_JAVA_HEAP
-bool MetaspaceShared::is_archive_object(oop p) {
-  return (p == NULL) ? false : G1ArchiveAllocator::is_archive_object(p);
+public final class DeserializationEvent extends Event {
+    public boolean filterConfigured;
+    public String filterStatus;
+    public Class<?> type;
+    public int arrayLength;
+    public long objectReferences;
+    public long depth;
+    public long bytesRead;
+    public Class<?> exceptionType;
+    public String exceptionMessage;
 }
-#endif
-
-#endif // SHARE_MEMORY_METASPACESHARED_INLINE_HPP
