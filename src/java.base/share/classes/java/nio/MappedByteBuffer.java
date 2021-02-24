@@ -222,7 +222,7 @@ public abstract class MappedByteBuffer
      * mapping modes. This method may or may not have an effect for
      * implementation-specific mapping modes. </p>
      *
-     * @throws UncheckedIOException 
+     * @throws UncheckedIOException
      *         If the underlying operation fails
      *
      * @return  This buffer
