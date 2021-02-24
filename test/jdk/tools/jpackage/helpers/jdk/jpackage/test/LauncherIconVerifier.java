@@ -75,17 +75,21 @@ public final class LauncherIconVerifier {
     public static Path getDefaultIcon() {
         final String[] components;
         if (TKit.isOSX()) {
-            components = new String[] { "macosx", "java.icns" };
+            components = new String[] { "macosx", "JavaApp.icns" };
         } else if (TKit.isLinux()) {
-            components = new String[] { "linux", "java32.png" };
+            components = new String[] { "linux", "JavaApp.png" };
         } else if (TKit.isWindows()) {
-            components = new String[] { "windows", "java48.ico" };
+            components = new String[] { "windows", "JavaApp.ico" };
         } else {
             throw TKit.throwUnknownPlatformError();
         }
-
-        return TKit.SRC_ROOT.resolve(Path.of(components[0],
+        Path iconPath = TKit.CLOSED_SRC_ROOT.resolve(Path.of(components[0],
                 "classes/jdk/jpackage/internal/resources", components[1]));
+        if (!Files.exists(iconPath)) {
+            iconPath = TKit.OPEN_SRC_ROOT.resolve(Path.of(components[0],
+                "classes/jdk/jpackage/internal/resources", components[1]));
+        }
+        return iconPath;
     }
 
     private String launcherName;

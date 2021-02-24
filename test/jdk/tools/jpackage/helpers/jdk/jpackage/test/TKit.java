@@ -80,8 +80,12 @@ final public class TKit {
         throw new RuntimeException("Failed to locate apps directory");
     }).get();
 
-    public static final Path SRC_ROOT = Functional.identity(() -> {
+    public static final Path OPEN_SRC_ROOT = Functional.identity(() -> {
         return TEST_SRC_ROOT.resolve("../../../../src/jdk.jpackage").normalize().toAbsolutePath();
+    }).get();
+
+    public static final Path CLOSED_SRC_ROOT = Functional.identity(() -> {
+        return TEST_SRC_ROOT.resolve("../../../../../closed/src/jdk.jpackage").normalize().toAbsolutePath();
     }).get();
 
     public final static String ICON_SUFFIX = Functional.identity(() -> {
