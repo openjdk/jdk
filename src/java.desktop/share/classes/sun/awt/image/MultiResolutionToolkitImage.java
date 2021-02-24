@@ -95,14 +95,14 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
             final int imgWidth, final int imgHeight,
             final int rvWidth, final int rvHeight, boolean concatenateInfo) {
 
-//        if (observer == null) {
+        if (observer == null) {
             return null;
-//        }
-//
-//        synchronized (ObserverCache.INSTANCE) {
-//            return ObserverCache.INSTANCE.computeIfAbsent(observer,
-//                    key -> new ObserverCache(key, concatenateInfo, image));
-//        }
+        }
+
+        synchronized (ObserverCache.INSTANCE) {
+            return ObserverCache.INSTANCE.computeIfAbsent(observer,
+                    key -> new ObserverCache(key, concatenateInfo, image));
+        }
     }
 
     private static final class ObserverCache implements ImageObserver {
