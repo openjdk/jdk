@@ -25,7 +25,7 @@
  * @test
  * @bug 4749938 8087190
  * @summary Bug in the parsing IPv4 literal addresses
- * @run main/othervm -Djdk.net.hosts.file=TestToNumericFormatHosts textToNumericFormat
+ * @run main/othervm -Djdk.net.hosts.file=HostFileDoesNotExist textToNumericFormat
 */
 
 /**
@@ -69,6 +69,7 @@ public class textToNumericFormat {
 
         for (int i=0; i<goodAddrs.length; i++) {
             try {
+                // Value is an IP Address literal, Name Service will not be called
                 InetAddress ia = InetAddress.getByName(goodAddrs[i]);
             } catch (UnknownHostException e) {
                 // shouldn't have come here
@@ -79,6 +80,7 @@ public class textToNumericFormat {
 
         for (int i=0; i<badAddrs.length; i++) {
             try {
+                // Value is not an IP Address literal, Name Service will be called
                 InetAddress ia = InetAddress.getByName(badAddrs[i]);
                 // shouldn't have come here
                 badList.add(badAddrs[i]);
