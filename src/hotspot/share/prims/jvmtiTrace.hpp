@@ -31,7 +31,6 @@
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiUtil.hpp"
 #include "runtime/stackValueCollection.hpp"
-#include "runtime/vmOperations.hpp"
 
 ///////////////////////////////////////////////////////////////
 //

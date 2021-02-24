@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,20 +21,13 @@
  * questions.
  */
 
-package sun.net.www;
+package pkg1;
+
+import pkg2.UndocumentedParent;
 
 /**
- * An exception thrown by the MimeLauncher when it is unable to launch
- * an external content viewer.
- *
- * @author      Sunita Mani
+ * A visible class, extending invisible classes.
  */
+public class Child extends UndocumentedParent<Child> {
 
-public class ApplicationLaunchException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = -4782286141289536883L;
-
-    public ApplicationLaunchException(String reason) {
-        super(reason);
-    }
 }

@@ -2092,6 +2092,7 @@ private:
   void shlxq(Register dst, Register src1, Register src2);
   void shrxq(Register dst, Register src1, Register src2);
 
+  void bzhiq(Register dst, Register src1, Register src2);
 
   //====================VECTOR ARITHMETIC=====================================
   void evpmovd2m(KRegister kdst, XMMRegister src, int vector_len);

@@ -43,7 +43,6 @@ public:
 protected:
   // The declaration order of these const fields is important; see the
   // constructor before changing.
-  const bool      _scanned_concurrently;
   const MemRegion _whole_heap;       // the region covered by the card table
   size_t          _guard_index;      // index of very last element in the card
                                      // table; it is set to a guard value
@@ -113,7 +112,7 @@ protected:
   static const intptr_t clean_card_row = (intptr_t)(-1);
 
 public:
-  CardTable(MemRegion whole_heap, bool conc_scan);
+  CardTable(MemRegion whole_heap);
   virtual ~CardTable();
   virtual void initialize();
 
@@ -245,7 +244,6 @@ public:
   // But since the heap starts at some higher address, this points to somewhere
   // before the beginning of the actual _byte_map.
   CardValue* byte_map_base() const { return _byte_map_base; }
-  bool scanned_concurrently() const { return _scanned_concurrently; }
 
   virtual bool is_in_young(oop obj) const = 0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,7 +510,7 @@ public class ObjectStreamClass implements Serializable {
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Void run() {
                     if (isEnum) {
-                        suid = Long.valueOf(0);
+                        suid = 0L;
                         fields = NO_FIELDS;
                         return null;
                     }
@@ -555,7 +555,7 @@ public class ObjectStreamClass implements Serializable {
                 }
             });
         } else {
-            suid = Long.valueOf(0);
+            suid = 0L;
             fields = NO_FIELDS;
         }
 
@@ -673,7 +673,7 @@ public class ObjectStreamClass implements Serializable {
         this.superDesc = superDesc;
         isProxy = true;
         serializable = true;
-        suid = Long.valueOf(0);
+        suid = 0L;
         fields = NO_FIELDS;
         if (osc != null) {
             localDesc = osc;
@@ -698,7 +698,7 @@ public class ObjectStreamClass implements Serializable {
                       ObjectStreamClass superDesc)
         throws InvalidClassException
     {
-        long suid = Long.valueOf(model.getSerialVersionUID());
+        long suid = model.getSerialVersionUID();
         ObjectStreamClass osc = null;
         if (cl != null) {
             osc = lookup(cl, true);
@@ -796,7 +796,7 @@ public class ObjectStreamClass implements Serializable {
         throws IOException, ClassNotFoundException
     {
         name = in.readUTF();
-        suid = Long.valueOf(in.readLong());
+        suid = in.readLong();
         isProxy = false;
 
         byte flags = in.readByte();
@@ -1846,7 +1846,7 @@ public class ObjectStreamClass implements Serializable {
             int mask = Modifier.STATIC | Modifier.FINAL;
             if ((f.getModifiers() & mask) == mask) {
                 f.setAccessible(true);
-                return Long.valueOf(f.getLong(null));
+                return f.getLong(null);
             }
         } catch (Exception ex) {
         }
