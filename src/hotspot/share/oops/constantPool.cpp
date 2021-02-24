@@ -548,6 +548,11 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
     }
   }
 
+  // We need to recheck exceptions from racing thread and return the same.
+  if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
+    throw_resolution_error(this_cp, which, CHECK_NULL);
+  }
+
   // logging for class+resolve.
   if (log_is_enabled(Debug, class, resolve)){
     trace_class_resolution(this_cp, k);
