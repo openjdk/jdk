@@ -253,29 +253,35 @@ public interface Path
      * The extension is defined to be the portion of the {@code String}
      * representation of the file name after the last dot ('.').  If the first
      * character in the file name string is a dot it is ignored.  If the
-     * extension cannot be determined, then the empty string is returned.  This
-     * will occur if the path has zero elements ({@link #getFileName()} returns
-     * {@code null}), or the file name string does not contain a dot, only the
-     * first character is a dot, or the last character is a dot.
+     * extension cannot be determined, then the parameter {@code ext} is
+     * returned.  This will occur if the path has zero elements
+     * ({@link #getFileName()} returns {@code null}), or the file name string
+     * does not contain a dot, only the first character is a dot, or the last
+     * character is a dot.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
      * <pre>{@code
+     *     String ext; // default extension
      *     String name = getFileName().toString();
      *     int lastDot = name.lastIndexOf('.');
      *     lastDot > 0 && lastDot < name.length() - 1 ?
-     *         name.substring(lastDot + 1) : "";
+     *         name.substring(lastDot + 1) : ext;
      * }</pre>
      *
-     * @return  the file name extension of this path, or the empty string
+     * @param   ext
+     *          the value to return if the extension is indeterminate;
+     *          may be {@code null}
+     *
+     * @return  the file name extension of this path, or {@code ext}
      *          if the extension is indeterminate
      *
      * @since 17
      */
-    default String getExtension() {
+    default String getExtension(String ext) {
         Path fileName = getFileName();
         if (fileName == null) {
-            return "";
+            return ext;
         }
 
         String fileNameString = fileName.toString();
@@ -289,7 +295,8 @@ public interface Path
                 return fileNameString.substring(lastDotIndex + 1);
             }
         }
-        return "";
+
+        return ext;
     }
 
     /**
