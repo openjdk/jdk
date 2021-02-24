@@ -95,6 +95,8 @@ public final class UnixDomainSocketAddress extends SocketAddress {
      *
      * @return a {@link Ser}
      * representing the path name of this instance
+     *
+     * @throws ObjectStreamException if an error occurs
      */
     @java.io.Serial
     private Object writeReplace() throws ObjectStreamException {

@@ -162,6 +162,9 @@ public final class URLPermission extends Permission {
     private transient Authority authority;
 
     // serialized field
+    /**
+     * The actions string
+     */
     private String actions;
 
     /**
@@ -504,7 +507,11 @@ public final class URLPermission extends Permission {
     }
 
     /**
-     * restore the state of this object from stream
+     * Restores the state of this object from stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream s)
