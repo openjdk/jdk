@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,26 @@
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
-import static java.awt.image.ImageObserver.ALLBITS;
 import java.io.File;
+
 import javax.imageio.ImageIO;
+
 import sun.awt.OSInfo;
 import sun.awt.SunToolkit;
 import sun.awt.image.MultiResolutionToolkitImage;
+
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /**
  * @test
  * @key headful
  * @bug 8040291
+ * @requires os.family == "mac"
  * @author Alexander Scherbatiy
  * @summary [macosx] Http-Images are not fully loaded when using ImageIcon
  * @modules java.desktop/sun.awt
@@ -54,8 +59,6 @@ public class MultiResolutionToolkitImageTest {
     private static final String IMAGE_NAME_1X = "image.png";
     private static final String IMAGE_NAME_2X = "image@2x.png";
     private static final int WAIT_TIME = 400;
-    private static volatile boolean isImageLoaded = false;
-    private static volatile boolean isRVObserverCalled = false;
 
     public static void main(String[] args) throws Exception {
 
@@ -64,6 +67,33 @@ public class MultiResolutionToolkitImageTest {
         }
         generateImages();
         testToolkitMultiResolutionImageLoad();
+        testToolkitMultiResolutionImageLoadOnDraw();
+    }
+
+    static void testToolkitMultiResolutionImageLoadOnDraw() throws Exception {
+        File imageFile = new File(IMAGE_NAME_1X);
+        String fileName = imageFile.getAbsolutePath();
+        Image src = Toolkit.getDefaultToolkit().getImage(fileName);
+        System.out.println("src = " + src);
+        LoadImageObserver observer = new LoadImageObserver();
+        BufferedImage dst = new BufferedImage(200, 300, TYPE_INT_RGB);
+        Graphics2D g2d = dst.createGraphics();
+        g2d.drawImage(src, 0, 0, observer);
+        g2d.dispose();
+
+        final long time = WAIT_TIME + System.currentTimeMillis();
+        while ((!observer.isImageLoaded || !observer.isRVObserverCalled)
+                && System.currentTimeMillis() < time) {
+            Thread.sleep(50);
+        }
+
+        if(!observer.isImageLoaded){
+            throw new RuntimeException("Image is not loaded!");
+        }
+
+        if(!observer.isRVObserverCalled){
+            throw new RuntimeException("Resolution Variant observer is not called!");
+        }
     }
 
     static void testToolkitMultiResolutionImageLoad() throws Exception {
@@ -71,19 +101,20 @@ public class MultiResolutionToolkitImageTest {
         String fileName = imageFile.getAbsolutePath();
         Image image = Toolkit.getDefaultToolkit().getImage(fileName);
         SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.prepareImage(image, -1, -1, new LoadImageObserver());
+        LoadImageObserver observer = new LoadImageObserver();
+        toolkit.prepareImage(image, -1, -1, observer);
 
         final long time = WAIT_TIME + System.currentTimeMillis();
-        while ((!isImageLoaded || !isRVObserverCalled)
+        while ((!observer.isImageLoaded || !observer.isRVObserverCalled)
                 && System.currentTimeMillis() < time) {
             Thread.sleep(50);
         }
 
-        if(!isImageLoaded){
+        if(!observer.isImageLoaded){
             throw new RuntimeException("Image is not loaded!");
         }
 
-        if(!isRVObserverCalled){
+        if(!observer.isRVObserverCalled){
             throw new RuntimeException("Resolution Variant observer is not called!");
         }
     }
@@ -113,6 +144,9 @@ public class MultiResolutionToolkitImageTest {
     }
 
     static class LoadImageObserver implements ImageObserver {
+
+        volatile boolean isImageLoaded;
+        volatile boolean isRVObserverCalled;
 
         @Override
         public boolean imageUpdate(Image img, int infoflags, int x, int y,

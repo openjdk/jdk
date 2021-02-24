@@ -22,15 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.awt.image;
 
 import java.awt.Image;
 import java.awt.image.ImageObserver;
 import java.awt.image.MultiResolutionImage;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.Function;
-import sun.awt.SoftCache;
 
 public class MultiResolutionToolkitImage extends ToolkitImage implements MultiResolutionImage {
 
@@ -79,12 +82,6 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
     private static final int BITS_INFO = ImageObserver.SOMEBITS
             | ImageObserver.FRAMEBITS | ImageObserver.ALLBITS;
 
-    private static class ObserverCache {
-
-        @SuppressWarnings("deprecation")
-        static final SoftCache INSTANCE = new SoftCache();
-    }
-
     public static ImageObserver getResolutionVariantObserver(
             final Image image, final ImageObserver observer,
             final int imgWidth, final int imgHeight,
@@ -98,43 +95,54 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
             final int imgWidth, final int imgHeight,
             final int rvWidth, final int rvHeight, boolean concatenateInfo) {
 
-        if (observer == null) {
+//        if (observer == null) {
             return null;
+//        }
+//
+//        synchronized (ObserverCache.INSTANCE) {
+//            return ObserverCache.INSTANCE.computeIfAbsent(observer,
+//                    key -> new ObserverCache(key, concatenateInfo, image));
+//        }
+    }
+
+    private static final class ObserverCache implements ImageObserver {
+
+        private static final Map<ImageObserver, ImageObserver> INSTANCE =
+                new WeakHashMap<>();
+
+        private final boolean concat;
+        private final WeakReference<Image> imageRef;
+        private final WeakReference<ImageObserver> observerRef;
+
+        private ObserverCache(ImageObserver obs, boolean concat, Image img) {
+            this.concat = concat;
+            imageRef = new WeakReference<>(img);
+            observerRef = new WeakReference<>(obs);
         }
 
-        synchronized (ObserverCache.INSTANCE) {
-            ImageObserver o = (ImageObserver) ObserverCache.INSTANCE.get(observer);
+        @Override
+        public boolean imageUpdate(Image img, int infoflags,
+                                   int x, int y, int width, int height) {
+            ImageObserver observer = observerRef.get();
+            Image image = imageRef.get();
 
-            if (o == null) {
-
-                o = (Image resolutionVariant, int flags,
-                        int x, int y, int width, int height) -> {
-
-                            if ((flags & (ImageObserver.WIDTH | BITS_INFO)) != 0) {
-                                width = (width + 1) / 2;
-                            }
-
-                            if ((flags & (ImageObserver.HEIGHT | BITS_INFO)) != 0) {
-                                height = (height + 1) / 2;
-                            }
-
-                            if ((flags & BITS_INFO) != 0) {
-                                x /= 2;
-                                y /= 2;
-                            }
-
-                            if(concatenateInfo){
-                                flags &= ((ToolkitImage) image).
-                                        getImageRep().check(null);
-                            }
-
-                            return observer.imageUpdate(
-                                    image, flags, x, y, width, height);
-                        };
-
-                ObserverCache.INSTANCE.put(observer, o);
+            if ((infoflags & (ImageObserver.WIDTH | BITS_INFO)) != 0) {
+                width = (width + 1) / 2;
             }
-            return o;
+
+            if ((infoflags & (ImageObserver.HEIGHT | BITS_INFO)) != 0) {
+                height = (height + 1) / 2;
+            }
+
+            if ((infoflags & BITS_INFO) != 0) {
+                x /= 2;
+                y /= 2;
+            }
+
+            if (concat) {
+                infoflags &= ((ToolkitImage) image).getImageRep().check(null);
+            }
+            return observer.imageUpdate(image, infoflags, x, y, width, height);
         }
     }
 }
