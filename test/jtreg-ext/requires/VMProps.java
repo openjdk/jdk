@@ -23,6 +23,7 @@
 package requires;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,6 +116,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
         map.put("docker.support", this::dockerSupport);
+        map.put("container.engine", this::containerEngine);
         map.put("vm.musl", this::isMusl);
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
@@ -499,7 +501,20 @@ public class VMProps implements Callable<Map<String, String>> {
         return (p.exitValue() == 0);
     }
 
-    /**
+   /**
+     * Container Engine command
+     *
+     * @return returns the name of container engine executable
+     */
+    protected String containerEngine() {
+        // The ENGINE_COMMAND could be a path to the executable, or just a name.
+        String[] parts = Container.ENGINE_COMMAND
+            .toLowerCase()
+            .split(File.pathSeparator);
+        return parts[parts.length - 1];
+    }
+
+   /**
      * Checks musl libc.
      *
      * @return true if musl libc is used.
