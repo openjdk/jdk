@@ -43,6 +43,7 @@ public final class ImageObserverLeak {
 
         while (!ref.refersTo(null)) {
             Thread.sleep(500);
+            // Cannot generate OOM here, it will clear the SoftRefs as well
             System.gc();
         }
     }
