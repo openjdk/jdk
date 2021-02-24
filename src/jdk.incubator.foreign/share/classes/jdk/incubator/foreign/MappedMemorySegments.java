@@ -150,7 +150,7 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
-     * @throws UncheckedIOException if the underlying native operation fails
+     * @throws UncheckedIOException if there is an I/O error writing the contents of the segment to the associated storage device
      */
     public static void force(MemorySegment segment) {
         toMappedSegment(segment).force();

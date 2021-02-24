@@ -223,7 +223,8 @@ public abstract class MappedByteBuffer
      * implementation-specific mapping modes. </p>
      *
      * @throws UncheckedIOException
-     *         If the underlying operation fails
+     *         If an I/O error occurs writing the buffer's content to the
+     *         storage device containing the mapped file
      *
      * @return  This buffer
      */
@@ -275,6 +276,10 @@ public abstract class MappedByteBuffer
      * @throws IndexOutOfBoundsException
      *         if the preconditions on the index and length do not
      *         hold.
+     *
+     * @throws UncheckedIOException
+     *         If an I/O error occurs writing the buffer's content to the
+     *         storage device containing the mapped file
      *
      * @return  This buffer
      *
