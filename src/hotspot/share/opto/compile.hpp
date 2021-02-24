@@ -1192,9 +1192,10 @@ class Compile : public Phase {
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif
 
-  static bool
-  push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
-                BasicType bt);
+  static bool push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
+                            BasicType bt);
+
+  static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP
