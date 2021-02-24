@@ -35,6 +35,7 @@ public:
   virtual const char* name()     { return "Passive"; }
   virtual bool is_diagnostic()   { return true; }
   virtual bool is_experimental() { return false; }
+  virtual bool is_concurrent_mode() const { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP
