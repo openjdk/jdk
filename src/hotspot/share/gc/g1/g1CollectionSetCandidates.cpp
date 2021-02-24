@@ -42,7 +42,7 @@ void G1CollectionSetCandidates::prune(uint keep_min_regions, size_t prune_total_
   while (regions_left > keep_min_regions) {
     uint cur_idx = regions_left - 1;
     // Do not prune more than prune_total_bytes.
-    if ((at(cur_idx)->reclaimable_bytes() + pruned_bytes) <= prune_total_bytes) {
+    if ((at(cur_idx)->reclaimable_bytes() + pruned_bytes) > prune_total_bytes) {
       break;
     }
 
