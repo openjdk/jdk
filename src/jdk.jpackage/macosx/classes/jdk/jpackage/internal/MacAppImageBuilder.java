@@ -72,7 +72,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.MacResources");
 
-    private static final String TEMPLATE_BUNDLE_ICON = "java.icns";
+    private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
     private static final String OS_TYPE_CODE = "APPL";
     private static final String TEMPLATE_INFO_PLIST_LITE =
             "Info-lite.plist.template";

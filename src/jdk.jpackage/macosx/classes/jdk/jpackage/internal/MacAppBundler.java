@@ -42,7 +42,7 @@ public class MacAppBundler extends AppImageBundler {
         setParamsValidator(MacAppBundler::doValidate);
     }
 
-    private static final String TEMPLATE_BUNDLE_ICON = "java.icns";
+    private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
 
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME =
             new StandardBundlerParam<>(
