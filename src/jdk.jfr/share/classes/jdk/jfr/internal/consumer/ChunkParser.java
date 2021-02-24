@@ -334,7 +334,7 @@ public final class ChunkParser {
                 if (lookup == null) {
                     if (type == null) {
                         throw new IOException(
-                                "Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + lastCP + size + "]");
+                                "Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + (lastCP + size) + "]");
                     }
                     if (type.getName() != CHUNKHEADER) {
                         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found constant pool(" + id + ") that is never used");
@@ -369,7 +369,7 @@ public final class ChunkParser {
                         }
                     }
                 } catch (Exception e) {
-                    throw new IOException("Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + lastCP + size + "]",
+                    throw new IOException("Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + (lastCP + size) + "]",
                             e);
                 }
             }
