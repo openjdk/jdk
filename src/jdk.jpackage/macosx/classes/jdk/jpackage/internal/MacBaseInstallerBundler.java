@@ -154,8 +154,8 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
     public static String findKey(String keyPrefix, String teamName, String keychainName) {
 
-        boolean useAsIs = teamName.startsWith(keyPrefix) 
-                || teamName.startsWith("Developer ID")
+        boolean useAsIs = teamName.startsWith(keyPrefix)
+                || teamName.startsWith("Developer ID)
                 || teamName.startsWith("3rd Party Mac");
 
         String key = (useAsIs) ? teamName : (keyPrefix + teamName);

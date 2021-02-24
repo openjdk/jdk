@@ -115,17 +115,9 @@ public class Log {
                 verbose(new String(sb));
                 if (output != null && !output.isEmpty()) {
                     sb = new StringBuffer("Output:");
-                    String last = null;
-                    boolean skipped = false;
                     for (String s : output) {
-                        if (s.equals(last)) {
-                            skipped = true;
-                        } else {
-                            sb.append("\n    " + s);
-                        }
-                        last = s;
+                        sb.append("\n    " + s);
                     }
-                    if (skipped) sb.append(" ...  ");
                     verbose(new String(sb));
                 }
                 verbose("Returned: " + returnCode + "\n");
