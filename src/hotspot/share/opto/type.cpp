@@ -4037,23 +4037,23 @@ int TypeInstPtr::hash(void) const {
 //------------------------------dump2------------------------------------------
 // Dump oop Type
 #ifndef PRODUCT
-void TypeInstPtr::dump2( Dict &d, uint depth, outputStream* st ) const {
+void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
   // Print the name of the klass.
   klass()->print_name_on(st);
 
   switch( _ptr ) {
   case Constant:
     if (WizardMode || Verbose) {
-      st->print(" ");
+      ResourceMark rm;
       stringStream ss;
-      const_oop()->print_oop(&ss);
 
-      {
-        ResourceMark rm;
-        char* buf = ss.as_string(false);
-        StringUtils::replace_no_expand(buf, "\n", "");
-        st->print_raw(buf);
-      }
+      st->print(" ");
+      const_oop()->print_oop(&ss);
+      // suppress new-lines('\n') in ss emitted by const_oop->print_oop()
+      // so each node is one-liner for -XX:+Verbose && -XX:+PrintIdeal
+      char* buf = ss.as_string(false);
+      StringUtils::replace_no_expand(buf, "\n", "");
+      st->print_raw(buf);
     }
   case BotPTR:
     if (!WizardMode && !Verbose) {
