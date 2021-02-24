@@ -36,19 +36,20 @@ void G1CollectionSetCandidates::remove(uint num_regions) {
 }
 
 void G1CollectionSetCandidates::prune(uint keep_min_regions, size_t prune_total_bytes) {
-  uint i = _num_regions;
+  uint regions_left = _num_regions;
   size_t reclaimed_bytes = 0;
-  while (i > keep_min_regions && (at(i - 1)->reclaimable_bytes() + reclaimed_bytes) <= prune_total_bytes) {
-    uint cur_idx = i - 1;
+  while (regions_left > keep_min_regions &&
+         (at(regions_left - 1)->reclaimable_bytes() + reclaimed_bytes) <= prune_total_bytes) {
+    uint cur_idx = regions_left - 1;
 
     reclaimed_bytes += at(cur_idx)->reclaimable_bytes();
     at(cur_idx)->rem_set()->clear(true /* only_cardset */);
     // Clear HeapRegion reference to make sure it is not going to be used.
     _regions[cur_idx] = NULL;
-    i--;
+    regions_left--;
   }
   _remaining_reclaimable_bytes -= reclaimed_bytes;
-  _num_regions -= _num_regions - i;
+  _num_regions = regions_left;
 }
 
 void G1CollectionSetCandidates::iterate(HeapRegionClosure* cl) {
