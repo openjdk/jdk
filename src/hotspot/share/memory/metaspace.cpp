@@ -625,9 +625,6 @@ void Metaspace::ergo_initialize() {
   // We still adjust CompressedClassSpaceSize to reasonable limits, mainly to
   //  save on reserved space, and to make ergnonomics less confusing.
 
-  // (aligned just for cleanliness:)
-  MaxMetaspaceSize = MAX2(align_down(MaxMetaspaceSize, commit_alignment()), commit_alignment());
-
   if (UseCompressedClassPointers) {
     // Let CCS size not be larger than 80% of MaxMetaspaceSize. Note that is
     // grossly over-dimensioned for most usage scenarios; typical ratio of
