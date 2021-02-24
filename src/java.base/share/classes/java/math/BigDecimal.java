@@ -30,6 +30,7 @@
 package java.math;
 
 import static java.math.BigInteger.LONG_MASK;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -4224,7 +4225,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
+        throws IOException, ClassNotFoundException {
         // Read in all fields
         s.defaultReadObject();
         // validate possibly bad fields
@@ -4244,7 +4245,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     */
     @java.io.Serial
    private void writeObject(java.io.ObjectOutputStream s)
-       throws java.io.IOException {
+       throws IOException {
        // Must inflate to maintain compatible serial form.
        if (this.intVal == null)
            UnsafeHolder.setIntValVolatile(this, BigInteger.valueOf(this.intCompact));

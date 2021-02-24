@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/stubRoutines.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"

@@ -89,10 +89,10 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             se.printStackTrace(System.out);
         } catch (InterruptedIOException ioe) {
             // must have been interrupted, no harm
-        } catch (SSLException ssle) {
+        } catch (SSLException | SocketException se) {
             // The client side may have closed the socket.
             System.out.println("Server SSLException:");
-            ssle.printStackTrace(System.out);
+            se.printStackTrace(System.out);
         } catch (Exception e) {
             System.out.println("Server exception:");
             e.printStackTrace(System.out);

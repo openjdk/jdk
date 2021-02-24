@@ -712,6 +712,14 @@ void ClassLoader::add_to_exploded_build_list(Symbol* module_sym, TRAPS) {
   }
 }
 
+jzfile* ClassLoader::open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread) {
+  // enable call to C land
+  ThreadToNativeFromVM ttn(thread);
+  HandleMark hm(thread);
+  load_zip_library_if_needed();
+  return (*ZipOpen)(canonical_path, error_msg);
+}
+
 ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const struct stat* st,
                                                      bool throw_exception,
                                                      bool is_boot_append,
@@ -723,8 +731,8 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
     ResourceMark rm(thread);
     // Regular file, should be a zip or jimage file
     // Canonicalized filename
-    char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
-    if (!get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
+    const char* canonical_path = get_canonical_path(path, thread);
+    if (canonical_path == NULL) {
       // This matches the classic VM
       if (throw_exception) {
         THROW_MSG_(vmSymbols::java_io_IOException(), "Bad pathname", NULL);
@@ -738,14 +746,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
       new_entry = new ClassPathImageEntry(jimage, canonical_path);
     } else {
       char* error_msg = NULL;
-      jzfile* zip;
-      {
-        // enable call to C land
-        ThreadToNativeFromVM ttn(thread);
-        HandleMark hm(thread);
-        load_zip_library_if_needed();
-        zip = (*ZipOpen)(canonical_path, &error_msg);
-      }
+      jzfile* zip = open_zip_file(canonical_path, &error_msg, thread);
       if (zip != NULL && error_msg == NULL) {
         new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
       } else {
@@ -784,18 +785,12 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bo
   struct stat st;
   if (os::stat(path, &st) == 0) {
     if ((st.st_mode & S_IFMT) == S_IFREG) {
-      char canonical_path[JVM_MAXPATHLEN];
-      if (get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
+      JavaThread* thread = JavaThread::current();
+      ResourceMark rm(thread);
+      const char* canonical_path = get_canonical_path(path, thread);
+      if (canonical_path != NULL) {
         char* error_msg = NULL;
-        jzfile* zip;
-        {
-          // enable call to C land
-          JavaThread* thread = JavaThread::current();
-          ThreadToNativeFromVM ttn(thread);
-          HandleMark hm(thread);
-          load_zip_library_if_needed();
-          zip = (*ZipOpen)(canonical_path, &error_msg);
-        }
+        jzfile* zip = open_zip_file(canonical_path, &error_msg, thread);
         if (zip != NULL && error_msg == NULL) {
           // create using canonical path
           return new ClassPathZipEntry(zip, canonical_path, is_boot_append, false);
@@ -1334,25 +1329,22 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
   PackageEntry* pkg_entry = ik->package();
 
   if (FileMapInfo::get_number_of_shared_paths() > 0) {
-    char* canonical_path_table_entry = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
-
-    // save the path from the file: protocol or the module name from the jrt: protocol
-    // if no protocol prefix is found, path is the same as stream->source()
+    // Save the path from the file: protocol or the module name from the jrt: protocol
+    // if no protocol prefix is found, path is the same as stream->source(). This path
+    // must be valid since the class has been successfully parsed.
     char* path = skip_uri_protocol(src);
-    char* canonical_class_src_path = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
-    bool success = get_canonical_path(path, canonical_class_src_path, JVM_MAXPATHLEN);
-    // The path is from the ClassFileStream. Since a ClassFileStream has been created successfully in functions
-    // such as ClassLoader::load_class(), its source path must be valid.
-    assert(success, "must be valid path");
+    assert(path != NULL, "sanity");
     for (int i = 0; i < FileMapInfo::get_number_of_shared_paths(); i++) {
       SharedClassPathEntry* ent = FileMapInfo::shared_path(i);
-      success = get_canonical_path(ent->name(), canonical_path_table_entry, JVM_MAXPATHLEN);
       // A shared path has been validated during its creation in ClassLoader::create_class_path_entry(),
       // it must be valid here.
-      assert(success, "must be valid path");
+      assert(ent->name() != NULL, "sanity");
       // If the path (from the class stream source) is the same as the shared
       // class or module path, then we have a match.
-      if (strcmp(canonical_path_table_entry, canonical_class_src_path) == 0) {
+      // src may come from the App/Platform class loaders, which would canonicalize
+      // the file name. We cannot use strcmp to check for equality against ent->name().
+      // We must use os::same_files (which is faster than canonicalizing ent->name()).
+      if (os::same_files(ent->name(), path)) {
         // NULL pkg_entry and pkg_entry in an unnamed module implies the class
         // is from the -cp or boot loader append path which consists of -Xbootclasspath/a
         // and jvmti appended entries.
@@ -1596,18 +1588,18 @@ void ClassLoader::classLoader_init2(TRAPS) {
   }
 }
 
-bool ClassLoader::get_canonical_path(const char* orig, char* out, int len) {
-  assert(orig != NULL && out != NULL && len > 0, "bad arguments");
-  JavaThread* THREAD = JavaThread::current();
-  ResourceMark rm(THREAD);
-
+char* ClassLoader::get_canonical_path(const char* orig, Thread* thread) {
+  assert(orig != NULL, "bad arguments");
+  // caller needs to allocate ResourceMark for the following output buffer
+  char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
+  ResourceMark rm(thread);
   // os::native_path writes into orig_copy
-  char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(orig)+1);
+  char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, strlen(orig)+1);
   strcpy(orig_copy, orig);
-  if ((CanonicalizeEntry)(os::native_path(orig_copy), out, len) < 0) {
-    return false;
+  if ((CanonicalizeEntry)(os::native_path(orig_copy), canonical_path, JVM_MAXPATHLEN) < 0) {
+    return NULL;
   }
-  return true;
+  return canonical_path;
 }
 
 void ClassLoader::create_javabase() {
