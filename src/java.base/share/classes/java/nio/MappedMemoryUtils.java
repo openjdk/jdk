@@ -28,6 +28,8 @@ package java.nio;
 import jdk.internal.misc.Unsafe;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 
 /* package */ class MappedMemoryUtils {
 
@@ -94,7 +96,12 @@ import java.io.FileDescriptor;
         } else {
             // force writeback via file descriptor
             long offset = mappingOffset(address, index);
-            force0(fd, mappingAddress(address, offset, index), mappingLength(offset, length));
+            try {
+                force0(fd, mappingAddress(address, offset, index),
+                    mappingLength(offset, length));
+            } catch (IOException cause) {
+                throw new UncheckedIOException(cause);
+            }
         }
     }
 

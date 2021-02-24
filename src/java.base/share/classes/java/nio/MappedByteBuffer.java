@@ -26,7 +26,6 @@
 package java.nio;
 
 import java.io.FileDescriptor;
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.util.Objects;
@@ -223,6 +222,9 @@ public abstract class MappedByteBuffer
      * mapping modes. This method may or may not have an effect for
      * implementation-specific mapping modes. </p>
      *
+     * @throws UncheckedIOException 
+     *         If the underlying operation fails
+     *
      * @return  This buffer
      */
     public final MappedByteBuffer force() {
@@ -261,8 +263,6 @@ public abstract class MappedByteBuffer
      * mapping modes. This method may or may not have an effect for
      * implementation-specific mapping modes. </p>
      *
-     * <p> If the force operation fails, then an unspecified error is thrown.
-     *
      * @param  index
      *         The index of the first byte in the buffer region that is
      *         to be written back to storage; must be non-negative
@@ -288,15 +288,7 @@ public abstract class MappedByteBuffer
         if ((address != 0) && (limit != 0)) {
             // check inputs
             Objects.checkFromIndexSize(index, length, limit);
-            try {
-                SCOPED_MEMORY_ACCESS.force(scope(), fd, address, isSync, index, length);
-            } catch (Exception unspecifiedException) {
-                IOException cause =
-                    unspecifiedException instanceof IOException ?
-                    (IOException)unspecifiedException :
-                    new IOException(unspecifiedException);
-                throw new UncheckedIOException(cause);
-            }
+            SCOPED_MEMORY_ACCESS.force(scope(), fd, address, isSync, index, length);
         }
         return this;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.incubator.foreign;
 
 import jdk.internal.foreign.MappedMemorySegmentImpl;
 
+import java.io.UncheckedIOException;
 import java.nio.MappedByteBuffer;
 import java.util.Objects;
 
@@ -149,6 +150,7 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
+     * @throws UncheckedIOException if the underlying native operation fails
      */
     public static void force(MemorySegment segment) {
         toMappedSegment(segment).force();
