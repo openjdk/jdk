@@ -27,8 +27,6 @@
 #
 # javadoc
 
-jdk/javadoc/doclet/testGeneratedClasses/TestGeneratedClasses.java 8262260 windows-all
-
 ###########################################################################
 #
 # jshell
