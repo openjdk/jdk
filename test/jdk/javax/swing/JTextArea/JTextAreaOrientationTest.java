@@ -29,8 +29,8 @@
  * @run main JTextAreaOrientationTest
  */
 import java.awt.ComponentOrientation;
+import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.Robot;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
@@ -39,6 +39,8 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 public class JTextAreaOrientationTest  {
 
@@ -103,14 +105,15 @@ public class JTextAreaOrientationTest  {
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
-        Robot robot = new Robot();
-        robot.waitForIdle();
-        robot.delay(1000);
+        Thread.sleep(1000);
         SwingUtilities.invokeAndWait(() -> {
             bounds = frame.getBounds();
         });
-        BufferedImage img = robot.createScreenCapture(bounds);
-        robot.delay(1000);
+        BufferedImage img = new BufferedImage(bounds.width, bounds.height, TYPE_INT_RGB);
+        Graphics g = img.getGraphics();
+        frame.paint(g);
+        g.dispose();
+        Thread.sleep(1000);
         SwingUtilities.invokeAndWait(() -> frame.dispose());
         return img;
     }
