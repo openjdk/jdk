@@ -2660,8 +2660,8 @@ public:
   void umov(Register Rd, FloatRegister Vn, SIMD_RegVariant T, int idx) {
     starti;
     assert(T != Q, "invalid register variant");
-    f(0, 31), f(T==D ? 1:0, 30), f(0b001110000, 29, 21);
-    f(((idx<<1)|1)<<(int)T, 20, 16), f(0b001111, 15, 10);
+    f(0, 31), f(T == D ? 1 : 0, 30), f(0b001110000, 29, 21);
+    f(((idx << 1) | 1) << (int)T, 20, 16), f(0b001111, 15, 10);
     rf(Vn, 5), rf(Rd, 0);
   }
 
@@ -2669,7 +2669,7 @@ public:
     starti;
     assert(T < D, "invalid register variant");
     f(0, 31), f(1, 30), f(0b001110000, 29, 21);
-    f(((idx<<1)|1)<<(int)T, 20, 16), f(0b001011, 15, 10);
+    f(((idx << 1) | 1) << (int)T, 20, 16), f(0b001011, 15, 10);
     rf(Vn, 5), rf(Rd, 0);
   }
 
