@@ -518,6 +518,10 @@ public class TrueTypeFont extends FileFont {
                     && getDirectoryEntry(hheaTag) == null) {
                 throw new FontFormatException("missing hhea table");
             }
+            ByteBuffer maxpTable = getTableBuffer(maxpTag);
+            if (maxpTable.getChar(4) == 0) {
+                throw new FontFormatException("zero glyphs");
+            }
             initNames();
         } catch (Exception e) {
             if (FontUtilities.isLogging()) {
