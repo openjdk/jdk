@@ -903,15 +903,13 @@ char java_runtime_vendor_version[128] = "";
 char java_runtime_vendor_vm_bug_url[128] = "";
 
 // extract the JRE version string from java.lang.VersionProps.java_version
-static const char* get_java_version(TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
-                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+static const char* get_java_version(InstanceKlass* ik) {
   fieldDescriptor fd;
-  bool found = k != NULL &&
-               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_version_name(),
-                                                        vmSymbols::string_signature(), &fd);
+  bool found = ik != NULL &&
+               ik->find_local_field(vmSymbols::java_version_name(),
+                                    vmSymbols::string_signature(), &fd);
   if (found) {
-    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
     if (name_oop == NULL) {
       return NULL;
     }
@@ -925,15 +923,13 @@ static const char* get_java_version(TRAPS) {
 }
 
 // extract the JRE name from java.lang.VersionProps.java_runtime_name
-static const char* get_java_runtime_name(TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
-                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+static const char* get_java_runtime_name(InstanceKlass* ik) {
   fieldDescriptor fd;
-  bool found = k != NULL &&
-               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_runtime_name_name(),
-                                                        vmSymbols::string_signature(), &fd);
+  bool found = ik != NULL &&
+               ik->find_local_field(vmSymbols::java_runtime_name_name(),
+                                    vmSymbols::string_signature(), &fd);
   if (found) {
-    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
     if (name_oop == NULL) {
       return NULL;
     }
@@ -947,15 +943,13 @@ static const char* get_java_runtime_name(TRAPS) {
 }
 
 // extract the JRE version from java.lang.VersionProps.java_runtime_version
-static const char* get_java_runtime_version(TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
-                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+static const char* get_java_runtime_version(InstanceKlass* ik) {
   fieldDescriptor fd;
-  bool found = k != NULL &&
-               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_runtime_version_name(),
-                                                        vmSymbols::string_signature(), &fd);
+  bool found = ik != NULL &&
+               ik->find_local_field(vmSymbols::java_runtime_version_name(),
+                                    vmSymbols::string_signature(), &fd);
   if (found) {
-    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
     if (name_oop == NULL) {
       return NULL;
     }
@@ -969,15 +963,13 @@ static const char* get_java_runtime_version(TRAPS) {
 }
 
 // extract the JRE vendor version from java.lang.VersionProps.VENDOR_VERSION
-static const char* get_java_runtime_vendor_version(TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
-                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+static const char* get_java_runtime_vendor_version(InstanceKlass* ik) {
   fieldDescriptor fd;
-  bool found = k != NULL &&
-               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_runtime_vendor_version_name(),
-                                                        vmSymbols::string_signature(), &fd);
+  bool found = ik != NULL &&
+               ik->find_local_field(vmSymbols::java_runtime_vendor_version_name(),
+                                    vmSymbols::string_signature(), &fd);
   if (found) {
-    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
     if (name_oop == NULL) {
       return NULL;
     }
@@ -991,15 +983,13 @@ static const char* get_java_runtime_vendor_version(TRAPS) {
 }
 
 // extract the JRE vendor VM bug URL from java.lang.VersionProps.VENDOR_URL_VM_BUG
-static const char* get_java_runtime_vendor_vm_bug_url(TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
-                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+static const char* get_java_runtime_vendor_vm_bug_url(InstanceKlass* ik) {
   fieldDescriptor fd;
-  bool found = k != NULL &&
-               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_runtime_vendor_vm_bug_url_name(),
-                                                        vmSymbols::string_signature(), &fd);
+  bool found = ik != NULL &&
+               ik->find_local_field(vmSymbols::java_runtime_vendor_vm_bug_url_name(),
+                                    vmSymbols::string_signature(), &fd);
   if (found) {
-    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
     if (name_oop == NULL) {
       return NULL;
     }
@@ -3022,11 +3012,13 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   call_initPhase1(CHECK);
 
   // get the Java runtime name, version, and vendor info after java.lang.System is initialized
-  JDK_Version::set_java_version(get_java_version(THREAD));
-  JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
-  JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
-  JDK_Version::set_runtime_vendor_version(get_java_runtime_vendor_version(THREAD));
-  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_runtime_vendor_vm_bug_url(THREAD));
+  InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
+                                                            Handle(), Handle());
+  JDK_Version::set_java_version(get_java_version(ik));
+  JDK_Version::set_runtime_name(get_java_runtime_name(ik));
+  JDK_Version::set_runtime_version(get_java_runtime_version(ik));
+  JDK_Version::set_runtime_vendor_version(get_java_runtime_vendor_version(ik));
+  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_runtime_vendor_vm_bug_url(ik));
 
   // an instance of OutOfMemory exception has been allocated earlier
   initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK);
