@@ -314,6 +314,7 @@ class LambdaForm {
         GET_DOUBLE_VOLATILE("getDoubleVolatile"),
         PUT_DOUBLE_VOLATILE("putDoubleVolatile"),
         TRY_FINALLY("tryFinally"),
+        TABLE_SWITCH("tableSwitch"),
         COLLECT("collect"),
         COLLECTOR("collector"),
         CONVERT("convert"),
@@ -708,6 +709,32 @@ class LambdaForm {
     }
 
     /**
+     * Check if i-th name is a start of the tableSwitch idiom.
+     */
+    boolean isTableSwitch(int pos) {
+        // tableSwitch idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)     // args
+        //   t_{n+1}:L=MethodHandleImpl.tableSwitch(*, *, *, t_{n})
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        if (pos + 2 >= names.length)  return false;
+
+        final int POS_COLLECT_ARGS  = pos;
+        final int POS_TABLE_SWITCH  = pos + 1;
+        final int POS_UNBOX_RESULT  = pos + 2;
+
+        Name collectArgs  = names[POS_COLLECT_ARGS];
+        Name tableSwitch  = names[POS_TABLE_SWITCH];
+        Name unboxResult  = names[POS_UNBOX_RESULT];
+        return tableSwitch.refersTo(MethodHandleImpl.class, "tableSwitch") &&
+                collectArgs.isInvokeBasic() &&
+                unboxResult.isInvokeBasic() &&
+                tableSwitch.lastUseIndex(collectArgs)  == 3 &&    // t_{n+1}:L=MethodHandleImpl.<invoker>(*, *, *, t_{n});
+                lastUseIndex(collectArgs)  == POS_TABLE_SWITCH && // t_{n} is local: used only in t_{n+1}
+                unboxResult.lastUseIndex(tableSwitch) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+                lastUseIndex(tableSwitch) == POS_UNBOX_RESULT;    // t_{n+1} is local: used only in t_{n+2}
+    }
+
+    /**
      * Check if i-th name is a start of the loop idiom.
      */
     boolean isLoop(int pos) {
@@ -1068,20 +1095,28 @@ class LambdaForm {
         private @Stable MethodHandle resolvedHandle;
         @Stable MethodHandle invoker;
         private final MethodHandleImpl.Intrinsic intrinsicName;
+        private final Object intrinsicData;
 
         NamedFunction(MethodHandle resolvedHandle) {
-            this(resolvedHandle.internalMemberName(), resolvedHandle, MethodHandleImpl.Intrinsic.NONE);
+            this(resolvedHandle.internalMemberName(), resolvedHandle, MethodHandleImpl.Intrinsic.NONE, null);
         }
         NamedFunction(MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic) {
-            this(resolvedHandle.internalMemberName(), resolvedHandle, intrinsic);
+            this(resolvedHandle.internalMemberName(), resolvedHandle, intrinsic, null);
+        }
+        NamedFunction(MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic, Object intrinsicData) {
+            this(resolvedHandle.internalMemberName(), resolvedHandle, intrinsic, intrinsicData);
         }
         NamedFunction(MemberName member, MethodHandle resolvedHandle) {
-            this(member, resolvedHandle, MethodHandleImpl.Intrinsic.NONE);
+            this(member, resolvedHandle, MethodHandleImpl.Intrinsic.NONE, null);
         }
         NamedFunction(MemberName member, MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic) {
+            this(member, resolvedHandle, intrinsic, null);
+        }
+        NamedFunction(MemberName member, MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic, Object intrinsicData) {
             this.member = member;
             this.resolvedHandle = resolvedHandle;
             this.intrinsicName = intrinsic;
+            this.intrinsicData = intrinsicData;
             assert(resolvedHandle == null ||
                    resolvedHandle.intrinsicName() == MethodHandleImpl.Intrinsic.NONE ||
                    resolvedHandle.intrinsicName() == intrinsic) : resolvedHandle.intrinsicName() + " != " + intrinsic;
@@ -1098,6 +1133,7 @@ class LambdaForm {
                 this.member = Invokers.invokeBasicMethod(basicInvokerType);
             }
             this.intrinsicName = MethodHandleImpl.Intrinsic.NONE;
+            this.intrinsicData = null;
             assert(isInvokeBasic(member));
         }
 
@@ -1251,6 +1287,10 @@ class LambdaForm {
 
         public MethodHandleImpl.Intrinsic intrinsicName() {
             return intrinsicName;
+        }
+
+        public Object intrinsicData() {
+            return intrinsicData;
         }
     }
 
