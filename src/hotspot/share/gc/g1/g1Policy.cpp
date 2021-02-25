@@ -1283,13 +1283,13 @@ bool G1Policy::next_gc_should_be_mixed(const char* true_action_str,
   return true;
 }
 
-void G1Policy::prune_collection_set(G1CollectionSetCandidates* candidates) {
+void G1Policy::prune_collection_set(G1CollectionSetCandidates* candidates, HeapRegionClosure* cl) {
   uint num_candidates_before = candidates->num_remaining();
   size_t reclaimable_bytes_before = candidates->remaining_reclaimable_bytes();
 
   size_t accepted_waste = G1HeapWastePercent * _g1h->capacity() / 100;
 
-  candidates->prune(calc_min_old_cset_length(candidates), accepted_waste);
+  candidates->prune(calc_min_old_cset_length(candidates), accepted_waste, cl);
 
   log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (accepted " SIZE_FORMAT ")",
                             num_candidates_before - candidates->num_remaining(),

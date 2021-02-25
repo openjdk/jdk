@@ -76,8 +76,8 @@ public:
 
   // Remove collection set candidates which would reclaim at most prune_total_bytes
   // bytes and keeping at least keep_min_regions. Removes the least efficient
-  // collection set candidate regions first.
-  void prune(uint keep_min_regions, size_t prune_total_bytes);
+  // collection set candidate regions first. Applies cl on the pruned regions.
+  void prune(uint keep_min_regions, size_t prune_total_bytes, HeapRegionClosure* cl);
 
   // Remove num_regions from the front of the collection set candidate list.
   void remove(uint num_regions);

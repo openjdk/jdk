@@ -264,9 +264,18 @@ G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkGang* workers, uint
   G1BuildCandidateRegionsTask cl(max_num_regions, chunk_size, num_workers);
   workers->run_task(&cl, num_workers);
 
+  class PruneRegionClosure : public HeapRegionClosure {
+  public:
+    virtual bool do_heap_region(HeapRegion* r) {
+      r->rem_set()->clear(true /* only_cardset */); // Simply drop the remembered set cards.
+      return false;
+    }
+  } prune_cl;
+
   G1CollectionSetCandidates* result = cl.get_sorted_candidates();
+
   G1Policy* p = G1CollectedHeap::heap()->policy();
-  p->prune_collection_set(result);
+  p->prune_collection_set(result, &prune_cl);
   result->verify();
   return result;
 }

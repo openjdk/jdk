@@ -349,8 +349,9 @@ public:
 
   // Prune collection set candidates according to G1HeapWastePercent heuristics
   // during selection. Guarantee some forward progress by always keeping a minimum
-  // of old collection set candidates for a single GC.
-  void prune_collection_set(G1CollectionSetCandidates* candidates);
+  // of old collection set candidates for a single GC. Applies cl onto the pruned
+  // regions.
+  void prune_collection_set(G1CollectionSetCandidates* candidates, HeapRegionClosure* cl);
   // Calculate and return the number of initial and optional old gen regions from
   // the given collection set candidates and the remaining time.
   void calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
