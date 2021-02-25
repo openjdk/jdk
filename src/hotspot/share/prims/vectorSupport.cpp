@@ -365,7 +365,7 @@ JVM_ENTRY(jint, VectorSupport_GetMaxLaneCount(JNIEnv *env, jclass vsclazz, jobje
   oop mirror = JNIHandles::resolve_non_null(clazz);
   if (java_lang_Class::is_primitive(mirror)) {
     BasicType bt = java_lang_Class::primitive_type(mirror);
-    int min_lane_count = 64 / type2aelembytes(bt);
+    int min_lane_count = 8 / type2aelembytes(bt);
     // The return value should not be less than min_lane_count since the minimal vector size
     // supported by the Vector API is 64-bit (see VectorShape.preferredShape() for more details).
     // This is fine because the vector size is unlikely to be less than 64-bit on modern hardware.
