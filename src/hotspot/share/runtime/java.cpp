@@ -96,8 +96,6 @@
 GrowableArray<Method*>* collected_profiled_methods;
 
 int compare_methods(Method** a, Method** b) {
-  // invocation_count() may have overflowed already. Interpret it's result as
-  // unsigned int to shift the limit of meaningless results by a factor of 2.
   return (int32_t)(((uint32_t)(*b)->invocation_count() + (*b)->compiled_invocation_count())
                  - ((uint32_t)(*a)->invocation_count() + (*a)->compiled_invocation_count()));
 }
