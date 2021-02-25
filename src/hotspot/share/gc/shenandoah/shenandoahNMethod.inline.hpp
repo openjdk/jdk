@@ -27,6 +27,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahNMethod.hpp"
 
 nmethod* ShenandoahNMethod::nm() const {
@@ -78,8 +79,9 @@ void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
 
 void ShenandoahNMethod::disarm_nmethod(nmethod* nm) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  assert(bs != NULL, "Sanity");
-  if (bs->is_armed(nm)) {
+  assert(bs != NULL || !ShenandoahHeap::heap()->mode()->is_concurrent_mode(),
+        "Must have nmethod barrier for concurrent GC");
+  if (bs != NULL && bs->is_armed(nm)) {
     bs->disarm(nm);
   }
 }

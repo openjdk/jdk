@@ -179,8 +179,11 @@ public:
 };
 
 void ShenandoahCodeRoots::disarm_nmethods() {
-  ShenandoahDisarmNMethodsTask task;
-  ShenandoahHeap::heap()->workers()->run_task(&task);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  if (heap->mode()->is_concurrent_mode()) {
+    ShenandoahDisarmNMethodsTask task;
+    heap->workers()->run_task(&task);
+  }
 }
 
 class ShenandoahNMethodUnlinkClosure : public NMethodClosure {
