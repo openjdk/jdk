@@ -4049,9 +4049,9 @@ void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
 
       st->print(" ");
       const_oop()->print_oop(&ss);
-      // suppress new-lines('\n') in ss emitted by const_oop->print_oop()
-      // so each node is one-liner for -XX:+Verbose && -XX:+PrintIdeal
-      char* buf = ss.as_string(false);
+      // 'const_oop->print_oop()' may emit newlines('\n') into ss.
+      // suppress newlines from it so -XX:+Verbose -XX:+PrintIdeal dumps one-liner for each node.
+      char* buf = ss.as_string(/* c_heap= */false);
       StringUtils::replace_no_expand(buf, "\n", "");
       st->print_raw(buf);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,6 @@
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/stringUtils.hpp"
 
 #include "unittest.hpp"
 
@@ -51,32 +50,6 @@ static void test_stringStream_is_zero_terminated(const stringStream* ss) {
   ASSERT_EQ(ss->base()[ss->size()], '\0');
 }
 
-static size_t count_char(const char* s, size_t len, char ch) {
-  size_t cnt = 0;
-
-  for (size_t i = 0; i < len; ++i) {
-    if (s[i] == ch) {
-      cnt++;
-    }
-  }
-  return cnt;
-}
-
-static size_t count_char(const stringStream* ss, char ch) {
-  return count_char(ss->as_string(), ss->size(), ch);
-}
-
-static void test_stringStream_tr_delete(stringStream* ss) {
-  ResourceMark rm;
-  size_t whitespaces = count_char(ss, ' ');
-  char* s2 = ss->as_string(false);
-  int deleted = StringUtils::replace_no_expand(s2, " ", "");
-  ASSERT_EQ(whitespaces, (size_t)deleted);
-
-  whitespaces = count_char(s2, strlen(s2), ' ');
-  ASSERT_EQ(whitespaces, (size_t)0);
-}
-
 static void do_test_stringStream(stringStream* ss, size_t expected_cap) {
   test_stringStream_is_zero_terminated(ss);
   size_t written = 0;
@@ -90,9 +63,6 @@ static void do_test_stringStream(stringStream* ss, size_t expected_cap) {
     // Internal buffer should always be zero-terminated.
     test_stringStream_is_zero_terminated(ss);
   }
-
-  test_stringStream_tr_delete(ss);
-
   // Reset should zero terminate too
   ss->reset();
   ASSERT_EQ(ss->size(), (size_t)0);
