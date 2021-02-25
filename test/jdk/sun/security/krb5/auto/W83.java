@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6932525 6951366 6959292 8194486 8139348
+ * @bug 6932525 6951366 6959292 8194486
  * @summary kerberos login failure on win2008 with AD set to win2000 compat mode
  * and cannot login if session key and preauth does not use the same etype
  * @library /test/lib
