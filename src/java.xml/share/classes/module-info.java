@@ -94,7 +94,7 @@
  * (hereafter referred to as secure processing) is required for XML processors
  * including DOM, SAX, Schema Validation, XSLT, and XPath. Any properties flagged
  * as {@code "security: yes"} (hereafter referred to as security properties) in
- * table <a href="#FeaturesAndProperties">Features And Properties</a>
+ * table <a href="#Properties">Implementation Specific Properties</a>
  * are enforced when secure processing is set to true. Such enforcement includes
  * setting security features to true and limits to the defined values shown in
  * the table. The property values will not be affected, however, when setting
@@ -195,11 +195,10 @@
  *
  * <p>
  * <h3>Implementation Specific Features and Properties</h3>
- * This section lists features and properties supported by the JDK implementation.
- *
+ * The table below lists Implementation Specific Properties supported by the JDK.
  * <p>
- * <table class="plain" id="FeaturesAndProperties">
- * <caption>Features and Properties</caption>
+ * <table class="striped" id="Properties">
+ * <caption>Implementation Specific Properties</caption>
  * <thead>
  * <tr>
  * <th scope="col" rowspan="2">Name [1]</th>
@@ -219,6 +218,85 @@
  * </thead>
  *
  * <tbody>
+ *
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="EELimit">entityExpansionLimit</th>
+ * <td>Limits the number of entity expansions.
+ * </td>
+ * <td rowspan="9">yes</td>
+ * <td rowspan="9">yes</td>
+ * <td rowspan="9">Integer</td>
+ * <th id="Value" scope="row" style="font-weight:normal" rowspan="9">
+ * A positive integer. A value less than or equal to 0 indicates no limit.
+ * If the value is not an integer, a NumericFormatException is thrown.
+ * </th>
+ * <th id="Default" scope="row" style="font-weight:normal">64000</th>
+ * <td rowspan="9">Yes</td>
+ * <td rowspan="9">
+ *     <a href="#DOM">DOM</a><br>
+ *     <a href="#SAX">SAX</a><br>
+ *     <a href="#StAX">StAX</a><br>
+ *     <a href="#Validation">Validation</a><br>
+ *     <a href="#Transform">Transform</a>
+ * </td>
+ * <td rowspan="6">7u45, 8</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="EALimit">elementAttributeLimit</th>
+ * <td>Limits the number of attributes an element can have.
+ * </td>
+ * <th id="Default" scope="row" style="font-weight:normal">10000</th>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="OccurLimit">maxOccurLimit</th>
+ * <td>Limits the number of content model nodes that may be created when building
+ * a grammar for a W3C XML Schema that contains maxOccurs attributes with values
+ * other than "unbounded".
+ * </td>
+ * <th id="Default" scope="row" style="font-weight:normal">5000</th>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="SizeLimit">totalEntitySizeLimit</th>
+ * <td>Limits the total size of all entities that include general and parameter
+ * entities. The size is calculated as an aggregation of all entities.
+ * </td>
+ * <th id="Default" scope="row" style="font-weight:normal">5x10^7</th>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="GELimit">maxGeneralEntitySizeLimit</th>
+ * <td>Limits the maximum size of any general entities.
+ * </td>
+ * <th id="Default" scope="row" style="font-weight:normal">0</th>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="PELimit">maxParameterEntitySizeLimit</th>
+ * <td>Limits the maximum size of any parameter entities, including the result
+ * of nesting multiple parameter entities.
+ * </td>
+ * <th id="Default" scope="row" style="font-weight:normal">10^6</th>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="ERLimit">entityReplacementLimit</th>
+ * <td>Limits the total number of nodes in all entity references.
+ * </td>
+ * <th id="Default" scope="row" style="font-weight:normal">3x10^6</th>
+ * <td>7u111, 8u101</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="ElementDepth">maxElementDepth</th>
+ * <td>Limits the maximum element depth.
+ * </td>
+ * <th id="Default" scope="row" style="font-weight:normal">0</th>
+ * <td>7u65, 8u11</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="NameLimit">maxXMLNameLimit</th>
+ * <td>Limits the maximum size of XML names, including element name, attribute
+ * name and namespace prefix and URI.
+ * </td>
+ * <th id="Default" scope="row" style="font-weight:normal">1000</th>
+ * <td>7u91, 8u65</td>
+ * </tr>
  *
  * <tr>
  * <th scope="row" style="font-weight:normal" id="ISSTANDALONE">isStandalone</th>
@@ -274,7 +352,9 @@
  * the property value. If the type is boolean, the system property is true only
  * if it is "true"; If the type is String, the system property is true only if
  * it is exactly the same string representing the positive value (e.g. "yes" for
- * {@code xsltcIsStandalone}); The system property is false otherwise.
+ * {@code xsltcIsStandalone}); The system property is false otherwise. If the type
+ * is Integer, the value of the System Property is the String representation of
+ * the value (e.g. "64000" for {@code entityExpansionLimit}).
  *
  * <p>
  * <b>[4]</b> A value "yes" indicates the property is a Security Property. Refer
