@@ -76,8 +76,7 @@ requires.properties= \
     vm.compiler2.enabled \
     vm.musl \
     docker.support \
-    jdk.containerized \
-    container.engine
+    jdk.containerized
 
 # Minimum jtreg version
 requiredVersion=5.1 b1
