@@ -494,9 +494,11 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   int name_index = kslot.name_index();
   assert(this_cp->tag_at(name_index).is_symbol(), "sanity");
 
-  Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
-  if (klass != NULL) {
-    return klass;
+  if (this_cp->tag_at(which).is_klass()) {
+    Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
+    if (klass != NULL) {
+      return klass;
+    }
   }
 
   // This tag doesn't change back to unresolved class unless at a safepoint.
@@ -540,7 +542,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
       // If CHECK_NULL above doesn't return the exception, that means that
       // some other thread has beaten us and has resolved the class.
       // To preserve old behavior, we return the resolved class.
-      klass = this_cp->resolved_klasses()->at(resolved_klass_index);
+      Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
       assert(klass != NULL, "must be resolved if exception was cleared");
       return klass;
     } else {
@@ -548,21 +550,31 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
     }
   }
 
-  // We need to recheck exceptions from racing thread and return the same.
-  if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
-    throw_resolution_error(this_cp, which, CHECK_NULL);
-  }
-
   // logging for class+resolve.
   if (log_is_enabled(Debug, class, resolve)){
     trace_class_resolution(this_cp, k);
   }
+
   Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
   Atomic::release_store(adr, k);
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* stored in _resolved_klasses is non-NULL, so we need
   // hardware store ordering here.
-  this_cp->release_tag_at_put(which, JVM_CONSTANT_Class);
+  // We also need to CAS to not overwrite an error from a racing thread.
+
+  jbyte old_tag = Atomic::cmpxchg((jbyte*)this_cp->tag_addr_at(which),
+                                  (jbyte)JVM_CONSTANT_UnresolvedClass,
+                                  (jbyte)JVM_CONSTANT_Class);
+
+  if (old_tag != JVM_CONSTANT_UnresolvedClass) {
+    // We need to recheck exceptions from racing thread and return the same.
+    if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
+      // Remove klass.
+      Atomic::release_store(adr, (Klass*)NULL);
+      throw_resolution_error(this_cp, which, CHECK_NULL);
+    }
+  }
+
   return k;
 }
 
@@ -577,8 +589,9 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
   int name_index = kslot.name_index();
   assert(this_cp->tag_at(name_index).is_symbol(), "sanity");
 
-  Klass* k = this_cp->resolved_klasses()->at(resolved_klass_index);
-  if (k != NULL) {
+  if (this_cp->tag_at(which).is_klass()) {
+    Klass* k = this_cp->resolved_klasses()->at(resolved_klass_index);
+    assert(k != NULL, "should be resolved");
     return k;
   } else {
     Thread *thread = Thread::current();
@@ -2341,13 +2354,7 @@ void ConstantPool::print_entry_on(const int index, outputStream* st) {
         int resolved_klass_index = kslot.resolved_klass_index();
         int name_index = kslot.name_index();
         assert(tag_at(name_index).is_symbol(), "sanity");
-
-        Klass* klass = resolved_klasses()->at(resolved_klass_index);
-        if (klass != NULL) {
-          klass->print_value_on(st);
-        } else {
-          symbol_at(name_index)->print_value_on(st);
-        }
+        symbol_at(name_index)->print_value_on(st);
       }
       break;
     case JVM_CONSTANT_MethodHandle :
