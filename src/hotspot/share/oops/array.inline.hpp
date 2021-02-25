@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,19 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "oops/metadata.hpp"
-#include "memory/resourceArea.hpp"
-#include "prims/jvmtiRedefineClasses.hpp"
+#ifndef SHARE_OOPS_ARRAY_INLINE_HPP
+#define SHARE_OOPS_ARRAY_INLINE_HPP
 
-void Metadata::set_on_stack(const bool value) {
-  // nothing to set for most metadata
-  // Can't inline because this materializes the vtable on some C++ compilers.
+#include "memory/allocation.hpp"
+#include "memory/metaspace.hpp"
+#include "oops/array.hpp"
+
+
+template <typename T>
+inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw() {
+  size_t word_size = Array::size(length);
+  return (void*) Metaspace::allocate(loader_data, word_size,
+                                     MetaspaceObj::array_type(sizeof(T)), THREAD);
 }
 
-void Metadata::print_on(outputStream* st) const {
-  ResourceMark rm;
-  // print title
-  st->print("%s", internal_name());
-  print_address_on(st);
-  st->cr();
-}
-
-void Metadata::print() const { print_on(tty); }
-void Metadata::print_value() const { print_value_on(tty); }
-
-char* Metadata::print_value_string() const {
-  char buf[256];
-  stringStream st(buf, sizeof(buf));
-  print_value_on(&st);
-  return st.as_string();
-}
+#endif // SHARE_OOPS_ARRAY_INLINE_HPP
