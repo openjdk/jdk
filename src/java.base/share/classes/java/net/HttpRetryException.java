@@ -45,7 +45,7 @@ public class HttpRetryException extends IOException {
     private int responseCode;
 
     /**
-     * the URL to be redirected to.
+     * The URL to be redirected to.
      */
     private String location;
 
