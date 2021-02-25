@@ -94,7 +94,6 @@ public final class ChunkParser {
     public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
 
     private static final long CONSTANT_POOL_TYPE_ID = 1;
-    private static final String CHUNKHEADER = "jdk.types.ChunkHeader";
     private final RecordingInput input;
     private final ChunkHeader chunkHeader;
     private final TimeConverter timeConverter;
@@ -335,9 +334,6 @@ public final class ChunkParser {
                     if (type == null) {
                         throw new IOException(
                                 "Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + (lastCP + size) + "]");
-                    }
-                    if (!type.getName().equals(CHUNKHEADER)) {
-                        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found constant pool(" + id + ") that is never used");
                     }
                     ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type.getName());
                     lookup = new ConstantLookup(pool, type);
