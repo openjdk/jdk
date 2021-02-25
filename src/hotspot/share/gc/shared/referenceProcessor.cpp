@@ -26,9 +26,9 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -137,6 +137,10 @@ void ReferenceProcessor::verify_no_references_recorded() {
   }
 }
 #endif
+
+bool ReferenceProcessor::processing_is_mt() const {
+  return ParallelRefProcEnabled && _num_queues > 1;
+}
 
 void ReferenceProcessor::weak_oops_do(OopClosure* f) {
   for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {

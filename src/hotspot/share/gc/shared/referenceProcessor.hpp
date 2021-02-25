@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHARED_REFERENCEPROCESSOR_HPP
 #define SHARE_GC_SHARED_REFERENCEPROCESSOR_HPP
 
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
@@ -414,7 +413,7 @@ public:
   void set_mt_discovery(bool mt) { _discovery_is_mt = mt; }
 
   // Whether we are in a phase when _processing_ is MT.
-  bool processing_is_mt() const { return ParallelRefProcEnabled && _num_queues > 1; }
+  bool processing_is_mt() const;
 
   // whether all enqueueing of weak references is complete
   bool enqueuing_is_done()  { return _enqueuing_is_done; }
