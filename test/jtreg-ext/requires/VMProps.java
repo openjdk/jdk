@@ -23,7 +23,6 @@
 package requires;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -499,19 +498,6 @@ public class VMProps implements Callable<Map<String, String>> {
         p.waitFor(10, TimeUnit.SECONDS);
 
         return (p.exitValue() == 0);
-    }
-
-   /**
-     * Container Engine command
-     *
-     * @return returns the name of container engine executable
-     */
-    protected String containerEngine() {
-        // The ENGINE_COMMAND could be a path to the executable, or just a name.
-        String[] parts = Container.ENGINE_COMMAND
-            .toLowerCase()
-            .split(File.pathSeparator);
-        return parts[parts.length - 1];
     }
 
    /**
