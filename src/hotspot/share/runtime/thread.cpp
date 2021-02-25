@@ -482,25 +482,49 @@ void Thread::check_for_dangling_thread_pointer(Thread *thread) {
 }
 #endif
 
-// Is the target JavaThread protected by the calling Thread:
+// Is the target JavaThread protected by the calling Thread
+// or by some other mechanism:
 bool Thread::is_JavaThread_protected(const JavaThread* p) {
-  Thread* thread = Thread::current();
-  if (thread == p || thread->is_VM_thread()) {
-    // Target JavaThread is self or access by the VMThread is always protected:
+  // Do the simplest check first:
+  if (SafepointSynchronize::is_at_safepoint()) {
+    // The target is protected since JavaThreads cannot exit
+    // while we're at a safepoint.
+    return true;
+  }
+
+  // Now make the simple checks based on who the caller is:
+  Thread* current_thread = Thread::current();
+  if (current_thread == p || Threads_lock->owner() == current_thread) {
+    // Target JavaThread is self or calling thread owns the Threads_lock.
+    // Second check is the same as Threads_lock->owner_is_self(),
+    // but we already have the current thread so check directly.
     return true;
   }
 
   // Check the ThreadsLists associated with the calling thread (if any)
   // to see if one of them protects the target JavaThread:
-  for (SafeThreadsListPtr* stlp = thread->_threads_list_ptr; stlp != NULL; stlp = stlp->previous()) {
+  for (SafeThreadsListPtr* stlp = current_thread->_threads_list_ptr;
+       stlp != NULL; stlp = stlp->previous()) {
     if (stlp->list()->includes(p)) {
       // The target JavaThread is protected by this ThreadsList:
       return true;
     }
   }
 
-  // The target JavaThread is not on this ThreadsList or any of its
-  // nested ThreadsLists (if any) so it is not safe to query:
+  // Use this debug code with -XX:+UseNewCode to diagnose locations that
+  // are missing a ThreadsListHandle or other protection mechanism:
+  // guarantee(!UseNewCode, "current_thread=" INTPTR_FORMAT " is not protecting p="
+  //           INTPTR_FORMAT, p2i(current_thread), p2i(p));
+  guarantee(false, "current_thread=" INTPTR_FORMAT " is not protecting p="
+            INTPTR_FORMAT, p2i(current_thread), p2i(p));
+
+  // Note: Since 'p' isn't protected by a TLH, the call to
+  // p->is_handshake_safe_for() may crash, but we have debug bits so
+  // we'll be able to figure out what protection mechanism is missing.
+  assert(p->is_handshake_safe_for(current_thread), "JavaThread=" INTPTR_FORMAT
+         " is not protected and not handshake safe.", p2i(p));
+
+  // The target JavaThread is not protected so it is not safe to query:
   return false;
 }
 
@@ -2550,25 +2574,6 @@ const char* JavaThread::get_thread_name() const {
     return get_thread_name_string();
   }
 
-//#ifdef ASSERT
-  Thread *current_thread = Thread::current();
-//#endif
-  // Use this with -XX:+UseNewCode to diagnose locations that are missing
-  // a ThreadsListHandle:
-  // guarantee(!UseNewCode, "current_thread=" INTPTR_FORMAT
-  //           " is not protecting this=" INTPTR_FORMAT,
-  //           p2i(current_thread), p2i(this));
-  guarantee(false, "current_thread=" INTPTR_FORMAT
-            " is not protecting this=" INTPTR_FORMAT,
-            p2i(current_thread), p2i(this));
-
-  // Note: Since this JavaThread isn't protected by a TLH, the call to
-  // this->is_handshake_safe_for() may crash, but we have debug bits so...
-  assert(SafepointSynchronize::is_at_safepoint() ||
-         this->is_handshake_safe_for(current_thread), "JavaThread="
-         INTPTR_FORMAT " is not protected, not at a safepoint and "
-         "not handshake safe.", p2i(this));
-
   // The target JavaThread is not protected so we return the default:
   return Thread::name();
 }
@@ -2931,12 +2936,6 @@ void Threads::java_threads_do(ThreadClosure* tc) {
   }
 }
 
-void Threads::java_threads_do(JavaThreadIteratorWithHandle* jtiwh_p, ThreadClosure* tc) {
-  for (; JavaThread *jt = jtiwh_p->next(); ) {
-    tc->do_thread(jt);
-  }
-}
-
 void Threads::java_threads_and_vm_thread_do(ThreadClosure* tc) {
   assert_locked_or_safepoint(Threads_lock);
   java_threads_do(tc);
@@ -2947,11 +2946,6 @@ void Threads::java_threads_and_vm_thread_do(ThreadClosure* tc) {
 void Threads::threads_do(ThreadClosure* tc) {
   assert_locked_or_safepoint(Threads_lock);
   java_threads_do(tc);
-  non_java_threads_do(tc);
-}
-
-void Threads::threads_do(JavaThreadIteratorWithHandle* jtiwh_p, ThreadClosure* tc) {
-  java_threads_do(jtiwh_p, tc);
   non_java_threads_do(tc);
 }
 

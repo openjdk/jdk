@@ -1003,7 +1003,7 @@ void CompileBroker::init_compiler_sweeper_threads() {
     if (!UseDynamicNumberOfCompilerThreads || i == 0) {
       JavaThread *ct = make_thread(compiler_t, thread_handle, _c2_compile_queue, _compilers[1], THREAD);
       assert(ct != NULL, "should have been handled for initial thread");
-      ThreadsListHandle tlh;
+      ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
       assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
@@ -1024,7 +1024,7 @@ void CompileBroker::init_compiler_sweeper_threads() {
     if (!UseDynamicNumberOfCompilerThreads || i == 0) {
       JavaThread *ct = make_thread(compiler_t, thread_handle, _c1_compile_queue, _compilers[0], THREAD);
       assert(ct != NULL, "should have been handled for initial thread");
-      ThreadsListHandle tlh;
+      ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
       assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
@@ -1111,8 +1111,8 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
 #endif
       JavaThread *ct = make_thread(compiler_t, compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
       if (ct == NULL) break;
-      ThreadsListHandle tlh;
-      if (!tlh.includes(ct)) break;
+      ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+      assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
@@ -1132,8 +1132,8 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
     for (int i = old_c1_count; i < new_c1_count; i++) {
       JavaThread *ct = make_thread(compiler_t, compiler1_object(i), _c1_compile_queue, _compilers[0], THREAD);
       if (ct == NULL) break;
-      ThreadsListHandle tlh;
-      if (!tlh.includes(ct)) break;
+      ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+      assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
