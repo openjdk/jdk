@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *          a file name that contains address host mappings, similar to those in
  *          /etc/hosts file. TestHosts-II file doesn't exist, so a UHE should be
  *          thrown
- * @run main/othervm -Djdk.net.hosts.file=${test.src}/TestHosts-II -Dsun.net.inetaddr.ttl=0
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts-II -Dsun.net.inetaddr.ttl=0
  *          InternalNameServiceWithNoHostsFileTest
  */
 
