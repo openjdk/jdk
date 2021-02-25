@@ -96,10 +96,7 @@ static void print_vs(outputStream* out, size_t scale) {
 
 static void print_settings(outputStream* out, size_t scale) {
   out->print("MaxMetaspaceSize: ");
-  // See Metaspace::ergo_initialize() for how MaxMetaspaceSize is rounded
-  if (MaxMetaspaceSize >= align_down(max_uintx, Metaspace::commit_alignment())) {
-    // aka "very big". Default is max_uintx, but due to rounding in arg parsing the real
-    // value is smaller.
+  if (MaxMetaspaceSize == max_uintx) {
     out->print("unlimited");
   } else {
     print_human_readable_size(out, MaxMetaspaceSize, scale);
