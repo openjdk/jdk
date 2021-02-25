@@ -336,7 +336,7 @@ public final class ChunkParser {
                         throw new IOException(
                                 "Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + (lastCP + size) + "]");
                     }
-                    if (type.getName() != CHUNKHEADER) {
+                    if (!type.getName().equals(CHUNKHEADER)) {
                         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found constant pool(" + id + ") that is never used");
                     }
                     ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type.getName());
