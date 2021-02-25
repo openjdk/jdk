@@ -355,7 +355,7 @@ static JLI_List readArgFile(FILE *file) {
 }
 
 static void reportAndExit(const char* fmt, const char* arg) {
-    if (fmt != NULL) JLI_ReportMessage(fmt, arg);
+    JLI_ReportMessage(fmt, arg);
     exit(1);
 }
 
@@ -375,7 +375,7 @@ static JLI_List expandArgFile(const char *arg) {
     } else {
         if (st.st_size > MAX_ARGF_SIZE) {
             JLI_ReportMessage(CFG_ERROR10, MAX_ARGF_SIZE);
-            reportAndExit(NULL, NULL);
+            exit(1);
         }
     }
 
