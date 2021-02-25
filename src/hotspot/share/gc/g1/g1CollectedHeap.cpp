@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
@@ -704,7 +705,8 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
     // Fill the memory below the allocated range with dummy object(s),
     // if the region bottom does not match the range start, or if the previous
     // range ended within the same G1 region, and there is a gap.
-    if (start_address != bottom_address) {
+    assert(start_address >= bottom_address, "bottom address should not be greater than start address");
+    if (start_address > bottom_address) {
       size_t fill_size = pointer_delta(start_address, bottom_address);
       G1CollectedHeap::fill_with_objects(bottom_address, fill_size);
       increase_used(fill_size * HeapWordSize);
@@ -1495,8 +1497,8 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 
   os::trace_page_sizes_for_requested_size(description,
                                           size,
-                                          preferred_page_size,
                                           page_size,
+                                          preferred_page_size,
                                           rs.base(),
                                           rs.size());
 
@@ -2841,7 +2843,7 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
   if (expand_bytes > 0) {
     // No need for an ergo logging here,
     // expansion_amount() does this when it returns a value > 0.
-    double expand_ms;
+    double expand_ms = 0.0;
     if (!expand(expand_bytes, _workers, &expand_ms)) {
       // We failed to expand the heap. Cannot do anything about it.
     }
@@ -3712,7 +3714,9 @@ protected:
       p->record_or_add_time_secs(termination_phase, worker_id, cl.term_time());
       p->record_or_add_thread_work_item(termination_phase, worker_id, cl.term_attempts());
     }
-    assert(pss->trim_ticks().seconds() == 0.0, "Unexpected partial trimming during evacuation");
+    assert(pss->trim_ticks().value() == 0,
+           "Unexpected partial trimming during evacuation value " JLONG_FORMAT,
+           pss->trim_ticks().value());
   }
 
   virtual void start_work(uint worker_id) { }

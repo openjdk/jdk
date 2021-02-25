@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "aot/aotLoader.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -532,7 +533,7 @@ bool Metaspace::class_space_is_initialized() {
 // On error, returns an unreserved space.
 ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size) {
 
-#ifdef AARCH64
+#if defined(AARCH64) || defined(PPC64)
   const size_t alignment = Metaspace::reserve_alignment();
 
   // AArch64: Try to align metaspace so that we can decode a compressed
@@ -541,6 +542,13 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   // Additionally, above 32G, ensure the lower LogKlassAlignmentInBytes bits
   // of the upper 32-bits of the address are zero so we can handle a shift
   // when decoding.
+
+  // PPC64: smaller heaps up to 2g will be mapped just below 4g. Then the
+  // attempt to place the compressed class space just after the heap fails on
+  // Linux 4.1.42 and higher because the launcher is loaded at 4g
+  // (ELF_ET_DYN_BASE). In that case we reach here and search the address space
+  // below 32g to get a zerobased CCS. For simplicity we reuse the search
+  // strategy for AARCH64.
 
   static const struct {
     address from;
@@ -565,7 +573,9 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
       a +=  search_ranges[i].increment;
     }
   }
+#endif // defined(AARCH64) || defined(PPC64)
 
+#ifdef AARCH64
   // Note: on AARCH64, if the code above does not find any good placement, we
   // have no recourse. We return an empty space and the VM will exit.
   return ReservedSpace();
@@ -662,23 +672,27 @@ void Metaspace::global_initialize() {
 
   metaspace::ChunkHeaderPool::initialize();
 
+  if (DumpSharedSpaces) {
+    assert(!UseSharedSpaces, "sanity");
+    MetaspaceShared::initialize_for_static_dump();
+  }
+
   // If UseCompressedClassPointers=1, we have two cases:
-  // a) if CDS is active (either dump time or runtime), it will create the ccs
+  // a) if CDS is active (runtime, Xshare=on), it will create the class space
   //    for us, initialize it and set up CompressedKlassPointers encoding.
   //    Class space will be reserved above the mapped archives.
-  // b) if CDS is not active, we will create the ccs on our own. It will be
-  //    placed above the java heap, since we assume it has been placed in low
+  // b) if CDS either deactivated (Xshare=off) or a static dump is to be done (Xshare:dump),
+  //    we will create the class space on our own. It will be placed above the java heap,
+  //    since we assume it has been placed in low
   //    address regions. We may rethink this (see JDK-8244943). Failing that,
   //    it will be placed anywhere.
 
 #if INCLUDE_CDS
   // case (a)
-  if (DumpSharedSpaces) {
-    MetaspaceShared::initialize_dumptime_shared_and_meta_spaces();
-  } else if (UseSharedSpaces) {
+  if (UseSharedSpaces) {
+    MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
-    MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
   }
 
   if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
@@ -689,18 +703,18 @@ void Metaspace::global_initialize() {
 #ifdef _LP64
 
   if (using_class_space() && !class_space_is_initialized()) {
-    assert(!UseSharedSpaces && !DumpSharedSpaces, "CDS should be off at this point");
+    assert(!UseSharedSpaces, "CDS archive is not mapped at this point");
 
     // case (b)
     ReservedSpace rs;
 
-    // If UseCompressedOops=1, java heap may have been placed in coops-friendly
-    //  territory already (lower address regions), so we attempt to place ccs
+    // If UseCompressedOops=1 and the java heap has been placed in coops-friendly
+    //  territory, i.e. its base is under 32G, then we attempt to place ccs
     //  right above the java heap.
-    // If UseCompressedOops=0, the heap has been placed anywhere - probably in
-    //  high memory regions. In that case, try to place ccs at the lowest allowed
-    //  mapping address.
-    address base = UseCompressedOops ? CompressedOops::end() : (address)HeapBaseMinAddress;
+    // Otherwise the lower 32G are still free. We try to place ccs at the lowest
+    // allowed mapping address.
+    address base = (UseCompressedOops && (uint64_t)CompressedOops::base() < OopEncodingHeapMax) ?
+                   CompressedOops::end() : (address)HeapBaseMinAddress;
     base = align_up(base, Metaspace::reserve_alignment());
 
     const size_t size = align_up(CompressedClassSpaceSize, Metaspace::reserve_alignment());

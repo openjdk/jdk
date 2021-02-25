@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
@@ -387,9 +388,10 @@ public class Window extends Container implements Accessible {
     private static final String base = "win";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 4497834738069338734L;
 
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Window");
@@ -2959,6 +2961,7 @@ public class Window extends Container implements Accessible {
      * @see Component#ownedWindowK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         synchronized (this) {
             // Update old focusMgr fields so that our object stream can be read
@@ -3105,6 +3108,7 @@ public class Window extends Container implements Accessible {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -3165,9 +3169,10 @@ public class Window extends Container implements Accessible {
      */
     protected class AccessibleAWTWindow extends AccessibleAWTContainer
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 4215068635060671780L;
 
         /**
@@ -4126,8 +4131,9 @@ class FocusManager implements java.io.Serializable {
     Container focusRoot;
     Component focusOwner;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
-    static final long serialVersionUID = 2491878825643557906L;
+    @Serial
+    private static final long serialVersionUID = 2491878825643557906L;
 }

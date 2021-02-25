@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -65,6 +67,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -75,6 +78,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
@@ -150,15 +154,10 @@ void Deoptimization::UnrollBlock::print() {
 
 
 // In order to make fetch_unroll_info work properly with escape
-// analysis, The method was changed from JRT_LEAF to JRT_BLOCK_ENTRY and
-// ResetNoHandleMark and HandleMark were removed from it. The actual reallocation
-// of previously eliminated objects occurs in realloc_objects, which is
-// called from the method fetch_unroll_info_helper below.
+// analysis, the method was changed from JRT_LEAF to JRT_BLOCK_ENTRY.
+// The actual reallocation of previously eliminated objects occurs in realloc_objects,
+// which is called from the method fetch_unroll_info_helper below.
 JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(JavaThread* thread, int exec_mode))
-  // It is actually ok to allocate handles in a leaf method. It causes no safepoints,
-  // but makes the entry a little slower. There is however a little dance we have to
-  // do in debug mode to get around the NoHandleMark code in the JRT_LEAF macro
-
   // fetch_unroll_info() is called at the beginning of the deoptimization
   // handler. Note this fact before we start generating temporary frames
   // that can confuse an asynchronous stack walker. This counter is
@@ -689,10 +688,13 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   // We are already active in the special DeoptResourceMark any ResourceObj's we
   // allocate will be freed at the end of the routine.
 
-  // It is actually ok to allocate handles in a leaf method. It causes no safepoints,
-  // but makes the entry a little slower. There is however a little dance we have to
-  // do in debug mode to get around the NoHandleMark code in the JRT_LEAF macro
-  ResetNoHandleMark rnhm; // No-op in release/product versions
+  // JRT_LEAF methods don't normally allocate handles and there is a
+  // NoHandleMark to enforce that. It is actually safe to use Handles
+  // in a JRT_LEAF method, and sometimes desirable, but to do so we
+  // must use ResetNoHandleMark to bypass the NoHandleMark, and
+  // then use a HandleMark to ensure any Handles we do create are
+  // cleaned up in this scope.
+  ResetNoHandleMark rnhm;
   HandleMark hm(thread);
 
   frame stub_frame = thread->last_frame();
@@ -739,7 +741,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   if (VerifyStack) {
     ResourceMark res_mark;
     // Clear pending exception to not break verification code (restored afterwards)
-    PRESERVE_EXCEPTION_MARK;
+    PreserveExceptionMark pm(thread);
 
     thread->validate_frame_layout();
 
@@ -1011,7 +1013,7 @@ BooleanBoxCache* BooleanBoxCache::_singleton = NULL;
 
 oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS) {
    Klass* k = java_lang_Class::as_Klass(bv->klass()->as_ConstantOopReadValue()->value()());
-   BasicType box_type = SystemDictionary::box_klass_type(k);
+   BasicType box_type = vmClasses::box_klass_type(k);
    if (box_type != T_OBJECT) {
      StackValue* value = StackValue::create_stack_value(fr, reg_map, bv->field_at(box_type == T_LONG ? 1 : 0));
      switch(box_type) {
@@ -1731,6 +1733,18 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.cb()->as_compiled_method_or_null() == cm, "expect top frame compiled method");
+  vframe* vf = vframe::new_vframe(&caller_frame, &reg_map, thread);
+  compiledVFrame* cvf = compiledVFrame::cast(vf);
+  ScopeDesc* imm_scope = cvf->scope();
+  MethodData* imm_mdo = get_method_data(thread, methodHandle(thread, imm_scope->method()), true);
+  if (imm_mdo != NULL) {
+    ProfileData* pdata = imm_mdo->allocate_bci_to_data(imm_scope->bci(), NULL);
+    if (pdata != NULL && pdata->is_BitData()) {
+      BitData* bit_data = (BitData*) pdata;
+      bit_data->set_exception_seen();
+    }
+  }
+
   Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
 
   MethodData* trap_mdo = get_method_data(thread, methodHandle(thread, cm->method()), true);
@@ -1789,7 +1803,7 @@ Deoptimization::get_method_data(JavaThread* thread, const methodHandle& m,
     Method::build_interpreter_method_data(m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // Only metaspace OOM is expected. No Java code executed.
-      assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+      assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
       CLEAR_PENDING_EXCEPTION;
     }
     mdo = m()->method_data();
@@ -2201,7 +2215,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     // aggressive optimization.
     bool inc_recompile_count = false;
     ProfileData* pdata = NULL;
-    if (ProfileTraps && !is_client_compilation_mode_vm() && update_trap_state && trap_mdo != NULL) {
+    if (ProfileTraps && CompilerConfig::is_c2_or_jvmci_compiler_enabled() && update_trap_state && trap_mdo != NULL) {
       assert(trap_mdo == get_method_data(thread, profiled_method, false), "sanity");
       uint this_trap_count = 0;
       bool maybe_prior_trap = false;
@@ -2323,7 +2337,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
 
     // Reprofile
     if (reprofile) {
-      CompilationPolicy::policy()->reprofile(trap_scope, nm->is_osr_method());
+      CompilationPolicy::reprofile(trap_scope, nm->is_osr_method());
     }
 
     // Give up compiling
@@ -2452,6 +2466,7 @@ Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, j
     // This enters VM and may safepoint
     uncommon_trap_inner(thread, trap_request);
   }
+  HandleMark hm(thread);
   return fetch_unroll_info_helper(thread, exec_mode);
 }
 

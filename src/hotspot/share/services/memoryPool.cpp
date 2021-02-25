@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
@@ -197,8 +196,8 @@ size_t MetaspacePool::used_in_bytes() {
 }
 
 size_t MetaspacePool::calculate_max_size() const {
-  return FLAG_IS_CMDLINE(MaxMetaspaceSize) ? MaxMetaspaceSize :
-                                             MemoryUsage::undefined_size();
+  return !FLAG_IS_DEFAULT(MaxMetaspaceSize) ? MaxMetaspaceSize :
+                                              MemoryUsage::undefined_size();
 }
 
 CompressedKlassSpacePool::CompressedKlassSpacePool() :

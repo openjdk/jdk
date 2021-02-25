@@ -75,16 +75,12 @@ public class Log {
         public void info(String msg) {
             if (out != null) {
                 out.println(msg);
-            } else {
-                System.out.println(msg);
             }
         }
 
         public void fatalError(String msg) {
             if (err != null) {
                 err.println(msg);
-            } else {
-                System.err.println(msg);
             }
         }
 
@@ -92,8 +88,6 @@ public class Log {
             msg = addTimestamp(msg);
             if (err != null) {
                 err.println(msg);
-            } else {
-                System.err.println(msg);
             }
         }
 
@@ -101,9 +95,6 @@ public class Log {
             if (out != null && verbose) {
                 out.print(addTimestamp(""));
                 t.printStackTrace(out);
-            } else if (verbose) {
-                System.out.print(addTimestamp(""));
-                t.printStackTrace(System.out);
             }
         }
 
@@ -111,8 +102,6 @@ public class Log {
             msg = addTimestamp(msg);
             if (out != null && verbose) {
                 out.println(msg);
-            } else if (verbose) {
-                System.out.println(msg);
             }
         }
 
@@ -142,62 +131,50 @@ public class Log {
         }
     }
 
-    private static Logger delegate = null;
+    private static final InheritableThreadLocal<Logger> instance =
+            new InheritableThreadLocal<Logger>() {
+                @Override protected Logger initialValue() {
+                    return new Logger();
+                }
+            };
 
-    public static void setLogger(Logger logger) {
-        delegate = (logger != null) ? logger : new Logger();
+    public static void setPrintWriter (PrintWriter out, PrintWriter err) {
+        instance.get().setPrintWriter(out, err);
     }
 
     public static void flush() {
-        if (delegate != null) {
-            delegate.flush();
-        }
+        instance.get().flush();
     }
 
     public static void info(String msg) {
-        if (delegate != null) {
-           delegate.info(msg);
-        }
+        instance.get().info(msg);
     }
 
     public static void fatalError(String msg) {
-        if (delegate != null) {
-            delegate.fatalError(msg);
-        }
+        instance.get().fatalError(msg);
     }
 
     public static void error(String msg) {
-        if (delegate != null) {
-            delegate.error(msg);
-        }
+        instance.get().error(msg);
     }
 
     public static void setVerbose() {
-        if (delegate != null) {
-            delegate.setVerbose();
-        }
+        instance.get().setVerbose();
     }
 
     public static boolean isVerbose() {
-        return (delegate != null) ? delegate.isVerbose() : false;
+        return instance.get().isVerbose();
     }
 
     public static void verbose(String msg) {
-        if (delegate != null) {
-           delegate.verbose(msg);
-        }
+       instance.get().verbose(msg);
     }
 
     public static void verbose(Throwable t) {
-        if (delegate != null) {
-           delegate.verbose(t);
-        }
+       instance.get().verbose(t);
     }
 
     public static void verbose(List<String> strings, List<String> out, int ret) {
-        if (delegate != null) {
-           delegate.verbose(strings, out, ret);
-        }
+       instance.get().verbose(strings, out, ret);
     }
-
 }

@@ -60,19 +60,15 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
         (byte)0x48, (byte)0x98, (byte)0xB9, (byte)0x5B
     };
 
-    private final HandshakeContext context;
-    private final String hkdfAlg;
     private final HashAlg hashAlg;
     private final SecretKey secret;
     private final byte[] transcriptHash;  // handshake messages transcript hash
 
     SSLSecretDerivation(
             HandshakeContext context, SecretKey secret) {
-        this.context = context;
         this.secret = secret;
         this.hashAlg = context.negotiatedCipherSuite.hashAlg;
-        this.hkdfAlg =
-                "HKDF-Expand/Hmac" + hashAlg.name.replace("-", "");
+        String hkdfAlg = "HKDF-Expand/Hmac" + hashAlg.name.replace("-", "");
         context.handshakeHash.update();
         this.transcriptHash = context.handshakeHash.digest();
     }

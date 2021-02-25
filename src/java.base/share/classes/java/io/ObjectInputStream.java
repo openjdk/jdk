@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.DeserializationEvent;
 import jdk.internal.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetBooleanAction;
@@ -223,39 +224,14 @@ import sun.security.action.GetIntegerAction;
  * Similarly, any serialPersistentFields or serialVersionUID field declarations
  * are also ignored--all enum types have a fixed serialVersionUID of 0L.
  *
- * @implSpec
  * <a id="record-serialization"></a>
- * Records are serialized differently than ordinary serializable or externalizable
- * objects. The serialized form of a record object is a sequence of values derived
- * from the record components. The stream format of a record object is the same as
- * that of an ordinary object in the stream. During deserialization, if the local
- * class equivalent of the specified stream class descriptor is a record class,
- * then first the stream fields are read and reconstructed to serve as the record's
- * component values; and second, a record object is created by invoking the
- * record's <i>canonical</i> constructor with the component values as arguments (or the
- * default value for component's type if a component value is absent from the
- * stream).
- * Like other serializable or externalizable objects, record objects can function
- * as the target of back references appearing subsequently in the serialization
- * stream. However, a cycle in the graph where the record object is referred to,
- * either directly or transitively, by one of its components, is not preserved.
- * The record components are deserialized prior to the invocation of the record
- * constructor, hence this limitation (see
- * <a href="{@docRoot}/../specs/serialization/serial-arch.html#cyclic-references">
- * <cite>Java Object Serialization Specification,</cite>
- * Section 1.14, "Circular References"</a> for additional information).
- * The process by which record objects are serialized or externalized cannot be
- * customized; any class-specific writeObject, readObject, readObjectNoData,
- * writeExternal, and readExternal methods defined by record classes are
- * ignored during serialization and deserialization. However, a substitute object
- * to be serialized or a designate replacement may be specified, by the
- * writeReplace and readResolve methods, respectively.  Any
- * serialPersistentFields field declaration is ignored. Documenting serializable
- * fields and data for record classes is unnecessary, since there is no variation
- * in the serial form, other than whether a substitute or replacement object is
- * used. The serialVersionUID of a record class is 0L unless explicitly
- * declared. The requirement for matching serialVersionUID values is waived for
- * record classes.
+ * <p>Records are serialized differently than ordinary serializable or externalizable
+ * objects. During deserialization the record's canonical constructor is invoked
+ * to construct the record object. Certain serialization-related methods, such
+ * as readObject and writeObject, are ignored for serializable records. See
+ * <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
+ * <cite>Java Object Serialization Specification,</cite> Section 1.13,
+ * "Serialization of Records"</a> for additional information.
  *
  * @author      Mike Warres
  * @author      Roger Riggs
@@ -1348,8 +1324,11 @@ public class ObjectInputStream
     }
 
     /**
-     * Invoke the serialization filter if non-null.
+     * Invokes the serialization filter if non-null.
+     *
      * If the filter rejects or an exception is thrown, throws InvalidClassException.
+     *
+     * Logs and/or commits a {@code DeserializationEvent}, if configured.
      *
      * @param clazz the class; may be null
      * @param arrayLength the array length requested; use {@code -1} if not creating an array
@@ -1358,11 +1337,12 @@ public class ObjectInputStream
      */
     private void filterCheck(Class<?> clazz, int arrayLength)
             throws InvalidClassException {
+        // Info about the stream is not available if overridden by subclass, return 0
+        long bytesRead = (bin == null) ? 0 : bin.getBytesRead();
+        RuntimeException ex = null;
+        ObjectInputFilter.Status status = null;
+
         if (serialFilter != null) {
-            RuntimeException ex = null;
-            ObjectInputFilter.Status status;
-            // Info about the stream is not available if overridden by subclass, return 0
-            long bytesRead = (bin == null) ? 0 : bin.getBytesRead();
             try {
                 status = serialFilter.checkInput(new FilterValues(clazz, arrayLength,
                         totalObjectRefs, depth, bytesRead));
@@ -1380,12 +1360,24 @@ public class ObjectInputStream
                         status, clazz, arrayLength, totalObjectRefs, depth, bytesRead,
                         Objects.toString(ex, "n/a"));
             }
-            if (status == null ||
-                    status == ObjectInputFilter.Status.REJECTED) {
-                InvalidClassException ice = new InvalidClassException("filter status: " + status);
-                ice.initCause(ex);
-                throw ice;
-            }
+        }
+        DeserializationEvent event = new DeserializationEvent();
+        if (event.shouldCommit()) {
+            event.filterConfigured = serialFilter != null;
+            event.filterStatus = status != null ? status.name() : null;
+            event.type = clazz;
+            event.arrayLength = arrayLength;
+            event.objectReferences = totalObjectRefs;
+            event.depth = depth;
+            event.bytesRead = bytesRead;
+            event.exceptionType = ex != null ? ex.getClass() : null;
+            event.exceptionMessage = ex != null ? ex.getMessage() : null;
+            event.commit();
+        }
+        if (serialFilter != null && (status == null || status == ObjectInputFilter.Status.REJECTED)) {
+            InvalidClassException ice = new InvalidClassException("filter status: " + status);
+            ice.initCause(ex);
+            throw ice;
         }
     }
 

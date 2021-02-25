@@ -152,7 +152,7 @@ public final class ModulePatcher {
         packages.removeAll(descriptor.packages());
         if (!packages.isEmpty()) {
             Builder builder = JLMA.newModuleBuilder(descriptor.name(),
-                                                    /*strict*/ false,
+                                                    /*strict*/ descriptor.isAutomatic(),
                                                     descriptor.modifiers());
             if (!descriptor.isAutomatic()) {
                 descriptor.requires().forEach(builder::requires);

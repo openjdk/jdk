@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,6 @@ import javax.management.InstanceNotFoundException;
 import javax.management.MalformedObjectNameException;
 import javax.management.StandardEmitterMBean;
 import javax.management.StandardMBean;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
@@ -48,11 +44,15 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.function.Function;
+import java.util.Set;
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 import javax.management.JMX;
 import sun.management.Util;
@@ -914,53 +914,48 @@ public class ManagementFactory {
         return PlatformMBeanFinder.getMap().values();
     }
 
-    private static class PlatformMBeanFinder
-    {
+    private static class PlatformMBeanFinder {
         private static final Map<String, PlatformComponent<?>> componentMap;
+
         static {
             // get all providers
             List<PlatformMBeanProvider> providers = AccessController.doPrivileged(
-                (PrivilegedAction<List<PlatformMBeanProvider>>) () -> {
-                     List<PlatformMBeanProvider> all = new ArrayList<>();
-                     ServiceLoader.loadInstalled(PlatformMBeanProvider.class)
-                                  .forEach(all::add);
-                     all.add(new DefaultPlatformMBeanProvider());
-                     return all;
+                new PrivilegedAction<List<PlatformMBeanProvider>>() {
+                    @Override
+                    public List<PlatformMBeanProvider> run() {
+                        List<PlatformMBeanProvider> all = new ArrayList<>();
+                        for (PlatformMBeanProvider provider : ServiceLoader.loadInstalled(PlatformMBeanProvider.class)) {
+                            all.add(provider);
+                        }
+                        all.add(new DefaultPlatformMBeanProvider());
+                        return all;
+                    }
                 }, null, new FilePermission("<<ALL FILES>>", "read"),
-                         new RuntimePermission("sun.management.spi.PlatformMBeanProvider.subclass"));
+                new RuntimePermission("sun.management.spi.PlatformMBeanProvider.subclass"));
 
             // load all platform components into a map
-            componentMap = providers.stream()
-                .flatMap(p -> toPlatformComponentStream(p))
-                // The first one wins if multiple PlatformComponents
-                // with same ObjectName pattern,
-                .collect(toMap(PlatformComponent::getObjectNamePattern,
-                               Function.identity(),
-                              (p1, p2) -> p1));
+            var map = new HashMap<String, PlatformComponent<?>>();
+            for (PlatformMBeanProvider provider : providers) {
+                // For each provider, ensure that two different components are not declared
+                // with the same object name pattern.
+                var names = new HashSet<String>();
+                for (PlatformComponent<?> component : provider.getPlatformComponentList()) {
+                    String name = component.getObjectNamePattern();
+                    if (!names.add(name)) {
+                        throw new InternalError(name +
+                                " has been used as key by this provider" +
+                                ", it cannot be reused for " + component);
+                    }
+                    // The first one wins if multiple PlatformComponents defined by
+                    // different providers use the same ObjectName pattern
+                    map.putIfAbsent(name, component);
+                }
+            }
+            componentMap = map;
         }
 
         static Map<String, PlatformComponent<?>> getMap() {
             return componentMap;
-        }
-
-        // Loads all platform components from a provider into a stream
-        // Ensures that two different components are not declared with the same
-        // object name pattern. Throws InternalError if the provider incorrectly
-        // declares two platform components with the same pattern.
-        private static Stream<PlatformComponent<?>>
-            toPlatformComponentStream(PlatformMBeanProvider provider)
-        {
-            return provider.getPlatformComponentList()
-                           .stream()
-                           .collect(toMap(PlatformComponent::getObjectNamePattern,
-                                          Function.identity(),
-                                          (p1, p2) -> {
-                                              throw new InternalError(
-                                                 p1.getObjectNamePattern() +
-                                                 " has been used as key for " + p1 +
-                                                 ", it cannot be reused for " + p2);
-                                          }))
-                           .values().stream();
         }
 
         // Finds the first PlatformComponent whose mbeanInterfaceNames() list

@@ -25,11 +25,12 @@
  * @test
  * @bug 8225056
  * @compile GetPermittedSubclasses.jcod
+ * @compile --enable-preview -source ${jdk.version} noSubclass/BaseC.java noSubclass/BaseI.java noSubclass/Impl1.java
+ * @compile --enable-preview -source ${jdk.version} noSubclass/Impl2.java
  * @compile --enable-preview -source ${jdk.version} GetPermittedSubclassesTest.java
  * @run main/othervm --enable-preview GetPermittedSubclassesTest
  */
 
-import java.lang.constant.ClassDesc;
 import java.util.ArrayList;
 
 // Test Class GetPermittedSubtpes() and Class.isSealed() APIs.
@@ -49,15 +50,16 @@ public class GetPermittedSubclassesTest {
 
     final class Final4 {}
 
-    public static void testSealedInfo(Class<?> c, String[] expected) {
-        Object[] permitted = c.permittedSubclasses();
+    public static void testSealedInfo(Class<?> c, String[] expected, boolean isSealed) {
+        var permitted = c.getPermittedSubclasses();
 
-        if (permitted.length != expected.length) {
-            throw new RuntimeException(
-                "Unexpected number of permitted subclasses for: " + c.toString());
-        }
+        if (isSealed) {
+            if (permitted.length != expected.length) {
+                throw new RuntimeException(
+                    "Unexpected number of permitted subclasses for: " + c.toString() +
+                    "(" + java.util.Arrays.asList(permitted));
+            }
 
-        if (permitted.length > 0) {
             if (!c.isSealed()) {
                 throw new RuntimeException("Expected sealed class: " + c.toString());
             }
@@ -65,7 +67,7 @@ public class GetPermittedSubclassesTest {
             // Create ArrayList of permitted subclasses class names.
             ArrayList<String> permittedNames = new ArrayList<String>();
             for (int i = 0; i < permitted.length; i++) {
-                permittedNames.add(((ClassDesc)permitted[i]).descriptorString());
+                permittedNames.add(permitted[i].getName());
             }
 
             if (permittedNames.size() != expected.length) {
@@ -82,57 +84,86 @@ public class GetPermittedSubclassesTest {
                 }
             }
         } else {
-            // Must not be sealed if no permitted subclasses.
-            if (c.isSealed()) {
+            // Must not be sealed.
+            if (c.isSealed() || permitted != null) {
                 throw new RuntimeException("Unexpected sealed class: " + c.toString());
             }
         }
     }
 
-    public static void testBadSealedClass(String className, String expectedCFEMessage) throws Throwable {
+    public static void testBadSealedClass(String className,
+                                          Class<?> expectedException,
+                                          String expectedCFEMessage) throws Throwable {
         try {
             Class.forName(className);
             throw new RuntimeException("Expected ClassFormatError exception not thrown for " + className);
         } catch (ClassFormatError cfe) {
+            if (ClassFormatError.class != expectedException) {
+                throw new RuntimeException(
+                    "Class " + className + " got unexpected exception: " + cfe.getMessage());
+            }
             if (!cfe.getMessage().contains(expectedCFEMessage)) {
                 throw new RuntimeException(
                     "Class " + className + " got unexpected ClassFormatError exception: " + cfe.getMessage());
+            }
+        } catch (IncompatibleClassChangeError icce) {
+            if (IncompatibleClassChangeError.class != expectedException) {
+                throw new RuntimeException(
+                    "Class " + className + " got unexpected exception: " + icce.getMessage());
+            }
+            if (!icce.getMessage().contains(expectedCFEMessage)) {
+                throw new RuntimeException(
+                    "Class " + className + " got unexpected IncompatibleClassChangeError exception: " + icce.getMessage());
             }
         }
     }
 
     public static void main(String... args) throws Throwable {
-        testSealedInfo(SealedI1.class, new String[] {"LGetPermittedSubclassesTest$NotSealed;",
-                                                     "LGetPermittedSubclassesTest$Sub1;",
-                                                     "LGetPermittedSubclassesTest$Extender;"});
-        testSealedInfo(Sealed1.class, new String[] {"LGetPermittedSubclassesTest$Sub1;"});
-        testSealedInfo(Final4.class, new String[] { });
-        testSealedInfo(NotSealed.class, new String[] { });
+        testSealedInfo(SealedI1.class, new String[] {"GetPermittedSubclassesTest$NotSealed",
+                                                     "GetPermittedSubclassesTest$Sub1",
+                                                     "GetPermittedSubclassesTest$Extender"},
+                                                     true);
+
+        testSealedInfo(Sealed1.class, new String[] {"GetPermittedSubclassesTest$Sub1"}, true);
+        testSealedInfo(Final4.class, null, false);
+        testSealedInfo(NotSealed.class, null, false);
 
         // Test class with PermittedSubclasses attribute but old class file version.
-        testSealedInfo(OldClassFile.class, new String[] { });
+        testSealedInfo(OldClassFile.class, null, false);
 
         // Test class with an empty PermittedSubclasses attribute.
-        testBadSealedClass("NoSubclasses", "PermittedSubclasses attribute is empty");
+        testSealedInfo(NoSubclasses.class, new String[]{}, true);
 
-        // Test returning names of non-existing classes.
-        testSealedInfo(NoLoadSubclasses.class, new String[]{"LiDontExist;", "LI/Dont/Exist/Either;"});
+        // Test that a class with an empty PermittedSubclasses attribute cannot be subclass-ed.
+        testBadSealedClass("SubClass", IncompatibleClassChangeError.class,
+                           "SubClass cannot inherit from sealed class NoSubclasses");
+
+        // Test returning only names of existing classes.
+        testSealedInfo(NoLoadSubclasses.class, new String[]{"ExistingClassFile" }, true);
 
         // Test that loading a class with a corrupted PermittedSubclasses attribute
         // causes a ClassFormatError.
-        testBadSealedClass("BadPermittedAttr",
-                          "Permitted subclass class_info_index 15 has bad constant type");
+        testBadSealedClass("BadPermittedAttr", ClassFormatError.class,
+                           "Permitted subclass class_info_index 15 has bad constant type");
 
         // Test that loading a sealed final class with a PermittedSubclasses
         // attribute causes a ClassFormatError.
-        testBadSealedClass("SealedButFinal", "PermittedSubclasses attribute in final class");
+        testBadSealedClass("SealedButFinal", ClassFormatError.class,
+                           "PermittedSubclasses attribute in final class");
 
-        // Test that loading a sealed class with a bad class name in its PermittedSubclasses
-        // attribute causes a ClassFormatError.
-        testBadSealedClass("BadPermittedSubclassEntry", "Illegal class name \"iDont;;Exist\" in class file");
+        // Test that loading a sealed class with an ill-formed class name in its
+        // PermittedSubclasses attribute causes a ClassFormatError.
+        testBadSealedClass("BadPermittedSubclassEntry", ClassFormatError.class,
+                           "Illegal class name \"iDont;;Exist\" in class file");
 
         // Test that loading a sealed class with an empty class name in its PermittedSubclasses
         // attribute causes a ClassFormatError.
-        testBadSealedClass("EmptyPermittedSubclassEntry", "Illegal class name \"\" in class file");
+        testBadSealedClass("EmptyPermittedSubclassEntry", ClassFormatError.class,
+                           "Illegal class name \"\" in class file");
+
+        //test type enumerated in the PermittedSubclasses attribute,
+        //which are not direct subtypes of the current class are not returned:
+        testSealedInfo(noSubclass.BaseC.class, new String[] {"noSubclass.ImplCIntermediate"}, true);
+        testSealedInfo(noSubclass.BaseI.class, new String[] {"noSubclass.ImplIIntermediateI", "noSubclass.ImplIIntermediateC"}, true);
     }
 }

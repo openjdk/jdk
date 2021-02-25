@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
+import jdk.jpackage.internal.RetryExecutor;
 import org.xml.sax.SAXException;
 import org.w3c.dom.NodeList;
 
@@ -66,11 +67,36 @@ public class MacHelper {
                     cmd.outputBundle(), dmgImage));
             ThrowingConsumer.toConsumer(consumer).accept(dmgImage);
         } finally {
-            // detach might not work right away due to resource busy error, so
-            // repeat detach several times or fail. Try 10 times with 3 seconds
-            // delay.
-            Executor.of("/usr/bin/hdiutil", "detach").addArgument(mountPoint).
-                    executeAndRepeatUntilExitCode(0, 10, 3);
+            String cmdline[] = {
+                "/usr/bin/hdiutil",
+                "detach",
+                "-verbose",
+                mountPoint.toAbsolutePath().toString()};
+            // "hdiutil detach" might not work right away due to resource busy error, so
+            // repeat detach several times.
+            RetryExecutor retryExecutor = new RetryExecutor();
+            // Image can get detach even if we got resource busy error, so stop
+            // trying to detach it if it is no longer attached.
+            retryExecutor.setExecutorInitializer(exec -> {
+                if (!Files.exists(mountPoint)) {
+                    retryExecutor.abort();
+                }
+            });
+            try {
+                // 10 times with 6 second delays.
+                retryExecutor.setMaxAttemptsCount(10)
+                        .setAttemptTimeoutMillis(6000)
+                        .execute(cmdline);
+            } catch (IOException ex) {
+                if (!retryExecutor.isAborted()) {
+                    // Now force to detach if it still attached
+                    if (Files.exists(mountPoint)) {
+                        Executor.of("/usr/bin/hdiutil", "detach",
+                                    "-force", "-verbose")
+                                 .addArgument(mountPoint).execute();
+                    }
+                }
+            }
         }
     }
 

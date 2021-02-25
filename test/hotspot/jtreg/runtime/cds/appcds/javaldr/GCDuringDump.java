@@ -73,7 +73,7 @@ public class GCDuringDump {
             TestCommon.run(
                 "-cp", appJar,
                 "-Xmx32m",
-                "-XX:+PrintSharedSpaces",
+                "-Xlog:cds=info",
                 "-XX:+UnlockDiagnosticVMOptions", extraOption,
                 gcLog,
                 Hello.class.getName())

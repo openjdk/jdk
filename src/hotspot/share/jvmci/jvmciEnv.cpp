@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/oopFactory.hpp"
@@ -632,6 +634,31 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   } else {
     JNIAccessMark jni(this, THREAD);
     jni()->ThrowNew(JNIJVMCI::JVMCIError::clazz(), msg);
+  }
+}
+
+jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isGCSupported (JVMCIObject runtime, jint gcIdentifier) {
+  JavaThread* THREAD = JavaThread::current();
+  if (is_hotspot()) {
+    JavaCallArguments jargs;
+    jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));
+    jargs.push_int(gcIdentifier);
+    JavaValue result(T_BOOLEAN);
+    JavaCalls::call_special(&result,
+                            HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
+                            vmSymbols::isGCSupported_name(),
+                            vmSymbols::int_bool_signature(), &jargs, CHECK_0);
+    return result.get_jboolean();
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jboolean result = jni()->CallNonvirtualBooleanMethod(runtime.as_jobject(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::isGCSupported_method(),
+                                                     gcIdentifier);
+    if (jni()->ExceptionCheck()) {
+      return false;
+    }
+    return result;
   }
 }
 

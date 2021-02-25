@@ -53,7 +53,7 @@ import java.util.function.IntFunction;
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
-public abstract class AbstractMemorySegmentImpl implements MemorySegment, MemorySegmentProxy {
+public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy implements MemorySegment {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 

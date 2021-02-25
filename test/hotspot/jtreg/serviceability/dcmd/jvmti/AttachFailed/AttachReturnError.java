@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @bug 8165736
+ * @bug 8165736 8252657
  * @library /test/lib
  * @run testng AttachReturnError
  */
@@ -36,8 +36,13 @@ public class AttachReturnError extends AttachFailedTestBase {
             String libpath = getSharedObjectPath("ReturnError");
             OutputAnalyzer output = null;
 
+            // Check return code
             output = executor.execute("JVMTI.agent_load " + libpath);
             output.shouldContain("return code: -1");
+
+            // Check loaded libraries
+            output = executor.execute("VM.dynlibs");
+            output.shouldNotContain(libpath);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

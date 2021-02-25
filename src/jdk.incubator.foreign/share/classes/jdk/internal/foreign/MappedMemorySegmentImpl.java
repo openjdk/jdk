@@ -34,6 +34,8 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -114,15 +116,24 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
         Objects.requireNonNull(mapMode);
         if (bytesSize < 0) throw new IllegalArgumentException("Requested bytes size must be >= 0.");
         if (bytesOffset < 0) throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
-        try (FileChannelImpl channelImpl = (FileChannelImpl)FileChannel.open(path, openOptions(mapMode))) {
-            UnmapperProxy unmapperProxy = channelImpl.mapInternal(mapMode, bytesOffset, bytesSize);
-            MemoryScope scope = MemoryScope.createConfined(null, unmapperProxy::unmap, null);
+        FileSystem fs = path.getFileSystem();
+        if (fs != FileSystems.getDefault() ||
+                fs.getClass().getModule() != Object.class.getModule()) {
+            throw new IllegalArgumentException("Unsupported file system");
+        }
+        try (FileChannel channelImpl = FileChannel.open(path, openOptions(mapMode))) {
+            UnmapperProxy unmapperProxy = ((FileChannelImpl)channelImpl).mapInternal(mapMode, bytesOffset, bytesSize);
             int modes = defaultAccessModes(bytesSize);
             if (mapMode == FileChannel.MapMode.READ_ONLY) {
                 modes &= ~WRITE;
             }
-            return new MappedMemorySegmentImpl(unmapperProxy.address(), unmapperProxy, bytesSize,
-                    modes, scope);
+            if (unmapperProxy != null) {
+                MemoryScope scope = MemoryScope.createConfined(null, unmapperProxy::unmap, null);
+                return new MappedMemorySegmentImpl(unmapperProxy.address(), unmapperProxy, bytesSize,
+                        modes, scope);
+            } else {
+                return new EmptyMappedMemorySegmentImpl(modes);
+            }
         }
     }
 
@@ -135,4 +146,32 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
             throw new UnsupportedOperationException("Unsupported map mode: " + mapMode);
         }
     }
+
+    static class EmptyMappedMemorySegmentImpl extends MappedMemorySegmentImpl {
+
+        public EmptyMappedMemorySegmentImpl(int modes) {
+            super(0, null, 0, modes,
+                    MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null));
+        }
+
+        @Override
+        public void load() {
+            // do nothing
+        }
+
+        @Override
+        public void unload() {
+            // do nothing
+        }
+
+        @Override
+        public boolean isLoaded() {
+            return true;
+        }
+
+        @Override
+        public void force() {
+            // do nothing
+        }
+    };
 }

@@ -189,7 +189,9 @@ public class instances002 extends HeapwalkingDebugger {
                         objectReferences.add(classType.newInstance(breakpointEvent.thread(), method, new ArrayList<Value>(), 0));
                     }
 
+                    debuggee.resume();
                     checkDebugeeAnswer_instances(className, baseInstances);
+                    debuggee.suspend();
 
                     break;
                 }

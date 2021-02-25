@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/os.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // ReservedSpace
@@ -81,27 +82,27 @@ ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment,
 }
 
 // Helper method
-static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd) {
+static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, bool executable) {
   if (fd != -1) {
     return os::attempt_map_memory_to_file_at(base, size, fd);
   }
-  return os::attempt_reserve_memory_at(base, size);
+  return os::attempt_reserve_memory_at(base, size, executable);
 }
 
 // Helper method
-static char* map_or_reserve_memory(size_t size, int fd) {
+static char* map_or_reserve_memory(size_t size, int fd, bool executable) {
   if (fd != -1) {
     return os::map_memory_to_file(size, fd);
   }
-  return os::reserve_memory(size);
+  return os::reserve_memory(size, executable);
 }
 
 // Helper method
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fd) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fd, bool executable) {
   if (fd != -1) {
     return os::map_memory_to_file_aligned(size, alignment, fd);
   }
-  return os::reserve_memory_aligned(size, alignment);
+  return os::reserve_memory_aligned(size, alignment, executable);
 }
 
 // Helper method
@@ -212,13 +213,13 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
     // important.  If available space is not detected, return NULL.
 
     if (requested_address != 0) {
-      base = attempt_map_or_reserve_memory_at(requested_address, size, _fd_for_heap);
+      base = attempt_map_or_reserve_memory_at(requested_address, size, _fd_for_heap, _executable);
       if (failed_to_reserve_as_requested(base, requested_address, size, false, _fd_for_heap != -1)) {
         // OS ignored requested address. Try different address.
         base = NULL;
       }
     } else {
-      base = map_or_reserve_memory(size, _fd_for_heap);
+      base = map_or_reserve_memory(size, _fd_for_heap, _executable);
     }
 
     if (base == NULL) return;
@@ -230,7 +231,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
 
       // Make sure that size is aligned
       size = align_up(size, alignment);
-      base = map_or_reserve_memory_aligned(size, alignment, _fd_for_heap);
+      base = map_or_reserve_memory_aligned(size, alignment, _fd_for_heap, _executable);
 
       if (requested_address != 0 &&
           failed_to_reserve_as_requested(base, requested_address, size, false, _fd_for_heap != -1)) {
@@ -252,13 +253,9 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   }
 }
 
-ReservedSpace ReservedSpace::first_part(size_t partition_size, size_t alignment, bool split) {
+ReservedSpace ReservedSpace::first_part(size_t partition_size, size_t alignment) {
   assert(partition_size <= size(), "partition failed");
-  if (split && partition_size > 0 && partition_size < size()) {
-    os::split_reserved_memory(base(), size(), partition_size);
-  }
-  ReservedSpace result(base(), partition_size, alignment, special(),
-                       executable());
+  ReservedSpace result(base(), partition_size, alignment, special(), executable());
   return result;
 }
 
@@ -414,13 +411,13 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
     }
 
     if (requested_address != 0) {
-      base = attempt_map_or_reserve_memory_at(requested_address, size, _fd_for_heap);
+      base = attempt_map_or_reserve_memory_at(requested_address, size, _fd_for_heap, executable());
     } else {
       // Optimistically assume that the OSes returns an aligned base pointer.
       // When reserving a large address range, most OSes seem to align to at
       // least 64K.
       // If the returned memory is not aligned we will release and retry.
-      base = map_or_reserve_memory(size, _fd_for_heap);
+      base = map_or_reserve_memory(size, _fd_for_heap, executable());
     }
   }
   if (base == NULL) { return; }
@@ -1024,7 +1021,7 @@ void VirtualSpace::shrink_by(size_t size) {
     assert(middle_high_boundary() <= aligned_upper_new_high &&
            aligned_upper_new_high + upper_needs <= upper_high_boundary(),
            "must not shrink beyond region");
-    if (!os::uncommit_memory(aligned_upper_new_high, upper_needs)) {
+    if (!os::uncommit_memory(aligned_upper_new_high, upper_needs, _executable)) {
       debug_only(warning("os::uncommit_memory failed"));
       return;
     } else {
@@ -1035,7 +1032,7 @@ void VirtualSpace::shrink_by(size_t size) {
     assert(lower_high_boundary() <= aligned_middle_new_high &&
            aligned_middle_new_high + middle_needs <= middle_high_boundary(),
            "must not shrink beyond region");
-    if (!os::uncommit_memory(aligned_middle_new_high, middle_needs)) {
+    if (!os::uncommit_memory(aligned_middle_new_high, middle_needs, _executable)) {
       debug_only(warning("os::uncommit_memory failed"));
       return;
     } else {
@@ -1046,7 +1043,7 @@ void VirtualSpace::shrink_by(size_t size) {
     assert(low_boundary() <= aligned_lower_new_high &&
            aligned_lower_new_high + lower_needs <= lower_high_boundary(),
            "must not shrink beyond region");
-    if (!os::uncommit_memory(aligned_lower_new_high, lower_needs)) {
+    if (!os::uncommit_memory(aligned_lower_new_high, lower_needs, _executable)) {
       debug_only(warning("os::uncommit_memory failed"));
       return;
     } else {

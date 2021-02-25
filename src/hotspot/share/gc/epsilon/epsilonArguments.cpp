@@ -26,9 +26,9 @@
 #include "gc/epsilon/epsilonArguments.hpp"
 #include "gc/epsilon/epsilonHeap.hpp"
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "utilities/macros.hpp"
 
 size_t EpsilonArguments::conservative_max_heap_alignment() {
   return UseLargePages ? os::large_page_size() : os::vm_page_size();

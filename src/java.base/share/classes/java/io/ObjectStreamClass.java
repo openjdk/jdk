@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,11 +490,6 @@ public class ObjectStreamClass implements Serializable {
         }
     }
 
-    @SuppressWarnings("preview")
-    private static boolean isRecord(Class<?> cls) {
-        return cls.isRecord();
-    }
-
     /**
      * Creates local class descriptor representing given class.
      */
@@ -503,7 +498,7 @@ public class ObjectStreamClass implements Serializable {
         name = cl.getName();
         isProxy = Proxy.isProxyClass(cl);
         isEnum = Enum.class.isAssignableFrom(cl);
-        isRecord = isRecord(cl);
+        isRecord = cl.isRecord();
         serializable = Serializable.class.isAssignableFrom(cl);
         externalizable = Externalizable.class.isAssignableFrom(cl);
 
@@ -515,7 +510,7 @@ public class ObjectStreamClass implements Serializable {
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Void run() {
                     if (isEnum) {
-                        suid = Long.valueOf(0);
+                        suid = 0L;
                         fields = NO_FIELDS;
                         return null;
                     }
@@ -560,7 +555,7 @@ public class ObjectStreamClass implements Serializable {
                 }
             });
         } else {
-            suid = Long.valueOf(0);
+            suid = 0L;
             fields = NO_FIELDS;
         }
 
@@ -678,7 +673,7 @@ public class ObjectStreamClass implements Serializable {
         this.superDesc = superDesc;
         isProxy = true;
         serializable = true;
-        suid = Long.valueOf(0);
+        suid = 0L;
         fields = NO_FIELDS;
         if (osc != null) {
             localDesc = osc;
@@ -703,7 +698,7 @@ public class ObjectStreamClass implements Serializable {
                       ObjectStreamClass superDesc)
         throws InvalidClassException
     {
-        long suid = Long.valueOf(model.getSerialVersionUID());
+        long suid = model.getSerialVersionUID();
         ObjectStreamClass osc = null;
         if (cl != null) {
             osc = lookup(cl, true);
@@ -718,7 +713,7 @@ public class ObjectStreamClass implements Serializable {
             }
 
             if (model.serializable == osc.serializable &&
-                    !cl.isArray() && !isRecord(cl) &&
+                    !cl.isArray() && !cl.isRecord() &&
                     suid != osc.getSerialVersionUID()) {
                 throw new InvalidClassException(osc.name,
                         "local class incompatible: " +
@@ -780,7 +775,7 @@ public class ObjectStreamClass implements Serializable {
                 deserializeEx = localDesc.deserializeEx;
             }
             domains = localDesc.domains;
-            assert isRecord(cl) ? localDesc.cons == null : true;
+            assert cl.isRecord() ? localDesc.cons == null : true;
             cons = localDesc.cons;
         }
 
@@ -801,7 +796,7 @@ public class ObjectStreamClass implements Serializable {
         throws IOException, ClassNotFoundException
     {
         name = in.readUTF();
-        suid = Long.valueOf(in.readLong());
+        suid = in.readLong();
         isProxy = false;
 
         byte flags = in.readByte();
@@ -1590,9 +1585,8 @@ public class ObjectStreamClass implements Serializable {
      * the not found ( which should never happen for correctly generated record
      * classes ).
      */
-    @SuppressWarnings("preview")
     private static MethodHandle canonicalRecordCtr(Class<?> cls) {
-        assert isRecord(cls) : "Expected record, got: " + cls;
+        assert cls.isRecord() : "Expected record, got: " + cls;
         PrivilegedAction<MethodHandle> pa = () -> {
             Class<?>[] paramTypes = Arrays.stream(cls.getRecordComponents())
                                           .map(RecordComponent::getType)
@@ -1743,7 +1737,7 @@ public class ObjectStreamClass implements Serializable {
             return NO_FIELDS;
 
         ObjectStreamField[] fields;
-        if (isRecord(cl)) {
+        if (cl.isRecord()) {
             fields = getDefaultSerialFields(cl);
             Arrays.sort(fields);
         } else if (!Externalizable.class.isAssignableFrom(cl) &&
@@ -1852,7 +1846,7 @@ public class ObjectStreamClass implements Serializable {
             int mask = Modifier.STATIC | Modifier.FINAL;
             if ((f.getModifiers() & mask) == mask) {
                 f.setAccessible(true);
-                return Long.valueOf(f.getLong(null));
+                return f.getLong(null);
             }
         } catch (Exception ex) {
         }
@@ -2411,7 +2405,7 @@ public class ObjectStreamClass implements Serializable {
                 Class<?> referent;
                 return (nullClass ? other.nullClass
                                   : ((referent = get()) != null) &&
-                                    (referent == other.get())) &&
+                                    (other.refersTo(referent))) &&
                         Arrays.equals(sigs, other.sigs);
             } else {
                 return false;
@@ -2532,9 +2526,9 @@ public class ObjectStreamClass implements Serializable {
             }
 
             if (obj instanceof WeakClassKey) {
-                Object referent = get();
+                Class<?> referent = get();
                 return (referent != null) &&
-                       (referent == ((WeakClassKey) obj).get());
+                        (((WeakClassKey) obj).refersTo(referent));
             } else {
                 return false;
             }
@@ -2663,7 +2657,6 @@ public class ObjectStreamClass implements Serializable {
          * and return
          * {@code Object}
          */
-        @SuppressWarnings("preview")
         static MethodHandle deserializationCtr(ObjectStreamClass desc) {
             // check the cached value 1st
             MethodHandle mh = desc.deserializationCtr;

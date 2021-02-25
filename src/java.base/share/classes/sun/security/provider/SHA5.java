@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,13 +98,14 @@ abstract class SHA5 extends DigestBase {
         super(name, digestLength, 128);
         this.initialHashes = initialHashes;
         state = new long[8];
-        W = new long[80];
         resetHashes();
     }
 
     final void implReset() {
         resetHashes();
-        Arrays.fill(W, 0L);
+        if (W != null) {
+            Arrays.fill(W, 0L);
+        }
     }
 
     private void resetHashes() {
@@ -225,11 +226,12 @@ abstract class SHA5 extends DigestBase {
     private void implCompressCheck(byte[] buf, int ofs) {
         Objects.requireNonNull(buf);
 
-        // The checks performed by the method 'b2iBig128'
-        // are sufficient for the case when the method
-        // 'implCompressImpl' is replaced with a compiler
-        // intrinsic.
-        b2lBig128(buf, ofs, W);
+        // Checks similar to those performed by the method 'b2lBig128'
+        // are sufficient for the case when the method 'implCompress0' is
+        // replaced with a compiler intrinsic.
+        if (ofs < 0 || (buf.length - ofs) < 128) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
     }
 
     // The method 'implCompressImpl' seems not to use its parameters.
@@ -239,6 +241,10 @@ abstract class SHA5 extends DigestBase {
     // must be passed as parameter to the method.
     @IntrinsicCandidate
     private final void implCompress0(byte[] buf, int ofs) {
+        if (W == null) {
+            W = new long[80];
+        }
+        b2lBig128(buf, ofs, W);
         // The first 16 longs are from the byte stream, compute the rest of
         // the W[]'s
         for (int t = 16; t < ITERATION; t++) {
@@ -280,7 +286,7 @@ abstract class SHA5 extends DigestBase {
     public Object clone() throws CloneNotSupportedException {
         SHA5 copy = (SHA5) super.clone();
         copy.state = copy.state.clone();
-        copy.W = new long[80];
+        copy.W = null;
         return copy;
     }
 

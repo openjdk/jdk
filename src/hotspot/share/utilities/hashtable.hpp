@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,7 @@ template <MEMFLAGS F> class BasicHashtableEntry : public CHeapObj<F> {
 private:
   unsigned int         _hash;           // 32-bit hash for item
 
-  // Link to next element in the linked list for this bucket.  EXCEPT
-  // bit 0 set indicates that this entry is shared and must not be
-  // unlinked from the table. Bit 0 is set during the dumping of the
-  // archive. Since shared entries are immutable, _next fields in the
-  // shared entries will not change.  New entries will always be
-  // unshared and since pointers are align, bit 0 will always remain 0
-  // with no extra effort.
+  // Link to next element in the linked list for this bucket.
   BasicHashtableEntry<F>* _next;
 
   // Windows IA64 compiler requires subclasses to be able to access these
@@ -71,12 +65,8 @@ public:
   void set_hash(unsigned int hash)      { _hash = hash; }
   unsigned int* hash_addr()             { return &_hash; }
 
-  static BasicHashtableEntry<F>* make_ptr(BasicHashtableEntry<F>* p) {
-    return (BasicHashtableEntry*)((intptr_t)p & -2);
-  }
-
   BasicHashtableEntry<F>* next() const {
-    return make_ptr(_next);
+    return _next;
   }
 
   void set_next(BasicHashtableEntry<F>* next) {
@@ -85,14 +75,6 @@ public:
 
   BasicHashtableEntry<F>** next_addr() {
     return &_next;
-  }
-
-  bool is_shared() const {
-    return ((intptr_t)_next & 1) != 0;
-  }
-
-  void set_shared() {
-    _next = (BasicHashtableEntry<F>*)((intptr_t)_next | 1);
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
@@ -54,10 +54,10 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   null_check_offset = offset();
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(hdr, obj, rklass_decode_tmp);
     movl(hdr, Address(hdr, Klass::access_flags_offset()));
-    testl(hdr, JVM_ACC_IS_BOX_CLASS);
+    testl(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
     jcc(Assembler::notZero, slow_case);
   }
 
@@ -335,12 +335,12 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   if (PreserveFramePointer) {
     mov(rbp, rsp);
   }
-#if !defined(_LP64) && defined(TIERED)
-  if (UseSSE < 2 ) {
+#if !defined(_LP64) && defined(COMPILER2)
+  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_aot_or_jvmci()) {
     // c2 leaves fpu stack dirty. Clean it on entry
     empty_FPU_stack();
   }
-#endif // !_LP64 && TIERED
+#endif // !_LP64 && COMPILER2
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -355,7 +355,7 @@ void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
 
 
 void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint || VerifyFPU || !UseStackBanging) {
+  if (C1Breakpoint || VerifyFPU) {
     // Verified Entry first instruction should be 5 bytes long for correct
     // patching by patch_verified_entry().
     //

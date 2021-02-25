@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,7 @@ abstract class AbstractVector<E> extends Vector<E> {
             int origin = shapeChangeOrigin(vsp, rsp, false, part);
             //System.out.println("*** origin = "+origin+", part = "+part+", reinterpret");
             if (part > 0) {  // Expansion: slice first then cast.
-                return slice(origin, vsp.zero()).convert0('X', rsp);
+                return slice(origin).convert0('X', rsp);
             } else {  // Contraction: cast first then unslice.
                 return rsp.zero().slice(rsp.laneCount() - origin,
                                         convert0('X', rsp));
@@ -322,6 +322,9 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     @Override
     public abstract AbstractVector<E> slice(int origin, Vector<E> v1);
+
+    @Override
+    public abstract AbstractVector<E> slice(int origin);
 
     /**
      * This is the template for Vector::convertShape, to be
@@ -365,7 +368,7 @@ abstract class AbstractVector<E> extends Vector<E> {
             int origin = shapeChangeOrigin(vsp, rsp, true, part);
             //System.out.println("*** origin = "+origin+", part = "+part+", lanewise");
             if (part > 0) {  // Expansion: slice first then cast.
-                return slice(origin, vsp.zero()).convert0(kind, rsp);
+                return slice(origin).convert0(kind, rsp);
             } else {  // Contraction: cast first then unslice.
                 return rsp.zero().slice(rsp.laneCount() - origin,
                                         convert0(kind, rsp));

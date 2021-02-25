@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -497,8 +498,8 @@ public class SignatureFileVerifier {
                     if (debug != null) {
                         debug.println("Signature File: Manifest digest " +
                                 algorithm);
-                        debug.println( "  sigfile  " + toHex(expectedHash));
-                        debug.println( "  computed " + toHex(computedHash));
+                        debug.println( "  sigfile  " + HexFormat.of().formatHex(expectedHash));
+                        debug.println( "  computed " + HexFormat.of().formatHex(computedHash));
                         debug.println();
                     }
 
@@ -568,8 +569,8 @@ public class SignatureFileVerifier {
                      debug.println("Signature File: " +
                                         "Manifest Main Attributes digest " +
                                         digest.getAlgorithm());
-                     debug.println( "  sigfile  " + toHex(expectedHash));
-                     debug.println( "  computed " + toHex(computedHash));
+                     debug.println( "  sigfile  " + HexFormat.of().formatHex(expectedHash));
+                     debug.println( "  computed " + HexFormat.of().formatHex(computedHash));
                      debug.println();
                     }
 
@@ -676,8 +677,8 @@ public class SignatureFileVerifier {
                         if (debug != null) {
                           debug.println("Signature Block File: " +
                                    name + " digest=" + digest.getAlgorithm());
-                          debug.println("  expected " + toHex(expected));
-                          debug.println("  computed " + toHex(computed));
+                          debug.println("  expected " + HexFormat.of().formatHex(expected));
+                          debug.println("  computed " + HexFormat.of().formatHex(computed));
                           debug.println();
                         }
 
@@ -690,7 +691,7 @@ public class SignatureFileVerifier {
                                computed = mde.digestWorkaround(digest);
                                if (MessageDigest.isEqual(computed, expected)) {
                                    if (debug != null) {
-                                       debug.println("  re-computed " + toHex(computed));
+                                       debug.println("  re-computed " + HexFormat.of().formatHex(computed));
                                        debug.println();
                                    }
                                    workaround = true;
@@ -761,26 +762,6 @@ public class SignatureFileVerifier {
         } else {
             return null;
         }
-    }
-
-    // for the toHex function
-    private static final char[] hexc =
-            {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
-    /**
-     * convert a byte array to a hex string for debugging purposes
-     * @param data the binary data to be converted to a hex string
-     * @return an ASCII hex string
-     */
-
-    static String toHex(byte[] data) {
-
-        StringBuilder sb = new StringBuilder(data.length*2);
-
-        for (int i=0; i<data.length; i++) {
-            sb.append(hexc[(data[i] >>4) & 0x0f]);
-            sb.append(hexc[data[i] & 0x0f]);
-        }
-        return sb.toString();
     }
 
     // returns true if set contains signer

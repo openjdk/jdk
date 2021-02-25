@@ -102,12 +102,12 @@ import java.util.Objects;
  * as well as a zone offset.
  * For example, the value "13:45:30.123456789+02:00" can be stored
  * in an {@code OffsetTime}.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code OffsetTime} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -115,6 +115,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class OffsetTime
         implements Temporal, TemporalAdjuster, Comparable<OffsetTime>, Serializable {
 

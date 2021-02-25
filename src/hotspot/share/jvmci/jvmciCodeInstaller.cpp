@@ -945,6 +945,10 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
     }
   }
 #endif
+  if (_has_auto_box) {
+    JavaThread* THREAD = JavaThread::current();
+    JVMCI::ensure_box_caches_initialized(CHECK_(JVMCI::ok));
+  }
   return JVMCI::ok;
 }
 
@@ -1028,6 +1032,9 @@ GrowableArray<ScopeValue*>* CodeInstaller::record_virtual_objects(JVMCIObject de
     int id = jvmci_env()->get_VirtualObject_id(value);
     JVMCIObject type = jvmci_env()->get_VirtualObject_type(value);
     bool is_auto_box = jvmci_env()->get_VirtualObject_isAutoBox(value);
+    if (is_auto_box) {
+      _has_auto_box = true;
+    }
     Klass* klass = jvmci_env()->asKlass(type);
     oop javaMirror = klass->java_mirror();
     ScopeValue *klass_sv = new ConstantOopWriteValue(JNIHandles::make_local(Thread::current(), javaMirror));
@@ -1049,6 +1056,7 @@ GrowableArray<ScopeValue*>* CodeInstaller::record_virtual_objects(JVMCIObject de
     record_object_value(objects->at(id)->as_ObjectValue(), value, objects, JVMCI_CHECK_NULL);
   }
   _debug_recorder->dump_object_pool(objects);
+
   return objects;
 }
 

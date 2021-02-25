@@ -41,6 +41,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
@@ -104,16 +105,6 @@ public abstract class BaseConfiguration {
      * The taglet manager.
      */
     public TagletManager tagletManager;
-
-    /**
-     * The path to the builder XML input file.
-     */
-    public String builderXMLPath;
-
-    /**
-     * The default path to the builder XML.
-     */
-    public static final String DEFAULT_BUILDER_XML = "resources/doclet.xml";
 
     /**
      * The meta tag keywords instance.
@@ -237,7 +228,8 @@ public abstract class BaseConfiguration {
 
     private boolean initialized = false;
 
-    protected void initConfiguration(DocletEnvironment docEnv) {
+    protected void initConfiguration(DocletEnvironment docEnv,
+                                     Function<String, String> resourceKeyMapper) {
         if (initialized) {
             throw new IllegalStateException("configuration previously initialized");
         }
@@ -250,6 +242,8 @@ public abstract class BaseConfiguration {
         if (!options.javafx()) {
             options.setJavaFX(isJavaFXMode());
         }
+
+        getDocResources().setKeyMapper(resourceKeyMapper);
 
         // Once docEnv and Utils have been initialized, others should be safe.
         metakeywords = new MetaKeywords(this);
@@ -603,18 +597,6 @@ public abstract class BaseConfiguration {
     public abstract WriterFactory getWriterFactory();
 
     /**
-     * Return the input stream to the builder XML.
-     *
-     * @return the input steam to the builder XML.
-     * @throws DocFileIOException when the given XML file cannot be found or opened.
-     */
-    public InputStream getBuilderXML() throws DocFileIOException {
-        return builderXMLPath == null ?
-                BaseConfiguration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
-                DocFile.createFileForInput(this, builderXMLPath).openInputStream();
-    }
-
-    /**
      * Return the Locale for this document.
      *
      * @return the current locale
@@ -793,8 +775,6 @@ public abstract class BaseConfiguration {
             String customTags = String.join(DocLint.SEPARATOR, customTagNames);
             doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags);
         }
-
-        doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + "html5");
 
         doclint = new DocLint();
         doclint.init(docEnv.getDocTrees(), docEnv.getElementUtils(), docEnv.getTypeUtils(),

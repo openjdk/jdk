@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public abstract class Reference<T> {
      *     pending: next element in the pending-Reference list (null if last)
      *    inactive: null
      */
-    private transient Reference<T> discovered;
+    private transient Reference<?> discovered;
 
 
     /* High-priority thread to enqueue pending References
@@ -220,7 +220,7 @@ public abstract class Reference<T> {
     /*
      * Atomically get and clear (set to null) the VM's pending-Reference list.
      */
-    private static native Reference<Object> getAndClearReferencePendingList();
+    private static native Reference<?> getAndClearReferencePendingList();
 
     /*
      * Test whether the VM's pending-Reference list contains any entries.
@@ -232,6 +232,16 @@ public abstract class Reference<T> {
      */
     private static native void waitForReferencePendingList();
 
+    /*
+     * Enqueue a Reference taken from the pending list.  Calling this method
+     * takes us from the Reference<?> domain of the pending list elements to
+     * having a Reference<T> with a correspondingly typed queue.
+     */
+    private void enqueueFromPending() {
+        var q = queue;
+        if (q != ReferenceQueue.NULL) q.enqueue(this);
+    }
+
     private static final Object processPendingLock = new Object();
     private static boolean processPendingActive = false;
 
@@ -241,13 +251,13 @@ public abstract class Reference<T> {
         // These are separate operations to avoid a race with other threads
         // that are calling waitForReferenceProcessing().
         waitForReferencePendingList();
-        Reference<Object> pendingList;
+        Reference<?> pendingList;
         synchronized (processPendingLock) {
             pendingList = getAndClearReferencePendingList();
             processPendingActive = true;
         }
         while (pendingList != null) {
-            Reference<Object> ref = pendingList;
+            Reference<?> ref = pendingList;
             pendingList = ref.discovered;
             ref.discovered = null;
 
@@ -260,8 +270,7 @@ public abstract class Reference<T> {
                     processPendingLock.notifyAll();
                 }
             } else {
-                ReferenceQueue<? super Object> q = ref.queue;
-                if (q != ReferenceQueue.NULL) q.enqueue(ref);
+                ref.enqueueFromPending();
             }
         }
         // Notify any waiters of completion of current round.
@@ -337,7 +346,7 @@ public abstract class Reference<T> {
      *
      * @return   The object to which this reference refers, or
      *           {@code null} if this reference object has been cleared
-     * @see refersTo
+     * @see #refersTo
      */
     @IntrinsicCandidate
     public T get() {
@@ -411,14 +420,35 @@ public abstract class Reference<T> {
     /* -- Queue operations -- */
 
     /**
-     * Tells whether or not this reference object has been enqueued, either by
-     * the program or by the garbage collector.  If this reference object was
-     * not registered with a queue when it was created, then this method will
-     * always return {@code false}.
+     * Tests if this reference object is in its associated queue, if any.
+     * This method returns {@code true} only if all of the following conditions
+     * are met:
+     * <ul>
+     * <li>this reference object was registered with a queue when it was created; and
+     * <li>the garbage collector has added this reference object to the queue
+     *     or {@link #enqueue()} is called; and
+     * <li>this reference object is not yet removed from the queue.
+     * </ul>
+     * Otherwise, this method returns {@code false}.
+     * This method may return {@code false} if this reference object has been cleared
+     * but not enqueued due to the race condition.
      *
-     * @return   {@code true} if and only if this reference object has
-     *           been enqueued
+     * @deprecated
+     * This method was originally specified to test if a reference object has
+     * been cleared and enqueued but was never implemented to do this test.
+     * This method could be misused due to the inherent race condition
+     * or without an associated {@code ReferenceQueue}.
+     * An application relying on this method to release critical resources
+     * could cause serious performance issue.
+     * An application should use {@link ReferenceQueue} to reliably determine
+     * what reference objects that have been enqueued or
+     * {@link #refersTo(Object) refersTo(null)} to determine if this reference
+     * object has been cleared.
+     *
+     * @return   {@code true} if and only if this reference object is
+     *           in its associated queue (if any).
      */
+    @Deprecated(since="16")
     public boolean isEnqueued() {
         return (this.queue == ReferenceQueue.ENQUEUED);
     }

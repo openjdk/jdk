@@ -28,19 +28,18 @@ package jdk.internal.platform.cgroupv2;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import jdk.internal.platform.CgroupInfo;
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
 import jdk.internal.platform.CgroupUtil;
 
 public class CgroupV2Subsystem implements CgroupSubsystem {
 
-    private static final CgroupV2Subsystem INSTANCE = initSubsystem();
+    private static volatile CgroupV2Subsystem INSTANCE;
     private static final long[] LONG_ARRAY_NOT_SUPPORTED = null;
     private static final int[] INT_ARRAY_UNAVAILABLE = null;
     private final CgroupSubsystemController unified;
@@ -48,60 +47,46 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     private static final int PER_CPU_SHARES = 1024;
     private static final String MAX_VAL = "max";
     private static final Object EMPTY_STR = "";
+    private static final long NO_SWAP = 0;
 
     private CgroupV2Subsystem(CgroupSubsystemController unified) {
         this.unified = unified;
     }
 
-    private long getLongVal(String file) {
+    private long getLongVal(String file, long defaultValue) {
         return CgroupSubsystemController.getLongValue(unified,
                                                       file,
                                                       CgroupV2SubsystemController::convertStringToLong,
-                                                      CgroupSubsystem.LONG_RETVAL_UNLIMITED);
+                                                      defaultValue);
     }
 
-    private static CgroupV2Subsystem initSubsystem() {
-        // read mountinfo so as to determine root mount path
-        String mountPath = null;
-        try (Stream<String> lines =
-                CgroupUtil.readFilePrivileged(Paths.get("/proc/self/mountinfo"))) {
+    private long getLongVal(String file) {
+        return getLongVal(file, CgroupSubsystem.LONG_RETVAL_UNLIMITED);
+    }
 
-            String l = lines.filter(line -> line.contains(" - cgroup2 "))
-                            .collect(Collectors.joining());
-            String[] tokens = l.split(" ");
-            mountPath = tokens[4];
-        } catch (UncheckedIOException e) {
-            return null;
-        } catch (IOException e) {
-            return null;
-        }
-        String cgroupPath = null;
-        try {
-            List<String> lines = CgroupUtil.readAllLinesPrivileged(Paths.get("/proc/self/cgroup"));
-            for (String line: lines) {
-                String[] tokens = line.split(":");
-                if (tokens.length != 3) {
-                    return null; // something is not right.
+    /**
+     * Get the singleton instance of a cgroups v2 subsystem. On initialization,
+     * a new object from the given cgroup information 'anyController' is being
+     * created. Note that the cgroup information has been parsed from cgroup
+     * interface files ahead of time.
+     *
+     * See CgroupSubsystemFactory.determineType() for the cgroup interface
+     * files parsing logic.
+     *
+     * @return A singleton CgroupSubsystem instance, never null.
+     */
+    public static CgroupSubsystem getInstance(CgroupInfo anyController) {
+        if (INSTANCE == null) {
+            CgroupSubsystemController unified = new CgroupV2SubsystemController(
+                    anyController.getMountPoint(),
+                    anyController.getCgroupPath());
+            CgroupV2Subsystem tmpCgroupSystem = new CgroupV2Subsystem(unified);
+            synchronized (CgroupV2Subsystem.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = tmpCgroupSystem;
                 }
-                if (!"0".equals(tokens[0])) {
-                    // hierarchy must be zero for cgroups v2
-                    return null;
-                }
-                cgroupPath = tokens[2];
-                break;
             }
-        } catch (UncheckedIOException e) {
-            return null;
-        } catch (IOException e) {
-            return null;
         }
-        CgroupSubsystemController unified = new CgroupV2SubsystemController(
-                mountPath,
-                cgroupPath);
-        return new CgroupV2Subsystem(unified);
-    }
-
-    public static CgroupSubsystem getInstance() {
         return INSTANCE;
     }
 
@@ -289,6 +274,11 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     @Override
     public long getMemoryAndSwapLimit() {
         String strVal = CgroupSubsystemController.getStringValue(unified, "memory.swap.max");
+        // We only get a null string when file memory.swap.max doesn't exist.
+        // In that case we return the memory limit without any swap.
+        if (strVal == null) {
+            return getMemoryLimit();
+        }
         long swapLimit = limitFromString(strVal);
         if (swapLimit >= 0) {
             long memoryLimit = getMemoryLimit();
@@ -307,9 +297,14 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
      */
     @Override
     public long getMemoryAndSwapUsage() {
-        long swapUsage = getLongVal("memory.swap.current");
         long memoryUsage = getMemoryUsage();
-        return memoryUsage + swapUsage;
+        if (memoryUsage >= 0) {
+            // If file memory.swap.current doesn't exist, only return the regular
+            // memory usage (without swap). Thus, use default value of NO_SWAP.
+            long swapUsage = getLongVal("memory.swap.current", NO_SWAP);
+            return memoryUsage + swapUsage;
+        }
+        return memoryUsage; // case of no memory limits
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -215,7 +215,7 @@ public class HelpWriter extends HtmlDocletWriter {
             section = newHelpSection(getContent("doclet.help.tree.head"));
             Content treeIntro = getContent("doclet.help.tree.intro",
                     links.createLink(DocPaths.OVERVIEW_TREE, resources.getText("doclet.Class_Hierarchy")),
-                    HtmlTree.CODE(new StringContent("java.lang.Object")));
+                    HtmlTree.CODE(Text.of("java.lang.Object")));
             section.add(HtmlTree.P(treeIntro))
                     .add(newHelpSectionList(
                             getContent("doclet.help.tree.overview"),
@@ -229,6 +229,15 @@ public class HelpWriter extends HtmlDocletWriter {
             Content deprBody = getContent("doclet.help.deprecated.body",
                     links.createLink(DocPaths.DEPRECATED_LIST, resources.getText("doclet.Deprecated_API")));
             section.add(HtmlTree.P(deprBody));
+            contentTree.add(section);
+        }
+
+        // Preview
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
+            section = newHelpSection(contents.previewAPI);
+            Content previewBody = getContent("doclet.help.preview.body",
+                    links.createLink(DocPaths.PREVIEW_LIST, contents.previewAPI));
+            section.add(HtmlTree.P(previewBody));
             contentTree.add(section);
         }
 
@@ -276,7 +285,7 @@ public class HelpWriter extends HtmlDocletWriter {
             for (String[] example : SEARCH_EXAMPLES) {
                 searchExamples.add(HtmlTree.LI(
                         getContent("doclet.help.search.example",
-                                HtmlTree.CODE(new StringContent(example[0])), example[1])));
+                                HtmlTree.CODE(Text.of(example[0])), example[1])));
             }
             Content searchSpecLink = HtmlTree.A(
                     resources.getText("doclet.help.search.spec.url", configuration.getDocletVersion().feature()),

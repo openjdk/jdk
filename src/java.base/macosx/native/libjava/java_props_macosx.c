@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,21 +236,46 @@ void setOSNameAndVersion(java_props_t *sprops) {
 
     char* osVersionCStr = NULL;
     // Mac OS 10.9 includes the [NSProcessInfo operatingSystemVersion] function,
-    // but it's not in the 10.9 SDK.  So, call it via objc_msgSend_stret.
+    // but it's not in the 10.9 SDK.  So, call it via NSInvocation.
     if ([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
-        OSVerStruct (*procInfoFn)(id rec, SEL sel) = (OSVerStruct(*)(id, SEL))objc_msgSend_stret;
-        OSVerStruct osVer = procInfoFn([NSProcessInfo processInfo],
-                                       @selector(operatingSystemVersion));
+        OSVerStruct osVer;
+        NSMethodSignature *sig = [[NSProcessInfo processInfo] methodSignatureForSelector:
+                @selector(operatingSystemVersion)];
+        NSInvocation *invoke = [NSInvocation invocationWithMethodSignature:sig];
+        invoke.selector = @selector(operatingSystemVersion);
+        [invoke invokeWithTarget:[NSProcessInfo processInfo]];
+        [invoke getReturnValue:&osVer];
+
         NSString *nsVerStr;
-        if (osVer.patchVersion == 0) { // Omit trailing ".0"
-            nsVerStr = [NSString stringWithFormat:@"%ld.%ld",
-                    (long)osVer.majorVersion, (long)osVer.minorVersion];
+        // Copy out the char* if running on version other than 10.16 Mac OS (10.16 == 11.x)
+        // or explicitly requesting version compatibility
+        if (!((long)osVer.majorVersion == 10 && (long)osVer.minorVersion >= 16) ||
+                (getenv("SYSTEM_VERSION_COMPAT") != NULL)) {
+            if (osVer.patchVersion == 0) { // Omit trailing ".0"
+                nsVerStr = [NSString stringWithFormat:@"%ld.%ld",
+                        (long)osVer.majorVersion, (long)osVer.minorVersion];
+            } else {
+                nsVerStr = [NSString stringWithFormat:@"%ld.%ld.%ld",
+                        (long)osVer.majorVersion, (long)osVer.minorVersion, (long)osVer.patchVersion];
+            }
+            // Copy out the char*
+            osVersionCStr = strdup([nsVerStr UTF8String]);
         } else {
-            nsVerStr = [NSString stringWithFormat:@"%ld.%ld.%ld",
-                    (long)osVer.majorVersion, (long)osVer.minorVersion, (long)osVer.patchVersion];
+            // Version 10.16, without explicit env setting of SYSTEM_VERSION_COMPAT
+            // AKA 11.x; compute the version number from the letter in the ProductBuildVersion
+            NSDictionary *version = [NSDictionary dictionaryWithContentsOfFile :
+                             @"/System/Library/CoreServices/SystemVersion.plist"];
+            if (version != NULL) {
+                NSString *nsBuildVerStr = [version objectForKey : @"ProductBuildVersion"];
+                if (nsBuildVerStr != NULL && nsBuildVerStr.length >= 3) {
+                    int letter = [nsBuildVerStr characterAtIndex:2];
+                    if (letter >= 'B' && letter <= 'Z') {
+                        int vers = letter - 'A' - 1;
+                        asprintf(&osVersionCStr, "11.%d", vers);
+                    }
+                }
+            }
         }
-        // Copy out the char*
-        osVersionCStr = strdup([nsVerStr UTF8String]);
     }
     // Fallback if running on pre-10.9 Mac OS
     if (osVersionCStr == NULL) {

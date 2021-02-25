@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package javax.lang.model.element;
 
 /**
- * Represents a value of an annotation type element.
+ * Represents a value of an annotation interface element.
  * A value is of one of the following types:
  * <ul><li> a wrapper class (such as {@link Integer}) for a primitive type
  *     <li> {@code String}
@@ -45,18 +45,14 @@ package javax.lang.model.element;
 public interface AnnotationValue {
 
     /**
-     * Returns the value.
-     *
-     * @return the value
+     * {@return the value}
      */
     Object getValue();
 
     /**
-     * Returns a string representation of this value.
+     * {@return a string representation of this value}
      * This is returned in a form suitable for representing this value
      * in the source code of an annotation.
-     *
-     * @return a string representation of this value
      */
     String toString();
 

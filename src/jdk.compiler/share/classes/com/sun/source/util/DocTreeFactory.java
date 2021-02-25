@@ -266,6 +266,26 @@ public interface DocTreeFactory {
     ReturnTree newReturnTree(List<? extends DocTree> description);
 
     /**
+     * Creates a new {@code ReturnTree} object, to represent a {@code @return} tag
+     * or {@code {@return}} tag.
+     *
+     * @implSpec This implementation throws {@code UnsupportedOperationException} if
+     * {@code isInline} is {@code true}, and calls {@link #newReturnTree(List)} otherwise.
+     *
+     * @param description the description of the return value of a method
+     * @return a {@code ReturnTree} object
+     * @throws UnsupportedOperationException if inline {@code {@return}} tags are
+     *      not supported
+     * @since 16
+     */
+    default ReturnTree newReturnTree(boolean isInline, List<? extends DocTree> description) {
+        if (isInline) {
+            throw new UnsupportedOperationException();
+        }
+        return newReturnTree(description);
+    }
+
+    /**
      * Creates a new {@code SeeTree} object, to represent a {@code @see} tag.
      * @param reference the reference
      * @return a {@code SeeTree} object

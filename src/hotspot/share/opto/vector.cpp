@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "opto/castnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/phaseX.hpp"
@@ -358,8 +360,8 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   Node* vec_obj = kit.new_instance(klass_node);
 
   // Store the allocated array into object.
-  ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbol::payload_name(),
-                                                                                     ciSymbol::object_signature(),
+  ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
+                                                                                     ciSymbols::object_signature(),
                                                                                      false);
   assert(field != NULL, "");
   Node* vec_field = kit.basic_plus_adr(vec_obj, field->offset_in_bytes());
@@ -403,8 +405,8 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
       bt = T_BYTE;
     }
 
-    ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbol::payload_name(),
-                                                                                       ciSymbol::object_signature(),
+    ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
+                                                                                       ciSymbols::object_signature(),
                                                                                        false);
     assert(field != NULL, "");
     int offset = field->offset_in_bytes();
@@ -412,15 +414,17 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     Node* mem = vec_unbox->mem();
     Node* ctrl = vec_unbox->in(0);
-    Node* vec_field_ld = LoadNode::make(gvn,
-                                        ctrl,
-                                        mem,
-                                        vec_adr,
-                                        vec_adr->bottom_type()->is_ptr(),
-                                        TypeOopPtr::make_from_klass(field->type()->as_klass()),
-                                        T_OBJECT,
-                                        MemNode::unordered);
-    vec_field_ld = gvn.transform(vec_field_ld);
+    Node* vec_field_ld;
+    {
+      DecoratorSet decorators = MO_UNORDERED | IN_HEAP;
+      C2AccessValuePtr addr(vec_adr, vec_adr->bottom_type()->is_ptr());
+      MergeMemNode* local_mem = MergeMemNode::make(mem);
+      gvn.record_for_igvn(local_mem);
+      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+      C2OptAccess access(gvn, ctrl, local_mem, decorators, T_OBJECT, obj, addr);
+      const Type* type = TypeOopPtr::make_from_klass(field->type()->as_klass());
+      vec_field_ld = bs->load_at(access, type);
+    }
 
     // For proper aliasing, attach concrete payload type.
     ciKlass* payload_klass = ciTypeArrayKlass::make(bt);

@@ -47,6 +47,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -70,6 +71,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.HeapMemorySegmentImpl;
@@ -464,13 +466,59 @@ public class TestByteBuffer {
         MemorySegment.mapFile(f.toPath(), -1, 1, FileChannel.MapMode.READ_WRITE);
     }
 
+    @Test
+    public void testMapOffset() throws IOException {
+        File f = new File("testMapOffset.out");
+        f.createNewFile();
+        f.deleteOnExit();
+
+        int SIZE = Byte.MAX_VALUE;
+
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0, SIZE, FileChannel.MapMode.READ_WRITE)) {
+            for (byte offset = 0; offset < SIZE; offset++) {
+                MemoryAccess.setByteAtOffset(segment, offset, offset);
+            }
+            MappedMemorySegments.force(segment);
+        }
+
+        for (int offset = 0 ; offset < SIZE ; offset++) {
+            try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), offset, SIZE - offset, FileChannel.MapMode.READ_ONLY)) {
+                assertEquals(MemoryAccess.getByte(segment), offset);
+            }
+        }
+    }
+
+    @Test
     public void testMapZeroSize() throws IOException {
         File f = new File("testPos1.out");
         f.createNewFile();
         f.deleteOnExit();
+        //RW
         try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, 0L, FileChannel.MapMode.READ_WRITE)) {
             assertEquals(segment.byteSize(), 0);
+            assertEquals(segment.isMapped(), true);
+            assertTrue((segment.accessModes() & (READ | WRITE)) == (READ | WRITE));
+            MappedMemorySegments.force(segment);
+            MappedMemorySegments.load(segment);
+            MappedMemorySegments.isLoaded(segment);
+            MappedMemorySegments.unload(segment);
         }
+        //RO
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, 0L, FileChannel.MapMode.READ_ONLY)) {
+            assertEquals(segment.byteSize(), 0);
+            assertEquals(segment.isMapped(), true);
+            assertTrue((segment.accessModes() & (READ | WRITE)) == READ);
+            MappedMemorySegments.force(segment);
+            MappedMemorySegments.load(segment);
+            MappedMemorySegments.isLoaded(segment);
+            MappedMemorySegments.unload(segment);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testMapCustomPath() throws IOException {
+        Path path = Path.of(URI.create("jrt:/"));
+        MemorySegment.mapFile(path, 0L, 0L, FileChannel.MapMode.READ_WRITE);
     }
 
     @Test(dataProvider="resizeOps")
@@ -588,7 +636,8 @@ public class TestByteBuffer {
         }
     }
 
-    public void testIOOnClosedConfinedSegment() throws IOException {
+    @Test
+    public void testIOOnConfinedSegment() throws IOException {
         File tmp = File.createTempFile("tmp", "txt");
         tmp.deleteOnExit();
         try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
@@ -599,6 +648,40 @@ public class TestByteBuffer {
             ByteBuffer bb = segment.asByteBuffer();
             channel.write(bb);
         }
+    }
+
+    @Test(dataProvider="segments")
+    public void buffersAndArraysFromSlices(Supplier<MemorySegment> segmentSupplier) {
+        try (MemorySegment segment = segmentSupplier.get()) {
+            int newSize = 8;
+            var slice = segment.asSlice(4, newSize);
+
+            var bytes = slice.toByteArray();
+            assertEquals(newSize, bytes.length);
+
+            var buffer = slice.asByteBuffer();
+            // Fails for heap segments, but passes for native segments:
+            assertEquals(0, buffer.position());
+            assertEquals(newSize, buffer.limit());
+            assertEquals(newSize, buffer.capacity());
+        }
+    }
+
+    @Test(dataProvider="segments")
+    public void viewsFromSharedSegment(Supplier<MemorySegment> segmentSupplier) {
+        try (MemorySegment segment = segmentSupplier.get().share()) {
+            var byteBuffer = segment.asByteBuffer();
+            byteBuffer.asReadOnlyBuffer();
+            byteBuffer.slice(0, 8);
+        }
+    }
+
+    @DataProvider(name = "segments")
+    public static Object[][] segments() throws Throwable {
+        return new Object[][] {
+                { (Supplier<MemorySegment>) () -> MemorySegment.allocateNative(16) },
+                { (Supplier<MemorySegment>) () -> MemorySegment.ofArray(new byte[16]) }
+        };
     }
 
     @DataProvider(name = "bufferOps")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,8 +29,6 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -64,9 +62,9 @@
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
@@ -957,21 +955,6 @@ double os::elapsedVTime() {
     // better than nothing, but not much
     return elapsedTime();
   }
-}
-
-jlong os::javaTimeMillis() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "aix error at gettimeofday()");
-  return jlong(time.tv_sec) * 1000 + jlong(time.tv_usec / 1000);
-}
-
-void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "aix error at gettimeofday()");
-  seconds = jlong(time.tv_sec);
-  nanos = jlong(time.tv_usec) * 1000;
 }
 
 // We use mread_real_time here.
@@ -1958,7 +1941,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
     "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
     p2i(addr), os::vm_page_size());
@@ -2035,7 +2018,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 }
 
 // Reserves and attaches a shared memory segment.
-char* os::pd_reserve_memory(size_t bytes) {
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
 
@@ -2236,7 +2219,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
   char* addr = NULL;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
@@ -2441,7 +2424,7 @@ void os::init(void) {
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
-  _page_sizes[0] = 0;
+  _page_sizes.add(Aix::_page_size);
 
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));
@@ -3290,4 +3273,3 @@ bool os::supports_map_sync() {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
-

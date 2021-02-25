@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "assembler_arm.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -268,10 +266,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     if (sig == SIGSEGV) {
       address addr = (address) info->si_addr;
 
-      if (StubRoutines::is_safefetch_fault(pc)) {
-        os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-        return true;
-      }
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
         // stack overflow

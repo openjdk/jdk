@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ template <class T> class EventLogBase : public EventLog {
   bool should_log() {
     // Don't bother adding new entries when we're crashing.  This also
     // avoids mutating the ring buffer when printing the log.
-    return !VMError::fatal_error_in_progress();
+    return !VMError::is_error_reported();
   }
 
   // Print the contents of the log

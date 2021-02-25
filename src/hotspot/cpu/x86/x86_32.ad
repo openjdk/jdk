@@ -945,41 +945,16 @@ static int impl_fp_store_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int
 }
 
 // Next two methods are shared by 32- and 64-bit VM. They are defined in x86.ad.
-static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st);
 
-static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
+void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
                             int stack_offset, int reg, uint ireg, outputStream* st);
 
-static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_offset,
+static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
                                      int dst_offset, uint ireg, outputStream* st) {
-  int calc_size = 0;
-  int src_offset_size = (src_offset == 0) ? 0 : ((src_offset < 0x80) ? 1 : 4);
-  int dst_offset_size = (dst_offset == 0) ? 0 : ((dst_offset < 0x80) ? 1 : 4);
-  switch (ireg) {
-  case Op_VecS:
-    calc_size = 3+src_offset_size + 3+dst_offset_size;
-    break;
-  case Op_VecD: {
-    calc_size = 3+src_offset_size + 3+dst_offset_size;
-    int tmp_src_offset = src_offset + 4;
-    int tmp_dst_offset = dst_offset + 4;
-    src_offset_size = (tmp_src_offset == 0) ? 0 : ((tmp_src_offset < 0x80) ? 1 : 4);
-    dst_offset_size = (tmp_dst_offset == 0) ? 0 : ((tmp_dst_offset < 0x80) ? 1 : 4);
-    calc_size += 3+src_offset_size + 3+dst_offset_size;
-    break;
-  }
-  case Op_VecX:
-  case Op_VecY:
-  case Op_VecZ:
-    calc_size = 6 + 6 + 5+src_offset_size + 5+dst_offset_size;
-    break;
-  default:
-    ShouldNotReachHere();
-  }
   if (cbuf) {
     MacroAssembler _masm(cbuf);
-    int offset = __ offset();
     switch (ireg) {
     case Op_VecS:
       __ pushl(Address(rsp, src_offset));
@@ -1012,11 +987,8 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
     default:
       ShouldNotReachHere();
     }
-    int size = __ offset() - offset;
-    assert(size == calc_size, "incorrect size calculation");
-    return size;
 #ifndef PRODUCT
-  } else if (!do_size) {
+  } else {
     switch (ireg) {
     case Op_VecS:
       st->print("pushl   [rsp + #%d]\t# 32-bit mem-mem spill\n\t"
@@ -1056,7 +1028,6 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
     }
 #endif
   }
-  return calc_size;
 }
 
 uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const {
@@ -1088,18 +1059,19 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
       // mem -> mem
       int src_offset = ra_->reg2offset(src_first);
       int dst_offset = ra_->reg2offset(dst_first);
-      return vec_stack_to_stack_helper(cbuf, do_size, src_offset, dst_offset, ireg, st);
+      vec_stack_to_stack_helper(cbuf, src_offset, dst_offset, ireg, st);
     } else if (src_first_rc == rc_xmm && dst_first_rc == rc_xmm ) {
-      return vec_mov_helper(cbuf, do_size, src_first, dst_first, src_second, dst_second, ireg, st);
+      vec_mov_helper(cbuf, src_first, dst_first, src_second, dst_second, ireg, st);
     } else if (src_first_rc == rc_xmm && dst_first_rc == rc_stack ) {
       int stack_offset = ra_->reg2offset(dst_first);
-      return vec_spill_helper(cbuf, do_size, false, stack_offset, src_first, ireg, st);
+      vec_spill_helper(cbuf, false, stack_offset, src_first, ireg, st);
     } else if (src_first_rc == rc_stack && dst_first_rc == rc_xmm ) {
       int stack_offset = ra_->reg2offset(src_first);
-      return vec_spill_helper(cbuf, do_size, true,  stack_offset, dst_first, ireg, st);
+      vec_spill_helper(cbuf, true,  stack_offset, dst_first, ireg, st);
     } else {
       ShouldNotReachHere();
     }
+    return 0;
   }
 
   // --------------------------------------
@@ -11439,7 +11411,7 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 // =======================================================================
 // fast clearing of an array
 instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(!((ClearArrayNode*)n)->is_large());
+  predicate(!((ClearArrayNode*)n)->is_large() && !n->in(2)->bottom_type()->is_int()->is_con());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11544,6 +11516,18 @@ instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Unive
                  $tmp$$XMMRegister, true);
   %}
   ins_pipe( pipe_slow );
+%}
+
+instruct rep_stos_im(immI cnt, eRegP base, regD tmp, rRegI zero, Universe dummy, eFlagsReg cr)
+%{
+  predicate(!((ClearArrayNode*)n)->is_large() && n->in(2)->bottom_type()->is_int()->is_con());
+  match(Set dummy (ClearArray cnt base));
+  effect(TEMP tmp, TEMP zero, KILL cr);
+  format %{ "clear_mem_imm $base , $cnt  \n\t" %}
+  ins_encode %{
+   __ clear_mem($base$$Register, $cnt$$constant, $zero$$Register, $tmp$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct string_compareL(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,

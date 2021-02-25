@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,13 @@ package jdk.javadoc.internal.doclets.formats.html;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 
 
 /**
@@ -90,7 +88,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     @Override
     public Content getSerializableMethods(String heading, Content serializableMethodContent) {
-        Content headingContent = new StringContent(heading);
+        Content headingContent = Text.of(heading);
         Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
         Content section = HtmlTree.SECTION(HtmlStyle.detail, serialHeading);
         section.add(serializableMethodContent);
@@ -105,8 +103,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     @Override
     public Content getNoCustomizationMsg(String msg) {
-        Content noCustomizationMsg = new StringContent(msg);
-        return noCustomizationMsg;
+        return Text.of(msg);
     }
 
     /**
@@ -117,7 +114,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     @Override
     public void addMemberHeader(ExecutableElement member, Content methodsContentTree) {
-        Content memberContent = new StringContent(name(member));
+        Content memberContent = Text.of(name(member));
         Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, memberContent);
         methodsContentTree.add(heading);
         methodsContentTree.add(getSignature(member));

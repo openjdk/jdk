@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/allocation.hpp"
 #include "memory/heapInspection.hpp"
@@ -31,6 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -452,7 +455,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
         }
       } else {
         if (concurrent_locks) {
-          if (waitingToLockBlocker->is_a(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
+          if (waitingToLockBlocker->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
             oop threadObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
             // This JavaThread (if there is one) is protected by the
             // ThreadsListSetter in VM_FindDeadlocks::doit().
@@ -716,7 +719,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
 }
 
 Handle ThreadStackTrace::allocate_fill_stack_trace_element_array(TRAPS) {
-  InstanceKlass* ik = SystemDictionary::StackTraceElement_klass();
+  InstanceKlass* ik = vmClasses::StackTraceElement_klass();
   assert(ik != NULL, "must be loaded in 1.4+");
 
   // Allocate an array of java/lang/StackTraceElement object
@@ -764,7 +767,7 @@ void ConcurrentLocksDump::dump_at_safepoint() {
   GrowableArray<oop>* aos_objects = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(INITIAL_ARRAY_SIZE, mtServiceability);
 
   // Find all instances of AbstractOwnableSynchronizer
-  HeapInspection::find_instances_at_safepoint(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass(),
+  HeapInspection::find_instances_at_safepoint(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass(),
                                               aos_objects);
   // Build a map of thread to its owned AQS locks
   build_map(aos_objects);
@@ -912,7 +915,7 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   // Support for JSR-166 locks
   if (_thread_status == JavaThreadStatus::PARKED || _thread_status == JavaThreadStatus::PARKED_TIMED) {
     blocker_object = thread->current_park_blocker();
-    if (blocker_object != NULL && blocker_object->is_a(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
+    if (blocker_object != NULL && blocker_object->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
       blocker_object_owner = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(blocker_object);
     }
   }
@@ -1021,7 +1024,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       st->print("  waiting for ownable synchronizer " INTPTR_FORMAT ", (a %s)",
                 p2i(waitingToLockBlocker),
                 waitingToLockBlocker->klass()->external_name());
-      assert(waitingToLockBlocker->is_a(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass()),
+      assert(waitingToLockBlocker->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass()),
              "Must be an AbstractOwnableSynchronizer");
       oop ownerObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
       currentThread = java_lang_Thread::thread(ownerObj);

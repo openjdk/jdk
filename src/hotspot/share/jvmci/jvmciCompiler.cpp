@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -32,6 +34,7 @@
 
 JVMCICompiler* JVMCICompiler::_instance = NULL;
 elapsedTimer JVMCICompiler::_codeInstallTimer;
+elapsedTimer JVMCICompiler::_hostedCodeInstallTimer;
 
 JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _bootstrapping = false;
@@ -42,9 +45,19 @@ JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _instance = this;
 }
 
+JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
+  if (!EnableJVMCI) {
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
+  }
+  if (_instance == NULL && require_non_null) {
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
+  }
+  return _instance;
+}
+
 // Initialization
 void JVMCICompiler::initialize() {
-  assert(!is_c1_or_interpreter_only(), "JVMCI is launched, it's not c1/interpreter only mode");
+  assert(!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci(), "JVMCI is launched, it's not c1/interpreter only mode");
   if (!UseCompiler || !EnableJVMCI || !UseJVMCICompiler || !should_perform_init()) {
     return;
   }
@@ -66,7 +79,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   }
   jlong start = os::javaTimeNanos();
 
-  Array<Method*>* objectMethods = SystemDictionary::Object_klass()->methods();
+  Array<Method*>* objectMethods = vmClasses::Object_klass()->methods();
   // Initialize compile queue with a selected set of methods.
   int len = objectMethods->length();
   for (int i = 0; i < len; i++) {
@@ -141,19 +154,19 @@ void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, 
   ShouldNotReachHere();
 }
 
-// Print compilation timers and statistics
+// Print CompileBroker compilation timers
 void JVMCICompiler::print_timers() {
-  tty->print_cr("    JVMCI Compile Time:      %7.3f s", stats()->total_time());
-  print_compilation_timers();
+  double code_install_time = _codeInstallTimer.seconds();
+  tty->print_cr("    JVMCI CompileBroker Time:");
+  tty->print_cr("       Compile:        %7.3f s", stats()->total_time());
+  tty->print_cr("       Install Code:   %7.3f s", code_install_time);
 }
 
-// Print compilation timers and statistics
-void JVMCICompiler::print_compilation_timers() {
-  double code_install_time = _codeInstallTimer.seconds();
-  if (code_install_time != 0.0) {
-    tty->cr();
-    tty->print_cr("    JVMCI code install time:        %6.3f s", code_install_time);
-  }
+// Print non-CompileBroker compilation timers
+void JVMCICompiler::print_hosted_timers() {
+  double code_install_time = _hostedCodeInstallTimer.seconds();
+  tty->print_cr("    JVMCI Hosted Time:");
+  tty->print_cr("       Install Code:   %7.3f s", code_install_time);
 }
 
 void JVMCICompiler::inc_methods_compiled() {

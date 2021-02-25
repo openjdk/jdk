@@ -71,13 +71,12 @@ public class DataFrame extends Http2Frame {
 
     @Override
     public String flagAsString(int flag) {
-        switch (flag) {
-        case END_STREAM:
-            return "END_STREAM";
-        case PADDED:
-            return "PADDED";
-        }
-        return super.flagAsString(flag);
+        return switch (flag) {
+            case END_STREAM ->  "END_STREAM";
+            case PADDED     ->  "PADDED";
+
+            default -> super.flagAsString(flag);
+        };
     }
 
     public List<ByteBuffer> getData() {

@@ -117,6 +117,11 @@ class UnixConstants {
     static final int PREFIX_ENODATA = ENODATA;
 #endif
 
+#ifdef ENOATTR
+    // BSD uses ENOATTR instead of ENODATA during xattr calls
+    static final int PREFIX_ENOATTR = ENOATTR;
+#endif
+
     static final int PREFIX_ERANGE = ERANGE;
     static final int PREFIX_EMFILE = EMFILE;
 

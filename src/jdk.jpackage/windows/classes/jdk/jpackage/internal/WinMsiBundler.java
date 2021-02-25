@@ -426,7 +426,7 @@ public class WinMsiBundler  extends AbstractBundler {
 
         String licenseFile = LICENSE_FILE.fetchFrom(params);
         if (licenseFile != null) {
-            String lname = Path.of(licenseFile).getFileName().toString();
+            String lname = IOUtils.getFileName(Path.of(licenseFile)).toString();
             Path destFile = CONFIG_ROOT.fetchFrom(params).resolve(lname);
             data.put("JpLicenseRtf", destFile.toAbsolutePath().toString());
         }

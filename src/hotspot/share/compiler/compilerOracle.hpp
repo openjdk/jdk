@@ -83,6 +83,7 @@ class methodHandle;
   option(Vectorize, "Vectorize", Bool) \
   option(VectorizeDebug, "VectorizeDebug", Uintx) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
+  option(IncrementalInlineForceCleanup, "IncrementalInlineForceCleanup", Bool) \
   option(MaxNodeLimit, "MaxNodeLimit", Intx)  \
 NOT_PRODUCT(option(TestOptionInt,    "TestOptionInt",    Intx)) \
 NOT_PRODUCT(option(TestOptionUint,   "TestOptionUint",   Uintx)) \
@@ -166,6 +167,14 @@ class CompilerOracle : AllStatic {
   // convert a string to a proper compilecommand option - used from whitebox.
   // returns CompileCommand::Unknown on names not matching an option.
   static enum CompileCommand string_to_option(const char* name);
+
+  // convert a string to a proper compilecommand option
+  // returns CompileCommand::Unknown if name is not an option.
+  static enum CompileCommand parse_option_name(const char* name);
+
+  // convert a string to a proper option type
+  // returns OptionType::Unknown on strings not matching an option type.
+  static enum OptionType parse_option_type(const char* type_str);
 };
 
 #endif // SHARE_COMPILER_COMPILERORACLE_HPP

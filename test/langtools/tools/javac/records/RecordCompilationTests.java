@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -27,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -344,6 +342,16 @@ public class RecordCompilationTests extends CompilationTestCase {
             assertOK("record R(int x, int y) { # }", goodCtor);
 
         assertOK("import java.util.*; record R(String x, String y) {  public R { Objects.requireNonNull(x); Objects.requireNonNull(y); } }");
+
+        // The lambda expressions in the constructor should be compiled successfully.
+        assertOK("""
+                import static java.util.Objects.*;
+                record R(String v) {
+                    R {
+                        requireNonNull(v, () -> "v must be provided");
+                        requireNonNullElseGet(v, () -> "w");
+                    }
+                }""");
 
         // Not OK to redeclare canonical without DA
         assertFail("compiler.err.var.might.not.have.been.initialized", "record R(int x, int y) { # }",
@@ -1023,6 +1031,110 @@ public class RecordCompilationTests extends CompilationTestCase {
                             record B() { }
                         }
                     }
+                }
+                """);
+    }
+
+    public void testAnnoInsideLocalOrAnonymous() {
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        interface I {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        record R() {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        enum E {
+                            E1;
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local1 {
+                            class Local2 {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            interface I {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            record R() {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            enum E {
+                                E1;
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    Runnable run = new Runnable() {
+                        @interface A {}
+                        public void run() {}
+                    };
                 }
                 """);
     }
@@ -1821,6 +1933,23 @@ public class RecordCompilationTests extends CompilationTestCase {
                     static void test() {
                         R rec = new R(10, 20);
                     }
+                }
+                """
+        );
+    }
+
+    public void testSaveVarargsAnno() {
+        // the compiler would generate an erronous accessor
+        assertFail("compiler.err.varargs.invalid.trustme.anno",
+                """
+                record R(@SafeVarargs String... s) {}
+                """
+        );
+        // but this is OK
+        assertOK(
+                """
+                record R(@SafeVarargs String... s) {
+                    public String[] s() { return s; }
                 }
                 """
         );

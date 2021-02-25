@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,12 +231,14 @@ public final class RSACore {
         if ((n == len + 1) && (b[0] == 0)) {
             byte[] t = new byte[len];
             System.arraycopy(b, 1, t, 0, len);
+            Arrays.fill(b, (byte)0);
             return t;
         }
         // must be smaller
         assert (n < len);
         byte[] t = new byte[len];
         System.arraycopy(b, 0, t, (len - n), n);
+        Arrays.fill(b, (byte)0);
         return t;
     }
 

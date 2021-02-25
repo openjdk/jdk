@@ -40,9 +40,9 @@ import java.lang.ref.Cleaner;
  * when performing memory dereference operations using a memory access var handle (see {@link MemoryHandles}).
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
- * use of identity-sensitive operations (including reference equality ({@code ==}), identity hash code, or synchronization) on
- * instances of {@code MemoryAddress} may have unpredictable results and should be avoided. The {@code equals} method should
- * be used for comparisons.
+ * programmers should treat instances that are {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may occur. For example, in a future release,
+ * synchronization may fail. The {@code equals} method should be used for comparisons.
  * <p>
  * Non-platform classes should not implement {@linkplain MemoryAddress} directly.
  *

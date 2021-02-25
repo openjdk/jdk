@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@
  * @build jdk.test.lib.Platform
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm/timeout=300 -Djdk.net.hosts.file=TestHosts
- *      ReplayCacheTestProc
+ *      -Dtest.libs=J ReplayCacheTestProc
+ * @run main/othervm/timeout=300 -Djdk.net.hosts.file=TestHosts
+ *      -Dtest.libs=N ReplayCacheTestProc
  */
 
 import java.io.*;
@@ -45,6 +47,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.internal.rcache.AuthTime;
@@ -53,9 +56,8 @@ import sun.security.krb5.internal.rcache.AuthTime;
  * This test runs multiple acceptor Procs to mimic AP-REQ replays.
  * These system properties are supported:
  *
- * - test.libs on what types of acceptors to use
+ * - test.libs on what types of acceptors to use. Cannot be null.
  *   Format: CSV of (J|N|N<suffix>=<libname>|J<suffix>=<launcher>)
- *   Default: J,N on Solaris and Linux where N is available, or J
  *   Example: J,N,N14=/krb5-1.14/lib/libgssapi_krb5.so,J8=/java8/bin/java
  *
  * - test.runs on manual runs. If empty, a iterate through all pattern
@@ -117,6 +119,16 @@ public class ReplayCacheTestProc {
             Ex[] result;
             int numPerType = 2; // number of acceptors per type
 
+            // User-provided libs
+            String userLibs = System.getProperty("test.libs");
+            Asserts.assertNotNull(userLibs, "test.libs property must be provided");
+            libs = userLibs.split(",");
+            if (Arrays.asList(libs).contains("N") && !isNativeLibAvailable()) {
+                // Skip test when native GSS libs are not available in running platform
+                System.out.println("Native mode not available - skipped");
+                return;
+            }
+
             KDC kdc = KDC.create(OneKDC.REALM, HOST, 0, true);
             for (int i=0; i<nc; i++) {
                 kdc.addPrincipal(client(i), OneKDC.PASS);
@@ -133,25 +145,6 @@ public class ReplayCacheTestProc {
 
             // Write KTAB after krb5.conf so it contains no aes-sha2 keys
             kdc.writeKtab(OneKDC.KTAB);
-
-            // User-provided libs
-            String userLibs = System.getProperty("test.libs");
-
-            if (userLibs != null) {
-                libs = userLibs.split(",");
-            } else {
-                if (Platform.isOSX() || Platform.isWindows()) {
-                    // macOS uses Heimdal and Windows has no native lib
-                    libs = new String[]{"J"};
-                } else {
-                    if (acceptor("N", "sanity").waitFor() != 0) {
-                        Proc.d("Native mode sanity check failed, only java");
-                        libs = new String[]{"J"};
-                    } else {
-                        libs = new String[]{"J", "N"};
-                    }
-                }
-            }
 
             pi = Proc.create("ReplayCacheTestProc").debug("C")
                     .inheritProp("jdk.net.hosts.file")
@@ -329,6 +322,13 @@ public class ReplayCacheTestProc {
         }
     }
 
+    // returns true if native lib is available in running platform
+    // macOS uses Heimdal and Windows has no native lib
+    private static boolean isNativeLibAvailable() throws Exception {
+        return !Platform.isOSX() && !Platform.isWindows()
+                && acceptor("N", "sanity").waitFor() == 0;
+    }
+
     // returns the client name
     private static String client(int p) {
         return "client" + p;
@@ -408,20 +408,9 @@ public class ReplayCacheTestProc {
             ps.printf("%s:\nmsg: %s\nMD5: %s\nSHA-256: %s\n\n",
                     label,
                     req.msg,
-                    hex(md5.digest(data)),
-                    hex(sha256.digest(data)));
+                    HexFormat.of().withUpperCase().formatHex(md5.digest(data)),
+                    HexFormat.of().withUpperCase().formatHex(sha256.digest(data)));
         }
-    }
-
-    // Returns a compact hexdump for a byte array
-    private static String hex(byte[] hash) {
-        char[] h = new char[hash.length * 2];
-        char[] hexConst = "0123456789ABCDEF".toCharArray();
-        for (int i=0; i<hash.length; i++) {
-            h[2*i] = hexConst[(hash[i]&0xff)>>4];
-            h[2*i+1] = hexConst[hash[i]&0xf];
-        }
-        return new String(h);
     }
 
     // return size of dfl file, excluding the null hash ones

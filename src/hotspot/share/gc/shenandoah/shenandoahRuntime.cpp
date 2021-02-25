@@ -47,7 +47,8 @@ JRT_LEAF(void, ShenandoahRuntime::write_ref_field_pre_entry(oopDesc* orig, JavaT
   shenandoah_assert_correct(NULL, orig);
   // store the original value that was in the field reference
   assert(ShenandoahThreadLocalData::satb_mark_queue(thread).is_active(), "Shouldn't be here otherwise");
-  ShenandoahThreadLocalData::satb_mark_queue(thread).enqueue_known_active(orig);
+  SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
+  ShenandoahBarrierSet::satb_mark_queue_set().enqueue_known_active(queue, orig);
 JRT_END
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_strong(oopDesc* src, oop* load_addr))

@@ -120,7 +120,7 @@ public class IOUtils {
 
     public static void copyFile(Path sourceFile, Path destFile)
             throws IOException {
-        Files.createDirectories(destFile.getParent());
+        Files.createDirectories(getParent(destFile));
 
         Files.copy(sourceFile, destFile,
                    StandardCopyOption.REPLACE_EXISTING,
@@ -140,8 +140,9 @@ public class IOUtils {
             throws IOException {
         if (IOUtils.exists(paramFile)) {
             ProcessBuilder pb =
-                    new ProcessBuilder(launcher, paramFile.getFileName().toString());
-            pb = pb.directory(paramFile.getParent().toFile());
+                    new ProcessBuilder(launcher,
+                        getFileName(paramFile).toString());
+            pb = pb.directory(getParent(paramFile).toFile());
             exec(pb);
         }
     }
@@ -254,20 +255,20 @@ public class IOUtils {
 
     public static Path replaceSuffix(Path path, String suffix) {
         Path parent = path.getParent();
-        String filename = path.getFileName().toString().replaceAll("\\.[^.]*$", "")
+        String filename = getFileName(path).toString().replaceAll("\\.[^.]*$", "")
                 + Optional.ofNullable(suffix).orElse("");
         return parent != null ? parent.resolve(filename) : Path.of(filename);
     }
 
     public static Path addSuffix(Path path, String suffix) {
         Path parent = path.getParent();
-        String filename = path.getFileName().toString() + suffix;
+        String filename = getFileName(path).toString() + suffix;
         return parent != null ? parent.resolve(filename) : Path.of(filename);
     }
 
     public static String getSuffix(Path path) {
-        String filename = replaceSuffix(path.getFileName(), null).toString();
-        return path.getFileName().toString().substring(filename.length());
+        String filename = replaceSuffix(getFileName(path), null).toString();
+        return getFileName(path).toString().substring(filename.length());
     }
 
     @FunctionalInterface
@@ -278,7 +279,7 @@ public class IOUtils {
     public static void createXml(Path dstFile, XmlConsumer xmlConsumer) throws
             IOException {
         XMLOutputFactory xmlFactory = XMLOutputFactory.newInstance();
-        Files.createDirectories(dstFile.getParent());
+        Files.createDirectories(getParent(dstFile));
         try (Writer w = Files.newBufferedWriter(dstFile)) {
             // Wrap with pretty print proxy
             XMLStreamWriter xml = (XMLStreamWriter) Proxy.newProxyInstance(
@@ -296,6 +297,28 @@ public class IOUtils {
         } catch (IOException ex) {
             throw ex;
         }
+    }
+
+    public static Path getParent(Path p) {
+        Path parent = p.getParent();
+        if (parent == null) {
+            IllegalArgumentException iae =
+                    new IllegalArgumentException(p.toString());
+            Log.verbose(iae);
+            throw iae;
+        }
+        return parent;
+    }
+
+    public static Path getFileName(Path p) {
+        Path filename = p.getFileName();
+        if (filename == null) {
+            IllegalArgumentException iae =
+                    new IllegalArgumentException(p.toString());
+            Log.verbose(iae);
+            throw iae;
+        }
+        return filename;
     }
 
     private static class PrettyPrintHandler implements InvocationHandler {

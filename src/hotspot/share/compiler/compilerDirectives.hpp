@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 #ifndef SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 #define SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 
+#include "classfile/vmIntrinsics.hpp"
 #include "ci/ciMetadata.hpp"
 #include "ci/ciMethod.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "utilities/exceptions.hpp"
@@ -70,11 +72,13 @@ NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
 NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLevel)) \
     cflags(VectorizeDebug,          uintx, 0, VectorizeDebug) \
+    cflags(IncrementalInlineForceCleanup, bool, IncrementalInlineForceCleanup, IncrementalInlineForceCleanup) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #else
   #define compilerdirectives_c2_flags(cflags)
 #endif
 
+class AbstractCompiler;
 class CompilerDirectives;
 class DirectiveSet;
 
@@ -163,9 +167,11 @@ void print(outputStream* st) {
   }
 };
 
-// Iterator of ControlIntrinsic
-// if disable_all is true, it accepts DisableIntrinsic(deprecated) and all intrinsics
-// appear in the list are to disable
+// Iterator of ControlIntrinsic=+_id1,-_id2,+_id3,...
+//
+// If disable_all is set, it accepts DisableIntrinsic and all intrinsic Ids
+// appear in the list are disabled. Arguments don't have +/- prefix. eg.
+// DisableIntrinsic=_id1,_id2,_id3,...
 class ControlIntrinsicIter {
  private:
   bool _enabled;
@@ -183,6 +189,39 @@ class ControlIntrinsicIter {
   const char* operator*() const { return _token; }
 
   ControlIntrinsicIter& operator++();
+};
+
+class ControlIntrinsicValidator {
+ private:
+  bool _valid;
+  char* _bad;
+
+ public:
+  ControlIntrinsicValidator(ccstrlist option, bool disable_all) : _valid(true), _bad(nullptr) {
+    for (ControlIntrinsicIter iter(option, disable_all); *iter != NULL && _valid; ++iter) {
+      if (vmIntrinsics::_none == vmIntrinsics::find_id(*iter)) {
+        const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all intrinsic names
+        _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
+        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with NULLs.
+        strncpy(_bad, *iter, len);
+        _valid = false;
+      }
+    }
+  }
+
+  ~ControlIntrinsicValidator() {
+    if (_bad != NULL) {
+      FREE_C_HEAP_ARRAY(char, _bad);
+    }
+  }
+
+  bool is_valid() const {
+    return _valid;
+  }
+
+  const char* what() const {
+    return _bad;
+  }
 };
 
 class CompilerDirectives : public CHeapObj<mtCompiler> {

@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/compiler_globals.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -195,10 +196,8 @@ void MacroAssembler::copy64_masked_avx(Register dst, Register src, XMMRegister x
   } else {
     Address::ScaleFactor scale = (Address::ScaleFactor)(shift);
     assert(MaxVectorSize == 64, "vector length != 64");
-    negptr(length);
-    addq(length, 64);
-    mov64(temp, -1);
-    shrxq(temp, temp, length);
+    mov64(temp, -1L);
+    bzhiq(temp, temp, length);
     kmovql(mask, temp);
     evmovdqu(type[shift], mask, xmm, Address(src, index, scale, offset), Assembler::AVX_512bit);
     evmovdqu(type[shift], mask, Address(dst, index, scale, offset), xmm, Assembler::AVX_512bit);
@@ -212,9 +211,8 @@ void MacroAssembler::copy32_masked_avx(Register dst, Register src, XMMRegister x
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
   BasicType type[] = { T_BYTE,  T_SHORT,  T_INT,   T_LONG};
   Address::ScaleFactor scale = (Address::ScaleFactor)(shift);
-  mov64(temp, 1);
-  shlxq(temp, temp, length);
-  decq(temp);
+  mov64(temp, -1L);
+  bzhiq(temp, temp, length);
   kmovql(mask, temp);
   evmovdqu(type[shift], mask, xmm, Address(src, index, scale, offset), Assembler::AVX_256bit);
   evmovdqu(type[shift], mask, Address(dst, index, scale, offset), xmm, Assembler::AVX_256bit);

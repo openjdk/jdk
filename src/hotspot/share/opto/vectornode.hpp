@@ -75,6 +75,8 @@ class VectorNode : public TypeNode {
   static VectorNode* make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, BasicType bt);
   static VectorNode* make(int vopc, Node* n1, Node* n2, Node* n3, const TypeVect* vt);
 
+  static bool is_shift_opcode(int opc);
+
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
@@ -1337,7 +1339,7 @@ class VectorBoxNode : public Node {
 class VectorBoxAllocateNode : public CallStaticJavaNode {
  public:
   VectorBoxAllocateNode(Compile* C, const TypeInstPtr* vbox_type)
-    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), NULL, NULL, -1) {
+    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), NULL, NULL) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
