@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -95,7 +95,8 @@ static void print_vs(outputStream* out, size_t scale) {
 
 static void print_settings(outputStream* out, size_t scale) {
   out->print("MaxMetaspaceSize: ");
-  if (MaxMetaspaceSize >= (max_uintx) - (2 * os::vm_page_size())) {
+  // See Metaspace::ergo_initialize() for how MaxMetaspaceSize is rounded
+  if (MaxMetaspaceSize >= align_down(max_uintx, Metaspace::commit_alignment())) {
     // aka "very big". Default is max_uintx, but due to rounding in arg parsing the real
     // value is smaller.
     out->print("unlimited");
