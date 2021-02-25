@@ -354,9 +354,8 @@ static JLI_List readArgFile(FILE *file) {
     return rv;
 }
 
-static void reportFcloseExit(FILE *fptr, const char* fmt, const char* arg) {
+static void reportAndExit(const char* fmt, const char* arg) {
     if (fmt != NULL) JLI_ReportMessage(fmt, arg);
-    if (fptr != NULL) fclose(fptr);
     exit(1);
 }
 
@@ -372,11 +371,11 @@ static JLI_List expandArgFile(const char *arg) {
 
     /* arg file cannot be openned */
     if (fptr == NULL || fstat(fileno(fptr), &st) != 0) {
-        reportFcloseExit(fptr, CFG_ERROR6, arg);
+        reportAndExit(CFG_ERROR6, arg);
     } else {
         if (st.st_size > MAX_ARGF_SIZE) {
             JLI_ReportMessage(CFG_ERROR10, MAX_ARGF_SIZE);
-            reportFcloseExit(fptr, NULL, NULL);
+            reportAndExit(NULL, NULL);
         }
     }
 
@@ -384,7 +383,7 @@ static JLI_List expandArgFile(const char *arg) {
 
     /* error occurred reading the file */
     if (rv == NULL) {
-        reportFcloseExit(fptr, DLL_ERROR4, arg);
+        reportAndExit(DLL_ERROR4, arg);
     }
     fclose(fptr);
 
