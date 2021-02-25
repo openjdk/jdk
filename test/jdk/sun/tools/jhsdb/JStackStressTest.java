@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8225715
+ * @bug 8262271
  * @requires vm.hasSA
  * @library /test/lib
  * @run main/timeout=240 JStackStressTest
