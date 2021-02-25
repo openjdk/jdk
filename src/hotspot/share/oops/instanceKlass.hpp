@@ -361,6 +361,9 @@ class InstanceKlass: public Klass {
     return (_misc_flags & shared_loader_type_bits()) == 0;
   }
 
+  // if can be shared in CDS, used by jcmd VM.cds
+  bool is_shareable() const;
+
   void clear_shared_class_loader_type() {
     _misc_flags &= ~shared_loader_type_bits();
   }

@@ -33,6 +33,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -120,6 +121,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TouchedMethodsDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
@@ -1076,6 +1078,34 @@ void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
 
 int TouchedMethodsDCmd::num_arguments() {
   return 0;
+}
+
+DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
+                                     DCmdWithParser(output, heap),
+  _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
+  _filename("filename", "Name of shared archive to be dumped", "STRING", false)
+{
+  _dcmdparser.add_dcmd_argument(&_suboption);
+  _dcmdparser.add_dcmd_argument(&_filename);
+}
+
+void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
+  if (strcmp(_suboption.value(), "static_dump") != 0 && strcmp(_suboption.value(), "dynamic_dump") != 0) {
+    output()->print_cr("Invalid command for VM.cds, please use static_dump or dynamic_dump");
+    return;
+  }
+  MetaspaceShared::cmd_dump_shared_archive(output(), _suboption.value(), _filename.value(), THREAD);
+}
+
+int DumpSharedArchiveDCmd::num_arguments() {
+  ResourceMark rm;
+  DumpSharedArchiveDCmd* dcmd = new DumpSharedArchiveDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
 }
 
 #if INCLUDE_JVMTI

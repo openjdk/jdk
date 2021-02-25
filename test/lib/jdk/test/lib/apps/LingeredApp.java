@@ -310,10 +310,12 @@ public class LingeredApp {
             cmd.add("-Djava.library.path=" + System.getProperty("java.library.path"));
         }
 
-        // Make sure we set correct classpath to run the app
-        cmd.add("-cp");
-        String classpath = System.getProperty("test.class.path");
-        cmd.add((classpath == null) ? "." : classpath);
+        if (useDefaultClasspath()) {
+            // Make sure we set correct classpath to run the app
+            cmd.add("-cp");
+            String classpath = System.getProperty("test.class.path");
+            cmd.add((classpath == null) ? "." : classpath);
+        }
 
         return cmd;
     }
@@ -335,6 +337,8 @@ public class LingeredApp {
                 .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(" ", "Command line: [", "]")));
     }
+
+    public boolean useDefaultClasspath() { return true; }
 
     /**
      * Run the app.

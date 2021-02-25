@@ -83,6 +83,11 @@ class MetaspaceShared : AllStatic {
   static int preload_classes(const char * class_list_path,
                              TRAPS) NOT_CDS_RETURN_(0);
 
+  // those cmd_ functions used for dump cds for jcmd.
+  static void cmd_dump_shared_archive(outputStream* output, const char* cmd, const char* filename, TRAPS) NOT_CDS_RETURN;
+  static void cmd_dump_static(outputStream* output, const char* filename, TRAPS) NOT_CDS_RETURN;
+  static void cmd_dump_dynamic(outputStream* output, const char* filename, TRAPS) NOT_CDS_RETURN;
+
   static Symbol* symbol_rs_base() {
     return (Symbol*)_symbol_rs.base();
   }

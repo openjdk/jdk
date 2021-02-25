@@ -47,6 +47,7 @@
 #include "memory/archiveBuilder.hpp"
 #include "memory/cppVtables.hpp"
 #include "memory/dumpAllocStats.hpp"
+#include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.hpp"
 #include "memory/metaspace.hpp"
@@ -774,6 +775,132 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
   } else {
     return false;
   }
+}
+
+void append_strings(char* buffer, size_t buff_len,  const char* arg) {
+  char* start = buffer + strlen(buffer);
+  snprintf(start, buff_len, "%s ", arg);
+}
+
+void MetaspaceShared::cmd_dump_shared_archive(outputStream* output, const char* cmd, const char* file_name,  TRAPS) {
+  // The existing file will be overwritten.
+  char filename[JVM_MAXPATHLEN];
+  const char* file = file_name;
+  assert(strcmp(cmd, "static_dump") == 0 || strcmp(cmd, "dynamic_dump") == 0, "Sanity check");
+  bool is_static = strcmp(cmd, "static_dump") == 0;
+  if (is_static) {
+    output->print_cr("Static dump");
+    if (file_name ==nullptr) {
+      os::snprintf(filename, sizeof(filename), "java_pid%d_static.jsa", os::current_process_id());
+      file = filename;
+    } else {
+      if (strstr(file_name, ".jsa") == nullptr) {
+        os::snprintf(filename, sizeof(filename), "%s.jsa", file_name);
+        file = filename;
+      }
+    }
+    cmd_dump_static(output, file, THREAD);
+  } else {
+    output->print_cr("Dynamic dump");
+    if (!UseSharedSpaces) {
+      output->print_cr("CDS is not available for this version.");
+      return;
+    }
+    if (!RecordDynamicDumpInfo) {
+      output->print_cr("Please run with -Xshare:auto -XX:+RecordDynamicDumpInfo dumping dynamic archive!");
+      return;
+    }
+    if (file_name == nullptr) {
+      os::snprintf(filename, sizeof(filename), "java_pid%d_dynamic.jsa", os::current_process_id());
+      file = filename;
+    } else {
+      if (strstr(file_name, ".jsa") == nullptr) {
+        os::snprintf(filename, sizeof(filename), "%s.jsa", file_name);
+        file = filename;
+      }
+    }
+    cmd_dump_dynamic(output, file, THREAD);
+  }
+}
+
+class DumpClassListCLDClosure : public CLDClosure {
+  fileStream *_stream;
+public:
+  DumpClassListCLDClosure(fileStream* f) : CLDClosure() { _stream = f; }
+  ~DumpClassListCLDClosure() {
+    delete _stream; // The file need close since in child process it will be used.
+  }
+  void do_cld(ClassLoaderData* cld) {
+    for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
+      if (klass->is_instance_klass()) {
+        InstanceKlass* ik = InstanceKlass::cast(klass);
+        if (ik->is_shareable()) {
+          _stream->print_cr("%s", ik->name()->as_C_string());
+        }
+      }
+    }
+  }
+};
+
+//   To create a static dump, steps:
+//   1. output a classlist file
+//   2. fork a new process to dump the shared archive
+void MetaspaceShared::cmd_dump_static(outputStream* output, const char* file, TRAPS) {
+  const char* java_home = Arguments::get_java_home();
+  const char* file_separator = os::file_separator();
+  const char* app_class_path = Arguments::get_appclasspath();  // -cp ..
+  const char* java_command = Arguments::java_command();        // arguments to app
+  char exec_path[JVM_MAXPATHLEN]; // $JAVA_HOME/bin/java or %JAVA_HOME%\\jre\bin\\java ...
+  char classlist_name[JVM_MAXPATHLEN];
+
+  os::snprintf(classlist_name, sizeof(classlist_name), "%s.classlist", file);
+
+  ResourceMark rm;
+  fileStream* stream = new (ResourceObj::C_HEAP, mtInternal) fileStream(classlist_name, "w");
+  if (stream->is_open()) {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    DumpClassListCLDClosure collect_classes(stream);
+    ClassLoaderDataGraph::loaded_cld_do(&collect_classes);
+  } else {
+    output->print_cr("Error to open %s for write!", classlist_name);
+    return;
+  }
+  os::snprintf(exec_path, sizeof(exec_path),
+               "%s%sbin%sjava -Xshare:dump -XX:SharedClassListFile=%s -XX:SharedArchiveFile=%s ",
+               java_home, file_separator, file_separator, classlist_name, file);
+  int num_vm_args = Arguments::num_jvm_args();
+  char** vm_args  = Arguments::jvm_args_array();
+  for (int i = 0; i < num_vm_args; i ++) {
+    append_strings(exec_path, sizeof(exec_path), vm_args[i]);
+  }
+  // Turn off RecordDynamicDumpInfo
+  if (RecordDynamicDumpInfo) {
+    append_strings(exec_path, sizeof(exec_path), "-XX:-RecordDynamicDumpInfo");
+  }
+  char* buff_start = exec_path + strlen(exec_path);
+  snprintf(buff_start, sizeof(exec_path), " -cp %s %s", app_class_path, java_command);
+  output->print_cr("%s", exec_path);
+  os::fork_and_exec(exec_path);
+}
+
+void MetaspaceShared::cmd_dump_dynamic(outputStream* output, const char* file, TRAPS) {
+  if (DynamicArchive::has_been_dumped_once()) {
+    output->print_cr("Dynamic dump has been done, and should only be done once.");
+    return;
+  } else {
+    // prevent multiple dumps.
+    DynamicArchive::set_has_been_dumped_once();
+  }
+  assert(UseSharedSpaces && RecordDynamicDumpInfo, "Sanity check");
+  const char* tmp_file = ArchiveClassesAtExit;
+  ArchiveClassesAtExit = file;
+  if (Arguments::init_shared_archive_paths()) {
+    DynamicArchive::dump();
+  } else {
+    output->print_cr("Could not setup SharedDynamicArchivePath!");
+  }
+  ArchiveClassesAtExit = tmp_file;
+  Arguments::init_shared_archive_paths();
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

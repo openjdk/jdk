@@ -4230,6 +4230,30 @@ unsigned char * InstanceKlass::get_cached_class_file_bytes() {
 }
 #endif
 
+bool InstanceKlass::is_shareable() const {
+#if INCLUDE_CDS
+  ClassLoaderData* loader_data = class_loader_data();
+  if (!SystemDictionaryShared::is_sharing_possible(loader_data)) {
+    return false;
+  }
+  if (is_shared()) {
+    if (is_hidden()) {
+      // Don't include archived lambda proxy class in the classlist.
+      assert(!is_non_strong_hidden(), "unexpected non-strong hidden class");
+      return false;
+    }
+  } else {
+    // skip hidden class and unsafe anonymous class.
+    if (is_hidden() || unsafe_anonymous_host() != NULL) {
+      return false;
+    }
+  }
+  return true;
+#else
+  return false;
+#endif
+}
+
 void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
 #if INCLUDE_CDS
   if (ClassListWriter::is_enabled()) {
