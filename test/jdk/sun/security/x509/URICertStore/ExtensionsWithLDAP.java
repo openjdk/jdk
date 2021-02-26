@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,17 @@
  * @test
  * @bug 8134708
  * @summary Check if LDAP resources from CRLDP and AIA extensions can be loaded
- * @run main/othervm ExtensionsWithLDAP CRLDP ldap.host.for.crldp
+ * @run main/othervm -Djdk.net.hosts.file=${test.src}/CRLDP
+ *      ExtensionsWithLDAP CRLDP ldap.host.for.crldp
  * @modules jdk.security.auth
- * @run main/othervm ExtensionsWithLDAP AIA ldap.host.for.aia
+ * @run main/othervm -Djdk.net.hosts.file=${test.src}/AIA
+ *      ExtensionsWithLDAP AIA ldap.host.for.aia
  */
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
@@ -135,11 +134,6 @@ public class ExtensionsWithLDAP {
         // enable CRLDP and AIA extensions
         System.setProperty("com.sun.security.enableCRLDP", "true");
         System.setProperty("com.sun.security.enableAIAcaIssuers", "true");
-
-        Path hostsFilePath = Paths.get(System.getProperty("test.src", ".")
-                + File.separator + extension);
-        System.setProperty("jdk.net.hosts.file",
-                hostsFilePath.toFile().getAbsolutePath());
 
         X509Certificate trustedCert = loadCertificate(CA_CERT);
         X509Certificate eeCert = loadCertificate(EE_CERT);
