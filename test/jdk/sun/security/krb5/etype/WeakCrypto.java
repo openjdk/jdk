@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 6844909 8012679
+ * @bug 6844909 8012679 8139348
  * @modules java.security.jgss/sun.security.krb5
  *          java.security.jgss/sun.security.krb5.internal.crypto
  * @run main/othervm WeakCrypto
@@ -31,34 +31,52 @@
  * @summary support allow_weak_crypto in krb5.conf
  */
 
-import java.io.File;
 import java.lang.Exception;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
+import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.EncryptedData;
 
 public class WeakCrypto {
+
+    static List<Integer> weakOnes = List.of(
+            EncryptedData.ETYPE_DES_CBC_CRC,
+            EncryptedData.ETYPE_DES_CBC_MD5,
+            EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
+            EncryptedData.ETYPE_ARCFOUR_HMAC
+    );
+
     public static void main(String[] args) throws Exception {
+
         String conf = "[libdefaults]\n" +
                 (args.length > 0 ? ("allow_weak_crypto = " + args[0]) : "");
         Files.write(Paths.get("krb5.conf"), conf.getBytes());
         System.setProperty("java.security.krb5.conf", "krb5.conf");
 
-        boolean expected = args.length != 0 && args[0].equals("true");
-        int[] etypes = EType.getBuiltInDefaults();
-
-        boolean found = false;
-        for (int i=0, length = etypes.length; i<length; i++) {
-            if (etypes[i] == EncryptedData.ETYPE_DES_CBC_CRC ||
-                    etypes[i] == EncryptedData.ETYPE_DES_CBC_MD4 ||
-                    etypes[i] == EncryptedData.ETYPE_DES_CBC_MD5) {
-                found = true;
-            }
+        // expected number of supported weak etypes
+        int expected = 0;
+        if (args.length != 0 && args[0].equals("true")) {
+            expected = weakOnes.size();
         }
-        if (expected != found) {
-            throw new Exception();
+
+        // Ensure EType.getBuiltInDefaults() has the correct etypes
+        if (Arrays.stream(EType.getBuiltInDefaults())
+                .filter(weakOnes::contains)
+                .count() != expected) {
+            throw new Exception("getBuiltInDefaults fails");
+        }
+
+        // Ensure keys generated have the correct etypes
+        if (Arrays.stream(EncryptionKey.acquireSecretKeys(
+                    "password".toCharArray(), "salt"))
+                .map(EncryptionKey::getEType)
+                .filter(weakOnes::contains)
+                .count() != expected) {
+            throw new Exception("acquireSecretKeys fails");
         }
     }
 }

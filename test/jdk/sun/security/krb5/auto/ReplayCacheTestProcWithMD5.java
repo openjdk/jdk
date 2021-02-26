@@ -32,5 +32,6 @@
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm/timeout=300 -Djdk.krb5.rcache.useMD5=true
  *           -Djdk.net.hosts.file=TestHosts
- *           -Dtest.service=host ReplayCacheTestProc
+ *           -Dtest.service=host
+ *           -Dtest.libs=J ReplayCacheTestProc
  */
