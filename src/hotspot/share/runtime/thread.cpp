@@ -896,11 +896,11 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                                       JavaThreadStatus::RUNNABLE);
 }
 
-char java_version[64] = "";
-char java_runtime_name[128] = "";
-char java_runtime_version[128] = "";
-char java_runtime_vendor_version[128] = "";
-char java_runtime_vendor_vm_bug_url[128] = "";
+static char java_version[64] = "";
+static char java_runtime_name[128] = "";
+static char java_runtime_version[128] = "";
+static char java_runtime_vendor_version[128] = "";
+static char java_runtime_vendor_vm_bug_url[128] = "";
 
 // Extract version and vendor specific information.
 static const char* get_java_version_info(InstanceKlass* ik,
