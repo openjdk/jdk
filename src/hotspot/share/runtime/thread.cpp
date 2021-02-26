@@ -902,11 +902,14 @@ char java_runtime_version[128] = "";
 char java_runtime_vendor_version[128] = "";
 char java_runtime_vendor_vm_bug_url[128] = "";
 
-// extract the JRE version string from java.lang.VersionProps.java_version
-static const char* get_java_version(InstanceKlass* ik) {
+// Extract version and vendor specific information.
+static const char* get_java_version_info(InstanceKlass* ik,
+                                         Symbol* field_name,
+                                         char* buffer,
+                                         int buffer_size) {
   fieldDescriptor fd;
   bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_version_name(),
+               ik->find_local_field(field_name,
                                     vmSymbols::string_signature(), &fd);
   if (found) {
     oop name_oop = ik->java_mirror()->obj_field(fd.offset());
@@ -914,88 +917,8 @@ static const char* get_java_version(InstanceKlass* ik) {
       return NULL;
     }
     const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_version,
-                                                        sizeof(java_version));
-    return name;
-  } else {
-    return NULL;
-  }
-}
-
-// extract the JRE name from java.lang.VersionProps.java_runtime_name
-static const char* get_java_runtime_name(InstanceKlass* ik) {
-  fieldDescriptor fd;
-  bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_runtime_name_name(),
-                                    vmSymbols::string_signature(), &fd);
-  if (found) {
-    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
-    }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_runtime_name,
-                                                        sizeof(java_runtime_name));
-    return name;
-  } else {
-    return NULL;
-  }
-}
-
-// extract the JRE version from java.lang.VersionProps.java_runtime_version
-static const char* get_java_runtime_version(InstanceKlass* ik) {
-  fieldDescriptor fd;
-  bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_runtime_version_name(),
-                                    vmSymbols::string_signature(), &fd);
-  if (found) {
-    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
-    }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_runtime_version,
-                                                        sizeof(java_runtime_version));
-    return name;
-  } else {
-    return NULL;
-  }
-}
-
-// extract the JRE vendor version from java.lang.VersionProps.VENDOR_VERSION
-static const char* get_java_runtime_vendor_version(InstanceKlass* ik) {
-  fieldDescriptor fd;
-  bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_runtime_vendor_version_name(),
-                                    vmSymbols::string_signature(), &fd);
-  if (found) {
-    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
-    }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_runtime_vendor_version,
-                                                        sizeof(java_runtime_vendor_version));
-    return name;
-  } else {
-    return NULL;
-  }
-}
-
-// extract the JRE vendor VM bug URL from java.lang.VersionProps.VENDOR_URL_VM_BUG
-static const char* get_java_runtime_vendor_vm_bug_url(InstanceKlass* ik) {
-  fieldDescriptor fd;
-  bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_runtime_vendor_vm_bug_url_name(),
-                                    vmSymbols::string_signature(), &fd);
-  if (found) {
-    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
-    }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_runtime_vendor_vm_bug_url,
-                                                        sizeof(java_runtime_vendor_vm_bug_url));
+                                                        buffer,
+                                                        buffer_size);
     return name;
   } else {
     return NULL;
@@ -3014,11 +2937,23 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // get the Java runtime name, version, and vendor info after java.lang.System is initialized
   InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
                                                             Handle(), Handle());
-  JDK_Version::set_java_version(get_java_version(ik));
-  JDK_Version::set_runtime_name(get_java_runtime_name(ik));
-  JDK_Version::set_runtime_version(get_java_runtime_version(ik));
-  JDK_Version::set_runtime_vendor_version(get_java_runtime_vendor_version(ik));
-  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_runtime_vendor_vm_bug_url(ik));
+
+  JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name(),
+                                                      java_version, sizeof(java_version)));
+
+  JDK_Version::set_runtime_name(get_java_version_info(ik, vmSymbols::java_runtime_name_name(),
+                                                      java_runtime_name, sizeof(java_runtime_name)));
+
+  JDK_Version::set_runtime_version(get_java_version_info(ik, vmSymbols::java_runtime_version_name(),
+                                                         java_runtime_version, sizeof(java_runtime_version)));
+
+  JDK_Version::set_runtime_vendor_version(get_java_version_info(ik, vmSymbols::java_runtime_vendor_version_name(),
+                                                                java_runtime_vendor_version,
+                                                                sizeof(java_runtime_vendor_version)));
+
+  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name(),
+                                                                   java_runtime_vendor_vm_bug_url,
+                                                                   sizeof(java_runtime_vendor_vm_bug_url)));
 
   // an instance of OutOfMemory exception has been allocated earlier
   initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK);
