@@ -56,6 +56,8 @@ public class TestHandshake {
     static final int MAX_EXECUTOR_WAIT_SECONDS = 10;
     static final int MAX_THREAD_SPIN_WAIT_MILLIS = 200;
 
+    static final int NUM_ACCESSORS = Math.max(10, Runtime.getRuntime().availableProcessors());
+
     static final AtomicLong start = new AtomicLong();
 
     @Test(dataProvider = "accessors")
@@ -65,7 +67,7 @@ public class TestHandshake {
             System.out.println("ITERATION " + it);
             ExecutorService accessExecutor = Executors.newCachedThreadPool();
             start.set(System.currentTimeMillis());
-            for (int i = 0; i < Runtime.getRuntime().availableProcessors() ; i++) {
+            for (int i = 0; i < NUM_ACCESSORS ; i++) {
                 accessExecutor.execute(accessorFactory.make(i, segment));
             }
             int delay = ThreadLocalRandom.current().nextInt(MAX_DELAY_MILLIS);
