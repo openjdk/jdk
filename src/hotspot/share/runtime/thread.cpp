@@ -515,8 +515,6 @@ bool Thread::is_JavaThread_protected(const JavaThread* p) {
   // are missing a ThreadsListHandle or other protection mechanism:
   // guarantee(!UseNewCode, "current_thread=" INTPTR_FORMAT " is not protecting p="
   //           INTPTR_FORMAT, p2i(current_thread), p2i(p));
-  guarantee(false, "current_thread=" INTPTR_FORMAT " is not protecting p="
-            INTPTR_FORMAT, p2i(current_thread), p2i(p));
 
   // Note: Since 'p' isn't protected by a TLH, the call to
   // p->is_handshake_safe_for() may crash, but we have debug bits so
