@@ -115,7 +115,7 @@ public class FastTooltipSwitchIAE {
 
         boolean moveToDialog = true;
 
-        int timeoutMs = 60_000;
+        int timeoutMs = 40_000;
         long endTime = System.currentTimeMillis() + timeoutMs;
 
         while (
