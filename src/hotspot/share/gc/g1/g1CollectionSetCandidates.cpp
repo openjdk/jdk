@@ -35,9 +35,10 @@ void G1CollectionSetCandidates::remove(uint num_regions) {
   }
 }
 
-void G1CollectionSetCandidates::remove_from_end(uint num_remove) {
+void G1CollectionSetCandidates::remove_from_end(uint num_remove, size_t wasted) {
   assert(num_remove <= num_remaining(), "trying to remove more regions than remaining");
 
+#ifdef ASSERT
   size_t reclaimable = 0;
 
   for (uint i = 0; i < num_remove; i++) {
@@ -46,8 +47,11 @@ void G1CollectionSetCandidates::remove_from_end(uint num_remove) {
     // Make sure we crash if we access it.
     _regions[cur_idx] = NULL;
   }
+
+  assert(reclaimable == wasted, "Recalculated reclaimable inconsistent");
+#endif
   _num_regions -= num_remove;
-  _remaining_reclaimable_bytes -= reclaimable;
+  _remaining_reclaimable_bytes -= wasted;
 }
 
 void G1CollectionSetCandidates::iterate(HeapRegionClosure* cl) {

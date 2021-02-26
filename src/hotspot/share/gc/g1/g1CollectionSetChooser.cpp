@@ -273,12 +273,13 @@ public:
     _num_pruned(0), _cur_wasted(0), _max_pruned(max_pruned), _max_wasted(max_wasted) { }
 
   virtual bool do_heap_region(HeapRegion* r) {
+    size_t const reclaimable = r->reclaimable_bytes();
     if (_num_pruned > _max_pruned ||
-        _cur_wasted + r->reclaimable_bytes() > _max_wasted) {
+        _cur_wasted + reclaimable > _max_wasted) {
       return true;
     }
     r->rem_set()->clear(true /* cardset_only */);
-    _cur_wasted += r->reclaimable_bytes();
+    _cur_wasted += reclaimable;
     _num_pruned++;
     return false;
   }
@@ -306,7 +307,7 @@ void G1CollectionSetChooser::prune(G1CollectionSetCandidates* candidates) {
                               prune_cl.wasted(),
                               allowed_waste);
 
-    candidates->remove_from_end(prune_cl.num_pruned());
+    candidates->remove_from_end(prune_cl.num_pruned(), prune_cl.wasted());
   }
 }
 

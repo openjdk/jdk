@@ -77,7 +77,7 @@ public:
   // Remove num_regions from the front of the collection set candidate list.
   void remove(uint num_regions);
   // Remove num_remove regions from the back of the collection set candidate list.
-  void remove_from_end(uint num_remove);
+  void remove_from_end(uint num_remove, size_t wasted);
 
   // Iterate over all remaining collection set candidate regions.
   void iterate(HeapRegionClosure* cl);
