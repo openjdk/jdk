@@ -192,7 +192,7 @@
  *
  * <h3>Implementation Specific Features and Properties</h3>
  * The table below lists Implementation Specific Properties supported by the JDK.
- * 
+ *
  * <table class="striped" id="Properties">
  * <caption>Implementation Specific Properties</caption>
  * <thead>
@@ -222,11 +222,11 @@
  * <td rowspan="9">yes</td>
  * <td rowspan="9">yes</td>
  * <td rowspan="9">Integer</td>
- * <th id="Value" scope="row" style="font-weight:normal" rowspan="9">
+ * <th scope="row" style="font-weight:normal" rowspan="9">
  * A positive integer. A value less than or equal to 0 indicates no limit.
- * If the value is not an integer, a NumericFormatException is thrown.
+ * If the value is not an integer, a NumberFormatException is thrown.
  * </th>
- * <th id="Default" scope="row" style="font-weight:normal">64000</th>
+ * <th scope="row" style="font-weight:normal">64000</th>
  * <td rowspan="9">Yes</td>
  * <td rowspan="9">
  *     <a href="#DOM">DOM</a><br>
@@ -235,13 +235,13 @@
  *     <a href="#Validation">Validation</a><br>
  *     <a href="#Transform">Transform</a>
  * </td>
- * <td rowspan="6">7u45, 8</td>
+ * <td rowspan="9">8</td>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="EALimit">elementAttributeLimit</th>
  * <td>Limits the number of attributes an element can have.
  * </td>
- * <th id="Default" scope="row" style="font-weight:normal">10000</th>
+ * <th scope="row" style="font-weight:normal">10000</th>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="OccurLimit">maxOccurLimit</th>
@@ -249,49 +249,46 @@
  * a grammar for a W3C XML Schema that contains maxOccurs attributes with values
  * other than "unbounded".
  * </td>
- * <th id="Default" scope="row" style="font-weight:normal">5000</th>
+ * <th scope="row" style="font-weight:normal">5000</th>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="SizeLimit">totalEntitySizeLimit</th>
  * <td>Limits the total size of all entities that include general and parameter
  * entities. The size is calculated as an aggregation of all entities.
  * </td>
- * <th id="Default" scope="row" style="font-weight:normal">5x10^7</th>
+ * <th scope="row" style="font-weight:normal">5x10^7</th>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="GELimit">maxGeneralEntitySizeLimit</th>
  * <td>Limits the maximum size of any general entities.
  * </td>
- * <th id="Default" scope="row" style="font-weight:normal">0</th>
+ * <th scope="row" style="font-weight:normal">0</th>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="PELimit">maxParameterEntitySizeLimit</th>
  * <td>Limits the maximum size of any parameter entities, including the result
  * of nesting multiple parameter entities.
  * </td>
- * <th id="Default" scope="row" style="font-weight:normal">10^6</th>
+ * <th scope="row" style="font-weight:normal">10^6</th>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="ERLimit">entityReplacementLimit</th>
  * <td>Limits the total number of nodes in all entity references.
  * </td>
- * <th id="Default" scope="row" style="font-weight:normal">3x10^6</th>
- * <td>7u111, 8u101</td>
+ * <th scope="row" style="font-weight:normal">3x10^6</th>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="ElementDepth">maxElementDepth</th>
  * <td>Limits the maximum element depth.
  * </td>
- * <th id="Default" scope="row" style="font-weight:normal">0</th>
- * <td>7u65, 8u11</td>
+ * <th scope="row" style="font-weight:normal">0</th>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="NameLimit">maxXMLNameLimit</th>
  * <td>Limits the maximum size of XML names, including element name, attribute
  * name and namespace prefix and URI.
  * </td>
- * <th id="Default" scope="row" style="font-weight:normal">1000</th>
- * <td>7u91, 8u65</td>
+ * <th scope="row" style="font-weight:normal">1000</th>
  * </tr>
  *
  * <tr>
@@ -305,8 +302,8 @@
  * <td>yes</td>
  * <td>yes</td>
  * <td>boolean</td>
- * <th id="Value" scope="row" style="font-weight:normal">true/false</th>
- * <th id="Default" scope="row" style="font-weight:normal">false</th>
+ * <th scope="row" style="font-weight:normal">true/false</th>
+ * <th scope="row" style="font-weight:normal">false</th>
  * <td>No</td>
  * <td><a href="#DOMLS">DOMLS</a></td>
  * <td>17</td>
@@ -327,8 +324,8 @@
  * <td>yes</td>
  * <td>yes</td>
  * <td>String</td>
- * <th id="Value" scope="row" style="font-weight:normal">yes/no</th>
- * <th id="Default" scope="row" style="font-weight:normal">no</th>
+ * <th scope="row" style="font-weight:normal">yes/no</th>
+ * <th scope="row" style="font-weight:normal">no</th>
  * <td>No</td>
  * <td><a href="#XSLTCSerializer">XSLTC Serializer</a></td>
  * <td>17</td>
