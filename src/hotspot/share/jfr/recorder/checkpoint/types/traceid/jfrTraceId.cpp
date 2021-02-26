@@ -52,7 +52,7 @@ static traceid atomic_inc(traceid volatile* const dest) {
 }
 
 static traceid next_class_id() {
-  static volatile traceid class_id_counter = LAST_TYPE_ID;
+  static volatile traceid class_id_counter = LAST_TYPE_ID + 1; // + 1 is for the void.class primitive
   return atomic_inc(&class_id_counter) << TRACE_ID_SHIFT;
 }
 
@@ -146,6 +146,10 @@ void JfrTraceId::assign(const ClassLoaderData* cld) {
     return;
   }
   cld->set_trace_id(next_class_loader_data_id());
+}
+
+traceid JfrTraceId::assign_primitive_klass_id() {
+  return next_class_id();
 }
 
 traceid JfrTraceId::assign_thread_id() {

@@ -83,6 +83,7 @@ class JfrTraceId : public AllStatic {
   static void assign(const ModuleEntry* module);
   static void assign(const PackageEntry* package);
   static void assign(const ClassLoaderData* cld);
+  static traceid assign_primitive_klass_id();
   static traceid assign_thread_id();
 
   // through load barrier
