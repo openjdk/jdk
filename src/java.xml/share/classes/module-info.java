@@ -41,7 +41,7 @@
  * <h3>Naming Convention</h3>
  * The names of the features and properties are fully qualified, composed of a
  * prefix and name.
- * <p>
+ *
  * <h4>Prefix</h4>
  * The prefix for JDK properties is defined as:
  * <pre>
@@ -57,7 +57,7 @@
  * <pre>
  *     {@code jdk.xml.}
  * </pre>
- * <p>
+ *
  * <h4>Name</h4>
  * A name may consist of one or multiple words that are case-sensitive.
  * All letters of the first word are in lowercase, while the first letter of
@@ -114,12 +114,10 @@
  * JAXP properties specified through JAXP factories or processors (e.g. SAXParser)
  * take preference over system properties, the jaxp.properties file, as well as
  * secure processing.
- * <p>
  *
  * <h3 id="Processor">Processor Support</h3>
  * Features and properties may be supported by one or more processors. The
  * following table lists the processors by IDs that can be used for reference.
- * <p>
  *
  * <table class="plain" id="Processors">
  * <caption>Processors</caption>
@@ -165,7 +163,6 @@
  * {@code schemaFactory.setProperty(name, value);}
  * </td>
  * </tr>
- * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="Transform">Transform</th>
  * <td>XML Transform API</td>
@@ -193,11 +190,9 @@
  * </tbody>
  * </table>
  *
- * <p>
  * <h3>Implementation Specific Features and Properties</h3>
  * This section lists features and properties supported by the JDK implementation.
  *
- * <p>
  * <table class="plain" id="FeaturesAndProperties">
  * <caption>Features and Properties</caption>
  * <thead>

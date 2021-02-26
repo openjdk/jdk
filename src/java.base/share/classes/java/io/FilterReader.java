@@ -66,12 +66,10 @@ public abstract class FilterReader extends Reader {
     }
 
     /**
-     * Reads characters into a portion of an array.
-     *
-     * @throws     IOException  If an I/O error occurs
-     * @throws     IndexOutOfBoundsException {@inheritDoc}
+     * {@inheritDoc}
+     * @throws     IndexOutOfBoundsException  {@inheritDoc}
      */
-    public int read(char cbuf[], int off, int len) throws IOException {
+    public int read(char[] cbuf, int off, int len) throws IOException {
         return in.read(cbuf, off, len);
     }
 
