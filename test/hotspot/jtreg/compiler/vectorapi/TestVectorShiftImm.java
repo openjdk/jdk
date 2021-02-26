@@ -34,17 +34,15 @@ import jdk.incubator.vector.*;
  * @summary AArch64: Incorrect instruction encoding when right-shifting vectors with shift amount equals to the element width
  * @modules jdk.incubator.vector
  *
- * @run main/othervm -XX:CompileThreshold=1000 -XX:-TieredCompilation
- *                   -XX:CompileCommand=print,compiler/vectorapi/TestVectorShiftImm.shift_*
- *                   -Dvlen=64 compiler.vectorapi.TestVectorShiftImm
- * @run main/othervm -XX:CompileThreshold=1000 -XX:-TieredCompilation
- *                   -XX:CompileCommand=print,compiler/vectorapi/TestVectorShiftImm.shift_*
- *                   -Dvlen=128 compiler.vectorapi.TestVectorShiftImm
+ * @run main/othervm -XX:CompileCommand=print,compiler/vectorapi/TestVectorShiftImm.shift*
+ *                   -XX:-TieredCompilation -Dvlen=64 compiler.vectorapi.TestVectorShiftImm
+ * @run main/othervm -XX:CompileCommand=print,compiler/vectorapi/TestVectorShiftImm.shift*
+ *                   -XX:-TieredCompilation -Dvlen=128 compiler.vectorapi.TestVectorShiftImm
  */
 
 public class TestVectorShiftImm {
-    private static final int LARGE_LEN = 256;
-    private static final int NUM_ITERS = 50000;
+    private static final int ARR_LEN = 16;
+    private static final int NUM_ITERS = 100000;
 
     private static final int NUM_OPS          = 5;
     private static final int ACCUMULATE_OP_S  = 3;
@@ -86,13 +84,11 @@ public class TestVectorShiftImm {
         test_init();
 
         if (vlen == 64) {
-            test_shift_and_accumulate_vlen64();
-            test_shift_immediate_vlen64();
+            test_vlen64();
         }
 
-        if (vlen == 128) {
-            test_shift_and_accumulate_vlen128();
-            test_shift_immediate_vlen128();
+        if(vlen == 128) {
+            test_vlen128();
         }
 
         if (allTestsPassed) {
@@ -102,498 +98,294 @@ public class TestVectorShiftImm {
         }
     }
 
-    static void test_shift_and_accumulate_vlen64() {
+    static void test_vlen64() {
         for (int i = 0; i < NUM_ITERS; i++) {
-            shift_and_accumulate_bytes64(tBytes,        true);
-            shift_and_accumulate_shorts64(tShorts,      true);
-            shift_and_accumulate_integers64(tIntegers,  true);
+            shift_and_accumulate(tBytes, true, byte64SPECIES, 64);
+            shift_and_accumulate(tShorts, true, short64SPECIES, 64);
+            shift_and_accumulate(tIntegers, true, integer64SPECIES, 64);
+
+            shift(tBytes, true, byte64SPECIES, 64);
+            shift(tShorts, true, short64SPECIES, 64);
+            shift(tIntegers, true, integer64SPECIES, 64);
         }
     }
 
-    static void test_shift_and_accumulate_vlen128() {
+    static void test_vlen128() {
         for (int i = 0; i < NUM_ITERS; i++) {
-            shift_and_accumulate_bytes128(tBytes,        true);
-            shift_and_accumulate_shorts128(tShorts,      true);
-            shift_and_accumulate_integers128(tIntegers,  true);
-            shift_and_accumulate_longs128(tLongs,        true);
+            shift_and_accumulate(tBytes, true, byte128SPECIES, 128);
+            shift_and_accumulate(tShorts, true, short128SPECIES, 128);
+            shift_and_accumulate(tIntegers, true, integer128SPECIES, 128);
+            shift_and_accumulate(tLongs, true, long128SPECIES, 128);
+
+            shift(tBytes, true, byte128SPECIES, 128);
+            shift(tShorts, true, short128SPECIES, 128);
+            shift(tIntegers, true, integer128SPECIES, 128);
+            shift(tLongs, true, long128SPECIES, 128);
         }
     }
 
-    static void test_shift_immediate_vlen64() {
-        for (int i = 0; i < NUM_ITERS; i++) {
-            shift_bytes64(tBytes,        true);
-            shift_shorts64(tShorts,      true);
-            shift_integers64(tIntegers,  true);
-        }
-    }
+    /**
+     * Tests for type byte.
+     */
 
-    static void test_shift_immediate_vlen128() {
-        for (int i = 0; i < NUM_ITERS; i++) {
-            shift_bytes128(tBytes,        true);
-            shift_shorts128(tShorts,      true);
-            shift_integers128(tIntegers,  true);
-            shift_longs128(tLongs,        true);
-        }
-    }
-
-    static int shift_op_byte_LSHL(ByteVector vbb, byte arrBytes[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.LSHL, 1).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 8).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 13).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 16).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 19).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 24).intoArray(arrBytes[end++], ind);
+    static int shift_with_op(VectorOperators.Binary op, ByteVector vbb,
+                             byte arr[][], int end, int ind) {
+        vbb.lanewise(op, 1).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 8).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 13).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 16).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 19).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 24).intoArray(arr[end++], ind);
         return end;
     }
 
-    static int shift_op_byte_ASHR(ByteVector vbb, byte arrBytes[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.ASHR, 1).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 8).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 13).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 16).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 19).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 24).intoArray(arrBytes[end++], ind);
+    static int shift_with_op_and_add(VectorOperators.Binary op,
+                                     ByteVector vba, ByteVector vbb,
+                                     byte arr[][], int end, int ind) {
+        vba.add(vbb.lanewise(op, 1)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 8)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 13)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 16)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 19)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 24)).intoArray(arr[end++], ind);
         return end;
     }
 
-    static int shift_op_byte_LSHR(ByteVector vbb, byte arrBytes[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.LSHR, 1).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 8).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 13).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 16).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 19).intoArray(arrBytes[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 24).intoArray(arrBytes[end++], ind);
-        return end;
-    }
+    static void shift(byte arrBytes[][], boolean verify,
+                      VectorSpecies<Byte> vSpecies, int vlen) {
+        int start = vlen / 128 * NUM_OPS * MAX_TESTS_PER_OP, end = 0;
 
-    static int shift_op_byte_ASHR_and_ADD(ByteVector vba, ByteVector vbb, byte arrBytes[][], int end, int ind) {
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 1)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 8)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 13)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 16)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 19)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 24)).intoArray(arrBytes[end++], ind);
-        return end;
-    }
-
-    static int shift_op_byte_LSHR_and_ADD(ByteVector vba, ByteVector vbb, byte arrBytes[][], int end, int ind) {
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 1)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 8)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 13)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 16)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 19)).intoArray(arrBytes[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 24)).intoArray(arrBytes[end++], ind);
-        return end;
-    }
-
-    static void shift_bytes64(byte arrBytes[][], boolean verify) {
-        int start = 0, end = 0;
-
-        for (int i = 0; i < LARGE_LEN; i += 16) {
+        for (int i = 0; i < ARR_LEN; i += vlen / 8) {
             end = start;
-            ByteVector vbb64 = ByteVector.fromArray(byte64SPECIES, bytesB, i);
-            end = shift_op_byte_LSHL(vbb64, arrBytes, end, i);
-            end = shift_op_byte_ASHR(vbb64, arrBytes, end, i);
-            end = shift_op_byte_LSHR(vbb64, arrBytes, end, i);
+            ByteVector vbb = ByteVector.fromArray(vSpecies, bytesB, i);
+            end = shift_with_op(VectorOperators.LSHL, vbb, arrBytes, end, i);
+            end = shift_with_op(VectorOperators.ASHR, vbb, arrBytes, end, i);
+            end = shift_with_op(VectorOperators.LSHR, vbb, arrBytes, end, i);
         }
 
         if (verify) {
             for (int i = start; i < end; i++) {
-                assertTrue("BYTE", Arrays.equals(tBytes[i], gBytes[i]), i, 64);
+                assertTrue("BYTE", Arrays.equals(tBytes[i], gBytes[i]), i, vlen);
             }
         }
     }
 
-    static void shift_and_accumulate_bytes64(byte arrBytes[][], boolean verify) {
-        int start = ACCUMULATE_OP_S * MAX_TESTS_PER_OP, end = 0;
+    static void shift_and_accumulate(byte arrBytes[][], boolean verify,
+                                           VectorSpecies<Byte> vSpecies, int vlen) {
+        int start = (ACCUMULATE_OP_S + vlen / 128 * NUM_OPS) * MAX_TESTS_PER_OP, end = 0;
 
-        for (int i = 0; i < LARGE_LEN; i += 16) {
+        for (int i = 0; i < ARR_LEN; i += vlen / 8) {
             end = start;
-            ByteVector vba64 = ByteVector.fromArray(byte64SPECIES, bytesA, i);
-            ByteVector vbb64 = ByteVector.fromArray(byte64SPECIES, bytesB, i);
-            end = shift_op_byte_ASHR_and_ADD(vba64, vbb64, arrBytes, end,  i);
-            end = shift_op_byte_LSHR_and_ADD(vba64, vbb64, arrBytes, end,  i);
+            ByteVector vba = ByteVector.fromArray(vSpecies, bytesA, i);
+            ByteVector vbb = ByteVector.fromArray(vSpecies, bytesB, i);
+            end = shift_with_op_and_add(VectorOperators.ASHR, vba, vbb, arrBytes, end, i);
+            end = shift_with_op_and_add(VectorOperators.LSHR, vba, vbb, arrBytes, end, i);
         }
 
         if (verify) {
             for (int i = start; i < end; i++) {
-                assertTrue("BYTE", Arrays.equals(tBytes[i], gBytes[i]), i, 64);
+                assertTrue("BYTE", Arrays.equals(tBytes[i], gBytes[i]), i, vlen);
             }
         }
     }
 
-    static void shift_bytes128(byte arrBytes[][], boolean verify) {
-        int start = NUM_OPS * MAX_TESTS_PER_OP, end = 0;
+    /**
+     * Tests for type short.
+     */
 
-        for (int i = 0; i < LARGE_LEN; i += 32) {
+    static int shift_with_op(VectorOperators.Binary op, ShortVector vbb,
+                             short arr[][], int end, int ind) {
+        vbb.lanewise(op, 9).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 16).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 27).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 32).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 43).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 48).intoArray(arr[end++], ind);
+        return end;
+    }
+
+    static int shift_with_op_and_add(VectorOperators.Binary op,
+                                     ShortVector vba, ShortVector vbb,
+                                     short arr[][], int end, int ind) {
+        vba.add(vbb.lanewise(op, 9)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 16)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 27)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 32)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 43)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 48)).intoArray(arr[end++], ind);
+        return end;
+    }
+
+    static void shift(short arrShorts[][], boolean verify,
+                      VectorSpecies<Short> vSpecies, int vlen) {
+        int start = vlen / 128 * NUM_OPS * MAX_TESTS_PER_OP, end = 0;
+
+        for (int i = 0; i < ARR_LEN; i += vlen / 16) {
             end = start;
-            ByteVector vbb128 = ByteVector.fromArray(byte128SPECIES, bytesB, i);
-            end = shift_op_byte_LSHL(vbb128, arrBytes, end, i);
-            end = shift_op_byte_ASHR(vbb128, arrBytes, end, i);
-            end = shift_op_byte_LSHR(vbb128, arrBytes, end, i);
-
+            ShortVector vbb = ShortVector.fromArray(vSpecies, shortsB, i);
+            end = shift_with_op(VectorOperators.LSHL, vbb, arrShorts, end, i);
+            end = shift_with_op(VectorOperators.ASHR, vbb, arrShorts, end, i);
+            end = shift_with_op(VectorOperators.LSHR, vbb, arrShorts, end, i);
         }
 
         if (verify) {
             for (int i = start; i < end; i++) {
-                assertTrue("BYTE", Arrays.equals(tBytes[i], gBytes[i]), i, 128);
+                assertTrue("SHORT", Arrays.equals(tShorts[i], gShorts[i]), i, vlen);
             }
         }
     }
 
-    static void shift_and_accumulate_bytes128(byte arrBytes[][], boolean verify) {
-        int start = (NUM_OPS + ACCUMULATE_OP_S) * MAX_TESTS_PER_OP, end = 0;
+    static void shift_and_accumulate(short arrShorts[][], boolean verify,
+                                     VectorSpecies<Short> vSpecies, int vlen) {
+        int start = (ACCUMULATE_OP_S + vlen / 128 * NUM_OPS) * MAX_TESTS_PER_OP, end = 0;
 
-        for (int i = 0; i < LARGE_LEN; i += 32) {
+        for (int i = 0; i < ARR_LEN; i += vlen / 16) {
             end = start;
-            ByteVector vba128 = ByteVector.fromArray(byte128SPECIES, bytesA, i);
-            ByteVector vbb128 = ByteVector.fromArray(byte128SPECIES, bytesB, i);
-            end = shift_op_byte_ASHR_and_ADD(vba128, vbb128, arrBytes, end,  i);
-            end = shift_op_byte_LSHR_and_ADD(vba128, vbb128, arrBytes, end,  i);
+            ShortVector vba = ShortVector.fromArray(vSpecies, shortsA, i);
+            ShortVector vbb = ShortVector.fromArray(vSpecies, shortsB, i);
+            end = shift_with_op_and_add(VectorOperators.ASHR, vba, vbb, arrShorts, end, i);
+            end = shift_with_op_and_add(VectorOperators.LSHR, vba, vbb, arrShorts, end, i);
         }
 
         if (verify) {
             for (int i = start; i < end; i++) {
-                assertTrue("BYTE", Arrays.equals(tBytes[i], gBytes[i]), i, 128);
+                assertTrue("SHORT", Arrays.equals(tShorts[i], gShorts[i]), i, vlen);
             }
         }
     }
 
-    static int shift_op_short_LSHL(ShortVector vbb, short arrShorts[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.LSHL, 9).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 16).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 27).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 32).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 43).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 48).intoArray(arrShorts[end++], ind);
+    /**
+     * Tests for type int.
+     */
+
+    static int shift_with_op(VectorOperators.Binary op, IntVector vbb,
+                             int arr[][], int end, int ind) {
+        vbb.lanewise(op, 17).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 32).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 53).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 64).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 76).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 96).intoArray(arr[end++], ind);
         return end;
     }
 
-    static int shift_op_short_ASHR(ShortVector vbb, short arrShorts[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.ASHR, 9).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 16).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 27).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 32).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 43).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 48).intoArray(arrShorts[end++], ind);
+    static int shift_with_op_and_add(VectorOperators.Binary op,
+                                     IntVector vba, IntVector vbb,
+                                     int arr[][], int end, int ind) {
+        vba.add(vbb.lanewise(op, 17)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 32)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 53)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 64)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 76)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 96)).intoArray(arr[end++], ind);
         return end;
     }
 
-    static int shift_op_short_LSHR(ShortVector vbb, short arrShorts[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.LSHR, 9).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 16).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 27).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 32).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 43).intoArray(arrShorts[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 48).intoArray(arrShorts[end++], ind);
-        return end;
-    }
+    static void shift(int arrIntegers[][], boolean verify,
+                      VectorSpecies<Integer> vSpecies, int vlen) {
+        int start = vlen / 128 * NUM_OPS * MAX_TESTS_PER_OP, end = 0;
 
-    static int shift_op_short_ASHR_and_ADD(ShortVector vba, ShortVector vbb, short arrShorts[][], int end, int ind) {
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 9)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 16)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 27)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 32)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 43)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 48)).intoArray(arrShorts[end++], ind);
-        return end;
-    }
-
-    static int shift_op_short_LSHR_and_ADD(ShortVector vba, ShortVector vbb, short arrShorts[][], int end, int ind) {
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 9)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 16)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 27)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 32)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 43)).intoArray(arrShorts[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 48)).intoArray(arrShorts[end++], ind);
-        return end;
-    }
-
-    static void shift_shorts64(short arrShorts[][], boolean verify) {
-        int start = 0, end = 0;
-
-        for (int i = 0; i < LARGE_LEN; i += 8) {
+        for (int i = 0; i < ARR_LEN; i += vlen / 32) {
             end = start;
-            ShortVector vbb64 = ShortVector.fromArray(short64SPECIES, shortsB, i);
-            end = shift_op_short_LSHL(vbb64, arrShorts, end, i);
-            end = shift_op_short_ASHR(vbb64, arrShorts, end, i);
-            end = shift_op_short_LSHR(vbb64, arrShorts, end, i);
+            IntVector vbb = IntVector.fromArray(vSpecies, integersB, i);
+            end = shift_with_op(VectorOperators.LSHL, vbb, arrIntegers, end, i);
+            end = shift_with_op(VectorOperators.ASHR, vbb, arrIntegers, end, i);
+            end = shift_with_op(VectorOperators.LSHR, vbb, arrIntegers, end, i);
         }
 
         if (verify) {
             for (int i = start; i < end; i++) {
-                assertTrue("SHORT", Arrays.equals(tShorts[i], gShorts[i]), i, 64);
+                assertTrue("INTEGER", Arrays.equals(tIntegers[i], gIntegers[i]), i, vlen);
             }
         }
     }
 
-    static void shift_and_accumulate_shorts64(short arrShorts[][], boolean verify) {
-        int start = ACCUMULATE_OP_S * MAX_TESTS_PER_OP, end = 0;
+    static void shift_and_accumulate(int arrIntegers[][], boolean verify,
+                                     VectorSpecies<Integer> vSpecies, int vlen) {
+        int start = (ACCUMULATE_OP_S + vlen / 128 * NUM_OPS) * MAX_TESTS_PER_OP, end = 0;
 
-        for (int i = 0; i < LARGE_LEN; i += 8) {
+        for (int i = 0; i < ARR_LEN; i += vlen / 32) {
             end = start;
-            ShortVector vba64 = ShortVector.fromArray(short64SPECIES, shortsA, i);
-            ShortVector vbb64 = ShortVector.fromArray(short64SPECIES, shortsB, i);
-            end = shift_op_short_ASHR_and_ADD(vba64, vbb64, arrShorts, end,    i);
-            end = shift_op_short_LSHR_and_ADD(vba64, vbb64, arrShorts, end,    i);
+            IntVector vba = IntVector.fromArray(vSpecies, integersA, i);
+            IntVector vbb = IntVector.fromArray(vSpecies, integersB, i);
+            end = shift_with_op_and_add(VectorOperators.ASHR, vba, vbb, arrIntegers, end, i);
+            end = shift_with_op_and_add(VectorOperators.LSHR, vba, vbb, arrIntegers, end, i);
         }
 
         if (verify) {
             for (int i = start; i < end; i++) {
-                assertTrue("SHORT", Arrays.equals(tShorts[i], gShorts[i]), i, 64);
+                assertTrue("INTEGER", Arrays.equals(tIntegers[i], gIntegers[i]), i, vlen);
             }
         }
     }
 
-    static void shift_shorts128(short arrShorts[][], boolean verify) {
-        int start = NUM_OPS * MAX_TESTS_PER_OP, end = 0;
+    /**
+     * Tests for type long.
+     */
 
-        for (int i = 0; i < LARGE_LEN; i += 16) {
+    static int shift_with_op(VectorOperators.Binary op, LongVector vbb,
+                             long arr[][], int end, int ind) {
+        vbb.lanewise(op, 37).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 64).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 99).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 128).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 157).intoArray(arr[end++], ind);
+        vbb.lanewise(op, 192).intoArray(arr[end++], ind);
+        return end;
+    }
+
+    static int shift_with_op_and_add(VectorOperators.Binary op,
+                                     LongVector vba, LongVector vbb,
+                                     long arr[][], int end, int ind) {
+        vba.add(vbb.lanewise(op, 37)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 64)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 99)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 128)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 157)).intoArray(arr[end++], ind);
+        vba.add(vbb.lanewise(op, 192)).intoArray(arr[end++], ind);
+        return end;
+    }
+
+    static void shift(long arrLongs[][], boolean verify,
+                      VectorSpecies<Long> vSpecies, int vlen) {
+        int start = vlen / 128 * NUM_OPS * MAX_TESTS_PER_OP, end = 0;
+
+        for (int i = 0; i < ARR_LEN; i += vlen / 64) {
             end = start;
-            ShortVector vbb128 = ShortVector.fromArray(short128SPECIES, shortsB, i);
-            end = shift_op_short_LSHL(vbb128, arrShorts, end, i);
-            end = shift_op_short_ASHR(vbb128, arrShorts, end, i);
-            end = shift_op_short_LSHR(vbb128, arrShorts, end, i);
-
+            LongVector vbb = LongVector.fromArray(vSpecies, longsB, i);
+            end = shift_with_op(VectorOperators.LSHL, vbb, arrLongs, end, i);
+            end = shift_with_op(VectorOperators.ASHR, vbb, arrLongs, end, i);
+            end = shift_with_op(VectorOperators.LSHR, vbb, arrLongs, end, i);
         }
 
         if (verify) {
             for (int i = start; i < end; i++) {
-                assertTrue("SHORT", Arrays.equals(tShorts[i], gShorts[i]), i, 128);
+                assertTrue("LONG", Arrays.equals(tLongs[i], gLongs[i]), i, vlen);
             }
         }
     }
 
-    static void shift_and_accumulate_shorts128(short arrShorts[][], boolean verify) {
-        int start = (NUM_OPS + ACCUMULATE_OP_S) * MAX_TESTS_PER_OP, end = 0;
+    static void shift_and_accumulate(long arrLongs[][], boolean verify,
+                                     VectorSpecies<Long> vSpecies, int vlen) {
+        int start = (ACCUMULATE_OP_S + vlen / 128 * NUM_OPS) * MAX_TESTS_PER_OP, end = 0;
 
-        for (int i = 0; i < LARGE_LEN; i += 16) {
+        for (int i = 0; i < ARR_LEN; i += vlen / 64) {
             end = start;
-            ShortVector vba128 = ShortVector.fromArray(short128SPECIES, shortsA, i);
-            ShortVector vbb128 = ShortVector.fromArray(short128SPECIES, shortsB, i);
-            end = shift_op_short_ASHR_and_ADD(vba128, vbb128, arrShorts, end,    i);
-            end = shift_op_short_LSHR_and_ADD(vba128, vbb128, arrShorts, end,    i);
+            LongVector vba = LongVector.fromArray(vSpecies, longsA, i);
+            LongVector vbb = LongVector.fromArray(vSpecies, longsB, i);
+            end = shift_with_op_and_add(VectorOperators.ASHR, vba, vbb, arrLongs, end, i);
+            end = shift_with_op_and_add(VectorOperators.LSHR, vba, vbb, arrLongs, end, i);
         }
 
         if (verify) {
             for (int i = start; i < end; i++) {
-                assertTrue("SHORT", Arrays.equals(tShorts[i], gShorts[i]), i, 128);
-            }
-        }
-    }
-
-    static int shift_op_integer_LSHL(IntVector vbb, int arrIntegers[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.LSHL, 17).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 32).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 53).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 64).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 76).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 96).intoArray(arrIntegers[end++], ind);
-        return end;
-    }
-
-    static int shift_op_integer_ASHR(IntVector vbb, int arrIntegers[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.ASHR, 17).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 32).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 53).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 64).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 76).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 96).intoArray(arrIntegers[end++], ind);
-        return end;
-    }
-
-    static int shift_op_integer_LSHR(IntVector vbb, int arrIntegers[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.LSHR, 17).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 32).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 53).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 64).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 76).intoArray(arrIntegers[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 96).intoArray(arrIntegers[end++], ind);
-        return end;
-    }
-
-    static int shift_op_integer_ASHR_and_ADD(IntVector vba, IntVector vbb, int arrIntegers[][], int end, int ind) {
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 17)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 32)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 53)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 64)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 76)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 96)).intoArray(arrIntegers[end++], ind);
-        return end;
-    }
-
-    static int shift_op_integer_LSHR_and_ADD(IntVector vba, IntVector vbb, int arrIntegers[][], int end, int ind) {
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 17)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 32)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 53)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 64)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 76)).intoArray(arrIntegers[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 96)).intoArray(arrIntegers[end++], ind);
-        return end;
-    }
-
-    static void shift_integers64(int arrIntegers[][], boolean verify) {
-        int start = 0, end = 0;
-
-        for (int i = 0; i < LARGE_LEN; i += 4) {
-            end = start;
-            IntVector vbb64 = IntVector.fromArray(integer64SPECIES, integersB, i);
-            end = shift_op_integer_LSHL(vbb64, arrIntegers, end, i);
-            end = shift_op_integer_ASHR(vbb64, arrIntegers, end, i);
-            end = shift_op_integer_LSHR(vbb64, arrIntegers, end, i);
-        }
-
-        if (verify) {
-            for (int i = start; i < end; i++) {
-                assertTrue("INTEGER", Arrays.equals(tIntegers[i], gIntegers[i]), i, 64);
-            }
-        }
-    }
-
-    static void shift_and_accumulate_integers64(int arrIntegers[][], boolean verify) {
-        int start = ACCUMULATE_OP_S * MAX_TESTS_PER_OP, end = 0;
-
-        for (int i = 0; i < LARGE_LEN; i += 4) {
-            end = start;
-            IntVector vba64 = IntVector.fromArray(integer64SPECIES, integersA,  i);
-            IntVector vbb64 = IntVector.fromArray(integer64SPECIES, integersB,  i);
-            end = shift_op_integer_ASHR_and_ADD(vba64, vbb64, arrIntegers, end, i);
-            end = shift_op_integer_LSHR_and_ADD(vba64, vbb64, arrIntegers, end, i);
-        }
-
-        if (verify) {
-            for (int i = start; i < end; i++) {
-                assertTrue("INTEGER", Arrays.equals(tIntegers[i], gIntegers[i]), i, 64);
-            }
-        }
-    }
-
-    static void shift_integers128(int arrIntegers[][], boolean verify) {
-        int start = NUM_OPS * MAX_TESTS_PER_OP, end = 0;
-
-        for (int i = 0; i < LARGE_LEN; i += 8) {
-            end = start;
-            IntVector vbb128 = IntVector.fromArray(integer128SPECIES, integersB, i);
-            end = shift_op_integer_LSHL(vbb128, arrIntegers, end, i);
-            end = shift_op_integer_ASHR(vbb128, arrIntegers, end, i);
-            end = shift_op_integer_LSHR(vbb128, arrIntegers, end, i);
-
-        }
-
-        if (verify) {
-            for (int i = start; i < end; i++) {
-                assertTrue("INTEGER", Arrays.equals(tIntegers[i], gIntegers[i]), i, 128);
-            }
-        }
-    }
-
-    static void shift_and_accumulate_integers128(int arrIntegers[][], boolean verify) {
-        int start = (NUM_OPS + ACCUMULATE_OP_S) * MAX_TESTS_PER_OP, end = 0;
-
-        for (int i = 0; i < LARGE_LEN; i += 8) {
-            end = start;
-            IntVector vba128 = IntVector.fromArray(integer128SPECIES, integersA,  i);
-            IntVector vbb128 = IntVector.fromArray(integer128SPECIES, integersB,  i);
-            end = shift_op_integer_ASHR_and_ADD(vba128, vbb128, arrIntegers, end, i);
-            end = shift_op_integer_LSHR_and_ADD(vba128, vbb128, arrIntegers, end, i);
-        }
-
-        if (verify) {
-            for (int i = start; i < end; i++) {
-                assertTrue("INTEGER", Arrays.equals(tIntegers[i], gIntegers[i]), i, 128);
-            }
-        }
-    }
-
-    static int shift_op_long_LSHL(LongVector vbb, long arrLongs[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.LSHL, 37).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 64).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 99).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 128).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 157).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHL, 192).intoArray(arrLongs[end++], ind);
-        return end;
-    }
-
-    static int shift_op_long_ASHR(LongVector vbb, long arrLongs[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.ASHR, 37).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 64).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 99).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 128).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 157).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.ASHR, 192).intoArray(arrLongs[end++], ind);
-        return end;
-    }
-
-    static int shift_op_long_LSHR(LongVector vbb, long arrLongs[][], int end, int ind) {
-        vbb.lanewise(VectorOperators.LSHR, 37).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 64).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 99).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 128).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 157).intoArray(arrLongs[end++], ind);
-        vbb.lanewise(VectorOperators.LSHR, 192).intoArray(arrLongs[end++], ind);
-        return end;
-    }
-
-    static int shift_op_long_ASHR_and_ADD(LongVector vba, LongVector vbb, long arrLongs[][], int end, int ind) {
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 37)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 64)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 99)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 128)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 157)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.ASHR, 192)).intoArray(arrLongs[end++], ind);
-        return end;
-    }
-
-    static int shift_op_long_LSHR_and_ADD(LongVector vba, LongVector vbb, long arrLongs[][], int end, int ind) {
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 37)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 64)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 99)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 128)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 157)).intoArray(arrLongs[end++], ind);
-        vba.add(vbb.lanewise(VectorOperators.LSHR, 192)).intoArray(arrLongs[end++], ind);
-        return end;
-    }
-
-    static void shift_longs128(long arrLongs[][], boolean verify) {
-        int start = NUM_OPS * MAX_TESTS_PER_OP, end = 0;
-
-        for (int i = 0; i < LARGE_LEN; i += 2) {
-            end = start;
-            LongVector vbb128 = LongVector.fromArray(long128SPECIES, longsB, i);
-            end = shift_op_long_LSHL(vbb128, arrLongs, end, i);
-            end = shift_op_long_ASHR(vbb128, arrLongs, end, i);
-            end = shift_op_long_LSHR(vbb128, arrLongs, end, i);
-
-        }
-
-        if (verify) {
-            for (int i = start; i < end; i++) {
-                assertTrue("LONG", Arrays.equals(tLongs[i], gLongs[i]), i, 128);
-            }
-        }
-    }
-
-    static void shift_and_accumulate_longs128(long arrLongs[][], boolean verify) {
-        int start = (NUM_OPS + ACCUMULATE_OP_S) * MAX_TESTS_PER_OP, end = 0;
-
-        for (int i = 0; i < LARGE_LEN; i += 2) {
-            end = start;
-            LongVector vba128 = LongVector.fromArray(long128SPECIES, longsA, i);
-            LongVector vbb128 = LongVector.fromArray(long128SPECIES, longsB, i);
-            end = shift_op_long_ASHR_and_ADD(vba128, vbb128, arrLongs, end,  i);
-            end = shift_op_long_LSHR_and_ADD(vba128, vbb128, arrLongs, end,  i);
-        }
-
-        if (verify) {
-            for (int i = start; i < end; i++) {
-                assertTrue("LONG", Arrays.equals(tLongs[i], gLongs[i]), i, 128);
+                assertTrue("LONG", Arrays.equals(tLongs[i], gLongs[i]), i, vlen);
             }
         }
     }
 
     static void test_init() {
-        int count = LARGE_LEN;
+        int count = ARR_LEN;
 
         bytesA    = new byte[count];
         shortsA   = new short[count];
@@ -627,21 +419,23 @@ public class TestVectorShiftImm {
             longsB[i]    = r.nextLong();
         }
 
-        shift_bytes64(gBytes,        false);
-        shift_bytes128(gBytes,       false);
-        shift_shorts64(gShorts,      false);
-        shift_shorts128(gShorts,     false);
-        shift_integers64(gIntegers,  false);
-        shift_integers128(gIntegers, false);
-        shift_longs128(gLongs,       false);
+        shift(gBytes, false, byte64SPECIES,  64);
+        shift(gBytes, false, byte128SPECIES, 128);
+        shift_and_accumulate(gBytes, false, byte64SPECIES,  64);
+        shift_and_accumulate(gBytes, false, byte128SPECIES, 128);
 
-        shift_and_accumulate_bytes64(gBytes,        false);
-        shift_and_accumulate_bytes128(gBytes,       false);
-        shift_and_accumulate_shorts64(gShorts,      false);
-        shift_and_accumulate_shorts128(gShorts,     false);
-        shift_and_accumulate_integers64(gIntegers,  false);
-        shift_and_accumulate_integers128(gIntegers, false);
-        shift_and_accumulate_longs128(gLongs,       false);
+        shift(gShorts, false, short64SPECIES,  64);
+        shift(gShorts, false, short128SPECIES, 128);
+        shift_and_accumulate(gShorts, false, short64SPECIES,  64);
+        shift_and_accumulate(gShorts, false, short128SPECIES, 128);
+
+        shift(gIntegers, false, integer64SPECIES,  64);
+        shift(gIntegers, false, integer128SPECIES, 128);
+        shift_and_accumulate(gIntegers, false, integer64SPECIES,  64);
+        shift_and_accumulate(gIntegers, false, integer128SPECIES, 128);
+
+        shift(gLongs, false, long128SPECIES, 128);
+        shift_and_accumulate(gLongs, false, long128SPECIES, 128);
     }
 
     static void assertTrue(String type, boolean okay, int i, int vlen) {
