@@ -362,21 +362,13 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
  */
 
 JVM_ENTRY(jint, VectorSupport_GetMaxLaneCount(JNIEnv *env, jclass vsclazz, jobject clazz)) {
+#ifdef COMPILER2
   oop mirror = JNIHandles::resolve_non_null(clazz);
   if (java_lang_Class::is_primitive(mirror)) {
     BasicType bt = java_lang_Class::primitive_type(mirror);
-    int min_lane_count = 8 / type2aelembytes(bt);
-    // The return value should not be less than min_lane_count since the minimal vector size
-    // supported by the Vector API is 64-bit (see VectorShape.preferredShape() for more details).
-    // This is fine because the vector size is unlikely to be less than 64-bit on modern hardware.
-    // And for the worst case, where the hardware doesn't support 64-bit long, the non-vector
-    // implementation will be called, which is still fine.
-#ifdef COMPILER2
-    return MAX2(Matcher::max_vector_size(bt), min_lane_count);
-#else
-    return min_lane_count;
-#endif // COMPILER2
+    return Matcher::max_vector_size(bt);
   }
+#endif // COMPILER2
   return -1;
 } JVM_END
 
