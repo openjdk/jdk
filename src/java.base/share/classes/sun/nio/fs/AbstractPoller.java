@@ -41,13 +41,13 @@ import java.util.*;
 abstract class AbstractPoller implements Runnable {
 
     // list of requests pending to the poller thread
-    private final LinkedList<Request> requestList;
+    private final ArrayDeque<Request> requestList;
 
     // set to true when shutdown
     private boolean shutdown;
 
     protected AbstractPoller() {
-        this.requestList = new LinkedList<>();
+        this.requestList = new ArrayDeque<>();
         this.shutdown = false;
     }
 
