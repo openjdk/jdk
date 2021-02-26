@@ -482,6 +482,50 @@ void Thread::check_for_dangling_thread_pointer(Thread *thread) {
 }
 #endif
 
+// Is the target JavaThread protected by the calling Thread
+// or by some other mechanism:
+bool Thread::is_JavaThread_protected(const JavaThread* p) {
+  // Do the simplest check first:
+  if (SafepointSynchronize::is_at_safepoint()) {
+    // The target is protected since JavaThreads cannot exit
+    // while we're at a safepoint.
+    return true;
+  }
+
+  // Now make the simple checks based on who the caller is:
+  Thread* current_thread = Thread::current();
+  if (current_thread == p || Threads_lock->owner() == current_thread) {
+    // Target JavaThread is self or calling thread owns the Threads_lock.
+    // Second check is the same as Threads_lock->owner_is_self(),
+    // but we already have the current thread so check directly.
+    return true;
+  }
+
+  // Check the ThreadsLists associated with the calling thread (if any)
+  // to see if one of them protects the target JavaThread:
+  for (SafeThreadsListPtr* stlp = current_thread->_threads_list_ptr;
+       stlp != NULL; stlp = stlp->previous()) {
+    if (stlp->list()->includes(p)) {
+      // The target JavaThread is protected by this ThreadsList:
+      return true;
+    }
+  }
+
+  // Use this debug code with -XX:+UseNewCode to diagnose locations that
+  // are missing a ThreadsListHandle or other protection mechanism:
+  // guarantee(!UseNewCode, "current_thread=" INTPTR_FORMAT " is not protecting p="
+  //           INTPTR_FORMAT, p2i(current_thread), p2i(p));
+
+  // Note: Since 'p' isn't protected by a TLH, the call to
+  // p->is_handshake_safe_for() may crash, but we have debug bits so
+  // we'll be able to figure out what protection mechanism is missing.
+  assert(p->is_handshake_safe_for(current_thread), "JavaThread=" INTPTR_FORMAT
+         " is not protected and not handshake safe.", p2i(p));
+
+  // The target JavaThread is not protected so it is not safe to query:
+  return false;
+}
+
 ThreadPriority Thread::get_priority(const Thread* const thread) {
   ThreadPriority priority;
   // Can return an error!
@@ -2509,21 +2553,17 @@ void JavaThread::verify() {
 // Most callers of this method assume that it can't return NULL but a
 // thread may not have a name whilst it is in the process of attaching to
 // the VM - see CR 6412693, and there are places where a JavaThread can be
-// seen prior to having it's threadObj set (eg JNI attaching threads and
+// seen prior to having its threadObj set (e.g., JNI attaching threads and
 // if vm exit occurs during initialization). These cases can all be accounted
 // for such that this method never returns NULL.
 const char* JavaThread::get_thread_name() const {
-#ifdef ASSERT
-  // early safepoints can hit while current thread does not yet have TLS
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    // Current JavaThreads are allowed to get their own name without
-    // the Threads_lock.
-    if (Thread::current() != this) {
-      assert_locked_or_safepoint_or_handshake(Threads_lock, this);
-    }
+  if (Thread::is_JavaThread_protected(this)) {
+    // The target JavaThread is protected so get_thread_name_string() is safe:
+    return get_thread_name_string();
   }
-#endif // ASSERT
-  return get_thread_name_string();
+
+  // The target JavaThread is not protected so we return the default:
+  return Thread::name();
 }
 
 // Returns a non-NULL representation of this thread's name, or a suitable
