@@ -1008,6 +1008,7 @@ public class Collections {
      * The returned collection will be serializable if the specified collection
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the collection
      * @param  c the collection for which an unmodifiable view is to be
      *         returned.
@@ -1120,6 +1121,7 @@ public class Collections {
      * The returned set will be serializable if the specified set
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the set
      * @param  s the set for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified set.
@@ -1156,6 +1158,7 @@ public class Collections {
      * The returned sorted set will be serializable if the specified sorted set
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the set
      * @param s the sorted set for which an unmodifiable view is to be
      *        returned.
@@ -1208,6 +1211,7 @@ public class Collections {
      * The returned navigable set will be serializable if the specified
      * navigable set is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the set
      * @param s the navigable set for which an unmodifiable view is to be
      *        returned
@@ -1303,6 +1307,7 @@ public class Collections {
      * is serializable. Similarly, the returned list will implement
      * {@link RandomAccess} if the specified list does.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the list
      * @param  list the list for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified list.
@@ -1457,6 +1462,7 @@ public class Collections {
      * The returned map will be serializable if the specified map
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param <K> the class of the map keys
      * @param <V> the class of the map values
      * @param  m the map for which an unmodifiable view is to be returned.
@@ -1818,6 +1824,7 @@ public class Collections {
      * The returned sorted map will be serializable if the specified sorted map
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param <K> the class of the map keys
      * @param <V> the class of the map values
      * @param m the sorted map for which an unmodifiable view is to be
@@ -1867,6 +1874,7 @@ public class Collections {
      * The returned navigable map will be serializable if the specified
      * navigable map is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param <K> the class of the map keys
      * @param <V> the class of the map values
      * @param m the navigable map for which an unmodifiable view is to be
