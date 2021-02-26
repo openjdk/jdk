@@ -1883,7 +1883,6 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 
 char* os::reserve_memory_special(size_t size, size_t alignment,
                                  char* addr, bool executable) {
-
   assert(is_aligned(addr, alignment), "Unaligned request address");
 
   char* result = pd_reserve_memory_special(size, alignment, addr, executable);

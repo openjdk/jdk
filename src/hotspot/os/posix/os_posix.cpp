@@ -51,6 +51,7 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/shm.h>
 #include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
@@ -1765,3 +1766,45 @@ int os::PlatformMonitor::wait(jlong millis) {
     return OS_OK;
   }
 }
+
+
+/// sbrk protection zone handling ///////////////////////
+
+#ifndef __APPLE__
+
+// We define a zone starting at the initial value for sbrk, with a configurable
+//  length, into which we do not allow the VM to place mappings.
+static const address g_initial_brk = ::sbrk(0);
+static const address g_lowest_mapping_above_initial_brk = (address)SIZE_MAX;
+
+static address brk_protection_zone_end() {
+  return MIN2(g_initial_brk + BrkZoneSize,
+              g_lowest_mapping_above_initial_brk);
+}
+
+bool os::Posix::is_in_brk_protection_zone(address p) {
+  return p != NULL &&
+         g_initial_brk != (address)-1 &&
+         p >= g_initial_brk && p < brk_protection_zone_end();
+}
+
+void os::Posix::update_lowest_mapping_above_initial_brk(address p) {
+  // This is to be called for addresses returned by ::mmap or ::shmat with
+  // a NULL wish address: the OS itself may place mappings into what we regard
+  // as protected brk zone, and for those mappings, we need to disable zone
+  // protection to be able to later re-map those addresses.
+  const address brknow = (address)::sbrk(0);
+  if (is_in_brk_protection_zone(p)) {
+    g_lowest_mapping_above_initial_brk = p;
+  }
+}
+
+void os::Posix::print_brk_info(outputStream* st) {
+  const address brknow = (address)::sbrk(0);
+  st->print_cr("brk initial: " PTR_FORMAT ", now: " PTR_FORMAT " (+" SIZE_FORMAT "k), "
+               "reserved zone end: " PTR_FORMAT,
+               p2i(g_initial_brk), p2i(brknow), (brknow - (address)g_initial_brk) / K,
+               p2i(brk_protection_zone_end()));
+}
+
+#endif // !__APPLE__

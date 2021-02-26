@@ -97,6 +97,11 @@ public:
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
                                     const void* ucVoid,
                                     address* stub);
+
+  static bool is_in_brk_protection_zone(address p)                MACOS_ONLY({ return false; });
+  static void update_lowest_mapping_above_initial_brk(address p)  MACOS_ONLY({ });
+  static void print_brk_info(outputStream* st)                    MACOS_ONLY({ });
+
 };
 
 /*

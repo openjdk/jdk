@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,11 @@
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
                                                                         \
   product(bool, DumpPerfMapAtExit, false, DIAGNOSTIC,                   \
-          "Write map file for Linux perf tool at exit")
+          "Write map file for Linux perf tool at exit")                 \
+                                                                        \
+  product(size_t, BrkReserveSize,                                       \
+          LP64_ONLY(2*G) NOT_LP64(64*M), DIAGNOSTIC,                    \
+          "Size of no-reserve-zone following program break")            \
 
 // end of RUNTIME_OS_FLAGS
 

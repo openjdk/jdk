@@ -750,3 +750,25 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
     }
   }
 }
+
+#ifndef _WIN32
+TEST_VM(os, test_reserve_at_sbrk) {
+  const size_t ag = os::vm_allocation_granularity();
+  // Test that we are not allowed within BreakReserveSize feet of the program break.
+  if (BrkReserveSize > 0) {
+    address brknow = (address)os::Posix::get_sbrk();
+    for (address addr = align_up(brknow, ag);
+         addr < (brknow + BrkReserveSize);
+         addr += NOT_LP64(M) LP64_ONLY(M * 32))
+    {
+      address p = (address)os::attempt_reserve_memory_at((char*)addr, ag, false);
+      EXPECT_EQ(p, (address)NULL);
+      if (p != NULL) {
+        os::Posix::print_brk_info(tty);
+        os::release_memory((char*)p, ag);
+        break; // we failed.
+      }
+    }
+  }
+}
+#endif

@@ -2087,6 +2087,7 @@ const intx ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
 
+
 // end of RUNTIME_FLAGS
 
 DECLARE_FLAGS(LP64_RUNTIME_FLAGS)

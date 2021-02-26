@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,15 +48,6 @@
   product(bool, AllowExtshm, false,                                                 \
           "Allow VM to run with EXTSHM=ON.")                                        \
                                                                                     \
-  /*  Maximum expected size of the data segment. That correlates with the      */   \
-  /*  to the maximum C Heap consumption we expect.                             */   \
-  /*  We need to know this because we need to leave "breathing space" for the  */   \
-  /*  data segment when placing the java heap. If that space is too small, we  */   \
-  /*  reduce our chance of getting a low heap address (needed for compressed   */   \
-  /*  Oops).                                                                   */   \
-  product(uintx, MaxExpectedDataSegmentSize, 8*G,                                   \
-          "Maximum expected Data Segment Size.")                                    \
-                                                                                    \
   /* Use optimized addresses for the polling page.                             */   \
   product(bool, OptimizePollingPageLocation, true,                                  \
              "Optimize the location of the polling page used for Safepoints")       \
@@ -75,8 +66,12 @@
   /* explicit commit behaviour. This flag, if true, causes the VM to touch     */   \
   /* memory on os::commit_memory() (which normally is a noop).                 */   \
   product(bool, UseExplicitCommit, false,                                           \
-          "Explicit commit for virtual memory.")
-
+          "Explicit commit for virtual memory.")                                    \
+                                                                                    \
+  /* On AIX lets create a large reserve size since thread stacks live in the */     \
+  /* and therefore the break needs more breathing space. */                         \
+  product(size_t, BrkReserveSize, 8*G, DIAGNOSTIC,                                  \
+          "Size of no-reserve-zone following program break")                        \
 // end of RUNTIME_OS_FLAGS
 
 //
