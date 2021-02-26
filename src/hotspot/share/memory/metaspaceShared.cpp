@@ -87,7 +87,6 @@ intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
 bool MetaspaceShared::_use_full_module_graph = true;
-size_t MetaspaceShared::_core_region_alignment = 0;
 
 // The CDS archive is divided into the following regions:
 //     mc  - misc code (the method entry trampolines, c++ vtables)
@@ -123,30 +122,22 @@ char* MetaspaceShared::symbol_space_alloc(size_t num_bytes) {
   return _symbol_region.allocate(num_bytes);
 }
 
-void MetaspaceShared::init_alignments() {
-  assert(_core_region_alignment == 0, "call this only once");
-  if (DumpSharedSpaces) {
-    _core_region_alignment = (size_t)os::vm_allocation_granularity();
-#if (defined(LINUX) && defined(AARCH64)) || (defined(__APPLE__) && defined(AMD64))
-    // If a CDS archive is created on one machine, and used on another, and the two
-    // machines have different page sizes, make sure the archive can be used on
-    // both machines.
-    //
-    // (a) Linux/aarch64 can be configured to have either 4KB or 64KB page sizes.
-    // (b) macOS/x64 uses 4KB, but macOS/aarch64 uses 64KB (note: you can run a x64 JDK
-    //     on a M1-based MacBook using Rosetta).
-    if (_core_region_alignment < 64*K) {
-      log_info(cds)("Force core region alignment to 64K");
-      _core_region_alignment = 64*K;
-    }
-#endif
-  } else {
-    assert(UseSharedSpaces, "don't call this if not mapping at least the base archive");
-    assert(FileMapInfo::current_info() != NULL, "Call init_alignments() after base archive is opened");
-    _core_region_alignment = FileMapInfo::current_info()->core_region_alignment();
-  }
-
-  log_info(cds)("core_region_alignment = " SIZE_FORMAT, _core_region_alignment);
+// core region alignment is configurable during build time.
+size_t MetaspaceShared::core_region_alignment() {
+#if defined(CDS_CORE_REGION_ALIGNMENT)
+  assert(CDS_CORE_REGION_ALIGNMENT == 4096  ||
+         CDS_CORE_REGION_ALIGNMENT == 16384 ||
+         CDS_CORE_REGION_ALIGNMENT == 65536, "Sanity check");
+  assert(is_power_of_2(CDS_CORE_REGION_ALIGNMENT),
+         "CDS core region alignment must be power of 2.");
+  assert(CDS_CORE_REGION_ALIGNMENT >= (size_t)os::vm_allocation_granularity(),
+         "CDS core region aligment must be greater or equal to OS page size.");
+  assert(CDS_CORE_REGION_ALIGNMENT % os::vm_allocation_granularity() == 0,
+         "CDS core region alignment must be divisible by page size");
+  return CDS_CORE_REGION_ALIGNMENT;
+#else
+  return (size_t)os::vm_allocation_granularity();
+#endif // CDS_CORE_REGION_ALIGNMENT
 }
 
 static bool shared_base_valid(char* shared_base) {
@@ -199,7 +190,7 @@ static char* compute_shared_base(size_t cds_max) {
 
 void MetaspaceShared::initialize_for_static_dump() {
   assert(DumpSharedSpaces, "should be called for dump time only");
-  init_alignments();
+  log_info(cds)("Core region alignment: " SIZE_FORMAT, core_region_alignment());
   // The max allowed size for CDS archive. We use this to limit SharedBaseAddress
   // to avoid address space wrap around.
   size_t cds_max;
@@ -905,7 +896,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   FileMapInfo* dynamic_mapinfo = NULL;
 
   if (static_mapinfo != NULL) {
-    init_alignments();
+    log_info(cds)("Core region alignment: " SIZE_FORMAT, static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
 
     // First try to map at the requested address

@@ -56,7 +56,6 @@ class MetaspaceShared : AllStatic {
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
   static bool _use_full_module_graph;
-  static size_t _core_region_alignment;
  public:
   enum {
     // core archive spaces
@@ -138,13 +137,9 @@ class MetaspaceShared : AllStatic {
   static bool linking_required(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS
-  static void init_alignments();
   // Alignment for the 3 core CDS regions (MC/RW/RO) only.
   // (Heap region alignments are decided by GC).
-  static size_t core_region_alignment() {
-    assert(_core_region_alignment != 0, "must be initialized");
-    return _core_region_alignment;
-  }
+  static size_t core_region_alignment();
   static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
 #endif
 
