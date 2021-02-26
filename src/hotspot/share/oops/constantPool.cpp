@@ -483,7 +483,7 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
 }
 
 Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
-                                   bool save_resolution_error, TRAPS) {
+                                   TRAPS) {
   JavaThread* javaThread = THREAD->as_Java_thread();
 
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
@@ -537,17 +537,13 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   // Failed to resolve class. We must record the errors so that subsequent attempts
   // to resolve this constant pool entry fail with the same error (JVMS 5.4.3).
   if (HAS_PENDING_EXCEPTION) {
-    if (save_resolution_error) {
-      save_and_throw_exception(this_cp, which, constantTag(JVM_CONSTANT_UnresolvedClass), CHECK_NULL);
-      // If CHECK_NULL above doesn't return the exception, that means that
-      // some other thread has beaten us and has resolved the class.
-      // To preserve old behavior, we return the resolved class.
-      Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
-      assert(klass != NULL, "must be resolved if exception was cleared");
-      return klass;
-    } else {
-      return NULL;  // return the pending exception
-    }
+    save_and_throw_exception(this_cp, which, constantTag(JVM_CONSTANT_UnresolvedClass), CHECK_NULL);
+    // If CHECK_NULL above doesn't return the exception, that means that
+    // some other thread has beaten us and has resolved the class.
+    // To preserve old behavior, we return the resolved class.
+    Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
+    assert(klass != NULL, "must be resolved if exception was cleared");
+    return klass;
   }
 
   // logging for class+resolve.
@@ -593,6 +589,8 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     Klass* k = this_cp->resolved_klasses()->at(resolved_klass_index);
     assert(k != NULL, "should be resolved");
     return k;
+  } else if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
+    return NULL;
   } else {
     Thread *thread = Thread::current();
     Symbol* name = this_cp->symbol_at(name_index);
@@ -965,7 +963,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
   case JVM_CONSTANT_Class:
     {
       assert(cache_index == _no_index_sentinel, "should not have been set");
-      Klass* resolved = klass_at_impl(this_cp, index, true, CHECK_NULL);
+      Klass* resolved = klass_at_impl(this_cp, index, CHECK_NULL);
       // ldc wants the java mirror.
       result_oop = resolved->java_mirror();
       break;
@@ -1054,7 +1052,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                               callee_index, name->as_C_string(), signature->as_C_string());
       }
 
-      Klass* callee = klass_at_impl(this_cp, callee_index, true, CHECK_NULL);
+      Klass* callee = klass_at_impl(this_cp, callee_index, CHECK_NULL);
 
       // Check constant pool method consistency
       if ((callee->is_interface() && m_tag.is_method()) ||

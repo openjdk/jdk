@@ -45,6 +45,8 @@ class CP1 {
 // This class has a constant pool reference to A also but will load
 // the second version of the class if CCE is thrown while loading the
 // first version of the class.  Otherwise if okSuper, will load A extends B
+// Due to timing, thread 1 might still be loading class A with CCE so this
+// could get CCE also.
 class CP2 {
   void foo(boolean okSuper) throws Exception {
       System.out.println("CP2.foo()");
@@ -53,7 +55,6 @@ class CP2 {
           Object obj = a.getConstructor(boolean.class).newInstance(okSuper);
       } catch (Throwable e) {
           System.out.println("Exception is caught: " + e);
-          throw new RuntimeException("Unexpected exception");
       }
   }
 }
