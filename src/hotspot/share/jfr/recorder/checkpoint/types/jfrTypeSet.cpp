@@ -275,7 +275,7 @@ static traceid primitive_id(KlassPtr array_klass) {
   return JfrTraceId::load_raw(array_klass) + 1;
 }
 
-static int write_primitive(JfrCheckpointWriter* writer, KlassPtr type_array_klass) {
+static void write_primitive(JfrCheckpointWriter* writer, KlassPtr type_array_klass) {
   assert(writer != NULL, "invariant");
   assert(_artifacts != NULL, "invariant");
   writer->write(primitive_id(type_array_klass));
@@ -284,7 +284,6 @@ static int write_primitive(JfrCheckpointWriter* writer, KlassPtr type_array_klas
   writer->write(package_id(Universe::boolArrayKlassObj(), false));
   writer->write(get_primitive_flags());
   writer->write<bool>(false);
-  return 1;
 }
 
 static void do_loader_klass(const Klass* klass) {
