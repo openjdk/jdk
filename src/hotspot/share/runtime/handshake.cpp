@@ -30,6 +30,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/task.hpp"
@@ -73,6 +74,7 @@ class HandshakeOperation : public CHeapObj<mtThread> {
     return val == 0;
   }
   void add_target_count(int count) { Atomic::add(&_pending_threads, count); }
+  int32_t pending_threads()        { return Atomic::load(&_pending_threads); }
   const char* name()               { return _handshake_cl->name(); }
   bool is_async()                  { return _handshake_cl->is_async(); }
 };
@@ -174,39 +176,42 @@ class HandshakeSpinYield : public StackObj {
   }
 };
 
-class VM_Handshake: public VM_Operation {
-  const jlong _handshake_timeout;
- public:
-  bool evaluate_at_safepoint() const { return false; }
+static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
+  JavaThreadIteratorWithHandle jtiwh;
 
- protected:
-  HandshakeOperation* const _op;
+  log_error(handshake)("Handshake timeout: %s(" INTPTR_FORMAT "), pending threads: " INT32_FORMAT,
+                       op->name(), p2i(op), op->pending_threads());
 
-  VM_Handshake(HandshakeOperation* op) :
-      _handshake_timeout(millis_to_nanos(HandshakeTimeout)), _op(op) {}
-
-  bool handshake_has_timed_out(jlong start_time);
-  static void handle_timeout();
-};
-
-bool VM_Handshake::handshake_has_timed_out(jlong start_time) {
-  // Check if handshake operation has timed out
-  if (_handshake_timeout > 0) {
-    return os::javaTimeNanos() >= (start_time + _handshake_timeout);
+  if (target == NULL) {
+    for ( ; JavaThread* thr = jtiwh.next(); ) {
+      if (thr->handshake_state()->operation_pending(op)) {
+        log_error(handshake)("JavaThread " INTPTR_FORMAT " has not cleared handshake op: " INTPTR_FORMAT, p2i(thr), p2i(op));
+        target = thr;
+      }
+    }
+  } else {
+    log_error(handshake)("JavaThread " INTPTR_FORMAT " has not cleared handshake op: " INTPTR_FORMAT, p2i(target), p2i(op));
   }
-  return false;
+
+  if (target != NULL) {
+    if (os::signal_thread(target, SIGILL, "cannot be handshaked")) {
+      // Give target a chance to report the error and terminate the VM.
+      os::naked_sleep(3000);
+    }
+  } else {
+    log_error(handshake)("No thread with an unfinished handshake op(" INTPTR_FORMAT ") found.", p2i(op));
+  }
+  fatal("Handshake timeout");
 }
 
-void VM_Handshake::handle_timeout() {
-  LogStreamHandle(Warning, handshake) log_stream;
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* thr = jtiwh.next(); ) {
-    if (thr->handshake_state()->has_operation()) {
-      log_stream.print("Thread " PTR_FORMAT " has not cleared its handshake op", p2i(thr));
-      thr->print_thread_state_on(&log_stream);
+static void check_handshake_timeout(jlong start_time, HandshakeOperation* op, JavaThread* target = NULL) {
+  // Check if handshake operation has timed out
+  jlong timeout_ns = millis_to_nanos(HandshakeTimeout);
+  if (timeout_ns > 0) {
+    if (os::javaTimeNanos() >= (start_time + timeout_ns)) {
+      handle_timeout(op, target);
     }
   }
-  log_stream.flush();
-  fatal("Handshake operation timed out");
 }
 
 static void log_handshake_info(jlong start_time_ns, const char* name, int targets, int emitted_handshakes_executed, const char* extra = NULL) {
@@ -221,9 +226,12 @@ static void log_handshake_info(jlong start_time_ns, const char* name, int target
   }
 }
 
-class VM_HandshakeAllThreads: public VM_Handshake {
+class VM_HandshakeAllThreads: public VM_Operation {
+  HandshakeOperation* const _op;
  public:
-  VM_HandshakeAllThreads(HandshakeOperation* op) : VM_Handshake(op) {}
+  VM_HandshakeAllThreads(HandshakeOperation* op) : _op(op) {}
+
+  bool evaluate_at_safepoint() const { return false; }
 
   void doit() {
     jlong start_time_ns = os::javaTimeNanos();
@@ -249,9 +257,7 @@ class VM_HandshakeAllThreads: public VM_Handshake {
     int emitted_handshakes_executed = 0;
     do {
       // Check if handshake operation has timed out
-      if (handshake_has_timed_out(start_time_ns)) {
-        handle_timeout();
-      }
+      check_handshake_timeout(start_time_ns, _op);
 
       // Have VM thread perform the handshake operation for blocked threads.
       // Observing a blocked state may of course be transient but the processing is guarded
@@ -359,6 +365,10 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
     if (op.is_completed()) {
       break;
     }
+
+    // Check if handshake operation has timed out
+    check_handshake_timeout(start_time_ns, &op, target);
+
     hsy.add_result(pr);
     // Check for pending handshakes to avoid possible deadlocks where our
     // target is trying to handshake us.
@@ -404,6 +414,20 @@ void HandshakeState::add_operation(HandshakeOperation* op) {
   assert(!_lock.owned_by_self(), "Lock should not be held");
   _queue.push(op);
   SafepointMechanism::arm_local_poll_release(_handshakee);
+}
+
+bool HandshakeState::operation_pending(HandshakeOperation* op) {
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  class MatchOp {
+    HandshakeOperation* _op;
+   public:
+    MatchOp(HandshakeOperation* op) : _op(op) {}
+    bool operator()(HandshakeOperation* op) {
+      return op == _op;
+    }
+  };
+  MatchOp mo(op);
+  return _queue.contains(mo);
 }
 
 HandshakeOperation* HandshakeState::pop_for_self() {
