@@ -62,8 +62,10 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.main.Option;
+import java.util.stream.Collectors;
 
 /**
  * The FilerImplementation class must maintain a number of
@@ -506,7 +508,7 @@ public class JavacFiler implements Filer, Closeable {
                                     JavaFileObject.Kind.CLASS);
 
         JavaFileObject fileObject =
-            fileManager.getJavaFileForOutput(loc, name, kind, originatingElements);
+            fileManager.getJavaFileForOutput(loc, name, kind, originatingFiles(originatingElements));
         checkFileReopening(fileObject, true);
 
         if (lastRound)
@@ -519,6 +521,19 @@ public class JavacFiler implements Filer, Closeable {
         openTypeNames.add(name);
 
         return new FilerOutputJavaFileObject(mod, name, fileObject);
+    }
+
+    private JavaFileObject[] originatingFiles(Element[] originatingElements) {
+        JavaFileObject[] originatingFiles = Arrays.asList(originatingElements)
+                .stream()
+                .filter(el -> el instanceof Symbol)
+                .map(el -> {
+                    ClassSymbol outermostClass = ((Symbol) el).outermostClass();
+                    return outermostClass.classfile != null ? outermostClass.classfile
+                            : outermostClass.sourcefile;
+                })
+                .toArray(s -> new JavaFileObject[s]);
+        return originatingFiles;
     }
 
     @Override @DefinedBy(Api.ANNOTATION_PROCESSING)
@@ -539,7 +554,7 @@ public class JavacFiler implements Filer, Closeable {
 
         FileObject fileObject =
             fileManager.getFileForOutput(location, strPkg,
-                                         relativeName.toString(), originatingElements);
+                                         relativeName.toString(), originatingFiles(originatingElements));
         checkFileReopening(fileObject, true);
 
         if (fileObject instanceof JavaFileObject)

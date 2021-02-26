@@ -37,7 +37,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -52,7 +51,6 @@ import javax.tools.ToolProvider;
 import java.io.IOException;
 import java.util.ArrayList;
 import javax.lang.model.element.Element;
-import javax.lang.model.util.Elements;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileManager;
 import toolbox.JavacTask;
@@ -101,21 +99,15 @@ public class TestOriginatingElements extends TestRunner {
         Path classes = outerBase.resolve("classes");
         Files.createDirectories(classes);
         try (StandardJavaFileManager sjfm = compiler.getStandardFileManager(null, null, null)) {
-            List<String> actualOriginatingElements = new ArrayList<>();
             List<String> actualOriginatingFiles = new ArrayList<>();
             JavaFileManager fm = new ForwardingJavaFileManager<JavaFileManager>(sjfm) {
                 @Override
-                public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, Element... originatingElements) throws IOException {
-                    List.of(originatingElements)
+                public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, JavaFileObject... originatingFiles) throws IOException {
+                    List.of(originatingFiles)
                         .stream()
-                        .map(el -> el.toString())
-                        .forEach(actualOriginatingElements::add);
-                    List.of(originatingElements)
-                        .stream()
-                        .map(elements::getOriginatingFile)
                         .map(fo -> fo.getName())
                         .forEach(actualOriginatingFiles::add);
-                    return super.getJavaFileForOutput(location, className, kind, originatingElements);
+                    return super.getJavaFileForOutput(location, className, kind, originatingFiles);
                 }
             };
             try {
@@ -126,10 +118,6 @@ public class TestOriginatingElements extends TestRunner {
                 ToolProvider.getSystemJavaCompiler()
                             .getTask(null, fm, null, options, null, sjfm.getJavaFileObjects(tb.findJavaFiles(src)))
                             .call();
-                List<String> expectedOriginatingElements = List.of("t.T", "java.lang.String");
-                if (!expectedOriginatingElements.equals(actualOriginatingElements)) {
-                    throw new AssertionError("Unexpected originatingElements: " + actualOriginatingElements);
-                }
                 List<String> expectedOriginatingFiles = List.of("testOriginatingElements/src/t/T.java",
                                                                 "/modules/java.base/java/lang/String.class");
                 if (!expectedOriginatingFiles.equals(actualOriginatingFiles)) {
@@ -141,15 +129,12 @@ public class TestOriginatingElements extends TestRunner {
         }
     }
 
-    private static Elements elements;
-
     @SupportedAnnotationTypes("*")
     public static class P extends AbstractProcessor {
         int round;
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             if (round++ == 0) {
-                elements = processingEnv.getElementUtils();
                 try {
                     List<Element> originating = new ArrayList<>();
                     originating.addAll(roundEnv.getRootElements());
@@ -157,8 +142,6 @@ public class TestOriginatingElements extends TestRunner {
                     processingEnv.getFiler().createSourceFile("test.Generated", originating.toArray(s -> new Element[s])).openOutputStream().close();
                 } catch (IOException ex) {
                     throw new AssertionError(ex);
-                } finally {
-                    elements = null;
                 }
             }
             return false;

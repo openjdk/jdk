@@ -358,7 +358,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @param kind the kind of file, must be one of {@link
      * JavaFileObject.Kind#SOURCE SOURCE} or {@link
      * JavaFileObject.Kind#CLASS CLASS}
-     * @param originatingElements XXX
+     * @param originatingFiles XXX
      * @return a file object for output
      * @throws IllegalArgumentException if sibling is not known to
      * this file manager, or if the location is not known to this file
@@ -374,9 +374,9 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     default JavaFileObject getJavaFileForOutput(Location location,
                                         String className,
                                         Kind kind,
-                                        Element... originatingElements)
+                                        JavaFileObject... originatingFiles)
         throws IOException {
-        return getJavaFileForOutput(location, className, kind, (FileObject) null);
+        return getJavaFileForOutput(location, className, kind, originatingFiles != null && originatingFiles.length > 0 ? originatingFiles[0] : null);
     }
 
     /**
@@ -498,7 +498,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @param location an output location
      * @param packageName a package name
      * @param relativeName a relative name
-     * @param originatingElements XXX
+     * @param originatingFiles XXX
      * @return a file object
      * @throws IllegalArgumentException if sibling is not known to
      * this file manager, or if the location is not known to this file
@@ -514,9 +514,9 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     default FileObject getFileForOutput(Location location,
                                 String packageName,
                                 String relativeName,
-                                Element... originatingElements)
+                                JavaFileObject... originatingFiles)
         throws IOException {
-        return getFileForOutput(location, packageName, relativeName, (FileObject) null);
+        return getFileForOutput(location, packageName, relativeName, originatingFiles != null && originatingFiles.length > 0 ? originatingFiles[0] : null);
     }
 
     /**

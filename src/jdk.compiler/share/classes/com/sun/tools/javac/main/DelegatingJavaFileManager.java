@@ -119,8 +119,8 @@ public class DelegatingJavaFileManager implements JavaFileManager {
 
     @Override
     public JavaFileObject getJavaFileForOutput(Location location, String className, Kind kind,
-                                               Element... originatingElements) throws IOException {
-        return delegate(location).getJavaFileForOutput(location, className, kind, originatingElements);
+                                               JavaFileObject... originatingFiles) throws IOException {
+        return delegate(location).getJavaFileForOutput(location, className, kind, originatingFiles);
     }
 
     @Override
@@ -137,8 +137,8 @@ public class DelegatingJavaFileManager implements JavaFileManager {
 
     @Override
     public FileObject getFileForOutput(Location location, String packageName, String relativeName,
-                                       Element... originatingElements) throws IOException {
-        return delegate(location).getFileForOutput(location, packageName, relativeName, originatingElements);
+                                       JavaFileObject... originatingFiles) throws IOException {
+        return delegate(location).getFileForOutput(location, packageName, relativeName, originatingFiles);
     }
 
     @Override

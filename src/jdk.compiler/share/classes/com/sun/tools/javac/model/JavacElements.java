@@ -715,13 +715,6 @@ public class JavacElements implements Elements {
         }
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public JavaFileObject getOriginatingFile(Element el) {
-        ClassSymbol outermostClass = cast(Symbol.class, el).outermostClass();
-        return outermostClass.classfile != null ? outermostClass.classfile
-                                                 : outermostClass.sourcefile;
-    }
-
     /**
      * Returns the tree node and compilation unit corresponding to this
      * element, or null if they can't be found.
