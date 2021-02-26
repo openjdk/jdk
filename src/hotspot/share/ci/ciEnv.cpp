@@ -445,8 +445,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     MutexLocker ml(Compile_lock);
     Klass* kls;
     if (!require_local) {
-      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader,
-                                                                       CHECK_AND_CLEAR_(fail_type));
+      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader, THREAD);
     } else {
       kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
