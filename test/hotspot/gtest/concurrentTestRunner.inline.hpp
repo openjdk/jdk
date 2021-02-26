@@ -31,8 +31,7 @@
 // Base class for test runnable. Override runUnitTest() to specify what to run.
 class TestRunnable {
 public:
-  virtual void runUnitTest() {
-  };
+  virtual void runUnitTest() = 0;
 };
 
 // This class represents a thread for a unit test.
