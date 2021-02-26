@@ -354,11 +354,6 @@ static JLI_List readArgFile(FILE *file) {
     return rv;
 }
 
-static void reportAndExit(const char* fmt, const char* arg) {
-    JLI_ReportMessage(fmt, arg);
-    exit(1);
-}
-
 /*
  * if the arg represent a file, that is, prefix with a single '@',
  * return a list of arguments from the file.
@@ -371,7 +366,8 @@ static JLI_List expandArgFile(const char *arg) {
 
     /* arg file cannot be openned */
     if (fptr == NULL || fstat(fileno(fptr), &st) != 0) {
-        reportAndExit(CFG_ERROR6, arg);
+        JLI_ReportMessage(CFG_ERROR6, arg);
+        exit(1);
     } else {
         if (st.st_size > MAX_ARGF_SIZE) {
             JLI_ReportMessage(CFG_ERROR10, MAX_ARGF_SIZE);
@@ -383,7 +379,8 @@ static JLI_List expandArgFile(const char *arg) {
 
     /* error occurred reading the file */
     if (rv == NULL) {
-        reportAndExit(DLL_ERROR4, arg);
+        JLI_ReportMessage(DLL_ERROR4, arg);
+        exit(1);
     }
     fclose(fptr);
 
