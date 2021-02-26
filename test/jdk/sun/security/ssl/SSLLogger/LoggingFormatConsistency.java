@@ -77,6 +77,7 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
             var incorrectTLSVersionsFormat = new String[]{"TLS10", "TLS11", "TLS12", "TLS13"};
 
             for (var i = 0; i < correctTlsVersionsFormat.length; i++) {
+                Thread.sleep(1000);
                 var expectedTLSVersion = correctTlsVersionsFormat[i];
                 var incorrectTLSVersion = incorrectTLSVersionsFormat[i];
 
@@ -90,7 +91,11 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
                         "runTest"); // Ensuring args.length is greater than 0 when test JVM starts
 
                 if (output.getExitValue() != 0) {
-                    throw new RuntimeException("Test JVM process failed. JVM stderr= " + output.getStderr());
+                    System.out.println("Process output = ");
+                    for (String line : output.asLines()) {
+                        System.out.println(line);
+                    }
+                    throw new RuntimeException("Test JVM process failed");
                 }
 
                 output.shouldContain(expectedTLSVersion);
@@ -132,11 +137,11 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
 
         var host = serverAddress == null ? "localhost" : serverAddress.getHostAddress();
         var url = new URL("https://" + host + ":" + serverPort + "/");
-        var httpsConnection = (HttpsURLConnection) url.openConnection();
-        httpsConnection.disconnect();
-        try (var in = new BufferedReader(new InputStreamReader(httpsConnection.getInputStream()))) {
-            // Getting the input stream from the BufferedReader is sufficient to generate the desired debug output
-            // We don't need to process the data
+        System.out.println("Connecting to " + url);
+
+        try (var in = new BufferedReader(new InputStreamReader(url.openStream()))) {
+            // Opening the connection and getting the input stream is sufficient
+            // to generate debug logs
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
