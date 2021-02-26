@@ -50,28 +50,6 @@ void G1CollectionSetCandidates::remove_from_end(uint num_remove) {
   _remaining_reclaimable_bytes -= reclaimable;
 }
 
-void G1CollectionSetCandidates::prune(uint keep_min_regions,
-                                      size_t prune_total_bytes,
-                                      HeapRegionClosure* cl) {
-  uint regions_left;
-  size_t pruned_bytes = 0;
-
-  for (regions_left = _num_regions; regions_left > keep_min_regions; regions_left--) {
-    uint cur_idx = regions_left - 1;
-    HeapRegion* region = at(cur_idx);
-    // Do not prune more than prune_total_bytes.
-    if ((region->reclaimable_bytes() + pruned_bytes) > prune_total_bytes) {
-      break;
-    }
-    pruned_bytes += region->reclaimable_bytes();
-    cl->do_heap_region(region);
-    // Clear HeapRegion reference to make sure it is not going to be used.
-    _regions[cur_idx] = NULL;
-  }
-  _remaining_reclaimable_bytes -= pruned_bytes;
-  _num_regions = regions_left;
-}
-
 void G1CollectionSetCandidates::iterate(HeapRegionClosure* cl) {
   for (uint i = _front_idx; i < _num_regions; i++) {
     HeapRegion* r = _regions[i];
