@@ -432,7 +432,7 @@ public class JavacFiler implements Filer, Closeable {
     public JavaFileObject createSourceFile(CharSequence nameAndModule,
                                            Element... originatingElements) throws IOException {
         Pair<ModuleSymbol, String> moduleAndClass = checkOrInferModule(nameAndModule);
-        return createSourceOrClassFile(moduleAndClass.fst, true, moduleAndClass.snd);
+        return createSourceOrClassFile(moduleAndClass.fst, true, moduleAndClass.snd, originatingElements);
     }
 
     @Override @DefinedBy(Api.ANNOTATION_PROCESSING)
@@ -483,7 +483,7 @@ public class JavacFiler implements Filer, Closeable {
         return Pair.of(explicitModule, pkg);
     }
 
-    private JavaFileObject createSourceOrClassFile(ModuleSymbol mod, boolean isSourceFile, String name) throws IOException {
+    private JavaFileObject createSourceOrClassFile(ModuleSymbol mod, boolean isSourceFile, String name, Element... originatingElements) throws IOException {
         Assert.checkNonNull(mod);
 
         if (lint) {
@@ -506,7 +506,7 @@ public class JavacFiler implements Filer, Closeable {
                                     JavaFileObject.Kind.CLASS);
 
         JavaFileObject fileObject =
-            fileManager.getJavaFileForOutput(loc, name, kind, null);
+            fileManager.getJavaFileForOutput(loc, name, kind, originatingElements);
         checkFileReopening(fileObject, true);
 
         if (lastRound)
@@ -539,7 +539,7 @@ public class JavacFiler implements Filer, Closeable {
 
         FileObject fileObject =
             fileManager.getFileForOutput(location, strPkg,
-                                         relativeName.toString(), null);
+                                         relativeName.toString(), originatingElements);
         checkFileReopening(fileObject, true);
 
         if (fileObject instanceof JavaFileObject)
@@ -582,8 +582,7 @@ public class JavacFiler implements Filer, Closeable {
         if (location.isOutputLocation()) {
             fileObject = fileManager.getFileForOutput(location,
                     pkg,
-                    relativeName.toString(),
-                    null);
+                    relativeName.toString());
         } else {
             fileObject = fileManager.getFileForInput(location,
                     pkg,

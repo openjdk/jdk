@@ -67,6 +67,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic;
+import javax.lang.model.element.Element;
 
 /**
  *  Wrap objects to enable unchecked exceptions to be caught and handled.
@@ -316,9 +317,31 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
+        public JavaFileObject getJavaFileForOutput(Location location, String className, Kind kind, Element... originatingElements) throws IOException {
+            try {
+                return wrap(clientJavaFileManager.getJavaFileForOutput(location, className, kind, originatingElements));
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
         public FileObject getFileForOutput(Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
             try {
                 return wrap(clientJavaFileManager.getFileForOutput(location, packageName, relativeName, unwrap(sibling)));
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public FileObject getFileForOutput(Location location, String packageName, String relativeName, Element... originatingElements) throws IOException {
+            try {
+                return wrap(clientJavaFileManager.getFileForOutput(location, packageName, relativeName, originatingElements));
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException | Error e) {

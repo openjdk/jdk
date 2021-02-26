@@ -93,6 +93,7 @@ import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
+import javax.tools.FileObject;
 
 /** This class could be the main entry point for GJC when GJC is used as a
  *  component in a larger software system. It provides operations to
@@ -776,7 +777,7 @@ public class JavaCompiler {
            = fileManager.getJavaFileForOutput(CLASS_OUTPUT,
                                                cdef.sym.flatname.toString(),
                                                JavaFileObject.Kind.SOURCE,
-                                               null);
+                                               (FileObject) null);
         if (inputFiles.contains(outFile)) {
             log.error(cdef.pos(), Errors.SourceCantOverwriteInputFile(outFile));
             return null;

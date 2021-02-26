@@ -34,6 +34,7 @@ import java.util.Objects;
 
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.element.*;
+import javax.tools.JavaFileObject;
 
 
 /**
@@ -681,6 +682,15 @@ public interface Elements {
                 }
             }
         }
+        return null;
+    }
+
+    /**TODO
+     * 
+     * @param el TODO
+     * @return TODO
+     */
+    default JavaFileObject getOriginatingFile(Element el) {
         return null;
     }
 }

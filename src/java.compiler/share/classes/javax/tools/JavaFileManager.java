@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.Set;
+import javax.lang.model.element.Element;
 
 import static javax.tools.JavaFileObject.Kind;
 
@@ -339,6 +340,46 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
         throws IOException;
 
     /**
+     * Returns a {@linkplain JavaFileObject file object} for output
+     * representing the specified class of the specified kind in the
+     * given package-oriented location.
+     *
+     * <p>Optionally, this file manager might consider the sibling as
+     * a hint for where to place the output.  The exact semantics of
+     * this hint is unspecified.  The JDK compiler, javac, for
+     * example, will place class files in the same directories as
+     * originating source files unless a class file output directory
+     * is provided.  To facilitate this behavior, javac might provide
+     * the originating source file as sibling when calling this
+     * method.
+     *
+     * @param location a package-oriented location
+     * @param className the name of a class
+     * @param kind the kind of file, must be one of {@link
+     * JavaFileObject.Kind#SOURCE SOURCE} or {@link
+     * JavaFileObject.Kind#CLASS CLASS}
+     * @param originatingElements XXX
+     * @return a file object for output
+     * @throws IllegalArgumentException if sibling is not known to
+     * this file manager, or if the location is not known to this file
+     * manager and the file manager does not support unknown
+     * locations, or if the kind is not valid, or if the location is
+     * not an output location
+     * @throws IOException if an I/O error occurred, or if {@link
+     * #close} has been called and this file manager cannot be
+     * reopened
+     * @throws IllegalStateException {@link #close} has been called
+     * and this file manager cannot be reopened
+     */
+    default JavaFileObject getJavaFileForOutput(Location location,
+                                        String className,
+                                        Kind kind,
+                                        Element... originatingElements)
+        throws IOException {
+        return getJavaFileForOutput(location, className, kind, (FileObject) null);
+    }
+
+    /**
      * Returns a {@linkplain FileObject file object} for input
      * representing the specified <a href="JavaFileManager.html#relative_name">relative
      * name</a> in the specified package in the given package-oriented location.
@@ -429,6 +470,54 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
                                 String relativeName,
                                 FileObject sibling)
         throws IOException;
+
+    /**
+     * Returns a {@linkplain FileObject file object} for output
+     * representing the specified <a href="JavaFileManager.html#relative_name">relative
+     * name</a> in the specified package in the given location.
+     *
+     * <p>Optionally, this file manager might consider the sibling as
+     * a hint for where to place the output.  The exact semantics of
+     * this hint is unspecified.  The JDK compiler, javac, for
+     * example, will place class files in the same directories as
+     * originating source files unless a class file output directory
+     * is provided.  To facilitate this behavior, javac might provide
+     * the originating source file as sibling when calling this
+     * method.
+     *
+     * <p>If the returned object represents a {@linkplain
+     * JavaFileObject.Kind#SOURCE source} or {@linkplain
+     * JavaFileObject.Kind#CLASS class} file, it must be an instance
+     * of {@link JavaFileObject}.
+     *
+     * <p>Informally, the file object returned by this method is
+     * located in the concatenation of the location, package name, and
+     * relative name or next to the sibling argument.  See {@link
+     * #getFileForInput getFileForInput} for an example.
+     *
+     * @param location an output location
+     * @param packageName a package name
+     * @param relativeName a relative name
+     * @param originatingElements XXX
+     * @return a file object
+     * @throws IllegalArgumentException if sibling is not known to
+     * this file manager, or if the location is not known to this file
+     * manager and the file manager does not support unknown
+     * locations, or if {@code relativeName} is not valid,
+     * or if the location is not an output location
+     * @throws IOException if an I/O error occurred, or if {@link
+     * #close} has been called and this file manager cannot be
+     * reopened
+     * @throws IllegalStateException if {@link #close} has been called
+     * and this file manager cannot be reopened
+     */
+    default FileObject getFileForOutput(Location location,
+                                String packageName,
+                                String relativeName,
+                                Element... originatingElements)
+        throws IOException {
+        return getFileForOutput(location, packageName, relativeName, (FileObject) null);
+    }
 
     /**
      * Flushes any resources opened for output by this file manager

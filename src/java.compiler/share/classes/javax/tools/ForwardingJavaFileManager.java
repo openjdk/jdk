@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
+import javax.lang.model.element.Element;
 import javax.tools.JavaFileObject.Kind;
 
 /**
@@ -146,6 +147,18 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
      * @throws IllegalStateException {@inheritDoc}
      */
     @Override
+    public JavaFileObject getJavaFileForOutput(Location location,
+                                               String className,
+                                               Kind kind,
+                                               Element... originatingElements) throws IOException {
+        return fileManager.getJavaFileForOutput(location, className, kind, originatingElements);
+    }
+
+    /**
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws IllegalStateException {@inheritDoc}
+     */
+    @Override
     public FileObject getFileForInput(Location location,
                                       String packageName,
                                       String relativeName)
@@ -166,6 +179,18 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
         throws IOException
     {
         return fileManager.getFileForOutput(location, packageName, relativeName, sibling);
+    }
+
+    /**
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws IllegalStateException {@inheritDoc}
+     */
+    @Override
+    public FileObject getFileForOutput(Location location,
+                                       String packageName,
+                                       String relativeName,
+                                       Element... originatingElements) throws IOException {
+        return fileManager.getFileForOutput(location, packageName, relativeName, originatingElements);
     }
 
     @Override
