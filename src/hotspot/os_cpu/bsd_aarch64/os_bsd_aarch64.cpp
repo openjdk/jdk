@@ -174,8 +174,6 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, pc);
 }
 
-// By default, gcc always saves frame pointer rfp on this stack. This
-// may get turned off by -fomit-frame-pointer.
 frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->link(), fr->link(), fr->sender_pc());
 }
@@ -320,50 +318,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }
   }
 
-#if defined(ASSERT) && defined(__APPLE__)
-  // Execution protection violation
-  //
-  // This should be kept as the last step in the triage.  We don't
-  // have a dedicated trap number for a no-execute fault, so be
-  // conservative and allow other handlers the first shot.
-  if (UnguardOnExecutionViolation > 0 &&
-      (sig == SIGBUS)) {
-    static __thread address last_addr = (address) -1;
-
-    address addr = (address) info->si_addr;
-    address pc = os::Posix::ucontext_get_pc(uc);
-
-    if (pc != addr && uc->context_esr == 0x9200004F) { //TODO: figure out what this value means
-      // We are faulting trying to write a R-X page
-      pthread_jit_write_protect_np(false);
-
-      log_debug(os)("Writing protection violation "
-                    "at " INTPTR_FORMAT
-                    ", unprotecting", p2i(addr));
-
-      stub = pc;
-
-      last_addr = (address) -1;
-    } else if (pc == addr && uc->context_esr == 0x8200000f) { //TODO: figure out what this value means
-      // We are faulting trying to execute a RW- page
-
-      if (addr != last_addr) {
-        pthread_jit_write_protect_np(true);
-
-        log_debug(os)("Execution protection violation "
-                      "at " INTPTR_FORMAT
-                      ", protecting", p2i(addr));
-
-        stub = pc;
-
-        // Set last_addr so if we fault again at the same address, we don't end
-        // up in an endless loop.
-        last_addr = addr;
-      }
-    }
-  }
-#endif
-
   if (stub != NULL) {
     // save all thread context in case we need to restore it
     if (thread != NULL) thread->set_saved_exception_pc(pc);
@@ -397,40 +351,6 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
 }
-
-
-// Java thread:
-//
-//   Low memory addresses
-//    +------------------------+
-//    |                        |\  Java thread created by VM does not have glibc
-//    |    glibc guard page    | - guard, attached Java thread usually has
-//    |                        |/  1 glibc guard page.
-// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
-//    |                        |\
-//    |  HotSpot Guard Pages   | - red, yellow and reserved pages
-//    |                        |/
-//    +------------------------+ JavaThread::stack_reserved_zone_base()
-//    |                        |\
-//    |      Normal Stack      | -
-//    |                        |/
-// P2 +------------------------+ Thread::stack_base()
-//
-// Non-Java thread:
-//
-//   Low memory addresses
-//    +------------------------+
-//    |                        |\
-//    |  glibc guard page      | - usually 1 page
-//    |                        |/
-// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
-//    |                        |\
-//    |      Normal Stack      | -
-//    |                        |/
-// P2 +------------------------+ Thread::stack_base()
-//
-// ** P1 (aka bottom) and size ( P2 = P1 - size) are the address and stack size returned from
-//    pthread_attr_getstack()
 
 static void current_stack_region(address * bottom, size_t * size) {
 #ifdef __APPLE__

@@ -815,7 +815,7 @@ static int c_calling_convention_priv(const BasicType *sig_bt,
         } else {
 #ifdef __APPLE__
           // Less-than word types are stored one after another.
-          // The code unable to handle this, bailout.
+          // The code is unable to handle this so bailout.
           return -1;
 #endif
           regs[i].set1(VMRegImpl::stack2reg(stk_args));
@@ -842,7 +842,7 @@ static int c_calling_convention_priv(const BasicType *sig_bt,
         } else {
 #ifdef __APPLE__
           // Less-than word types are stored one after another.
-          // The code unable to handle this, bailout.
+          // The code is unable to handle this so bailout.
           return -1;
 #endif
           regs[i].set1(VMRegImpl::stack2reg(stk_args));
