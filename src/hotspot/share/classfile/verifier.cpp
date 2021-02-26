@@ -1675,7 +1675,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_return :
           if (return_type != VerificationType::bogus_type()) {
             verify_error(ErrorContext::bad_code(bci),
-                         "Method expects a return value");
+                         "Method descriptor has a non-void return type");
             return;
           }
           // Make sure "this" has been initialized if current method is an
@@ -3149,7 +3149,7 @@ void ClassVerifier::verify_return_value(
   if (return_type == VerificationType::bogus_type()) {
     verify_error(ErrorContext::bad_type(bci,
         current_frame->stack_top_ctx(), TypeOrigin::signature(return_type)),
-        "Method expects a return value");
+        "Method descriptor has a void return type");
     return;
   }
   bool match = return_type.is_assignable_from(type, this, false, CHECK_VERIFY(this));
