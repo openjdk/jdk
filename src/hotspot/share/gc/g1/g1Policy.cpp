@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1283,19 +1283,8 @@ bool G1Policy::next_gc_should_be_mixed(const char* true_action_str,
   return true;
 }
 
-void G1Policy::prune_collection_set(G1CollectionSetCandidates* candidates, HeapRegionClosure* cl) {
-  uint num_candidates_before = candidates->num_remaining();
-  size_t reclaimable_bytes_before = candidates->remaining_reclaimable_bytes();
-
-  size_t accepted_waste = G1HeapWastePercent * _g1h->capacity() / 100;
-
-  candidates->prune(calc_min_old_cset_length(candidates), accepted_waste, cl);
-
-  log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (accepted " SIZE_FORMAT ")",
-                            num_candidates_before - candidates->num_remaining(),
-                            candidates->num_regions(),
-                            reclaimable_bytes_before - candidates->remaining_reclaimable_bytes(),
-                            accepted_waste);
+size_t G1Policy::allowed_waste_in_collection_set() const {
+  return G1HeapWastePercent * _g1h->capacity() / 100;
 }
 
 uint G1Policy::calc_min_old_cset_length(G1CollectionSetCandidates* candidates) const {

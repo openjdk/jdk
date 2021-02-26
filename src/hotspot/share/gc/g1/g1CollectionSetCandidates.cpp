@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,21 @@ void G1CollectionSetCandidates::remove(uint num_regions) {
   }
 }
 
+void G1CollectionSetCandidates::remove_from_end(uint num_remove) {
+  assert(num_remove <= num_remaining(), "trying to remove more regions than remaining");
+
+  size_t reclaimable = 0;
+
+  for (uint i = 0; i < num_remove; i++) {
+    uint cur_idx = _num_regions - i - 1;
+    reclaimable += at(cur_idx)->reclaimable_bytes();
+    // Make sure we crash if we access it.
+    _regions[cur_idx] = NULL;
+  }
+  _num_regions -= num_remove;
+  _remaining_reclaimable_bytes -= reclaimable;
+}
+
 void G1CollectionSetCandidates::prune(uint keep_min_regions,
                                       size_t prune_total_bytes,
                                       HeapRegionClosure* cl) {
@@ -60,6 +75,16 @@ void G1CollectionSetCandidates::prune(uint keep_min_regions,
 void G1CollectionSetCandidates::iterate(HeapRegionClosure* cl) {
   for (uint i = _front_idx; i < _num_regions; i++) {
     HeapRegion* r = _regions[i];
+    if (cl->do_heap_region(r)) {
+      cl->set_incomplete();
+      break;
+    }
+  }
+}
+
+void G1CollectionSetCandidates::iterate_backwards(HeapRegionClosure* cl) {
+  for (uint i = _num_regions; i > _front_idx; i--) {
+    HeapRegion* r = _regions[i - 1];
     if (cl->do_heap_region(r)) {
       cl->set_incomplete();
       break;
