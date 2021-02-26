@@ -25,8 +25,6 @@
 
 #import "ButtonAccessibility.h"
 
-#import <AppKit/AppKit.h>
-
 @interface RadiobuttonAccessibility : ButtonAccessibility <NSAccessibilityRadioButton> {
 
 };

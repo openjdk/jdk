@@ -582,7 +582,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     oop protection_domain = this_cp->pool_holder()->protection_domain();
     Handle h_prot (thread, protection_domain);
     Handle h_loader (thread, loader);
-    Klass* k = SystemDictionary::find(name, h_loader, h_prot, thread);
+    Klass* k = SystemDictionary::find_instance_klass(name, h_loader, h_prot);
 
     // Avoid constant pool verification at a safepoint, which takes the Module_lock.
     if (k != NULL && !SafepointSynchronize::is_at_safepoint()) {

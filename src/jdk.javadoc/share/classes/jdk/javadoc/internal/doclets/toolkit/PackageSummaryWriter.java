@@ -45,10 +45,9 @@ public interface PackageSummaryWriter {
     /**
      * Get the header for the summary.
      *
-     * @param heading Package name.
      * @return the header to be added to the content tree
      */
-    Content getPackageHeader(String heading);
+    Content getPackageHeader();
 
     /**
      * Get the header for the package content.

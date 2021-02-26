@@ -369,8 +369,8 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
     // Special processing for handling UNREGISTERED shared classes.
-    InstanceKlass* k = SystemDictionaryShared::dump_time_resolve_super_or_fail(class_name,
-        super_name, class_loader, protection_domain, is_superclass, CHECK_NULL);
+    InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
+                           super_name, is_superclass);
     if (k) {
       return k;
     }
@@ -899,16 +899,15 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
 // _dictionary->bucket(index) is read here, so the caller will not see
 // the new entry.
 
-Klass* SystemDictionary::find(Symbol* class_name,
-                              Handle class_loader,
-                              Handle protection_domain,
-                              TRAPS) {
+InstanceKlass* SystemDictionary::find_instance_klass(Symbol* class_name,
+                                                     Handle class_loader,
+                                                     Handle protection_domain) {
 
   // The result of this call should be consistent with the result
   // of the call to resolve_instance_class_or_null().
   // See evaluation 6790209 and 4474172 for more details.
-  class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
-  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader());
+  oop class_loader_oop = java_lang_ClassLoader::non_reflection_class_loader(class_loader());
+  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader_oop);
 
   if (loader_data == NULL) {
     // If the ClassLoaderData has not been setup,
@@ -918,16 +917,14 @@ Klass* SystemDictionary::find(Symbol* class_name,
 
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int name_hash = dictionary->compute_hash(class_name);
-  return dictionary->find(name_hash, class_name,
-                          protection_domain);
+  return dictionary->find(name_hash, class_name, protection_domain);
 }
 
 // Look for a loaded instance or array klass by name.  Do not do any loading.
 // return NULL in case of error.
 Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
                                                       Handle class_loader,
-                                                      Handle protection_domain,
-                                                      TRAPS) {
+                                                      Handle protection_domain) {
   Klass* k = NULL;
   assert(class_name != NULL, "class name must be non NULL");
 
@@ -941,13 +938,13 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
     if (t != T_OBJECT) {
       k = Universe::typeArrayKlassObj(t);
     } else {
-      k = SystemDictionary::find(ss.as_symbol(), class_loader, protection_domain, THREAD);
+      k = SystemDictionary::find_instance_klass(ss.as_symbol(), class_loader, protection_domain);
     }
     if (k != NULL) {
       k = k->array_klass_or_null(ndims);
     }
   } else {
-    k = find(class_name, class_loader, protection_domain, THREAD);
+    k = find_instance_klass(class_name, class_loader, protection_domain);
   }
   return k;
 }
@@ -1219,7 +1216,7 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
   if (!super_type->is_shared_unregistered_class() && super_type->class_loader_data() != NULL) {
     // Check if the super class is loaded by the current class_loader
     Symbol* name = super_type->name();
-    Klass* check = find(name, class_loader, protection_domain, CHECK_0);
+    InstanceKlass* check = find_instance_klass(name, class_loader, protection_domain);
     if (check == super_type) {
       return true;
     }
@@ -1897,7 +1894,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
   // Force the protection domain to be null.  (This removes protection checks.)
   Handle no_protection_domain;
   Klass* klass = find_instance_or_array_klass(class_name, class_loader,
-                                              no_protection_domain, CHECK_NULL);
+                                              no_protection_domain);
   if (klass != NULL)
     return klass;
 

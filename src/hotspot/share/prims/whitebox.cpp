@@ -23,9 +23,7 @@
  */
 
 #include "precompiled.hpp"
-
 #include <new>
-
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
@@ -47,13 +45,14 @@
 #include "logging/log.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "memory/iterator.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspace/testHelpers.hpp"
-#include "memory/iterator.hpp"
+#include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "memory/oopFactory.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"

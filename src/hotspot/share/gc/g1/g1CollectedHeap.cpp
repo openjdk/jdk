@@ -93,6 +93,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"

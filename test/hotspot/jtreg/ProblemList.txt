@@ -85,7 +85,6 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
 runtime/cds/DeterministicDump.java 8253495 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
-runtime/NMT/CheckForProperDetailStackTrace.java 8261520 generic-all
 runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
 containers/docker/TestJFRWithJMX.java 8256417 linux-5.4.17-2011.5.3.el8uek.x86_64
 
@@ -95,6 +94,7 @@ containers/docker/TestJFRWithJMX.java 8256417 linux-5.4.17-2011.5.3.el8uek.x86_6
 
 serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
+resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8262386 generic-all
 
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all

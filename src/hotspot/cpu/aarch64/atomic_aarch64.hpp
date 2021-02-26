@@ -42,5 +42,8 @@ extern aarch64_atomic_stub_t aarch64_atomic_xchg_8_impl;
 extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_1_impl;
 extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_4_impl;
 extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_8_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_1_relaxed_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_4_relaxed_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_8_relaxed_impl;
 
 #endif // CPU_AARCH64_ATOMIC_AARCH64_HPP

@@ -73,6 +73,7 @@
 
 #include "classfile/systemDictionary.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
@@ -1497,8 +1498,8 @@ public:
     size_t stride = ShenandoahParallelRegionStride;
 
     size_t max = _heap->num_regions();
-    while (_index < max) {
-      size_t cur = Atomic::fetch_and_add(&_index, stride);
+    while (Atomic::load(&_index) < max) {
+      size_t cur = Atomic::fetch_and_add(&_index, stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;

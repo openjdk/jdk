@@ -40,6 +40,7 @@
 #include "gc/shenandoah/shenandoahUnload.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 

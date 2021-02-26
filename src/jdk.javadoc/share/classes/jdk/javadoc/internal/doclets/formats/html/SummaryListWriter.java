@@ -37,7 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -219,11 +219,11 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
                 switch (e.getKind()) {
                     case MODULE:
                         ModuleElement m = (ModuleElement) e;
-                        link = getModuleLink(m, new StringContent(m.getQualifiedName()));
+                        link = getModuleLink(m, Text.of(m.getQualifiedName()));
                         break;
                     case PACKAGE:
                         PackageElement pkg = (PackageElement) e;
-                        link = getPackageLink(pkg, getPackageName(pkg));
+                        link = getPackageLink(pkg, getLocalizedPackageName(pkg));
                         break;
                     default:
                         link = getSummaryLink(e);

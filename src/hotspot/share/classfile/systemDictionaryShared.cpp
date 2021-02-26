@@ -1196,18 +1196,23 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   return created;
 }
 
-// This function is called to resolve the super/interfaces of shared classes for
-// non-built-in loaders. E.g., SharedClass in the below example
+// This function is called to lookup the super/interfaces of shared classes for
+// unregistered loaders. E.g., SharedClass in the below example
 // where "super:" (and optionally "interface:") have been specified.
 //
 // java/lang/Object id: 0
-// Interface   id: 2 super: 0 source: cust.jar
+// Interface    id: 2 super: 0 source: cust.jar
 // SharedClass  id: 4 super: 0 interfaces: 2 source: cust.jar
-InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
-    Symbol* class_name, Symbol* super_name, Handle class_loader,
-    Handle protection_domain, bool is_superclass, TRAPS) {
+InstanceKlass* SystemDictionaryShared::lookup_super_for_unregistered_class(
+    Symbol* class_name, Symbol* super_name, bool is_superclass) {
 
-  assert(DumpSharedSpaces, "only when dumping");
+  assert(DumpSharedSpaces, "only when static dumping");
+
+  if (!ClassListParser::is_parsing_thread()) {
+    // Unregistered classes can be created only by ClassListParser::_parsing_thread.
+
+    return NULL;
+  }
 
   ClassListParser* parser = ClassListParser::instance();
   if (parser == NULL) {
@@ -1600,7 +1605,9 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
   InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
 
   DumpTimeSharedClassInfo* info = _dumptime_table->get(lambda_ik);
-  if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)) {
+  if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)
+      // Don't include the lambda proxy if its nest host is not in the "linked" state.
+      && nest_host->is_linked()) {
     // Set _is_archived_lambda_proxy in DumpTimeSharedClassInfo so that the lambda_ik
     // won't be excluded during dumping of shared archive. See ExcludeDumpTimeSharedClasses.
     info->_is_archived_lambda_proxy = true;
