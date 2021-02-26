@@ -40,6 +40,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/stringUtils.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -4103,15 +4104,23 @@ int TypeInstPtr::hash(void) const {
 //------------------------------dump2------------------------------------------
 // Dump oop Type
 #ifndef PRODUCT
-void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
+void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
   // Print the name of the klass.
   klass()->print_name_on(st);
 
   switch( _ptr ) {
   case Constant:
-    // TO DO: Make CI print the hex address of the underlying oop.
     if (WizardMode || Verbose) {
-      const_oop()->print_oop(st);
+      ResourceMark rm;
+      stringStream ss;
+
+      st->print(" ");
+      const_oop()->print_oop(&ss);
+      // 'const_oop->print_oop()' may emit newlines('\n') into ss.
+      // suppress newlines from it so -XX:+Verbose -XX:+PrintIdeal dumps one-liner for each node.
+      char* buf = ss.as_string(/* c_heap= */false);
+      StringUtils::replace_no_expand(buf, "\n", "");
+      st->print_raw(buf);
     }
   case BotPTR:
     if (!WizardMode && !Verbose) {
