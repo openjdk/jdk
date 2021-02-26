@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,9 @@ public class Main {
     boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag;
 
     boolean suppressDeprecateMsg = false;
+
+    // destination directory for extraction
+    String xdestDir = null;
 
     /* To support additional GNU Style informational options */
     Consumer<PrintWriter> info;
@@ -359,6 +362,18 @@ public class Main {
                     }
                 }
             } else if (xflag) {
+                if (xdestDir == null) {
+                    // default to current working directory
+                    xdestDir = ".";
+                } else if (!xdestDir.equals(".")) {
+                    final Path destPath = Paths.get(xdestDir);
+                    try {
+                        Files.createDirectories(destPath);
+                    } catch (IOException ioe) {
+                        throw new IOException(formatMsg("error.create.dir",
+                                destPath.toString()), ioe);
+                    }
+                }
                 replaceFSC(filesMap);
                 // For the extract action, when extracting all the entries,
                 // access using the ZipInputStream class is most efficient,
@@ -599,6 +614,11 @@ public class Main {
                         }
                         /* change the directory */
                         String dir = args[++i];
+                        if (xflag && xdestDir != null) {
+                            // extract option doesn't allow more than one destination directory
+                            usageError(getMsg("error.extract.multiple.dest.dir"));
+                            return false;
+                        }
                         dir = (dir.endsWith(File.separator) ?
                                dir : (dir + File.separator));
                         dir = dir.replace(File.separatorChar, '/');
@@ -610,8 +630,12 @@ public class Main {
                         if (hasUNC) { // Restore Windows UNC path.
                             dir = "/" + dir;
                         }
-                        pathsMap.get(version).add(dir);
-                        nameBuf[k++] = dir + args[++i];
+                        if (xflag) {
+                            xdestDir = dir;
+                        } else {
+                            pathsMap.get(version).add(dir);
+                            nameBuf[k++] = dir + args[++i];
+                        }
                     } else if (args[i].startsWith("--release")) {
                         int v = BASE_VERSION;
                         try {
@@ -1306,7 +1330,7 @@ public class Main {
             if (lastModified != -1) {
                 String name = safeName(ze.getName().replace(File.separatorChar, '/'));
                 if (name.length() != 0) {
-                    File f = new File(name.replace('/', File.separatorChar));
+                    File f = new File(xdestDir, name.replace('/', File.separatorChar));
                     f.setLastModified(lastModified);
                 }
             }
@@ -1320,6 +1344,9 @@ public class Main {
      * (indicating this was a zip file without "leading garbage")
      */
     boolean extract(InputStream in, String files[]) throws IOException {
+        if (vflag) {
+            output(formatMsg("out.extract.dir", Path.of(xdestDir).normalize().toAbsolutePath().toString()));
+        }
         ZipInputStream zis = new ZipInputStream(in);
         ZipEntry e;
         // Set of all directory entries specified in archive.  Disallows
@@ -1354,6 +1381,9 @@ public class Main {
      * Extracts specified entries from JAR file, via ZipFile.
      */
     void extract(String fname, String files[]) throws IOException {
+        if (vflag) {
+            output(formatMsg("out.extract.dir", Path.of(xdestDir).normalize().toAbsolutePath().toString()));
+        }
         ZipFile zf = new ZipFile(fname);
         Set<ZipEntry> dirs = newDirSet();
         Enumeration<? extends ZipEntry> zes = zf.entries();
@@ -1391,7 +1421,7 @@ public class Main {
         if (name.length() == 0) {
             return rc;    // leading '/' or 'dot-dot' only path
         }
-        File f = new File(name.replace('/', File.separatorChar));
+        File f = new File(xdestDir, name.replace('/', File.separatorChar));
         if (e.isDirectory()) {
             if (f.exists()) {
                 if (!f.isDirectory()) {
