@@ -34,6 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/relocator.hpp"
@@ -906,12 +907,15 @@ void GenerateOopMap::monitor_push(CellTypeState cts) {
 // Interpretation handling methods
 //
 
-void GenerateOopMap::do_interpretation()
+void GenerateOopMap::do_interpretation(Thread* thread)
 {
-  // "i" is just for debugging, so we can detect cases where this loop is
-  // iterated more than once.
   int i = 0;
   do {
+    if (i != 0 && thread->is_Java_thread()) {
+      if (thread->as_Java_thread()->thread_state() == _thread_in_vm) {
+        ThreadBlockInVM tbivm(thread->as_Java_thread());
+      }
+    }
 #ifndef PRODUCT
     if (TraceNewOopMapGeneration) {
       tty->print("\n\nIteration #%d of do_interpretation loop, method:\n", i);
@@ -2129,7 +2133,7 @@ void GenerateOopMap::compute_map(TRAPS) {
 
   // Step 3: Calculate stack maps
   if (!_got_error)
-    do_interpretation();
+    do_interpretation(THREAD);
 
   // Step 4:Return results
   if (!_got_error && report_results())
