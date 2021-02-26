@@ -190,6 +190,10 @@ void JfrTraceId::restore(const Klass* k) {
   const traceid event_flags = k->trace_id();
   // get a fresh traceid and restore the original event flags
   k->set_trace_id(next_class_id() | event_flags);
+  if (k->is_typeArray_klass()) {
+    // the next id is reserved for the corresponding primitive class
+    next_class_id();
+  }
 }
 
 bool JfrTraceId::in_visible_set(const jclass jc) {
