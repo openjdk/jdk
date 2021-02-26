@@ -859,7 +859,7 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
 
 // There might be an AddINode (marked with *) with a constant increment
 // in-between the CmpNode(s) and the common value we compare.
-// Check for the following cases. Then return common value compared 
+// Check for the following cases. Then return common value compared
 // if present and also save the constant values to be adjusted or
 // subtracted due to the possible AddINode in-between.
 //
