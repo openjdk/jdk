@@ -28,7 +28,7 @@
 #include "runtime/os.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
-#include "concurrentTestRunner.inline.hpp"
+#include "concurrent_test_runner.inline.hpp"
 #include "unittest.hpp"
 
 namespace {

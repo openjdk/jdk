@@ -30,7 +30,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
-#include "concurrentTestRunner.inline.hpp"
+#include "concurrent_test_runner.inline.hpp"
 #include "unittest.hpp"
 
 namespace {
