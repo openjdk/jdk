@@ -40,7 +40,6 @@ import org.testng.annotations.Test;
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.vector
  * @run testng/othervm -XX:MaxVectorSize=8 PreferredSpeciesTest
  * @run testng/othervm -XX:MaxVectorSize=4 PreferredSpeciesTest
- * @run testng/othervm -XX:TieredStopAtLevel=3 PreferredSpeciesTest
  */
 
 public class PreferredSpeciesTest {
