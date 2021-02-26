@@ -1013,7 +1013,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       // Note: currently, find_or_load_shared_class is called only from
       // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
       // which are parallel-capable loaders, so a lock here is NOT taken.
-      assert(compute_loader_lock_object(class_loader) == NULL, "ObjectLocker not required");
+      assert(get_loader_lock_or_null(class_loader) == NULL, "ObjectLocker not required");
       {
         MutexLocker mu(THREAD, SystemDictionary_lock);
         InstanceKlass* check = dictionary->find_class(d_hash, name);
@@ -1196,18 +1196,23 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   return created;
 }
 
-// This function is called to resolve the super/interfaces of shared classes for
-// non-built-in loaders. E.g., SharedClass in the below example
+// This function is called to lookup the super/interfaces of shared classes for
+// unregistered loaders. E.g., SharedClass in the below example
 // where "super:" (and optionally "interface:") have been specified.
 //
 // java/lang/Object id: 0
-// Interface   id: 2 super: 0 source: cust.jar
+// Interface    id: 2 super: 0 source: cust.jar
 // SharedClass  id: 4 super: 0 interfaces: 2 source: cust.jar
-InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
-    Symbol* class_name, Symbol* super_name, Handle class_loader,
-    Handle protection_domain, bool is_superclass, TRAPS) {
+InstanceKlass* SystemDictionaryShared::lookup_super_for_unregistered_class(
+    Symbol* class_name, Symbol* super_name, bool is_superclass) {
 
-  assert(DumpSharedSpaces, "only when dumping");
+  assert(DumpSharedSpaces, "only when static dumping");
+
+  if (!ClassListParser::is_parsing_thread()) {
+    // Unregistered classes can be created only by ClassListParser::_parsing_thread.
+
+    return NULL;
+  }
 
   ClassListParser* parser = ClassListParser::instance();
   if (parser == NULL) {
@@ -1600,7 +1605,9 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
   InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
 
   DumpTimeSharedClassInfo* info = _dumptime_table->get(lambda_ik);
-  if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)) {
+  if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)
+      // Don't include the lambda proxy if its nest host is not in the "linked" state.
+      && nest_host->is_linked()) {
     // Set _is_archived_lambda_proxy in DumpTimeSharedClassInfo so that the lambda_ik
     // won't be excluded during dumping of shared archive. See ExcludeDumpTimeSharedClasses.
     info->_is_archived_lambda_proxy = true;
@@ -2038,7 +2045,7 @@ public:
     log_info(cds,dynamic)("Archiving hidden %s", info._proxy_klasses->at(0)->external_name());
     size_t byte_size = sizeof(RunTimeLambdaProxyClassInfo);
     RunTimeLambdaProxyClassInfo* runtime_info =
-        (RunTimeLambdaProxyClassInfo*)MetaspaceShared::read_only_space_alloc(byte_size);
+        (RunTimeLambdaProxyClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
     runtime_info->init(key, info);
     unsigned int hash = runtime_info->hash();
     u4 delta = _builder->any_to_offset_u4((void*)runtime_info);
@@ -2086,7 +2093,7 @@ public:
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
       size_t byte_size = RunTimeSharedClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
       RunTimeSharedClassInfo* record;
-      record = (RunTimeSharedClassInfo*)MetaspaceShared::read_only_space_alloc(byte_size);
+      record = (RunTimeSharedClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
       record->init(info);
 
       unsigned int hash;

@@ -33,7 +33,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -215,7 +215,7 @@ public class HelpWriter extends HtmlDocletWriter {
             section = newHelpSection(getContent("doclet.help.tree.head"));
             Content treeIntro = getContent("doclet.help.tree.intro",
                     links.createLink(DocPaths.OVERVIEW_TREE, resources.getText("doclet.Class_Hierarchy")),
-                    HtmlTree.CODE(new StringContent("java.lang.Object")));
+                    HtmlTree.CODE(Text.of("java.lang.Object")));
             section.add(HtmlTree.P(treeIntro))
                     .add(newHelpSectionList(
                             getContent("doclet.help.tree.overview"),
@@ -285,7 +285,7 @@ public class HelpWriter extends HtmlDocletWriter {
             for (String[] example : SEARCH_EXAMPLES) {
                 searchExamples.add(HtmlTree.LI(
                         getContent("doclet.help.search.example",
-                                HtmlTree.CODE(new StringContent(example[0])), example[1])));
+                                HtmlTree.CODE(Text.of(example[0])), example[1])));
             }
             Content searchSpecLink = HtmlTree.A(
                     resources.getText("doclet.help.search.spec.url", configuration.getDocletVersion().feature()),

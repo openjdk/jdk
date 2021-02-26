@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_KLASS_HPP
 #define SHARE_OOPS_KLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/markWord.hpp"
@@ -67,6 +66,7 @@ const uint KLASS_ID_COUNT = 6;
 // Forward declarations.
 template <class T> class Array;
 template <class T> class GrowableArray;
+class ClassLoaderData;
 class fieldDescriptor;
 class klassVtable;
 class ModuleEntry;
@@ -508,11 +508,7 @@ protected:
 
   oop class_loader() const;
 
-  // This loads the klass's holder as a phantom. This is useful when a weak Klass
-  // pointer has been "peeked" and then must be kept alive before it may
-  // be used safely.  All uses of klass_holder need to apply the appropriate barriers,
-  // except during GC.
-  oop klass_holder() const { return class_loader_data()->holder_phantom(); }
+  inline oop klass_holder() const;
 
  protected:
   virtual Klass* array_klass_impl(bool or_null, int rank, TRAPS);
@@ -635,10 +631,10 @@ protected:
   void set_is_shared()                  { _access_flags.set_is_shared_class(); }
   bool is_hidden() const                { return access_flags().is_hidden_class(); }
   void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
-  bool is_non_strong_hidden() const     { return access_flags().is_hidden_class() &&
-                                          class_loader_data()->has_class_mirror_holder(); }
   bool is_value_based()                 { return _access_flags.is_value_based_class(); }
   void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
+
+  inline bool is_non_strong_hidden() const;
 
   bool is_cloneable() const;
   void set_is_cloneable();
@@ -672,10 +668,7 @@ protected:
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
-  // Iff the class loader (or mirror for unsafe anonymous classes) is alive the
-  // Klass is considered alive. This is safe to call before the CLD is marked as
-  // unloading, and hence during concurrent class unloading.
-  bool is_loader_alive() const { return class_loader_data()->is_alive(); }
+  inline bool is_loader_alive() const;
 
   void clean_subklass();
 

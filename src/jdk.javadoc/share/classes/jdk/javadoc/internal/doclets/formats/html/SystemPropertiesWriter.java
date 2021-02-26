@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.javadoc.internal.doclets.formats.html;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
@@ -126,13 +127,13 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
      */
     protected void addSystemProperties(Content content) {
         Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
-        Content separator = new StringContent(", ");
+        Content separator = Text.of(", ");
         Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (Entry<String, List<IndexItem>> entry : searchIndexMap.entrySet()) {
-            Content propertyName = new StringContent(entry.getKey());
+            Content propertyName = Text.of(entry.getKey());
             List<IndexItem> searchIndexItems = entry.getValue();
             Content separatedReferenceLinks = new ContentBuilder();
             separatedReferenceLinks.add(createLink(searchIndexItems.get(0)));
@@ -169,7 +170,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
                 t = p.getFileName().toString();
             }
             ContentBuilder b = new ContentBuilder();
-            b.add(HtmlTree.CODE(new FixedStringContent(i.getHolder() + ": ")));
+            b.add(HtmlTree.CODE(Text.of(i.getHolder() + ": ")));
             // non-program elements should be displayed using a normal font
             b.add(t);
             return links.createLink(pathToRoot.resolve(i.getUrl()), b);

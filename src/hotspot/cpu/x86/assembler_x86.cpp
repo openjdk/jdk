@@ -9173,6 +9173,13 @@ void Assembler::evpblendmq (XMMRegister dst, KRegister mask, XMMRegister nds, XM
   emit_int16(0x64, (0xC0 | encode));
 }
 
+void Assembler::bzhiq(Register dst, Register src1, Register src2) {
+  assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes);
+  emit_int16((unsigned char)0xF5, (0xC0 | encode));
+}
+
 void Assembler::shlxl(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -822,7 +822,6 @@ void PSScavenge::initialize() {
   _span_based_discoverer.set_span(young_gen->reserved());
   _ref_processor =
     new ReferenceProcessor(&_span_based_discoverer,
-                           ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
                            ParallelGCThreads,          // mt processing degree
                            true,                       // mt discovery
                            ParallelGCThreads,          // mt discovery degree

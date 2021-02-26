@@ -42,14 +42,15 @@ public final class ECDSAUtils {
      * The JAVA JCE ECDSA Signature algorithm creates ASN.1 encoded (r, s) value
      * pairs; the XML Signature requires the core BigInteger values.
      *
-     * @param asn1Bytes
-     * @return the decode bytes
+     * @param asn1Bytes the ASN.1 encoded bytes
+     * @param rawLen the intended length of decoded bytes for an integer.
+     *               If -1, choose one automatically.
+     * @return the decoded bytes
      * @throws IOException
      * @see <A HREF="http://www.w3.org/TR/xmldsig-core/#dsa-sha1">6.4.1 DSA</A>
      * @see <A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4050.txt">3.3. ECDSA Signatures</A>
      */
-    public static byte[] convertASN1toXMLDSIG(byte asn1Bytes[]) throws IOException {
-
+    public static byte[] convertASN1toXMLDSIG(byte asn1Bytes[], int rawLen) throws IOException {
         if (asn1Bytes.length < 8 || asn1Bytes[0] != 48) {
             throw new IOException("Invalid ASN.1 format of ECDSA signature");
         }
@@ -72,7 +73,13 @@ public final class ECDSAUtils {
 
         for (j = sLength; j > 0 && asn1Bytes[offset + 2 + rLength + 2 + sLength - j] == 0; j--); //NOPMD
 
-        int rawLen = Math.max(i, j);
+        int maxLen = Math.max(i, j);
+
+        if (rawLen < 0) {
+            rawLen = maxLen;
+        } else if (rawLen < maxLen) {
+            throw new IOException("Invalid signature length");
+        }
 
         if ((asn1Bytes[offset - 1] & 0xff) != asn1Bytes.length - offset
                 || (asn1Bytes[offset - 1] & 0xff) != 2 + rLength + 2 + sLength
