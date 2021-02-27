@@ -558,48 +558,50 @@ void LateInlineVirtualCallGenerator::do_late_inline() {
 static void replace_box_to_scalar(CallNode* call, Node* resproj) {
   if (resproj != nullptr && call->is_CallStaticJava() &&
       call->as_CallStaticJava()->is_boxing_method()) {
-    Unique_Node_List debuginfo_node_list;
+    Unique_Node_List safepoints;
     for (DUIterator_Fast imax, i = resproj->fast_outs(imax); i < imax; i++) {
       Node* m = resproj->fast_out(i);
-      if (m->is_SafePoint()) {
-        SafePointNode* sfpt = m->as_SafePoint();
-        uint dbg_start = sfpt->is_Call() ? sfpt->as_Call()->tf()->domain()->cnt() : (uint)TypeFunc::Parms+1;
-        for (uint i = 0; i < dbg_start; i++) {
-          if (sfpt->in(i) == resproj) {
-            return;
-          }
-        }
-        debuginfo_node_list.push(m);
+      if (m->is_SafePoint()
+          && (!m->is_Call() || !m->as_Call()->has_non_debug_use(resproj))) {
+        safepoints.push(m);
       } else {
         return;
       }
     }
 
+#ifndef PRODUCT
+    if (PrintEliminateAllocations && safepoints.size() > 0) {
+      tty->print("++++ Eliminated: %d ", call->_idx);
+      call->as_CallStaticJava()->method()->print_short_name(tty);
+      tty->cr();
+    }
+#endif
+
     GraphKit kit(call->jvms());
     PhaseGVN& gvn = kit.gvn();
     // delay box in runtime, treat box as a scalarized object
-    while (debuginfo_node_list.size() > 0) {
+    while (safepoints.size() > 0) {
       ProjNode* res = resproj->as_Proj();
-      Node* debuginfo_node = debuginfo_node_list.pop();
+      Node* sfpt = safepoints.pop();
 
       ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
       int n_fields = klass->nof_nonstatic_fields();
       assert(n_fields == 1, "the klass must be an auto-boxing klass");
 
-      uint first_ind = (debuginfo_node->req() - debuginfo_node->jvms()->scloff());
+      uint first_ind = sfpt->req() - sfpt->jvms()->scloff();
       Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
 #ifdef ASSERT
                                                   call->isa_Allocate(),
 #endif // ASSERT
                                                   first_ind, n_fields, true);
       sobj->init_req(0, kit.root());
-      debuginfo_node->add_req(call->in(res->_con));
+      sfpt->add_req(call->in(TypeFunc::Parms));
       sobj = gvn.transform(sobj);
-      JVMState* jvms = debuginfo_node->jvms();
-      jvms->set_endoff(debuginfo_node->req());
+      JVMState* jvms = sfpt->jvms();
+      jvms->set_endoff(sfpt->req());
       int start = jvms->debug_start();
       int end   = jvms->debug_end();
-      debuginfo_node->replace_edges_in_range(res, sobj, start, end);
+      sfpt->replace_edges_in_range(res, sobj, start, end);
     }
   }
 }
@@ -653,7 +655,9 @@ void CallGenerator::do_late_inline_helper() {
     C->remove_macro_node(call);
   }
 
-  replace_box_to_scalar(call, callprojs.resproj);
+  if (C->eliminate_boxing()) {
+    replace_box_to_scalar(call, callprojs.resproj);
+  }
 
   bool result_not_used = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
   if (is_pure_call() && result_not_used) {
