@@ -269,7 +269,7 @@ eventHandlerRestricted_iterator(EventIndex ei,
 
 /* BREAKPOINT, METHOD_ENTRY and SINGLE_STEP events are covered by
  * the co-location of events policy. Of these three co-located
- * events, METHOD_ENTRY is  always reported first and BREAKPOINT
+ * events, METHOD_ENTRY is always reported first and BREAKPOINT
  * is always reported last. Here are the possible combinations and
  * their order:
  *
@@ -545,8 +545,9 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
     jbyte eventSessionID = currentSessionID; /* session could change */
     jthrowable currentException;
     jthread thread;
+    EventIndex ei = evinfo->ei;
 
-    LOG_MISC(("event_callback(): ei=%s", eventText(evinfo->ei)));
+    LOG_MISC(("event_callback(): ei=%s", eventText(ei)));
     log_debugee_location("event_callback()", evinfo->thread, evinfo->method, evinfo->location);
 
     /* We want to preserve any current exception that might get
@@ -602,8 +603,7 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
          * resources can be allocated.  This must be done before
          * grabbing any locks.
          */
-        eventBag = threadControl_onEventHandlerEntry(eventSessionID,
-                                 evinfo->ei, thread, currentException);
+        eventBag = threadControl_onEventHandlerEntry(eventSessionID, evinfo, currentException);
         if ( eventBag == NULL ) {
             jboolean invoking;
             do {
