@@ -25,6 +25,10 @@
 #ifndef OS_CPU_BSD_X86_OS_BSD_X86_HPP
 #define OS_CPU_BSD_X86_OS_BSD_X86_HPP
 
+#if defined(COMPATIBLE_CDS_ALIGNMENT)
+#define CDS_CORE_REGION_ALIGNMENT (16*K)
+#endif
+
   static void setup_fpu();
   static bool supports_sse();
   static juint cpu_microcode_revision();

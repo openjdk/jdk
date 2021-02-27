@@ -122,18 +122,16 @@ char* MetaspaceShared::symbol_space_alloc(size_t num_bytes) {
   return _symbol_region.allocate(num_bytes);
 }
 
-// core region alignment is configurable during build time.
+// os::vm_allocation_granularity() is usually 4K for most OSes. However, on Linux/aarch64,
+// it can be either 4K or 64K and on Macosx-arm it is 16K. To generate archives that are
+// compatible for both settings. An alternative cds core region alignment can be enabled
+// at building time:
+//   --enable-compactible-cds-alignment
+// Upon successful configuration, the compactible alignment then can be defined as in:
+//   os_linux_aarch64.hpp
+// which is the highest page size configured on the platform.
 size_t MetaspaceShared::core_region_alignment() {
 #if defined(CDS_CORE_REGION_ALIGNMENT)
-  assert(CDS_CORE_REGION_ALIGNMENT == 4096  ||
-         CDS_CORE_REGION_ALIGNMENT == 16384 ||
-         CDS_CORE_REGION_ALIGNMENT == 65536, "Sanity check");
-  assert(is_power_of_2(CDS_CORE_REGION_ALIGNMENT),
-         "CDS core region alignment must be power of 2.");
-  assert(CDS_CORE_REGION_ALIGNMENT >= (size_t)os::vm_allocation_granularity(),
-         "CDS core region aligment must be greater or equal to OS page size.");
-  assert(CDS_CORE_REGION_ALIGNMENT % os::vm_allocation_granularity() == 0,
-         "CDS core region alignment must be divisible by page size");
   return CDS_CORE_REGION_ALIGNMENT;
 #else
   return (size_t)os::vm_allocation_granularity();

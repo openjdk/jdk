@@ -583,34 +583,30 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
         fi
       ])
   AC_SUBST(BUILD_CDS_ARCHIVE)
+])
 
-  AC_ARG_WITH([cds-region-alignment],
-       [AS_HELP_STRING([--with-cds-region-alignment],
-                       [set cds region alignment (4096, 16384, 65536)])],
-  [
-      AC_MSG_CHECKING([if cds-region-alignmenat specified])
-      CORE_REGION_ALIGNMENT=${withval}
-      if test "x$BUILD_CDS_ARCHIVE" = "xfalse"; then
-          if test "x$CORE_REGION_ALIGNMENT" != "x"; then
-              AC_MSG_ERROR([--with-cds-region-alignment used when cds is disabled])
-          fi
-      fi
-      if test "x$BUILD_CDS_ARCHIVE" = "xtrue"; then
-          if test "x$CORE_REGION_ALIGNMENT" != "x"; then
-              if test "x$CORE_REGION_ALIGNMENT" != "x4096" && \
-                 test "x$CORE_REGION_ALIGNMENT" != "x16384" && \
-                 test "x$CORE_REGION_ALIGNMENT" != "x65536"; then
-                  AC_MSG_ERROR([$CORE_REGION_ALIGNMENT: Allowed values are: 4096, 16384 and 65536])
-              fi
-          fi
-          # define CDS_CORE_REGION_ALIGNMENT
-          CDS_CORE_REGION_ALIGNMENT=$CORE_REGION_ALIGNMENT
-          AC_SUBST(CDS_CORE_REGION_ALIGNMENT)
-          AC_MSG_RESULT([yes $CDS_CORE_REGION_ALIGNMENT])
-      else
-          AC_MSG_RESULT([no])
-      fi
-   ])
+################################################################################
+#
+# Enable the alternative CDS core region alignment
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],
+[
+  UTIL_ARG_ENABLE(NAME: compatible-cds-alignment, DEFAULT: false,
+      RESULT: ENABLE_COMPATIBLE_CDS_ALIGNMENT,
+      DESC: [enable use alternative compatible cds core region alignment],
+      DEFAULT_DESC: [disabled],
+      CHECKING_MSG: [if compatible cds region alignment enabled],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if CDS archive is available])
+        if test "x$BUILD_CDS_ARCHIVE" = "xfalse"; then
+          AVAILABLE=false
+          AC_MSG_RESULT([no (CDS is disabled)])
+        else
+          AVAILABLE=true
+          AC_MSG_RESULT([yes])
+        fi
+      ])
+  AC_SUBST(ENABLE_COMPATIBLE_CDS_ALIGNMENT)
 ])
 
 ################################################################################
