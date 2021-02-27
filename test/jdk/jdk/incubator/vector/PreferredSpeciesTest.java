@@ -36,6 +36,7 @@ import org.testng.annotations.Test;
 /**
  * @test
  * @bug 8262096
+ * @requires vm.compiler2.enabled
  * @summary Test the initialization of vector shapes
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.vector
  * @run testng/othervm -XX:MaxVectorSize=8 PreferredSpeciesTest
