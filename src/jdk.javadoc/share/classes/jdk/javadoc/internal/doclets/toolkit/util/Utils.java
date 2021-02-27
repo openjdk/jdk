@@ -767,14 +767,20 @@ public class Utils {
             }
 
             @Override
-            public StringBuilder visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
+            public StringBuilder visitPrimitive(PrimitiveType t, Void p) {
+                sb.append(t.getKind().toString().toLowerCase(Locale.ROOT));
+                return sb;
+            }
+
+            @Override
+            public StringBuilder visitTypeVariable(TypeVariable t, Void p) {
                 Element e = t.asElement();
                 sb.append(qualifiedName ? getFullyQualifiedName(e, false) : getSimpleName(e));
                 return sb;
             }
 
             @Override
-            public StringBuilder visitWildcard(javax.lang.model.type.WildcardType t, Void p) {
+            public StringBuilder visitWildcard(WildcardType t, Void p) {
                 sb.append("?");
                 TypeMirror upperBound = t.getExtendsBound();
                 if (upperBound != null) {
@@ -1112,20 +1118,6 @@ public class Utils {
             pkgname = pkgname.substring(0, index);
         }
         return pkgname;
-    }
-
-    /**
-     * Given a string, replace all occurrences of 'newStr' with 'oldStr'.
-     * @param originalStr the string to modify.
-     * @param oldStr the string to replace.
-     * @param newStr the string to insert in place of the old string.
-     */
-    public String replaceText(String originalStr, String oldStr,
-            String newStr) {
-        if (oldStr == null || newStr == null || oldStr.equals(newStr)) {
-            return originalStr;
-        }
-        return originalStr.replace(oldStr, newStr);
     }
 
     /**
@@ -2433,13 +2425,15 @@ public class Utils {
 
     /**
      * Get the package name for a given package element. An unnamed package is returned as &lt;Unnamed&gt;
+     * Use {@link jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter#getLocalizedPackageName(PackageElement)}
+     * to get a localized string for the unnamed package instead.
      *
      * @param pkg
      * @return
      */
     public String getPackageName(PackageElement pkg) {
         if (pkg == null || pkg.isUnnamed()) {
-            return DocletConstants.DEFAULT_PACKAGE_NAME;
+            return DocletConstants.DEFAULT_ELEMENT_NAME;
         }
         return pkg.getQualifiedName().toString();
     }

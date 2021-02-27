@@ -272,8 +272,6 @@ java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8197796 ge
 java/awt/TextArea/TextAreaScrolling/TextAreaScrolling.java 8196300 windows-all
 java/awt/print/PrinterJob/PSQuestionMark.java 7003378 generic-all
 java/awt/print/PrinterJob/GlyphPositions.java 7003378 generic-all
-java/awt/print/PrinterJob/Margins.java 8196301 windows-all,macosx-all
-java/awt/PrintJob/PrinterException.java 8196301 windows-all,macosx-all
 java/awt/Choice/PopupPosTest/PopupPosTest.java  8197811 windows-all
 java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all,linux-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
@@ -697,8 +695,6 @@ javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
-sun/security/krb5/auto/ReplayCacheTestProcWithMD5.java          8258855 linux-all
-sun/security/krb5/auto/ReplayCacheTestProc.java                 8258855 linux-all
 
 ############################################################################
 

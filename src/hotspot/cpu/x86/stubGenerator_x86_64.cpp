@@ -808,6 +808,17 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_vector_byte_shuffle_mask(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x7070707070707070, relocInfo::none);
+    __ emit_data64(0x7070707070707070, relocInfo::none);
+    __ emit_data64(0xF0F0F0F0F0F0F0F0, relocInfo::none);
+    __ emit_data64(0xF0F0F0F0F0F0F0F0, relocInfo::none);
+    return start;
+  }
+
   address generate_fp_mask(const char *stub_name, int64_t mask) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -6832,6 +6843,7 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_64_bit_mask = generate_vector_custom_i32("vector_64_bit_mask", Assembler::AVX_512bit,
                                                                         0xFFFFFFFF, 0xFFFFFFFF, 0, 0);
     StubRoutines::x86::_vector_int_shuffle_mask = generate_vector_mask("vector_int_shuffle_mask", 0x0302010003020100);
+    StubRoutines::x86::_vector_byte_shuffle_mask = generate_vector_byte_shuffle_mask("vector_byte_shuffle_mask");
     StubRoutines::x86::_vector_short_shuffle_mask = generate_vector_mask("vector_short_shuffle_mask", 0x0100010001000100);
     StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask("vector_long_shuffle_mask", 0x0000000100000000);
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask("vector_long_sign_mask", 0x8000000000000000);

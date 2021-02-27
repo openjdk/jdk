@@ -38,7 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.MethodWriter;
@@ -103,7 +103,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public Content getMethodDocTreeHeader(ExecutableElement method) {
         Content methodDocTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(name(method)));
+                Text.of(name(method)));
         HtmlId erasureAnchor;
         if ((erasureAnchor = htmlIds.forErasure(method)) != null) {
             heading.setId(erasureAnchor);
@@ -218,11 +218,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
-            label = new StringContent(utils.isClass(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Declared_In_Class")
                     : resources.getText("doclet.Methods_Declared_In_Interface"));
         } else {
-            label = new StringContent(utils.isClass(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Inherited_From_Class")
                     : resources.getText("doclet.Methods_Inherited_From_Interface"));
         }

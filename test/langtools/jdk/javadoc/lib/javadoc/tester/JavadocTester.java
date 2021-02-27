@@ -54,6 +54,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -233,6 +235,7 @@ public abstract class JavadocTester {
 
     private boolean automaticCheckAccessibility = true;
     private boolean automaticCheckLinks = true;
+    private boolean automaticCheckUniqueOUT = true;
 
     /** The current subtest number. Incremented when checking(...) is called. */
     private int numTestsRun = 0;
@@ -318,18 +321,10 @@ public abstract class JavadocTester {
         String encodingArg = null;
         for (int i = 0; i < args.length - 2; i++) {
             switch (args[i]) {
-                case "-d":
-                    outputDir = new File(args[++i]);
-                    break;
-                case "-charset":
-                    charsetArg = args[++i];
-                    break;
-                case "-docencoding":
-                    docencodingArg = args[++i];
-                    break;
-                case "-encoding":
-                    encodingArg = args[++i];
-                    break;
+                case "-d" -> outputDir = new File(args[++i]);
+                case "-charset" -> charsetArg = args[++i];
+                case "-docencoding" -> docencodingArg = args[++i];
+                case "-encoding" -> encodingArg = args[++i];
             }
         }
 
@@ -386,6 +381,9 @@ public abstract class JavadocTester {
             if (automaticCheckAccessibility) {
                 checkAccessibility();
             }
+            if (automaticCheckUniqueOUT) {
+                checkUnique(Output.OUT, "^[A-Z][a-z]+ing ", true);
+            }
         }
     }
 
@@ -411,6 +409,13 @@ public abstract class JavadocTester {
      */
     public void setAutomaticCheckLinks(boolean b) {
         automaticCheckLinks = b;
+    }
+
+    /**
+     * Sets whether or not to perform an automatic call of checkUnique(OUT).
+     */
+    public void setAutomaticCheckUniqueOUT(boolean b) {
+        automaticCheckUniqueOUT = b;
     }
 
     /**
@@ -522,6 +527,48 @@ public abstract class JavadocTester {
                         "found \n" +
                         fileString);
             }
+        }
+    }
+
+    /**
+     * Checks that there are no duplicate lines in one of the streams written by javadoc.
+     * @param output the output stream to check
+     */
+    public void checkUnique(Output output) {
+        checkUnique(output, ".*", true);
+    }
+
+    /**
+     * Checks that there are no duplicate lines that either match or don't match a given patter,
+     * in one of the streams written by javadoc.
+     * @param output the output stream to check
+     * @param pattern a pattern to filter the lines to be checked
+     * @param select if {@code true}, lines that match the pattern will be checked for uniqueness;
+     *               if {@code false}, lines that do not match the pattern will be checked
+     */
+    public void checkUnique(Output output, String pattern, boolean select) {
+        checking("checkUnique");
+        Pattern filter = Pattern.compile(pattern);
+        Matcher m = filter.matcher("");
+        Map<String, Integer> linesSofar = new HashMap<>();
+        int lineNumber = 0;
+        int duplicates = 0;
+        for (String line : getOutputLines(output)) {
+            m.reset(line);
+            if (m.find() == select) {
+                Integer prev = linesSofar.putIfAbsent(line, ++lineNumber);
+                if (prev != null) {
+                    out.println("duplicate line detected on line " + lineNumber
+                            + "; first occurrence on line " + prev);
+                    out.println("line: " + line);
+                    duplicates++;
+                }
+            }
+        }
+        if (duplicates == 0) {
+            passed("All lines are unique");
+        } else {
+            failed(duplicates + " duplicate lines found");
         }
     }
 

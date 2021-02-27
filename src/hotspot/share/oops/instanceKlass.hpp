@@ -1430,4 +1430,41 @@ class InnerClassesIterator : public StackObj {
   }
 };
 
+// Iterator over class hierarchy under a particular class. Implements depth-first pre-order traversal.
+// Usage:
+//  for (ClassHierarchyIterator iter(root_klass); !iter.done(); iter.next()) {
+//    Klass* k = iter.klass();
+//    ...
+//  }
+class ClassHierarchyIterator : public StackObj {
+ private:
+  InstanceKlass* _root;
+  Klass*         _current;
+  bool           _visit_subclasses;
+
+ public:
+  ClassHierarchyIterator(InstanceKlass* root) : _root(root), _current(root), _visit_subclasses(true) {
+    assert(!root->is_interface(), "no subclasses");
+    assert(_root == _current, "required"); // initial state
+  }
+
+  bool done() {
+    return (_current == NULL);
+  }
+
+  // Make a step iterating over the class hierarchy under the root class.
+  // Skips subclasses if requested.
+  void next();
+
+  Klass* klass() {
+    assert(!done(), "sanity");
+    return _current;
+  }
+
+  // Skip subclasses of the current class.
+  void skip_subclasses() {
+    _visit_subclasses = false;
+  }
+};
+
 #endif // SHARE_OOPS_INSTANCEKLASS_HPP

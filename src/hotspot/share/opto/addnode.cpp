@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,6 +332,23 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
+  if (Matcher::match_rule_supported(Op_RotateRight) &&
+      ((op1 == Op_URShiftI && op2 == Op_LShiftI) || (op1 == Op_LShiftI && op2 == Op_URShiftI)) &&
+      in1->in(1) != NULL && in1->in(1) == in2->in(1)) {
+    Node* rshift = op1 == Op_URShiftI ? in1->in(2) : in2->in(2);
+    Node* lshift = op1 == Op_URShiftI ? in2->in(2) : in1->in(2);
+    if (rshift != NULL && lshift != NULL) {
+      const TypeInt* rshift_t = phase->type(rshift)->isa_int();
+      const TypeInt* lshift_t = phase->type(lshift)->isa_int();
+      if (lshift_t != NULL && lshift_t->is_con() &&
+          rshift_t != NULL && rshift_t->is_con() &&
+          ((lshift_t->get_con() & 0x1F) == (32 - (rshift_t->get_con() & 0x1F)))) {
+        return new RotateRightNode(in1->in(1), phase->intcon(rshift_t->get_con() & 0x1F), TypeInt::INT);
+      }
+    }
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 
@@ -447,6 +464,24 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *shift = phase->transform(new LShiftLNode(in1,phase->intcon(1)));
     return new AddLNode(shift,in2->in(2));
   }
+
+  // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
+  if (Matcher::match_rule_supported(Op_RotateRight) &&
+      ((op1 == Op_URShiftL && op2 == Op_LShiftL) || (op1 == Op_LShiftL && op2 == Op_URShiftL)) &&
+      in1->in(1) != NULL && in1->in(1) == in2->in(1)) {
+    Node* rshift = op1 == Op_URShiftL ? in1->in(2) : in2->in(2);
+    Node* lshift = op1 == Op_URShiftL ? in2->in(2) : in1->in(2);
+    if (rshift != NULL && lshift != NULL) {
+      const TypeInt* rshift_t = phase->type(rshift)->isa_int();
+      const TypeInt* lshift_t = phase->type(lshift)->isa_int();
+      if (lshift_t != NULL && lshift_t->is_con() &&
+          rshift_t != NULL && rshift_t->is_con() &&
+          ((lshift_t->get_con() & 0x3F) == (64 - (rshift_t->get_con() & 0x3F)))) {
+        return new RotateRightNode(in1->in(1), phase->intcon(rshift_t->get_con() & 0x3F), TypeLong::LONG);
+      }
+    }
+  }
+
 
   return AddNode::Ideal(phase, can_reshape);
 }

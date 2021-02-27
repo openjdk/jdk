@@ -43,6 +43,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -50,11 +51,10 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
+volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
 ClassListParser::ClassListParser(const char* file) {
-  assert(_instance == NULL, "must be singleton");
-  _instance = this;
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
@@ -73,12 +73,22 @@ ClassListParser::ClassListParser(const char* file) {
   _line_no = 0;
   _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
   _indy_items = new (ResourceObj::C_HEAP, mtClass) GrowableArray<const char*>(9, mtClass);
+
+  // _instance should only be accessed by the thread that created _instance.
+  assert(_instance == NULL, "must be singleton");
+  _instance = this;
+  Atomic::store(&_parsing_thread, Thread::current());
+}
+
+bool ClassListParser::is_parsing_thread() {
+  return Atomic::load(&_parsing_thread) == Thread::current();
 }
 
 ClassListParser::~ClassListParser() {
   if (_file) {
     fclose(_file);
   }
+  Atomic::store(&_parsing_thread, (Thread*)NULL);
   _instance = NULL;
 }
 
