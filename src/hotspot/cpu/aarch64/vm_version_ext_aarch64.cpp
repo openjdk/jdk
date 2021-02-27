@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,28 @@ void VM_Version_Ext::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "AArch64");
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 %s", _features_string);
+
+  int fd = open("/proc/device-tree/compatible", O_RDONLY);
+  if (fd != -1) {
+    struct stat statbuf;
+    fstat(fd, &statbuf);
+    char* tmp = NEW_C_HEAP_ARRAY(char, statbuf.st_size, mtInternal);
+    if (read(fd, tmp, statbuf.st_size) != -1) {
+      // Replace '\0' to ' '
+      char *tok = tmp;
+      while ((tok = (char*)memchr(tok, 0, statbuf.st_size - (tok - tmp) - 1)) != NULL) {
+        *tok = ' ';
+      }
+      snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "%s %s", tmp, _features_string);
+    } else {
+      snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 %s", _features_string);
+    }
+    FREE_C_HEAP_ARRAY(char, tmp);
+    close(fd);
+  } else {
+    snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 %s", _features_string);
+  }
+
   _initialized = true;
 }
 
