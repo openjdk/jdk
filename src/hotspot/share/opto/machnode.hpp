@@ -102,14 +102,13 @@ public:
     return ::as_FloatRegister(reg(ra_, node, idx));
   }
 
+#if defined(IA32) || defined(AMD64)
   KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node)   const {
     return ::as_KRegister(reg(ra_, node));
   }
   KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node, int idx)   const {
     return ::as_KRegister(reg(ra_, node, idx));
   }
-
-#if defined(IA32) || defined(AMD64)
   XMMRegister  as_XMMRegister(PhaseRegAlloc *ra_, const Node *node)   const {
     return ::as_XMMRegister(reg(ra_, node));
   }
