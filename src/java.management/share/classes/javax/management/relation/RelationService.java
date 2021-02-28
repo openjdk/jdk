@@ -1485,7 +1485,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
                 ObjectName unregMBeanName = currNtf.getMBeanName();
 
-                // Adds the unregsitered MBean in the list of references to
+                // Adds the unregistered MBean in the list of references to
                 // remove from the listener filter
                 obsRefList.add(unregMBeanName);
 
