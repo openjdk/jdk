@@ -1436,7 +1436,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         boolean failed;
     }
 
-    static HashMap<String, FamilyDescription> platformFontMap;
+    static volatile HashMap<String, FamilyDescription> platformFontMap;
 
     /**
      * default implementation does nothing.
