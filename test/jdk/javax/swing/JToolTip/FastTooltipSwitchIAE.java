@@ -29,124 +29,52 @@
  * @run main FastTooltipSwitchIAE
  */
 
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
+import javax.swing.JToolTip;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.WindowConstants;
-import javax.swing.plaf.metal.MetalLookAndFeel;
-import java.awt.AWTException;
-import java.awt.Color;
-import java.awt.Insets;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.Window;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 
 public class FastTooltipSwitchIAE {
-    public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeLater(() -> {
+    static Dimension oneByOneSize = new Dimension(1, 1);
+
+    public static void main(String[] args) {
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             try {
-                UIManager.setLookAndFeel(new MetalLookAndFeel());
-            } catch (UnsupportedLookAndFeelException e) {
-                throw new RuntimeException(e);
+                SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+                SwingUtilities.invokeAndWait(FastTooltipSwitchIAE::doTest);
+                System.out.println("Test passed for LookAndFeel " + laf.getClassName());
+            } catch (Exception e) {
+                throw new RuntimeException("Test failed for " + laf.getClassName(), e);
             }
-        });
-
-        FastTooltipSwitchIAE fastTooltipSwitchIAE = new FastTooltipSwitchIAE();
-        fastTooltipSwitchIAE.doTest();
-    }
-
-    Robot robot = new Robot();
-    JFrame frame;
-    JDialog dialog;
-
-    public FastTooltipSwitchIAE() throws AWTException {
-        SwingUtilities.invokeLater(() -> {
-            frame = new JFrame("Frame");
-            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-            frame.setSize(250, 250);
-            frame.setLocation(100, 100);
-
-            frame.add(createLabel("Frame label", Color.RED, "frame tooltip"));
-            frame.setVisible(true);
-
-            dialog = new JDialog(frame, "Dialog");
-            dialog.add(createLabel("Dialog label", Color.YELLOW, "dialog tooltip"));
-            dialog.pack();
-            dialog.setLocation(350, 100);
-            dialog.setVisible(true);
-        });
-    }
-
-    private Point getCenter(Window window) {
-        Rectangle bounds = window.getBounds();
-        Insets insets = window.getInsets();
-        int width = bounds.width - insets.right - insets.left;
-        int height = bounds.height - insets.top - insets.bottom;
-
-        return new Point(
-                bounds.x + insets.left + width / 2,
-                bounds.y + insets.top + height / 2
-        );
-    }
-
-    private volatile Throwable unexpectedThrowable = null;
-
-    private void doTest() throws InterruptedException {
-        robot.waitForIdle();
-
-        Point frameCenter = getCenter(frame);
-        Point dialogCenter = getCenter(dialog);
-
-
-        robot.mouseMove(frameCenter.x, frameCenter.y);
-
-        // waiting for tooltip to show up
-        Thread.sleep(3000);
-
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            // Let's catch all exceptions, not only IllegalArgumentException
-            unexpectedThrowable = e;
-            e.printStackTrace();
-        });
-
-        boolean moveToDialog = true;
-
-        int timeoutMs = 40_000;
-        long endTime = System.currentTimeMillis() + timeoutMs;
-
-        while (
-                unexpectedThrowable == null
-                        && System.currentTimeMillis() <= endTime
-        ) {
-            if (moveToDialog) {
-                robot.mouseMove(dialogCenter.x, dialogCenter.y);
-            } else {
-                robot.mouseMove(frameCenter.x, frameCenter.y);
-            }
-            robot.waitForIdle();
-            moveToDialog = !moveToDialog;
-        }
-        frame.dispose();
-        if (unexpectedThrowable == null) {
-            System.out.println("Test passed, no exception thrown in " + timeoutMs + "ms");
-        } else {
-            throw new RuntimeException("Test failed due to exception thrown:", unexpectedThrowable);
         }
     }
 
-    private static JLabel createLabel(
-            final String labelText,
-            final Color bgColor,
-            final String tooltipContent
-    ) {
-        final JLabel label = new JLabel(labelText);
-        label.setOpaque(true);
-        label.setBackground(bgColor);
-        label.setToolTipText("<html><h1>" + tooltipContent + "</h1></html>");
-        return label;
+    private static void setLookAndFeel(final UIManager.LookAndFeelInfo laf) {
+        try {
+            System.out.println("LookAndFeel: " + laf.getClassName());
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                UnsupportedLookAndFeelException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void doTest() {
+        JToolTip toolTip = new JToolTip();
+        toolTip.setTipText("<html><h1>Hello world</h1></html>");
+        toolTip.setMinimumSize(oneByOneSize);
+        toolTip.setMaximumSize(oneByOneSize);
+        toolTip.setPreferredSize(oneByOneSize);
+        toolTip.setBounds(100, 100, 1, 1);
+
+        BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = img.createGraphics();
+
+        toolTip.paint(g2d);
+
+        g2d.dispose();
     }
 }
