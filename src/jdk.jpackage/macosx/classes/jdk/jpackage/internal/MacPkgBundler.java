@@ -449,24 +449,36 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
             patchCPLFile(cpl);
 
-            if (!APP_STORE.fetchFrom(params)) {
-                preparePackageScripts(params);
-            }
-
             // build application package
-            pb = new ProcessBuilder("/usr/bin/pkgbuild",
-                    "--root",
-                    root,
-                    "--install-location",
-                    getInstallDir(params),
-                    "--component-plist",
-                    cpl.toAbsolutePath().toString(),
-                    "--scripts",
-                    SCRIPTS_DIR.fetchFrom(params).toAbsolutePath().toString(),
-                    "--identifier",
-                     MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
-                    appPKG.toAbsolutePath().toString());
-            IOUtils.exec(pb);
+            if (APP_STORE.fetchFrom(params)) {
+                pb = new ProcessBuilder("/usr/bin/pkgbuild",
+                        "--root",
+                        root,
+                        "--install-location",
+                        getInstallDir(params),
+                        "--component-plist",
+                        cpl.toAbsolutePath().toString(),
+                        "--identifier",
+                         MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
+                        appPKG.toAbsolutePath().toString());
+                IOUtils.exec(pb);
+            } else {
+                preparePackageScripts(params);
+                pb = new ProcessBuilder("/usr/bin/pkgbuild",
+                        "--root",
+                        root,
+                        "--install-location",
+                        getInstallDir(params),
+                        "--component-plist",
+                        cpl.toAbsolutePath().toString(),
+                        "--scripts",
+                        SCRIPTS_DIR.fetchFrom(params)
+                        .toAbsolutePath().toString(),
+                        "--identifier",
+                         MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
+                        appPKG.toAbsolutePath().toString());
+                IOUtils.exec(pb);
+            }
 
             // build final package
             Path finalPKG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
