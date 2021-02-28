@@ -28,7 +28,7 @@
 #import "ThreadUtilities.h"
 
 /*
- * Implementation of the accessibility peer for the pushbutton role
+ * Implementation of the accessibility peer for the radiobutton role
  */
 @implementation RadiobuttonAccessibility
 

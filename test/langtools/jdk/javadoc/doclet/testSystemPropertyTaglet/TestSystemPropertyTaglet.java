@@ -149,14 +149,14 @@ public class TestSystemPropertyTaglet extends JavadocTester {
 
         checkOrder("mymodule/module-summary.html",
                    """
-                       <h1 title="Module" class="title">Module&nbsp;mymodule</h1>""",
+                       <h1 title="Module mymodule" class="title">Module mymodule</h1>""",
                    """
                        (module) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "");
 
         checkOrder("mymodule/mypackage/package-summary.html",
                    """
-                       <h1 title="Package" class="title">Package&nbsp;mypackage</h1>""",
+                       <h1 title="Package mypackage" class="title">Package mypackage</h1>""",
                    """
                        (package) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "");

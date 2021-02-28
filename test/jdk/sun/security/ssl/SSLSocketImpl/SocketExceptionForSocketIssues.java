@@ -31,18 +31,18 @@
  * @bug 8214339
  * @summary SSLSocketImpl erroneously wraps SocketException
  * @library /javax/net/ssl/templates
- * @run main/othervm SSLExceptionForIOIssue
+ * @run main/othervm SocketExceptionForSocketIssues
  */
 
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
 
-public class SSLExceptionForIOIssue implements SSLContextTemplate {
+public class SocketExceptionForSocketIssues implements SSLContextTemplate {
 
     public static void main(String[] args) throws Exception {
         System.err.println("===================================");
-        new SSLExceptionForIOIssue().test();
+        new SocketExceptionForSocketIssues().test();
     }
 
     private void test() throws Exception {
@@ -79,9 +79,9 @@ public class SSLExceptionForIOIssue implements SSLContextTemplate {
             os.flush();
         } catch (SSLProtocolException | SSLHandshakeException sslhe) {
             throw sslhe;
-        } catch (SSLException ssle) {
+        } catch (SocketException se) {
             // the expected exception, ignore it
-            System.err.println("server exception: " + ssle);
+            System.err.println("server exception: " + se);
         } finally {
             if (listenSocket != null) {
                 listenSocket.close();

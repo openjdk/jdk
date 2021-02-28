@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,43 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * <a href="http://www.unicode.org">http://www.unicode.org</a>.
  * <p>
  * Character information is based on the Unicode Standard, version 13.0.
- *
+ * <p>
+ * The Java platform has supported different versions of the Unicode
+ * Standard over time. Upgrades to newer versions of the Unicode Standard
+ * occurred in the following Java releases, each indicating the new version:
+ * <table class="striped">
+ * <caption style="display:none">Shows Java releases and supported Unicode versions</caption>
+ * <thead>
+ * <tr><th scope="col">Java release</th>
+ *     <th scope="col">Unicode version</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><td>Java SE 15</td>
+ *     <td>Unicode 13.0</td></tr>
+ * <tr><td>Java SE 13</td>
+ *     <td>Unicode 12.1</td></tr>
+ * <tr><td>Java SE 12</td>
+ *     <td>Unicode 11.0</td></tr>
+ * <tr><td>Java SE 11</td>
+ *     <td>Unicode 10.0</td></tr>
+ * <tr><td>Java SE 9</td>
+ *     <td>Unicode 8.0</td></tr>
+ * <tr><td>Java SE 8</td>
+ *     <td>Unicode 6.2</td></tr>
+ * <tr><td>Java SE 7</td>
+ *     <td>Unicode 6.0</td></tr>
+ * <tr><td>Java SE 5.0</td>
+ *     <td>Unicode 4.0</td></tr>
+ * <tr><td>Java SE 1.4</td>
+ *     <td>Unicode 3.0</td></tr>
+ * <tr><td>JDK 1.1</td>
+ *     <td>Unicode 2.0</td></tr>
+ * <tr><td>JDK 1.0.2</td>
+ *     <td>Unicode 1.1.5</td></tr>
+ * </tbody>
+ * </table>
+ * Variations from these base Unicode versions, such as recognized appendixes,
+ * are documented elsewhere.
  * <h2><a id="unicode">Unicode Character Representations</a></h2>
  *
  * <p>The {@code char} data type (and therefore the value that a
