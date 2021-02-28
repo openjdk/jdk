@@ -1781,6 +1781,15 @@ public final class Matcher implements MatchResult {
     }
 
     /**
+     * Returns this matcher's input character at index i.
+     *
+     * @return A char from the specified index
+     */
+    char charAt(int i) {
+        return text.charAt(i);
+    }
+
+    /**
      * Returns the group index of the matched capturing group.
      *
      * @return the index of the named-capturing group
