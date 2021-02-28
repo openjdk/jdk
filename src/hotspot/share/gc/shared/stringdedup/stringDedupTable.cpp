@@ -395,31 +395,33 @@ bool StringDedupTable::is_rehashing() {
 StringDedupTable* StringDedupTable::prepare_resize() {
   size_t size = _table->_size;
 
-  // Check if the hashtable needs to be resized
+  // Decide whether to resize, and compute desired new size if so.
   if (_table->_entries > _table->_grow_threshold) {
-    // Grow table, double the size
-    size *= 2;
-    if (size > _max_size) {
-      // Too big, don't resize
-      return NULL;
+    // Compute new size.
+    size_t needed = _table->_entries / _grow_load_factor;
+    if (needed < _max_size) {
+      size = round_up_power_of_2(needed);
+    } else {
+      size = _max_size;
     }
   } else if (_table->_entries < _table->_shrink_threshold) {
-    // Shrink table, half the size
-    size /= 2;
-    if (size < _min_size) {
-      // Too small, don't resize
-      return NULL;
+    // Compute new size.
+    size_t needed = _table->_entries / _shrink_load_factor;
+    if (needed > _min_size) {
+      size = round_down_power_of_2(needed);
+    } else {
+      size = _min_size;
     }
-  } else if (StringDeduplicationResizeALot) {
-    // Force grow
-    size *= 2;
-    if (size > _max_size) {
-      // Too big, force shrink instead
-      size /= 4;
+  }
+  // If no change in size needed (and not forcing resize) then done.
+  if (size == _table->_size) {
+    if (!StringDeduplicationResizeALot) {
+      return NULL;              // Don't resize.
+    } else if (size < _max_size) {
+      size *= 2;                // Force grow, but not past _max_size.
+    } else {
+      size /= 2;                // Can't force grow, so force shrink instead.
     }
-  } else {
-    // Resize not needed
-    return NULL;
   }
 
   // Update statistics
