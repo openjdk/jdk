@@ -409,7 +409,8 @@ uint PhaseChaitin::count_int_pressure(IndexSet* liveout) {
     LRG& lrg = lrgs(lidx);
     if (lrg.mask_is_nonempty_and_up() &&
         !lrg.is_float_or_vector() &&
-        lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI])) {
+        ( lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
+          lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegVMask]))) {
       cnt += lrg.reg_pressure();
     }
     lidx = elements.next();
@@ -445,7 +446,8 @@ void PhaseChaitin::lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* l
     } else {
       // Do not count the SP and flag registers
       const RegMask& r = lrg.mask();
-      if (r.overlap(*Matcher::idealreg2regmask[Op_RegI])) {
+      if (r.overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
+          r.overlap(*Matcher::idealreg2regmask[Op_RegVMask])) {
         int_pressure.lower(lrg, location);
       }
     }
@@ -500,7 +502,8 @@ void PhaseChaitin::raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pr
     } else {
       // Do not count the SP and flag registers
       const RegMask& rm = lrg.mask();
-      if (rm.overlap(*Matcher::idealreg2regmask[Op_RegI])) {
+      if (rm.overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
+          rm.overlap(*Matcher::idealreg2regmask[Op_RegVMask])) {
         int_pressure.raise(lrg);
       }
     }

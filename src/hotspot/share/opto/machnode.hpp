@@ -102,6 +102,13 @@ public:
     return ::as_FloatRegister(reg(ra_, node, idx));
   }
 
+  KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node)   const {
+    return ::as_KRegister(reg(ra_, node));
+  }
+  KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node, int idx)   const {
+    return ::as_KRegister(reg(ra_, node, idx));
+  }
+
 #if defined(IA32) || defined(AMD64)
   XMMRegister  as_XMMRegister(PhaseRegAlloc *ra_, const Node *node)   const {
     return ::as_XMMRegister(reg(ra_, node));
@@ -316,6 +323,8 @@ public:
     const Type *t = _opnds[0]->type();
     if (t == TypeInt::CC) {
       return Op_RegFlags;
+    } else if (Matcher::is_mask_generating_oper(ideal_Opcode())) {
+      return Op_RegVMask;
     } else {
       return t->ideal_reg();
     }
@@ -579,11 +588,11 @@ public:
 private:
   const RegMask *_in;           // RegMask for input
   const RegMask *_out;          // RegMask for output
-  const Type *_type;
+  const Node *_node;
   const SpillType _spill_type;
 public:
   MachSpillCopyNode(SpillType spill_type, Node *n, const RegMask &in, const RegMask &out ) :
-    MachIdealNode(), _in(&in), _out(&out), _type(n->bottom_type()), _spill_type(spill_type) {
+    MachIdealNode(), _in(&in), _out(&out), _node(n), _spill_type(spill_type) {
     init_class_id(Class_MachSpillCopy);
     init_flags(Flag_is_Copy);
     add_req(NULL);
@@ -594,8 +603,16 @@ public:
   void set_in_RegMask(const RegMask &in) { _in = &in; }
   virtual const RegMask &out_RegMask() const { return *_out; }
   virtual const RegMask &in_RegMask(uint) const { return *_in; }
-  virtual const class Type *bottom_type() const { return _type; }
-  virtual uint ideal_reg() const { return _type->ideal_reg(); }
+  virtual const class Type *bottom_type() const { return _node->bottom_type(); }
+  virtual uint ideal_reg() const {
+    if(_node->isa_Mach()) {
+      return _node->as_Mach()->ideal_reg();
+    }
+    if (_node->isa_Phi()) {
+      return _node->ideal_reg();
+    }
+    return _node->bottom_type()->ideal_reg();
+  }
   virtual uint oper_input_base() const { return 1; }
   uint implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const;
 
@@ -1074,6 +1091,14 @@ public:
     _opnds[0] = oper;
   }
   virtual uint size_of() const { return sizeof(MachTempNode); }
+
+  virtual uint ideal_reg() const {
+    if (Matcher::is_predicate_operand(_opnd_array[0]->opcode())) {
+      return Op_RegVMask;
+    } else {
+      return MachNode::ideal_reg();
+    }
+  }
 
 #ifndef PRODUCT
   virtual void format(PhaseRegAlloc *, outputStream *st ) const {}

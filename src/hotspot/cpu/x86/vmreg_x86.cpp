@@ -72,6 +72,7 @@ void VMRegImpl::set_regName() {
 #define X87_TYPE 2
 #define STACK_TYPE 3
 
+//TODO: Case for KRegisters
 VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
   switch(type) {
     case INTEGER_TYPE: return ::as_Register(index)->as_VMReg();

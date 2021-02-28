@@ -1091,6 +1091,13 @@ public:
   void kmovwl(KRegister dst, Address src) { Assembler::kmovwl(dst, src); }
   void kmovwl(KRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
 
+  void kmovql(KRegister dst, KRegister src) { Assembler::kmovql(dst, src); }
+  void kmovql(KRegister dst, Register src) { Assembler::kmovql(dst, src); }
+  void kmovql(Register dst, KRegister src) { Assembler::kmovql(dst, src); }
+  void kmovql(KRegister dst, Address src) { Assembler::kmovql(dst, src); }
+  void kmovql(Address  dst, KRegister src) { Assembler::kmovql(dst, src); }
+  void kmovql(KRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
+
   // AVX Unaligned forms
   void vmovdqu(Address     dst, XMMRegister src);
   void vmovdqu(XMMRegister dst, Address src);
@@ -1683,13 +1690,13 @@ public:
 
   // clear memory of size 'cnt' qwords, starting at 'base';
   // if 'is_large' is set, do not try to produce short loop
-  void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large);
+  void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large, KRegister mask=knoreg);
 
   // clear memory initialization sequence for constant size;
-  void clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp);
+  void clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp, KRegister mask=knoreg);
 
   // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM registers
-  void xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp);
+  void xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, KRegister mask=knoreg);
 
   // Fill primitive arrays
   void generate_fill(BasicType t, bool aligned,
@@ -1802,11 +1809,12 @@ public:
   // Compress char[] array to byte[].
   void char_array_compress(Register src, Register dst, Register len,
                            XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
-                           XMMRegister tmp4, Register tmp5, Register result);
+                           XMMRegister tmp4, Register tmp5, Register result,
+                           KRegister mask1 = knoreg, KRegister mask2 = knoreg);
 
   // Inflate byte[] array to char[].
   void byte_array_inflate(Register src, Register dst, Register len,
-                          XMMRegister tmp1, Register tmp2);
+                          XMMRegister tmp1, Register tmp2, KRegister mask = knoreg);
 
   void fill64_masked_avx(uint shift, Register dst, int disp,
                          XMMRegister xmm, KRegister mask, Register length,

@@ -560,6 +560,9 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_RegD] = Type::DOUBLE;
   mreg2type[Op_RegL] = TypeLong::LONG;
   mreg2type[Op_RegFlags] = TypeInt::CC;
+  if (Matcher::has_predicated_vectors()) {
+    mreg2type[Op_RegVMask] = Matcher::predicate_reg_type();
+  }
 
   TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), NULL /* current->env()->Object_klass() */, false, arrayOopDesc::length_offset_in_bytes());
 

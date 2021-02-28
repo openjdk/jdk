@@ -218,7 +218,7 @@ class KRegisterImpl : public AbstractRegisterImpl {
 public:
   enum {
     number_of_registers = 8,
-    max_slots_per_register = 1
+    max_slots_per_register = 2
   };
 
   // construction
@@ -257,9 +257,9 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   // it's optoregs.
 
     number_of_registers = RegisterImpl::number_of_registers * RegisterImpl::max_slots_per_register +
-      2 * FloatRegisterImpl::number_of_registers +
+      2 * FloatRegisterImpl::number_of_registers + NOT_LP64(8) LP64_ONLY(0) +
       XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers +
-      KRegisterImpl::number_of_registers + // mask registers
+      KRegisterImpl::number_of_registers * KRegisterImpl::max_slots_per_register + // mask registers
       1 // eflags
   };
 

@@ -95,6 +95,7 @@ Matcher::Matcher()
   idealreg2spillmask  [Op_VecY] = NULL;
   idealreg2spillmask  [Op_VecZ] = NULL;
   idealreg2spillmask  [Op_RegFlags] = NULL;
+  idealreg2spillmask  [Op_RegVMask] = NULL;
 
   idealreg2debugmask  [Op_RegI] = NULL;
   idealreg2debugmask  [Op_RegN] = NULL;
@@ -109,6 +110,7 @@ Matcher::Matcher()
   idealreg2debugmask  [Op_VecY] = NULL;
   idealreg2debugmask  [Op_VecZ] = NULL;
   idealreg2debugmask  [Op_RegFlags] = NULL;
+  idealreg2debugmask  [Op_RegVMask] = NULL;
 
   idealreg2mhdebugmask[Op_RegI] = NULL;
   idealreg2mhdebugmask[Op_RegN] = NULL;
@@ -123,6 +125,7 @@ Matcher::Matcher()
   idealreg2mhdebugmask[Op_VecY] = NULL;
   idealreg2mhdebugmask[Op_VecZ] = NULL;
   idealreg2mhdebugmask[Op_RegFlags] = NULL;
+  idealreg2mhdebugmask[Op_RegVMask] = NULL;
 
   debug_only(_mem_node = NULL;)   // Ideal memory node consumed by mach node
 }
@@ -430,7 +433,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   return rms;
 }
 
-#define NOF_STACK_MASKS (3*12)
+#define NOF_STACK_MASKS (3*13)
 
 // Create the initial stack mask used by values spilling to the stack.
 // Disallow any debug info in outgoing argument areas by setting the
@@ -487,6 +490,10 @@ void Matcher::init_first_stack_mask() {
   idealreg2mhdebugmask[Op_VecY] = &rms[34];
   idealreg2mhdebugmask[Op_VecZ] = &rms[35];
 
+  idealreg2spillmask  [Op_RegVMask] = &rms[36];
+  idealreg2debugmask  [Op_RegVMask] = &rms[37];
+  idealreg2mhdebugmask[Op_RegVMask] = &rms[38];
+
   OptoReg::Name i;
 
   // At first, start with the empty mask
@@ -530,6 +537,11 @@ void Matcher::init_first_stack_mask() {
    idealreg2spillmask[Op_RegF]->OR(C->FIRST_STACK_mask());
   *idealreg2spillmask[Op_RegD] = *idealreg2regmask[Op_RegD];
    idealreg2spillmask[Op_RegD]->OR(aligned_stack_mask);
+
+  if (Matcher::has_predicated_vectors()) {
+   *idealreg2spillmask[Op_RegVMask] = *idealreg2regmask[Op_RegVMask];
+   idealreg2spillmask[Op_RegVMask]->OR(aligned_stack_mask);
+  }
 
   if (Matcher::vector_size_supported(T_BYTE,4)) {
     *idealreg2spillmask[Op_VecS] = *idealreg2regmask[Op_VecS];
@@ -649,6 +661,9 @@ void Matcher::init_first_stack_mask() {
   *idealreg2debugmask  [Op_RegF] = *idealreg2spillmask[Op_RegF];
   *idealreg2debugmask  [Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2debugmask  [Op_RegP] = *idealreg2spillmask[Op_RegP];
+  if (Matcher::has_predicated_vectors()) {
+    *idealreg2debugmask  [Op_RegVMask] = *idealreg2spillmask[Op_RegVMask];
+  }
 
   *idealreg2debugmask  [Op_VecA] = *idealreg2spillmask[Op_VecA];
   *idealreg2debugmask  [Op_VecS] = *idealreg2spillmask[Op_VecS];
@@ -663,6 +678,9 @@ void Matcher::init_first_stack_mask() {
   *idealreg2mhdebugmask[Op_RegF] = *idealreg2spillmask[Op_RegF];
   *idealreg2mhdebugmask[Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2mhdebugmask[Op_RegP] = *idealreg2spillmask[Op_RegP];
+  if (Matcher::has_predicated_vectors()) {
+    *idealreg2mhdebugmask[Op_RegVMask] = *idealreg2spillmask[Op_RegVMask];
+  }
 
   *idealreg2mhdebugmask[Op_VecA] = *idealreg2spillmask[Op_VecA];
   *idealreg2mhdebugmask[Op_VecS] = *idealreg2spillmask[Op_VecS];
@@ -683,6 +701,9 @@ void Matcher::init_first_stack_mask() {
   idealreg2debugmask[Op_RegF]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegD]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegP]->SUBTRACT(*caller_save_mask);
+  if (Matcher::has_predicated_vectors()) {
+    idealreg2debugmask[Op_RegVMask]->SUBTRACT(*caller_save_mask);
+  }
 
   idealreg2debugmask[Op_VecA]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_VecS]->SUBTRACT(*caller_save_mask);
@@ -697,7 +718,9 @@ void Matcher::init_first_stack_mask() {
   idealreg2mhdebugmask[Op_RegF]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegD]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegP]->SUBTRACT(*mh_caller_save_mask);
-
+  if (Matcher::has_predicated_vectors()) {
+    idealreg2mhdebugmask[Op_RegVMask]->SUBTRACT(*mh_caller_save_mask);
+  }
   idealreg2mhdebugmask[Op_VecA]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_VecS]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_VecD]->SUBTRACT(*mh_caller_save_mask);
@@ -965,6 +988,12 @@ void Matcher::init_spill_mask( Node *ret ) {
   idealreg2regmask[Op_VecX] = regmask_for_ideal_register(Op_VecX, ret);
   idealreg2regmask[Op_VecY] = regmask_for_ideal_register(Op_VecY, ret);
   idealreg2regmask[Op_VecZ] = regmask_for_ideal_register(Op_VecZ, ret);
+  idealreg2regmask[Op_VecZ] = regmask_for_ideal_register(Op_VecZ, ret);
+  if (Matcher::has_predicated_vectors()) {
+    idealreg2regmask[Op_RegVMask] = regmask_for_ideal_register(Op_RegVMask, ret);
+  } else {
+    idealreg2regmask[Op_RegVMask] = idealreg2regmask[Op_RegI];
+  }
 }
 
 #ifdef ASSERT
@@ -2559,6 +2588,9 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
     case Op_VecX: // fall-through
     case Op_VecY: // fall-through
     case Op_VecZ: spill = new LoadVectorNode(NULL, mem, fp, atp, t->is_vect()); break;
+    case Op_RegVMask: {
+       return Matcher::predicate_reg_mask();
+    } break;
 
     default: ShouldNotReachHere();
   }
@@ -2613,6 +2645,7 @@ MachOper* Matcher::specialize_vector_operand(MachNode* m, uint opnd_idx) {
       }
     }
   }
+
   assert(def->bottom_type()->isa_vect(), "not a vector");
   uint ideal_vreg = def->bottom_type()->ideal_reg();
   return Matcher::pd_specialize_generic_vector_operand(m->_opnds[opnd_idx], ideal_vreg, false /*is_temp*/);
@@ -2824,6 +2857,29 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
   }
 
   return false;
+}
+
+
+bool Matcher::is_mask_generating_node(Node* n) {
+  if(!Matcher::has_predicated_vectors() || !n) {
+    return false;
+  }
+  if (n->is_Phi()) {
+    return reinterpret_cast<PhiNode*>(n)->has_masked_inputs();
+  }
+  return is_mask_generating_oper(n->Opcode());
+}
+
+bool Matcher::is_mask_generating_oper(int opcode) {
+  //TODO: Other mask generating nodes are VectorLoadMask
+  //and VectorMaskCmp, will be handled along with changes
+  //to corresponding instruction patterns.
+  switch(opcode) {
+    case Op_VectorMaskGen:
+      return true;
+    default:
+      return false;
+  }
 }
 
 //=============================================================================

@@ -31,8 +31,8 @@ public:
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // special instructions for EVEX
-  void setvectmask(Register dst, Register src);
-  void restorevectmask();
+  void setvectmask(Register dst, Register src, KRegister mask = k1);
+  void restorevectmask(KRegister mask = k1);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   // See full desription in macroAssembler_x86.cpp.
@@ -131,7 +131,7 @@ public:
 
   // vector test
   void vectortest(int bt, int vlen, XMMRegister src1, XMMRegister src2,
-                  XMMRegister vtmp1 = xnoreg, XMMRegister vtmp2 = xnoreg);
+                  XMMRegister vtmp1 = xnoreg, XMMRegister vtmp2 = xnoreg, KRegister mask = knoreg);
 
   // blend
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral adr, int comparison, int vector_len, Register scratch = rscratch1);
@@ -146,7 +146,7 @@ public:
   void reduceI(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
 #ifdef _LP64
   void reduceL(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
-  void genmask(Register dst, Register len, Register temp);
+  void genmask(KRegister dst, Register len, Register temp);
 #endif // _LP64
 
   // dst = reduce(op, src2) using vtmp as temps
@@ -244,17 +244,17 @@ public:
   // Compare strings.
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
-                      XMMRegister vec1, int ae);
+                      XMMRegister vec1, int ae, KRegister mask = knoreg);
 
   // Search for Non-ASCII character (Negative byte value) in a byte array,
   // return true if it has any and false otherwise.
   void has_negatives(Register ary1, Register len,
                      Register result, Register tmp1,
-                     XMMRegister vec1, XMMRegister vec2);
+                     XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
 
   // Compare char[] or byte[] arrays.
   void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                      Register limit, Register result, Register chr,
-                     XMMRegister vec1, XMMRegister vec2, bool is_char);
+                     XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

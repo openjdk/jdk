@@ -824,7 +824,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
             lrg.set_scalable_reg_slots(Matcher::scalable_vector_reg_size(T_FLOAT));
           }
         }
-        assert(n_type->isa_vect() == NULL || lrg._is_vector || ireg == Op_RegD || ireg == Op_RegL,
+        assert(n_type->isa_vect() == NULL || lrg._is_vector ||
+               ireg == Op_RegD || ireg == Op_RegL  || ireg == Op_RegVMask,
                "vector must be in vector registers");
 
         // Check for bound register masks
@@ -894,12 +895,15 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           break;
         case Op_RegL:           // Check for long or double
         case Op_RegD:
+#if defined(IA32) || defined(AMD64)
+        case Op_RegVMask:
+#endif
           lrg.set_num_regs(2);
           // Define platform specific register pressure
 #if defined(ARM32)
           lrg.set_reg_pressure(2);
 #elif defined(IA32)
-          if( ireg == Op_RegL ) {
+          if( ireg == Op_RegL  || ireg == Op_RegVMask ) {
             lrg.set_reg_pressure(2);
           } else {
             lrg.set_reg_pressure(1);
@@ -1036,8 +1040,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         const RegMask &lrgmask = lrg.mask();
         uint kreg = n->in(k)->ideal_reg();
         bool is_vect = RegMask::is_vector(kreg);
-        assert(n->in(k)->bottom_type()->isa_vect() == NULL ||
-               is_vect || kreg == Op_RegD || kreg == Op_RegL,
+        assert(n->in(k)->bottom_type()->isa_vect() == NULL || is_vect ||
+               kreg == Op_RegD || kreg == Op_RegL || kreg == Op_RegVMask,
                "vector must be in vector registers");
         if (lrgmask.is_bound(kreg))
           lrg._is_bound = 1;

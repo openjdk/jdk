@@ -36,7 +36,7 @@
 // non-SSA names.  A Register is represented as a number.  Non-regular values
 // (e.g., Control, Memory, I/O) use the Special register.  The actual machine
 // registers (as described in the ADL file for a machine) start at zero.
-// Stack-slots (spill locations) start at the nest Chunk past the last machine
+// Stack-slots (spill locations) start at the next Chunk past the last machine
 // register.
 //
 // Note that stack spill-slots are treated as a very large register set.

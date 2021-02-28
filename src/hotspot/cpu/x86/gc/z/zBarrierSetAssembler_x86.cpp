@@ -146,10 +146,33 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ movdqu(Address(rsp, xmm_size * 1), xmm1);
   __ movdqu(Address(rsp, xmm_size * 0), xmm0);
 
+  const int opmask_size = 8;
+  if (UseAVX > 2) {
+    __ subptr(rsp, 7*opmask_size);
+    __ kmovql(Address(rsp, opmask_size * 6), k7);
+    __ kmovql(Address(rsp, opmask_size * 5), k6);
+    __ kmovql(Address(rsp, opmask_size * 4), k5);
+    __ kmovql(Address(rsp, opmask_size * 3), k4);
+    __ kmovql(Address(rsp, opmask_size * 2), k3);
+    __ kmovql(Address(rsp, opmask_size * 1), k2);
+    __ kmovql(Address(rsp, opmask_size * 0), k1);
+  }
+
   // Call VM
   call_vm(masm, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), dst, scratch);
 
   // Restore registers
+  if (UseAVX > 2) {
+    __ kmovql(k1, Address(rsp, opmask_size * 0));
+    __ kmovql(k2, Address(rsp, opmask_size * 1));
+    __ kmovql(k3, Address(rsp, opmask_size * 2));
+    __ kmovql(k4, Address(rsp, opmask_size * 3));
+    __ kmovql(k5, Address(rsp, opmask_size * 4));
+    __ kmovql(k6, Address(rsp, opmask_size * 5));
+    __ kmovql(k7, Address(rsp, opmask_size * 6));
+    __ addptr(rsp, 7*opmask_size);
+  }
+
   __ movdqu(xmm0, Address(rsp, xmm_size * 0));
   __ movdqu(xmm1, Address(rsp, xmm_size * 1));
   __ movdqu(xmm2, Address(rsp, xmm_size * 2));
@@ -394,6 +417,7 @@ private:
 
   MacroAssembler* const          _masm;
   GrowableArray<Register>        _gp_registers;
+  GrowableArray<KRegister>       _opmask_registers;
   GrowableArray<XMMRegisterData> _xmm_registers;
   int                            _spill_size;
   int                            _spill_offset;
@@ -450,8 +474,18 @@ private:
     __ movq(Address(rsp, _spill_offset), reg);
   }
 
+  void opmask_register_save(KRegister reg) {
+    _spill_offset -= 8;
+    __ kmovql(Address(rsp, _spill_offset), reg);
+  }
+
   void gp_register_restore(Register reg) {
     __ movq(reg, Address(rsp, _spill_offset));
+    _spill_offset += 8;
+  }
+
+  void opmask_register_restore(KRegister reg) {
+    __ kmovql(reg, Address(rsp, _spill_offset));
     _spill_offset += 8;
   }
 
@@ -468,6 +502,15 @@ private:
     caller_saved.Insert(OptoReg::as_OptoReg(r9->as_VMReg()));
     caller_saved.Insert(OptoReg::as_OptoReg(r10->as_VMReg()));
     caller_saved.Insert(OptoReg::as_OptoReg(r11->as_VMReg()));
+    if (UseAVX > 2) {
+      caller_saved.Insert(OptoReg::as_OptoReg(k1->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(k2->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(k3->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(k4->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(k5->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(k6->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(k7->as_VMReg()));
+    }
     caller_saved.Remove(OptoReg::as_OptoReg(stub->ref()->as_VMReg()));
 
     // Create mask of live registers
@@ -477,6 +520,7 @@ private:
     }
 
     int gp_spill_size = 0;
+    int opmask_spill_size = 0;
     int xmm_spill_size = 0;
 
     // Record registers that needs to be saved/restored
@@ -489,6 +533,11 @@ private:
         if (caller_saved.Member(opto_reg)) {
           _gp_registers.append(vm_reg->as_Register());
           gp_spill_size += 8;
+        }
+      } else if (vm_reg->is_KRegister()) {
+        if (caller_saved.Member(opto_reg)) {
+          _opmask_registers.append(vm_reg->as_KRegister());
+          opmask_spill_size += 8;
         }
       } else if (vm_reg->is_XMMRegister()) {
         // We encode in the low order 4 bits of the opto_reg, how large part of the register is live
@@ -520,13 +569,14 @@ private:
     const int arg_spill_size = frame::arg_reg_save_area_bytes;
 
     // Stack pointer must be 16 bytes aligned for the call
-    _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + arg_spill_size, 16);
+    _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + opmask_spill_size + arg_spill_size, 16);
   }
 
 public:
   ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
       _masm(masm),
       _gp_registers(),
+      _opmask_registers(),
       _xmm_registers(),
       _spill_size(0),
       _spill_offset(0) {
@@ -576,9 +626,19 @@ public:
     for (int i = 0; i < _gp_registers.length(); i++) {
       gp_register_save(_gp_registers.at(i));
     }
+
+    // Save opmask purpose registers
+    for (int i = 0; i < _opmask_registers.length(); i++) {
+      opmask_register_save(_opmask_registers.at(i));
+    }
   }
 
   ~ZSaveLiveRegisters() {
+    // Restore opmask registers
+    for (int i = _opmask_registers.length() - 1; i >= 0; i--) {
+      opmask_register_restore(_opmask_registers.at(i));
+    }
+
     // Restore general purpose registers
     for (int i = _gp_registers.length() - 1; i >= 0; i--) {
       gp_register_restore(_gp_registers.at(i));

@@ -260,6 +260,12 @@ source %{
 // instructions, to allow sign-masking or sign-bit flipping.  They allow
 // fast versions of NegF/NegD and AbsF/AbsD.
 
+void reg_mask_init() {
+  if(Matcher::has_predicated_vectors()) {
+    const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k0->as_VMReg()));
+  }
+}
+
 // Note: 'double' and 'long long' have 32-bits alignment on x86.
 static jlong* double_quadword(jlong *adr, jlong lo, jlong hi) {
   // Use the expression (adr)&(~0xF) to provide 128-bits aligned address
@@ -731,7 +737,7 @@ const Pipeline * MachEpilogNode::pipeline() const {
 
 //=============================================================================
 
-enum RC { rc_bad, rc_int, rc_float, rc_xmm, rc_stack };
+enum RC { rc_bad, rc_int, rc_kreg, rc_float, rc_xmm, rc_stack };
 static enum RC rc_class( OptoReg::Name reg ) {
 
   if( !OptoReg::is_valid(reg)  ) return rc_bad;
@@ -1103,7 +1109,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),src_first,0x89,"MOV ",size, st);
 
   // Check for integer load
-  if( dst_first_rc == rc_int && src_first_rc == rc_stack )
+  if( src_first_rc == rc_stack && dst_first_rc == rc_int )
     size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first,0x8B,"MOV ",size, st);
 
   // Check for integer reg-xmm reg copy
@@ -1192,16 +1198,16 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
 
   // Check for xmm store
   if( src_first_rc == rc_xmm && dst_first_rc == rc_stack ) {
-    return impl_x_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),src_first, src_second, size, st);
+    return impl_x_helper(cbuf,do_size,false,ra_->reg2offset(dst_first), src_first, src_second, size, st);
   }
 
   // Check for float xmm load
-  if( dst_first_rc == rc_xmm && src_first_rc == rc_stack ) {
+  if( src_first_rc == rc_stack && dst_first_rc == rc_xmm ) {
     return impl_x_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first, dst_second, size, st);
   }
 
   // Copy from float reg to xmm reg
-  if( dst_first_rc == rc_xmm && src_first_rc == rc_float ) {
+  if( src_first_rc == rc_float && dst_first_rc == rc_xmm ) {
     // copy to the top of stack from floating point reg
     // and use LEA to preserve flags
     if( cbuf ) {
@@ -1257,6 +1263,42 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if( dst_second_rc == rc_int && src_second_rc == rc_stack )
     return impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),dst_second,0x8B,"MOV ",size, st);
 
+  // AVX-512 opmask specific spilling.
+  if (src_first_rc == rc_stack && dst_first_rc == rc_kreg) {
+    assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
+    assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
+    MacroAssembler _masm(cbuf);
+    int offset = ra_->reg2offset(src_first);
+    __ kmovql(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+    return 0;
+  }
+
+  if (src_first_rc == rc_kreg && dst_first_rc == rc_stack) {
+    assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
+    assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
+    MacroAssembler _masm(cbuf);
+    int offset = ra_->reg2offset(dst_first);
+    __ kmovql(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
+    return 0;
+  }
+
+  if (src_first_rc == rc_kreg && dst_first_rc == rc_int) {
+    Unimplemented();
+    return 0;
+  }
+
+  if (src_first_rc == rc_int && dst_first_rc == rc_kreg) {
+    Unimplemented();
+    return 0;
+  }
+
+  if (src_first_rc == rc_kreg && dst_first_rc == rc_kreg) {
+    assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
+    assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
+    MacroAssembler _masm(cbuf);
+    __ kmovql(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
+    return 0;
+  }
 
   Unimplemented();
   return 0; // Mute compiler
@@ -3572,6 +3614,80 @@ operand immI_65535() %{
 
   format %{ %}
   interface(CONST_INTER);
+%}
+
+operand kReg()
+%{
+  constraint(ALLOC_IN_RC(opmask_reg));
+  match(RegVMask);
+  format %{%}
+  interface(REG_INTER);
+%}
+
+operand kReg_K0()
+%{
+  constraint(ALLOC_IN_RC(opmask_reg_K0));
+  match(RegVMask);
+  format %{%}
+  interface(REG_INTER);
+%}
+
+operand kReg_K1()
+%{
+  constraint(ALLOC_IN_RC(opmask_reg_K1));
+  match(RegVMask);
+  format %{%}
+  interface(REG_INTER);
+%}
+
+operand kReg_K2()
+%{
+  constraint(ALLOC_IN_RC(opmask_reg_K2));
+  match(RegVMask);
+  format %{%}
+  interface(REG_INTER);
+%}
+
+// Special Registers
+operand kReg_K3()
+%{
+  constraint(ALLOC_IN_RC(opmask_reg_K3));
+  match(RegVMask);
+  format %{%}
+  interface(REG_INTER);
+%}
+
+operand kReg_K4()
+%{
+  constraint(ALLOC_IN_RC(opmask_reg_K4));
+  match(RegVMask);
+  format %{%}
+  interface(REG_INTER);
+%}
+
+operand kReg_K5()
+%{
+  constraint(ALLOC_IN_RC(opmask_reg_K5));
+  match(RegVMask);
+  format %{%}
+  interface(REG_INTER);
+%}
+
+operand kReg_K6()
+%{
+  constraint(ALLOC_IN_RC(opmask_reg_K6));
+  match(RegVMask);
+  format %{%}
+  interface(REG_INTER);
+%}
+
+// Special Registers
+operand kReg_K7()
+%{
+  constraint(ALLOC_IN_RC(opmask_reg_K7));
+  match(RegVMask);
+  format %{%}
+  interface(REG_INTER);
 %}
 
 // Register Operands
@@ -11410,10 +11526,10 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 
 // =======================================================================
 // fast clearing of an array
-instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(!((ClearArrayNode*)n)->is_large() && !n->in(2)->bottom_type()->is_int()->is_con());
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
 
   format %{ $$template
     $$emit$$"XOR    EAX,EAX\t# ClearArray:\n\t"
@@ -11464,15 +11580,15 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe du
   %}
   ins_encode %{
     __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register,
-                 $tmp$$XMMRegister, false);
+                 $tmp$$XMMRegister, false, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
   format %{ $$template
     if (UseFastStosb) {
        $$emit$$"XOR    EAX,EAX\t# ClearArray:\n\t"
@@ -11513,94 +11629,94 @@ instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Unive
   %}
   ins_encode %{
     __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register,
-                 $tmp$$XMMRegister, true);
+                 $tmp$$XMMRegister, true, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct rep_stos_im(immI cnt, eRegP base, regD tmp, rRegI zero, Universe dummy, eFlagsReg cr)
+instruct rep_stos_im(immI cnt, kReg ktmp, eRegP base, regD tmp, rRegI zero, Universe dummy, eFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() && n->in(2)->bottom_type()->is_int()->is_con());
   match(Set dummy (ClearArray cnt base));
-  effect(TEMP tmp, TEMP zero, KILL cr);
+  effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
   format %{ "clear_mem_imm $base , $cnt  \n\t" %}
   ins_encode %{
-   __ clear_mem($base$$Register, $cnt$$constant, $zero$$Register, $tmp$$XMMRegister);
+   __ clear_mem($base$$Register, $cnt$$constant, $zero$$Register, $tmp$$XMMRegister, $ktmp$$KRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct string_compareL(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
-                         eAXRegI result, regD tmp1, eFlagsReg cr) %{
+                         eAXRegI result, regD tmp1, kReg ktmp, eFlagsReg cr) %{
   predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+  effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$XMMRegister, StrIntrinsicNode::LL);
+                      $tmp1$$XMMRegister, StrIntrinsicNode::LL, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct string_compareU(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
-                         eAXRegI result, regD tmp1, eFlagsReg cr) %{
+                         eAXRegI result, regD tmp1, kReg ktmp, eFlagsReg cr) %{
   predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+  effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare char[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$XMMRegister, StrIntrinsicNode::UU);
+                      $tmp1$$XMMRegister, StrIntrinsicNode::UU, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct string_compareLU(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
-                          eAXRegI result, regD tmp1, eFlagsReg cr) %{
+                          eAXRegI result, regD tmp1, kReg ktmp, eFlagsReg cr) %{
   predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+  effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$XMMRegister, StrIntrinsicNode::LU);
+                      $tmp1$$XMMRegister, StrIntrinsicNode::LU, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct string_compareUL(eSIRegP str1, eDXRegI cnt1, eDIRegP str2, eCXRegI cnt2,
-                          eAXRegI result, regD tmp1, eFlagsReg cr) %{
+                          eAXRegI result, regD tmp1, kReg ktmp, eFlagsReg cr) %{
   predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+  effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
     __ string_compare($str2$$Register, $str1$$Register,
                       $cnt2$$Register, $cnt1$$Register, $result$$Register,
-                      $tmp1$$XMMRegister, StrIntrinsicNode::UL);
+                      $tmp1$$XMMRegister, StrIntrinsicNode::UL, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
 // fast string equals
 instruct string_equals(eDIRegP str1, eSIRegP str2, eCXRegI cnt, eAXRegI result,
-                       regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr) %{
+                       regD tmp1, regD tmp2, kReg ktmp, eBXRegI tmp3, eFlagsReg cr) %{
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
 
   format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
     __ arrays_equals(false, $str1$$Register, $str2$$Register,
                      $cnt$$Register, $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */);
+                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */, $ktmp$$KRegister);
   %}
 
   ins_pipe( pipe_slow );
@@ -11767,79 +11883,80 @@ instruct stringL_indexof_char(eDIRegP str1, eDXRegI cnt1, eAXRegI ch,
 
 // fast array equals
 instruct array_equalsB(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
-                       regD tmp1, regD tmp2, eCXRegI tmp3, eBXRegI tmp4, eFlagsReg cr)
+                       regD tmp1, regD tmp2, kReg ktmp, eCXRegI tmp3, eBXRegI tmp4, eFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
   //ins_cost(300);
 
   format %{ "Array Equals byte[] $ary1,$ary2 -> $result   // KILL $tmp1, $tmp2, $tmp3, $tmp4" %}
   ins_encode %{
     __ arrays_equals(true, $ary1$$Register, $ary2$$Register,
                      $tmp3$$Register, $result$$Register, $tmp4$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */);
+                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct array_equalsC(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
-                       regD tmp1, regD tmp2, eCXRegI tmp3, eBXRegI tmp4, eFlagsReg cr)
+                       regD tmp1, regD tmp2, kReg ktmp, eCXRegI tmp3, eBXRegI tmp4, eFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
   //ins_cost(300);
 
   format %{ "Array Equals char[] $ary1,$ary2 -> $result   // KILL $tmp1, $tmp2, $tmp3, $tmp4" %}
   ins_encode %{
     __ arrays_equals(true, $ary1$$Register, $ary2$$Register,
                      $tmp3$$Register, $result$$Register, $tmp4$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, true /* char */);
+                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, true /* char */, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct has_negatives(eSIRegP ary1, eCXRegI len, eAXRegI result,
-                      regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr)
+                      regD tmp1, regD tmp2, kReg ktmp1, kReg ktmp2, eBXRegI tmp3, eFlagsReg cr)
 %{
   match(Set result (HasNegatives ary1 len));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, TEMP ktmp1, TEMP ktmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
   format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
     __ has_negatives($ary1$$Register, $len$$Register,
                      $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
 // fast char[] to byte[] compression
-instruct string_compress(eSIRegP src, eDIRegP dst, eDXRegI len, regD tmp1, regD tmp2, regD tmp3, regD tmp4,
-                         eCXRegI tmp5, eAXRegI result, eFlagsReg cr) %{
+instruct string_compress(eSIRegP src, eDIRegP dst, eDXRegI len, regD tmp1, regD tmp2,
+                         regD tmp3, regD tmp4, kReg ktmp1, kReg ktmp2, eCXRegI tmp5, eAXRegI result, eFlagsReg cr) %{
   match(Set result (StrCompressedCopy src (Binary dst len)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP ktmp1, TEMP ktmp2, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
 
   format %{ "String Compress $src,$dst -> $result    // KILL RAX, RCX, RDX" %}
   ins_encode %{
     __ char_array_compress($src$$Register, $dst$$Register, $len$$Register,
                            $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
-                           $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+                           $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register,
+                           $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
 // fast byte[] to char[] inflation
 instruct string_inflate(Universe dummy, eSIRegP src, eDIRegP dst, eDXRegI len,
-                        regD tmp1, eCXRegI tmp2, eFlagsReg cr) %{
+                        regD tmp1, kReg ktmp, eCXRegI tmp2, eFlagsReg cr) %{
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
 
   format %{ "String Inflate $src,$dst    // KILL $tmp1, $tmp2" %}
   ins_encode %{
     __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
-                          $tmp1$$XMMRegister, $tmp2$$Register);
+                          $tmp1$$XMMRegister, $tmp2$$Register, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -12267,10 +12384,10 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
 
 // mask version
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEnd_and_restoreMask(cmpOp cop, eFlagsReg cr, label labl) %{
+instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, eFlagsReg cr, label labl) %{
   predicate(n->has_vector_mask_set());
   match(CountedLoopEnd cop cr);
-  effect(USE labl);
+  effect(USE labl, TEMP ktmp);
 
   ins_cost(400);
   format %{ "J$cop    $labl\t# Loop end\n\t"
@@ -12279,16 +12396,16 @@ instruct jmpLoopEnd_and_restoreMask(cmpOp cop, eFlagsReg cr, label labl) %{
   ins_encode %{
     Label* L = $labl$$label;
     __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask();
+    __ restorevectmask($ktmp$$KRegister);
   %}
   ins_pipe( pipe_jcc );
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, eFlagsRegU cmp, label labl) %{
+instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, eFlagsRegU cmp, label labl) %{
   predicate(n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
-  effect(USE labl);
+  effect(USE labl, TEMP ktmp);
 
   ins_cost(400);
   format %{ "J$cop,u  $labl\t# Loop end\n\t"
@@ -12297,15 +12414,15 @@ instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   ins_encode %{
     Label* L = $labl$$label;
     __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask();
+    __ restorevectmask($ktmp$$KRegister);
   %}
   ins_pipe( pipe_jcc );
 %}
 
-instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
+instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, kReg_K1 ktmp, eFlagsRegUCF cmp, label labl) %{
   predicate(n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
-  effect(USE labl);
+  effect(USE labl, TEMP ktmp);
 
   ins_cost(300);
   format %{ "J$cop,u  $labl\t# Loop end\n\t"
@@ -12314,7 +12431,7 @@ instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, eFlagsRegUCF cmp, label lab
   ins_encode %{
     Label* L = $labl$$label;
     __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask();
+    __ restorevectmask($ktmp$$KRegister);
   %}
   ins_pipe( pipe_jcc );
 %}

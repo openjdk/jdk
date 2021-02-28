@@ -130,6 +130,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int num_xmm_regs = XMMRegisterImpl::number_of_registers;
   int ymm_bytes = num_xmm_regs * 16;
   int zmm_bytes = num_xmm_regs * 32;
+  int opmask_state_bytes = KRegisterImpl::number_of_registers * 8;
 #ifdef COMPILER2
   if (save_vectors) {
     assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
@@ -141,6 +142,9 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       vect_bytes += zmm_bytes;
     }
     additional_frame_words += vect_bytes / wordSize;
+  }
+  if(UseAVX > 2) {
+    additional_frame_words += opmask_state_bytes / wordSize;
   }
 #else
   assert(!save_vectors, "vectors are generated only by C2");
@@ -231,6 +235,15 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
     }
   }
+#ifdef COMPILER2
+  if (UseAVX > 2) {
+    __ subptr(rsp, opmask_state_bytes);
+    // Save opmask registers
+    for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+      __ kmovql(Address(rsp, n*8), as_KRegister(n));
+    }
+  }
+#endif
   __ vzeroupper();
 
   // Set an oopmap for the call site.  This oopmap will map all
@@ -251,6 +264,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // rbp, location is known implicitly, no oopMap
   map->set_callee_saved(STACK_OFFSET(rsi_off), rsi->as_VMReg());
   map->set_callee_saved(STACK_OFFSET(rdi_off), rdi->as_VMReg());
+
   // %%% This is really a waste but we'll keep things as they were for now for the upper component
   off = st0_off;
   delta = st1_off - off;
@@ -278,6 +292,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
   int num_xmm_regs = XMMRegisterImpl::number_of_registers;
   int ymm_bytes = num_xmm_regs * 16;
   int zmm_bytes = num_xmm_regs * 32;
+  int opmask_state_bytes = KRegisterImpl::number_of_registers * 8;
   // Recover XMM & FPU state
   int additional_frame_bytes = 0;
 #ifdef COMPILER2
@@ -290,6 +305,9 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
       // Save upper half of ZMM registers as well
       additional_frame_bytes += zmm_bytes;
     }
+  }
+  if (UseAVX > 2) {
+    additional_frame_bytes += opmask_state_bytes;
   }
 #else
   assert(!restore_vectors, "vectors are generated only by C2");
@@ -322,14 +340,26 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     for (int n = 0; n < num_xmm_regs; n++) {
       __ vinsertf128_high(as_XMMRegister(n), Address(rsp, n*16+off));
     }
-
     if (UseAVX > 2) {
       // Restore upper half of ZMM registers.
+      off = opmask_state_bytes;
       for (int n = 0; n < num_xmm_regs; n++) {
-        __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32));
+        __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32+off));
+      }
+      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+        __ kmovql(as_KRegister(n), Address(rsp, n*8));
       }
     }
     __ addptr(rsp, additional_frame_bytes);
+  } else {
+#ifdef COMPILER2
+    if (UseAVX > 2) {
+      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+        __ kmovql(as_KRegister(n), Address(rsp, n*8));
+      }
+      __ addptr(rsp, additional_frame_bytes);
+    }
+#endif
   }
 
   __ pop_FPU_state();

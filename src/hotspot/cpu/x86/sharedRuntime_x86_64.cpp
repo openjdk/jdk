@@ -90,11 +90,13 @@ class RegisterSaver {
   // units because compiler frame slots are jints.
 #define XSAVE_AREA_BEGIN 160
 #define XSAVE_AREA_YMM_BEGIN 576
+#define XSAVE_AREA_OPMASK_BEGIN 1088
 #define XSAVE_AREA_ZMM_BEGIN 1152
 #define XSAVE_AREA_UPPERBANK 1664
 #define DEF_XMM_OFFS(regnum)       xmm ## regnum ## _off = xmm_off + (regnum)*16/BytesPerInt, xmm ## regnum ## H_off
 #define DEF_YMM_OFFS(regnum)       ymm ## regnum ## _off = ymm_off + (regnum)*16/BytesPerInt, ymm ## regnum ## H_off
 #define DEF_ZMM_OFFS(regnum)       zmm ## regnum ## _off = zmm_off + (regnum)*32/BytesPerInt, zmm ## regnum ## H_off
+#define DEF_OPMASK_OFFS(regnum)    opmask ## regnum ## _off = opmask_off + (regnum)*8/BytesPerInt,     opmask ## regnum ## H_off
 #define DEF_ZMM_UPPER_OFFS(regnum) zmm ## regnum ## _off = zmm_upper_off + (regnum-16)*64/BytesPerInt, zmm ## regnum ## H_off
   enum layout {
     fpu_state_off = frame::arg_reg_save_area_bytes/BytesPerInt, // fxsave save area
@@ -105,6 +107,10 @@ class RegisterSaver {
     ymm_off = xmm_off + (XSAVE_AREA_YMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_YMM_OFFS(0),
     DEF_YMM_OFFS(1),
+    // 2..7 are implied in range usage
+    opmask_off         = xmm_off + (XSAVE_AREA_OPMASK_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
+    DEF_OPMASK_OFFS(0),
+    DEF_OPMASK_OFFS(1),
     // 2..15 are implied in range usage
     zmm_off = xmm_off + (XSAVE_AREA_ZMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_ZMM_OFFS(0),
@@ -213,6 +219,12 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       for (int n = 16; n < num_xmm_regs; n++) {
         __ evmovdqul(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n), vector_len);
       }
+
+      base_addr = XSAVE_AREA_OPMASK_BEGIN;
+      off = 0;
+      for(int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+        __ kmovql(Address(rsp, base_addr+(off++*8)), as_KRegister(n));
+      }
     }
   } else {
     if (VM_Version::supports_evex()) {
@@ -221,6 +233,11 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       off = 0;
       for (int n = 16; n < num_xmm_regs; n++) {
         __ movsd(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n));
+      }
+      base_addr = XSAVE_AREA_OPMASK_BEGIN;
+      off = 0;
+      for(int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+        __ kmovql(Address(rsp, base_addr+(off++*8)), as_KRegister(n));
       }
     }
   }
@@ -381,6 +398,11 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
       for (int n = 16; n < num_xmm_regs; n++) {
         __ evmovdqul(as_XMMRegister(n), Address(rsp, base_addr+(off++*64)), vector_len);
       }
+      base_addr = XSAVE_AREA_OPMASK_BEGIN;
+      off = 0;
+      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+        __ kmovql(as_KRegister(n), Address(rsp, base_addr+(off++*8)));
+      }
     }
   } else {
     if (VM_Version::supports_evex()) {
@@ -389,6 +411,11 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
       int off = 0;
       for (int n = 16; n < num_xmm_regs; n++) {
         __ movsd(as_XMMRegister(n), Address(rsp, base_addr+(off++*64)));
+      }
+      base_addr = XSAVE_AREA_OPMASK_BEGIN;
+      off = 0;
+      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+        __ kmovql(as_KRegister(n), Address(rsp, base_addr+(off++*8)));
       }
     }
   }
