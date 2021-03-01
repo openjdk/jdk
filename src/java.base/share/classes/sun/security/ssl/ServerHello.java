@@ -624,6 +624,7 @@ final class ServerHello {
             // update the handshake traffic read keys.
             SecretKey readSecret = kd.deriveKey(
                     "TlsClientHandshakeTrafficSecret", null);
+            SSLLogger.logKey("CLIENT_HANDSHAKE_TRAFFIC_SECRET", shc.clientHelloRandom, readSecret);
             SSLKeyDerivation readKD =
                     kdg.createKeyDerivation(shc, readSecret);
             SecretKey readKey = readKD.deriveKey(
@@ -658,6 +659,7 @@ final class ServerHello {
             // update the handshake traffic write secret.
             SecretKey writeSecret = kd.deriveKey(
                     "TlsServerHandshakeTrafficSecret", null);
+            SSLLogger.logKey("SERVER_HANDSHAKE_TRAFFIC_SECRET", shc.clientHelloRandom, writeSecret);
             SSLKeyDerivation writeKD =
                     kdg.createKeyDerivation(shc, writeSecret);
             SecretKey writeKey = writeKD.deriveKey(
@@ -1308,6 +1310,7 @@ final class ServerHello {
             // update the handshake traffic read keys.
             SecretKey readSecret = secretKD.deriveKey(
                     "TlsServerHandshakeTrafficSecret", null);
+            SSLLogger.logKey("SERVER_HANDSHAKE_TRAFFIC_SECRET", chc.clientHelloRandom, readSecret);
 
             SSLKeyDerivation readKD =
                     kdg.createKeyDerivation(chc, readSecret);
@@ -1343,6 +1346,7 @@ final class ServerHello {
             // update the handshake traffic write keys.
             SecretKey writeSecret = secretKD.deriveKey(
                     "TlsClientHandshakeTrafficSecret", null);
+            SSLLogger.logKey("CLIENT_HANDSHAKE_TRAFFIC_SECRET", chc.clientHelloRandom, writeSecret);
             SSLKeyDerivation writeKD =
                     kdg.createKeyDerivation(chc, writeSecret);
             SecretKey writeKey = writeKD.deriveKey(

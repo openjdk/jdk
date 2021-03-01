@@ -27,11 +27,15 @@ package sun.security.ssl;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Writer;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
 import java.security.cert.Extension;
 import java.security.cert.X509Certificate;
@@ -43,6 +47,7 @@ import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import javax.crypto.SecretKey;
 
 import sun.security.action.GetPropertyAction;
 import sun.security.util.HexDumpEncoder;
@@ -63,6 +68,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class SSLLogger {
     private static final System.Logger logger;
     private static final String property;
+    private static final Writer keyLogger;
     public static final boolean isOn;
 
     static {
@@ -85,6 +91,47 @@ public final class SSLLogger {
             logger = null;
             isOn = false;
         }
+
+        // Setting up the key log requires multiple privileged actions,
+        // so it is better and easier to bundle them into a single PrivilegedAction block
+        // 1. Getting the property
+        // 2. Opening the file for writing
+        // 3. Getting the process id for the header comment in the file
+        keyLogger = AccessController.doPrivileged(new PrivilegedAction<Writer>(){
+            public Writer run() {
+                final String fileName = System.getProperty("javax.net.debug.keylog");
+                if (fileName == null) {
+                    return null;
+                }
+                final long pid = ProcessHandle.current().pid();
+
+                Writer tempWriter = null;
+                try {
+                    tempWriter = new FileWriter(fileName, true);
+
+                    tempWriter.write("# Java TLS key logging started for PID " + pid);
+                    tempWriter.write(". Started at ");
+                    tempWriter.write(SSLSimpleFormatter.dateTimeFormat.format(Instant.now()));
+                    tempWriter.write("\n");
+                    tempWriter.flush();
+                } catch (final IOException ex) {
+                    if (logger != null) {
+                        logger.log(Level.WARNING, "Unable to create key logger", ex);
+                    } else {
+                        ex.printStackTrace();
+                    }
+                    if (tempWriter != null) {
+                        try {
+                            tempWriter.close();
+                        } catch (final IOException ignored) {
+                            // Ignore exception when closing logger
+                        }
+                    }
+                    tempWriter = null;
+                }
+                return tempWriter;
+            }
+        });
     }
 
     private static void help() {
@@ -115,7 +162,29 @@ public final class SSLLogger {
         System.err.println("\tplaintext    hex dump of record plaintext");
         System.err.println("\tpacket       print raw SSL/TLS packets");
         System.err.println();
+        System.err.println("Key logging can be enabled with javax.net.debug.keylog=<filename>");
+        System.err.println();
         System.exit(0);
+    }
+
+    public static void logKey(String label, RandomCookie clientRandom, SecretKey secret) {
+        if (label == null || keyLogger == null || clientRandom == null || secret == null) {
+            return;
+        }
+        synchronized (keyLogger) {
+            try {
+                keyLogger.append(label).append(' ');
+                keyLogger.append(HexFormat.of().formatHex(clientRandom.randomBytes)).append(' ');
+                keyLogger.append(HexFormat.of().formatHex(secret.getEncoded())).append('\n');
+                keyLogger.flush();
+            } catch (final IOException ex) {
+                if (logger != null) {
+                    logger.log(Level.INFO, "Could not log tls key", ex);
+                } else {
+                    ex.printStackTrace();
+                }
+            }
+        }
     }
 
     /**

@@ -138,6 +138,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     // in this session.
     private final String        identificationProtocol;
 
+    // Used for logging and to tie a session to data visible on the wire
+    private RandomCookie clientHelloRandom;
+
     private final ReentrantLock sessionLock = new ReentrantLock();
 
     /*
@@ -159,6 +162,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.creationTime = System.currentTimeMillis();
         this.identificationProtocol = null;
         this.boundValues = new ConcurrentHashMap<>();
+        this.clientHelloRandom = null;
     }
 
     /*
@@ -214,6 +218,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.creationTime = creationTime;
         this.identificationProtocol = hc.sslConfig.identificationProtocol;
         this.boundValues = new ConcurrentHashMap<>();
+        this.clientHelloRandom = hc.clientHelloRandom;
 
         if (SSLLogger.isOn && SSLLogger.isOn("session")) {
              SSLLogger.finest("Session initialized:  " + this);
@@ -234,6 +239,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 Collections.emptySet() : baseSession.peerSupportedSignAlgs;
         this.serverNameIndication = baseSession.serverNameIndication;
         this.requestedServerNames = baseSession.getRequestedServerNames();
+        this.clientHelloRandom = baseSession.clientHelloRandom;
         this.masterSecret = baseSession.getMasterSecret();
         this.useExtendedMasterSecret = baseSession.useExtendedMasterSecret;
         this.creationTime = baseSession.getCreationTime();
@@ -336,6 +342,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
         this.peerSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
+        this.clientHelloRandom = hc.clientHelloRandom;
         // PSK
         byte[] b;
         i = Short.toUnsignedInt(buf.getShort());
@@ -375,6 +382,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             b = new byte[i];
             buf.get(b);
             this.masterSecret = new SecretKeySpec(b, "TlsMasterSecret");
+            logMasterSecret();
         } else {
             this.masterSecret = null;
         }
@@ -693,6 +701,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     void setMasterSecret(SecretKey secret) {
         masterSecret = secret;
+        logMasterSecret();
+    }
+
+    private void logMasterSecret() {
+        if (protocolVersion.compare(ProtocolVersion.TLS13) < 0) {
+            SSLLogger.logKey("CLIENT_RANDOM", this.clientHelloRandom, this.masterSecret);
+        }
     }
 
     void setResumptionMasterSecret(SecretKey secret) {
