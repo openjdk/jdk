@@ -45,6 +45,7 @@ public class URISyntaxException
      * The input string.
      */
     private String input;
+    
     /**
      * The index at which the parse error occurred,
      * or {@code -1} if the index is not known.
