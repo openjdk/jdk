@@ -2632,9 +2632,9 @@ Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNative
 
   address call_addr = nep->entry_point();
   if (nep->need_transition()) {
-    BufferBlob* invoker = SharedRuntime::make_native_invoker(call_addr,
-                                                             nep->shadow_space(),
-                                                             arg_regs, ret_regs);
+    RuntimeStub* invoker = SharedRuntime::make_native_invoker(call_addr,
+                                                              nep->shadow_space(),
+                                                              arg_regs, ret_regs);
     if (invoker == NULL) {
       C->record_failure("native invoker not implemented on this platform");
       return NULL;

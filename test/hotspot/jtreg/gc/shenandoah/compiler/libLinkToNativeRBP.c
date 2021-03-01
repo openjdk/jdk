@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_LINUX_X86_THREAD_LINUX_X86_HPP
-#define OS_CPU_LINUX_X86_THREAD_LINUX_X86_HPP
+#ifdef _WIN64
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
 
- private:
-  void pd_initialize() {
-    _anchor.clear();
-  }
-
-  frame pd_last_frame();
-
- public:
-  static ByteSize last_Java_fp_offset()          {
-    return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_fp_offset();
-  }
-
-  bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext,
-    bool isInJava);
-
-  bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
-private:
-  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
-public:
-
-#endif // OS_CPU_LINUX_X86_THREAD_LINUX_X86_HPP
+EXPORT int foo() {
+  return 0;
+}
