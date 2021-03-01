@@ -44,7 +44,7 @@ inline void ParallelScavengeHeap::invoke_scavenge() {
 }
 
 inline void ParallelScavengeHeap::capture_live() {
-  _live = young_gen()->used_in_bytes() + old_gen()->used_in_bytes();
+  _live_estimate = young_gen()->used_in_bytes() + old_gen()->used_in_bytes();
 }
 
 inline bool ParallelScavengeHeap::is_in_young(oop p) {
