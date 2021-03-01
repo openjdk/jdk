@@ -56,8 +56,9 @@ public class FastTooltipSwitchIAE {
         try {
             System.out.println("LookAndFeel: " + laf.getClassName());
             UIManager.setLookAndFeel(laf.getClassName());
-        } catch (ClassNotFoundException | InstantiationException |
-                UnsupportedLookAndFeelException | IllegalAccessException e) {
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.err.println("Unsupported L&F: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
