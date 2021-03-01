@@ -54,10 +54,9 @@ static MTLRenderPipelineDescriptor * templateTexturePipelineDesc = nil;
 static MTLRenderPipelineDescriptor * templateAATexturePipelineDesc = nil;
 static MTLRenderPipelineDescriptor * templateLCDPipelineDesc = nil;
 static MTLRenderPipelineDescriptor * templateAAPipelineDesc = nil;
-static void setTxtUniforms(
-        id<MTLRenderCommandEncoder> encoder, int color, int mode, int interpolation, bool repeat, jfloat extraAlpha,
-        const SurfaceRasterFlags * srcFlags, const SurfaceRasterFlags * dstFlags
-);
+static void
+setTxtUniforms(MTLContext *mtlc, int color, id <MTLRenderCommandEncoder> encoder, int interpolation, bool repeat,
+               jfloat extraAlpha, const SurfaceRasterFlags *srcFlags, const SurfaceRasterFlags *dstFlags, int mode);
 
 static void initTemplatePipelineDescriptors() {
     if (templateRenderPipelineDesc != nil && templateTexturePipelineDesc != nil)
@@ -205,9 +204,9 @@ jint _color;
             fragShader = @"lcd_color";
             rpDesc = [[templateLCDPipelineDesc copy] autorelease];
         }
-        setTxtUniforms(encoder, _color, 1,
+        setTxtUniforms(mtlc, _color, encoder,
                        renderOptions->interpolation, NO, [mtlc.composite getExtraAlpha], &renderOptions->srcFlags,
-                       &renderOptions->dstFlags);
+                       &renderOptions->dstFlags, 1);
     } else if (renderOptions->isAAShader) {
         vertShader = @"vert_col_aa";
         fragShader = @"frag_col_aa";
@@ -248,9 +247,9 @@ jint _color;
         fragShader = @"frag_txt_xorMode";
         rpDesc = [[templateTexturePipelineDesc copy] autorelease];
 
-        setTxtUniforms(encoder, col, 1,
+        setTxtUniforms(mtlc, col, encoder,
                        renderOptions->interpolation, NO, [mtlc.composite getExtraAlpha],
-                       &renderOptions->srcFlags, &renderOptions->dstFlags);
+                       &renderOptions->srcFlags, &renderOptions->dstFlags, 1);
         [encoder setFragmentBytes:&xorColor length:sizeof(xorColor) atIndex:0];
 
         [encoder setFragmentTexture:dstOps->pTexture atIndex:1];
@@ -786,9 +785,9 @@ jint _color;
         [encoder setFragmentTexture:_paintTexture atIndex:0];
     }
     const SurfaceRasterFlags srcFlags = {_isOpaque, renderOptions->srcFlags.isPremultiplied};
-    setTxtUniforms(encoder, 0, 0,
+    setTxtUniforms(mtlc, 0, encoder,
                    renderOptions->interpolation, YES, [mtlc.composite getExtraAlpha],
-                   &srcFlags, &renderOptions->dstFlags);
+                   &srcFlags, &renderOptions->dstFlags, 0);
 
     id <MTLRenderPipelineState> pipelineState = [pipelineStateStorage getPipelineState:rpDesc
                                                                         vertexShaderId:vertShader
@@ -867,72 +866,12 @@ jint _color;
     return @"unknown-paint";
 }
 
-static bool samplersInitialized = false;
-static id<MTLSamplerState> samplerNearestClamp = nil;
-static id<MTLSamplerState> samplerLinearClamp = nil;
-static id<MTLSamplerState> samplerNearestRepeat = nil;
-static id<MTLSamplerState> samplerLinearRepeat = nil;
-
-void initSamplers(id<MTLDevice> device) {
-    // TODO: move this code into SamplerManager (need implement)
-
-    if (samplersInitialized) {
-        // Release old samplers if any
-        [samplerNearestClamp release];
-        [samplerLinearClamp release];
-        [samplerNearestRepeat release];
-        [samplerLinearRepeat release];
-
-        samplersInitialized = false;
-    }
-
-    MTLSamplerDescriptor *samplerDescriptor = [[MTLSamplerDescriptor new] autorelease];
-
-    samplerDescriptor.rAddressMode = MTLSamplerAddressModeClampToEdge;
-    samplerDescriptor.sAddressMode = MTLSamplerAddressModeClampToEdge;
-    samplerDescriptor.tAddressMode = MTLSamplerAddressModeClampToEdge;
-
-    samplerDescriptor.minFilter = MTLSamplerMinMagFilterNearest;
-    samplerDescriptor.magFilter = MTLSamplerMinMagFilterNearest;
-    samplerNearestClamp = [device newSamplerStateWithDescriptor:samplerDescriptor];
-
-    samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
-    samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
-    samplerLinearClamp = [device newSamplerStateWithDescriptor:samplerDescriptor];
-
-    samplerDescriptor.rAddressMode = MTLSamplerAddressModeRepeat;
-    samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
-    samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
-
-    samplerDescriptor.minFilter = MTLSamplerMinMagFilterNearest;
-    samplerDescriptor.magFilter = MTLSamplerMinMagFilterNearest;
-    samplerNearestRepeat = [device newSamplerStateWithDescriptor:samplerDescriptor];
-
-    samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
-    samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
-    samplerLinearRepeat = [device newSamplerStateWithDescriptor:samplerDescriptor];
-
-    samplersInitialized = true;
-}
-
-static void setSampler(id<MTLRenderCommandEncoder> encoder, int interpolation, bool repeat) {
-    id<MTLSamplerState> sampler;
-    if (repeat) {
-        sampler = interpolation == INTERPOLATION_BILINEAR ? samplerLinearRepeat : samplerNearestRepeat;
-    } else {
-        sampler = interpolation == INTERPOLATION_BILINEAR ? samplerLinearClamp : samplerNearestClamp;
-    }
-    [encoder setFragmentSamplerState:sampler atIndex:0];
-}
-
-static void setTxtUniforms(
-        id<MTLRenderCommandEncoder> encoder, int color, int mode, int interpolation, bool repeat, jfloat extraAlpha,
-        const SurfaceRasterFlags * srcFlags, const SurfaceRasterFlags * dstFlags
-) {
+static void
+setTxtUniforms(MTLContext *mtlc, int color, id <MTLRenderCommandEncoder> encoder, int interpolation, bool repeat,
+               jfloat extraAlpha, const SurfaceRasterFlags *srcFlags, const SurfaceRasterFlags *dstFlags, int mode) {
     struct TxtFrameUniforms uf = {RGBA_TO_V4(color), mode, srcFlags->isOpaque, dstFlags->isOpaque, extraAlpha};
     [encoder setFragmentBytes:&uf length:sizeof(uf) atIndex:FrameUniformBuffer];
-
-    setSampler(encoder, interpolation, repeat);
+    [mtlc.samplerManager setSamplerWithEncoder:encoder interpolation:interpolation repeat:repeat];
 }
 
 // For the current paint mode:
@@ -963,7 +902,7 @@ static void setTxtUniforms(
                         FLOAT_ARR_TO_V4([rescaleOp getScaleFactors]), FLOAT_ARR_TO_V4([rescaleOp getOffsets])
                 };
                 [encoder setFragmentBytes:&uf length:sizeof(uf) atIndex:FrameUniformBuffer];
-                setSampler(encoder, renderOptions->interpolation, NO);
+                [mtlc.samplerManager setSamplerWithEncoder:encoder interpolation:renderOptions->interpolation repeat:NO];
             } else if ([bufImgOp isKindOfClass:[MTLConvolveOp class]]) {
                 MTLConvolveOp *convolveOp = bufImgOp;
                 fragShader = @"frag_txt_op_convolve";
@@ -974,7 +913,7 @@ static void setTxtUniforms(
                         convolveOp.kernelSize, convolveOp.isEdgeZeroFill,
                 };
                 [encoder setFragmentBytes:&uf length:sizeof(uf) atIndex:FrameUniformBuffer];
-                setSampler(encoder, renderOptions->interpolation, NO);
+                [mtlc.samplerManager setSamplerWithEncoder:encoder interpolation:renderOptions->interpolation repeat:NO];
 
                 [encoder setFragmentBuffer:[convolveOp getBuffer] offset:0 atIndex:2];
             } else if ([bufImgOp isKindOfClass:[MTLLookupOp class]]) {
@@ -986,14 +925,14 @@ static void setTxtUniforms(
                         FLOAT_ARR_TO_V4([lookupOp getOffset]), lookupOp.isUseSrcAlpha, lookupOp.isNonPremult,
                 };
                 [encoder setFragmentBytes:&uf length:sizeof(uf) atIndex:FrameUniformBuffer];
-                setSampler(encoder, renderOptions->interpolation, NO);
+                [mtlc.samplerManager setSamplerWithEncoder:encoder interpolation:renderOptions->interpolation repeat:NO];
                 [encoder setFragmentTexture:[lookupOp getLookupTexture] atIndex:1];
             }
         } else {
-            setTxtUniforms(encoder, 0, 0,
+            setTxtUniforms(mtlc, 0, encoder,
                            renderOptions->interpolation, NO, [mtlc.composite getExtraAlpha],
                            &renderOptions->srcFlags,
-                           &renderOptions->dstFlags);
+                           &renderOptions->dstFlags, 0);
 
         }
         id <MTLRenderPipelineState> pipelineState = [pipelineStateStorage getPipelineState:rpDesc
@@ -1022,18 +961,18 @@ static void setTxtUniforms(
         MTLRenderPipelineDescriptor * rpDesc = [[templateTexturePipelineDesc copy] autorelease];
 
         const int col = 0 ^ xorColor;
-        setTxtUniforms(encoder, col, 0,
+        setTxtUniforms(mtlc, col, encoder,
                        renderOptions->interpolation, NO, [mtlc.composite getExtraAlpha],
-                       &renderOptions->srcFlags, &renderOptions->dstFlags);
+                       &renderOptions->srcFlags, &renderOptions->dstFlags, 0);
         [encoder setFragmentBytes:&xorColor length:sizeof(xorColor) atIndex: 0];
 
         BMTLSDOps *dstOps = MTLRenderQueue_GetCurrentDestination();
         [encoder setFragmentTexture:dstOps->pTexture atIndex:1];
 
-        setTxtUniforms(encoder, 0, 0,
+        setTxtUniforms(mtlc, 0, encoder,
                        renderOptions->interpolation, NO, [mtlc.composite getExtraAlpha],
                        &renderOptions->srcFlags,
-                       &renderOptions->dstFlags);
+                       &renderOptions->dstFlags, 0);
 
         id <MTLRenderPipelineState> pipelineState = [pipelineStateStorage getPipelineState:rpDesc
                                                                             vertexShaderId:vertShader

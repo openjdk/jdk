@@ -361,6 +361,12 @@ MTLBlitLoops_IsoBlit(JNIEnv *env,
     RETURN_IF_NULL(mtlc);
     RETURN_IF_NULL(srcOps);
     RETURN_IF_NULL(dstOps);
+    // Verify if we use a valid MTLContext
+    MTLSDOps *dstMTLOps = (MTLSDOps *)dstOps->privOps;
+    RETURN_IF_TRUE(dstMTLOps->configInfo != NULL && mtlc != dstMTLOps->configInfo->context);
+
+    MTLSDOps *srcMTLOps = (MTLSDOps *)srcOps->privOps;
+    RETURN_IF_TRUE(srcMTLOps->configInfo != NULL && mtlc != srcMTLOps->configInfo->context);
 
     id<MTLTexture> srcTex = srcOps->pTexture;
     id<MTLTexture> dstTex = dstOps->pTexture;
@@ -484,6 +490,9 @@ MTLBlitLoops_Blit(JNIEnv *env,
     RETURN_IF_NULL(mtlc);
     RETURN_IF_NULL(srcOps);
     RETURN_IF_NULL(dstOps);
+    // Verify if we use a valid MTLContext
+    MTLSDOps *dstMTLOps = (MTLSDOps *)dstOps->privOps;
+    RETURN_IF_TRUE(dstMTLOps->configInfo != NULL && mtlc != dstMTLOps->configInfo->context);
 
     id<MTLTexture> dest = dstOps->pTexture;
     if (dest == NULL) {

@@ -38,6 +38,9 @@
 #include "MTLPaints.h"
 #include "MTLClip.h"
 #include "EncoderManager.h"
+#include "MTLSamplerManager.h"
+
+@class MTLStencilManager;
 
 // Constant from
 // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
@@ -74,6 +77,8 @@
 @property (strong) id<MTLBuffer>               vertexBuffer;
 
 @property (readonly) EncoderManager * encoderManager;
+@property (readonly) MTLSamplerManager * samplerManager;
+@property (readonly) MTLStencilManager * stencilManager;
 
 @property (strong)MTLPipelineStatesStorage*   pipelineStateStorage;
 @property (strong)MTLTexturePool*             texturePool;

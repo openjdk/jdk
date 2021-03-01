@@ -26,10 +26,10 @@
 #include "MTLClip.h"
 
 #include "MTLContext.h"
+#include "MTLStencilManager.h"
 #include "common.h"
 
 static MTLRenderPipelineDescriptor * templateStencilPipelineDesc = nil;
-static id<MTLDepthStencilState> stencilState = nil;
 
 static void initTemplatePipelineDescriptors() {
     if (templateStencilPipelineDesc != nil)
@@ -48,27 +48,6 @@ static void initTemplatePipelineDescriptors() {
     templateStencilPipelineDesc.vertexDescriptor = vertDesc;
     templateStencilPipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormatR8Uint; // A byte buffer format
     templateStencilPipelineDesc.label = @"template_stencil";
-}
-
-static id<MTLDepthStencilState> getStencilState(id<MTLDevice> device) {
-    if (stencilState == nil) {
-        MTLDepthStencilDescriptor* stencilDescriptor;
-        stencilDescriptor = [[MTLDepthStencilDescriptor new] autorelease];
-        stencilDescriptor.frontFaceStencil.stencilCompareFunction = MTLCompareFunctionEqual;
-        stencilDescriptor.frontFaceStencil.stencilFailureOperation = MTLStencilOperationKeep;
-
-        // TODO : backFaceStencil can be set to nil if all primitives are drawn as front-facing primitives
-        // currently, fill parallelogram uses back-facing primitive drawing - that needs to be changed.
-        // Once that part is changed, set backFaceStencil to nil
-        //stencilDescriptor.backFaceStencil = nil;
-
-        stencilDescriptor.backFaceStencil.stencilCompareFunction = MTLCompareFunctionEqual;
-        stencilDescriptor.backFaceStencil.stencilFailureOperation = MTLStencilOperationKeep;
-
-        stencilState = [device newDepthStencilStateWithDescriptor:stencilDescriptor];
-    }
-
-    return stencilState;
 }
 
 @implementation MTLClip {
@@ -128,6 +107,7 @@ static id<MTLDepthStencilState> getStencilState(id<MTLDevice> device) {
     _clipType = other->_clipType;
     _stencilMaskGenerationInProgress = other->_stencilMaskGenerationInProgress;
     _dstOps = other->_dstOps;
+    _mtlc = other->_mtlc;
     if (other->_clipType == RECT_CLIP) {
         _clipRect = other->_clipRect;
     }
@@ -138,12 +118,6 @@ static id<MTLDepthStencilState> getStencilState(id<MTLDevice> device) {
     _stencilMaskGenerationInProgress = JNI_FALSE;
 }
 
-- (void)resetStencilState {
-    if (stencilState != nil) {
-        [stencilState release];
-        stencilState = nil;
-    }
-}
 
 - (void)setClipRectX1:(jint)x1 Y1:(jint)y1 X2:(jint)x2 Y2:(jint)y2 {
     if (_clipType == SHAPE_CLIP) {
@@ -308,7 +282,7 @@ static id<MTLDepthStencilState> getStencilState(id<MTLDevice> device) {
 
     if (_clipType == SHAPE_CLIP) {
         // Enable stencil test
-        [encoder setDepthStencilState:getStencilState(device)];
+        [encoder setDepthStencilState:_mtlc.stencilManager.stencilState];
         [encoder setStencilReferenceValue:0xFF];
     }
 }

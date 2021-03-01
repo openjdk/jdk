@@ -30,6 +30,8 @@
 #include "jlong.h"
 #import "MTLContext.h"
 #include "MTLRenderQueue.h"
+#import "MTLSamplerManager.h"
+#import "MTLStencilManager.h"
 
 
 extern jboolean MTLSD_InitMTLWindow(JNIEnv *env, MTLSDOps *mtlsdo);
@@ -108,12 +110,15 @@ MTLTransform* tempTransform = nil;
     NSObject*          _bufImgOp; // TODO: pass as parameter of IsoBlit
 
     EncoderManager * _encoderManager;
+    MTLSamplerManager * _samplerManager;
+    MTLStencilManager * _stencilManager;
 }
 
 @synthesize textureFunction,
             vertexCacheEnabled, aaEnabled, device, pipelineStateStorage,
             commandQueue, blitCommandQueue, vertexBuffer,
-            texturePool, paint=_paint;
+            texturePool, paint=_paint, encoderManager=_encoderManager,
+            samplerManager=_samplerManager, stencilManager=_stencilManager;
 
 extern void initSamplers(id<MTLDevice> device);
 
@@ -137,6 +142,8 @@ extern void initSamplers(id<MTLDevice> device);
 
         _encoderManager = [[EncoderManager alloc] init];
         [_encoderManager setContext:self];
+        _samplerManager = [[MTLSamplerManager alloc] initWithDevice:device];
+        _stencilManager = [[MTLStencilManager alloc] initWithDevice:device];
         _composite = [[MTLComposite alloc] init];
         _paint = [[MTLPaint alloc] init];
         _transform = [[MTLTransform alloc] init];
@@ -150,8 +157,6 @@ extern void initSamplers(id<MTLDevice> device);
         blitCommandQueue = [device newCommandQueue];
 
         _tempTransform = [[MTLTransform alloc] init];
-
-        initSamplers(device);
     }
     return self;
 }
@@ -165,6 +170,8 @@ extern void initSamplers(id<MTLDevice> device);
     self.blitCommandQueue = nil;
     self.pipelineStateStorage = nil;
     [_encoderManager release];
+    [_samplerManager release];
+    [_stencilManager release];
     [_composite release];
     [_paint release];
     [_transform release];
@@ -177,7 +184,6 @@ extern void initSamplers(id<MTLDevice> device);
     J2dTraceLn(J2D_TRACE_VERBOSE, "MTLContext : reset");
 
     // Add code for context state reset here
-    [_clip resetStencilState];
 }
 
  - (MTLCommandBufferWrapper *) getCommandBufferWrapper {

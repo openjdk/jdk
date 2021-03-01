@@ -88,6 +88,15 @@ enum {
 #define RETURN_IF_NULL(value)   ACT_IF_NULL(return, value)
 #define CONTINUE_IF_NULL(value) ACT_IF_NULL(continue, value)
 
+#define ACT_IF_TRUE(ACTION, value)         \
+    if ((value)) {                         \
+        J2dTraceLn1(J2D_TRACE_ERROR,       \
+                    "%s is false", #value);\
+        ACTION;                            \
+    } else do { } while (0)
+
+#define RETURN_IF_TRUE(value)   ACT_IF_TRUE(return, value)
+
 MTLContext *MTLRenderQueue_GetCurrentContext();
 BMTLSDOps *MTLRenderQueue_GetCurrentDestination();
 void commitEncodedCommands();
