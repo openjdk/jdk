@@ -1189,41 +1189,6 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Sets the rendering intent of the profile. This is used to select the
-     * proper transform from a profile that has multiple transforms.
-     */
-    void setRenderingIntent(int renderingIntent) {
-        byte[] theHeader = getData(icSigHead);/* getData will activate deferred
-                                                 profiles if necessary */
-        intToBigEndian (renderingIntent, theHeader, icHdrRenderingIntent);
-                                                 /* set the rendering intent */
-        setData (icSigHead, theHeader);
-    }
-
-    /**
-     * Returns the rendering intent of the profile. This is used to select the
-     * proper transform from a profile that has multiple transforms. It is
-     * typically set in a source profile to select a transform from an output
-     * profile.
-     */
-    int getRenderingIntent() {
-        byte[] theHeader = getData(icSigHead);/* getData will activate deferred
-                                                 profiles if necessary */
-
-        int renderingIntent = intFromBigEndian(theHeader, icHdrRenderingIntent);
-                                                 /* set the rendering intent */
-
-        /* According to ICC spec, only the least-significant 16 bits shall be
-         * used to encode the rendering intent. The most significant 16 bits
-         * shall be set to zero. Thus, we are ignoring two most significant
-         * bytes here.
-         *
-         *  See http://www.color.org/ICC1v42_2006-05.pdf, section 7.2.15.
-         */
-        return (0xffff & renderingIntent);
-    }
-
-    /**
      * Returns the number of color components in the "input" color space of this
      * profile. For example if the color space type of this profile is
      * {@code TYPE_RGB}, then this method will return 3.
@@ -1544,32 +1509,16 @@ public class ICC_Profile implements Serializable {
         return theColorSpace;
     }
 
-
-    static int intFromBigEndian(byte[] array, int index) {
+    private static int intFromBigEndian(byte[] array, int index) {
         return (((array[index]   & 0xff) << 24) |
                 ((array[index+1] & 0xff) << 16) |
                 ((array[index+2] & 0xff) <<  8) |
                  (array[index+3] & 0xff));
     }
 
-
-    static void intToBigEndian(int value, byte[] array, int index) {
-            array[index]   = (byte) (value >> 24);
-            array[index+1] = (byte) (value >> 16);
-            array[index+2] = (byte) (value >>  8);
-            array[index+3] = (byte) (value);
-    }
-
-
-    static short shortFromBigEndian(byte[] array, int index) {
+    private static short shortFromBigEndian(byte[] array, int index) {
         return (short) (((array[index]   & 0xff) << 8) |
                          (array[index+1] & 0xff));
-    }
-
-
-    static void shortToBigEndian(short value, byte[] array, int index) {
-            array[index]   = (byte) (value >> 8);
-            array[index+1] = (byte) (value);
     }
 
     /**
