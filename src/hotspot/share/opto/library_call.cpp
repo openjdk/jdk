@@ -2215,10 +2215,18 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
 
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
+
+  Node* adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
+
   if (_gvn.type(base)->isa_ptr() == TypePtr::NULL_PTR) {
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
     } else {
+      set_map(old_map);
+      set_sp(old_sp);
       return false; // off-heap oop accesses are not supported
     }
   } else {
@@ -2234,11 +2242,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   Node* val = is_store ? argument(4) : NULL;
 
-  // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
-
-  Node* adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
   const TypePtr* adr_type = _gvn.type(adr)->isa_ptr();
   if (adr_type == TypePtr::NULL_PTR) {
     set_map(old_map);
