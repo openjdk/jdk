@@ -52,26 +52,9 @@ void VM_Version_Ext::initialize_cpu_information(void) {
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "AArch64");
 
-  int fd = open("/proc/device-tree/compatible", O_RDONLY);
-  if (fd != -1) {
-    struct stat statbuf;
-    fstat(fd, &statbuf);
-    char* tmp = NEW_C_HEAP_ARRAY(char, statbuf.st_size, mtInternal);
-    if (read(fd, tmp, statbuf.st_size) != -1) {
-      // Replace '\0' to ' '
-      char *tok = tmp;
-      while ((tok = (char*)memchr(tok, 0, statbuf.st_size - (tok - tmp) - 1)) != NULL) {
-        *tok = ' ';
-      }
-      snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "%s %s", tmp, _features_string);
-    } else {
-      snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 %s", _features_string);
-    }
-    FREE_C_HEAP_ARRAY(char, tmp);
-    close(fd);
-  } else {
-    snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 %s", _features_string);
-  }
+  VM_Version::get_compatible_board(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
+  size_t desc_len = strlen(_cpu_desc);
+  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
 
   _initialized = true;
 }
