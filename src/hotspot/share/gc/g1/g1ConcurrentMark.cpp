@@ -972,6 +972,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
   G1ConcurrentMark* _cm;
   HeapRegionClaimer _hrclaimer;
   uint volatile _total_selected_for_rebuild;
+  size_t volatile _live;
 
   G1PrintRegionLivenessInfoClosure _cl;
 
@@ -982,6 +983,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
     G1PrintRegionLivenessInfoClosure* _cl;
 
     uint _num_regions_selected_for_rebuild;  // The number of regions actually selected for rebuild.
+    size_t _live; // Cumulative live set size over iterated regions
 
     void update_remset_before_rebuild(HeapRegion* hr) {
       G1RemSetTrackingPolicy* tracking_policy = _g1h->policy()->remset_tracker();
@@ -1054,30 +1056,34 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
 
   public:
     G1UpdateRemSetTrackingBeforeRebuild(G1CollectedHeap* g1h, G1ConcurrentMark* cm, G1PrintRegionLivenessInfoClosure* cl) :
-      _g1h(g1h), _cm(cm), _cl(cl), _num_regions_selected_for_rebuild(0) { }
+      _g1h(g1h), _cm(cm), _cl(cl), _num_regions_selected_for_rebuild(0), _live(0) { }
 
     virtual bool do_heap_region(HeapRegion* r) {
       update_remset_before_rebuild(r);
       update_marked_bytes(r);
 
+      _live += r->live_bytes();
       return false;
     }
 
     uint num_selected_for_rebuild() const { return _num_regions_selected_for_rebuild; }
+    size_t live_estimate() const { return _live; }
   };
 
 public:
   G1UpdateRemSetTrackingBeforeRebuildTask(G1CollectedHeap* g1h, G1ConcurrentMark* cm, uint num_workers) :
     AbstractGangTask("G1 Update RemSet Tracking Before Rebuild"),
-    _g1h(g1h), _cm(cm), _hrclaimer(num_workers), _total_selected_for_rebuild(0), _cl("Post-Marking") { }
+    _g1h(g1h), _cm(cm), _hrclaimer(num_workers), _total_selected_for_rebuild(0), _live(0), _cl("Post-Marking") { }
 
   virtual void work(uint worker_id) {
     G1UpdateRemSetTrackingBeforeRebuild update_cl(_g1h, _cm, &_cl);
     _g1h->heap_region_par_iterate_from_worker_offset(&update_cl, &_hrclaimer, worker_id);
     Atomic::add(&_total_selected_for_rebuild, update_cl.num_selected_for_rebuild());
+    Atomic::add(&_live, update_cl.live_estimate());
   }
 
   uint total_selected_for_rebuild() const { return _total_selected_for_rebuild; }
+  size_t live_estimate() const { return _live; }
 
   // Number of regions for which roughly one thread should be spawned for this work.
   static const uint RegionsPerThread = 384;
@@ -1102,16 +1108,6 @@ void G1ConcurrentMark::remark() {
   if (has_aborted()) {
     return;
   }
-
-  // collect the liveness info from all referenced regions
-  // the info should be consistent form the previous marking phase
-  size_t live_size = 0;
-  uint max_reserved_regions = _g1h->max_reserved_regions();
-  for (uint i = 0; i < max_reserved_regions; i++) {
-    live_size += _region_mark_stats[i]._live_words;
-  }
-
-  _g1h->set_live(live_size * HeapWordSize);
 
   G1Policy* policy = _g1h->policy();
   policy->record_concurrent_mark_remark_start();
@@ -1157,6 +1153,7 @@ void G1ConcurrentMark::remark() {
       G1UpdateRemSetTrackingBeforeRebuildTask cl(_g1h, this, num_workers);
       log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->num_regions());
       _g1h->workers()->run_task(&cl, num_workers);
+      _g1h->set_live(cl.live_estimate());
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
                                       _g1h->num_regions(), cl.total_selected_for_rebuild());
