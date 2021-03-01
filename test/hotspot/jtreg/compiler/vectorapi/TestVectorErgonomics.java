@@ -26,6 +26,7 @@ package compiler.vectorapi;
 /*
  * @test TestVectorErgonomics
  * @bug 8262508
+ * @requires vm.compiler2.enabled
  * @summary Check ergonomics for Vector API
  * @library /test/lib
  * @run main/othervm compiler.vectorapi.TestVectorErgonomics
