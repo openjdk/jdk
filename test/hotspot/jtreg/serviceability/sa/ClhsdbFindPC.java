@@ -203,11 +203,15 @@ public class ClhsdbFindPC {
             parts = parts[1].split(" \\[");
             parts = parts[1].split("\\]");
             String stackAddress = parts[0];  // address of the thread's stack
-            cmdStr = "findpc " + stackAddress;
-            cmds = List.of(cmdStr);
-            expStrMap = new HashMap<>();
-            expStrMap.put(cmdStr, List.of("In java stack"));
-            runTest(withCore, cmds, expStrMap);
+            if (Long.decode(stackAddress) == 0L) {
+                System.out.println("Stack address is " + stackAddress + ". Skipping test.");
+            } else {
+                cmdStr = "findpc " + stackAddress;
+                cmds = List.of(cmdStr);
+                expStrMap = new HashMap<>();
+                expStrMap.put(cmdStr, List.of("In java stack"));
+                runTest(withCore, cmds, expStrMap);
+            }
 
             // Run 'examine <addr>' using a thread's tid as the address. The
             // examine output will be the of the form:

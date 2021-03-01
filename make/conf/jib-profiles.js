@@ -478,7 +478,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
-		"--disable-jvm-feature-jvmci",
 		"--enable-compatible-cds-alignment",
             ],
         },

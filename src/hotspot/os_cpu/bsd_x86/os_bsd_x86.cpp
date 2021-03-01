@@ -454,7 +454,10 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
 #ifdef AMD64
       if (sig == SIGFPE  &&
-          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
+          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV
+           // Workaround for macOS ARM incorrectly reporting FPE_FLTINV for "div by 0"
+           // instead of the expected FPE_FLTDIV when running x86_64 binary under Rosetta emulation
+           MACOS_ONLY(|| (VM_Version::is_cpu_emulated() && info->si_code == FPE_FLTINV)))) {
         stub =
           SharedRuntime::
           continuation_for_implicit_exception(thread,

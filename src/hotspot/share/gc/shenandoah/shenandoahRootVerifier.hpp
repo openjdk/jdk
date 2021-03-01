@@ -39,38 +39,11 @@ public:
   ~ShenandoahGCStateResetter();
 };
 
-class ShenandoahRootVerifier : public StackObj {
+class ShenandoahRootVerifier : public AllStatic {
 public:
-  enum RootTypes {
-    None                = 0,
-    SerialRoots         = 1 << 0,
-    ThreadRoots         = 1 << 1,
-    CodeRoots           = 1 << 2,
-    CLDGRoots           = 1 << 3,
-    WeakRoots           = 1 << 4,
-    StringDedupRoots    = 1 << 5,
-    JNIHandleRoots      = 1 << 6,
-    AllRoots            = (SerialRoots | ThreadRoots | CodeRoots | CLDGRoots | WeakRoots | StringDedupRoots | JNIHandleRoots)
-  };
-
-private:
-  RootTypes _types;
-
-public:
-  ShenandoahRootVerifier(RootTypes types = AllRoots);
-
-  void excludes(RootTypes types);
-  void oops_do(OopClosure* cl);
-
   // Used to seed ShenandoahVerifier, do not honor root type filter
-  void roots_do(OopClosure* cl);
-  void strong_roots_do(OopClosure* cl);
-
-  static RootTypes combine(RootTypes t1, RootTypes t2);
-private:
-  bool verify(RootTypes type) const;
-
-  void weak_roots_do(OopClosure* cl);
+  static void roots_do(OopClosure* cl);
+  static void strong_roots_do(OopClosure* cl);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP

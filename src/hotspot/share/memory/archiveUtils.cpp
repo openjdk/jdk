@@ -33,8 +33,8 @@
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -236,8 +236,7 @@ void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t neede
 void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
   _rs = rs;
   _vs = vs;
-  // Start with 0 committed bytes. The memory will be committed as needed by
-  // MetaspaceShared::commit_to().
+  // Start with 0 committed bytes. The memory will be committed as needed.
   if (!_vs->initialize(*_rs, 0)) {
     fatal("Unable to allocate memory for shared space");
   }

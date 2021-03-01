@@ -32,6 +32,7 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.inline.hpp"
 #include "gc/z/zUtils.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"

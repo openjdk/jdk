@@ -163,7 +163,6 @@ public class CommandProcessor {
 
         Tokens(String cmd) {
             input = cmd;
-
             // check for quoting
             int quote = cmd.indexOf('"');
             ArrayList<String> t = new ArrayList<>();
@@ -267,34 +266,12 @@ public class CommandProcessor {
             out.println("Usage: " + usage);
         }
 
-        void printOopValue(Oop oop) {
-            if (oop != null) {
-                Klass k = oop.getKlass();
-                Symbol s = k.getName();
-                if (s != null) {
-                    out.print("Oop for " + s.asString() + " @ ");
-                } else {
-                    out.print("Oop @ ");
-                }
-                Oop.printOopAddressOn(oop, out);
-            } else {
-                out.print("null");
-            }
-        }
-
         void printNode(SimpleTreeNode node) {
             int count = node.getChildCount();
             for (int i = 0; i < count; i++) {
                 try {
                     SimpleTreeNode field = node.getChild(i);
-                    if (field instanceof OopTreeNodeAdapter) {
-                        out.print(field);
-                        out.print(" ");
-                        printOopValue(((OopTreeNodeAdapter)field).getOop());
-                        out.println();
-                    } else {
-                        out.println(field);
-                    }
+                    out.println(field);
                 } catch (Exception e) {
                     out.println();
                     out.println("Error: " + e);
@@ -1063,7 +1040,7 @@ public class CommandProcessor {
                         Oop oop = VM.getVM().getObjectHeap().newOop(handle);
                         node = new OopTreeNodeAdapter(oop, null);
 
-                        out.println("instance of " + node.getValue() + " @ " + a +
+                        out.println("instance of " + node.getValue() +
                                     " (size = " + oop.getObjectSize() + ")");
                     } else if (VM.getVM().getCodeCache().contains(a)) {
                         CodeBlob blob = VM.getVM().getCodeCache().findBlobUnsafe(a);
@@ -1809,25 +1786,60 @@ public class CommandProcessor {
                 sysProps.run();
             }
         },
-        new Command("dumpheap", "dumpheap [filename]", false) {
+        new Command("dumpheap", "dumpheap [gz=<1-9>] [filename]", false) {
             public void doit(Tokens t) {
-                if (t.countTokens() > 1) {
+                int cntTokens = t.countTokens();
+                if (cntTokens > 2) {
+                    err.println("More than 2 options specified: " + cntTokens);
                     usage();
-                } else {
-                    JMap jmap = new JMap();
-                    String filename;
-                    if (t.countTokens() == 1) {
-                        filename = t.nextToken();
+                    return;
+                }
+                JMap jmap = new JMap();
+                String filename = "heap.bin";
+                int gzlevel = 0;
+                /*
+                 * Possible command:
+                 *     dumpheap gz=1 file;
+                 *     dumpheap gz=1;
+                 *     dumpheap file;
+                 *     dumpheap
+                 *
+                 * Use default filename if cntTokens == 0.
+                 * Handle cases with cntTokens == 1 or 2.
+                 */
+                if (cntTokens == 1) { // first argument could be filename or "gz="
+                    String option = t.nextToken();
+                    if (!option.startsWith("gz=")) {
+                        filename = option;
                     } else {
-                        filename = "heap.bin";;
-                    }
-                    try {
-                        jmap.writeHeapHprofBin(filename);
-                    } catch (Exception e) {
-                        err.println("Error: " + e);
-                        if (verboseExceptions) {
-                            e.printStackTrace(err);
+                        gzlevel = parseHeapDumpCompressionLevel(option);
+                        if (gzlevel == 0) {
+                            usage();
+                            return;
                         }
+                        filename = "heap.bin.gz";
+                    }
+                }
+                if (cntTokens == 2) { // first argument is "gz=" followed by filename
+                    String option = t.nextToken();
+                    gzlevel = parseHeapDumpCompressionLevel(option);
+                    if (gzlevel == 0) {
+                        usage();
+                        return;
+                    }
+                    filename = t.nextToken();
+                    if (filename.startsWith("gz=")) {
+                        err.println("Filename should not start with \"gz=\": " + filename);
+                        usage();
+                        return;
+                    }
+                }
+                try {
+                    jmap.writeHeapHprofBin(filename, gzlevel);
+                } catch (Exception e) {
+                    err.println("Error: " + e);
+                    if (verboseExceptions) {
+                        e.printStackTrace(err);
                     }
                 }
             }
@@ -1938,7 +1950,7 @@ public class CommandProcessor {
         }
     }
 
-    static Pattern historyPattern = Pattern.compile("((!\\*)|(!\\$)|(!!-?)|(!-?[0-9][0-9]*)|(![a-zA-Z][^ ]*))");
+    static Pattern historyPattern = Pattern.compile("([\\\\]?)((!\\*)|(!\\$)|(!!-?)|(!-?[0-9][0-9]*)|(![a-zA-Z][^ ]*))");
 
     public void executeCommand(String ln, boolean putInHistory) {
         if (ln.indexOf('!') != -1) {
@@ -1951,12 +1963,20 @@ public class CommandProcessor {
                 Matcher m = historyPattern.matcher(ln);
                 int start = 0;
                 while (m.find()) {
+                    // Capture the text preceding the matched text.
                     if (m.start() > start) {
-                        result.append(ln.substring(start, m.start() - start));
+                        result.append(ln.substring(start, m.start()));
                     }
                     start = m.end();
 
-                    String cmd = m.group();
+                    if (m.group(1).length() != 0) {
+                        // This means we matched a `\` before the '!'. Don't do any history
+                        // expansion in this case. Just capture what matched after the `\`.
+                        result.append(m.group(2));
+                        continue;
+                    }
+
+                    String cmd = m.group(2);
                     if (cmd.equals("!!")) {
                         result.append((String)history.get(history.size() - 1));
                     } else if (cmd.equals("!!-")) {
@@ -2000,6 +2020,7 @@ public class CommandProcessor {
                                 String s = (String)history.get(i);
                                 if (s.startsWith(tail)) {
                                     result.append(s);
+                                    break; // only capture the most recent match in the history
                                 }
                             }
                         }
@@ -2092,5 +2113,35 @@ public class CommandProcessor {
                 }
             }
         }
+    }
+
+    /* Parse compression level
+     * @return   1-9    compression level
+     *           0      compression level is illegal
+     */
+    private int parseHeapDumpCompressionLevel(String option) {
+
+        String[] keyValue = option.split("=");
+        if (!keyValue[0].equals("gz")) {
+            err.println("Expected option is \"gz=\"");
+            return 0;
+        }
+        if (keyValue.length != 2) {
+            err.println("Exactly one argument is expected for option \"gz\"");
+            return 0;
+        }
+        int gzl = 0;
+        String level = keyValue[1];
+        try {
+            gzl = Integer.parseInt(level);
+        } catch (NumberFormatException e) {
+            err.println("gz option value not an integer ("+level+")");
+            return 0;
+        }
+        if (gzl < 1 || gzl > 9) {
+            err.println("Compression level out of range (1-9): " + level);
+            return 0;
+        }
+        return gzl;
     }
 }

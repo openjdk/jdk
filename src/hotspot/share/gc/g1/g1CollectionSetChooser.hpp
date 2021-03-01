@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,11 @@ class WorkGang;
 // methods.
 class G1CollectionSetChooser : public AllStatic {
   static uint calculate_work_chunk_size(uint num_workers, uint num_regions);
+
+  // Remove regions in the collection set candidates as long as the G1HeapWastePercent
+  // criteria is met. Keep at least the minimum amount of old regions to guarantee
+  // some progress.
+  static void prune(G1CollectionSetCandidates* candidates);
 public:
 
   static size_t mixed_gc_live_threshold_bytes() {

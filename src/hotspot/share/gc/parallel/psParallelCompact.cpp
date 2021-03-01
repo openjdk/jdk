@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -858,7 +859,6 @@ public:
     BoolObjectClosure* is_subject_to_discovery,
     BoolObjectClosure* is_alive_non_header) :
       ReferenceProcessor(is_subject_to_discovery,
-      ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
       ParallelGCThreads,   // mt processing degree
       true,                // mt discovery
       ParallelGCThreads,   // mt discovery degree

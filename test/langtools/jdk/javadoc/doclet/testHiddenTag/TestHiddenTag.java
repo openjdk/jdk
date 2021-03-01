@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8073100 8182765 8196202 8261079
+ * @bug 8073100 8182765 8196202 8261079 8261976
  * @summary ensure the hidden tag works as intended
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -72,7 +72,7 @@ public class TestHiddenTag extends JavadocTester {
                 """
                     <code><a href="A.html#visibleMethod()">visibleMethod</a></code>""",
                 """
-                    <h2 id="nested.classes.inherited.from.class.pkg1.A">Nested classes/interfaces in\
+                    <h2 id="nested-classes-inherited-from-class-pkg1.A">Nested classes/interfaces in\
                     herited from class&nbsp;pkg1.<a href="A.html" title="class in pkg1">A</a></h2>
                     <code><a href="A.VisibleInner.html" title="class in pkg1">A.VisibleInner</a>, <a\
                      href="A.VisibleInnerExtendsInvisibleInner.html" title="class in pkg1">A.Visible\
