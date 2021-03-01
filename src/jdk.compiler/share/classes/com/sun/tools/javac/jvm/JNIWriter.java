@@ -185,7 +185,7 @@ public class JNIWriter {
         }
         FileObject outFile
             = fileManager.getFileForOutput(outLocn,
-                "", className.replaceAll("[.$]", "_") + ".h", (FileObject) null);
+                "", className.replaceAll("[.$]", "_") + ".h", null);
         PrintWriter out = new PrintWriter(outFile.openWriter());
         try {
             write(out, c);

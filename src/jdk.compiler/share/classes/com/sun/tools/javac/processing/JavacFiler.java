@@ -441,7 +441,7 @@ public class JavacFiler implements Filer, Closeable {
     public JavaFileObject createClassFile(CharSequence nameAndModule,
                                           Element... originatingElements) throws IOException {
         Pair<ModuleSymbol, String> moduleAndClass = checkOrInferModule(nameAndModule);
-        return createSourceOrClassFile(moduleAndClass.fst, false, moduleAndClass.snd);
+        return createSourceOrClassFile(moduleAndClass.fst, false, moduleAndClass.snd, originatingElements);
     }
 
     private Pair<ModuleSymbol, String> checkOrInferModule(CharSequence moduleAndPkg) throws FilerException {
@@ -508,7 +508,7 @@ public class JavacFiler implements Filer, Closeable {
                                     JavaFileObject.Kind.CLASS);
 
         JavaFileObject fileObject =
-            fileManager.getJavaFileForOutput(loc, name, kind, originatingFiles(originatingElements));
+            fileManager.getJavaFileForOutputForOriginatingFiles(loc, name, kind, originatingFiles(originatingElements));
         checkFileReopening(fileObject, true);
 
         if (lastRound)
@@ -553,8 +553,8 @@ public class JavacFiler implements Filer, Closeable {
             checkName(strPkg);
 
         FileObject fileObject =
-            fileManager.getFileForOutput(location, strPkg,
-                                         relativeName.toString(), originatingFiles(originatingElements));
+            fileManager.getFileForOutputForOriginatingFiles(location, strPkg,
+                                                            relativeName.toString(), originatingFiles(originatingElements));
         checkFileReopening(fileObject, true);
 
         if (fileObject instanceof JavaFileObject)
@@ -595,7 +595,7 @@ public class JavacFiler implements Filer, Closeable {
         // invocation.
         FileObject fileObject;
         if (location.isOutputLocation()) {
-            fileObject = fileManager.getFileForOutput(location,
+            fileObject = fileManager.getFileForOutputForOriginatingFiles(location,
                     pkg,
                     relativeName.toString());
         } else {

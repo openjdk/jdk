@@ -376,7 +376,7 @@ class StandardDocFileFactory extends DocFileFactory {
             }
             String pkg = (lastSep == -1) ? "" : p.substring(0, lastSep);
             String rest = p.substring(lastSep + 1);
-            return fileManager.getFileForOutput(location, pkg, rest, (FileObject) null);
+            return fileManager.getFileForOutput(location, pkg, rest, null);
         }
     }
 }

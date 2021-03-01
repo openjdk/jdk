@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
-import javax.lang.model.element.Element;
 import javax.tools.JavaFileObject.Kind;
 
 /**
@@ -147,11 +146,11 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
      * @throws IllegalStateException {@inheritDoc}
      */
     @Override
-    public JavaFileObject getJavaFileForOutput(Location location,
+    public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location,
                                                String className,
                                                Kind kind,
                                                JavaFileObject... originatingFiles) throws IOException {
-        return fileManager.getJavaFileForOutput(location, className, kind, originatingFiles);
+        return fileManager.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles);
     }
 
     /**
@@ -186,11 +185,11 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
      * @throws IllegalStateException {@inheritDoc}
      */
     @Override
-    public FileObject getFileForOutput(Location location,
+    public FileObject getFileForOutputForOriginatingFiles(Location location,
                                        String packageName,
                                        String relativeName,
                                        JavaFileObject... originatingFiles) throws IOException {
-        return fileManager.getFileForOutput(location, packageName, relativeName, originatingFiles);
+        return fileManager.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles);
     }
 
     @Override

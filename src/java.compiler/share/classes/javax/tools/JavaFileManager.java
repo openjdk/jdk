@@ -371,7 +371,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @throws IllegalStateException {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    default JavaFileObject getJavaFileForOutput(Location location,
+    default JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location,
                                         String className,
                                         Kind kind,
                                         JavaFileObject... originatingFiles)
@@ -511,7 +511,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    default FileObject getFileForOutput(Location location,
+    default FileObject getFileForOutputForOriginatingFiles(Location location,
                                 String packageName,
                                 String relativeName,
                                 JavaFileObject... originatingFiles)

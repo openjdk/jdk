@@ -67,7 +67,6 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic;
-import javax.lang.model.element.Element;
 
 /**
  *  Wrap objects to enable unchecked exceptions to be caught and handled.
@@ -317,9 +316,9 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
-        public JavaFileObject getJavaFileForOutput(Location location, String className, Kind kind, JavaFileObject... originatingFiles) throws IOException {
+        public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location, String className, Kind kind, JavaFileObject... originatingFiles) throws IOException {
             try {
-                return wrap(clientJavaFileManager.getJavaFileForOutput(location, className, kind, originatingFiles));
+                return wrap(clientJavaFileManager.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles));
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException | Error e) {
@@ -339,9 +338,9 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
-        public FileObject getFileForOutput(Location location, String packageName, String relativeName, JavaFileObject... originatingFiles) throws IOException {
+        public FileObject getFileForOutputForOriginatingFiles(Location location, String packageName, String relativeName, JavaFileObject... originatingFiles) throws IOException {
             try {
-                return wrap(clientJavaFileManager.getFileForOutput(location, packageName, relativeName, originatingFiles));
+                return wrap(clientJavaFileManager.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles));
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException | Error e) {

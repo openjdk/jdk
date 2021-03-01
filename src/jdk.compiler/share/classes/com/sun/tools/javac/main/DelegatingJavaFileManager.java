@@ -33,7 +33,6 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.Set;
 
-import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
@@ -118,9 +117,9 @@ public class DelegatingJavaFileManager implements JavaFileManager {
     }
 
     @Override
-    public JavaFileObject getJavaFileForOutput(Location location, String className, Kind kind,
+    public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location, String className, Kind kind,
                                                JavaFileObject... originatingFiles) throws IOException {
-        return delegate(location).getJavaFileForOutput(location, className, kind, originatingFiles);
+        return delegate(location).getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles);
     }
 
     @Override
@@ -136,9 +135,9 @@ public class DelegatingJavaFileManager implements JavaFileManager {
     }
 
     @Override
-    public FileObject getFileForOutput(Location location, String packageName, String relativeName,
+    public FileObject getFileForOutputForOriginatingFiles(Location location, String packageName, String relativeName,
                                        JavaFileObject... originatingFiles) throws IOException {
-        return delegate(location).getFileForOutput(location, packageName, relativeName, originatingFiles);
+        return delegate(location).getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles);
     }
 
     @Override
