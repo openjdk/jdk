@@ -191,7 +191,12 @@
  * </table>
  *
  * <h3>Implementation Specific Features and Properties</h3>
- * The table below lists Implementation Specific Properties supported by the JDK.
+ * The Implementation Specific Features and Properties reflect JDK's choice to
+ * manage the limitations on resources while complying with the API specification,
+ * or allow applications to alter behaviors beyond those required by the standards.
+ * <p>
+ * The table below lists the Implementation Specific Properties currently supported
+ * by the JDK. More properties may be added in the future if necessary.
  *
  * <table class="striped" id="Properties">
  * <caption>Implementation Specific Properties</caption>
