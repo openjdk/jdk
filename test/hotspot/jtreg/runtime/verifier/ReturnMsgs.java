@@ -42,7 +42,7 @@ public class ReturnMsgs {
             throw new RuntimeException("Expected VerifyError exception not thrown");
         } catch (java.lang.VerifyError e) {
             String eMsg = e.getMessage();
-            if (!eMsg.contains("Method descriptor has a void return type")) {
+            if (!eMsg.contains("Method does not expect a return value")) {
                 throw new RuntimeException("Unexpected exception message: " + eMsg);
             }
         }
@@ -54,7 +54,7 @@ public class ReturnMsgs {
             throw new RuntimeException("Expected VerifyError exception not thrown");
         } catch (java.lang.VerifyError e) {
             String eMsg = e.getMessage();
-            if (!eMsg.contains("Method descriptor has a non-void return type")) {
+            if (!eMsg.contains("Method expects a return value")) {
                 throw new RuntimeException("Unexpected exception message: " + eMsg);
             }
         }
