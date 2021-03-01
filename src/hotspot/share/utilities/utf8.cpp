@@ -447,9 +447,7 @@ char* UNICODE::as_utf8(const T* base, int& length) {
 }
 
 char* UNICODE::as_utf8(const jchar* base, int length, char* buf, int buflen) {
-  if (buflen == 0) {
-    return buf;
-  }
+  assert(buflen > 0, "zero length output buffer");
   u_char* p = (u_char*)buf;
   for (int index = 0; index < length; index++) {
     jchar c = base[index];
@@ -462,9 +460,7 @@ char* UNICODE::as_utf8(const jchar* base, int length, char* buf, int buflen) {
 }
 
 char* UNICODE::as_utf8(const jbyte* base, int length, char* buf, int buflen) {
-  if (buflen == 0) {
-    return buf;
-  }
+  assert(buflen > 0, "zero length output buffer");
   u_char* p = (u_char*)buf;
   for (int index = 0; index < length; index++) {
     jbyte c = base[index];

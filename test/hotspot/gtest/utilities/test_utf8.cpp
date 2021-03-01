@@ -70,7 +70,7 @@ TEST_VM(utf8, jchar_length) {
   ASSERT_EQ(strlen(res), (size_t) 3 * 19) << "string should end here";
 
   // Test that we do not overflow the output buffer
-  for (int i = 0; i < 10; i ++) {
+  for (int i = 1; i < 5; i ++) {
     stamp(res, sizeof(res));
     UNICODE::as_utf8(str, 19, res, i);
     EXPECT_TRUE(test_stamp(res + i, sizeof(res) - i));
@@ -96,7 +96,7 @@ TEST_VM(utf8, jbyte_length) {
   ASSERT_EQ(strlen(res), (size_t) 19) << "string should end here";
 
   // Test that we do not overflow the output buffer
-  for (int i = 0; i < 10; i ++) {
+  for (int i = 1; i < 5; i ++) {
     stamp(res, sizeof(res));
     UNICODE::as_utf8(str, 19, res, i);
     EXPECT_TRUE(test_stamp(res + i, sizeof(res) - i));
