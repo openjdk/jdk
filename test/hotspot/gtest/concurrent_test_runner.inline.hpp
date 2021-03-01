@@ -43,8 +43,6 @@ public:
   UnitTestThread(const TestRunnable* runnableArg, Semaphore* doneArg, const long testDurationArg) :
     JavaTestThread(doneArg), runnable(runnableArg), testDuration(testDurationArg) {}
 
-  virtual ~UnitTestThread() {}
-
   // from JavaTestThread
   void main_run() {
     long stopTime = os::javaTimeMillis() + testDuration;
