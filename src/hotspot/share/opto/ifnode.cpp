@@ -981,6 +981,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
       assert(igvn->_worklist.member(in(1)) && in(1)->Value(igvn) != igvn->type(in(1)), "unhandled lo_test: %d", lo_test);
       return false;
     }
+    // this test was canonicalized
     assert(this_bool->_test.is_less() && !fail->_con, "incorrect test");
   } else {
     const TypeInt* failtype = filtered_int_type(igvn, n, proj);
