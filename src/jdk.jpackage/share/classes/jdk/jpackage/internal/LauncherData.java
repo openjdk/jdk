@@ -310,7 +310,7 @@ final class LauncherData {
             return (value == null) ? List.of() :
                     List.of(value.split(File.pathSeparator)).stream()
                     .map(Path::of)
-                    .collect(Collectors.toUnmodifiableList()); 
+                    .collect(Collectors.toUnmodifiableList());
         });
     }
 
