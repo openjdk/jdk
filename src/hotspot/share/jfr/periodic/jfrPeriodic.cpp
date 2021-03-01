@@ -646,11 +646,9 @@ TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 
 TRACE_REQUEST_FUNC(HeapUsageSummary) {
   EventHeapUsageSummary event;
-  if (event.should_commit()) {
-    CollectedHeap* heap = Universe::heap();
-    event.set_capacity(heap->capacity());
-    event.set_used(heap->used());
-    event.set_live(heap->live());
-    event.commit();
-  }
+  CollectedHeap* heap = Universe::heap();
+  event.set_capacity(heap->capacity());
+  event.set_used(heap->used());
+  event.set_live(heap->live());
+  event.commit();
 }
