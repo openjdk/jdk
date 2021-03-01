@@ -3603,7 +3603,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided. (dst == src) also possible.
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
-  bool     need_zero_extend = false;
+  bool     need_zero_extend = base != 0;
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass encoder {");
@@ -3626,7 +3626,6 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   if (shift != 0) {
     assert (LogKlassAlignmentInBytes == shift, "decode alg wrong");
     z_srlg(dst, current, shift);
-    need_zero_extend = true;
     current = dst;
   }
 
@@ -3657,19 +3656,32 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
       //  - Even that can be replaced with a conditional load if dst != current.
       //    (this is a local view. The shift step may have requested zero-extension).
     } else {
-      // To begin with, we may need to copy and/or zero-extend the register operand.
-      // We have to calculate (current_l - base_l). Because there is no unsigend
-      // subtract instruction with immediate operand, we add the 2's complement of base_l.
-      if (need_zero_extend) {
-        z_llgfr(dst, current);
+      if ((base_h == 0) && is_uimm(base_l, 31)) {
+        // If we happen to find that (base_h == 0), and that base_l is within the range
+        // which can be represented by a signed int, then we can use 64bit signed add with
+        // (-base_l) as 32bit signed immediate operand. The add will take care of the
+        // upper 32 bits of the result, saving us the need of an extra zero extension.
+        // For base_l to be in the required range, it must not have the most significant
+        // bit (aka sign bit) set.
+        lgr_if_needed(dst, current); // no zero/sign extension in this case!
+        z_agfi(dst, -(int)base_l);   // base_l must be passed as signed.
         need_zero_extend = false;
+        current = dst;
       } else {
-        llgfr_if_needed(dst, current); // zero-extension while copying comes at no extra cost.
+        // To begin with, we may need to copy and/or zero-extend the register operand.
+        // We have to calculate (current_l - base_l). Because there is no unsigend
+        // subtract instruction with immediate operand, we add the 2's complement of base_l.
+        if (need_zero_extend) {
+          z_llgfr(dst, current);
+          need_zero_extend = false;
+        } else {
+          llgfr_if_needed(dst, current);
+        }
+        current = dst;
+        z_alfi(dst, -base_l);
       }
-      current = dst;
-      z_alfi(dst, -(int)base_l);
     }
-  } // base nonzero
+  }
 
   if (need_zero_extend) {
     // We must zero-extend the calculated result. It may have some leftover bits in
