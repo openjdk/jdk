@@ -4078,7 +4078,7 @@ jint Arguments::apply_ergo() {
     UseOptoBiasInlining = false;
   }
 
-  if (!EnableVectorSupport) {
+  if (!FLAG_IS_DEFAULT(EnableVectorSupport) && !EnableVectorSupport) {
     if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
       warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
     }
