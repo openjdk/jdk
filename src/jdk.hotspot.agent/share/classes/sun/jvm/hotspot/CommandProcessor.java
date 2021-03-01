@@ -116,6 +116,7 @@ public class CommandProcessor {
         public abstract boolean isAttached();
         public abstract void attach(String pid);
         public abstract void attach(String java, String core);
+        public abstract void connect(String remoteServer);
         public abstract void detach();
         public abstract void reattach();
     }
@@ -392,6 +393,18 @@ public class CommandProcessor {
                 } else if (tokens == 2) {
                     preAttach();
                     debugger.attach(t.nextToken(), t.nextToken());
+                    postAttach();
+                } else {
+                    usage();
+                }
+            }
+        },
+        new Command("connect", "connect remote_server", true) {
+            public void doit(Tokens t) {
+                int tokens = t.countTokens();
+                if (tokens == 1) {
+                    preAttach();
+                    debugger.connect(t.nextToken());
                     postAttach();
                 } else {
                     usage();

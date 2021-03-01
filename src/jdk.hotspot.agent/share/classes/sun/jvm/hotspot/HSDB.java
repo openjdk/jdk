@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
   private int pid;
   private String execPath;
   private String coreFilename;
+  private String remoteServer;
 
   private void doUsage() {
     System.out.println("Usage:  java HSDB [[pid] | [path-to-java-executable [path-to-corefile]] | help ]");
@@ -1317,6 +1318,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
       if (agent.getDebugger().hasConsole()) {
         showDbgConsoleMenuItem.setEnabled(true);
       }
+      remoteServer = remoteMachineName;
       attached = true;
       SwingUtilities.invokeLater(remover);
     }
@@ -1504,6 +1506,9 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
               }
               public void attach(String java, String core) {
               }
+              public void connect(String remoteServer) {
+                  HSDB.this.connect(remoteServer);
+              }
               public void detach() {
                   detachDebugger();
               }
@@ -1513,8 +1518,10 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                   }
                   if (pidText != null) {
                       attach(pidText);
-                  } else {
+                  } else if (execPath != null) {
                       attach(execPath, coreFilename);
+                  } else if (remoteServer != null) {
+                      connect(remoteServer);
                   }
               }
           };

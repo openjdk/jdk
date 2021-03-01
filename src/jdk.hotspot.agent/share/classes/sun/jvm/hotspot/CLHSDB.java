@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,9 @@ public class CLHSDB {
                 public void attach(String java, String core) {
                     attachDebugger(java, core);
                 }
+                public void connect(String remoteServer) {
+                    CLHSDB.this.connect(remoteServer);
+                }
                 public void detach() {
                     detachDebugger();
                 }
@@ -86,8 +89,10 @@ public class CLHSDB {
                     }
                     if (pidText != null) {
                         attach(pidText);
-                    } else {
+                    } else if (execPath != null) {
                         attach(execPath, coreFilename);
+                    } else if (remoteServer != null) {
+                        connect(remoteServer);
                     }
                 }
             };
@@ -111,6 +116,7 @@ public class CLHSDB {
     private int pid;
     private String execPath;
     private String coreFilename;
+    private String remoteServer;
 
     private void doUsage() {
         System.out.println("Usage:  java CLHSDB [[pid] | [path-to-java-executable [path-to-corefile]] | help ]");
@@ -217,8 +223,9 @@ public class CLHSDB {
     private void connect(final String remoteMachineName) {
         // Try to open this core file
         try {
-            System.err.println("Connecting to debug server, please wait...");
+            System.out.println("Connecting to debug server, please wait...");
             agent.attach(remoteMachineName);
+            remoteServer = remoteMachineName;
             attached = true;
         }
         catch (DebuggerException e) {
