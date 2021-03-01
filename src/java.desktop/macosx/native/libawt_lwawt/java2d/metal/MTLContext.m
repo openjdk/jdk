@@ -223,7 +223,7 @@ extern void initSamplers(id<MTLDevice> device);
         // initialize the surface as an MTLSD_WINDOW
         if (!MTLSD_InitMTLWindow(env, dstOps)) {
             J2dRlsTraceLn(J2D_TRACE_ERROR,
-                          "MTLContext_SetSurfaces: could not init OGL window");
+                          "MTLContext_SetSurfaces: could not init MTL window");
             return NULL;
         }
     }

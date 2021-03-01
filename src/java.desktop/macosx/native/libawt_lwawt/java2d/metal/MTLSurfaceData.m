@@ -378,11 +378,11 @@ Java_sun_java2d_metal_MTLSurfaceData_initOps
 
 JNIEXPORT void JNICALL
 Java_sun_java2d_metal_MTLSurfaceData_clearWindow
-(JNIEnv *env, jobject cglsd)
+(JNIEnv *env, jobject mtlsd)
 {
     J2dTraceLn(J2D_TRACE_INFO, "MTLSurfaceData_clearWindow");
 
-    BMTLSDOps *bmtlsdo = (MTLSDOps*) SurfaceData_GetOps(env, cglsd);
+    BMTLSDOps *bmtlsdo = (MTLSDOps*) SurfaceData_GetOps(env, mtlsd);
     MTLSDOps *mtlsdo = (MTLSDOps*) bmtlsdo->privOps;
 
     mtlsdo->peerData = NULL;

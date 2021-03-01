@@ -613,15 +613,6 @@ public abstract class MTLSurfaceData extends SurfaceData
     }
 
 
-    // additional cleanup
-    private static native void destroyCGLContext(long ctx);
-
-    public static void destroyOGLContext(long ctx) {
-        if (ctx != 0L) {
-            destroyCGLContext(ctx);
-        }
-    }
-
     /**
      * Disposes the native resources associated with the given MTLSurfaceData
      * (referenced by the pData parameter).  This method is invoked from

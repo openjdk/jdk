@@ -42,7 +42,7 @@ public class MTLLayer extends CFRetainedResource {
 
     // Pass the insets to native code to make adjustments in blitTexture
     private static native void nativeSetInsets(long layerPtr, int top, int left);
-    private static native void validate(long layerPtr, MTLSurfaceData cglsd);
+    private static native void validate(long layerPtr, MTLSurfaceData mtlsd);
     private static native void blitTexture(long layerPtr);
 
     private LWWindowPeer peer;
@@ -107,11 +107,11 @@ public class MTLLayer extends CFRetainedResource {
         return surfaceData;
     }
 
-    public void validate(final MTLSurfaceData cglsd) {
+    public void validate(final MTLSurfaceData mtlsd) {
         MTLRenderQueue rq = MTLRenderQueue.getInstance();
         rq.lock();
         try {
-            execute(ptr -> validate(ptr, cglsd));
+            execute(ptr -> validate(ptr, mtlsd));
         } finally {
             rq.unlock();
         }
