@@ -655,7 +655,7 @@ class TestVirtualSpace : AllStatic {
 
 class ReservedSpaceRunnable : public TestRunnable {
 public:
-  void runUnitTest() {
+  void runUnitTest() const {
     TestReservedSpace::test_reserved_space();
   }
 };
@@ -667,7 +667,7 @@ TEST_VM(VirtualSpace, reserve_space_concurrent) {
 
 class VirtualSpaceRunnable : public TestRunnable {
 public:
-  void runUnitTest() {
+  void runUnitTest() const {
     TestVirtualSpace::test_virtual_space();
   }
 };

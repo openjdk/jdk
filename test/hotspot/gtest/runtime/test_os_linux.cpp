@@ -408,7 +408,7 @@ TEST_VM(os_linux, reserve_memory_special) {
 
 class ReserveMemorySpecialRunnable : public TestRunnable {
 public:
-  void runUnitTest() {
+  void runUnitTest() const {
     TestReserveMemorySpecial::test();
   }
 };

@@ -695,7 +695,7 @@ TEST_VM(os_windows, reserve_memory_special) {
 
 class ReserveMemorySpecialRunnable : public TestRunnable {
 public:
-  void runUnitTest() {
+  void runUnitTest() const {
     TestReserveMemorySpecial_test();
   }
 };

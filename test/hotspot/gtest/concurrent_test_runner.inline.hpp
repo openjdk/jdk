@@ -31,7 +31,7 @@
 // Base class for test runnable. Override runUnitTest() to specify what to run.
 class TestRunnable {
 public:
-  virtual void runUnitTest() = 0;
+  virtual void runUnitTest() const = 0;
 };
 
 // This class represents a thread for a unit test.
@@ -40,10 +40,8 @@ public:
   // runnableArg - what to run
   // doneArg - a semaphore to notify when the thread is done running
   // testDurationArg - how long to run (in milliseconds)
-  UnitTestThread(TestRunnable* runnableArg, Semaphore* doneArg, long testDurationArg) : JavaTestThread(doneArg) {
-    runnable = runnableArg;
-    testDuration = testDurationArg;
-  }
+  UnitTestThread(const TestRunnable* runnableArg, Semaphore* doneArg, const long testDurationArg) :
+    JavaTestThread(doneArg), runnable(runnableArg), testDuration(testDurationArg) {}
 
   virtual ~UnitTestThread() {}
 
@@ -55,8 +53,8 @@ public:
     }
   }
 private:
-  long testDuration;
-  TestRunnable* runnable;
+  const TestRunnable* runnable;
+  const long testDuration;
 };
 
 // Helper class for running a given unit test concurrently in multiple threads.
@@ -65,11 +63,10 @@ public:
   // runnableArg - what to run
   // nrOfThreadsArg - how many threads to use concurrently
   // testDurationMillisArg - duration for each test run
-  ConcurrentTestRunner(TestRunnable* runnableArg, int nrOfThreadsArg, long testDurationMillisArg) {
-    unitTestRunnable = runnableArg;
-    nrOfThreads = nrOfThreadsArg;
-    testDurationMillis = testDurationMillisArg;
-  }
+  ConcurrentTestRunner(const TestRunnable* runnableArg, int nrOfThreadsArg, long testDurationMillisArg) :
+    unitTestRunnable(runnableArg),
+    nrOfThreads{nrOfThreadsArg},
+    testDurationMillis{testDurationMillisArg} {}
 
   virtual ~ConcurrentTestRunner() {}
 
@@ -91,9 +88,9 @@ public:
   }
 
 private:
-  long testDurationMillis;
-  int nrOfThreads;
-  TestRunnable* unitTestRunnable;
+  const TestRunnable* unitTestRunnable;
+  const int nrOfThreads;
+  const long testDurationMillis;
 };
 
 #endif // include guard
