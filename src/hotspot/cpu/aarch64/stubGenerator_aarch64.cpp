@@ -5654,7 +5654,7 @@ class StubGenerator: public StubCodeGenerator {
         release = false;
         break;
       default:
-        acquire = true;
+        acquire = false;
         release = true;
         break;
     }
@@ -5673,7 +5673,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void gen_ldaddal_entry(Assembler::operand_size size) {
     Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-    __ ldaddal(size, incr, prev, addr);
+    __ ldaddl(size, incr, prev, addr);
     __ membar(Assembler::StoreStore|Assembler::StoreLoad);
     if (size == Assembler::xword) {
       __ mov(r0, prev);
@@ -5685,7 +5685,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void gen_swpal_entry(Assembler::operand_size size) {
     Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-    __ swpal(size, incr, prev, addr);
+    __ swpl(size, incr, prev, addr);
     __ membar(Assembler::StoreStore|Assembler::StoreLoad);
     if (size == Assembler::xword) {
       __ mov(r0, prev);

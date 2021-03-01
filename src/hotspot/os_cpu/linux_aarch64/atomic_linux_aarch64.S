@@ -27,7 +27,7 @@
         .align 5
 aarch64_atomic_fetch_add_8_default_impl:
         prfm    pstl1strm, [x0]
-0:      ldaxr   x2, [x0]
+0:      ldxr    x2, [x0]
         add     x8, x2, x1
         stlxr   w9, x8, [x0]
         cbnz    w9, 0b
@@ -39,7 +39,7 @@ aarch64_atomic_fetch_add_8_default_impl:
         .align 5
 aarch64_atomic_fetch_add_4_default_impl:
         prfm    pstl1strm, [x0]
-0:      ldaxr   w2, [x0]
+0:      ldxr    w2, [x0]
         add     w8, w2, w1
         stlxr   w9, w8, [x0]
         cbnz    w9, 0b
@@ -51,7 +51,7 @@ aarch64_atomic_fetch_add_4_default_impl:
         .align 5
 aarch64_atomic_xchg_4_default_impl:
         prfm    pstl1strm, [x0]
-0:      ldaxr   w2, [x0]
+0:      ldxr    w2, [x0]
         stlxr   w8, w1, [x0]
         cbnz    w8, 0b
         dmb     ish
@@ -62,7 +62,7 @@ aarch64_atomic_xchg_4_default_impl:
         .align 5
 aarch64_atomic_xchg_8_default_impl:
         prfm    pstl1strm, [x0]
-0:      ldaxr   x2, [x0]
+0:      ldxr    x2, [x0]
         stlxr   w8, x1, [x0]
         cbnz    w8, 0b
         dmb     ish
