@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,8 +279,7 @@ public:
 // G1's concurrent cycle.
 class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1ConcurrentMarkThread;
-  friend class G1CMRefProcTaskProxy;
-  friend class G1CMRefProcTaskExecutor;
+  friend class G1CMRefProcClosureContext;
   friend class G1CMKeepAliveAndDrainClosure;
   friend class G1CMDrainMarkingStackClosure;
   friend class G1CMBitMapClosure;

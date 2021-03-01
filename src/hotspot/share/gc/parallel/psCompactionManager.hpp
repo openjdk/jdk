@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/parallel/psParallelCompact.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/stack.hpp"
 
@@ -38,17 +39,14 @@ class ParallelCompactData;
 class ParMarkBitMap;
 
 class ParCompactionManager : public CHeapObj<mtGC> {
-  friend class ParMarkBitMap;
-  friend class PSParallelCompact;
   friend class CompactionWithStealingTask;
-  friend class UpdateAndFillClosure;
-  friend class RefProcTaskExecutor;
-  friend class PCRefProcTask;
   friend class MarkFromRootsTask;
+  friend class ParMarkBitMap;
+  friend class PCRefProcClosureContext;
+  friend class PSParallelCompact;
+  friend class RefProcClosureContext;
+  friend class UpdateAndFillClosure;
   friend class UpdateDensePrefixAndCompactionTask;
-
- public:
-
 
  private:
   typedef GenericTaskQueue<oop, mtGC>             OopTaskQueue;
@@ -192,8 +190,11 @@ private:
   class FollowStackClosure: public VoidClosure {
    private:
     ParCompactionManager* _compaction_manager;
+    TaskTerminator* _maybe_terminator;
+    uint _worker_id;
    public:
-    FollowStackClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+    FollowStackClosure(ParCompactionManager* cm, TaskTerminator* maybe_terminator, uint worker_id)
+      : _compaction_manager(cm), _maybe_terminator(maybe_terminator), _worker_id(worker_id) { }
     virtual void do_void();
   };
 };

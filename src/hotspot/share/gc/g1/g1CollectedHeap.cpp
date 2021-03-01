@@ -3312,98 +3312,72 @@ public:
   }
 };
 
-// Parallel Reference Processing closures
-
-// Implementation of AbstractRefProcTaskExecutor for parallel reference
-// processing during G1 evacuation pauses.
-
-class G1STWRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-private:
-  G1CollectedHeap*          _g1h;
-  G1ParScanThreadStateSet*  _pss;
-  G1ScannerTasksQueueSet*   _queues;
-  WorkGang*                 _workers;
-
-public:
-  G1STWRefProcTaskExecutor(G1CollectedHeap* g1h,
-                           G1ParScanThreadStateSet* per_thread_states,
-                           WorkGang* workers,
-                           G1ScannerTasksQueueSet *task_queues) :
-    _g1h(g1h),
-    _pss(per_thread_states),
-    _queues(task_queues),
-    _workers(workers)
-  {
-    g1h->ref_processor_stw()->set_active_mt_degree(workers->active_workers());
-  }
-
-  // Executes the given task using concurrent marking worker threads.
-  virtual void execute(ProcessTask& task, uint ergo_workers);
-};
-
-// Gang task for possibly parallel reference processing
-
-class G1STWRefProcTaskProxy: public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  ProcessTask&     _proc_task;
-  G1CollectedHeap* _g1h;
-  G1ParScanThreadStateSet* _pss;
-  G1ScannerTasksQueueSet* _task_queues;
-  TaskTerminator* _terminator;
+class G1STWRefProcClosureContext : public AbstractClosureContext {
+  uint                           _max_workers;
+  uint                           _queues;
+  G1CollectedHeap&               _g1h;
+  G1ParScanThreadStateSet&       _pss;
+  G1ScannerTasksQueueSet&        _task_queues;
+  TaskTerminator                 _terminator;
+  G1STWIsAliveClosure            _is_alive;
+  G1CopyingKeepAliveClosure*     _keep_alive;
+  G1ParEvacuateFollowersClosure* _parallel_complete_gc;
+  G1CopyingKeepAliveClosure      _serial_keep_alive;
+  G1STWDrainQueueClosure         _serial_complete_gc;
+  ThreadModel                    _tm;
 
 public:
-  G1STWRefProcTaskProxy(ProcessTask& proc_task,
-                        G1CollectedHeap* g1h,
-                        G1ParScanThreadStateSet* per_thread_states,
-                        G1ScannerTasksQueueSet *task_queues,
-                        TaskTerminator* terminator) :
-    AbstractGangTask("Process reference objects in parallel"),
-    _proc_task(proc_task),
-    _g1h(g1h),
-    _pss(per_thread_states),
-    _task_queues(task_queues),
-    _terminator(terminator)
-  {}
+  G1STWRefProcClosureContext(
+    uint max_workers,
+    G1CollectedHeap& g1h,
+    G1ParScanThreadStateSet& pss,
+    G1ScannerTasksQueueSet& task_queues)
+    : _max_workers(max_workers),
+      _queues(0),
+      _g1h(g1h),
+      _pss(pss),
+      _task_queues(task_queues),
+      _terminator(_max_workers, &task_queues),
+      _is_alive(&g1h),
+      _keep_alive(NEW_C_HEAP_ARRAY(G1CopyingKeepAliveClosure, _max_workers, mtGC)),
+      _parallel_complete_gc(NEW_C_HEAP_ARRAY(G1ParEvacuateFollowersClosure, _max_workers, mtGC)),
+      _serial_keep_alive(&g1h, _pss.state_for_worker(0)),
+      _serial_complete_gc(&g1h, _pss.state_for_worker(0)),
+      _tm(ThreadModel::Single) {}
 
-  virtual void work(uint worker_id) {
-    // The reference processing task executed by a single worker.
-    ResourceMark rm;
-
-    G1STWIsAliveClosure is_alive(_g1h);
-
-    G1ParScanThreadState* pss = _pss->state_for_worker(worker_id);
-    pss->set_ref_discoverer(NULL);
-
-    // Keep alive closure.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, pss);
-
-    // Complete GC closure
-    G1ParEvacuateFollowersClosure drain_queue(_g1h, pss, _task_queues, _terminator, G1GCPhaseTimes::ObjCopy);
-
-    // Call the reference processing task's work routine.
-    _proc_task.work(worker_id, is_alive, keep_alive, drain_queue);
-
-    // Note we cannot assert that the refs array is empty here as not all
-    // of the processing tasks (specifically phase2 - pp2_work) execute
-    // the complete_gc closure (which ordinarily would drain the queue) so
-    // the queue may not be empty.
+  ~G1STWRefProcClosureContext() {
+    FREE_C_HEAP_ARRAY(G1CopyingKeepAliveClosure, _keep_alive);
+    FREE_C_HEAP_ARRAY(G1ParEvacuateFollowersClosure, _parallel_complete_gc);
   }
+
+  BoolObjectClosure* is_alive(uint worker_id) { return &_is_alive; }
+  OopClosure* keep_alive(uint worker_id) {
+    assert(worker_id < _queues || _tm == ThreadModel::Single, "sanity");
+    if (_tm == ThreadModel::Single) {
+      return ::new (&_serial_keep_alive) G1CopyingKeepAliveClosure(&_g1h, _pss.state_for_worker(0));
+    }
+    return ::new (&_keep_alive[worker_id]) G1CopyingKeepAliveClosure(&_g1h, _pss.state_for_worker(worker_id));
+  }
+  VoidClosure* complete_gc(uint worker_id) {
+    assert(worker_id < _queues || _tm == ThreadModel::Single, "sanity");
+    if (_tm == ThreadModel::Single) {
+      return ::new (&_serial_complete_gc) G1STWDrainQueueClosure(&_g1h, _pss.state_for_worker(0));
+    }
+    return ::new (&_parallel_complete_gc[worker_id]) G1ParEvacuateFollowersClosure(&_g1h, _pss.state_for_worker(worker_id), &_task_queues, &_terminator, G1GCPhaseTimes::ObjCopy);
+  }
+
+  void prepare_run_task(uint queue_count, ThreadModel tm, bool marks_oops_alive) {
+    log_debug(gc, ref)("G1STWRefProcClosureContext: prepare_run_task");
+    assert(queue_count <= _max_workers, "sanity");
+    _queues = queue_count;
+    _tm = tm;
+
+    for (uint qid = 0; qid < index(queue_count, tm); ++qid ) {
+      _pss.state_for_worker(qid)->set_ref_discoverer(nullptr); // move?, maybe not...
+    }
+    _terminator.reset_for_reuse(queue_count);
+  };
 };
-
-// Driver routine for parallel reference processing.
-// Creates an instance of the ref processing gang
-// task and has the worker threads execute it.
-void G1STWRefProcTaskExecutor::execute(ProcessTask& proc_task, uint ergo_workers) {
-  assert(_workers != NULL, "Need parallel worker threads.");
-
-  assert(_workers->active_workers() >= ergo_workers,
-         "Ergonomically chosen workers (%u) should be less than or equal to active workers (%u)",
-         ergo_workers, _workers->active_workers());
-  TaskTerminator terminator(ergo_workers, _queues);
-  G1STWRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _pss, _queues, &terminator);
-
-  _workers->run_task(&proc_task_proxy, ergo_workers);
-}
 
 // End of weak reference support closures
 
@@ -3413,53 +3387,27 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
   ReferenceProcessor* rp = _ref_processor_stw;
   assert(rp->discovery_enabled(), "should have been enabled");
 
-  // Closure to test whether a referent is alive.
-  G1STWIsAliveClosure is_alive(this);
-
-  // Even when parallel reference processing is enabled, the processing
-  // of JNI refs is serial and performed serially by the current thread
-  // rather than by a worker. The following PSS will be used for processing
-  // JNI refs.
-
   // Use only a single queue for this PSS.
   G1ParScanThreadState*          pss = per_thread_states->state_for_worker(0);
   pss->set_ref_discoverer(NULL);
   assert(pss->queue_is_empty(), "pre-condition");
 
-  // Keep alive closure.
-  G1CopyingKeepAliveClosure keep_alive(this, pss);
-
-  // Serial Complete GC closure
-  G1STWDrainQueueClosure drain_queue(this, pss);
-
   // Setup the soft refs policy...
   rp->setup_policy(false);
 
-  ReferenceProcessorPhaseTimes* pt = phase_times()->ref_phase_times();
+  ReferenceProcessorPhaseTimes& pt = *phase_times()->ref_phase_times();
 
   ReferenceProcessorStats stats;
-  if (!rp->processing_is_mt()) {
-    // Serial reference processing...
-    stats = rp->process_discovered_references(&is_alive,
-                                              &keep_alive,
-                                              &drain_queue,
-                                              NULL,
-                                              pt);
-  } else {
-    uint no_of_gc_workers = workers()->active_workers();
+  uint no_of_gc_workers = workers()->active_workers();
 
-    // Parallel reference processing
-    assert(no_of_gc_workers <= rp->max_num_queues(),
-           "Mismatch between the number of GC workers %u and the maximum number of Reference process queues %u",
-           no_of_gc_workers,  rp->max_num_queues());
+  // Parallel reference processing
+  assert(no_of_gc_workers <= rp->max_num_queues(),
+         "Mismatch between the number of GC workers %u and the maximum number of Reference process queues %u",
+         no_of_gc_workers,  rp->max_num_queues());
 
-    G1STWRefProcTaskExecutor par_task_executor(this, per_thread_states, workers(), _task_queues);
-    stats = rp->process_discovered_references(&is_alive,
-                                              &keep_alive,
-                                              &drain_queue,
-                                              &par_task_executor,
-                                              pt);
-  }
+  rp->set_active_mt_degree(no_of_gc_workers);
+  G1STWRefProcClosureContext context(rp->max_num_queues(), *this, *per_thread_states, *_task_queues);
+  stats = rp->process_discovered_references(context, pt);
 
   _gc_tracer_stw->report_gc_reference_stats(stats);
 

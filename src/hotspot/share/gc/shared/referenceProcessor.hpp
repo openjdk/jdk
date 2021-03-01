@@ -28,10 +28,11 @@
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/instanceRefKlass.hpp"
 
-class AbstractRefProcTaskExecutor;
+class AbstractClosureContext;
 class GCTimer;
 class ReferencePolicy;
 class ReferenceProcessorPhaseTimes;
@@ -235,33 +236,24 @@ private:
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
 
+  void run_task(AbstractGangTask& task, AbstractClosureContext& closure_context, bool marks_oops_alive);
+
   // Phase 1: Re-evaluate soft ref policy.
-  void process_soft_ref_reconsider(BoolObjectClosure* is_alive,
-                                   OopClosure* keep_alive,
-                                   VoidClosure* complete_gc,
-                                   AbstractRefProcTaskExecutor*  task_executor,
-                                   ReferenceProcessorPhaseTimes* phase_times);
+  void process_soft_ref_reconsider(AbstractClosureContext& closure_context,
+                                   ReferenceProcessorPhaseTimes& phase_times);
 
   // Phase 2: Drop Soft/Weak/Final references with a NULL or live referent, and clear
   // and enqueue non-Final references.
-  void process_soft_weak_final_refs(BoolObjectClosure* is_alive,
-                                    OopClosure* keep_alive,
-                                    VoidClosure* complete_gc,
-                                    AbstractRefProcTaskExecutor*  task_executor,
-                                    ReferenceProcessorPhaseTimes* phase_times);
+  void process_soft_weak_final_refs(AbstractClosureContext& closure_context,
+                                    ReferenceProcessorPhaseTimes& phase_times);
 
   // Phase 3: Keep alive followers of Final references, and enqueue.
-  void process_final_keep_alive(OopClosure* keep_alive,
-                                VoidClosure* complete_gc,
-                                AbstractRefProcTaskExecutor*  task_executor,
-                                ReferenceProcessorPhaseTimes* phase_times);
+  void process_final_keep_alive(AbstractClosureContext& closure_context,
+                                ReferenceProcessorPhaseTimes& phase_times);
 
   // Phase 4: Drop and keep alive live Phantom references, or clear and enqueue if dead.
-  void process_phantom_refs(BoolObjectClosure* is_alive,
-                            OopClosure* keep_alive,
-                            VoidClosure* complete_gc,
-                            AbstractRefProcTaskExecutor*  task_executor,
-                            ReferenceProcessorPhaseTimes* phase_times);
+  void process_phantom_refs(AbstractClosureContext& closure_context,
+                            ReferenceProcessorPhaseTimes& phase_times);
 
   // Work methods used by the process_* methods. All methods return the number of
   // removed elements.
@@ -432,11 +424,8 @@ public:
 
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats
-  process_discovered_references(BoolObjectClosure*            is_alive,
-                                OopClosure*                   keep_alive,
-                                VoidClosure*                  complete_gc,
-                                AbstractRefProcTaskExecutor*  task_executor,
-                                ReferenceProcessorPhaseTimes* phase_times);
+  process_discovered_references(AbstractClosureContext&  closure_context,
+                                ReferenceProcessorPhaseTimes& phase_times);
 
   // If a discovery is in process that is being superceded, abandon it: all
   // the discovered lists will be empty, and all the objects on them will
@@ -596,42 +585,15 @@ class ReferenceProcessorAtomicMutator: StackObj {
   }
 };
 
-// This class is an interface used to implement task execution for the
-// reference processing.
-class AbstractRefProcTaskExecutor {
+enum class ThreadModel {Multi, Single};
+
+class AbstractClosureContext {
 public:
-
-  // Abstract tasks to execute.
-  class ProcessTask;
-
-  // Executes a task using worker threads.
-  virtual void execute(ProcessTask& task, uint ergo_workers) = 0;
-};
-
-// Abstract reference processing task to execute.
-class AbstractRefProcTaskExecutor::ProcessTask {
-protected:
-  ReferenceProcessor&           _ref_processor;
-  // Indicates whether the phase could generate work that should be balanced across
-  // threads after execution.
-  bool                          _marks_oops_alive;
-  ReferenceProcessorPhaseTimes* _phase_times;
-
-  ProcessTask(ReferenceProcessor& ref_processor,
-              bool marks_oops_alive,
-              ReferenceProcessorPhaseTimes* phase_times)
-    : _ref_processor(ref_processor),
-      _marks_oops_alive(marks_oops_alive),
-      _phase_times(phase_times)
-  { }
-
-public:
-  virtual void work(uint worker_id,
-                    BoolObjectClosure& is_alive,
-                    OopClosure& keep_alive,
-                    VoidClosure& complete_gc) = 0;
-
-  bool marks_oops_alive() const { return _marks_oops_alive; }
+  virtual BoolObjectClosure* is_alive(uint worker_id) = 0;
+  virtual OopClosure* keep_alive(uint worker_id) = 0;
+  virtual VoidClosure* complete_gc(uint worker_id) = 0;
+  virtual void prepare_run_task(uint queue_count, ThreadModel tm, bool marks_oops_alive) = 0;
+  uint index(uint id, ThreadModel tm) { return (tm==ThreadModel::Single)?0:id; }
 };
 
 // Temporarily change the number of workers based on given reference count.
