@@ -3102,7 +3102,7 @@ public:
     assert(_output_registers.length() <= 1
            || (_output_registers.length() == 2 && !_output_registers.at(1)->is_valid()), "no multi-reg returns");
   }
-  
+
   void generate();
 
   int spill_size_in_bytes() const {
