@@ -405,13 +405,9 @@ StringDedupTable* StringDedupTable::prepare_resize() {
       size = _max_size;
     }
   } else if (_table->_entries < _table->_shrink_threshold) {
-    // Compute new size.
-    size_t needed = _table->_entries / _shrink_load_factor;
-    if (needed > _min_size) {
-      size = round_down_power_of_2(needed);
-    } else {
-      size = _min_size;
-    }
+    // Compute new size.  We can't shrink by more than a factor of 2,
+    // because the partitioning for parallelization doesn't support more.
+    if (size > _min_size) size /= 2;
   }
   // If no change in size needed (and not forcing resize) then done.
   if (size == _table->_size) {
@@ -423,6 +419,9 @@ StringDedupTable* StringDedupTable::prepare_resize() {
       size /= 2;                // Can't force grow, so force shrink instead.
     }
   }
+  assert(size <= _max_size, "invariant: %zu", size);
+  assert(size >= _min_size, "invariant: %zu", size);
+  assert(is_power_of_2(size), "invariant: %zu", size);
 
   // Update statistics
   _resize_count++;
