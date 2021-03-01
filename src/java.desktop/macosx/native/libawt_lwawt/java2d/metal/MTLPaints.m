@@ -53,6 +53,7 @@ static MTLRenderPipelineDescriptor * templateRenderPipelineDesc = nil;
 static MTLRenderPipelineDescriptor * templateTexturePipelineDesc = nil;
 static MTLRenderPipelineDescriptor * templateAATexturePipelineDesc = nil;
 static MTLRenderPipelineDescriptor * templateLCDPipelineDesc = nil;
+static MTLRenderPipelineDescriptor * templateAAPipelineDesc = nil;
 static void setTxtUniforms(
         id<MTLRenderCommandEncoder> encoder, int color, int mode, int interpolation, bool repeat, jfloat extraAlpha,
         const SurfaceRasterFlags * srcFlags, const SurfaceRasterFlags * dstFlags
@@ -105,6 +106,33 @@ static void initTemplatePipelineDescriptors() {
     templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stepRate = 1;
     templateLCDPipelineDesc.vertexDescriptor.layouts[MeshVertexBuffer].stepFunction = MTLVertexStepFunctionPerVertex;
     templateLCDPipelineDesc.label = @"template_lcd";
+
+    vertDesc = [[MTLVertexDescriptor new] autorelease];
+    vertDesc.attributes[VertexAttributePosition].format = MTLVertexFormatFloat2;
+    vertDesc.attributes[VertexAttributePosition].offset = 0;
+    vertDesc.attributes[VertexAttributePosition].bufferIndex = MeshVertexBuffer;
+    vertDesc.layouts[MeshVertexBuffer].stride = sizeof(struct AAVertex);
+    vertDesc.layouts[MeshVertexBuffer].stepRate = 1;
+    vertDesc.layouts[MeshVertexBuffer].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    templateAAPipelineDesc = [MTLRenderPipelineDescriptor new];
+    templateAAPipelineDesc.sampleCount = 1;
+    templateAAPipelineDesc.vertexDescriptor = vertDesc;
+    templateAAPipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+    templateAAPipelineDesc.colorAttachments[0].rgbBlendOperation =   MTLBlendOperationAdd;
+    templateAAPipelineDesc.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
+    templateAAPipelineDesc.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorOne;
+    templateAAPipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOne;
+    templateAAPipelineDesc.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+    templateAAPipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+    templateAAPipelineDesc.colorAttachments[0].blendingEnabled = YES;
+    templateAAPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].format = MTLVertexFormatFloat2;
+    templateAAPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].offset = 2*sizeof(float);
+    templateAAPipelineDesc.vertexDescriptor.attributes[VertexAttributeTexPos].bufferIndex = MeshVertexBuffer;
+    templateAAPipelineDesc.vertexDescriptor.attributes[VertexAttributeITexPos].format = MTLVertexFormatFloat2;
+    templateAAPipelineDesc.vertexDescriptor.attributes[VertexAttributeITexPos].offset = 4*sizeof(float);
+    templateAAPipelineDesc.vertexDescriptor.attributes[VertexAttributeITexPos].bufferIndex = MeshVertexBuffer;
+    templateAAPipelineDesc.label = @"template_aa";
 }
 
 
@@ -180,6 +208,10 @@ jint _color;
         setTxtUniforms(encoder, _color, 1,
                        renderOptions->interpolation, NO, [mtlc.composite getExtraAlpha], &renderOptions->srcFlags,
                        &renderOptions->dstFlags);
+    } else if (renderOptions->isAAShader) {
+        vertShader = @"vert_col_aa";
+        fragShader = @"frag_col_aa";
+        rpDesc = [[templateAAPipelineDesc copy] autorelease];
     } else {
         rpDesc = [[templateRenderPipelineDesc copy] autorelease];
     }

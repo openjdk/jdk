@@ -84,7 +84,7 @@ static void setBlendingFactors(
                                  vertexShaderId:(NSString *)vertexShaderId
                                fragmentShaderId:(NSString *)fragmentShaderId
 {
-    RenderOptions defaultOptions = {JNI_FALSE, JNI_FALSE, 0/*unused*/, {JNI_FALSE, JNI_TRUE}, {JNI_FALSE, JNI_TRUE}, JNI_FALSE, JNI_FALSE};
+    RenderOptions defaultOptions = {JNI_FALSE, JNI_FALSE, 0/*unused*/, {JNI_FALSE, JNI_TRUE}, {JNI_FALSE, JNI_TRUE}, JNI_FALSE, JNI_FALSE, JNI_FALSE};
     return [self getPipelineState:pipelineDescriptor
                    vertexShaderId:vertexShaderId
                  fragmentShaderId:fragmentShaderId
@@ -98,7 +98,7 @@ static void setBlendingFactors(
                                fragmentShaderId:(NSString *)fragmentShaderId
                                stencilNeeded:(bool)stencilNeeded
 {
-    RenderOptions defaultOptions = {JNI_FALSE, JNI_FALSE, 0/*unused*/, {JNI_FALSE, JNI_TRUE}, {JNI_FALSE, JNI_TRUE}, JNI_FALSE, JNI_FALSE};
+    RenderOptions defaultOptions = {JNI_FALSE, JNI_FALSE, 0/*unused*/, {JNI_FALSE, JNI_TRUE}, {JNI_FALSE, JNI_TRUE}, JNI_FALSE, JNI_FALSE, JNI_FALSE};
     return [self getPipelineState:pipelineDescriptor
                    vertexShaderId:vertexShaderId
                  fragmentShaderId:fragmentShaderId
