@@ -296,7 +296,8 @@ public:
   case TYPE_##type: \
     assert(sizeof(T) == sizeof(type) && \
            std::is_integral<T>::value == std::is_integral<type>::value && \
-           std::is_signed  <T>::value == std::is_signed  <type>::value, "must be"); break;
+           std::is_signed  <T>::value == std::is_signed  <type>::value, "must be"); \
+    break;
 
   template <typename T>
   static void assert_compatible_type(int type_enum) {
@@ -307,6 +308,8 @@ public:
     }
 #endif
   }
+
+#undef CHECK_COMPATIBLE
 
 public:
   static void printSetFlags(outputStream* out);

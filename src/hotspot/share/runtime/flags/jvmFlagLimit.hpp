@@ -70,7 +70,7 @@ class JVMFlagLimit {
   char  _phase;
   char  _kind;
 
-#ifndef PRODUCT
+#ifdef ASSERT
   int   _type_enum;
 #endif
 
@@ -179,7 +179,7 @@ public:
 
 template <typename T>
 const JVMTypedFlagLimit<T>* JVMFlagLimit::cast() const {
-  NOT_PRODUCT(JVMFlag::assert_compatible_type<T>(_type_enum));
+  DEBUG_ONLY(JVMFlag::assert_compatible_type<T>(_type_enum));
   return static_cast<const JVMTypedFlagLimit<T>*>(this);
 }
 
