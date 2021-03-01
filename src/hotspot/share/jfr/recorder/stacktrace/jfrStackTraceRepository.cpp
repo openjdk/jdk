@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,38 @@
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "runtime/mutexLocker.hpp"
 
-static JfrStackTraceRepository* _instance = NULL;
+/*
+ * There are two separate repository instances.
+ * One instance is dedicated to stacktraces taken as part of the leak profiler subsystem.
+ * It is kept separate because at the point of insertion, it is unclear if a trace will be serialized,
+ * which is a decision postponed and taken during rotation.
+ */
 
-JfrStackTraceRepository::JfrStackTraceRepository() : _next_id(0), _entries(0) {
-  memset(_table, 0, sizeof(_table));
-}
+static JfrStackTraceRepository* _instance = NULL;
+static JfrStackTraceRepository* _leak_profiler_instance = NULL;
+static traceid _next_id = 0;
 
 JfrStackTraceRepository& JfrStackTraceRepository::instance() {
+  assert(_instance != NULL, "invariant");
   return *_instance;
+}
+
+static JfrStackTraceRepository& leak_profiler_instance() {
+  assert(_leak_profiler_instance != NULL, "invariant");
+  return *_leak_profiler_instance;
+}
+
+JfrStackTraceRepository::JfrStackTraceRepository() : _last_entries(0), _entries(0) {
+  memset(_table, 0, sizeof(_table));
 }
 
 JfrStackTraceRepository* JfrStackTraceRepository::create() {
   assert(_instance == NULL, "invariant");
+  assert(_leak_profiler_instance == NULL, "invariant");
+  _leak_profiler_instance = new JfrStackTraceRepository();
+  if (_leak_profiler_instance == NULL) {
+    return NULL;
+  }
   _instance = new JfrStackTraceRepository();
   return _instance;
 }
@@ -69,12 +89,12 @@ void JfrStackTraceRepository::destroy() {
   assert(_instance != NULL, "invarinat");
   delete _instance;
   _instance = NULL;
+  delete _leak_profiler_instance;
+  _leak_profiler_instance = NULL;
 }
 
-static traceid last_id = 0;
-
 bool JfrStackTraceRepository::is_modified() const {
-  return last_id != _next_id;
+  return _last_entries != _entries;
 }
 
 size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
@@ -102,26 +122,27 @@ size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
     memset(_table, 0, sizeof(_table));
     _entries = 0;
   }
-  last_id = _next_id;
+  _last_entries = _entries;
   return count;
 }
 
-size_t JfrStackTraceRepository::clear() {
+size_t JfrStackTraceRepository::clear(JfrStackTraceRepository& repo) {
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  if (_entries == 0) {
+  if (repo._entries == 0) {
     return 0;
   }
   for (u4 i = 0; i < TABLE_SIZE; ++i) {
-    JfrStackTrace* stacktrace = _table[i];
+    JfrStackTrace* stacktrace = repo._table[i];
     while (stacktrace != NULL) {
       JfrStackTrace* next = const_cast<JfrStackTrace*>(stacktrace->next());
       delete stacktrace;
       stacktrace = next;
     }
   }
-  memset(_table, 0, sizeof(_table));
-  const size_t processed = _entries;
-  _entries = 0;
+  memset(repo._table, 0, sizeof(repo._table));
+  const size_t processed = repo._entries;
+  repo._entries = 0;
+  repo._last_entries = 0;
   return processed;
 }
 
@@ -147,20 +168,23 @@ traceid JfrStackTraceRepository::record(Thread* thread, int skip /* 0 */) {
 
 traceid JfrStackTraceRepository::record_for(JavaThread* thread, int skip, JfrStackFrame *frames, u4 max_frames) {
   JfrStackTrace stacktrace(frames, max_frames);
-  return stacktrace.record_safe(thread, skip) ? add(stacktrace) : 0;
+  return stacktrace.record_safe(thread, skip) ? add(instance(), stacktrace) : 0;
 }
-
-traceid JfrStackTraceRepository::add(const JfrStackTrace& stacktrace) {
-  traceid tid = instance().add_trace(stacktrace);
+traceid JfrStackTraceRepository::add(JfrStackTraceRepository& repo, const JfrStackTrace& stacktrace) {
+  traceid tid = repo.add_trace(stacktrace);
   if (tid == 0) {
     stacktrace.resolve_linenos();
-    tid = instance().add_trace(stacktrace);
+    tid = repo.add_trace(stacktrace);
   }
   assert(tid != 0, "invariant");
   return tid;
 }
 
-void JfrStackTraceRepository::record_and_cache(JavaThread* thread, int skip /* 0 */) {
+traceid JfrStackTraceRepository::add(const JfrStackTrace& stacktrace) {
+  return add(instance(), stacktrace);
+}
+
+void JfrStackTraceRepository::record_for_leak_profiler(JavaThread* thread, int skip /* 0 */) {
   assert(thread != NULL, "invariant");
   JfrThreadLocal* const tl = thread->jfr_thread_local();
   assert(tl != NULL, "invariant");
@@ -169,7 +193,7 @@ void JfrStackTraceRepository::record_and_cache(JavaThread* thread, int skip /* 0
   stacktrace.record_safe(thread, skip);
   const unsigned int hash = stacktrace.hash();
   if (hash != 0) {
-    tl->set_cached_stack_trace_id(instance().add(stacktrace), hash);
+    tl->set_cached_stack_trace_id(add(leak_profiler_instance(), stacktrace), hash);
   }
 }
 
@@ -196,9 +220,9 @@ traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
 }
 
 // invariant is that the entry to be resolved actually exists in the table
-const JfrStackTrace* JfrStackTraceRepository::lookup(unsigned int hash, traceid id) const {
+const JfrStackTrace* JfrStackTraceRepository::lookup(unsigned int hash, traceid id) {
   const size_t index = (hash % TABLE_SIZE);
-  const JfrStackTrace* trace = _table[index];
+  const JfrStackTrace* trace = leak_profiler_instance()._table[index];
   while (trace != NULL && trace->id() != id) {
     trace = trace->next();
   }
@@ -206,4 +230,13 @@ const JfrStackTrace* JfrStackTraceRepository::lookup(unsigned int hash, traceid 
   assert(trace->hash() == hash, "invariant");
   assert(trace->id() == id, "invariant");
   return trace;
+}
+
+void JfrStackTraceRepository::clear_leak_profiler() {
+  clear(leak_profiler_instance());
+}
+
+size_t JfrStackTraceRepository::clear() {
+  clear_leak_profiler();
+  return clear(instance());
 }
