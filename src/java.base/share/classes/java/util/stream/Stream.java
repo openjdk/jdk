@@ -340,6 +340,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      */
     DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper);
 
+    // THE EXAMPLES USED IN THE JAVADOC MUST BE IN SYNC WITH THEIR CORRESPONDING
+    // TEST IN test/jdk/java/util/stream/examples/JavadocExamples.java.
     /**
      * Returns a stream consisting of the results of replacing each element of
      * this stream with multiple elements, specifically zero or more elements.
@@ -407,7 +409,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *     }
      *
      *     public static void main(String[] args) {
-     *         var nestedList = ...;
+     *         var nestedList = List.of(1, List.of(2, List.of(3, 4)), 5);
      *         Stream<Object> expandedStream = nestedList.stream().mapMulti(C::expandIterable);
      *     }
      * }

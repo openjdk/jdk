@@ -30,8 +30,7 @@ import java.util.stream.Stream;
 import static org.testng.Assert.assertEquals;
 
 /*
- * THE CONTENTS OF THIS FILE HAVE TO BE IN SYNC WITH THE EXAMPLES USED IN THE
- * JAVADOC.
+ * THE CONTENTS OF THIS FILE HAVE TO BE IN SYNC WITH THE EXAMPLES USED IN THE JAVADOC.
  *
  * @test
  * @run testng/othervm JavadocExamples
@@ -71,7 +70,3 @@ public class JavadocExamples {
         }
     }
 }
-
-
-
-
