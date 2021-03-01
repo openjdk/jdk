@@ -196,6 +196,11 @@ static void setBlendingFactors(
             }
             if (stencilNeeded) {
                 pipelineDesc.stencilAttachmentPixelFormat = MTLPixelFormatStencil8;
+            } else {
+                // We continue to use same encoder when we move from shape clip
+                // to other opcodes. So we need to maintain apprppriate state
+                // for stencilAttachmentPixelFormat until we end the encoder
+                pipelineDesc.stencilAttachmentPixelFormat = MTLPixelFormatInvalid;
             }
 
             if (renderOptions->isAA) {
