@@ -65,7 +65,7 @@ public class TestIndex extends JavadocTester {
                     <a href="pkg/Coin.html" class="type-name-link" title="enum class in pkg">Coin</a\
                     > - Enum Class in <a href="pkg/package-summary.html">pkg</a>""",
                 """
-                    Class in <a href="package-summary.html">&lt;Unnamed&gt;</a>""",
+                    Class in <a href="package-summary.html">Unnamed Package</a>""",
                 """
                     <dl class="index">
                     <dt><a href="pkg/C.html#Java" class="member-name-link">Java</a> - Static variabl\

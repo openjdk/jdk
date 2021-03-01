@@ -1006,7 +1006,8 @@ void CompileBroker::init_compiler_sweeper_threads() {
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        MutexLocker mu(Threads_lock);
+        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
       }
     }
@@ -1026,7 +1027,8 @@ void CompileBroker::init_compiler_sweeper_threads() {
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        MutexLocker mu(Threads_lock);
+        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
       }
     }
@@ -1112,7 +1114,8 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        MutexLocker mu(Threads_lock);
+        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added compiler thread %s (available memory: %dMB, available non-profiled code cache: %dMB)",
                       ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_np/M));
       }
@@ -1132,7 +1135,8 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        MutexLocker mu(Threads_lock);
+        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added compiler thread %s (available memory: %dMB, available profiled code cache: %dMB)",
                       ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_p/M));
       }

@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Objects;
 
 /**
  * A character-stream reader that allows characters to be pushed back into the
@@ -92,28 +93,14 @@ public class PushbackReader extends FilterReader {
     }
 
     /**
-     * Reads characters into a portion of an array.
-     *
-     * @param      cbuf  Destination buffer
-     * @param      off   Offset at which to start writing characters
-     * @param      len   Maximum number of characters to read
-     *
-     * @return     The number of characters read, or -1 if the end of the
-     *             stream has been reached
-     *
-     * @throws     IOException  If an I/O error occurs
-     * @throws     IndexOutOfBoundsException {@inheritDoc}
+     * {@inheritDoc}
      */
-    public int read(char cbuf[], int off, int len) throws IOException {
+    public int read(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
             ensureOpen();
             try {
-                if (len <= 0) {
-                    if (len < 0) {
-                        throw new IndexOutOfBoundsException();
-                    } else if ((off < 0) || (off > cbuf.length)) {
-                        throw new IndexOutOfBoundsException();
-                    }
+                Objects.checkFromIndexSize(off, len, cbuf.length);
+                if (len == 0) {
                     return 0;
                 }
                 int avail = buf.length - pos;
@@ -172,7 +159,7 @@ public class PushbackReader extends FilterReader {
      * @throws     IOException  If there is insufficient room in the pushback
      *                          buffer, or if some other I/O error occurs
      */
-    public void unread(char cbuf[], int off, int len) throws IOException {
+    public void unread(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
             ensureOpen();
             if (len > pos)
@@ -193,7 +180,7 @@ public class PushbackReader extends FilterReader {
      * @throws     IOException  If there is insufficient room in the pushback
      *                          buffer, or if some other I/O error occurs
      */
-    public void unread(char cbuf[]) throws IOException {
+    public void unread(char[] cbuf) throws IOException {
         unread(cbuf, 0, cbuf.length);
     }
 
