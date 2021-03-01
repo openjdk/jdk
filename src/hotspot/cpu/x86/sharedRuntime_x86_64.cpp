@@ -3435,7 +3435,12 @@ public:
      _output_registers(output_registers),
      _frame_complete(0),
      _framesize(0),
-     _oop_maps(NULL) {}
+     _oop_maps(NULL) {
+    assert(_output_registers.length() <= 1
+           || (_output_registers.length() == 2 && !_output_registers.at(1)->is_valid()), "no multi-reg returns");
+
+  }
+  
   void generate();
 
   int spill_size_in_bytes() const {
@@ -3460,7 +3465,7 @@ public:
     return 0;
   }
 
-  void spill_register() {
+  void spill_out_registers() {
     if (_output_registers.length() == 0) {
       return;
     }
@@ -3482,7 +3487,7 @@ public:
     }
   }
 
-  void fill_register() {
+  void fill_out_registers() {
     if (_output_registers.length() == 0) {
       return;
     }
@@ -3580,9 +3585,6 @@ void NativeInvokerGenerator::generate() {
 
   __ call(RuntimeAddress(_call_target));
 
-  assert(_output_registers.length() <= 1
-    || (_output_registers.length() == 2 && !_output_registers.at(1)->is_valid()), "no multi-reg returns");
-
   __ restore_cpu_control_state_after_jni();
 
   __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
@@ -3622,7 +3624,7 @@ void NativeInvokerGenerator::generate() {
   __ bind(L_safepoint_poll_slow_path);
   __ vzeroupper();
 
-  spill_register();
+  spill_out_registers();
 
   __ mov(c_rarg0, r15_thread);
   __ mov(r12, rsp); // remember sp
@@ -3632,7 +3634,7 @@ void NativeInvokerGenerator::generate() {
   __ mov(rsp, r12); // restore sp
   __ reinit_heapbase();
 
-  fill_register();
+  fill_out_registers();
 
   __ jmp(L_after_safepoint_poll);
   __ block_comment("} L_safepoint_poll_slow_path");
@@ -3643,7 +3645,7 @@ void NativeInvokerGenerator::generate() {
   __ bind(L_reguard);
   __ vzeroupper();
 
-  spill_register();
+  spill_out_registers();
 
   __ mov(r12, rsp); // remember sp
   __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
@@ -3652,7 +3654,7 @@ void NativeInvokerGenerator::generate() {
   __ mov(rsp, r12); // restore sp
   __ reinit_heapbase();
 
-  fill_register();
+  fill_out_registers();
 
   __ jmp(L_after_reguard);
 

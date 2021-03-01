@@ -3098,7 +3098,11 @@ public:
      _output_registers(output_registers),
      _frame_complete(0),
      _framesize(0),
-     _oop_maps(NULL) {}
+     _oop_maps(NULL) {
+    assert(_output_registers.length() <= 1
+           || (_output_registers.length() == 2 && !_output_registers.at(1)->is_valid()), "no multi-reg returns");
+  }
+  
   void generate();
 
   int spill_size_in_bytes() const {
@@ -3121,7 +3125,7 @@ public:
     return 0;
   }
 
-  void spill_register() {
+  void spill_output_registers() {
     if (_output_registers.length() == 0) {
       return;
     }
@@ -3142,7 +3146,7 @@ public:
     }
   }
 
-  void fill_register() {
+  void fill_output_registers() {
     if (_output_registers.length() == 0) {
       return;
     }
@@ -3289,14 +3293,14 @@ void NativeInvokerGenerator::generate() {
   __ bind(L_safepoint_poll_slow_path);
 
   // Need to save the native result registers around any runtime calls.
-  spill_register();
+  spill_output_registers();
 
   __ mov(c_rarg0, rthread);
   assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
   __ blr(rscratch1);
 
-  fill_register();
+  fill_output_registers();
 
   __ b(L_after_safepoint_poll);
   __ block_comment("} L_safepoint_poll_slow_path");
@@ -3306,11 +3310,11 @@ void NativeInvokerGenerator::generate() {
   __ block_comment("{ L_reguard");
   __ bind(L_reguard);
 
-  spill_register();
+  spill_output_registers();
 
   rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
 
-  fill_register();
+  fill_output_registers();
 
   __ b(L_after_reguard);
 
