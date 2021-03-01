@@ -366,8 +366,7 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
   //
   jboolean needEnd = JNI_FALSE;
   if (_encoder != nil) {
-    if (_destination != dest || renderOptions->isAA != _encoderStates.aa ||
-            renderOptions->isAAShader != _encoderStates.aaShader) {
+    if (_destination != dest || renderOptions->isAA != _encoderStates.aa) {
       J2dTraceLn2(J2D_TRACE_VERBOSE,
                   "end common encoder because of dest change: %p -> %p",
                   _destination, dest);
