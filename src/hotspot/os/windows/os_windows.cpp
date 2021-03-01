@@ -1705,7 +1705,7 @@ void os::print_os_info(outputStream* st) {
     st->print("N/A ");
   }
 #endif
-  st->print_cr("OS:");
+  st->print("OS: ");
   os::win32::print_windows_version(st);
 
   os::win32::print_uptime_info(st);

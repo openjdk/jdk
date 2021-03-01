@@ -1990,7 +1990,7 @@ void os::print_os_info_brief(outputStream* st) {
 }
 
 void os::print_os_info(outputStream* st) {
-  st->print_cr("OS:");
+  st->print("OS: ");
 
   os::Linux::print_distro_info(st);
 
