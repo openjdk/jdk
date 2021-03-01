@@ -1981,6 +1981,11 @@ public final class System {
      * Initialize the system class.  Called after thread initialization.
      */
     private static void initPhase1() {
+
+        // register the shared secrets - do this first, since SystemProps.initProperties
+        // might initialize CharsetDecoders that rely on it
+        setJavaLangAccess();
+
         // VM might invoke JNU_NewStringPlatform() to set those encoding
         // sensitive properties (user.home, user.name, boot.class.path, etc.)
         // during "props" initialization.
@@ -2026,8 +2031,6 @@ public final class System {
         Thread current = Thread.currentThread();
         current.getThreadGroup().add(current);
 
-        // register shared secrets
-        setJavaLangAccess();
 
         // Subsystems that are invoked during initialization can invoke
         // VM.isBooted() in order to avoid doing things that should
@@ -2275,6 +2278,14 @@ public final class System {
 
             public byte[] getBytesUTF8NoRepl(String s) {
                 return String.getBytesUTF8NoRepl(s);
+            }
+
+            public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+                StringLatin1.inflate(src, srcOff, dst, dstOff, len);
+            }
+
+            public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+                return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
             public void setCause(Throwable t, Throwable cause) {

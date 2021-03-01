@@ -1070,8 +1070,7 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   Handle h_loader(THREAD, JNIHandles::resolve(loader));
   Klass* k = SystemDictionary::find_instance_or_array_klass(klass_name,
                                                               h_loader,
-                                                              Handle(),
-                                                              CHECK_NULL);
+                                                              Handle());
 #if INCLUDE_CDS
   if (k == NULL) {
     // If the class is not already loaded, try to see if it's in the shared
@@ -2934,8 +2933,6 @@ JVM_END
 // but is thought to be reliable and simple. In the case, where the receiver is the
 // same thread as the sender, no VM_Operation is needed.
 JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
-  // A nested ThreadsListHandle will grab the Threads_lock so create
-  // tlh before we resolve throwable.
   ThreadsListHandle tlh(thread);
   oop java_throwable = JNIHandles::resolve(throwable);
   if (java_throwable == NULL) {

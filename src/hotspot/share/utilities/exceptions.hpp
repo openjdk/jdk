@@ -321,8 +321,8 @@ class Exceptions {
   THREAD); if (HAS_PENDING_EXCEPTION) {    \
     oop ex = PENDING_EXCEPTION;            \
     CLEAR_PENDING_EXCEPTION;               \
-    ex->print();                           \
-    ShouldNotReachHere();                  \
+    DEBUG_ONLY(ex->print();)               \
+    assert(false, "CATCH");                \
   } (void)(0
 
 // ExceptionMark is a stack-allocated helper class for local exception handling.

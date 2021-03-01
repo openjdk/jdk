@@ -42,6 +42,7 @@
 #endif
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/dynamicArchive.hpp"

@@ -131,7 +131,7 @@ public class DebugReportsOneExtraByte {
             OutputAnalyzer output = ProcessTools.executeTestJvm(
                 "-Dtest.src=" + System.getProperty("test.src"),
                 "-Djavax.net.debug=all", "DebugReportsOneExtraByte", "p");
-            output.shouldContain("WRITE: TLS10 application_data, length = 8");
+            output.shouldContain("WRITE: TLSv1 application_data, length = 8");
 
             System.out.println("Test Passed.");
         } else {
