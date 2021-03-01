@@ -3529,11 +3529,19 @@ bool os::Linux::transparent_huge_pages_sanity_check(bool warn,
   return result;
 }
 
+int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
+  if (page_size != default_large_page_size()) {
+    return (exact_log2(page_size) << MAP_HUGE_SHIFT);
+  }
+  return 0;
+}
+
 bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   bool result = false;
-  void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE,
-                 MAP_ANONYMOUS|MAP_PRIVATE|MAP_HUGETLB,
-                 -1, 0);
+
+  // Include the page size flag to ensure we sanity check the correct page size.
+  int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
+  void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
 
   if (p != MAP_FAILED) {
     // We don't know if this really is a huge page or not.
@@ -3562,6 +3570,30 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   }
 
   return result;
+}
+
+bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
+  // Try to create a large shared memory segment.
+  int shmid = shmget(IPC_PRIVATE, page_size, SHM_HUGETLB|IPC_CREAT|SHM_R|SHM_W);
+  if (shmid == -1) {
+    // Possible reasons for shmget failure:
+    // 1. shmmax is too small for the request.
+    //    > check shmmax value: cat /proc/sys/kernel/shmmax
+    //    > increase shmmax value: echo "new_value" > /proc/sys/kernel/shmmax
+    // 2. not enough large page memory.
+    //    > check available large pages: cat /proc/meminfo
+    //    > increase amount of large pages:
+    //          sysctl -w vm.nr_hugepages=new_value
+    //    > For more information regarding large pages please refer to:
+    //      https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt
+    if (warn) {
+      warning("Large pages using UseSHM are not configured on this system.");
+    }
+    return false;
+  }
+  // Managed to create a segment, now delete it.
+  shmctl(shmid, IPC_RMID, NULL);
+  return true;
 }
 
 // From the coredump_filter documentation:
@@ -3748,7 +3780,18 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
     UseHugeTLBFS = false;
   }
 
-  return UseSHM;
+  if (UseSHM) {
+    bool warn_on_failure = !FLAG_IS_DEFAULT(UseSHM);
+    if (shm_hugetlbfs_sanity_check(warn_on_failure, page_size)) {
+      return true;
+    }
+    UseSHM = false;
+  }
+
+  if (!FLAG_IS_DEFAULT(UseLargePages)) {
+    log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
+  }
+  return false;
 }
 
 void os::large_page_init() {
@@ -3888,13 +3931,15 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
   int shmid = shmget(IPC_PRIVATE, bytes, SHM_HUGETLB|IPC_CREAT|SHM_R|SHM_W);
   if (shmid == -1) {
     // Possible reasons for shmget failure:
-    // 1. shmmax is too small for Java heap.
+    // 1. shmmax is too small for the request.
     //    > check shmmax value: cat /proc/sys/kernel/shmmax
-    //    > increase shmmax value: echo "0xffffffff" > /proc/sys/kernel/shmmax
+    //    > increase shmmax value: echo "new_value" > /proc/sys/kernel/shmmax
     // 2. not enough large page memory.
     //    > check available large pages: cat /proc/meminfo
     //    > increase amount of large pages:
-    //          echo new_value > /proc/sys/vm/nr_hugepages
+    //          sysctl -w vm.nr_hugepages=new_value
+    //    > For more information regarding large pages please refer to:
+    //      https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt
     //      Note 1: different Linux may use different name for this property,
     //            e.g. on Redhat AS-3 it is "hugetlb_pool".
     //      Note 2: it's possible there's enough physical memory available but
@@ -3943,10 +3988,9 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
 
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   int flags = MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB;
+  // Ensure the correct page size flag is used when needed.
+  flags |= hugetlbfs_page_size_flag(os::large_page_size());
 
-  if (os::large_page_size() != default_large_page_size()) {
-    flags |= (exact_log2(os::large_page_size()) << MAP_HUGE_SHIFT);
-  }
   char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
 
   if (addr == MAP_FAILED) {
@@ -4016,11 +4060,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
   }
 
   // Commit large-paged area.
-  flags |= MAP_HUGETLB;
-
-  if (os::large_page_size() != default_large_page_size()) {
-    flags |= (exact_log2(os::large_page_size()) << MAP_HUGE_SHIFT);
-  }
+  flags |= MAP_HUGETLB | hugetlbfs_page_size_flag(os::large_page_size());
 
   result = ::mmap(lp_start, lp_bytes, prot, flags, -1, 0);
   if (result == MAP_FAILED) {

@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "aot/aotLoader.hpp"
-#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -43,6 +42,7 @@
 #endif
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/dynamicArchive.hpp"

@@ -25,10 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_INLINE_HPP
 
-#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 
 bool ShenandoahHeapRegionSet::is_in(size_t region_idx) const {
@@ -38,14 +36,6 @@ bool ShenandoahHeapRegionSet::is_in(size_t region_idx) const {
 
 bool ShenandoahHeapRegionSet::is_in(ShenandoahHeapRegion* r) const {
   return is_in(r->index());
-}
-
-bool ShenandoahHeapRegionSet::is_in(oop p) const {
-  shenandoah_assert_in_heap(NULL, p);
-  uintx index = (cast_from_oop<uintx>(p)) >> _region_size_bytes_shift;
-  // no need to subtract the bottom of the heap from p,
-  // _biased_set_map is biased
-  return _biased_set_map[index] == 1;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_INLINE_HPP

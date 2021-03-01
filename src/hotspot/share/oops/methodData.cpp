@@ -32,6 +32,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.inline.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/arguments.hpp"

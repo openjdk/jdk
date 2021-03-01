@@ -1223,37 +1223,37 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
   }
 }
 
-Klass* InstanceKlass::implementor() const {
-  Klass* volatile* k = adr_implementor();
-  if (k == NULL) {
+InstanceKlass* InstanceKlass::implementor() const {
+  InstanceKlass* volatile* ik = adr_implementor();
+  if (ik == NULL) {
     return NULL;
   } else {
     // This load races with inserts, and therefore needs acquire.
-    Klass* kls = Atomic::load_acquire(k);
-    if (kls != NULL && !kls->is_loader_alive()) {
+    InstanceKlass* ikls = Atomic::load_acquire(ik);
+    if (ikls != NULL && !ikls->is_loader_alive()) {
       return NULL;  // don't return unloaded class
     } else {
-      return kls;
+      return ikls;
     }
   }
 }
 
 
-void InstanceKlass::set_implementor(Klass* k) {
+void InstanceKlass::set_implementor(InstanceKlass* ik) {
   assert_locked_or_safepoint(Compile_lock);
   assert(is_interface(), "not interface");
-  Klass* volatile* addr = adr_implementor();
+  InstanceKlass* volatile* addr = adr_implementor();
   assert(addr != NULL, "null addr");
   if (addr != NULL) {
-    Atomic::release_store(addr, k);
+    Atomic::release_store(addr, ik);
   }
 }
 
 int  InstanceKlass::nof_implementors() const {
-  Klass* k = implementor();
-  if (k == NULL) {
+  InstanceKlass* ik = implementor();
+  if (ik == NULL) {
     return 0;
-  } else if (k != this) {
+  } else if (ik != this) {
     return 1;
   } else {
     return 2;
@@ -1269,29 +1269,29 @@ int  InstanceKlass::nof_implementors() const {
 //   self                  - more than one implementor
 //
 // The _implementor field only exists for interfaces.
-void InstanceKlass::add_implementor(Klass* k) {
+void InstanceKlass::add_implementor(InstanceKlass* ik) {
   if (Universe::is_fully_initialized()) {
     assert_lock_strong(Compile_lock);
   }
   assert(is_interface(), "not interface");
   // Filter out my subinterfaces.
   // (Note: Interfaces are never on the subklass list.)
-  if (InstanceKlass::cast(k)->is_interface()) return;
+  if (ik->is_interface()) return;
 
   // Filter out subclasses whose supers already implement me.
   // (Note: CHA must walk subclasses of direct implementors
   // in order to locate indirect implementors.)
-  Klass* sk = k->super();
-  if (sk != NULL && InstanceKlass::cast(sk)->implements_interface(this))
+  InstanceKlass* super_ik = ik->java_super();
+  if (super_ik != NULL && super_ik->implements_interface(this))
     // We only need to check one immediate superclass, since the
     // implements_interface query looks at transitive_interfaces.
     // Any supers of the super have the same (or fewer) transitive_interfaces.
     return;
 
-  Klass* ik = implementor();
-  if (ik == NULL) {
-    set_implementor(k);
-  } else if (ik != this && ik != k) {
+  InstanceKlass* iklass = implementor();
+  if (iklass == NULL) {
+    set_implementor(ik);
+  } else if (iklass != this && iklass != ik) {
     // There is already an implementor. Use itself as an indicator of
     // more than one implementors.
     set_implementor(this);
@@ -1299,7 +1299,7 @@ void InstanceKlass::add_implementor(Klass* k) {
 
   // The implementor also implements the transitive_interfaces
   for (int index = 0; index < local_interfaces()->length(); index++) {
-    InstanceKlass::cast(local_interfaces()->at(index))->add_implementor(k);
+    local_interfaces()->at(index)->add_implementor(ik);
   }
 }
 
@@ -1314,7 +1314,7 @@ void InstanceKlass::process_interfaces() {
   // link this class into the implementors list of every interface it implements
   for (int i = local_interfaces()->length() - 1; i >= 0; i--) {
     assert(local_interfaces()->at(i)->is_klass(), "must be a klass");
-    InstanceKlass* interf = InstanceKlass::cast(local_interfaces()->at(i));
+    InstanceKlass* interf = local_interfaces()->at(i);
     assert(interf->is_interface(), "expected interface");
     interf->add_implementor(this);
   }
@@ -2344,11 +2344,11 @@ void InstanceKlass::clean_implementors_list() {
     assert (ClassUnloading, "only called for ClassUnloading");
     for (;;) {
       // Use load_acquire due to competing with inserts
-      Klass* impl = Atomic::load_acquire(adr_implementor());
+      InstanceKlass* impl = Atomic::load_acquire(adr_implementor());
       if (impl != NULL && !impl->is_loader_alive()) {
-        // NULL this field, might be an unloaded klass or NULL
-        Klass* volatile* klass = adr_implementor();
-        if (Atomic::cmpxchg(klass, impl, (Klass*)NULL) == impl) {
+        // NULL this field, might be an unloaded instance klass or NULL
+        InstanceKlass* volatile* iklass = adr_implementor();
+        if (Atomic::cmpxchg(iklass, impl, (InstanceKlass*)NULL) == impl) {
           // Successfully unlinking implementor.
           if (log_is_enabled(Trace, class, unload)) {
             ResourceMark rm;
@@ -2934,7 +2934,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
 // in an unnamed module.  It is also used to indicate (for all packages whose
 // classes are loaded by the boot loader) that at least one of the package's
 // classes has been loaded.
-void InstanceKlass::set_classpath_index(s2 path_index, TRAPS) {
+void InstanceKlass::set_classpath_index(s2 path_index) {
   if (_package_entry != NULL) {
     DEBUG_ONLY(PackageEntryTable* pkg_entry_tbl = ClassLoaderData::the_null_class_loader_data()->packages();)
     assert(pkg_entry_tbl->lookup_only(_package_entry->name()) == _package_entry, "Should be same");
@@ -4283,4 +4283,25 @@ void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
     }
   }
 #endif // INCLUDE_CDS
+}
+
+// Make a step iterating over the class hierarchy under the root class.
+// Skips subclasses if requested.
+void ClassHierarchyIterator::next() {
+  assert(_current != NULL, "required");
+  if (_visit_subclasses && _current->subklass() != NULL) {
+    _current = _current->subklass();
+    return; // visit next subclass
+  }
+  _visit_subclasses = true; // reset
+  while (_current->next_sibling() == NULL && _current != _root) {
+    _current = _current->superklass(); // backtrack; no more sibling subclasses left
+  }
+  if (_current == _root) {
+    // Iteration is over (back at root after backtracking). Invalidate the iterator.
+    _current = NULL;
+    return;
+  }
+  _current = _current->next_sibling();
+  return; // visit next sibling subclass
 }

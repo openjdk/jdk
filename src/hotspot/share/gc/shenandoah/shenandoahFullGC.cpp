@@ -48,7 +48,7 @@
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -958,7 +958,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
 
       Copy::aligned_conjoint_words(heap->get_region(old_start)->bottom(),
                                    heap->get_region(new_start)->bottom(),
-                                   ShenandoahHeapRegion::region_size_words()*num_regions);
+                                   words_size);
 
       oop new_obj = oop(heap->get_region(new_start)->bottom());
       new_obj->init_mark();

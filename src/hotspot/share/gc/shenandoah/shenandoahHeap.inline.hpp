@@ -54,7 +54,7 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
-  size_t new_index = Atomic::add(&_index, (size_t) 1);
+  size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns NULL on OOB.
   return _heap->get_region(new_index - 1);
 }

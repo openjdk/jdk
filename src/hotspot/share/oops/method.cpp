@@ -891,7 +891,7 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
     Symbol* klass_name = constants()->klass_name_at(klass_index);
     Handle loader(thread, method_holder()->class_loader());
     Handle prot  (thread, method_holder()->protection_domain());
-    return SystemDictionary::find(klass_name, loader, prot, thread) != NULL;
+    return SystemDictionary::find_instance_klass(klass_name, loader, prot) != NULL;
   } else {
     return true;
   }

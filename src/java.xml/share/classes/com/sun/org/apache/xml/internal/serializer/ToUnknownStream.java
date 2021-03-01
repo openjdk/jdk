@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,7 +49,7 @@ import org.xml.sax.SAXException;
  *
  * This class is not a public API, it is public because it is used within Xalan.
  * @xsl.usage internal
- * @LastModified: Aug 2019
+ * @LastModified: Feb 2021
  */
 public final class ToUnknownStream extends SerializerBase
 {
@@ -655,6 +655,11 @@ public final class ToUnknownStream extends SerializerBase
         m_handler.setStandalone(standalone);
     }
 
+    @Override
+    public void setIsStandalone(boolean isStandalone) {
+       super.setIsStandalone(isStandalone);
+       m_handler.setIsStandalone(isStandalone);
+    }
     /**
      * Pass the call on to the underlying handler
      * @see org.xml.sax.ext.DeclHandler#attributeDecl(String, String, String, String, String)

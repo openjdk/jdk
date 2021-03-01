@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,261 +26,480 @@
  * @bug 8248830 8256823
  * @summary Support for scalar rotates ([Integer/Long].rotate[Left/Right]).
  * @library /test/lib
- * @requires vm.compiler2.enabled
- *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -XX:CompileThreshold=1000 -Xbatch
  *      compiler.intrinsics.TestRotate
- *
  */
-
 package compiler.intrinsics;
 
-import java.util.Arrays;
-import java.util.Random;
-import jdk.test.lib.Utils;
-
 public class TestRotate {
-    static int ITERS = 500000;
-    static int SIZE  = 32;
-    static Random rand;
 
-    static final int [] ref_rol_int = {1073741824,2147483647,-1847483168,-762700135,617181014,1499775590,770793873,-921711375,1843194553,618929189,543569581,-1524383055,-1358287055,-2015951670,1688073778,687346128,2069534693,-649937276,-1986172760,-1935023546,1291562794,-1493576900,1682263699,807071113,888440312,1299098553,1799312476,745578744,762073952,-1048231621,479680827,403988906};
+    static final int ITERS = 500000;
+    static final int[] INT_VALUES = {Integer.MIN_VALUE, Integer.MAX_VALUE, 0, 1, 2, 3, 5, 8, 13};
+    static final long[] LONG_VALUES = {Long.MIN_VALUE, Long.MAX_VALUE, 0L, 1L, 2L, 3L, 5L, 8L, 13L};
 
-    static final int [] ref_ror_int = {1,2147483647,-1847483168,1244166759,1284961634,1704135065,770793873,-53535600,-1217156379,118049081,1667944966,1766387884,-960747332,849475009,2106366247,-532201309,-111225179,-1590275921,1733962274,-1851577736,1055640211,1872573386,356142481,1649149627,1025605133,1537928787,1799312476,-131305312,190518488,82773525,1321674198,-2126112095};
+    // expected resules
+    static final int[] TEST_ROR_OR_INT_1_EXPECTED = {1073741824, -1073741825, 0, -2147483648, 1, -2147483647, -2147483646, 4, -2147483642};
 
-    static final long [] ref_rol_long = {4611686018427387904L,9223372036854775807L,-3965526468698771170L,-4285866096636113521L,7635506276746300070L,5413117018148508287L,1868037460083876000L,-3244573585138770353L,7136025216317516898L,-4913621043675642569L,-6391133452542036978L,3902621950534797292L,-4632945906580257763L,4947809816008258399L,5235987658397734862L,2619582334080606650L,1815014778597694835L,-2451797983190531776L,-12499474356882106L,-8308822678069541478L,8441313153103433409L,3994820770127321462L,3403550366464210270L,-5787882067214947834L,-3689654055874130041L,-589861354719079036L,6641098980367723810L,763129181839551415L,4389436227302949880L,-8023110070632385182L,-8486732357167672789L,7236425339463197932L};
+    static final int[] TEST_ROR_OR_INT_16_EXPECTED = {32768, -32769, 0, 65536, 131072, 196608, 327680, 524288, 851968};
 
-    static final long [] ref_ror_long = {1L,9223372036854775807L,-3965526468698771170L,1303279687165097535L,-6959108088026060186L,681250795361731838L,3705372465420868140L,-8117671657526198993L,-335604442896202624L,-3176041913244586253L,-2152781018329716108L,975655487633699323L,8574521504761035792L,-5473888690750018935L,1581768605333334728L,7674419410656225425L,6685114322387540375L,5780227587575757360L,-799966358840454721L,8284086884492323912L,5288463661042741341L,912426852973757747L,-11970671133582816L,-344117270115783853L,-2106591766031512621L,-857638554601955011L,6641098980367723810L,-5257223391402178581L,1097359056825737470L,-4640791861453503840L,8696676574724001348L,-6526192196514797544L};
+    static final int[] TEST_ROR_OR_INT_31_EXPECTED = {1, -2, 0, 2, 4, 6, 10, 16, 26};
 
-    static final int [] ref_int_rol_shift_1 = {1,-2,600000961,1244166759,642480817,161047955,-1021158430,-2014938908,-1427785869,-467917532,857429648,-1524383055,1807911884,1884072061,845454838,1040479242,1471523198,1301556200,-1713993080,-1641781046,-809831772,-1713031218,-1529278125,-1361538303,1602441032,-689259628,-696342344,93197343,762073952,352644870,1972613577,223396003};
+    static final int[] TEST_ROR_OR_INT_32_EXPECTED = {-2147483648, 2147483647, 0, 1, 2, 3, 5, 8, 13};
 
-    static final int [] ref_int_rol_shift_127 = {1073741824 ,-1073741825 ,1223742064 ,-762700135 ,1234362028 ,-1033479836 ,-1329031432 ,570007097 ,-356946468 ,956762441 ,214357412 ,1766387884 ,451977971 ,1544759839 ,-1936119939 ,-1887363838 ,-1779602849 ,325389050 ,645243554 ,-1484187086 ,871283881 ,-1501999629 ,-382319532 ,1807099072 ,400610258 ,901426917 ,899656238 ,-1050442489 ,190518488 ,-2059322431 ,1566895218 ,-1017892824};
+    static final long[] TEST_ROR_OR_LONG_1_EXPECTED = {4611686018427387904L, -4611686018427387905L, 0L, -9223372036854775808L, 1L, -9223372036854775807L, -9223372036854775806L, 4L, -9223372036854775802L};
 
-    static final int [] ref_int_rol_shift_128 = {-2147483648 ,2147483647 ,-1847483168 ,-1525400269 ,-1826243240 ,-2066959671 ,1636904433 ,1140014194 ,-713892935 ,1913524882 ,428714824 ,-762191528 ,903955942 ,-1205447618 ,422727419 ,520239621 ,735761599 ,650778100 ,1290487108 ,1326593125 ,1742567762 ,1290968039 ,-764639063 ,-680769152 ,801220516 ,1802853834 ,1799312476 ,-2100884977 ,381036976 ,176322435 ,-1161176860 ,-2035785647};
+    static final long[] TEST_ROR_OR_LONG_16_EXPECTED = {140737488355328L, -140737488355329L, 0L, 281474976710656L, 562949953421312L, 844424930131968L, 1407374883553280L, 2251799813685248L, 3659174697238528L};
 
-    static final int [] ref_int_rol_shift_M128 = {-2147483648 ,2147483647 ,-1847483168 ,-1525400269 ,-1826243240 ,-2066959671 ,1636904433 ,1140014194 ,-713892935 ,1913524882 ,428714824 ,-762191528 ,903955942 ,-1205447618 ,422727419 ,520239621 ,735761599 ,650778100 ,1290487108 ,1326593125 ,1742567762 ,1290968039 ,-764639063 ,-680769152 ,801220516 ,1802853834 ,1799312476 ,-2100884977 ,381036976 ,176322435 ,-1161176860 ,-2035785647};
+    static final long[] TEST_ROR_OR_LONG_63_EXPECTED = {1L, -2L, 0L, 2L, 4L, 6L, 10L, 16L, 26L};
 
-    static final int [] ref_int_rol_shift_M129 = {1073741824 ,-1073741825 ,1223742064 ,-762700135 ,1234362028 ,-1033479836 ,-1329031432 ,570007097 ,-356946468 ,956762441 ,214357412 ,1766387884 ,451977971 ,1544759839 ,-1936119939 ,-1887363838 ,-1779602849 ,325389050 ,645243554 ,-1484187086 ,871283881 ,-1501999629 ,-382319532 ,1807099072 ,400610258 ,901426917 ,899656238 ,-1050442489 ,190518488 ,-2059322431 ,1566895218 ,-1017892824};
+    static final long[] TEST_ROR_OR_LONG_64_EXPECTED = {-9223372036854775808L, 9223372036854775807L, 0L, 1L, 2L, 3L, 5L, 8L, 13L};
 
-    static final int [] ref_int_ror_shift_1 = {1073741824,-1073741825,1223742064,-762700135,1234362028,-1033479836,-1329031432,570007097,-356946468,956762441,214357412,1766387884,451977971,1544759839,-1936119939,-1887363838,-1779602849,325389050,645243554,-1484187086,871283881,-1501999629,-382319532,1807099072,400610258,901426917,899656238,-1050442489,190518488,-2059322431,1566895218,-1017892824};
+    static final int[] TEST_ROR_ADD_INT_1_EXPECTED = TEST_ROR_OR_INT_1_EXPECTED;
 
-    static final int [] ref_int_ror_shift_127 = {1 ,-2 ,600000961 ,1244166759 ,642480817 ,161047955 ,-1021158430 ,-2014938908 ,-1427785869 ,-467917532 ,857429648 ,-1524383055 ,1807911884 ,1884072061 ,845454838 ,1040479242 ,1471523198 ,1301556200 ,-1713993080 ,-1641781046 ,-809831772 ,-1713031218 ,-1529278125 ,-1361538303 ,1602441032 ,-689259628 ,-696342344 ,93197343 ,762073952 ,352644870 ,1972613577 ,223396003};
+    static final int[] TEST_ROR_ADD_INT_16_EXPECTED = TEST_ROR_OR_INT_16_EXPECTED;
 
-    static final int [] ref_int_ror_shift_128 = {-2147483648 ,2147483647 ,-1847483168 ,-1525400269 ,-1826243240 ,-2066959671 ,1636904433 ,1140014194 ,-713892935 ,1913524882 ,428714824 ,-762191528 ,903955942 ,-1205447618 ,422727419 ,520239621 ,735761599 ,650778100 ,1290487108 ,1326593125 ,1742567762 ,1290968039 ,-764639063 ,-680769152 ,801220516 ,1802853834 ,1799312476 ,-2100884977 ,381036976 ,176322435 ,-1161176860 ,-2035785647};
+    static final int[] TEST_ROR_ADD_INT_31_EXPECTED = TEST_ROR_OR_INT_31_EXPECTED;
 
-    static final int [] ref_int_ror_shift_M128 = {-2147483648 ,2147483647 ,-1847483168 ,-1525400269 ,-1826243240 ,-2066959671 ,1636904433 ,1140014194 ,-713892935 ,1913524882 ,428714824 ,-762191528 ,903955942 ,-1205447618 ,422727419 ,520239621 ,735761599 ,650778100 ,1290487108 ,1326593125 ,1742567762 ,1290968039 ,-764639063 ,-680769152 ,801220516 ,1802853834 ,1799312476 ,-2100884977 ,381036976 ,176322435 ,-1161176860 ,-2035785647};
+    static final int[] TEST_ROR_ADD_INT_32_EXPECTED = {0, -2, 0, 2, 4, 6, 10, 16, 26};
 
-    static final int [] ref_int_ror_shift_M129 = {1 ,-2 ,600000961 ,1244166759 ,642480817 ,161047955 ,-1021158430 ,-2014938908 ,-1427785869 ,-467917532 ,857429648 ,-1524383055 ,1807911884 ,1884072061 ,845454838 ,1040479242 ,1471523198 ,1301556200 ,-1713993080 ,-1641781046 ,-809831772 ,-1713031218 ,-1529278125 ,-1361538303 ,1602441032 ,-689259628 ,-696342344 ,93197343 ,762073952 ,352644870 ,1972613577 ,223396003};
+    static final long[] TEST_ROR_ADD_LONG_1_EXPECTED = TEST_ROR_OR_LONG_1_EXPECTED;
 
+    static final long[] TEST_ROR_ADD_LONG_16_EXPECTED = TEST_ROR_OR_LONG_16_EXPECTED;
 
-    static final long [] ref_long_rol_shift_1 = {
-1L,-2L,-7931052937397542339L,1303279687165097535L,5608201114852140040L,359735415298403453L,4701815018953926360L,8969694797557082089L,324535527229983777L,-3508390168714987589L,-8153196119534272952L,-5889362595358906884L,8065135560209711367L,-3515635332702993867L,-3582426625105780649L,1632572717772861065L,3572202937482896855L,-7534931108784269461L,8161459789691976885L,5213383633793760703L,5933801933688073239L,-6730200469375698045L,6308363257973444605L,-3098812595652498694L,-541332749731694416L,9008962398204287055L,6200852250644175020L,5992317991244719550L,1486051504252676350L,-6863599526811956670L,5846438278934178867L,2838151117945983671L};
+    static final long[] TEST_ROR_ADD_LONG_63_EXPECTED = TEST_ROR_OR_LONG_63_EXPECTED;
 
-    static final long [] ref_long_rol_shift_127 = {4611686018427387904L,-4611686018427387905L,7240608802505390223L,-4285866096636113521L,1402050278713035010L,4701619872251988767L,1175453754738481590L,6854109717816658426L,4692819900234883848L,-877097542178746898L,2573386988543819666L,3139345369587661183L,-2595402128374960063L,8344463203679027341L,-895606656276445163L,5019829197870603170L,-3718635284056663691L,-1883732777196067366L,6652050965850382125L,-3308340109978947729L,-3128235535005369595L,-1682550117343924512L,6188776832920749055L,-5386389167340512578L,4476352830994464300L,-2359445418876316141L,1550213062661043755L,-7725292539043595921L,-8851859160791606721L,-6327585900130377072L,-3150076448693843188L,-3902148238940891987L};
+    static final long[] TEST_ROR_ADD_LONG_64_EXPECTED = {0L, -2L, 0L, 2L, 4L, 6L, 10L, 16L, 26L};
 
-    static final long [] ref_long_rol_shift_128 = {-9223372036854775808L,9223372036854775807L,-3965526468698771170L,-8571732193272227041L,2804100557426070020L,-9043504329205574082L,2350907509476963180L,-4738524638076234764L,-9061104273239783920L,-1754195084357493795L,5146773977087639332L,6278690739175322366L,-5190804256749920125L,-1757817666351496934L,-1791213312552890325L,-8407085677968345276L,-7437270568113327381L,-3767465554392134731L,-5142642142008787366L,-6616680219957895457L,-6256471070010739189L,-3365100234687849023L,-6069190407868053506L,7673965739028526461L,8952705661988928600L,-4718890837752632281L,3100426125322087510L,2996158995622359775L,743025752126338175L,5791572273448797473L,-6300152897387686375L,-7804296477881783973L};
+    // eor shift expected
+    static final int[] TEST_EOR_ROR_SHIFT_1_INT_EXPECTED = {-1073741824, -1073741824, 0, -2147483647, 3, -2147483646, -2147483641, 12, -2147483637};
 
-    static final long [] ref_long_rol_shift_M128 = {-9223372036854775808L,9223372036854775807L,-3965526468698771170L,-8571732193272227041L,2804100557426070020L,-9043504329205574082L,2350907509476963180L,-4738524638076234764L,-9061104273239783920L,-1754195084357493795L,5146773977087639332L,6278690739175322366L,-5190804256749920125L,-1757817666351496934L,-1791213312552890325L,-8407085677968345276L,-7437270568113327381L,-3767465554392134731L,-5142642142008787366L,-6616680219957895457L,-6256471070010739189L,-3365100234687849023L,-6069190407868053506L,7673965739028526461L,8952705661988928600L,-4718890837752632281L,3100426125322087510L,2996158995622359775L,743025752126338175L,5791572273448797473L,-6300152897387686375L,-7804296477881783973L};
+    static final int[] TEST_EOR_ROR_SHIFT_16_INT_EXPECTED = {-2147450880, -2147450880, 0, 65537, 131074, 196611, 327685, 524296, 851981};
 
+    static final int[] TEST_EOR_ROR_SHIFT_31_INT_EXPECTED = {-2147483647, -2147483647, 0, 3, 6, 5, 15, 24, 23};
 
-    static final long [] ref_long_rol_shift_M129 = {4611686018427387904L,-4611686018427387905L,7240608802505390223L,-4285866096636113521L,1402050278713035010L,4701619872251988767L,1175453754738481590L,6854109717816658426L,4692819900234883848L,-877097542178746898L,2573386988543819666L,3139345369587661183L,-2595402128374960063L,8344463203679027341L,-895606656276445163L,5019829197870603170L,-3718635284056663691L,-1883732777196067366L,6652050965850382125L,-3308340109978947729L,-3128235535005369595L,-1682550117343924512L,6188776832920749055L,-5386389167340512578L,4476352830994464300L,-2359445418876316141L,1550213062661043755L,-7725292539043595921L,-8851859160791606721L,-6327585900130377072L,-3150076448693843188L,-3902148238940891987L};
+    static final int[] TEST_EOR_ROR_SHIFT_32_INT_EXPECTED = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    static final long [] ref_long_ror_shift_1 = {4611686018427387904L,-4611686018427387905L,7240608802505390223L,-4285866096636113521L,1402050278713035010L,4701619872251988767L,1175453754738481590L,6854109717816658426L,4692819900234883848L,-877097542178746898L,2573386988543819666L,3139345369587661183L,-2595402128374960063L,8344463203679027341L,-895606656276445163L,5019829197870603170L,-3718635284056663691L,-1883732777196067366L,6652050965850382125L,-3308340109978947729L,-3128235535005369595L,-1682550117343924512L,6188776832920749055L,-5386389167340512578L,4476352830994464300L,-2359445418876316141L,1550213062661043755L,-7725292539043595921L,-8851859160791606721L,-6327585900130377072L,-3150076448693843188L,-3902148238940891987L};
+    static final long[] TEST_EOR_ROR_SHIFT_1_LONG_EXPECTED = {-4611686018427387904L, -4611686018427387904L, 0L, -9223372036854775807L, 3L, -9223372036854775806L, -9223372036854775801L, 12L, -9223372036854775797L};
 
-    static final long [] ref_long_ror_shift_127 = {1L,-2L,-7931052937397542339L,1303279687165097535L,5608201114852140040L,359735415298403453L,4701815018953926360L,8969694797557082089L,324535527229983777L,-3508390168714987589L,-8153196119534272952L,-5889362595358906884L,8065135560209711367L,-3515635332702993867L,-3582426625105780649L,1632572717772861065L,3572202937482896855L,-7534931108784269461L,8161459789691976885L,5213383633793760703L,5933801933688073239L,-6730200469375698045L,6308363257973444605L,-3098812595652498694L,-541332749731694416L,9008962398204287055L,6200852250644175020L,5992317991244719550L,1486051504252676350L,-6863599526811956670L,5846438278934178867L,2838151117945983671L};
+    static final long[] TEST_EOR_ROR_SHIFT_16_LONG_EXPECTED = {-9223231299366420480L, -9223231299366420480L, 0L, 281474976710657L, 562949953421314L, 844424930131971L, 1407374883553285L, 2251799813685256L, 3659174697238541L};
 
+    static final long[] TEST_EOR_ROR_SHIFT_63_LONG_EXPECTED = {-9223372036854775807L, -9223372036854775807L, 0L, 3L, 6L, 5L, 15L, 24L, 23L};
 
-    static final long [] ref_long_ror_shift_128 = {-9223372036854775808L,9223372036854775807L,-3965526468698771170L,-8571732193272227041L,2804100557426070020L,-9043504329205574082L,2350907509476963180L,-4738524638076234764L,-9061104273239783920L,-1754195084357493795L,5146773977087639332L,6278690739175322366L,-5190804256749920125L,-1757817666351496934L,-1791213312552890325L,-8407085677968345276L,-7437270568113327381L,-3767465554392134731L,-5142642142008787366L,-6616680219957895457L,-6256471070010739189L,-3365100234687849023L,-6069190407868053506L,7673965739028526461L,8952705661988928600L,-4718890837752632281L,3100426125322087510L,2996158995622359775L,743025752126338175L,5791572273448797473L,-6300152897387686375L,-7804296477881783973L};
+    static final long[] TEST_EOR_ROR_SHIFT_64_LONG_EXPECTED = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+    // and shift expected
+    static final int[] TEST_AND_ROR_SHIFT_1_INT_EXPECTED = {0, 1073741823, 0, 0, 0, 1, 0, 0, 4};
 
-    static final long [] ref_long_ror_shift_M128 = {-9223372036854775808L,9223372036854775807L,-3965526468698771170L,-8571732193272227041L,2804100557426070020L,-9043504329205574082L,2350907509476963180L,-4738524638076234764L,-9061104273239783920L,-1754195084357493795L,5146773977087639332L,6278690739175322366L,-5190804256749920125L,-1757817666351496934L,-1791213312552890325L,-8407085677968345276L,-7437270568113327381L,-3767465554392134731L,-5142642142008787366L,-6616680219957895457L,-6256471070010739189L,-3365100234687849023L,-6069190407868053506L,7673965739028526461L,8952705661988928600L,-4718890837752632281L,3100426125322087510L,2996158995622359775L,743025752126338175L,5791572273448797473L,-6300152897387686375L,-7804296477881783973L};
+    static final int[] TEST_AND_ROR_SHIFT_16_INT_EXPECTED = {0, 2147450879, 0, 0, 0, 0, 0, 0, 0};
 
-    static final long [] ref_long_ror_shift_M129 = {1L,-2L,-7931052937397542339L,1303279687165097535L,5608201114852140040L,359735415298403453L,4701815018953926360L,8969694797557082089L,324535527229983777L,-3508390168714987589L,-8153196119534272952L,-5889362595358906884L,8065135560209711367L,-3515635332702993867L,-3582426625105780649L,1632572717772861065L,3572202937482896855L,-7534931108784269461L,8161459789691976885L,5213383633793760703L,5933801933688073239L,-6730200469375698045L,6308363257973444605L,-3098812595652498694L,-541332749731694416L,9008962398204287055L,6200852250644175020L,5992317991244719550L,1486051504252676350L,-6863599526811956670L,5846438278934178867L,2838151117945983671L};
+    static final int[] TEST_AND_ROR_SHIFT_31_INT_EXPECTED = {0, 2147483646, 0, 0, 0, 2, 0, 0, 8};
 
+    static final int[] TEST_AND_ROR_SHIFT_32_INT_EXPECTED = {-2147483648, 2147483647, 0, 1, 2, 3, 5, 8, 13};
+
+    static final long[] TEST_AND_ROR_SHIFT_1_LONG_EXPECTED = {0L, 4611686018427387903L, 0L, 0L, 0L, 1L, 0L, 0L, 4L};
+
+    static final long[] TEST_AND_ROR_SHIFT_16_LONG_EXPECTED = {0L, 9223231299366420479L, 0L, 0L, 0L, 0L, 0L, 0L, 0L};
+
+    static final long[] TEST_AND_ROR_SHIFT_63_LONG_EXPECTED = {0L, 9223372036854775806L, 0L, 0L, 0L, 2L, 0L, 0L, 8L};
+
+    static final long[] TEST_AND_ROR_SHIFT_64_LONG_EXPECTED = {-9223372036854775808L, 9223372036854775807L, 0L, 1L, 2L, 3L, 5L, 8L, 13L};
+
+    // or shift expected
+    static final int[] TEST_OR_ROR_SHIFT_1_INT_EXPECTED = {-1073741824, -1, 0, -2147483647, 3, -2147483645, -2147483641, 12, -2147483633};
+
+    static final int[] TEST_OR_ROR_SHIFT_16_INT_EXPECTED = {-2147450880, -1, 0, 65537, 131074, 196611, 327685, 524296, 851981};
+
+    static final int[] TEST_OR_ROR_SHIFT_31_INT_EXPECTED = {-2147483647, -1, 0, 3, 6, 7, 15, 24, 31};
+
+    static final int[] TEST_OR_ROR_SHIFT_32_INT_EXPECTED = {-2147483648, 2147483647, 0, 1, 2, 3, 5, 8, 13};
+
+    static final long[] TEST_OR_ROR_SHIFT_1_LONG_EXPECTED = {-4611686018427387904L, -1L, 0L, -9223372036854775807L, 3L, -9223372036854775805L, -9223372036854775801L, 12L, -9223372036854775793L};
+
+    static final long[] TEST_OR_ROR_SHIFT_16_LONG_EXPECTED = {-9223231299366420480L, -1L, 0L, 281474976710657L, 562949953421314L, 844424930131971L, 1407374883553285L, 2251799813685256L, 3659174697238541L};
+
+    static final long[] TEST_OR_ROR_SHIFT_63_LONG_EXPECTED = {-9223372036854775807L, -1L, 0L, 3L, 6L, 7L, 15L, 24L, 31L};
+
+    static final long[] TEST_OR_ROR_SHIFT_64_LONG_EXPECTED = {-9223372036854775808L, 9223372036854775807L, 0L, 1L, 2L, 3L, 5L, 8L, 13L};
+
+    // eon shift expected
+    static final int[] TEST_EON_ROR_SHIFT_1_INT_EXPECTED = {1073741823, 1073741823, -1, 2147483646, -4, 2147483645, 2147483640, -13, 2147483636};
+
+    static final int[] TEST_EON_ROR_SHIFT_16_INT_EXPECTED = {2147450879, 2147450879, -1, -65538, -131075, -196612, -327686, -524297, -851982};
+
+    static final int[] TEST_EON_ROR_SHIFT_31_INT_EXPECTED = {2147483646, 2147483646, -1, -4, -7, -6, -16, -25, -24};
+
+    static final int[] TEST_EON_ROR_SHIFT_32_INT_EXPECTED = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+    static final long[] TEST_EON_ROR_SHIFT_1_LONG_EXPECTED = {4611686018427387903L, 4611686018427387903L, -1L, 9223372036854775806L, -4L, 9223372036854775805L, 9223372036854775800L, -13L, 9223372036854775796L};
+
+    static final long[] TEST_EON_ROR_SHIFT_16_LONG_EXPECTED = {9223231299366420479L, 9223231299366420479L, -1L, -281474976710658L, -562949953421315L, -844424930131972L, -1407374883553286L, -2251799813685257L, -3659174697238542L};
+
+    static final long[] TEST_EON_ROR_SHIFT_63_LONG_EXPECTED = {9223372036854775806L, 9223372036854775806L, -1L, -4L, -7L, -6L, -16L, -25L, -24L};
+
+    static final long[] TEST_EON_ROR_SHIFT_64_LONG_EXPECTED = {-1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L};
+
+    // bic shift expected
+    static final int[] TEST_BIC_ROR_SHIFT_1_INT_EXPECTED = {-2147483648, 1073741824, 0, 1, 2, 2, 5, 8, 9};
+
+    static final int[] TEST_BIC_ROR_SHIFT_16_INT_EXPECTED = {-2147483648, 32768, 0, 1, 2, 3, 5, 8, 13};
+
+    static final int[] TEST_BIC_ROR_SHIFT_31_INT_EXPECTED = {-2147483648, 1, 0, 1, 2, 1, 5, 8, 5};
+
+    static final int[] TEST_BIC_ROR_SHIFT_32_INT_EXPECTED = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    static final long[] TEST_BIC_ROR_SHIFT_1_LONG_EXPECTED = {-9223372036854775808L, 4611686018427387904L, 0L, 1L, 2L, 2L, 5L, 8L, 9L};
+
+    static final long[] TEST_BIC_ROR_SHIFT_16_LONG_EXPECTED = {-9223372036854775808L, 140737488355328L, 0L, 1L, 2L, 3L, 5L, 8L, 13L};
+
+    static final long[] TEST_BIC_ROR_SHIFT_63_LONG_EXPECTED = {-9223372036854775808L, 1L, 0L, 1L, 2L, 1L, 5L, 8L, 5L};
+
+    static final long[] TEST_BIC_ROR_SHIFT_64_LONG_EXPECTED = {0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L};
+
+    // orn shift expected
+    static final int[] TEST_ORN_ROR_SHIFT_1_INT_EXPECTED = {-1073741825, 2147483647, -1, 2147483647, -2, 2147483647, 2147483645, -5, 2147483645};
+
+    static final int[] TEST_ORN_ROR_SHIFT_16_INT_EXPECTED = {-32769, 2147483647, -1, -65537, -131073, -196609, -327681, -524289, -851969};
+
+    static final int[] TEST_ORN_ROR_SHIFT_31_INT_EXPECTED = {-2, 2147483647, -1, -3, -5, -5, -11, -17, -19};
+
+    static final int[] TEST_ORN_ROR_SHIFT_32_INT_EXPECTED = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+    static final long[] TEST_ORN_ROR_SHIFT_1_LONG_EXPECTED = {-4611686018427387905L, 9223372036854775807L, -1L, 9223372036854775807L, -2L, 9223372036854775807L, 9223372036854775805L, -5L, 9223372036854775805L};
+
+    static final long[] TEST_ORN_ROR_SHIFT_16_LONG_EXPECTED = {-140737488355329L, 9223372036854775807L, -1L, -281474976710657L, -562949953421313L, -844424930131969L, -1407374883553281L, -2251799813685249L, -3659174697238529L};
+
+    static final long[] TEST_ORN_ROR_SHIFT_63_LONG_EXPECTED = {-2L, 9223372036854775807L, -1L, -3L, -5L, -5L, -11L, -17L, -19L};
+
+    static final long[] TEST_ORN_ROR_SHIFT_64_LONG_EXPECTED = {-1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L};
+
+    static final int[] TEST_ROR_INT_API_1_EXPECTED = TEST_ROR_OR_INT_1_EXPECTED;
+
+    static final int[] TEST_ROR_INT_API_16_EXPECTED = TEST_ROR_OR_INT_16_EXPECTED;
+
+    static final int[] TEST_ROR_INT_API_31_EXPECTED = TEST_ROR_OR_INT_31_EXPECTED;
+
+    static final int[] TEST_ROR_INT_API_32_EXPECTED = TEST_ROR_OR_INT_32_EXPECTED;
+
+    static final long[] TEST_ROR_LONG_API_1_EXPECTED = TEST_ROR_OR_LONG_1_EXPECTED;
+
+    static final long[] TEST_ROR_LONG_API_16_EXPECTED = TEST_ROR_OR_LONG_16_EXPECTED;
+
+    static final long[] TEST_ROR_LONG_API_63_EXPECTED = TEST_ROR_OR_LONG_63_EXPECTED;
+
+    static final long[] TEST_ROR_LONG_API_64_EXPECTED = TEST_ROR_OR_LONG_64_EXPECTED;
+
+    static final int[] TEST_ROL_INT_API_1_EXPECTED = {1, -2, 0, 2, 4, 6, 10, 16, 26};
+
+    static final int[] TEST_ROL_INT_API_16_EXPECTED = {32768, -32769, 0, 65536, 131072, 196608, 327680, 524288, 851968};
+
+    static final int[] TEST_ROL_INT_API_31_EXPECTED = {1073741824, -1073741825, 0, -2147483648, 1, -2147483647, -2147483646, 4, -2147483642};
+
+    static final int[] TEST_ROL_INT_API_32_EXPECTED = {-2147483648, 2147483647, 0, 1, 2, 3, 5, 8, 13};
+
+    static final long[] TEST_ROL_LONG_API_1_EXPECTED = {1L, -2L, 0L, 2L, 4L, 6L, 10L, 16L, 26L};
+
+    static final long[] TEST_ROL_LONG_API_16_EXPECTED = {32768L, -32769L, 0L, 65536L, 131072L, 196608L, 327680L, 524288L, 851968L};
+
+    static final long[] TEST_ROL_LONG_API_63_EXPECTED = {4611686018427387904L, -4611686018427387905L, 0L, -9223372036854775808L, 1L, -9223372036854775807L, -9223372036854775806L, 4L, -9223372036854775802L};
+
+    static final long[] TEST_ROL_LONG_API_64_EXPECTED = {-9223372036854775808L, 9223372036854775807L, 0L, 1L, 2L, 3L, 5L, 8L, 13L};
+
+    // verify
     static void verify(String text, long ref, long actual) {
-      if (ref != actual) {
-        System.err.println(text + " " +  ref + " != " + actual);
-        throw new Error("Fail");
-      }
+        if (ref != actual) {
+            System.err.println(text + " " + ref + " != " + actual);
+            throw new Error("Fail");
+        }
     }
 
-    public static int [] init_shift_vector(Random rand) {
-      int [] vec_int = new int [SIZE];
-      vec_int[0] = 127;
-      vec_int[1] = -128;
-      vec_int[2] = 128;
-      vec_int[3] = -129;
-      for (int i = 4 ; i < SIZE ; i++) {
-        vec_int[i] = rand.nextInt(256);
-      }
-      return vec_int;
+    static void verify(String text, int ref, int actual) {
+        if (ref != actual) {
+            System.err.println(text + " " + ref + " != " + actual);
+            throw new Error("Fail");
+        }
     }
 
-    public static int [] init_int_vector() {
-      int [] vec_int = new int [SIZE];
-      vec_int[0] = Integer.MIN_VALUE;
-      vec_int[1] = Integer.MAX_VALUE;
-      for (int i = 2 ; i < SIZE ; i++) {
-        vec_int[i] = rand.nextInt();
-      }
-      return vec_int;
+    // ror test constant
+    public static int testRorOrInt1(int val) {
+        return (val >>> 1) | (val << (32 - 1));
     }
 
-    public static long [] init_long_vector() {
-      long [] vec_long = new long [SIZE];
-      vec_long[0] = Long.MIN_VALUE;
-      vec_long[1] = Long.MAX_VALUE;
-      for (int i = 2 ; i < SIZE ; i++) {
-        vec_long[i] = rand.nextLong();
-      }
-      return vec_long;
+    public static int testRorOrInt16(int val) {
+        return (val >>> 16) | (val << (32 - 16));
     }
 
-    public static void test_rol_int(int val, int shift, int index) {
-      int actual = Integer.rotateLeft(val, shift);
-      verify("Integer.rotateLeft shift = " + shift, ref_rol_int[index], actual);
-      actual = (val << shift) | (val >>> -shift);
-      verify("Pattern1 integer rotateLeft shift = " + shift, ref_rol_int[index], actual);
-      actual = (val << shift) | (val >>> 32-shift);
-      verify("Pattern2 integer rotateLeft shift = " + shift, ref_rol_int[index], actual);
+    public static int testRorOrInt31(int val) {
+        return (val >>> 31) | (val << (32 - 31));
     }
 
-    public static void test_ror_int(int val, int shift, int index) {
-      int actual = Integer.rotateRight(val, shift);
-      verify("Integer.rotateRight shift = " + shift, ref_ror_int[index], actual);
-      actual = (val >>> shift) | (val <<-shift);
-      verify("Pattern1 integer rotateRight shift = " + shift, ref_ror_int[index], actual);
-      actual = (val >>> shift) | (val <<-32-shift);
-      verify("Pattern2 integer rotateRight shift = " + shift, ref_ror_int[index], actual);
+    public static int testRorOrInt32(int val) {
+        return (val >>> 32) | (val << (32 - 32));
     }
 
-    public static void test_rol_long(long val, int shift, int index) {
-      long actual = Long.rotateLeft(val, shift);
-      verify("Long.rotateLeft shift = " + shift, ref_rol_long[index], actual);
-      actual =  (val << shift) | (val >>>-shift);
-      verify("Pattern1 long rotateLeft shift = " + shift, ref_rol_long[index], actual);
-      actual =  (val << shift) | (val >>>64-shift);
-      verify("Pattern2 long rotateLeft shift = " + shift, ref_rol_long[index], actual);
+    public static long testRorOrLong1(long val) {
+        return (val >>> 1) | (val << (64 - 1));
     }
 
-    public static void test_ror_long(long val, int shift, int index) {
-      long actual = Long.rotateRight(val, shift);
-      verify("Long.rotateRight shift = " + shift, ref_ror_long[index], actual);
-      actual =  (val >>> shift) | (val <<-shift);
-      verify("Pattern1 long rotateRight shift = " + shift, ref_ror_long[index], actual);
-      actual =  (val >>> shift) | (val <<64-shift);
-      verify("Pattern2 long rotateRight shift = " + shift, ref_ror_long[index], actual);
+    public static long testRorOrLong16(long val) {
+        return (val >>> 16) | (val << (64 - 16));
     }
 
-    public static void test_rol_int_const(int val, int index) {
-      int res1 = Integer.rotateLeft(val, 1);
-      verify("Constant integer rotateLeft shift = 1", res1 , ref_int_rol_shift_1[index]);
-      int res2 = (val << 1) | (val >>> -1);
-      verify("Constant integer rotateLeft shift = 1", res2 , ref_int_rol_shift_1[index]);
-
-      res1 = Integer.rotateLeft(val, 127);
-      verify("Constant integer rotateLeft shift = 127", res1 , ref_int_rol_shift_127[index]);
-      res2 = (val << 127) | (val >>> -127);
-      verify("Constant integer rotateLeft shift = 127", res2 , ref_int_rol_shift_127[index]);
-
-      res1 = Integer.rotateLeft(val, 128);
-      verify("Constant integer rotateLeft shift = 128", res1 , ref_int_rol_shift_128[index]);
-      res2 = (val << 128) | (val >>> -128);
-      verify("Constant integer rotateLeft pattern = 128", res2 , ref_int_rol_shift_128[index]);
-
-      res1 = Integer.rotateLeft(val, -128);
-      verify("Constant integer rotateLeft shift = -128", res1 , ref_int_rol_shift_M128[index]);
-      res2 = (val << -128) | (val >>> 128);
-      verify("Constant integer rotateLeft pattern = 128", res2 , ref_int_rol_shift_M128[index]);
-
-      res1 = Integer.rotateLeft(val, -129);
-      verify("Constant integer rotateLeft shift = -129", res1 , ref_int_rol_shift_M129[index]);
-      res2 = (val << -129) | (val >>> 129);
-      verify("Constant integer rotateLeft pattern = 129", res2 , ref_int_rol_shift_M129[index]);
+    public static long testRorOrLong63(long val) {
+        return (val >>> 63) | (val << (64 - 63));
     }
 
-    public static void test_ror_int_const(int val, int index) {
-      int res1 = Integer.rotateRight(val, 1);
-      verify("Constant integer rotateRight shift = 1", res1 , ref_int_ror_shift_1[index]);
-      int res2 = (val >>> 1) | (val << -1);
-      verify("Constant integer rotateRight pattern = 1", res2 , ref_int_ror_shift_1[index]);
-
-      res1 = Integer.rotateRight(val, 127);
-      verify("Constant integer rotateRight shift = 127", res1 , ref_int_ror_shift_127[index]);
-      res2 = (val >>> 127) | (val << -127);
-      verify("Constant integer rotateRight pattern = 127", res2 , ref_int_ror_shift_127[index]);
-
-      res1 = Integer.rotateRight(val, 128);
-      verify("Constant integer rotateRight shift = 128", res1 , ref_int_ror_shift_128[index]);
-      res2 = (val >>> 128) | (val << -128);
-      verify("Constant integer rotateRight pattern = 128", res2 , ref_int_ror_shift_128[index]);
-
-      res1 = Integer.rotateRight(val, -128);
-      verify("Constant integer rotateRight shift = -128", res1 , ref_int_ror_shift_M128[index]);
-      res2 = (val >>> -128) | (val << 128);
-      verify("Constant integer rotateRight pattern = 128", res2 , ref_int_ror_shift_M128[index]);
-
-      res1 = Integer.rotateRight(val, -129);
-      verify("Constant integer rotateRight shift = -129", res1 , ref_int_ror_shift_M129[index]);
-      res2 = (val >>> -129) | (val << 129);
-      verify("Constant integer rotateRight pattern = 129", res2 , ref_int_ror_shift_M129[index]);
+    public static long testRorOrLong64(long val) {
+        return (val >>> 64) | (val << (64 - 64));
     }
 
-    public static void test_rol_long_const(long val, int index) {
-      long res1 = Long.rotateLeft(val, 1);
-      verify("Constant long rotateLeft shift = 1", res1 , ref_long_rol_shift_1[index]);
-      long res2 = (val << 1) | (val >>> -1);
-      verify("Constant long rotateLeft pattern = 1", res2 , ref_long_rol_shift_1[index]);
-
-      res1 = Long.rotateLeft(val, 127);
-      verify("Constant long rotateLeft shift = 127", res1 , ref_long_rol_shift_127[index]);
-      res2 = (val << 127) | (val >>> -127);
-      verify("Constant long rotateLeft pattern = 127", res2 , ref_long_rol_shift_127[index]);
-
-      res1 = Long.rotateLeft(val, 128);
-      verify("Constant long rotateLeft shift = 128", res1 , ref_long_rol_shift_128[index]);
-      res2 = (val << 128) | (val >>> -128);
-      verify("Constant long rotateLeft pattern = 128", res2 , ref_long_rol_shift_128[index]);
-
-      res1 = Long.rotateLeft(val, -128);
-      verify("Constant long rotateLeft shift = -128", res1 , ref_long_rol_shift_M128[index]);
-      res2 = (val << -128) | (val >>> 128);
-      verify("Constant long rotateLeft pattern = 128", res2 , ref_long_rol_shift_M128[index]);
-
-      res1 = Long.rotateLeft(val, -129);
-      verify("Constant long rotateLeft shift = -129", res1 , ref_long_rol_shift_M129[index]);
-      res2 = (val << -129) | (val >>> 129);
-      verify("Constant long rotateLeft pattern = 129", res2 , ref_long_rol_shift_M129[index]);
+    public static int testRorAddInt1(int val) {
+        return (val >>> 1) + (val << (32 - 1));
     }
 
-    public static void test_ror_long_const(long val, int index) {
-      long res1 = Long.rotateRight(val, 1);
-      verify("Constant long rotateRight shift = 1", res1 , ref_long_ror_shift_1[index]);
-      long res2 = (val >>> 1) | (val << -1);
-      verify("Constant long rotateRight pattern = 1", res2 , ref_long_ror_shift_1[index]);
-
-      res1 = Long.rotateRight(val, 127);
-      verify("Constant long rotateRight shift = 127", res1 , ref_long_ror_shift_127[index]);
-      res2 = (val >>> 127) | (val << -127);
-      verify("Constant long rotateRight pattern = 127", res2 , ref_long_ror_shift_127[index]);
-
-      res1 = Long.rotateRight(val, 128);
-      verify("Constant long rotateRight shift = 128", res1 , ref_long_ror_shift_128[index]);
-      res2 = (val >>> 128) | (val << -128);
-      verify("Constant long rotateRight pattern = 128", res2 , ref_long_ror_shift_128[index]);
-
-      res1 = Long.rotateRight(val, -128);
-      verify("Constant long rotateRight shift = -128", res1 , ref_long_ror_shift_M128[index]);
-      res2 = (val >>> -128) | (val << 128);
-      verify("Constant long rotateRight pattern = 128", res2 , ref_long_ror_shift_M128[index]);
-
-      res1 = Long.rotateRight(val, -129);
-      verify("Constant long rotateRight shift = -129", res1 , ref_long_ror_shift_M129[index]);
-      res2 = (val >>> -129) | (val << 129);
-      verify("Constant long rotateRight pattern = 129", res2 , ref_long_ror_shift_M129[index]);
+    public static int testRorAddInt16(int val) {
+        return (val >>> 16) + (val << (32 - 16));
     }
 
-    public static void test_rol_int_zero(int val) {
+    public static int testRorAddInt31(int val) {
+        return (val >>> 31) + (val << (32 - 31));
+    }
+
+    public static int testRorAddInt32(int val) {
+        return (val >>> 32) + (val << (32 - 32));
+    }
+
+    public static long testRorAddLong1(long val) {
+        return (val >>> 1) + (val << (64 - 1));
+    }
+
+    public static long testRorAddLong16(long val) {
+        return (val >>> 16) + (val << (64 - 16));
+    }
+
+    public static long testRorAddLong63(long val) {
+        return (val >>> 63) + (val << (64 - 63));
+    }
+
+    public static long testRorAddLong64(long val) {
+        return (val >>> 64) + (val << (64 - 64));
+    }
+
+    // eor(ROR shift)
+    public static int testRorOrInt1Eor(int val) {
+        return val ^ ((val >>> 1) | (val << (32 - 1)));
+    }
+
+    public static int testRorOrInt16Eor(int val) {
+        return val ^ ((val >>> 16) | (val << (32 - 16)));
+    }
+
+    public static int testRorOrInt31Eor(int val) {
+        return val ^ ((val >>> 31) | (val << (32 - 31)));
+    }
+
+    public static int testRorOrInt32Eor(int val) {
+        return val ^ ((val >>> 32) | (val << (32 - 32)));
+    }
+
+    public static long testRorOrLong1Eor(long val) {
+        return val ^ ((val >>> 1) | (val << (64 - 1)));
+    }
+
+    public static long testRorOrLong16Eor(long val) {
+        return val ^ ((val >>> 16) | (val << (64 - 16)));
+    }
+
+    public static long testRorOrLong63Eor(long val) {
+        return val ^ ((val >>> 63) | (val << (64 - 63)));
+    }
+
+    public static long testRorOrLong64Eor(long val) {
+        return val ^ ((val >>> 64) | (val << (64 - 64)));
+    }
+
+    // and(ROR shift)
+    public static int testRorOrInt1And(int val) {
+        return val & ((val >>> 1) | (val << (32 - 1)));
+    }
+
+    public static int testRorOrInt16And(int val) {
+        return val & ((val >>> 16) | (val << (32 - 16)));
+    }
+
+    public static int testRorOrInt31And(int val) {
+        return val & ((val >>> 31) | (val << (32 - 31)));
+    }
+
+    public static int testRorOrInt32And(int val) {
+        return val & ((val >>> 32) | (val << (32 - 32)));
+    }
+
+    public static long testRorOrLong1And(long val) {
+        return val & ((val >>> 1) | (val << (64 - 1)));
+    }
+
+    public static long testRorOrLong16And(long val) {
+        return val & ((val >>> 16) | (val << (64 - 16)));
+    }
+
+    public static long testRorOrLong63And(long val) {
+        return val & ((val >>> 63) | (val << (64 - 63)));
+    }
+
+    public static long testRorOrLong64And(long val) {
+        return val & ((val >>> 64) | (val << (64 - 64)));
+    }
+
+    // or(ROR shift)
+    public static int testRorOrInt1Or(int val) {
+        return val | ((val >>> 1) | (val << (32 - 1)));
+    }
+
+    public static int testRorOrInt16Or(int val) {
+        return val | ((val >>> 16) | (val << (32 - 16)));
+    }
+
+    public static int testRorOrInt31Or(int val) {
+        return val | ((val >>> 31) | (val << (32 - 31)));
+    }
+
+    public static int testRorOrInt32Or(int val) {
+        return val | ((val >>> 32) | (val << (32 - 32)));
+    }
+
+    public static long testRorOrLong1Or(long val) {
+        return val | ((val >>> 1) | (val << (64 - 1)));
+    }
+
+    public static long testRorOrLong16Or(long val) {
+        return val | ((val >>> 16) | (val << (64 - 16)));
+    }
+
+    public static long testRorOrLong63Or(long val) {
+        return val | ((val >>> 63) | (val << (64 - 63)));
+    }
+
+    public static long testRorOrLong64Or(long val) {
+        return val | ((val >>> 64) | (val << (64 - 64)));
+    }
+
+    // eon (ROR shift)
+    public static int testRorOrInt1Eon(int val) {
+        return val ^ (-1 ^ ((val >>> 1) | (val << (32 - 1))));
+    }
+
+    public static int testRorOrInt16Eon(int val) {
+        return val ^ (-1 ^ ((val >>> 16) | (val << (32 - 16))));
+    }
+
+    public static int testRorOrInt31Eon(int val) {
+        return val ^ (-1 ^ ((val >>> 31) | (val << (32 - 31))));
+    }
+
+    public static int testRorOrInt32Eon(int val) {
+        return val ^ (-1 ^ ((val >>> 32) | (val << (32 - 32))));
+    }
+
+    public static long testRorOrLong1Eon(long val) {
+        return val ^ (-1 ^ ((val >>> 1) | (val << (64 - 1))));
+    }
+
+    public static long testRorOrLong16Eon(long val) {
+        return val ^ (-1 ^ ((val >>> 16) | (val << (64 - 16))));
+    }
+
+    public static long testRorOrLong63Eon(long val) {
+        return val ^ (-1 ^ ((val >>> 63) | (val << (64 - 63))));
+    }
+
+    public static long testRorOrLong64Eon(long val) {
+        return val ^ (-1 ^ ((val >>> 64) | (val << (64 - 64))));
+    }
+
+    // and (ROR shift)
+    public static int testRorOrInt1Bic(int val) {
+        return val & (-1 ^ ((val >>> 1) | (val << (32 - 1))));
+    }
+
+    public static int testRorOrInt16Bic(int val) {
+        return val & (-1 ^ ((val >>> 16) | (val << (32 - 16))));
+    }
+
+    public static int testRorOrInt31Bic(int val) {
+        return val & (-1 ^ ((val >>> 31) | (val << (32 - 31))));
+    }
+
+    public static int testRorOrInt32Bic(int val) {
+        return val & (-1 ^ ((val >>> 32) | (val << (32 - 32))));
+    }
+
+    public static long testRorOrLong1Bic(long val) {
+        return val & (-1 ^ ((val >>> 1) | (val << (64 - 1))));
+    }
+
+    public static long testRorOrLong16Bic(long val) {
+        return val & (-1 ^ ((val >>> 16) | (val << (64 - 16))));
+    }
+
+    public static long testRorOrLong63Bic(long val) {
+        return val & (-1 ^ ((val >>> 63) | (val << (64 - 63))));
+    }
+
+    public static long testRorOrLong64Bic(long val) {
+        return val & (-1 ^ ((val >>> 64) | (val << (64 - 64))));
+    }
+
+    // or (ROR shift)
+    public static int testRorOrInt1Orn(int val) {
+        return val | (-1 ^ ((val >>> 1) | (val << (32 - 1))));
+    }
+
+    public static int testRorOrInt16Orn(int val) {
+        return val | (-1 ^ ((val >>> 16) | (val << (32 - 16))));
+    }
+
+    public static int testRorOrInt31Orn(int val) {
+        return val | (-1 ^ ((val >>> 31) | (val << (32 - 31))));
+    }
+
+    public static int testRorOrInt32Orn(int val) {
+        return val | (-1 ^ ((val >>> 32) | (val << (32 - 32))));
+    }
+
+    public static long testRorOrLong1Orn(long val) {
+        return val | (-1 ^ ((val >>> 1) | (val << (64 - 1))));
+    }
+
+    public static long testRorOrLong16Orn(long val) {
+        return val | (-1 ^ ((val >>> 16) | (val << (64 - 16))));
+    }
+
+    public static long testRorOrLong63Orn(long val) {
+        return val | (-1 ^ ((val >>> 63) | (val << (64 - 63))));
+    }
+
+    public static long testRorOrLong64Orn(long val) {
+        return val | (-1 ^ ((val >>> 64) | (val << (64 - 64))));
+    }
+
+    // test rotate API
+    public static int testRorIntApi(int val, int distance) {
+        return Integer.rotateRight(val, distance);
+    }
+
+    public static long testRorLongApi(long val, int distance) {
+        return Long.rotateRight(val, distance);
+    }
+
+    public static int testRolIntApi(int val, int distance) {
+        return Integer.rotateLeft(val, distance);
+    }
+
+    public static long testRolLongApi(long val, int distance) {
+        return Long.rotateLeft(val, distance);
+    }
+
+    public static void testRolIntZero(int val) {
         // Count is known to be zero only after loop opts
         int count = 42;
         for (int i = 0; i < 4; i++) {
@@ -294,7 +513,7 @@ public class TestRotate {
         }
     }
 
-    public static void test_rol_long_zero(long val) {
+    public static void testRolLongZero(long val) {
         // Count is known to be zero only after loop opts
         int count = 42;
         for (int i = 0; i < 4; i++) {
@@ -308,7 +527,7 @@ public class TestRotate {
         }
     }
 
-    public static void test_ror_int_zero(int val) {
+    public static void testRorIntZero(int val) {
         // Count is known to be zero only after loop opts
         int count = 42;
         for (int i = 0; i < 4; i++) {
@@ -322,7 +541,7 @@ public class TestRotate {
         }
     }
 
-    public static void test_ror_long_zero(long val) {
+    public static void testRorLongZero(long val) {
         // Count is known to be zero only after loop opts
         int count = 42;
         for (int i = 0; i < 4; i++) {
@@ -336,34 +555,122 @@ public class TestRotate {
         }
     }
 
-    public static void main(String args[]) throws Exception {
-      rand = new Random(8248830);
+    public static void main(String[] args) {
+        try {
+            for (int count = 0; count < ITERS; count++) {
+                for (int i = 0; i < INT_VALUES.length; i++) {
+                    int val = INT_VALUES[i];
+                    verify("testRorOrInt1(" + val + ")", testRorOrInt1(val), TEST_ROR_OR_INT_1_EXPECTED[i]);
+                    verify("testRorOrInt16(" + val + ")", testRorOrInt16(val), TEST_ROR_OR_INT_16_EXPECTED[i]);
+                    verify("testRorOrInt31(" + val + ")", testRorOrInt31(val), TEST_ROR_OR_INT_31_EXPECTED[i]);
+                    verify("testRorOrInt32(" + val + ")", testRorOrInt32(val), TEST_ROR_OR_INT_32_EXPECTED[i]);
 
-      int [] test_int = init_int_vector();
-      long [] test_long = init_long_vector();
-      int [] shift_vec = init_shift_vector(rand);
+                    verify("testRorAddInt1(" + val + ")", testRorAddInt1(val), TEST_ROR_ADD_INT_1_EXPECTED[i]);
+                    verify("testRorAddInt16(" + val + ")", testRorAddInt16(val), TEST_ROR_ADD_INT_16_EXPECTED[i]);
+                    verify("testRorAddInt31(" + val + ")", testRorAddInt31(val), TEST_ROR_ADD_INT_31_EXPECTED[i]);
+                    verify("testRorAddInt32(" + val + ")", testRorAddInt32(val), TEST_ROR_ADD_INT_32_EXPECTED[i]);
 
-      try {
-        for (int i = 0  ; i < ITERS; i++) {
-          for (int j = 0 ; j <  SIZE ; j++) {
-            test_rol_int(test_int[j], shift_vec[j], j);
-            test_ror_int(test_int[j], shift_vec[j], j);
-            test_rol_long(test_long[j], shift_vec[j], j);
-            test_ror_long(test_long[j], shift_vec[j], j);
+                    verify("testRorOrInt1Eor(" + val + ")", testRorOrInt1Eor(val), TEST_EOR_ROR_SHIFT_1_INT_EXPECTED[i]);
+                    verify("testRorOrInt16Eor(" + val + ")", testRorOrInt16Eor(val), TEST_EOR_ROR_SHIFT_16_INT_EXPECTED[i]);
+                    verify("testRorOrInt31Eor(" + val + ")", testRorOrInt31Eor(val), TEST_EOR_ROR_SHIFT_31_INT_EXPECTED[i]);
+                    verify("testRorOrInt32Eor(" + val + ")", testRorOrInt32Eor(val), TEST_EOR_ROR_SHIFT_32_INT_EXPECTED[i]);
 
-            test_rol_int_const(test_int[j], j);
-            test_ror_int_const(test_int[j], j);
-            test_rol_long_const(test_long[j], j);
-            test_ror_long_const(test_long[j], j);
-          }
-          test_rol_int_zero(i);
-          test_rol_long_zero(i);
-          test_ror_int_zero(i);
-          test_ror_long_zero(i);
+                    verify("testRorOrInt1And(" + val + ")", testRorOrInt1And(val), TEST_AND_ROR_SHIFT_1_INT_EXPECTED[i]);
+                    verify("testRorOrInt16And(" + val + ")", testRorOrInt16And(val), TEST_AND_ROR_SHIFT_16_INT_EXPECTED[i]);
+                    verify("testRorOrInt31And(" + val + ")", testRorOrInt31And(val), TEST_AND_ROR_SHIFT_31_INT_EXPECTED[i]);
+                    verify("testRorOrInt32And(" + val + ")", testRorOrInt32And(val), TEST_AND_ROR_SHIFT_32_INT_EXPECTED[i]);
+
+                    verify("testRorOrInt1Or(" + val + ")", testRorOrInt1Or(val), TEST_OR_ROR_SHIFT_1_INT_EXPECTED[i]);
+                    verify("testRorOrInt16Or(" + val + ")", testRorOrInt16Or(val), TEST_OR_ROR_SHIFT_16_INT_EXPECTED[i]);
+                    verify("testRorOrInt31Or(" + val + ")", testRorOrInt31Or(val), TEST_OR_ROR_SHIFT_31_INT_EXPECTED[i]);
+                    verify("testRorOrInt32Or(" + val + ")", testRorOrInt32Or(val), TEST_OR_ROR_SHIFT_32_INT_EXPECTED[i]);
+
+                    verify("testRorOrInt1Eon(" + val + ")", testRorOrInt1Eon(val), TEST_EON_ROR_SHIFT_1_INT_EXPECTED[i]);
+                    verify("testRorOrInt16Eon(" + val + ")", testRorOrInt16Eon(val), TEST_EON_ROR_SHIFT_16_INT_EXPECTED[i]);
+                    verify("testRorOrInt31Eon(" + val + ")", testRorOrInt31Eon(val), TEST_EON_ROR_SHIFT_31_INT_EXPECTED[i]);
+                    verify("testRorOrInt32Eon(" + val + ")", testRorOrInt32Eon(val), TEST_EON_ROR_SHIFT_32_INT_EXPECTED[i]);
+
+                    verify("testRorOrInt1Bic(" + val + ")", testRorOrInt1Bic(val), TEST_BIC_ROR_SHIFT_1_INT_EXPECTED[i]);
+                    verify("testRorOrInt16Bic(" + val + ")", testRorOrInt16Bic(val), TEST_BIC_ROR_SHIFT_16_INT_EXPECTED[i]);
+                    verify("testRorOrInt31Bic(" + val + ")", testRorOrInt31Bic(val), TEST_BIC_ROR_SHIFT_31_INT_EXPECTED[i]);
+                    verify("testRorOrInt32Bic(" + val + ")", testRorOrInt32Bic(val), TEST_BIC_ROR_SHIFT_32_INT_EXPECTED[i]);
+
+                    verify("testRorOrInt1Orn(" + val + ")", testRorOrInt1Orn(val), TEST_ORN_ROR_SHIFT_1_INT_EXPECTED[i]);
+                    verify("testRorOrInt16Orn(" + val + ")", testRorOrInt16Orn(val), TEST_ORN_ROR_SHIFT_16_INT_EXPECTED[i]);
+                    verify("testRorOrInt31Orn(" + val + ")", testRorOrInt31Orn(val), TEST_ORN_ROR_SHIFT_31_INT_EXPECTED[i]);
+                    verify("testRorOrInt32Orn(" + val + ")", testRorOrInt32Orn(val), TEST_ORN_ROR_SHIFT_32_INT_EXPECTED[i]);
+
+                    verify("testRorIntApi(" + val + ", 1)", testRorIntApi(val, 1), TEST_ROR_INT_API_1_EXPECTED[i]);
+                    verify("testRorIntApi(" + val + ", 16)", testRorIntApi(val, 16), TEST_ROR_INT_API_16_EXPECTED[i]);
+                    verify("testRorIntApi(" + val + ", 31)", testRorIntApi(val, 31), TEST_ROR_INT_API_31_EXPECTED[i]);
+                    verify("testRorIntApi(" + val + ", 32)", testRorIntApi(val, 32), TEST_ROR_INT_API_32_EXPECTED[i]);
+                    verify("testRolIntApi(" + val + ", 1)", testRolIntApi(val, 1), TEST_ROL_INT_API_1_EXPECTED[i]);
+                    verify("testRolIntApi(" + val + ", 16)", testRolIntApi(val, 16), TEST_ROL_INT_API_16_EXPECTED[i]);
+                    verify("testRolIntApi(" + val + ", 31)", testRolIntApi(val, 31), TEST_ROL_INT_API_31_EXPECTED[i]);
+                    verify("testRolIntApi(" + val + ", 32)", testRolIntApi(val, 32), TEST_ROL_INT_API_32_EXPECTED[i]);
+
+                    testRolIntZero(val);
+                    testRorIntZero(val);
+                }
+
+                for (int i = 0; i < LONG_VALUES.length; i++) {
+                    long val = LONG_VALUES[i];
+                    verify("testRorOrLong1(" + val + ")", testRorOrLong1(val), TEST_ROR_OR_LONG_1_EXPECTED[i]);
+                    verify("testRorOrLong16(" + val + ")", testRorOrLong16(val), TEST_ROR_OR_LONG_16_EXPECTED[i]);
+                    verify("testRorOrLong63(" + val + ")", testRorOrLong63(val), TEST_ROR_OR_LONG_63_EXPECTED[i]);
+                    verify("testRorOrLong64(" + val + ")", testRorOrLong64(val), TEST_ROR_OR_LONG_64_EXPECTED[i]);
+
+                    verify("testRorAddLong1(" + val + ")", testRorAddLong1(val), TEST_ROR_ADD_LONG_1_EXPECTED[i]);
+                    verify("testRorAddLong16(" + val + ")", testRorAddLong16(val), TEST_ROR_ADD_LONG_16_EXPECTED[i]);
+                    verify("testRorAddLong63(" + val + ")", testRorAddLong63(val), TEST_ROR_ADD_LONG_63_EXPECTED[i]);
+                    verify("testRorAddLong64(" + val + ")", testRorAddLong64(val), TEST_ROR_ADD_LONG_64_EXPECTED[i]);
+
+                    verify("testRorOrLong1Eor(" + val + ")", testRorOrLong1Eor(val), TEST_EOR_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                    verify("testRorOrLong16Eor(" + val + ")", testRorOrLong16Eor(val), TEST_EOR_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                    verify("testRorOrLong63Eor(" + val + ")", testRorOrLong63Eor(val), TEST_EOR_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                    verify("testRorOrLong64Eor(" + val + ")", testRorOrLong64Eor(val), TEST_EOR_ROR_SHIFT_64_LONG_EXPECTED[i]);
+
+                    verify("testRorOrLong1And(" + val + ")", testRorOrLong1And(val), TEST_AND_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                    verify("testRorOrLong16And(" + val + ")", testRorOrLong16And(val), TEST_AND_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                    verify("testRorOrLong63And(" + val + ")", testRorOrLong63And(val), TEST_AND_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                    verify("testRorOrLong64And(" + val + ")", testRorOrLong64And(val), TEST_AND_ROR_SHIFT_64_LONG_EXPECTED[i]);
+
+                    verify("testRorOrLong1Or(" + val + ")", testRorOrLong1Or(val), TEST_OR_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                    verify("testRorOrLong16Or(" + val + ")", testRorOrLong16Or(val), TEST_OR_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                    verify("testRorOrLong63Or(" + val + ")", testRorOrLong63Or(val), TEST_OR_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                    verify("testRorOrLong64Or(" + val + ")", testRorOrLong64Or(val), TEST_OR_ROR_SHIFT_64_LONG_EXPECTED[i]);
+
+                    verify("testRorOrLong1Eon(" + val + ")", testRorOrLong1Eon(val), TEST_EON_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                    verify("testRorOrLong16Eon(" + val + ")", testRorOrLong16Eon(val), TEST_EON_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                    verify("testRorOrLong63Eon(" + val + ")", testRorOrLong63Eon(val), TEST_EON_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                    verify("testRorOrLong64Eon(" + val + ")", testRorOrLong64Eon(val), TEST_EON_ROR_SHIFT_64_LONG_EXPECTED[i]);
+
+                    verify("testRorOrLong1Bic(" + val + ")", testRorOrLong1Bic(val), TEST_BIC_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                    verify("testRorOrLong16Bic(" + val + ")", testRorOrLong16Bic(val), TEST_BIC_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                    verify("testRorOrLong63Bic(" + val + ")", testRorOrLong63Bic(val), TEST_BIC_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                    verify("testRorOrLong64Bic(" + val + ")", testRorOrLong64Bic(val), TEST_BIC_ROR_SHIFT_64_LONG_EXPECTED[i]);
+
+                    verify("testRorOrLong1Orn(" + val + ")", testRorOrLong1Orn(val), TEST_ORN_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                    verify("testRorOrLong16Orn(" + val + ")", testRorOrLong16Orn(val), TEST_ORN_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                    verify("testRorOrLong63Orn(" + val + ")", testRorOrLong63Orn(val), TEST_ORN_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                    verify("testRorOrLong64Orn(" + val + ")", testRorOrLong64Orn(val), TEST_ORN_ROR_SHIFT_64_LONG_EXPECTED[i]);
+
+                    verify("testRorLongApi(" + val + ", 1)", testRorLongApi(val, 1), TEST_ROR_LONG_API_1_EXPECTED[i]);
+                    verify("testRorLongApi(" + val + ", 16)", testRorLongApi(val, 16), TEST_ROR_LONG_API_16_EXPECTED[i]);
+                    verify("testRorLongApi(" + val + ", 63)", testRorLongApi(val, 63), TEST_ROR_LONG_API_63_EXPECTED[i]);
+                    verify("testRorLongApi(" + val + ", 64)", testRorLongApi(val, 64), TEST_ROR_LONG_API_64_EXPECTED[i]);
+                    verify("testRolLongApi(" + val + ", 1)", testRolLongApi(val, 1), TEST_ROL_LONG_API_1_EXPECTED[i]);
+                    verify("testRolLongApi(" + val + ", 16)", testRolLongApi(val, 16), TEST_ROL_LONG_API_16_EXPECTED[i]);
+                    verify("testRolLongApi(" + val + ", 63)", testRolLongApi(val, 63), TEST_ROL_LONG_API_63_EXPECTED[i]);
+                    verify("testRolLongApi(" + val + ", 64)", testRolLongApi(val, 64), TEST_ROL_LONG_API_64_EXPECTED[i]);
+
+                    testRolLongZero(i);
+                    testRorLongZero(i);
+                }
+            }
+            System.out.println("test status : PASS");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
-        System.out.println("test status : PASS");
-      } catch (Exception e) {
-        System.out.println(e.getMessage());
-      }
     }
 }

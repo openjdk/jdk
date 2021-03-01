@@ -1070,8 +1070,7 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   Handle h_loader(THREAD, JNIHandles::resolve(loader));
   Klass* k = SystemDictionary::find_instance_or_array_klass(klass_name,
                                                               h_loader,
-                                                              Handle(),
-                                                              CHECK_NULL);
+                                                              Handle());
 #if INCLUDE_CDS
   if (k == NULL) {
     // If the class is not already loaded, try to see if it's in the shared
@@ -2934,8 +2933,6 @@ JVM_END
 // but is thought to be reliable and simple. In the case, where the receiver is the
 // same thread as the sender, no VM_Operation is needed.
 JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
-  // A nested ThreadsListHandle will grab the Threads_lock so create
-  // tlh before we resolve throwable.
   ThreadsListHandle tlh(thread);
   oop java_throwable = JNIHandles::resolve(throwable);
   if (java_throwable == NULL) {
@@ -3287,10 +3284,14 @@ JVM_END
 
 JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
   for (vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
-    vfst.skip_reflection_related_frames(); // Only needed for 1.4 reflection
-    oop loader = vfst.method()->method_holder()->class_loader();
+    InstanceKlass* ik = vfst.method()->method_holder();
+    oop loader = ik->class_loader();
     if (loader != NULL && !SystemDictionary::is_platform_class_loader(loader)) {
-      return JNIHandles::make_local(THREAD, loader);
+      // Skip reflection related frames
+      if (!ik->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass()) &&
+          !ik->is_subclass_of(vmClasses::reflect_ConstructorAccessorImpl_klass())) {
+        return JNIHandles::make_local(THREAD, loader);
+      }
     }
   }
   return NULL;
