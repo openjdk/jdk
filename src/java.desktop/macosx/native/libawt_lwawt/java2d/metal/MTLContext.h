@@ -172,7 +172,7 @@
                     M01:(jdouble) m01 M11:(jdouble) m11
                     M02:(jdouble) m02 M12:(jdouble) m12;
 
-
+- (void)reset;
 - (void)resetPaint;
 - (void)setColorPaint:(int)pixel;
 - (void)setGradientPaintUseMask:(jboolean)useMask

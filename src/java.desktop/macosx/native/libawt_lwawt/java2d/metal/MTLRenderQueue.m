@@ -663,10 +663,18 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                     // invalidate the references to the current context and
                     // destination surface that are maintained at the native level
                     if (mtlc != NULL) {
-                        [mtlc.encoderManager endEncoder];
+                        commitEncodedCommands();
+                        RESET_PREVIOUS_OP();
+                        [mtlc reset];
                     }
+
+                    MTLTR_FreeGlyphCaches();
+                    if (dstOps != NULL) {
+                        MTLSD_Delete(env, dstOps);
+                    }
+
                     mtlc = NULL;
-                //    dstOps = NULL;
+                    dstOps = NULL;
                     break;
                 }
                 case sun_java2d_pipe_BufferedOpCodes_SYNC:

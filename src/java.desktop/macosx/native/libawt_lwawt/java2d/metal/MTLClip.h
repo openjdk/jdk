@@ -65,6 +65,7 @@ enum Clip {
 - (const MTLScissorRect *) getRect;
 
 - (void)reset;
+- (void)resetStencilState;
 - (void)setClipRectX1:(jint)x1 Y1:(jint)y1 X2:(jint)x2 Y2:(jint)y2;
 - (void)beginShapeClip:(BMTLSDOps *)dstOps context:(MTLContext *)mtlc;
 - (void)endShapeClip:(BMTLSDOps *)dstOps context:(MTLContext *)mtlc;

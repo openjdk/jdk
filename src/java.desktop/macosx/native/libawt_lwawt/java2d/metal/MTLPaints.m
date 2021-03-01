@@ -835,6 +835,7 @@ jint _color;
     return @"unknown-paint";
 }
 
+static bool samplersInitialized = false;
 static id<MTLSamplerState> samplerNearestClamp = nil;
 static id<MTLSamplerState> samplerLinearClamp = nil;
 static id<MTLSamplerState> samplerNearestRepeat = nil;
@@ -843,8 +844,15 @@ static id<MTLSamplerState> samplerLinearRepeat = nil;
 void initSamplers(id<MTLDevice> device) {
     // TODO: move this code into SamplerManager (need implement)
 
-    if (samplerNearestClamp != nil)
-        return;
+    if (samplersInitialized) {
+        // Release old samplers if any
+        [samplerNearestClamp release];
+        [samplerLinearClamp release];
+        [samplerNearestRepeat release];
+        [samplerLinearRepeat release];
+
+        samplersInitialized = false;
+    }
 
     MTLSamplerDescriptor *samplerDescriptor = [[MTLSamplerDescriptor new] autorelease];
 
@@ -871,6 +879,8 @@ void initSamplers(id<MTLDevice> device) {
     samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
     samplerLinearRepeat = [device newSamplerStateWithDescriptor:samplerDescriptor];
+
+    samplersInitialized = true;
 }
 
 static void setSampler(id<MTLRenderCommandEncoder> encoder, int interpolation, bool repeat) {

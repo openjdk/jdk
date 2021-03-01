@@ -29,6 +29,7 @@
 #include "common.h"
 
 static MTLRenderPipelineDescriptor * templateStencilPipelineDesc = nil;
+static id<MTLDepthStencilState> stencilState = nil;
 
 static void initTemplatePipelineDescriptors() {
     if (templateStencilPipelineDesc != nil)
@@ -50,7 +51,6 @@ static void initTemplatePipelineDescriptors() {
 }
 
 static id<MTLDepthStencilState> getStencilState(id<MTLDevice> device) {
-    static id<MTLDepthStencilState> stencilState = nil;
     if (stencilState == nil) {
         MTLDepthStencilDescriptor* stencilDescriptor;
         stencilDescriptor = [[MTLDepthStencilDescriptor new] autorelease];
@@ -136,6 +136,13 @@ static id<MTLDepthStencilState> getStencilState(id<MTLDevice> device) {
 - (void)reset {
     _clipType = NO_CLIP;
     _stencilMaskGenerationInProgress = JNI_FALSE;
+}
+
+- (void)resetStencilState {
+    if (stencilState != nil) {
+        [stencilState release];
+        stencilState = nil;
+    }
 }
 
 - (void)setClipRectX1:(jint)x1 Y1:(jint)y1 X2:(jint)x2 Y2:(jint)y2 {

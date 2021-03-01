@@ -173,6 +173,13 @@ extern void initSamplers(id<MTLDevice> device);
     [super dealloc];
 }
 
+- (void) reset {
+    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLContext : reset");
+
+    // Add code for context state reset here
+    [_clip resetStencilState];
+}
+
  - (MTLCommandBufferWrapper *) getCommandBufferWrapper {
     if (_commandBufferWrapper == nil) {
         J2dTraceLn(J2D_TRACE_VERBOSE, "MTLContext : commandBuffer is NULL");
