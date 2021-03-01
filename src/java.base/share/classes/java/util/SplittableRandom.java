@@ -284,4 +284,19 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     public long nextLong() {
         return mix64(nextSeed());
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws NullPointerException {@inheritDoc}
+     *
+     * implNote {@inheritDoc}
+     *
+     * @since 10
+     */
+    @Override
+    public  void nextBytes(byte[] bytes) {
+        super.nextBytes(bytes);
+    }
+
 }

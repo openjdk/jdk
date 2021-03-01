@@ -445,8 +445,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      */
     @Override
     public boolean nextBoolean() {
@@ -455,8 +453,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      */
     @Override
     public double nextDouble() {
@@ -466,7 +462,6 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.7
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */
@@ -478,7 +473,6 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.7
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */
@@ -489,8 +483,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      */
     @Override
     public float nextFloat() {
@@ -499,8 +491,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */
@@ -511,8 +501,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */
@@ -524,8 +512,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      */
     @Override
     public int nextInt() {
@@ -534,8 +520,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */
@@ -546,8 +530,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */
@@ -558,8 +540,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      */
     @Override
     public long nextLong() {
@@ -568,8 +548,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */
@@ -580,8 +558,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.7
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */

@@ -1542,22 +1542,23 @@ public class RandomSupport {
          * split from it; each value conforms to the given origin (inclusive)
          * and bound (exclusive).
          *
-         * <p>The (pseudo)random {@code int} values are generated as if the result of
-         * calling the following method with the origin and bound:
-         * <pre> {@code
-         * int nextInt(int origin, int bound) {
-         *   int n = bound - origin;
-         *   if (n > 0) {
-         *     return nextInt(n) + origin;
-         *   }
-         *   else {  // range not representable as int
-         *     int r;
-         *     do {
-         *       r = nextInt();
-         *     } while (r < origin || r >= bound);
-         *     return r;
-         *   }
-         * }}</pre>
+         * @implNote <p>The (pseudo)random {@code int} values are generated as
+         *           if the result of calling the following method with the
+         *           origin and bound:
+         *           <pre>{@code
+         *           int nextInt(int origin, int bound) {
+         *             int n = bound - origin;
+         *             if (n > 0) {
+         *               return nextInt(n) + origin;
+         *             }
+         *             else {  // range not representable as int
+         *               int r;
+         *               do {
+         *                 r = nextInt();
+         *               } while (r < origin || r >= bound);
+         *               return r;
+         *             }
+         *           }}</pre>
          *
          * @param streamSize         the number of values to generate
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1582,25 +1583,8 @@ public class RandomSupport {
          * values from this generator and/or one split from it; each value
          * conforms to the given origin (inclusive) and bound (exclusive).
          *
-         * <p>The (pseudo)random {@code int} values are generated as if the result of
-         * calling the following method with the origin and bound:
-         * <pre> {@code
-         * int nextInt(int origin, int bound) {
-         *   int n = bound - origin;
-         *   if (n > 0) {
-         *     return nextInt(n) + origin;
-         *   }
-         *   else {  // range not representable as int
-         *     int r;
-         *     do {
-         *       r = nextInt();
-         *     } while (r < origin || r >= bound);
-         *     return r;
-         *   }
-         * }}</pre>
-         *
-         * @implNote This method is implemented to be equivalent to {@code
-         * ints(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+         * @implNote <p>TThis method is implemented to be equivalent to {@code
+         *           ints(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
          *
          * @param randomNumberOrigin the origin (inclusive) of each random value
          * @param randomNumberBound  the bound (exclusive) of each random value
@@ -1660,27 +1644,28 @@ public class RandomSupport {
          * split from it; each value conforms to the given origin (inclusive)
          * and bound (exclusive).
          *
-         * <p>The (pseudo)random {@code long} values are generated as if the result
-         * of calling the following method with the origin and bound:
-         * <pre> {@code
-         * long nextLong(long origin, long bound) {
-         *   long r = nextLong();
-         *   long n = bound - origin, m = n - 1;
-         *   if ((n & m) == 0L)  // power of two
-         *     r = (r & m) + origin;
-         *   else if (n > 0L) {  // reject over-represented candidates
-         *     for (long u = r >>> 1;            // ensure nonnegative
-         *          u + m - (r = u % n) < 0L;    // rejection check
-         *          u = nextLong() >>> 1) // retry
-         *         ;
-         *     r += origin;
-         *   }
-         *   else {              // range not representable as long
-         *     while (r < origin || r >= bound)
-         *       r = nextLong();
-         *   }
-         *   return r;
-         * }}</pre>
+         * @implNote <p>The (pseudo)random {@code long} values are generated as
+         *           if the result of calling the following method with the
+         *           origin and bound:
+         *           <pre>{@code
+         *           long nextLong(long origin, long bound) {
+         *             long r = nextLong();
+         *             long n = bound - origin, m = n - 1;
+         *             if ((n & m) == 0L)  // power of two
+         *               r = (r & m) + origin;
+         *             else if (n > 0L) {  // reject over-represented candidates
+         *               for (long u = r >>> 1;            // ensure nonnegative
+         *                    u + m - (r = u % n) < 0L;    // rejection check
+         *                    u = nextLong() >>> 1) // retry
+         *                   ;
+         *               r += origin;
+         *             }
+         *             else {              // range not representable as long
+         *               while (r < origin || r >= bound)
+         *                 r = nextLong();
+         *             }
+         *             return r;
+         *           }}</pre>
          *
          * @param streamSize         the number of values to generate
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1707,30 +1692,8 @@ public class RandomSupport {
          * each value conforms to the given origin (inclusive) and bound
          * (exclusive).
          *
-         * <p>The (pseudo)random {@code long} values are generated as if the result
-         * of calling the following method with the origin and bound:
-         * <pre> {@code
-         * long nextLong(long origin, long bound) {
-         *   long r = nextLong();
-         *   long n = bound - origin, m = n - 1;
-         *   if ((n & m) == 0L)  // power of two
-         *     r = (r & m) + origin;
-         *   else if (n > 0L) {  // reject over-represented candidates
-         *     for (long u = r >>> 1;            // ensure nonnegative
-         *          u + m - (r = u % n) < 0L;    // rejection check
-         *          u = nextLong() >>> 1) // retry
-         *         ;
-         *     r += origin;
-         *   }
-         *   else {              // range not representable as long
-         *     while (r < origin || r >= bound)
-         *       r = nextLong();
-         *   }
-         *   return r;
-         * }}</pre>
-         *
          * @implNote This method is implemented to be equivalent to {@code
-         * longs(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+         *           longs(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
          *
          * @param randomNumberOrigin the origin (inclusive) of each random value
          * @param randomNumberBound  the bound (exclusive) of each random value
@@ -1794,16 +1757,17 @@ public class RandomSupport {
          * split from it; each value conforms to the given origin (inclusive)
          * and bound (exclusive).
          *
-         * <p>The (pseudo)random {@code double} values are generated as if the result
-         * of calling the following method with the origin and bound:
-         * <pre> {@code
-         * double nextDouble(double origin, double bound) {
-         *   double r = nextDouble();
-         *   r = r * (bound - origin) + origin;
-         *   if (r >= bound) // correct for rounding
-         *     r = Math.nextDown(bound);
-         *   return r;
-         * }}</pre>
+         * @implNote <p>The (pseudo)random {@code double} values are generated
+         *           as if the result of calling the following method with the
+         *           origin and bound:
+         *           <pre>{@code
+         *           double nextDouble(double origin, double bound) {
+         *             double r = nextDouble();
+         *             r = r * (bound - origin) + origin;
+         *             if (r >= bound) // correct for rounding
+         *               r = Math.nextDown(bound);
+         *             return r;
+         *           }}</pre>
          *
          * @param streamSize         the number of values to generate
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1829,19 +1793,8 @@ public class RandomSupport {
          * each value conforms to the given origin (inclusive) and bound
          * (exclusive).
          *
-         * <p>The (pseudo)random {@code double} values are generated as if the result
-         * of calling the following method with the origin and bound:
-         * <pre> {@code
-         * double nextDouble(double origin, double bound) {
-         *   double r = nextDouble();
-         *   r = r * (bound - origin) + origin;
-         *   if (r >= bound) // correct for rounding
-         *     r = Math.nextDown(bound);
-         *   return r;
-         * }}</pre>
-         *
          * @implNote This method is implemented to be equivalent to {@code
-         * doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+         *           doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
          *
          * @param randomNumberOrigin the origin (inclusive) of each random value
          * @param randomNumberBound  the bound (exclusive) of each random value

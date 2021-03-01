@@ -128,9 +128,25 @@
  *
  * <h2>Choosing a Random Number Generator Algorithm</h2>
  *
- * If an application requires a random number generator algorithm that is
- * cryptographically secure, then it should use an instance of the class
- * {@link java.security.SecureRandom}.
+ * <p> There are three groups of random number generator algorithm provided
+ * in Java; Legacy group, LXM group and Xoroshiro/Xoshiro group.
+ *
+ * <p> The legacy group includes random number generators that existed
+ * before JDK 17; Random, ThreadLocalRandom, SplittableRandom and
+ * SecureRandom. Random (LCG) is the weakest of available algorithms and it
+ * is recommended that users migrate to newer algorithms. If an application
+ * requires a random number generator algorithm that is cryptographically
+ * secure, then it should continue to use an instance of the class {@link
+ * java.security.SecureRandom}.
+ *
+ * <p> The algorithms in the LXM group use a similar algorithm. The parameters
+ * of the algorithm can be found in algorithm name. The numbers indicate the
+ * number of bits in the lower and upper state bits respectively. Mix indicates
+ * the algorithm uses mix congruency. StarStar indicates use a double
+ * multiplier.
+ *
+ * <p> The algorithms in the Xoroshiro/Xoshiro are more traditional algorithms
+ * where the number in the name indicates the period.
  *
  * <p> For applications (such as physical simulation, machine learning, and
  * games) that do not require a cryptographically secure algorithm, this package

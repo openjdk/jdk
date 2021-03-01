@@ -131,10 +131,11 @@ public class Random extends AbstractSpliteratorGenerator
      * The seed is the initial value of the internal state of the pseudorandom
      * number generator which is maintained by method {@link #next}.
      *
-     * <p>The invocation {@code new Random(seed)} is equivalent to:
-     *  <pre> {@code
-     * Random rnd = new Random();
-     * rnd.setSeed(seed);}</pre>
+     * @implNote <p>The invocation {@code new Random(seed)} is equivalent to:
+     *           <pre>{@code
+     *           Random rnd = new Random();
+     *           rnd.setSeed(seed);
+     *           }</pre>
      *
      * @param seed the initial seed
      * @see   #setSeed(long)
@@ -217,15 +218,15 @@ public class Random extends AbstractSpliteratorGenerator
      * byte array.  The number of random bytes produced is equal to
      * the length of the byte array.
      *
-     * <p>The method {@code nextBytes} is implemented by class {@code Random}
-     * as if by:
-     *  <pre> {@code
-     * public void nextBytes(byte[] bytes) {
-     *   for (int i = 0; i < bytes.length; )
-     *     for (int rnd = nextInt(), n = Math.min(bytes.length - i, 4);
-     *          n-- > 0; rnd >>= 8)
-     *       bytes[i++] = (byte)rnd;
-     * }}</pre>
+     * @implNote <p>The method {@code nextBytes} is
+     *           implemented by class {@code Random} as if by:
+     *           <pre>{@code
+     *           public void nextBytes(byte[] bytes) {
+     *             for (int i = 0; i < bytes.length; )
+     *               for (int rnd = nextInt(), n = Math.min(bytes.length - i, 4);
+     *                    n-- > 0; rnd >>= 8)
+     *                 bytes[i++] = (byte)rnd;
+     *           }}</pre>
      *
      * @param  bytes the byte array to fill with random bytes
      * @throws NullPointerException if the byte array is null
@@ -247,12 +248,12 @@ public class Random extends AbstractSpliteratorGenerator
      * pseudorandomly generated and returned. All 2<sup>32</sup> possible
      * {@code int} values are produced with (approximately) equal probability.
      *
-     * <p>The method {@code nextInt} is implemented by class {@code Random}
-     * as if by:
-     *  <pre> {@code
-     * public int nextInt() {
-     *   return next(32);
-     * }}</pre>
+     * @implNote <p>The method {@code nextInt} is
+     *           implemented by class {@code Random} as if by:
+     *           <pre>{@code
+     *           public int nextInt() {
+     *             return next(32);
+     *           }}</pre>
      *
      * @return the next pseudorandom, uniformly distributed {@code int}
      *         value from this random number generator's sequence
@@ -269,23 +270,25 @@ public class Random extends AbstractSpliteratorGenerator
      * {@code nextInt} is that one {@code int} value in the specified range
      * is pseudorandomly generated and returned.  All {@code bound} possible
      * {@code int} values are produced with (approximately) equal
-     * probability.  The method {@code nextInt(int bound)} is implemented by
-     * class {@code Random} as if by:
-     *  <pre> {@code
-     * public int nextInt(int bound) {
-     *   if (bound <= 0)
-     *     throw new IllegalArgumentException("bound must be positive");
+     * probability.
      *
-     *   if ((bound & -bound) == bound)  // i.e., bound is a power of 2
-     *     return (int)((bound * (long)next(31)) >> 31);
+     * @implNote <p>The method {@code nextInt(int bound)} is implemented by
+     *           class {@code Random} as if by:
+     *           <pre>{@code
+     *           public int nextInt(int bound) {
+     *             if (bound <= 0)
+     *               throw new IllegalArgumentException("bound must be positive");
      *
-     *   int bits, val;
-     *   do {
-     *       bits = next(31);
-     *       val = bits % bound;
-     *   } while (bits - val + (bound-1) < 0);
-     *   return val;
-     * }}</pre>
+     *             if ((bound & -bound) == bound)  // i.e., bound is a power of 2
+     *               return (int)((bound * (long)next(31)) >> 31);
+     *
+     *             int bits, val;
+     *             do {
+     *                 bits = next(31);
+     *                 val = bits % bound;
+     *             } while (bits - val + (bound-1) < 0);
+     *             return val;
+     *           }}</pre>
      *
      * <p>The hedge "approximately" is used in the foregoing description only
      * because the next method is only approximately an unbiased source of
@@ -338,12 +341,12 @@ public class Random extends AbstractSpliteratorGenerator
      * contract of {@code nextLong} is that one {@code long} value is
      * pseudorandomly generated and returned.
      *
-     * <p>The method {@code nextLong} is implemented by class {@code Random}
-     * as if by:
-     *  <pre> {@code
-     * public long nextLong() {
-     *   return ((long)next(32) << 32) + next(32);
-     * }}</pre>
+     * @implNote <p>The method {@code nextLong} is implemented by class {@code Random}
+     *           {@code Random} as if by:
+     *           <pre>{@code
+     *           public long nextLong() {
+     *             return ((long)next(32) << 32) + next(32);
+     *           }}</pre>
      *
      * Because class {@code Random} uses a seed with only 48 bits,
      * this algorithm will not return all possible {@code long} values.
@@ -365,12 +368,12 @@ public class Random extends AbstractSpliteratorGenerator
      * values {@code true} and {@code false} are produced with
      * (approximately) equal probability.
      *
-     * <p>The method {@code nextBoolean} is implemented by class {@code Random}
-     * as if by:
-     *  <pre> {@code
-     * public boolean nextBoolean() {
-     *   return next(1) != 0;
-     * }}</pre>
+     * @implNote <p>The method {@code nextBoolean} is implemented by class
+     *           {@code Random} as if by:
+     *           <pre>{@code
+     *           public boolean nextBoolean() {
+     *             return next(1) != 0;
+     *           }}</pre>
      *
      * @return the next pseudorandom, uniformly distributed
      *         {@code boolean} value from this random number generator's
@@ -395,25 +398,24 @@ public class Random extends AbstractSpliteratorGenerator
      * where <i>m</i> is a positive integer less than 2<sup>24</sup>, are
      * produced with (approximately) equal probability.
      *
-     * <p>The method {@code nextFloat} is implemented by class {@code Random}
-     * as if by:
-     *  <pre> {@code
-     * public float nextFloat() {
-     *   return next(24) / ((float)(1 << 24));
-     * }}</pre>
+     * @implNote <p>The method {@code nextFloat} is implemented by class
+     *           {@code Random} as if by:
+     *           <pre>{@code
+     *           public float nextFloat() {
+     *             return next(24) / ((float)(1 << 24));
+     *           }}</pre>
      *
-     * <p>The hedge "approximately" is used in the foregoing description only
-     * because the next method is only approximately an unbiased source of
-     * independently chosen bits. If it were a perfect source of randomly
-     * chosen bits, then the algorithm shown would choose {@code float}
-     * values from the stated range with perfect uniformity.<p>
-     * [In early versions of Java, the result was incorrectly calculated as:
-     *  <pre> {@code
-     *   return next(30) / ((float)(1 << 30));}</pre>
-     * This might seem to be equivalent, if not better, but in fact it
-     * introduced a slight nonuniformity because of the bias in the rounding
-     * of floating-point numbers: it was slightly more likely that the
-     * low-order bit of the significand would be 0 than that it would be 1.]
+     *           <p>The hedge "approximately" is used in the foregoing description only
+     *           because the next method is only approximately an unbiased source of
+     *           independently chosen bits. If it were a perfect source of randomly
+     *           chosen bits, then the algorithm shown would choose {@code float}
+     *           values from the stated range with perfect uniformity.<p>
+     *           [In early versions of Java, the result was incorrectly calculated as:
+     *            <pre> {@code return next(30) / ((float)(1 << 30));}</pre>
+     *           This might seem to be equivalent, if not better, but in fact it
+     *           introduced a slight nonuniformity because of the bias in the rounding
+     *           of floating-point numbers: it was slightly more likely that the
+     *           low-order bit of the significand would be 0 than that it would be 1.]
      *
      * @return the next pseudorandom, uniformly distributed {@code float}
      *         value between {@code 0.0} and {@code 1.0} from this
@@ -434,29 +436,26 @@ public class Random extends AbstractSpliteratorGenerator
      * range {@code 0.0d} (inclusive) to {@code 1.0d} (exclusive), is
      * pseudorandomly generated and returned.
      *
-     * <p>The method {@code nextDouble} is implemented by class {@code Random}
-     * as if by:
-     *  <pre> {@code
-     * public double nextDouble() {
-     *   return (((long)next(26) << 27) + next(27))
-     *     / (double)(1L << 53);
-     * }}</pre>
-     *
-     * <p>The hedge "approximately" is used in the foregoing description only
-     * because the {@code next} method is only approximately an unbiased
-     * source of independently chosen bits. If it were a perfect source of
-     * randomly chosen bits, then the algorithm shown would choose
-     * {@code double} values from the stated range with perfect uniformity.
-     * <p>[In early versions of Java, the result was incorrectly calculated as:
-     *  <pre> {@code
-     *   return (((long)next(27) << 27) + next(27))
-     *     / (double)(1L << 54);}</pre>
-     * This might seem to be equivalent, if not better, but in fact it
-     * introduced a large nonuniformity because of the bias in the rounding
-     * of floating-point numbers: it was three times as likely that the
-     * low-order bit of the significand would be 0 than that it would be 1!
-     * This nonuniformity probably doesn't matter much in practice, but we
-     * strive for perfection.]
+     * @implNote <p>The method {@code nextDouble} is implemented by class
+     *           {@code Random} as if by:
+     *           <pre>{@code
+     *           public double nextDouble() {
+     *             return (((long)next(26) << 27) + next(27))
+     *               / (double)(1L << 53);
+     *           }}</pre>
+     *           <p>The hedge "approximately" is used in the foregoing description only
+     *           because the {@code next} method is only approximately an unbiased source
+     *           of independently chosen bits. If it were a perfect source of randomly
+     *           chosen bits, then the algorithm shown would choose {@code double} values
+     *           from the stated range with perfect uniformity.
+     *           <p>[In early versions of Java, the result was incorrectly calculated as:
+     *           <pre> {@code return (((long)next(27) << 27) + next(27)) / (double)(1L << 54);}</pre>
+     *           This might seem to be equivalent, if not better, but in fact it
+     *           introduced a large nonuniformity because of the bias in the rounding of
+     *           floating-point numbers: it was three times as likely that the low-order
+     *           bit of the significand would be 0 than that it would be 1! This
+     *           nonuniformity probably doesn't matter much in practice, but we strive
+     *           for perfection.]
      *
      * @return the next pseudorandom, uniformly distributed {@code double}
      *         value between {@code 0.0} and {@code 1.0} from this
@@ -481,35 +480,36 @@ public class Random extends AbstractSpliteratorGenerator
      * normal distribution with mean {@code 0.0} and standard deviation
      * {@code 1.0}, is pseudorandomly generated and returned.
      *
-     * <p>The method {@code nextGaussian} is implemented by class
-     * {@code Random} as if by a threadsafe version of the following:
-     *  <pre> {@code
-     * private double nextNextGaussian;
-     * private boolean haveNextNextGaussian = false;
+     * @implNote <p>The method {@code nextGaussian} is implemented by class
+     *           {@code Random} as if by a threadsafe version of the following:
+     *           <pre>{@code
+     *           private double nextNextGaussian;
+     *           private boolean haveNextNextGaussian = false;
      *
-     * public double nextGaussian() {
-     *   if (haveNextNextGaussian) {
-     *     haveNextNextGaussian = false;
-     *     return nextNextGaussian;
-     *   } else {
-     *     double v1, v2, s;
-     *     do {
-     *       v1 = 2 * nextDouble() - 1;   // between -1.0 and 1.0
-     *       v2 = 2 * nextDouble() - 1;   // between -1.0 and 1.0
-     *       s = v1 * v1 + v2 * v2;
-     *     } while (s >= 1 || s == 0);
-     *     double multiplier = StrictMath.sqrt(-2 * StrictMath.log(s)/s);
-     *     nextNextGaussian = v2 * multiplier;
-     *     haveNextNextGaussian = true;
-     *     return v1 * multiplier;
-     *   }
-     * }}</pre>
-     * This uses the <i>polar method</i> of G. E. P. Box, M. E. Muller, and
-     * G. Marsaglia, as described by Donald E. Knuth in <cite>The Art of
-     * Computer Programming, Volume 2, third edition: Seminumerical Algorithms</cite>,
-     * section 3.4.1, subsection C, algorithm P. Note that it generates two
-     * independent values at the cost of only one call to {@code StrictMath.log}
-     * and one call to {@code StrictMath.sqrt}.
+     *           public double nextGaussian() {
+     *             if (haveNextNextGaussian) {
+     *               haveNextNextGaussian = false;
+     *               return nextNextGaussian;
+     *             } else {
+     *               double v1, v2, s;
+     *               do {
+     *                 v1 = 2 * nextDouble() - 1;   // between -1.0 and 1.0
+     *                 v2 = 2 * nextDouble() - 1;   // between -1.0 and 1.0
+     *                 s = v1 * v1 + v2 * v2;
+     *               } while (s >= 1 || s == 0);
+     *               double multiplier = StrictMath.sqrt(-2 * StrictMath.log(s)/s);
+     *               nextNextGaussian = v2 * multiplier;
+     *               haveNextNextGaussian = true;
+     *               return v1 * multiplier;
+     *             }
+     *           }}</pre>
+     *
+     *           This uses the <i>polar method</i> of G. E. P. Box, M. E. Muller, and G.
+     *           Marsaglia, as described by Donald E. Knuth in <cite>The Art of Computer
+     *           Programming, Volume 2, third edition: Seminumerical Algorithms</cite>,
+     *           section 3.4.1, subsection C, algorithm P. Note that it generates two
+     *           independent values at the cost of only one call to {@code
+     *           StrictMath.log} and one call to {@code StrictMath.sqrt}.
      *
      * @return the next pseudorandom, Gaussian ("normally") distributed
      *         {@code double} value with mean {@code 0.0} and
@@ -637,9 +637,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     * @implNote  {@inheritDoc}
      *
      * @since 1.8
+     * @implNote  {@inheritDoc}
      */
     @Override
     public IntStream ints() {

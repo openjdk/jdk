@@ -26,7 +26,6 @@
 package java.util.random;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -52,7 +51,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * methods for selecting random number generator algorithms.
  *
  * A specific {@link RandomGeneratorFactory} can be located by using the
- * {@link RandomGenerator#factoryOf(String)} method, where the argument string
+ * {@link RandomGeneratorFactory#factoryOf(String)} method, where the argument string
  * is the name of the <a href="package-summary.html#algorithms">algorithm</a>
  * required. The method
  * {@link RandomGeneratorFactory#all()} produces a {@link Stream} of all available
@@ -105,11 +104,6 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  *
  */
 public final class RandomGeneratorFactory<T extends RandomGenerator> {
-    /**
-     * Map of provider classes.
-     */
-    private static volatile Map<String, Provider<? extends RandomGenerator>> factoryMap;
-
     /**
      * Instance provider class of random number algorithm.
      */
@@ -228,8 +222,16 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
             throws IllegalArgumentException {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
         Provider<? extends RandomGenerator> provider = fm.get(name);
-        if (!isSubclass(category, provider)) {
-            throw new IllegalArgumentException(name + " is an unknown random number generator");
+        if (provider == null) {
+            throw new IllegalArgumentException("No implementation of the random number generator algorithm \"" +
+                                                name +
+                                                "\" is available");
+        } else if (!isSubclass(category, provider)) {
+            throw new IllegalArgumentException("The random number generator algorithm \"" +
+                                                name +
+                                                "\" is not implemented with the interface \"" +
+                                                category.getSimpleName() +
+                                                "\"");
         }
         return provider;
     }
@@ -255,7 +257,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
 
     /**
      * Returns a {@link RandomGeneratorFactory} that will produce instances
-     * of {@link RandomGenerator} that utilizes the {@code name} algorithm.
+     * of {@link RandomGenerator} that utilizes the named algorithm.
      *
      * @param name  Name of random number algorithm to use
      * @param category Sub-interface of {@link RandomGenerator} to type check
@@ -597,7 +599,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
         Objects.requireNonNull(seed, "seed must not be null");
         try {
             ensureConstructors();
-            return ctorBytes.newInstance((Object)seed);
+            return ctorBytes.newInstance(seed);
         } catch (Exception ex) {
             return create();
         }
