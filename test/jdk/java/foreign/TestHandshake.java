@@ -56,7 +56,7 @@ public class TestHandshake {
     static final int MAX_EXECUTOR_WAIT_SECONDS = 10;
     static final int MAX_THREAD_SPIN_WAIT_MILLIS = 200;
 
-    static final int NUM_ACCESSORS = Math.max(10, Runtime.getRuntime().availableProcessors());
+    static final int NUM_ACCESSORS = Math.min(10, Runtime.getRuntime().availableProcessors());
 
     static final AtomicLong start = new AtomicLong();
 
