@@ -4575,7 +4575,7 @@ void G1CollectedHeap::set_used(size_t bytes) {
 }
 
 void G1CollectedHeap::set_live(size_t bytes) {
-  Atomic::release_store(&_live_size, bytes);
+  Atomic::store(&_live_size, bytes);
 }
 
 class RebuildRegionSetsClosure : public HeapRegionClosure {
