@@ -162,12 +162,6 @@ class LinuxFileStore
                 return false;
             }
 
-            // user_{no}xattr options not present but we special-case ext3 as
-            // we know that extended attributes are not enabled by default.
-            if (entry().fstype().equals("ext3")) {
-                return false;
-            }
-
             // user_xattr option not present but we special-case ext4 as we
             // know that extended attributes are enabled by default for
             // kernel version >= 2.6.39
@@ -184,7 +178,7 @@ class LinuxFileStore
                 return xattrEnabled;
             }
 
-            // not ext3/4 so probe mount point
+            // not ext4 so probe mount point
             if (!xattrChecked) {
                 UnixPath dir = new UnixPath(file().getFileSystem(), entry().dir());
                 xattrEnabled = isExtendedAttributesEnabled(dir);
