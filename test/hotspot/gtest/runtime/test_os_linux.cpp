@@ -414,10 +414,9 @@ public:
 };
 
 TEST_VM(os_linux, reserve_memory_special_concurrent) {
-  TestRunnable* runnable = new ReserveMemorySpecialRunnable();
-  ConcurrentTestRunner testRunner(runnable, 30, 15000);
+  ReserveMemorySpecialRunnable runnable;
+  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
   testRunner.run();
-  delete runnable;
 }
 
 #endif

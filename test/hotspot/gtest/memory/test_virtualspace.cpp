@@ -661,10 +661,9 @@ public:
 };
 
 TEST_VM(VirtualSpace, reserve_space_concurrent) {
-  TestRunnable* runnable = new ReservedSpaceRunnable();
-  ConcurrentTestRunner testRunner(runnable, 30, 15000);
+  ReservedSpaceRunnable runnable;
+  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
   testRunner.run();
-  delete runnable;
 }
 
 class VirtualSpaceRunnable : public TestRunnable {
@@ -675,8 +674,7 @@ public:
 };
 
 TEST_VM(VirtualSpace, virtual_space_concurrent) {
-  TestRunnable* runnable = new VirtualSpaceRunnable();
-  ConcurrentTestRunner testRunner(runnable, 30, 15000);
+  VirtualSpaceRunnable runnable;
+  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
   testRunner.run();
-  delete runnable;
 }
