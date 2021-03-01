@@ -1352,7 +1352,7 @@ size_t ZStatHeap::used_at_relocate_end() {
   return _at_relocate_end.used;
 }
 
-size_t ZStatHeap::live() {
+size_t ZStatHeap::live_at_mark_end() {
   return _at_mark_end.live;
 }
 
