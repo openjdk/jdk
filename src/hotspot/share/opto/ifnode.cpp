@@ -669,7 +669,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               hi = TypeInt::INT->_hi;
               break;
             default:
-              assert(false, "should not reach here");
+              ShouldNotReachHere();
               break;
             }
             return TypeInt::make(lo, hi, cmp2_t->_widen);
@@ -858,92 +858,84 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
 }
 
 // There might be an AddINode (marked with *) with a constant increment
-// in-between the CmpNode(s) and the common value we compare.
-// Check for the following cases. Then return common value compared
-// if present and also save the constant values to be adjusted or
-// subtracted due to the possible AddINode in-between.
+// in-between the CmpNodes and the common value we compare.
+// Check for the following cases and return true if a common value is
+// compared. Also save the constant value that is added to infer
+// the type of the common value we compare.
 //
 //   Variant 1         Variant 2         Variant 3           Variant 4
 //
-//    res_val           res_val            res_val             res_val
-//     /   \             /   \             /   \               /     \
-// dom_cmp  \        dom_val* \           /  this_val*    dom_val*   this_val*
-//        this_cmp      |      \         /       \            |        \
-//                   dom_cmp    \     dom_cmp     \        dom_cmp      \
-//                            this_cmp          this_cmp              this_cmp
-Node* IfNode::get_base_comparing_value (Node* dom_if, PhaseIterGVN* igvn, jint& this_adj_val, jint& dom_adj_val) {
-  Node* this_cmp = in(1)->in(1);
-  Node* dom_cmp = dom_if->in(1)->in(1);
-  assert(this_cmp->is_Cmp() != false && dom_cmp->is_Cmp() != false, "compare expected");
-
-  Node* res_val = NULL;
-  this_adj_val = 0;
-  dom_adj_val = 0;
+//    res_val           res_val             res_val          res_val
+//    /   \             /    \              /    \           /     \
+// dom_cmp \           /   this_val*   dom_val*   \     dom_val*  this_val*
+//        this_cmp    /       \            /       \        |        \
+//                  dom_cmp    \        dom_cmp     \     dom_cmp     \
+//                          this_cmp            this_cmp           this_cmp
+bool IfNode::get_base_comparing_value (Node* dom_if, PhaseIterGVN* igvn, jint& this_adj_val, jint& dom_adj_val) {
+  Node* this_cmp = in(1)->in(1)->as_Cmp();
+  Node* dom_cmp = dom_if->in(1)->in(1)->as_Cmp();
   Node* dom_val = dom_cmp->in(1);
   Node* this_val = this_cmp->in(1);
   if (this_val == dom_val) {
-    res_val = this_val;
-  } else if (this_val->is_Add() && this_val->in(1) && this_val->in(1) == dom_val) {
+    // Variant 1
+    return true;
+  } else if (this_val->is_Add() && this_val->in(1) != NULL && this_val->in(1) == dom_val) {
     const TypeInt* val_t = igvn->type(this_val->in(2))->isa_int();
-    if (val_t && val_t->is_con()) {
-      this_adj_val = val_t->_lo;
-      res_val = this_val->in(1);
+    if (val_t != NULL && val_t->is_con()) {
+      // Variant 2
+      this_adj_val = val_t->get_con();
+      return true;
     }
-  } else if (dom_val->is_Add() && dom_val->in(1) && this_val == dom_val->in(1)) {
+  } else if (dom_val->is_Add() && dom_val->in(1) != NULL && this_val == dom_val->in(1)) {
     const TypeInt* val_t = igvn->type(dom_val->in(2))->isa_int();
-    if (val_t && val_t->is_con()) {
-      dom_adj_val = val_t->_lo;
-      res_val = this_val;
+    if (val_t != NULL && val_t->is_con()) {
+      // Variant 3
+      dom_adj_val = val_t->get_con();
+      return true;
     }
-  } else if (this_val->is_Add() && dom_val->is_Add() && this_val->in(1) && dom_val->in(1) && this_val->in(1) == dom_val->in(1)) {
+  } else if (this_val->is_Add() && dom_val->is_Add() && this_val->in(1) != NULL && dom_val->in(1) != NULL && this_val->in(1) == dom_val->in(1)) {
     const TypeInt* domval_t = igvn->type(dom_val->in(2))->isa_int();
     const TypeInt* thisval_t = igvn->type(this_val->in(2))->isa_int();
-    if (thisval_t && domval_t && thisval_t->is_con() && domval_t->is_con()) {
-      this_adj_val = thisval_t->_lo;
-      dom_adj_val = domval_t->_lo;
-      res_val = this_val->in(1);
+    if (thisval_t != NULL && domval_t != NULL && thisval_t->is_con() && domval_t->is_con()) {
+      // Variant 4
+      this_adj_val = thisval_t->get_con();
+      dom_adj_val = domval_t->get_con();
+      return true;
     }
   }
-
-  return res_val;
+  return false;
 }
 
 // Check if dominating if determines the result of this if
 bool IfNode::fold_dominated_if(ProjNode* proj, PhaseIterGVN* igvn) {
-  Node* this_cmp = in(1)->in(1);
+  Node* this_val = in(1)->in(1)->in(1);
   Node* dom_if = proj->in(0)->as_If();
-  Node* dom_cmp = dom_if->in(1)->in(1);
+  Node* dom_val = dom_if->in(1)->in(1)->in(1);
   jint this_adj_val = 0;
   jint dom_adj_val = 0;
-  Node* n = NULL;
 
-  n = get_base_comparing_value(dom_if, igvn, this_adj_val, dom_adj_val);
-  if (n == NULL) {
-    // Not comparing same value
-    return false;
-  }
-
-  const TypeInt* failtype = filtered_int_type(igvn, dom_cmp->in(1), proj);
-  if (failtype != NULL) {
-    if (dom_adj_val != 0) {
-      // To account for the AddINode, subtract the constant increment from the type
-      assert(dom_cmp->in(1)->is_Add() != false, "sanity");
-      failtype = dom_cmp->in(1)->as_Add()->add_ring(failtype, TypeInt::make(-dom_adj_val))->is_int();
-    }
-    for (int i = 0; i < 2; ++i) {
-      const TypeInt* type2 = filtered_int_type(igvn, this_cmp->in(1), proj_out(i));
-      if (type2 != NULL) {
-        if (this_adj_val != 0) {
-          // To account for the AddINode, subtract the constant increment from the type
-          assert(this_cmp->in(1)->is_Add() != false, "sanity");
-          type2 = this_cmp->in(1)->as_Add()->add_ring(type2, TypeInt::make(-this_adj_val))->is_int();
-        }
-        const TypeInt* res_type = failtype->join(type2)->is_int();
-        if (res_type->empty()) {
-          // Replace Bool with constant
-          igvn->_worklist.push(in(1));
-          igvn->replace_input_of(this, 1, igvn->intcon(proj_out(1-i)->_con));
-          return true;
+  // Must compare same value
+  if (get_base_comparing_value(dom_if, igvn, this_adj_val, dom_adj_val)) {
+    const TypeInt* failtype = filtered_int_type(igvn, dom_val, proj);
+    if (failtype != NULL) {
+      if (dom_adj_val != 0) {
+        // To account for the AddINode, subtract the constant increment from the type
+        failtype = dom_val->as_Add()->add_ring(failtype, TypeInt::make(-dom_adj_val))->is_int();
+      }
+      for (int i = 0; i < 2; ++i) {
+        const TypeInt* type = filtered_int_type(igvn, this_val, proj_out(i));
+        if (type != NULL) {
+          if (this_adj_val != 0) {
+            // To account for the AddINode, subtract the constant increment from the type
+            type = this_val->as_Add()->add_ring(type, TypeInt::make(-this_adj_val))->is_int();
+          }
+          type = failtype->join(type)->is_int();
+          if (type->empty()) {
+            // Replace Bool with constant
+            igvn->_worklist.push(in(1));
+            igvn->replace_input_of(this, 1, igvn->intcon(proj_out(1-i)->_con));
+            return true;
+          }
         }
       }
     }

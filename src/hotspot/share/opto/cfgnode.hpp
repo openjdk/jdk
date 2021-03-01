@@ -299,7 +299,7 @@ private:
   bool is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn);
   void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
   ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call) const;
-  Node* get_base_comparing_value(Node* dom_if, PhaseIterGVN* igvn, jint& this_adj_val, jint& dom_adj_val);
+  bool get_base_comparing_value(Node* dom_if, PhaseIterGVN* igvn, jint& this_adj_val, jint& dom_adj_val);
   bool fold_dominated_if(ProjNode* proj, PhaseIterGVN* igvn);
   bool fold_to_unsigned(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
   static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
