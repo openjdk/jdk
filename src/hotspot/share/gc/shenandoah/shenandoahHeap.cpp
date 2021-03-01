@@ -624,7 +624,7 @@ size_t ShenandoahHeap::used() const {
 }
 
 size_t ShenandoahHeap::live() const {
-  size_t live = Atomic::load_acquire(&_live);
+  size_t live = Atomic::load(&_live);
   return live > 0 ? live : used();
 }
 
@@ -652,7 +652,7 @@ void ShenandoahHeap::set_used(size_t bytes) {
 }
 
 void ShenandoahHeap::set_live(size_t bytes) {
-  Atomic::release_store_fence(&_live, bytes);
+  Atomic::store(&_live, bytes);
 }
 
 void ShenandoahHeap::decrease_used(size_t bytes) {

@@ -488,10 +488,8 @@ inline void ShenandoahHeap::mark_complete_marking_context() {
   _marking_context->mark_complete();
 }
 
-inline void ShenandoahHeap::mark_finished() {
-  mark_complete_marking_context();
-
-  class ShenandoahCollectLiveSizeClosure : public ShenandoahHeapRegionClosure {
+// a heap-region iterating closure to collect the liveness estimate
+class ShenandoahCollectLiveSizeClosure : public ShenandoahHeapRegionClosure {
   private:
     size_t _live;
 
@@ -505,8 +503,9 @@ inline void ShenandoahHeap::mark_finished() {
     size_t get_live() {
       return _live;
     }
-  };
+};
 
+inline void ShenandoahHeap::update_live() {
   ShenandoahCollectLiveSizeClosure cl;
   heap_region_iterate(&cl);
   set_live(cl.get_live());

@@ -569,14 +569,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
     }
   }
-  EventGCHeapSummary event;
-  if (event.should_commit()) {
-    event.set_gcId(GCId::current());
-    event.set_when(GCWhen::AfterGC);
-    event.set_heapUsed(heap->used());
-    event.set_heapLive(heap->live());
-    event.commit();
-  }
 }
 
 class ShenandoahConcurrentEvacThreadClosure : public ThreadClosure {
