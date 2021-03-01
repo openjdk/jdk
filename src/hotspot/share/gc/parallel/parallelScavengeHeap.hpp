@@ -74,7 +74,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   WorkGang _workers;
 
   size_t _live_estimate;
-  
+
   virtual void initialize_serviceability();
 
   void trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs);
