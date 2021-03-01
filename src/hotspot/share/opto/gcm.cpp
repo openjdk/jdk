@@ -776,18 +776,18 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
         // perform an implicit null check, and 'load' is placed in the null
         // block. In this case it is safe to ignore the anti-dependence, as the
         // null block is only reached if 'store' tries to write to null.
+        Block* store_null_block = NULL;
         Node* store_null_check = store->find_out_with(Op_MachNullCheck);
-        Block* null_block = NULL;
         if (store_null_check != NULL) {
           Node* if_true = store_null_check->find_out_with(Op_IfTrue);
           assert(if_true != NULL, "null check without null projection");
           Node* null_block_region = if_true->find_out_with(Op_Region);
           assert(null_block_region != NULL, "null check without null region");
-          null_block = get_block_for_node(null_block_region);
+          store_null_block = get_block_for_node(null_block_region);
         }
 #endif
-        assert((store_null_check != NULL && LCA == null_block) ||
-               store->find_edge(load) != -1, "missing precedence edge");
+        assert(LCA == store_null_block || store->find_edge(load) != -1,
+               "missing precedence edge");
       } else {
         store->add_prec(load);
       }
