@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -53,8 +54,8 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   shenandoah_assert_not_in_cset_except(NULL, obj, ShenandoahHeap::heap()->cancelled_gc());
 
   // Are we in weak subgraph scan?
-  bool weak = task->is_weak();
-  cl->set_weak(weak);
+  bool weak = cl->is_weak();
+  ShenandoahRefStrengthScope<T> scope(cl, weak);
 
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {

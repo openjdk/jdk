@@ -127,6 +127,22 @@ public:
   }
 };
 
+template <typename T>
+class ShenandoahRefStrengthScope : public StackObj {
+private:
+  T* const   _cl;
+  bool const _was_weak;
+public:
+  ShenandoahRefStrengthScope(T* cl, bool weak) :
+    _cl(cl), _was_weak(cl->is_weak()) {
+    _cl->set_weak(weak);
+  }
+
+  ~ShenandoahRefStrengthScope() {
+    _cl->set_weak(_was_weak);
+  }
+};
+
 class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
 private:
   ReferencePolicy* _soft_reference_policy;
