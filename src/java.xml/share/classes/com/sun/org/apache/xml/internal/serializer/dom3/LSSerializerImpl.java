@@ -358,10 +358,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
         fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "no");
 
         // JDK specific property isStandalone
-        String p = SecuritySupport.getSystemProperty(DOMConstants.SP_IS_STANDALONE);
-        if (p == null || p.isEmpty()) {
-            p = SecuritySupport.readJAXPProperty(DOMConstants.SP_IS_STANDALONE);
-        }
+        String p = SecuritySupport.getJAXPSystemProperty(DOMConstants.SP_IS_STANDALONE);
         // the system property is true only if it is "true" and false otherwise
         if (p != null && p.equals("true")) {
             fFeatures |= IS_STANDALONE;

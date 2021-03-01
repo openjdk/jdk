@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,21 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACESHARED_INLINE_HPP
-#define SHARE_MEMORY_METASPACESHARED_INLINE_HPP
+#ifndef SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP
+#define SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP
 
-#include "memory/metaspaceShared.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1Allocator.inline.hpp"
-#endif
+#include "oops/compiledICHolder.hpp"
+#include "oops/klass.inline.hpp"
 
-#if INCLUDE_CDS_JAVA_HEAP
-bool MetaspaceShared::is_archive_object(oop p) {
-  return (p == NULL) ? false : G1ArchiveAllocator::is_archive_object(p);
+inline bool CompiledICHolder::is_loader_alive() {
+  Klass* k = _is_metadata_method ? ((Method*)_holder_metadata)->method_holder() : (Klass*)_holder_metadata;
+  if (!k->is_loader_alive()) {
+    return false;
+  }
+  if (!_holder_klass->is_loader_alive()) {
+    return false;
+  }
+  return true;
 }
-#endif
 
-#endif // SHARE_MEMORY_METASPACESHARED_INLINE_HPP
+#endif // SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP

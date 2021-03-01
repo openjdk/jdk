@@ -191,9 +191,6 @@ void set_client_emulation_mode_flags() {
   if (FLAG_IS_DEFAULT(CodeCacheExpansionSize)) {
     FLAG_SET_ERGO(CodeCacheExpansionSize, 32*K);
   }
-  if (FLAG_IS_DEFAULT(MetaspaceSize)) {
-    FLAG_SET_ERGO(MetaspaceSize, MIN2(12*M, MaxMetaspaceSize));
-  }
   if (FLAG_IS_DEFAULT(MaxRAM)) {
     // Do not use FLAG_SET_ERGO to update MaxRAM, as this will impact
     // heap setting done based on available phys_mem (see Arguments::set_heap_size).
@@ -444,9 +441,6 @@ void CompilerConfig::set_jvmci_specific_flags() {
       if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
         FLAG_SET_DEFAULT(InitialCodeCacheSize, MAX2(16*M, InitialCodeCacheSize));
       }
-      if (FLAG_IS_DEFAULT(MetaspaceSize)) {
-        FLAG_SET_DEFAULT(MetaspaceSize, MIN2(MAX2(12*M, MetaspaceSize), MaxMetaspaceSize));
-      }
       if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
         FLAG_SET_DEFAULT(NewSizeThreadIncrease, MAX2(4*K, NewSizeThreadIncrease));
       }
@@ -555,6 +549,8 @@ void CompilerConfig::ergo_initialize() {
     if (NeverActAsServerClassMachine) {
       set_client_emulation_mode_flags();
     }
+  } else if (!has_c2() && !is_jvmci_compiler()) {
+    set_client_emulation_mode_flags();
   }
 
   set_legacy_emulation_flags();

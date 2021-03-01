@@ -3035,36 +3035,6 @@ encode %{
     __ stfd($src$$FloatRegister, Idisp, $mem$$base$$Register);
   %}
 
-  // Use release_store for card-marking to ensure that previous
-  // oop-stores are visible before the card-mark change.
-  enc_class enc_cms_card_mark(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
-    // FIXME: Implement this as a cmove and use a fixed condition code
-    // register which is written on every transition to compiled code,
-    // e.g. in call-stub and when returning from runtime stubs.
-    //
-    // Proposed code sequence for the cmove implementation:
-    //
-    // Label skip_release;
-    // __ beq(CCRfixed, skip_release);
-    // __ release();
-    // __ bind(skip_release);
-    // __ stb(card mark);
-
-    C2_MacroAssembler _masm(&cbuf);
-    Label skip_storestore;
-
-    __ li(R0, 0);
-    __ membar(Assembler::StoreStore);
-
-    // Do the store.
-    if ($mem$$index == 0) {
-      __ stb(R0, $mem$$disp, $mem$$base$$Register);
-    } else {
-      assert(0 == $mem$$disp, "no displacement possible with indexed load/stores on ppc");
-      __ stbx(R0, $mem$$base$$Register, $mem$$index$$Register);
-    }
-  %}
-
   enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
 
     if (VM_Version::has_isel()) {
@@ -6601,37 +6571,15 @@ instruct storeD(memory mem, regD src) %{
 
 //----------Store Instructions With Zeros--------------------------------------
 
-// Card-mark for CMS garbage collection.
-// This cardmark does an optimization so that it must not always
-// do a releasing store. For this, it gets the address of
-// CMSCollectorCardTableBarrierSetBSExt::_requires_release as input.
-// (Using releaseFieldAddr in the match rule is a hack.)
-instruct storeCM_CMS(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
-  match(Set mem (StoreCM mem releaseFieldAddr));
-  effect(TEMP crx);
-  predicate(false);
-  ins_cost(MEMORY_REF_COST);
-
-  // See loadConP.
-  ins_cannot_rematerialize(true);
-
-  format %{ "STB     #0, $mem \t// CMS card-mark byte (must be 0!), checking requires_release in [$releaseFieldAddr]" %}
-  ins_encode( enc_cms_card_mark(mem, releaseFieldAddr, crx) );
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct storeCM_G1(memory mem, immI_0 zero) %{
+instruct storeCM(memory mem, immI_0 zero) %{
   match(Set mem (StoreCM mem zero));
-  predicate(UseG1GC);
   ins_cost(MEMORY_REF_COST);
 
-  ins_cannot_rematerialize(true);
-
-  format %{ "STB     #0, $mem \t// CMS card-mark byte store (G1)" %}
+  format %{ "STB     #0, $mem \t// CMS card-mark byte store" %}
   size(8);
   ins_encode %{
     __ li(R0, 0);
-    //__ release(); // G1: oops are allowed to get visible after dirty marking
+    // No release barrier: Oops are allowed to get visible after marking.
     guarantee($mem$$base$$Register != R1_SP, "use frame_slots_bias");
     __ stb(R0, $mem$$disp, $mem$$base$$Register);
   %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,16 @@ import java.util.function.ToDoubleFunction;
 import java.util.Comparators;
 
 /**
- * A comparison function, which imposes a <i>total ordering</i> on some
- * collection of objects.  Comparators can be passed to a sort method (such
- * as {@link Collections#sort(List,Comparator) Collections.sort} or {@link
- * Arrays#sort(Object[],Comparator) Arrays.sort}) to allow precise control
- * over the sort order.  Comparators can also be used to control the order of
- * certain data structures (such as {@link SortedSet sorted sets} or {@link
- * SortedMap sorted maps}), or to provide an ordering for collections of
- * objects that don't have a {@link Comparable natural ordering}.<p>
+ * A comparison function, which imposes a <i>total ordering</i> on
+ * some collection of objects.  Comparators can be passed to a sort
+ * method (such as {@link Collections#sort(List,Comparator)
+ * Collections.sort} or {@link Arrays#sort(Object[],Comparator)
+ * Arrays.sort}) to allow precise control over the sort order.
+ * Comparators can also be used to control the order of certain data
+ * structures (such as {@linkplain SortedSet sorted sets} or
+ * {@linkplain SortedMap sorted maps}), or to provide an ordering for
+ * collections of objects that don't have a {@linkplain Comparable
+ * natural ordering}.<p>
  *
  * The ordering imposed by a comparator {@code c} on a set of elements
  * {@code S} is said to be <i>consistent with equals</i> if and only if
@@ -89,6 +91,11 @@ import java.util.Comparators;
  * equals(Object)} method(s):<pre>
  *     {(x, y) such that x.equals(y)}. </pre>
  *
+ * In other words, when the imposed ordering is consistent with
+ * equals, the equivalence classes defined by the equivalence relation
+ * of the {@code equals} method and the equivalence classes defined by
+ * the quotient of the {@code compare} method are the same.
+
  * <p>Unlike {@code Comparable}, a comparator may optionally permit
  * comparison of null arguments, while maintaining the requirements for
  * an equivalence relation.
@@ -112,30 +119,26 @@ public interface Comparator<T> {
      * zero, or a positive integer as the first argument is less than, equal
      * to, or greater than the second.<p>
      *
-     * The implementor must ensure that {@code sgn(compare(x, y)) ==
-     * -sgn(compare(y, x))} for all {@code x} and {@code y}.  (This
-     * implies that {@code compare(x, y)} must throw an exception if and only
-     * if {@code compare(y, x)} throws an exception.)<p>
+     * The implementor must ensure that {@link Integer#signum
+     * signum}{@code (compare(x, y)) == -signum(compare(y, x))} for
+     * all {@code x} and {@code y}.  (This implies that {@code
+     * compare(x, y)} must throw an exception if and only if {@code
+     * compare(y, x)} throws an exception.)<p>
      *
      * The implementor must also ensure that the relation is transitive:
      * {@code ((compare(x, y)>0) && (compare(y, z)>0))} implies
      * {@code compare(x, z)>0}.<p>
      *
-     * Finally, the implementor must ensure that {@code compare(x, y)==0}
-     * implies that {@code sgn(compare(x, z))==sgn(compare(y, z))} for all
-     * {@code z}.<p>
+     * Finally, the implementor must ensure that {@code compare(x,
+     * y)==0} implies that {@code signum(compare(x,
+     * z))==signum(compare(y, z))} for all {@code z}.<p>
      *
+     * @apiNote
      * It is generally the case, but <i>not</i> strictly required that
      * {@code (compare(x, y)==0) == (x.equals(y))}.  Generally speaking,
      * any comparator that violates this condition should clearly indicate
      * this fact.  The recommended language is "Note: this comparator
      * imposes orderings that are inconsistent with equals."<p>
-     *
-     * In the foregoing description, the notation
-     * {@code sgn(}<i>expression</i>{@code )} designates the mathematical
-     * <i>signum</i> function, which is defined to return one of {@code -1},
-     * {@code 0}, or {@code 1} according to whether the value of
-     * <i>expression</i> is negative, zero, or positive, respectively.
      *
      * @param o1 the first object to be compared.
      * @param o2 the second object to be compared.
@@ -150,13 +153,14 @@ public interface Comparator<T> {
     int compare(T o1, T o2);
 
     /**
-     * Indicates whether some other object is &quot;equal to&quot; this
-     * comparator.  This method must obey the general contract of
-     * {@link Object#equals(Object)}.  Additionally, this method can return
-     * {@code true} <i>only</i> if the specified object is also a comparator
-     * and it imposes the same ordering as this comparator.  Thus,
-     * {@code comp1.equals(comp2)} implies that {@code sgn(comp1.compare(o1,
-     * o2))==sgn(comp2.compare(o1, o2))} for every object reference
+     * Indicates whether some other object is &quot;equal to&quot;
+     * this comparator.  This method must obey the general contract of
+     * {@link Object#equals(Object)}.  Additionally, this method can
+     * return {@code true} <i>only</i> if the specified object is also
+     * a comparator and it imposes the same ordering as this
+     * comparator.  Thus, {@code comp1.equals(comp2)} implies that
+     * {@link Integer#signum signum}{@code (comp1.compare(o1,
+     * o2))==signum(comp2.compare(o1, o2))} for every object reference
      * {@code o1} and {@code o2}.<p>
      *
      * Note that it is <i>always</i> safe <i>not</i> to override

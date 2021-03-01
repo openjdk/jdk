@@ -139,15 +139,14 @@ class SystemDictionary : AllStatic {
                                             TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
-  static Klass* find(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static InstanceKlass* find_instance_klass(Symbol* class_name, Handle class_loader, Handle protection_domain);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
   // If not found NULL is returned.
   static Klass* find_instance_or_array_klass(Symbol* class_name,
                                              Handle class_loader,
-                                             Handle protection_domain,
-                                             TRAPS);
+                                             Handle protection_domain);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
@@ -172,7 +171,7 @@ class SystemDictionary : AllStatic {
   // to local linkage and access checks.
   static Klass* find_constrained_instance_or_array_klass(Symbol* class_name,
                                                            Handle class_loader,
-                                                           TRAPS);
+                                                           Thread* THREAD);
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
