@@ -40,8 +40,8 @@ public:
   // runnableArg - what to run
   // doneArg - a semaphore to notify when the thread is done running
   // testDurationArg - how long to run (in milliseconds)
-  UnitTestThread(const TestRunnable* runnableArg, Semaphore* doneArg, const long testDurationArg) :
-    JavaTestThread(doneArg), runnable(runnableArg), testDuration(testDurationArg) {}
+  UnitTestThread(TestRunnable* const runnableArg, Semaphore* doneArg, const long testDurationArg) :
+    JavaTestThread(doneArg), runnable{runnableArg}, testDuration{testDurationArg} {}
 
   // from JavaTestThread
   void main_run() {
@@ -51,7 +51,7 @@ public:
     }
   }
 private:
-  const TestRunnable* runnable;
+  TestRunnable* const runnable;
   const long testDuration;
 };
 
@@ -61,8 +61,8 @@ public:
   // runnableArg - what to run
   // nrOfThreadsArg - how many threads to use concurrently
   // testDurationMillisArg - duration for each test run
-  ConcurrentTestRunner(const TestRunnable* runnableArg, int nrOfThreadsArg, long testDurationMillisArg) :
-    unitTestRunnable(runnableArg),
+  ConcurrentTestRunner(TestRunnable* const runnableArg, int nrOfThreadsArg, long testDurationMillisArg) :
+    unitTestRunnable{runnableArg},
     nrOfThreads{nrOfThreadsArg},
     testDurationMillis{testDurationMillisArg} {}
 
@@ -86,7 +86,7 @@ public:
   }
 
 private:
-  const TestRunnable* unitTestRunnable;
+  TestRunnable* const unitTestRunnable;
   const int nrOfThreads;
   const long testDurationMillis;
 };
