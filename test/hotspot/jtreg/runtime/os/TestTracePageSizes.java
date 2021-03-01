@@ -172,7 +172,7 @@ public class TestTracePageSizes {
         Scanner fileScanner = new Scanner(new File("./ps-" + ProcessHandle.current().pid() + ".log"));
         while (fileScanner.hasNextLine()) {
             String line = fileScanner.nextLine();
-            if (line.matches(traceLinePatternString)){
+            if (line.matches(traceLinePatternString)) {
                 Matcher trace = traceLinePattern.matcher(line);
                 trace.find();
 
@@ -238,7 +238,7 @@ class RangeWithPageSize {
 
     public RangeWithPageSize(String start, String end, String pageSize, String vmFlags) {
         this.start = Long.parseUnsignedLong(start, 16);
-        this.end = Long.parseUnsignedLong(end, 16);;
+        this.end = Long.parseUnsignedLong(end, 16);
         this.pageSize = Long.parseLong(pageSize);
 
         vmFlagHG = false;
