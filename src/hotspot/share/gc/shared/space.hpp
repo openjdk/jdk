@@ -445,7 +445,7 @@ protected:
   // Used during compaction.
   HeapWord* _first_dead;
   HeapWord* _end_of_live;
-  size_t    _zombie_space;
+  size_t    _dead_space;
 
   // This the function is invoked when an allocation of an object covering
   // "start" to "end occurs crosses the threshold; returns the next
@@ -551,7 +551,7 @@ class ContiguousSpace: public CompactibleSpace {
   size_t capacity() const        { return byte_size(bottom(), end()); }
   size_t used() const            { return byte_size(bottom(), top()); }
   size_t live() const            {
-    return used() - _zombie_space;
+    return used() - _dead_space;
   }
   size_t free() const            { return byte_size(top(),    end()); }
 

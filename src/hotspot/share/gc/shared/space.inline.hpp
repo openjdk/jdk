@@ -87,7 +87,9 @@ class DeadSpacer : StackObj {
   CompactibleSpace* _space;
 
 public:
-  DeadSpacer(CompactibleSpace* space) : _allowed_deadspace_words(0), _space(space) {
+  size_t _dead_space;
+
+  DeadSpacer(CompactibleSpace* space) : _allowed_deadspace_words(0), _space(space), _dead_space(0) {
     size_t ratio = _space->allowed_dead_ratio();
     _active = ratio > 0;
 
@@ -123,6 +125,7 @@ public:
       log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", " SIZE_FORMAT "b",
           p2i(dead_start), p2i(dead_end), dead_length * HeapWordSize);
 
+      _dead_space += dead_length;
       return true;
     } else {
       _active = false;
@@ -162,8 +165,6 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
   HeapWord* cur_obj = space->bottom();
   HeapWord* scan_limit = space->scan_limit();
 
-  size_t live_offset = 0;
-
   while (cur_obj < scan_limit) {
     if (space->scanned_block_is_obj(cur_obj) && oop(cur_obj)->is_gc_marked()) {
       // prefetch beyond cur_obj
@@ -186,7 +187,6 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
       if (cur_obj == compact_top && dead_spacer.insert_deadspace(cur_obj, end)) {
         oop obj = oop(cur_obj);
         size_t obj_size = obj->size();
-        live_offset += obj_size;
         compact_top = cp->space->forward(obj, obj_size, cp, compact_top);
         end_of_live = end;
       } else {
@@ -208,7 +208,7 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
 
   assert(cur_obj == scan_limit, "just checking");
   space->_end_of_live = end_of_live;
-  space->_zombie_space = live_offset;
+  space->_dead_space = dead_spacer._dead_space;
   if (first_dead != NULL) {
     space->_first_dead = first_dead;
   } else {
