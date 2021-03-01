@@ -177,10 +177,7 @@ public:
 
   size_t capacity() const;
   size_t used() const;
-  size_t live() const {
-    size_t live = _live_size;
-    return live > 0 ? live : used();
-  };
+  size_t live() const;
 
   // Save the "used_region" for both generations.
   void save_used_regions();

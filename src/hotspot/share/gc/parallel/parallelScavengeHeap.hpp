@@ -97,7 +97,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   inline void death_march_check(HeapWord* const result, size_t size);
   HeapWord* mem_allocate_old_gen(size_t size);
 
-
  public:
   ParallelScavengeHeap() :
     CollectedHeap(),

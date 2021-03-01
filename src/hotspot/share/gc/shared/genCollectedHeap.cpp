@@ -242,6 +242,11 @@ size_t GenCollectedHeap::used() const {
   return _young_gen->used() + _old_gen->used();
 }
 
+size_t GenCollectedHeap::live() const {
+  size_t live = _live_size;
+  return live > 0 ? live : used();
+}
+
 void GenCollectedHeap::save_used_regions() {
   _old_gen->save_used_region();
   _young_gen->save_used_region();
@@ -679,8 +684,6 @@ void GenCollectedHeap::do_collection(bool           full,
 
     print_heap_after_gc();
   }
-  // update the live size after last GC
-  _live_size = _young_gen->live() + _old_gen->live();
 }
 
 bool GenCollectedHeap::should_do_full_collection(size_t size, bool full, bool is_tlab,
@@ -1141,7 +1144,6 @@ void GenCollectedHeap::prepare_for_compaction() {
   CompactPoint cp(_old_gen);
   _old_gen->prepare_for_compaction(&cp);
   _young_gen->prepare_for_compaction(&cp);
-
 }
 #endif // INCLUDE_SERIALGC
 
@@ -1256,6 +1258,9 @@ void GenCollectedHeap::gc_epilogue(bool full) {
 
   MetaspaceCounters::update_performance_counters();
   CompressedClassSpaceCounters::update_performance_counters();
+
+  // update the live size after last GC
+  _live_size = _young_gen->live() + _old_gen->live();
 };
 
 #ifndef PRODUCT
