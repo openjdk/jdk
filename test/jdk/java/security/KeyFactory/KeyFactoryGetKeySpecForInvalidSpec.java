@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Amazon.com, Inc. or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Amazon.com, Inc. or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8254717
- * @summary Two users facing implications caused by "isAssignableFrom" checks in "engineGetKeySpec" being backwards.
+ * @summary isAssignableFrom checks in KeyFactorySpi.engineGetKeySpec appear to be backwards.
  * @author Greg Rubin, Ziyi Luo
  */
 
