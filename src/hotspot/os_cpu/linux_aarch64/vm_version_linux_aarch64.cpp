@@ -171,15 +171,12 @@ void VM_Version::get_os_cpu_info() {
 void VM_Version::get_compatible_board(char *buf, int buflen) {
   const char *aarch64_label = "AArch64";
   assert((buf != NULL) && ((size_t)buflen >= (strlen(aarch64_label) + 1)), "invalid argument");
+  strncpy(buf, aarch64_label, buflen);
 
   int fd = open("/proc/device-tree/compatible", O_RDONLY);
   if (fd != -1) {
     struct stat statbuf;
     fstat(fd, &statbuf);
-    if (buflen < statbuf.st_size) {
-      strncpy(buf, aarch64_label, buflen);
-      return;
-    }
     ssize_t read_sz = read(fd, buf, statbuf.st_size);
     if (read_sz != -1) {
       // Replace '\0' to ' '
@@ -187,11 +184,7 @@ void VM_Version::get_compatible_board(char *buf, int buflen) {
       while ((tok = (char*)memchr(tok, 0, statbuf.st_size - (tok - buf) - 1)) != NULL) {
         *tok = ' ';
       }
-    } else {
-      strncpy(buf, aarch64_label, buflen);
     }
     close(fd);
-  } else {
-    strncpy(buf, aarch64_label, buflen);
   }
 }
