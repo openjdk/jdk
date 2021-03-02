@@ -450,7 +450,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         Node* n = val->in(MemNode::ValueIn);
         BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
         n = bs->step_over_gc_barrier(n);
-        if (ft == T_SHORT || ft == T_BYTE || ft == T_CHAR || ft == T_BOOLEAN) {
+        if (is_subword_type(ft)) {
           n = Compile::narrow_value(ft, n, phi_type, &_igvn, true);
         }
         values.at_put(j, n);
