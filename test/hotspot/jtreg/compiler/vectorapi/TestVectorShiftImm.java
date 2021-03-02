@@ -46,7 +46,7 @@ public class TestVectorShiftImm {
 
     private static final int NUM_OPS          = 5;
     private static final int ACCUMULATE_OP_S  = 3;
-    private static final int MAX_TESTS_PER_OP = 6;
+    private static final int MAX_TESTS_PER_OP = 7;
     private static final int VLENS            = 2;
 
     private static byte[]  bytesA,    bytesB;
@@ -130,6 +130,7 @@ public class TestVectorShiftImm {
 
     static int shift_with_op(VectorOperators.Binary op, ByteVector vbb,
                              byte arr[][], int end, int ind) {
+        vbb.lanewise(op, 0).intoArray(arr[end++], ind);
         vbb.lanewise(op, 1).intoArray(arr[end++], ind);
         vbb.lanewise(op, 8).intoArray(arr[end++], ind);
         vbb.lanewise(op, 13).intoArray(arr[end++], ind);
@@ -142,6 +143,7 @@ public class TestVectorShiftImm {
     static int shift_with_op_and_add(VectorOperators.Binary op,
                                      ByteVector vba, ByteVector vbb,
                                      byte arr[][], int end, int ind) {
+        vba.add(vbb.lanewise(op, 0)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 1)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 8)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 13)).intoArray(arr[end++], ind);
@@ -195,6 +197,7 @@ public class TestVectorShiftImm {
 
     static int shift_with_op(VectorOperators.Binary op, ShortVector vbb,
                              short arr[][], int end, int ind) {
+        vbb.lanewise(op, 0).intoArray(arr[end++], ind);
         vbb.lanewise(op, 9).intoArray(arr[end++], ind);
         vbb.lanewise(op, 16).intoArray(arr[end++], ind);
         vbb.lanewise(op, 27).intoArray(arr[end++], ind);
@@ -207,6 +210,7 @@ public class TestVectorShiftImm {
     static int shift_with_op_and_add(VectorOperators.Binary op,
                                      ShortVector vba, ShortVector vbb,
                                      short arr[][], int end, int ind) {
+        vba.add(vbb.lanewise(op, 0)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 9)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 16)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 27)).intoArray(arr[end++], ind);
@@ -260,6 +264,7 @@ public class TestVectorShiftImm {
 
     static int shift_with_op(VectorOperators.Binary op, IntVector vbb,
                              int arr[][], int end, int ind) {
+        vbb.lanewise(op, 0).intoArray(arr[end++], ind);
         vbb.lanewise(op, 17).intoArray(arr[end++], ind);
         vbb.lanewise(op, 32).intoArray(arr[end++], ind);
         vbb.lanewise(op, 53).intoArray(arr[end++], ind);
@@ -272,6 +277,7 @@ public class TestVectorShiftImm {
     static int shift_with_op_and_add(VectorOperators.Binary op,
                                      IntVector vba, IntVector vbb,
                                      int arr[][], int end, int ind) {
+        vba.add(vbb.lanewise(op, 0)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 17)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 32)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 53)).intoArray(arr[end++], ind);
@@ -325,6 +331,7 @@ public class TestVectorShiftImm {
 
     static int shift_with_op(VectorOperators.Binary op, LongVector vbb,
                              long arr[][], int end, int ind) {
+        vbb.lanewise(op, 0).intoArray(arr[end++], ind);
         vbb.lanewise(op, 37).intoArray(arr[end++], ind);
         vbb.lanewise(op, 64).intoArray(arr[end++], ind);
         vbb.lanewise(op, 99).intoArray(arr[end++], ind);
@@ -337,6 +344,7 @@ public class TestVectorShiftImm {
     static int shift_with_op_and_add(VectorOperators.Binary op,
                                      LongVector vba, LongVector vbb,
                                      long arr[][], int end, int ind) {
+        vba.add(vbb.lanewise(op, 0)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 37)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 64)).intoArray(arr[end++], ind);
         vba.add(vbb.lanewise(op, 99)).intoArray(arr[end++], ind);
