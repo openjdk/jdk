@@ -1216,7 +1216,7 @@ void LIRGenerator::do_Return(Return* x) {
   set_no_result(x);
 }
 
-// Examble: ref.get()
+// Example: ref.get()
 // Combination of LoadField and g1 pre-write barrier
 void LIRGenerator::do_Reference_get(Intrinsic* x) {
 
@@ -1227,7 +1227,7 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
   LIRItem reference(x->argument_at(0), this);
   reference.load_item();
 
-  // need to perform the null check on the reference objecy
+  // need to perform the null check on the reference object
   CodeEmitInfo* info = NULL;
   if (x->needs_null_check()) {
     info = state_for(x);

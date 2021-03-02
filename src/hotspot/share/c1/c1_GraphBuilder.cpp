@@ -3236,10 +3236,9 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       // Compiles where the root method is an intrinsic need a special
       // compilation environment because the bytecodes for the method
       // shouldn't be parsed during the compilation, only the special
-      // Intrinsic node should be emitted.  If this isn't done the the
-      // code for the inlined version will be different than the root
-      // compiled version which could lead to monotonicity problems on
-      // intel.
+      // Intrinsic node should be emitted.  If this isn't done the code
+      // for the inlined version will be different than the root compiled
+      // version which could lead to monotonicity problems on intel.
       if (CheckIntrinsics && !scope->method()->intrinsic_candidate()) {
         BAILOUT("failed to inline intrinsic, method not annotated");
       }

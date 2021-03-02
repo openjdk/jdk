@@ -654,7 +654,6 @@ class LIRItem: public CompilationResourceObj {
     } else {
       return _result;
     }
-    return _result;
   }
 
   void set_result(LIR_Opr opr);
