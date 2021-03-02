@@ -277,10 +277,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         }
 
         return false;
-      }
-      else
-
-      if (sig == SIGFPE  &&
+      } else if (sig == SIGFPE &&
           (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
         stub =
           SharedRuntime::
@@ -288,11 +285,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                               pc,
                                               SharedRuntime::
                                               IMPLICIT_DIVIDE_BY_ZERO);
-#ifdef __APPLE__
-      } else if (sig == SIGFPE && info->si_code == FPE_NOOP) {
-        Unimplemented();
-#endif /* __APPLE__ */
-
       } else if ((sig == SIGSEGV || sig == SIGBUS) &&
                  MacroAssembler::uses_implicit_null_check(info->si_addr)) {
           // Determination of interpreter/vtable stub/compiled code null exception
