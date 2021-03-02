@@ -89,7 +89,11 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
                         "LoggingFormatConsistency",
                         "runTest"); // Ensuring args.length is greater than 0 when test JVM starts
 
-                output.asLines().stream().filter(line -> line.startsWith("Connecting to")).forEach(System.out::println); // prints connection info from test jvm output
+                output.asLines()
+                        .stream()
+                        .filter(line -> line.startsWith("Connecting to"))
+                        .forEach(System.out::println); // prints connection info from test jvm output
+
                 if (output.getExitValue() != 0) {
                     output.asLines().forEach(System.out::println);
                     throw new RuntimeException("Test JVM process failed");
