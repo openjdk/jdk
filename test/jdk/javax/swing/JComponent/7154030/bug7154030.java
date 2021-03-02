@@ -109,11 +109,10 @@ public class bug7154030 {
             frw = bounds.width - insets.left - insets.right;
             frh = bounds.height - insets.top - insets.bottom;
 
-            imageInit = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
             BufferedImage fullScreen = robot.createScreenCapture(screen);
             Graphics g = fullScreen.getGraphics();
             g.setColor(Color.RED);
-            g.drawRect(locx-1, locy-1, frw+1, frh+1);
+            g.drawRect(locx - 1, locy - 1, frw + 1, frh + 1);
             imageInit = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
             SwingUtilities.invokeAndWait(new Runnable() {
