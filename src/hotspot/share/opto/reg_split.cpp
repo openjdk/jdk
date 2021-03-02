@@ -499,7 +499,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
   uint                 bidx, pidx, slidx, insidx, inpidx, twoidx;
   uint                 non_phi = 1, spill_cnt = 0;
-  int                  delta;
   Node                *n1, *n2, *n3;
   Node_List           *defs,*phis;
   bool                *UPblock;
