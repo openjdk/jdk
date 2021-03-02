@@ -253,10 +253,10 @@ public abstract class Reader implements Readable, Closeable {
      * @return     The number of characters read, or -1 if the end of the
      *             stream has been reached
      *
-     * @throws     IOException  If an I/O error occurs
      * @throws     IndexOutOfBoundsException
      *             If {@code off} is negative, or {@code len} is negative,
      *             or {@code len} is greater than {@code cbuf.length - off}
+     * @throws     IOException  If an I/O error occurs
      */
     public abstract int read(char cbuf[], int off, int len) throws IOException;
 

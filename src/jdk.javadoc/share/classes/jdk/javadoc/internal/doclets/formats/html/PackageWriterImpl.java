@@ -42,7 +42,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -94,8 +94,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     @Override
-    public Content getPackageHeader(String heading) {
-        HtmlTree bodyTree = getBody(getWindowTitle(utils.getPackageName(packageElement)));
+    public Content getPackageHeader() {
+        String packageName = getLocalizedPackageName(packageElement).toString();
+        HtmlTree bodyTree = getBody(getWindowTitle(packageName));
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -104,14 +105,16 @@ public class PackageWriterImpl extends HtmlDocletWriter
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
             moduleNameDiv.add(Entity.NO_BREAK_SPACE);
             moduleNameDiv.add(getModuleLink(mdle,
-                    new StringContent(mdle.getQualifiedName().toString())));
+                    Text.of(mdle.getQualifiedName().toString())));
             div.add(moduleNameDiv);
         }
+        Content packageHead = new ContentBuilder();
+        if (!packageElement.isUnnamed()) {
+            packageHead.add(contents.packageLabel).add(" ");
+        }
+        packageHead.add(packageName);
         Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, contents.packageLabel);
-        tHeading.add(Entity.NO_BREAK_SPACE);
-        Content packageHead = new StringContent(heading);
-        tHeading.add(packageHead);
+                HtmlStyle.title, packageHead);
         div.add(tHeading);
         bodyContents.setHeader(getHeader(PageMode.PACKAGE, packageElement))
                 .addMainContent(div);
@@ -205,7 +208,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             TableHeader tableHeader, Content summaryContentTree) {
         if(!classes.isEmpty()) {
             Table table = new Table(HtmlStyle.summaryTable)
-                    .setCaption(new StringContent(label))
+                    .setCaption(Text.of(label))
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
 
