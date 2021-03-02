@@ -60,7 +60,7 @@ public enum VectorShape {
     /** Shape of length 512 bits */
     S_512_BIT(512),
     /** Shape of maximum length supported on the platform */
-    S_Max_BIT(Math.max(VectorSupport.getMaxLaneCount(byte.class) * Byte.SIZE, 64));
+    S_Max_BIT(getMaxVectorBitSize(byte.class));
 
     final int vectorBitSize;
     final int vectorBitSizeLog2;
@@ -211,10 +211,7 @@ public enum VectorShape {
 
     /*package-private*/
     static VectorShape largestShapeFor(Class<?> etype) {
-        int laneCount = VectorSupport.getMaxLaneCount(etype);
-        int elementSize = LaneType.of(etype).elementSize;
-        int vectorBitSize = Math.max(laneCount * elementSize, 64);
-        return VectorShape.forBitSize(vectorBitSize);
+        return VectorShape.forBitSize(getMaxVectorBitSize(etype));
     }
 
     /**
@@ -244,17 +241,30 @@ public enum VectorShape {
         int prefBitSize = Integer.MAX_VALUE;
         for (LaneType type : LaneType.values()) {
             Class<?> etype = type.elementType;
-            int maxLaneCount = VectorSupport.getMaxLaneCount(etype);
-            int maxSize = type.elementSize * maxLaneCount;
-            prefBitSize = Math.min(prefBitSize, maxSize);
+            prefBitSize = Math.min(prefBitSize, getMaxVectorBitSize(etype));
         }
-        prefBitSize = Math.max(prefBitSize, 64);
         // If these assertions fail, we must reconsider our API portability assumptions.
         assert(prefBitSize >= Double.SIZE && prefBitSize < Integer.MAX_VALUE / Long.SIZE);
-        assert(prefBitSize == Math.max(VectorSupport.getMaxLaneCount(byte.class)*Byte.SIZE, 64));
+        assert(prefBitSize == getMaxVectorBitSize(byte.class));
         VectorShape shape = VectorShape.forBitSize(prefBitSize);
         PREFERRED_SHAPE = shape;
         return shape;
+    }
+
+    /**
+     * Returns the maximum vector bit size for a given element type.
+     *
+     * @param etype the element type.
+     * @return the maximum vector bit.
+     */
+     /*package-private*/
+    static int getMaxVectorBitSize(Class<?> etype) {
+        // VectorSupport.getMaxLaneCount may return -1 if C2 is not enabled,
+        // or a value smaller than the S_64_BIT.vectorBitSize / elementSizeInBits if MaxVectorSize < 16
+        // If so default to S_64_BIT
+        int maxLaneCount = VectorSupport.getMaxLaneCount(etype);
+        int elementSizeInBits = LaneType.of(etype).elementSize;
+        return Math.max(maxLaneCount * elementSizeInBits, S_64_BIT.vectorBitSize);
     }
 
     private static @Stable VectorShape PREFERRED_SHAPE;
