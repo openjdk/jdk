@@ -179,7 +179,7 @@ private:
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
 
-  volatile size_t _live_size;
+  volatile size_t _live;
 
 public:
   void prepare_region_for_full_compaction(HeapRegion* hr);

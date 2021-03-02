@@ -198,7 +198,7 @@ size_t ParallelScavengeHeap::used() const {
 }
 
 size_t ParallelScavengeHeap::live() const {
-  return _live_estimate > 0 ? _live_estimate : used();
+  return _live;
 }
 
 bool ParallelScavengeHeap::is_maximal_no_gc() const {

@@ -100,7 +100,7 @@ GenCollectedHeap::GenCollectedHeap(Generation::Name young,
   _gc_policy_counters(new GCPolicyCounters(policy_counters_name, 2, 2)),
   _incremental_collection_failed(false),
   _full_collections_completed(0),
-  _live_size(0),
+  _live(0),
   _young_manager(NULL),
   _old_manager(NULL) {
 }
@@ -245,8 +245,7 @@ size_t GenCollectedHeap::used() const {
 }
 
 size_t GenCollectedHeap::live() const {
-  size_t live = _live_size;
-  return live > 0 ? live : used();
+  return _live;
 }
 
 void GenCollectedHeap::save_used_regions() {
@@ -1262,7 +1261,7 @@ void GenCollectedHeap::gc_epilogue(bool full) {
   CompressedClassSpaceCounters::update_performance_counters();
 
   // update the live size after last GC
-  _live_size = _young_gen->live() + _old_gen->live();
+  _live = _young_gen->live() + _old_gen->live();
 };
 
 #ifndef PRODUCT

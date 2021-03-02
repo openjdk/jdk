@@ -625,8 +625,7 @@ size_t ShenandoahHeap::used() const {
 }
 
 size_t ShenandoahHeap::live() const {
-  size_t live = Atomic::load(&_live);
-  return live > 0 ? live : used();
+  return Atomic::load(&_live);
 }
 
 size_t ShenandoahHeap::committed() const {

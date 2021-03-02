@@ -201,7 +201,7 @@
   <Event name="HeapUsageSummary" category="Java Virtual Machine, GC, Heap" label="Heap Usage Summary" startTime="false" period="everyChunk">
     <Field type="ulong" contentType="bytes" name="capacity" label="Heap Capacity" description="Maximum number of bytes to be allocated by objects in the heap" />
     <Field type="ulong" contentType="bytes" name="used" label="Heap Used" description="Bytes allocated by objects in the heap" />
-    <Field type="ulong" contentType="bytes" name="live" label="Heap Live" description="Estimate of live bytes allocated by objects in the heap" />
+    <Field type="ulong" contentType="bytes" name="live" label="Heap Live" description="Estimate of live bytes allocated by objects in the heap or '0' if that estimate is not avaialable" />
   </Event>
 
   <Type name="MetaspaceSizes">

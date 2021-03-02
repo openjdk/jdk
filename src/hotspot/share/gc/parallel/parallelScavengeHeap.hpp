@@ -73,7 +73,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   WorkGang _workers;
 
-  size_t _live_estimate;
+  size_t _live;
 
   virtual void initialize_serviceability();
 
@@ -108,7 +108,7 @@ class ParallelScavengeHeap : public CollectedHeap {
              ParallelGCThreads,
              true /* are_GC_task_threads */,
              false /* are_ConcurrentGC_threads */),
-    _live_estimate(0) { }
+    _live(0) { }
 
   // For use by VM operations
   enum CollectionType {

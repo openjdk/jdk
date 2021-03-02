@@ -88,7 +88,7 @@ private:
   // In support of ExplicitGCInvokesConcurrent functionality
   unsigned int _full_collections_completed;
 
-  size_t _live_size;
+  size_t _live;
 
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
