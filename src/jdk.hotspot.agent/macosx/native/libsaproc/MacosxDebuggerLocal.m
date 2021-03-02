@@ -973,17 +973,17 @@ static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle*
   // add load objects
   n = get_num_libs(ph);
   for (i = 0; i < n; i++) {
-     uintptr_t base;
+     uintptr_t base, memsz;
      const char* name;
      jobject loadObject;
      jstring nameString;
 
-     base = get_lib_base(ph, i);
+     get_lib_addr_range(ph, i, &base, &memsz);
      name = get_lib_name(ph, i);
      nameString = (*env)->NewStringUTF(env, name);
      CHECK_EXCEPTION;
      loadObject = (*env)->CallObjectMethod(env, this_obj, createLoadObject_ID,
-                                            nameString, (jlong)0, (jlong)base);
+                                            nameString, (jlong)memsz, (jlong)base);
      CHECK_EXCEPTION;
      (*env)->CallBooleanMethod(env, loadObjectList, listAdd_ID, loadObject);
      CHECK_EXCEPTION;
