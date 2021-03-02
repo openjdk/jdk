@@ -191,6 +191,15 @@ NOINLINE frame os::current_frame() {
   }
 }
 
+ATTRIBUTE_PRINTF(6, 7)
+static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
+                             const char* detail_fmt, ...) {
+  va_list va;
+  va_start(va, detail_fmt);
+  VMError::report_and_die(thread, context, filename, lineno, message, detail_fmt, va);
+  va_end(va);
+}
+
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
   // Enable WXWrite: this function is called by the signal handler at arbitrary
@@ -265,6 +274,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       } else if (sig == SIGILL && nativeInstruction_at(pc)->is_stop()) {
+        // Pull a pointer to the error message out of the instruction
+        // stream.
+        const uint64_t *detail_msg_ptr
+          = (uint64_t*)(pc + NativeInstruction::instruction_size);
+        const char *detail_msg = (const char *)*detail_msg_ptr;
         const char *msg = "stop";
         if (TraceTraps) {
           tty->print_cr("trap: %s: (SIGILL)", msg);
@@ -272,10 +286,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy;
-        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
-
+        report_and_die(thread, uc, NULL, 0, msg, "%s", detail_msg);
         ShouldNotReachHere();
 
       } else if (sig == SIGFPE &&
