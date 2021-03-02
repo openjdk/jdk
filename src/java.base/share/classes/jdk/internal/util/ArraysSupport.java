@@ -576,7 +576,7 @@ public class ArraysSupport {
 
     /**
      * A soft maximum array length imposed by array growth computations.
-     * Some JVMs (such as Hotspot) have an implementation limit that will cause
+     * Some JVMs (such as HotSpot) have an implementation limit that will cause
      *
      *     OutOfMemoryError("Requested array size exceeds VM limit")
      *
