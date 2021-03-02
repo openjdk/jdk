@@ -77,7 +77,6 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
             var incorrectTLSVersionsFormat = new String[]{"TLS10", "TLS11", "TLS12", "TLS13"};
 
             for (var i = 0; i < correctTlsVersionsFormat.length; i++) {
-                Thread.sleep(1000);
                 var expectedTLSVersion = correctTlsVersionsFormat[i];
                 var incorrectTLSVersion = incorrectTLSVersionsFormat[i];
 
@@ -90,11 +89,9 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
                         "LoggingFormatConsistency",
                         "runTest"); // Ensuring args.length is greater than 0 when test JVM starts
 
+                output.asLines().stream().filter(line -> line.startsWith("Connecting to")).forEach(System.out::println); // prints connection info from test jvm output
                 if (output.getExitValue() != 0) {
-                    System.out.println("Process output = ");
-                    for (String line : output.asLines()) {
-                        System.out.println(line);
-                    }
+                    output.asLines().forEach(System.out::println);
                     throw new RuntimeException("Test JVM process failed");
                 }
 
@@ -122,10 +119,14 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
             out.writeBytes("Content-Type: text/html\r\n\r\n");
             out.write(responseBytes);
             out.flush();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            System.err.println("Server-Side Exception: " + e);
+            e.printStackTrace(System.err);
             out.writeBytes("HTTP/1.0 400 " + e.getMessage() + "\r\n");
             out.writeBytes("Content-Type: text/html\r\n\r\n");
             out.flush();
+        } finally {
+            socket.getInputStream().readAllBytes();
         }
     }
 
@@ -138,10 +139,13 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
         var host = serverAddress == null ? "localhost" : serverAddress.getHostAddress();
         var url = new URL("https://" + host + ":" + serverPort + "/");
         System.out.println("Connecting to " + url);
-
-        try (var in = new BufferedReader(new InputStreamReader(url.openStream()))) {
-            // Opening the connection and getting the input stream is sufficient
-            // to generate debug logs
+        System.out.println("Reading data on client side: ");
+        HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+        try (var in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                System.out.println(line);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
