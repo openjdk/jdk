@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver Scimark
  */
 
