@@ -104,7 +104,7 @@ public:
   char kind()  const { return _kind; }
 
   constexpr JVMFlagLimit(int type_enum, short func, short phase, short kind)
-    : _constraint_func(func), _phase(phase), _kind(kind) NOT_PRODUCT(COMMA _type_enum(type_enum)) {}
+    : _constraint_func(func), _phase(phase), _kind(kind) DEBUG_ONLY(COMMA _type_enum(type_enum)) {}
 
   static const JVMFlagLimit* get_range(const JVMFlag* flag) {
     return get_range_at(flag->flag_enum());
