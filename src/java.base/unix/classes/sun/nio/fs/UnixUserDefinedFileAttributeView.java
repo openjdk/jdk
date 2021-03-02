@@ -45,9 +45,6 @@ abstract class UnixUserDefinedFileAttributeView
     // namespace for extended user attributes
     private static final String USER_NAMESPACE = "user.";
 
-    // returns the maximum supported length of xattr names (in bytes, including namespace)
-    protected abstract int maxNameLength();
-
     private byte[] nameAsBytes(UnixPath file, String name) throws IOException {
         if (name == null)
             throw new NullPointerException("'name' is null");
@@ -90,6 +87,11 @@ abstract class UnixUserDefinedFileAttributeView
         this.file = file;
         this.followLinks = followLinks;
     }
+
+    /**
+     * @return the maximum supported length of xattr names (in bytes, including namespace)
+     */
+    protected abstract int maxNameLength();
 
     @Override
     public List<String> list() throws IOException  {

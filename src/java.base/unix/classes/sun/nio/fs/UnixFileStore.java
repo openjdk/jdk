@@ -172,8 +172,12 @@ abstract class UnixFileStore
         throw new UnsupportedOperationException("'" + attribute + "' not recognized");
     }
 
-    // returns true if extended attributes enabled on file system where given
-    // file resides, returns false if disabled or unable to determine.
+    /**
+     * Checks whether extended attributes are enabled on the file system where the given file resides.
+     *
+     * @param path A path pointing to an existing node, such as the file system's root
+     * @return <code>true</code> if enabled, <code>false</code> if disabled or unable to determine
+     */
     protected boolean isExtendedAttributesEnabled(UnixPath path) {
         int fd = -1;
         try {
