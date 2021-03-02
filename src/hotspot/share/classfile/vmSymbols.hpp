@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,6 +535,7 @@
   template(object_object_signature,                   "(Ljava/lang/Object;)Ljava/lang/Object;")   \
   template(string_void_signature,                     "(Ljava/lang/String;)V")                    \
   template(string_int_signature,                      "(Ljava/lang/String;)I")                    \
+  template(throwable_signature,                       "Ljava/lang/Throwable;")                                    \
   template(throwable_void_signature,                  "(Ljava/lang/Throwable;)V")                 \
   template(void_throwable_signature,                  "()Ljava/lang/Throwable;")                  \
   template(throwable_throwable_signature,             "(Ljava/lang/Throwable;)Ljava/lang/Throwable;")             \
