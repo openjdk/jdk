@@ -143,9 +143,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     ShenandoahGCPhase prepare_phase(ShenandoahPhaseTimings::full_gc_prepare);
     // Full GC is supposed to recover from any GC state:
 
-    // a0. Remember if we have forwarded objects
-    bool has_forwarded_objects = heap->has_forwarded_objects();
-
     // a1. Cancel evacuation, if in progress
     if (heap->is_evacuation_in_progress()) {
       heap->set_evacuation_in_progress(false);
@@ -166,7 +163,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
     // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
-    if (has_forwarded_objects) {
+    if (heap->has_forwarded_objects()) {
       update_roots(true /*full_gc*/);
     }
 
@@ -179,10 +176,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
     rp->abandon_partial_discovery();
 
-    // f. Set back forwarded objects bit back, in case some steps above dropped it.
-    heap->set_has_forwarded_objects(has_forwarded_objects);
-
-    // g. Sync pinned region status from the CP marks
+    // f. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     // The rest of prologue:
