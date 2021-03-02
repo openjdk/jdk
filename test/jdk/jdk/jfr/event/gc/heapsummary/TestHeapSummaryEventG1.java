@@ -38,5 +38,6 @@ import jdk.test.lib.jfr.GCHelper;
 public class TestHeapSummaryEventG1 {
     public static void main(String[] args) throws Exception {
         HeapSummaryEventAllGcs.test(GCHelper.gcG1New, GCHelper.gcG1Old);
+        HeapSummaryEventAllGcs.testPeriodicUsage(false); // do not validate the live set size as provoking G1 to compute it is not easy
     }
 }

@@ -37,6 +37,26 @@ import jdk.test.lib.jfr.GCHelper;
 
 public class HeapSummaryEventAllGcs {
 
+    public static void testPeriodicUsage(boolean assertLiveSize) throws Exception {
+        Recording recording = new Recording();
+        recording.enable(EventNames.HeapUsageSummary);
+
+        recording.start();
+        GCHelper.callSystemGc(1, true);
+        recording.stop();
+        List<RecordedEvent> events = Events.fromRecording(recording);
+        Asserts.assertFalse(events.isEmpty(), "Expected at least one event");
+        for (RecordedEvent event : events) {
+            long minUsedSize = 1L;
+            if (assertLiveSize) {
+                // make sure that the estimated live set size is present
+                minUsedSize = Events.assertField(event, "live").atLeast(1L).getValue();
+            }
+            // make sure the used value is valid - it must be at least as big as the reported live set size
+            Events.assertField(event, "used").atLeast(minUsedSize);
+        }
+    }
+
     public static void test(String expectedYoungCollector, String expectedOldCollector) throws Exception {
         Recording recording = new Recording();
         recording.enable(EventNames.GCConfiguration);

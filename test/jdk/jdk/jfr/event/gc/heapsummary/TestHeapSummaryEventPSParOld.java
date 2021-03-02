@@ -37,5 +37,6 @@ import jdk.test.lib.jfr.GCHelper;
 public class TestHeapSummaryEventPSParOld {
     public static void main(String[] args) throws Exception {
         HeapSummaryEventAllGcs.test(GCHelper.gcParallelScavenge, GCHelper.gcParallelOld);
+        HeapSummaryEventAllGcs.testPeriodicUsage(true);
     }
 }

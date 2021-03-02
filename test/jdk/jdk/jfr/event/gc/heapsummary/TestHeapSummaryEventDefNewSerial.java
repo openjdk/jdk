@@ -37,5 +37,6 @@ import jdk.test.lib.jfr.GCHelper;
 public class TestHeapSummaryEventDefNewSerial {
     public static void main(String[] args) throws Exception {
         HeapSummaryEventAllGcs.test(GCHelper.gcDefNew, GCHelper.gcSerialOld);
+        HeapSummaryEventAllGcs.testPeriodicUsage(true);
     }
 }

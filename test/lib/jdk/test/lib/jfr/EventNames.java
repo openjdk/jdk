@@ -97,6 +97,7 @@ public class EventNames {
 
     // GC
     public final static String GCHeapSummary = PREFIX + "GCHeapSummary";
+    public final static String HeapUsageSummary = PREFIX + "HeapUsageSummary";
     public final static String MetaspaceSummary = PREFIX + "MetaspaceSummary";
     public final static String MetaspaceGCThreshold = PREFIX + "MetaspaceGCThreshold";
     public final static String MetaspaceAllocationFailure = PREFIX + "MetaspaceAllocationFailure";
