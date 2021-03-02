@@ -382,7 +382,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
         return fm.values()
                  .stream()
-                 .filter(p -> isSubclass(category, p))
+                 .filter(p -> isSubclass(category, p) && p.type().getDeclaredAnnotation(Deprecated.class) == null)
                  .map(RandomGeneratorFactory::new);
     }
 
@@ -390,7 +390,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * Returns a stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
      * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
-     * to locate implementations of the RandomGenerator interface.
+     * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
+     * as deprecated are not included in the result.
      *
      * @return Stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
@@ -398,12 +399,17 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
         return fm.values()
                  .stream()
+                 .filter(p -> p.type().getDeclaredAnnotation(Deprecated.class) == null)
                  .map(RandomGeneratorFactory::new);
     }
 
     /**
      * Return the name of the <a href="package-summary.html#algorithms">algorithm</a>
      * used by the random number generator.
+     *
+     * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
+     * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
+     * as deprecated are not included in the result.
      *
      * @return Name of the <a href="package-summary.html#algorithms">algorithm</a>.
      */
@@ -545,6 +551,23 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     public boolean isStreamable() {
         return isSubclass(StreamableGenerator.class);
     }
+
+    /**
+     * Return true if the implementation of RandomGenerator (algorithm) has been
+     * marked for deprecation.
+     *
+     * @implNote Random number generator algorithms evolve over time; new
+     *           algorithms will be introduced and old algorithms will
+     *           lose standing. If an older algorithm is deemed unsuitable
+     *           for continued use, it will be marked as deprecated to indicate
+     *           that it may be removed at some point in the future.
+     *
+     * @return true if the implementation of RandomGenerator (algorithm) has been
+     *         marked for deprecation
+     */
+     public boolean isDeprecated() {
+        return provider.type().getDeclaredAnnotation(Deprecated.class) != null;
+     }
 
     /**
      * Create an instance of {@link RandomGenerator} based on
