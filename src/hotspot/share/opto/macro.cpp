@@ -1314,7 +1314,7 @@ bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
 //               ----------   ----------
 //
 //
-//  EncodeP:  delele because we don't need storeN
+//  EncodeP:  delete because we don't need storeN
 //  CastP2X:  delete because we don't need StoreCM
 //  AllocateArray: don't need to allocate byte[] (still need allocation in deoptimization)
 //  ArrayCopy: delete because we don't need to copy contents
