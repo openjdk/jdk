@@ -179,15 +179,9 @@ public class CLHSDB {
         thread or the Swing/AWT event handler thread, so we must be very
         careful when creating or removing widgets */
     private void attachDebugger(int pid) {
+        this.pid = pid;
         try {
-            this.pid = pid;
-        }
-        catch (NumberFormatException e) {
-            System.err.print("Unable to parse process ID \"" + Integer.toString(pid) + "\".\nPlease enter a number.");
-        }
-
-        try {
-            System.err.println("Attaching to process " + pid + ", please wait...");
+            System.out.println("Attaching to process " + pid + ", please wait...");
 
             // FIXME: display exec'd debugger's output messages during this
             // lengthy call

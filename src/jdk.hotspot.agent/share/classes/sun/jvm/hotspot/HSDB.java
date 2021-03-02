@@ -1183,22 +1183,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
       thread or the Swing/AWT event handler thread, so we must be very
       careful when creating or removing widgets */
   private void attach(int pid) {
-      try {
-      this.pid = pid;
-    }
-    catch (NumberFormatException e) {
-      SwingUtilities.invokeLater(new Runnable() {
-          public void run() {
-            setMenuItemsEnabled(attachMenuItems, true);
-            JOptionPane.showInternalMessageDialog(desktop,
-                                                  "Unable to parse process ID \"" + Integer.toString(HSDB.this.pid) + "\".\nPlease enter a number.",
-                                                  "Parse error",
-                                                  JOptionPane.WARNING_MESSAGE);
-          }
-        });
-      return;
-    }
-
+    this.pid = pid;
     // Try to attach to this process
     Runnable remover = new Runnable() {
           public void run() {

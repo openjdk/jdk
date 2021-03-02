@@ -78,10 +78,10 @@ public class ClhsdbAttachToDebugServer {
                 console.println("echo true");
                 console.println("verbose true");
                 console.println("attach localhost");
-                console.println("universe");
+                console.println("class java.lang.Object");
                 console.println("detach");
                 console.println("reattach");
-                console.println("universe");
+                console.println("class java.lang.String");
                 console.println("quit");
             }
 
@@ -90,6 +90,8 @@ public class ClhsdbAttachToDebugServer {
             System.err.println(out.getStderr());
 
             out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+            out.shouldMatch("^java/lang/Object @0x[0-9a-f]+$"); // for "class java.lang.Object"
+            out.shouldMatch("^java/lang/String @0x[0-9a-f]+$"); // for "class java.lang.String"
             out.shouldHaveExitValue(0);
         } catch (SkippedException se) {
             throw se;
