@@ -1057,6 +1057,7 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
     heap->set_used(post_compact.get_live());
+    heap->set_live(post_compact.get_live());
 
     heap->collection_set()->clear();
     heap->free_set()->rebuild();

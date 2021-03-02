@@ -92,12 +92,17 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t free = 0;
   size_t free_regions = 0;
 
+  size_t total_live = 0;
+
   ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
 
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
 
-    size_t garbage = region->garbage();
+    size_t live = region->get_live_data_bytes();
+    size_t garbage = region->used() - live;
+    assert(region->garbage() == garbage, "Garbage calculation should agree");
+
     total_garbage += garbage;
 
     if (region->is_empty()) {
@@ -114,9 +119,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         candidates[cand_idx]._region = region;
         candidates[cand_idx]._garbage = garbage;
         cand_idx++;
+
+        // This region has live data, add up to estimate.
+        total_live += live;
       }
     } else if (region->is_humongous_start()) {
-      // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
       bool reg_live = region->has_live();
       bool bm_live = ctx->is_marked(oop(region->bottom()));
@@ -124,7 +131,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
              "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: " SIZE_FORMAT,
              BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
 #endif
-      if (!region->has_live()) {
+      if (region->has_live()) {
+        // Humongous region is live, count the entire chain as live.
+        total_live += oop(region->bottom())->size() * HeapWordSize;
+      } else {
+        // Reclaim humongous regions here, and count them as the immediate garbage
         heap->trash_humongous_region_at(region);
 
         // Count only the start. Continuations would be counted on "trash" path
@@ -140,6 +151,9 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   // Step 2. Look back at garbage statistics, and decide if we want to collect anything,
   // given the amount of immediately reclaimable garbage. If we do, figure out the collection set.
+
+  // Update the live data estimate
+  heap->set_live(total_live);
 
   assert (immediate_garbage <= total_garbage,
           "Cannot have more immediate garbage than total garbage: " SIZE_FORMAT "%s vs " SIZE_FORMAT "%s",

@@ -263,7 +263,6 @@ void ShenandoahConcurrentMark::finish_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   heap->set_concurrent_mark_in_progress(false);
   heap->mark_complete_marking_context();
-  heap->update_live();
 }
 
 void ShenandoahConcurrentMark::finish_mark_work() {
