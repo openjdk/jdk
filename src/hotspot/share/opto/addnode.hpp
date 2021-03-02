@@ -212,8 +212,8 @@ public:
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::ZERO; }
   virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------XorINode---------------------------------------
@@ -225,8 +225,8 @@ public:
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeLong::ZERO; }
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------MaxNode----------------------------------------
