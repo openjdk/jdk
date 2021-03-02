@@ -32,7 +32,8 @@
  *
  * @modules jdk.incubator.foreign
  *
- * @run main/othervm -Dforeign.restricted=permit -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive TestLinkToNativeRBP
+ * @run main/othervm -Dforeign.restricted=permit -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive TestLinkToNativeRBP
  *
  */
 
