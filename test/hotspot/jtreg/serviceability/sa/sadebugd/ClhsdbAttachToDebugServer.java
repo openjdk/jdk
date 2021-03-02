@@ -38,10 +38,10 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires os.family != "windows"
  * @library /test/lib
- * @run main/othervm ClhsdbConnect
+ * @run main/othervm ClhsdbAttachToDebugServer
  */
 
-public class ClhsdbConnect {
+public class ClhsdbAttachToDebugServer {
 
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
@@ -58,7 +58,7 @@ public class ClhsdbConnect {
             throw new SkippedException("Cannot run this test on OSX if adding privileges is required.");
         }
 
-        System.out.println("Starting ClhsdbConnect test");
+        System.out.println("Starting ClhsdbAttachToDebugServer test");
 
         LingeredApp theApp = null;
         DebugdUtils debugd = null;
@@ -77,7 +77,7 @@ public class ClhsdbConnect {
             try (PrintStream console = new PrintStream(jhsdb.getOutputStream(), true)) {
                 console.println("echo true");
                 console.println("verbose true");
-                console.println("connect localhost");
+                console.println("attach localhost");
                 console.println("universe");
                 console.println("detach");
                 console.println("reattach");

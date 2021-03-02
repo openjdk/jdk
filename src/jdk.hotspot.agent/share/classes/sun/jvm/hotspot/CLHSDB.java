@@ -33,6 +33,10 @@ import java.util.*;
 public class CLHSDB {
 
     public CLHSDB(JVMDebugger d) {
+        pid = -1;
+        execPath = null;
+        coreFilename = null;
+        remoteMachineName = null;
         jvmDebugger = d;
     }
 
@@ -42,10 +46,11 @@ public class CLHSDB {
 
     public void run() {
         // If jvmDebugger is already set, we have been given a JVMDebugger.
-        // Otherwise, if pidText != null we are supposed to attach to it.
-        // Finally, if execPath != null, it is the path of a jdk/bin/java
+        // Otherwise, if pid != -1 we are supposed to attach to it.
+        // If execPath != null, it is the path of a jdk/bin/java
         // and coreFilename is the pathname of a core file we are
         // supposed to attach to.
+        // Finally, if remoteMachineName != null, we are supposed to connect to remote debug server.
 
         agent = new HotSpotAgent();
 
@@ -57,10 +62,12 @@ public class CLHSDB {
 
         if (jvmDebugger != null) {
             attachDebugger(jvmDebugger);
-        } else if (pidText != null) {
-            attachDebugger(pidText);
+        } else if (pid != -1) {
+            attachDebugger(pid);
         } else if (execPath != null) {
             attachDebugger(execPath, coreFilename);
+        } else if (remoteMachineName != null) {
+            connect(remoteMachineName);
         }
 
 
@@ -71,14 +78,14 @@ public class CLHSDB {
                 public boolean isAttached() {
                     return attached;
                 }
-                public void attach(String pid) {
+                public void attach(int pid) {
                     attachDebugger(pid);
                 }
                 public void attach(String java, String core) {
                     attachDebugger(java, core);
                 }
-                public void connect(String remoteServer) {
-                    CLHSDB.this.connect(remoteServer);
+                public void attach(String remoteMachineName) {
+                    connect(remoteMachineName);
                 }
                 public void detach() {
                     detachDebugger();
@@ -87,12 +94,12 @@ public class CLHSDB {
                     if (attached) {
                         detachDebugger();
                     }
-                    if (pidText != null) {
-                        attach(pidText);
-                    } else if (execPath != null) {
+                    if (pid != -1) {
+                        attach(pid);
+                    } else if (remoteMachineName != null) {
+                        connect(remoteMachineName);
+                    } else {
                         attach(execPath, coreFilename);
-                    } else if (remoteServer != null) {
-                        connect(remoteServer);
                     }
                 }
             };
@@ -112,11 +119,10 @@ public class CLHSDB {
     private JVMDebugger jvmDebugger;
     private boolean      attached;
     // These had to be made data members because they are referenced in inner classes.
-    private String pidText;
     private int pid;
     private String execPath;
     private String coreFilename;
-    private String remoteServer;
+    private String remoteMachineName;
 
     private void doUsage() {
         System.out.println("Usage:  java CLHSDB [[pid] | [path-to-java-executable [path-to-corefile]] | help ]");
@@ -128,6 +134,11 @@ public class CLHSDB {
     }
 
     private CLHSDB(String[] args) {
+        pid = -1;
+        execPath = null;
+        coreFilename = null;
+        remoteMachineName = null;
+
         switch (args.length) {
         case (0):
             break;
@@ -140,9 +151,7 @@ public class CLHSDB {
             // If all numbers, it is a PID to attach to
             // Else, it is a pathname to a .../bin/java for a core file.
             try {
-                int unused = Integer.parseInt(args[0]);
-                // If we get here, we have a PID and not a core file name
-                pidText = args[0];
+                pid = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
                 execPath = args[0];
                 coreFilename = "core";
@@ -169,13 +178,12 @@ public class CLHSDB {
     /** NOTE we are in a different thread here than either the main
         thread or the Swing/AWT event handler thread, so we must be very
         careful when creating or removing widgets */
-    private void attachDebugger(String pidText) {
+    private void attachDebugger(int pid) {
         try {
-            this.pidText = pidText;
-            pid = Integer.parseInt(pidText);
+            this.pid = pid;
         }
         catch (NumberFormatException e) {
-            System.err.print("Unable to parse process ID \"" + pidText + "\".\nPlease enter a number.");
+            System.err.print("Unable to parse process ID \"" + Integer.toString(pid) + "\".\nPlease enter a number.");
         }
 
         try {
@@ -225,7 +233,7 @@ public class CLHSDB {
         try {
             System.out.println("Connecting to debug server, please wait...");
             agent.attach(remoteMachineName);
-            remoteServer = remoteMachineName;
+            this.remoteMachineName = remoteMachineName;
             attached = true;
         }
         catch (DebuggerException e) {
