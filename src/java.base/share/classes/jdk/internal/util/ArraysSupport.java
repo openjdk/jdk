@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -607,13 +607,11 @@ public class ArraysSupport {
      * current length. If the preferred length does not exceed the soft maximum length
      * (SOFT_MAX_ARRAY_LENGTH) then the preferred length is returned.
      *
-     * Since the preferred length exceeds the soft maximum, we use the minimum growth
+     * If the preferred length exceeds the soft maximum, we use the minimum growth
      * amount. The minimum required length is determined by adding the minimum growth
-     * amount to the current length. If the minimum required length is less than the
-     * soft maximum, the soft maximum is returned. If the minimum required length is
-     * greater than the soft maximum but does not exceed Integer.MAX_VALUE, the minimum
-     * required length is returned. Otherwise, the minimum required length exceeds
-     * Integer.MAX_VALUE, which can never be fulfilled, so this method throws OutOfMemoryError.
+     * amount to the current length. If the minimum required length exceeds Integer.MAX_VALUE,
+     * then this method throws OutOfMemoryError. Otherwise, this method returns the greater of
+     * the soft maximum or the minimum required length.
      *
      * Note that this method does not do any array allocation itself; it only does array
      * length growth computations. However, it will throw OutOfMemoryError as noted above.
@@ -628,7 +626,7 @@ public class ArraysSupport {
      * @param oldLength   current length of the array (must be nonnegative)
      * @param minGrowth   minimum required growth amount (must be positive)
      * @param prefGrowth  preferred growth amount
-     * @return the new length of the array
+     * @return the new array length
      * @throws OutOfMemoryError if the new length would exceed Integer.MAX_VALUE
      */
     public static int newLength(int oldLength, int minGrowth, int prefGrowth) {
@@ -640,6 +638,7 @@ public class ArraysSupport {
         if (0 < prefLength && prefLength <= SOFT_MAX_ARRAY_LENGTH) {
             return prefLength;
         } else {
+            // put code cold in a separate method
             return hugeLength(oldLength, minGrowth);
         }
     }

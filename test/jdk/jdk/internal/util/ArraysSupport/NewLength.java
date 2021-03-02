@@ -97,8 +97,6 @@ public class NewLength {
         try {
             int r = ArraysSupport.newLength(old, min, pref);
             fail("expected OutOfMemoryError, got normal return value of " + r);
-        } catch (OutOfMemoryError oome) {
-            // ok
-        }
+        } catch (OutOfMemoryError success) { }
     }
 }
