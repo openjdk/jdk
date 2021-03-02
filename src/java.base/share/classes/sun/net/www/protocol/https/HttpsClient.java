@@ -566,7 +566,7 @@ final class HttpsClient extends HttpClient
                     // will do the spoof checks in SSLSocket.
                     SSLParameters paramaters = s.getSSLParameters();
                     paramaters.setEndpointIdentificationAlgorithm("HTTPS");
- 		    paramaters.setServerNames(Collections.singletonList(new SNIHostName(host)));
+                    paramaters.setServerNames(Collections.singletonList(new SNIHostName(host)));
                     s.setSSLParameters(paramaters);
 
                     needToCheckSpoofing = false;
