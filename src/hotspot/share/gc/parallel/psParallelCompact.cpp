@@ -859,7 +859,6 @@ public:
     BoolObjectClosure* is_subject_to_discovery,
     BoolObjectClosure* is_alive_non_header) :
       ReferenceProcessor(is_subject_to_discovery,
-      ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
       ParallelGCThreads,   // mt processing degree
       true,                // mt discovery
       ParallelGCThreads,   // mt discovery degree

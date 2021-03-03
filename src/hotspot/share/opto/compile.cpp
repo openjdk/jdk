@@ -4790,6 +4790,6 @@ void Compile::igv_print_method_to_network(const char* phase_name) {
 }
 #endif
 
-void Compile::add_native_invoker(BufferBlob* stub) {
+void Compile::add_native_invoker(RuntimeStub* stub) {
   _native_invokers.append(stub);
 }

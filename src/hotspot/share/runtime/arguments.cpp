@@ -44,6 +44,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
@@ -2269,6 +2270,11 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   // The values have also been chosen to fit inside a 32-bit signed type.
   const julong min_ThreadStackSize = 0;
   const julong max_ThreadStackSize = 1 * M;
+
+  // Make sure the above values match the range set in globals.hpp
+  const JVMTypedFlagLimit<intx>* limit = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(ThreadStackSize))->cast<intx>();
+  assert(min_ThreadStackSize == static_cast<julong>(limit->min()), "must be");
+  assert(max_ThreadStackSize == static_cast<julong>(limit->max()), "must be");
 
   const julong min_size = min_ThreadStackSize * K;
   const julong max_size = max_ThreadStackSize * K;
