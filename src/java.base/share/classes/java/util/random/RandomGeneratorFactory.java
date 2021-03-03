@@ -382,7 +382,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
         return fm.values()
                  .stream()
-                 .filter(p -> isSubclass(category, p) && p.type().getDeclaredAnnotation(Deprecated.class) == null)
+                 .filter(p -> isSubclass(category, p) && !p.type().isAnnotationPresent(Deprecated.class))
                  .map(RandomGeneratorFactory::new);
     }
 
@@ -399,7 +399,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
         return fm.values()
                  .stream()
-                 .filter(p -> p.type().getDeclaredAnnotation(Deprecated.class) == null)
+                 .filter(p -> !p.type().isAnnotationPresent(Deprecated.class))
                  .map(RandomGeneratorFactory::new);
     }
 
@@ -566,7 +566,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *         marked for deprecation
      */
      public boolean isDeprecated() {
-        return provider.type().getDeclaredAnnotation(Deprecated.class) != null;
+        return provider.type().isAnnotationPresent(Deprecated.class);
      }
 
     /**
