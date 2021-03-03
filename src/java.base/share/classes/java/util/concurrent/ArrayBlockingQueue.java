@@ -301,12 +301,10 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         try {
             final Object[] items = this.items;
             int i = 0;
-            try {
-                for (E e : c)
-                    items[i++] = Objects.requireNonNull(e);
-            } catch (ArrayIndexOutOfBoundsException ex) {
-                throw new IllegalArgumentException();
-            }
+            if(c.size()>capacity)
+                 throw new IllegalArgumentException();
+            for (E e : c)
+                 items[i++] = Objects.requireNonNull(e);
             count = i;
             putIndex = (i == capacity) ? 0 : i;
         } finally {
