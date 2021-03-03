@@ -258,7 +258,7 @@
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
   volatile_nonstatic_field(ObjectMonitor,      _cxq,                                          ObjectWaiter*)                         \
   volatile_nonstatic_field(ObjectMonitor,      _EntryList,                                    ObjectWaiter*)                         \
-  volatile_nonstatic_field(ObjectMonitor,      _succ,                                         Thread*)                               \
+  volatile_nonstatic_field(ObjectMonitor,      _succ,                                         JavaThread*)                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
