@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmEnums.hpp"
+#include <type_traits>
 
 class outputStream;
 
@@ -289,6 +290,26 @@ public:
   void print_as_flag(outputStream* st) const;
 
   static const char* flag_error_str(JVMFlag::Error error);
+
+  // type checking
+#define CHECK_COMPATIBLE(type) \
+  case TYPE_##type: \
+    assert(sizeof(T) == sizeof(type) && \
+           std::is_integral<T>::value == std::is_integral<type>::value && \
+           std::is_signed  <T>::value == std::is_signed  <type>::value, "must be"); \
+    break;
+
+  template <typename T>
+  static void assert_compatible_type(int type_enum) {
+#ifndef PRODUCT
+    switch (type_enum) {
+      JVM_FLAG_NON_STRING_TYPES_DO(CHECK_COMPATIBLE);
+      default: ShouldNotReachHere();
+    }
+#endif
+  }
+
+#undef CHECK_COMPATIBLE
 
 public:
   static void printSetFlags(outputStream* out);
