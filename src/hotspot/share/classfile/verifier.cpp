@@ -3149,7 +3149,7 @@ void ClassVerifier::verify_return_value(
   if (return_type == VerificationType::bogus_type()) {
     verify_error(ErrorContext::bad_type(bci,
         current_frame->stack_top_ctx(), TypeOrigin::signature(return_type)),
-        "Method expects a return value");
+        "Method does not expect a return value");
     return;
   }
   bool match = return_type.is_assignable_from(type, this, false, CHECK_VERIFY(this));
