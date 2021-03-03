@@ -156,7 +156,6 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (s == NULL) {
     return NULL;
   }
-
   // Count unused bytes in instruction sequences of variable size.
   // We add them to the computed buffer size in order to avoid
   // overflow in subsequently generated stubs.

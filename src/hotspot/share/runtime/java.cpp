@@ -96,8 +96,11 @@
 GrowableArray<Method*>* collected_profiled_methods;
 
 int compare_methods(Method** a, Method** b) {
-  return (int32_t)(((uint32_t)(*b)->invocation_count() + (*b)->compiled_invocation_count())
-                 - ((uint32_t)(*a)->invocation_count() + (*a)->compiled_invocation_count()));
+  // compiled_invocation_count() returns int64_t, forcing the entire expression
+  // to be evaluated as int64_t. Overflow is not an issue.
+  int64_t diff = (((*b)->invocation_count() + (*b)->compiled_invocation_count())
+                - ((*a)->invocation_count() + (*a)->compiled_invocation_count()));
+  return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
 }
 
 void collect_profiled_methods(Method* m) {
@@ -149,7 +152,7 @@ void print_method_profiling_data() {
 GrowableArray<Method*>* collected_invoked_methods;
 
 void collect_invoked_methods(Method* m) {
-  if ((uint32_t)m->invocation_count() + m->compiled_invocation_count() >= 1) {
+  if (m->invocation_count() + m->compiled_invocation_count() >= 1) {
     collected_invoked_methods->push(m);
   }
 }
