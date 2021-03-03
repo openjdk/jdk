@@ -37,6 +37,7 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.HelloApp;
 
 
 /*
@@ -106,23 +107,8 @@ public final class NoMPathRuntimeTest {
 
         jlink.execute();
 
-        ArrayList<Path> paths = new ArrayList<Path>();
-        paths.add(TKit.TEST_SRC_ROOT.resolve("apps/image/Hello.java"));
-
-        // compile Hello.java again putting classes in tmpdir
-        new Executor()
-                .setToolProvider(JavaTool.JAVAC)
-                .addArguments("-d", tmpdir.toString())
-                .addPathArguments(paths)
-                .execute();
-
-        // make raw jar of just Hello.class from tmpdir.
-        new Executor()
-                .setToolProvider(JavaTool.JAR)
-                .dumpOutput()
-                .addArguments("-cvf", "junk.jar",
-                        "-C", tmpdir.toString(), "Hello.class")
-                .execute();
+        // create a non-modular jar in the current directory
+        HelloApp.createBundle(JavaAppDesc.parse("junk.jar:Hello"), Path.of("."));
 
         // non-modular jar in current dir caused error whe no module-path given
         cmd.removeArgumentWithValue("--module-path");
