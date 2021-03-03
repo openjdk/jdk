@@ -89,7 +89,7 @@ class ObjectSynchronizer : AllStatic {
 
   // This is the "slow path" version of monitor enter and exit.
   static void enter(Handle obj, BasicLock* lock, JavaThread* current);
-  static void exit(oop obj, BasicLock* lock, TRAPS);
+  static void exit(oop obj, BasicLock* lock, JavaThread* current);
 
   // Used only to handle jni locks or other unmatched monitor enter/exit
   // Internally they will use heavy weight monitor.

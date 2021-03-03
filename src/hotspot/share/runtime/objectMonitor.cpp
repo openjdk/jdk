@@ -1139,8 +1139,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter *curren
 // structured the code so the windows are short and the frequency
 // of such futile wakups is low.
 
-void ObjectMonitor::exit(bool not_suspended, TRAPS) {
-  JavaThread* const current = THREAD->as_Java_thread();
+void ObjectMonitor::exit(bool not_suspended, JavaThread* current) {
   void* cur = owner_raw();
   if (current != cur) {
     if (current->is_lock_owned((address)cur)) {

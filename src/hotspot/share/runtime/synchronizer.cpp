@@ -473,8 +473,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
   }
 }
 
-void ObjectSynchronizer::exit(oop object, BasicLock* lock, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
   markWord mark = object->mark();
   // We cannot check for Biased Locking if we are racing an inflation.
   assert(mark == markWord::INFLATING() ||
@@ -523,7 +522,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, TRAPS) {
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped inside exit() and the ObjectMonitor* must be !is_busy().
   ObjectMonitor* monitor = inflate(current, object, inflate_cause_vm_internal);
-  monitor->exit(true, CHECK);
+  monitor->exit(true, current);
 }
 
 // -----------------------------------------------------------------------------
