@@ -50,7 +50,6 @@ import java.text.NumberFormat;
 import java.text.spi.NumberFormatProvider;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Objects;
 
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -2706,15 +2705,36 @@ public final class Formatter implements Closeable, Flushable {
     private static final String formatSpecifier
         = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
 
-    private static Pattern fsPattern = Pattern.compile(formatSpecifier);
+    private static final Pattern fsPattern = Pattern.compile(formatSpecifier);
 
     /**
      * Finds format specifiers in the format string.
      */
     private List<FormatString> parse(String s) {
         ArrayList<FormatString> al = new ArrayList<>();
+        int i = 0;
+        int n = s.indexOf('%');
+        int max = s.length() - 1;
+        while (n < max) {
+            if (i != n) {
+                // Assume previous characters were fixed text
+                al.add(new FixedString(s, i, n));
+            }
+            char c = s.charAt(n + 1);
+            if (Conversion.isValid(c)) {
+                al.add(new FormatSpecifier(c));
+                i = n + 2;
+                n = s.indexOf('%', i);
+            } else {
+                return parse(s, i, al); // slow path
+            }
+        }
+        return al;
+    }
+
+    private List<FormatString> parse(String s, int i, ArrayList<FormatString> al) {
         Matcher m = fsPattern.matcher(s);
-        for (int i = 0, len = s.length(); i < len; ) {
+        for (int len = s.length(); i < len; ) {
             if (m.find(i)) {
                 // Anything between the start of the string and the beginning
                 // of the format specifier is either fixed text or contains
@@ -2757,9 +2777,9 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     private class FixedString implements FormatString {
-        private String s;
-        private int start;
-        private int end;
+        private final String s;
+        private final int start;
+        private final int end;
         FixedString(String s, int start, int end) {
             this.s = s;
             this.start = start;
@@ -2787,14 +2807,15 @@ public final class Formatter implements Closeable, Flushable {
     };
 
     private class FormatSpecifier implements FormatString {
-        private int index = -1;
+
+        private int index = 0;
         private Flags f = Flags.NONE;
-        private int width;
-        private int precision;
+        private int width = -1;
+        private int precision = -1;
         private boolean dt = false;
         private char c;
 
-        private int index(String s, int start, int end) {
+        private void index(String s, int start, int end) {
             if (start >= 0) {
                 try {
                     // skip the trailing '$'
@@ -2805,25 +2826,20 @@ public final class Formatter implements Closeable, Flushable {
                 } catch (NumberFormatException x) {
                     throw new IllegalFormatArgumentIndexException(Integer.MIN_VALUE);
                 }
-            } else {
-                index = 0;
             }
-            return index;
         }
 
         public int index() {
             return index;
         }
 
-        private Flags flags(String s, int start, int end) {
+        private void flags(String s, int start, int end) {
             f = Flags.parse(s, start, end);
             if (f.contains(Flags.PREVIOUS))
                 index = -1;
-            return f;
         }
 
-        private int width(String s, int start, int end) {
-            width = -1;
+        private void width(String s, int start, int end) {
             if (start >= 0) {
                 try {
                     width = Integer.parseInt(s, start, end, 10);
@@ -2833,11 +2849,9 @@ public final class Formatter implements Closeable, Flushable {
                     throw new IllegalFormatWidthException(Integer.MIN_VALUE);
                 }
             }
-            return width;
         }
 
-        private int precision(String s, int start, int end) {
-            precision = -1;
+        private void precision(String s, int start, int end) {
             if (start >= 0) {
                 try {
                     // skip the leading '.'
@@ -2848,10 +2862,9 @@ public final class Formatter implements Closeable, Flushable {
                     throw new IllegalFormatPrecisionException(Integer.MIN_VALUE);
                 }
             }
-            return precision;
         }
 
-        private char conversion(char conv) {
+        private void conversion(char conv) {
             c = conv;
             if (!dt) {
                 if (!Conversion.isValid(c)) {
@@ -2865,7 +2878,17 @@ public final class Formatter implements Closeable, Flushable {
                     index = -2;
                 }
             }
-            return c;
+        }
+
+        FormatSpecifier(char conv) {
+            c = conv;
+            if (Character.isUpperCase(conv)) {
+                f.add(Flags.UPPERCASE);
+                c = Character.toLowerCase(conv);
+            }
+            if (Conversion.isText(conv)) {
+                index = -2;
+            }
         }
 
         FormatSpecifier(String s, Matcher m) {
@@ -4707,7 +4730,7 @@ public final class Formatter implements Closeable, Flushable {
 
         static boolean isValid(char c) {
             return (isGeneral(c) || isInteger(c) || isFloat(c) || isText(c)
-                    || c == 't' || isCharacter(c));
+                    || isCharacter(c));
         }
 
         // Returns true iff the Conversion is applicable to all objects.
