@@ -105,10 +105,13 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 
     protected void checkEmittedCode(Executable executable) {
         final byte[] nativeCode = NMethod.get(executable, false).insts;
+        final byte[] matchInstrPattern = (((BmiTestCase) testCase).getTestCaseX64()) ? ((BmiTestCase_x64) testCase).getInstrPattern_x64() : ((BmiTestCase) testCase).getInstrPattern();
         if (!((BmiTestCase) testCase).verifyPositive(nativeCode)) {
-            throw new AssertionError(testCase.name() + "CPU instructions expected not found: " + Utils.toHexString(nativeCode));
+            throw new AssertionError(testCase.name() + " " + "CPU instructions expected not found in nativeCode: " + Utils.toHexString(nativeCode) + " ---- Expected instrPattern: " +
+            Utils.toHexString(matchInstrPattern));
         } else {
-            System.out.println("CPU instructions found, PASSED");
+            System.out.println("CPU instructions found, PASSED, nativeCode: " + Utils.toHexString(nativeCode) + " ---- Expected instrPattern: " +
+            Utils.toHexString(matchInstrPattern));
         }
     }
 
@@ -117,6 +120,8 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
         protected byte[] instrMask;
         protected byte[] instrPattern;
         protected boolean isLongOperation;
+        protected String cpuFlag = "bmi1";
+        protected String vmFlag = "UseBMI1Instructions";
 
         public BmiTestCase(Method method) {
             this.method = method;
@@ -140,6 +145,10 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
         @Override
         public boolean isOsr() {
             return false;
+        }
+
+        public byte[] getInstrPattern() {
+            return instrPattern;
         }
 
         protected int countCpuInstructions(byte[] nativeCode) {
@@ -177,11 +186,23 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
         }
 
         protected String getCpuFlag() {
-            return "bmi1";
+            return cpuFlag;
+        }
+
+        protected void setCpuFlag(String cpuFlag) {
+            this.cpuFlag = cpuFlag;
         }
 
         protected String getVMFlag() {
-            return "UseBMI1Instructions";
+            return vmFlag;
+        }
+
+        protected void setVMFlag(String vmFlag) {
+            this.vmFlag = vmFlag;
+        }
+
+        protected boolean getTestCaseX64() {
+            return false;
         }
     }
 
@@ -191,6 +212,14 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 
         protected BmiTestCase_x64(Method method) {
             super(method);
+        }
+
+        public byte[] getInstrPattern_x64() {
+            return instrPattern_x64;
+        }
+
+        protected boolean getTestCaseX64() {
+            return true;
         }
 
         protected int countCpuInstructions(byte[] nativeCode) {

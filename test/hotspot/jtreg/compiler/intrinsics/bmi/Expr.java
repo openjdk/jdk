@@ -61,6 +61,10 @@ public abstract class Expr {
         return false;
     }
 
+    public boolean isIntToLongExprSupported() {
+        return false;
+    }
+
     public boolean isMemExprSupported() {
         return false;
     }
@@ -101,7 +105,15 @@ public abstract class Expr {
         throw new UnsupportedOperationException();
     }
 
+    public long longExpr(int a, int b) {
+        throw new UnsupportedOperationException();
+    }
+
     public long longExpr(long a, MemL b) {
+        throw new UnsupportedOperationException();
+    }
+
+    public long longExpr(int a, MemL b) {
         throw new UnsupportedOperationException();
     }
 
@@ -110,6 +122,10 @@ public abstract class Expr {
     }
 
     public long longExpr(MemL a, MemL b) {
+        throw new UnsupportedOperationException();
+    }
+
+    public long intToLongExpr(int reg) {
         throw new UnsupportedOperationException();
     }
 

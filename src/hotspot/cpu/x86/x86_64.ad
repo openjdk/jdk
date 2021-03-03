@@ -9173,11 +9173,11 @@ instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src, immI_bitmask mask, rR
   ins_cost(125);
   effect(TEMP tmp, KILL cr);
   match(Set dst (ConvI2L (AndI src mask)));
-  format %{ "bzhi $dst, $src, $mask \t# using $tmp as TEMP, int & immI_bitmask -> long" %}
+  format %{ "bzhiq $dst, $src, $mask \t# using $tmp as TEMP, int & immI_bitmask -> long" %}
   ins_encode %{
     assert(VM_Version::supports_bmi2(), "required");
     __ movl($tmp$$Register, exact_log2($mask$$constant + 1));
-    __ bzhi($dst$$Register, $src$$Register, $tmp$$Register);
+    __ bzhiq($dst$$Register, $src$$Register, $tmp$$Register);
   %}
   ins_pipe(ialu_reg_reg);
 %}
