@@ -34,7 +34,7 @@ package compiler.intrinsics;
 
 public class TestRotate {
 
-    static final int ITERS = 500000;
+    static final int ITERS = 50000;
     static final int[] INT_VALUES = {Integer.MIN_VALUE, Integer.MAX_VALUE, 0, 1, 2, 3, 5, 8, 13};
     static final long[] LONG_VALUES = {Long.MIN_VALUE, Long.MAX_VALUE, 0L, 1L, 2L, 3L, 5L, 8L, 13L};
 
