@@ -170,17 +170,18 @@ void VM_Version::get_os_cpu_info() {
 
 void VM_Version::get_compatible_board(char *buf, int buflen) {
   assert(buf != NULL, "invalid argument");
+  assert(buflen >= 1, "invalid argument");
   *buf = '\0';
   int fd = open("/proc/device-tree/compatible", O_RDONLY);
   if (fd != -1) {
-    struct stat statbuf;
-    fstat(fd, &statbuf);
-    ssize_t read_sz = read(fd, buf, statbuf.st_size);
+    ssize_t read_sz = read(fd, buf, buflen);
+    buf[buflen - 1] = '\0';
     if (read_sz != -1) {
       // Replace '\0' to ' '
-      char *tok = buf;
-      while ((tok = (char*)memchr(tok, 0, statbuf.st_size - (tok - buf) - 1)) != NULL) {
-        *tok = ' ';
+      for (char *ch = buf; ch < buf + read_sz; ch++) {
+        if (*ch == '\0') {
+          *ch = ' ';
+        }
       }
     }
     close(fd);

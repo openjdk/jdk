@@ -100,5 +100,6 @@ void VM_Version::get_os_cpu_info() {
 
 void VM_Version::get_compatible_board(char *buf, int buflen) {
   assert(buf != NULL, "invalid argument");
+  assert(buflen >= 1, "invalid argument");
   *buf = '\0';
 }
