@@ -141,7 +141,23 @@ class LinuxFileStore
                 return false;
             }
 
-            // no other information available so probe mount point
+            // user_xattr option not present but we special-case ext4 as we
+            // know that extended attributes are enabled by default for
+            // kernel version >= 2.6.39
+            if (entry().fstype().equals("ext4")) {
+                if (!xattrChecked) {
+                    // check kernel version
+                    int[] kernelVersion = getKernelVersion();
+                    xattrEnabled = kernelVersion[0] > 2 ||
+                        (kernelVersion[0] == 2 && kernelVersion[1] > 6) ||
+                        (kernelVersion[0] == 2 && kernelVersion[1] == 6 &&
+                            kernelVersion[2] >= 39);
+                    xattrChecked = true;
+                }
+                return xattrEnabled;
+            }
+
+            // not ext4 so probe mount point
             if (!xattrChecked) {
                 UnixPath dir = new UnixPath(file().getFileSystem(), entry().dir());
                 xattrEnabled = isExtendedAttributesEnabled(dir);
