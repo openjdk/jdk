@@ -31,7 +31,7 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
- * @build sun.hotspot.WhiteBox ArchivedSuperIfApp Bar Baz 
+ * @build sun.hotspot.WhiteBox ArchivedSuperIfApp Bar Baz
  * @run driver ClassFileInstaller -jar archived_super_if.jar pkg.ArchivedSuperIfApp pkg.Bar pkg.Baz
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
