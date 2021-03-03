@@ -63,7 +63,7 @@ public class TestJumpTable {
 
     // Original (slightly simplified) fuzzer generated test
     public static void test1() {
-        int i4, i5=99, i6, i9=89;
+        int i4, i5 = 99, i6, i9 = 89;
         for (i4 = 12; i4 < 365; i4++) {
             for (i6 = 5; i6 > 1; i6--) {
                 switch ((i6 * 5) + 11) {

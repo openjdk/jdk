@@ -634,9 +634,10 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               return cmp2_t;
             case BoolTest::lt:
               if (is_unsigned && lo >= 0) {
-                // val u< cmp2 only passes for val >= 0 if cmp2 >= 0
+                // cmp2 >= 0: val u<= cmp2 can only pass if val >= 0. Set val->_lo to 0.
                 lo = 0;
               } else {
+                // The lower bound of val cannot be improved.
                 lo = TypeInt::INT->_lo;
               }
               if (hi != min_jint) {
@@ -645,9 +646,10 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               break;
             case BoolTest::le:
               if (is_unsigned && lo >= 0) {
-                // val u<= cmp2 only passes for val >= 0 if cmp2 >= 0
+                // cmp2 >= 0: val u<= cmp2 can only pass if val >= 0. Set val->_lo to 0.
                 lo = 0;
               } else {
+                // The lower bound of val cannot be improved.
                 lo = TypeInt::INT->_lo;
               }
               break;
@@ -661,11 +663,11 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               hi = TypeInt::INT->_hi;
               break;
             case BoolTest::ge:
-              // lo unchanged
               if (is_unsigned && (val_t == NULL || val_t->_lo < 0)) {
                 // val u>= cmp2 passes for val < 0
                 lo = TypeInt::INT->_lo;
               }
+              // else lo unchanged
               hi = TypeInt::INT->_hi;
               break;
             default:
@@ -720,7 +722,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
 //
 
 // Is the comparison for this If suitable for folding?
-bool IfNode::cmpi_folds(PhaseIterGVN* igvn) {
+bool IfNode::cmp_folds(PhaseIterGVN* igvn) {
   return in(1) != NULL &&
     in(1)->is_Bool() &&
     in(1)->in(1) != NULL &&
@@ -740,7 +742,7 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
     ctrl->in(0) != NULL &&
     ctrl->in(0)->Opcode() == Op_If &&
     ctrl->in(0)->outcnt() == 2 &&
-    ctrl->in(0)->as_If()->cmpi_folds(igvn) &&
+    ctrl->in(0)->as_If()->cmp_folds(igvn) &&
     ctrl->in(0)->in(1)->in(1)->in(1) != NULL &&
     in(1)->in(1)->in(1) != NULL;
 }
@@ -872,28 +874,28 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
 //                  dom_cmp    \        dom_cmp     \     dom_cmp     \
 //                          this_cmp            this_cmp           this_cmp
 bool IfNode::get_base_comparing_value (Node* dom_if, PhaseIterGVN* igvn, jint& this_adj_val, jint& dom_adj_val) {
-  Node* this_cmp = in(1)->in(1)->as_Cmp();
-  Node* dom_cmp = dom_if->in(1)->in(1)->as_Cmp();
-  Node* dom_val = dom_cmp->in(1);
-  Node* this_val = this_cmp->in(1);
+  assert(dom_if->in(1)->in(1)->is_Cmp() && in(1)->in(1)->is_Cmp(), "compare expected");
+  Node* dom_val = dom_if->in(1)->in(1)->in(1);
+  Node* this_val = in(1)->in(1)->in(1);
+  assert(dom_val != NULL && this_val != NULL, "sanity");
   if (this_val == dom_val) {
     // Variant 1
     return true;
-  } else if (this_val->is_Add() && this_val->in(1) != NULL && this_val->in(1) == dom_val) {
+  } else if (this_val->is_Add() && this_val->in(1) == dom_val) {
     const TypeInt* val_t = igvn->type(this_val->in(2))->isa_int();
     if (val_t != NULL && val_t->is_con()) {
       // Variant 2
       this_adj_val = val_t->get_con();
       return true;
     }
-  } else if (dom_val->is_Add() && dom_val->in(1) != NULL && this_val == dom_val->in(1)) {
+  } else if (dom_val->is_Add() && this_val == dom_val->in(1)) {
     const TypeInt* val_t = igvn->type(dom_val->in(2))->isa_int();
     if (val_t != NULL && val_t->is_con()) {
       // Variant 3
       dom_adj_val = val_t->get_con();
       return true;
     }
-  } else if (this_val->is_Add() && dom_val->is_Add() && this_val->in(1) != NULL && dom_val->in(1) != NULL && this_val->in(1) == dom_val->in(1)) {
+  } else if (this_val->is_Add() && dom_val->is_Add() && this_val->in(1) != NULL && this_val->in(1) == dom_val->in(1)) {
     const TypeInt* domval_t = igvn->type(dom_val->in(2))->isa_int();
     const TypeInt* thisval_t = igvn->type(this_val->in(2))->isa_int();
     if (thisval_t != NULL && domval_t != NULL && thisval_t->is_con() && domval_t->is_con()) {
@@ -1357,7 +1359,7 @@ void IfNode::reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, Ph
 Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
   if (Opcode() != Op_If) return NULL;
 
-  if (cmpi_folds(igvn)) {
+  if (cmp_folds(igvn)) {
     Node* ctrl = in(0);
     Node* cmp = in(1)->in(1);
     Node* val = cmp->in(1);
