@@ -233,7 +233,7 @@ public class CLHSDB {
         }
         catch (DebuggerException e) {
             final String errMsg = formatMessage(e.getMessage(), 80);
-            System.err.println("Unable to connect to machine \"" + debugServerName + "\":\n\n" + errMsg);
+            System.err.println("Unable to connect to debug server \"" + debugServerName + "\":\n\n" + errMsg);
             agent.detach();
             e.printStackTrace();
             return;
