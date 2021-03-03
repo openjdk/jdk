@@ -451,7 +451,9 @@ final class HttpsClient extends HttpClient
                 if (!(serverSocket instanceof SSLSocket)) {
                     s = (SSLSocket)factory.createSocket(serverSocket,
                                                         host, port, true);
-                }
+                } else {
+		    s = (SSLSocket)serverSocket;
+		}
             } catch (IOException ex) {
                 // If we fail to connect through the tunnel, try it
                 // locally, as a last resort.  If this doesn't work,
