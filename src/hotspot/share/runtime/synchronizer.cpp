@@ -330,7 +330,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
     if (m->object_peek() == NULL) {
       return false;
     }
-    JavaThread* const owner = (JavaThread *) m->owner_raw();
+    JavaThread* const owner = (JavaThread*) m->owner_raw();
 
     // Lock contention and Transactional Lock Elision (TLE) diagnostics
     // and observability
@@ -1407,7 +1407,7 @@ void ObjectSynchronizer::chk_for_block_req(JavaThread* current, const char* op_n
 
 // Walk the in-use list and deflate (at most MonitorDeflationMax) idle
 // ObjectMonitors. Returns the number of deflated ObjectMonitors.
-size_t ObjectSynchronizer::deflate_monitor_list(Thread *current, LogStream* ls,
+size_t ObjectSynchronizer::deflate_monitor_list(Thread* current, LogStream* ls,
                                                 elapsedTimer* timer_p) {
   MonitorList::Iterator iter = _in_use_list.iterator();
   size_t deflated_count = 0;

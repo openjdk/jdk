@@ -480,7 +480,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
 // Caveat: TryLock() is not necessarily serializing if it returns failure.
 // Callers must compensate as needed.
 
-int ObjectMonitor::TryLock(JavaThread * current) {
+int ObjectMonitor::TryLock(JavaThread* current) {
   void* own = owner_raw();
   if (own != NULL) return 0;
   if (try_set_owner_from(NULL, current) == NULL) {
@@ -935,7 +935,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 //
 // In the future we should reconcile EnterI() and ReenterI().
 
-void ObjectMonitor::ReenterI(JavaThread * current, ObjectWaiter * currentNode) {
+void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter * currentNode) {
   assert(current != NULL, "invariant");
   assert(currentNode != NULL, "invariant");
   assert(currentNode->_thread == current, "invariant");
@@ -1020,7 +1020,7 @@ void ObjectMonitor::ReenterI(JavaThread * current, ObjectWaiter * currentNode) {
 // after the thread acquires the lock in ::enter().  Equally, we could defer
 // unlinking the thread until ::exit()-time.
 
-void ObjectMonitor::UnlinkAfterAcquire(JavaThread *current, ObjectWaiter *currentNode) {
+void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter *currentNode) {
   assert(owner_raw() == current, "invariant");
   assert(currentNode->_thread == current, "invariant");
 
@@ -1319,7 +1319,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
   }
 }
 
-void ObjectMonitor::ExitEpilog(JavaThread * current, ObjectWaiter * Wakee) {
+void ObjectMonitor::ExitEpilog(JavaThread* current, ObjectWaiter * Wakee) {
   assert(owner_raw() == current, "invariant");
 
   // Exit protocol:
@@ -1673,7 +1673,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 // then instead of transferring a thread from the WaitSet to the EntryList
 // we might just dequeue a thread from the WaitSet and directly unpark() it.
 
-void ObjectMonitor::INotify(JavaThread * current) {
+void ObjectMonitor::INotify(JavaThread* current) {
   Thread::SpinAcquire(&_WaitSetLock, "WaitSet - notify");
   ObjectWaiter * iterator = DequeueWaiter();
   if (iterator != NULL) {
@@ -1838,7 +1838,7 @@ void ObjectMonitor::notifyAll(TRAPS) {
 // not spinning.
 
 // Spinning: Fixed frequency (100%), vary duration
-int ObjectMonitor::TrySpin(JavaThread * current) {
+int ObjectMonitor::TrySpin(JavaThread* current) {
   // Dumb, brutal spin.  Good for comparative measurements against adaptive spinning.
   int ctr = Knob_FixedSpin;
   if (ctr != 0) {
@@ -1892,7 +1892,7 @@ int ObjectMonitor::TrySpin(JavaThread * current) {
   if (_succ == NULL) {
     _succ = current;
   }
-  Thread * prv = NULL;
+  Thread* prv = NULL;
 
   // There are three ways to exit the following loop:
   // 1.  A successful spin where this thread has acquired the lock.
@@ -1927,7 +1927,7 @@ int ObjectMonitor::TrySpin(JavaThread * current) {
     // the spin without prejudice or apply a "penalty" to the
     // spin count-down variable "ctr", reducing it by 100, say.
 
-    JavaThread * ox = (JavaThread *) owner_raw();
+    JavaThread* ox = (JavaThread*) owner_raw();
     if (ox == NULL) {
       ox = (JavaThread*)try_set_owner_from(NULL, current);
       if (ox == NULL) {
