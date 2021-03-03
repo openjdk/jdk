@@ -3215,8 +3215,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     // Hash Function
 
     /**
-     * Returns the hash code for this {@code BigDecimal}.  Note that
-     * two {@code BigDecimal} objects that are numerically equal but
+     * Returns the hash code for this {@code BigDecimal}.
+     * The hash code is computed as a function of the {@linkplain
+     * unscaledValue() unscaled value} and the {@linkplain scale()
+     * scale} of this {@code BigDecimal}.
+     *
+     * @apiNote
+     * Two {@code BigDecimal} objects that are numerically equal but
      * differ in scale (like 2.0 and 2.00) will generally <em>not</em>
      * have the same hash code.
      *
