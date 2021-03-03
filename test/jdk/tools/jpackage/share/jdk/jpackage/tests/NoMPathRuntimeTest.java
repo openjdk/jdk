@@ -62,12 +62,6 @@ public final class NoMPathRuntimeTest {
 
     @Test
     public void test() throws IOException {
-        final Path tmpdir = TKit.createTempDirectory("tmpdir");
-        try {
-            Files.createFile(tmpdir.resolve("tmpfile"));
-        } catch (IOException ioe) {
-            // ignore
-        }
         JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
 
         JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);
