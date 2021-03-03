@@ -179,15 +179,14 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
     rp->abandon_partial_discovery();
 
-    // f. Set back forwarded objects bit back, in case some steps above dropped it.
-    heap->set_has_forwarded_objects(has_forwarded_objects);
-
-    // g. Sync pinned region status from the CP marks
+    // f. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     // The rest of prologue:
     BiasedLocking::preserve_marks();
     _preserved_marks->init(heap->workers()->active_workers());
+
+    assert(heap->has_forwarded_objects() == has_forwarded_objects, "This should not change");
   }
 
   if (UseTLAB) {
