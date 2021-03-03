@@ -1784,8 +1784,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
   // Get the compaction manager reserved for the VM thread.
-  ParCompactionManager* const vmthread_cm =
-    ParCompactionManager::manager_array(ParallelScavengeHeap::heap()->workers().total_workers());
+  ParCompactionManager* const vmthread_cm = ParCompactionManager::get_vmthread_cm();
 
   {
     const uint active_workers =
@@ -1836,6 +1835,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     compaction_start.update();
     compact();
+
+    ParCompactionManager::verify_all_region_stack_empty();
 
     // Reset the mark bitmap, summary data, and do other bookkeeping.  Must be
     // done before resizing.
@@ -1932,15 +1933,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     heap->post_full_gc_dump(&_gc_timer);
   }
-
-#ifdef ASSERT
-  for (size_t i = 0; i < ParallelGCThreads + 1; ++i) {
-    ParCompactionManager* const cm =
-      ParCompactionManager::manager_array(int(i));
-    assert(cm->marking_stack()->is_empty(),       "should be empty");
-    assert(cm->region_stack()->is_empty(), "Region stack " SIZE_FORMAT " is not empty", i);
-  }
-#endif // ASSERT
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     Universe::verify("After GC");
@@ -2181,7 +2173,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   }
 
   // This is the point where the entire marking should have completed.
-  assert(cm->marking_stacks_empty(), "Marking should have completed");
+  ParCompactionManager::verify_all_marking_stack_empty();
 
   {
     GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
@@ -2206,6 +2198,19 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
 }
+
+#ifdef ASSERT
+void PCAdjustPointerClosure::verify_cm(ParCompactionManager* cm) {
+  assert(cm != NULL, "associate ParCompactionManage should not be NULL");
+  auto vmthread_cm = ParCompactionManager::get_vmthread_cm();
+  if (Thread::current()->is_VM_thread()) {
+    assert(cm == vmthread_cm, "VM threads should use ParCompactionManager from get_vmthread_cm()");
+  } else {
+    assert(Thread::current()->is_GC_task_thread(), "Must be a GC thread");
+    assert(cm != vmthread_cm, "GC threads should use ParCompactionManager from gc_thread_compaction_manager()");
+  }
+}
+#endif
 
 class PSAdjustTask final : public AbstractGangTask {
   SubTasksDone                               _sub_tasks;
@@ -2614,9 +2619,11 @@ void PSParallelCompact::compact() {
   }
 
   {
-    // Update the deferred objects, if any.  Any compaction manager can be used.
     GCTraceTime(Trace, gc, phases) tm("Deferred Updates", &_gc_timer);
-    ParCompactionManager* cm = ParCompactionManager::manager_array(0);
+    // Update the deferred objects, if any. Any compaction manager can be used.
+    // However, since the current thread is VM thread, we use the rightful one
+    // to keep the verification logic happy.
+    ParCompactionManager* cm = ParCompactionManager::get_vmthread_cm();
     for (unsigned int id = old_space_id; id < last_space_id; ++id) {
       update_deferred_objects(cm, SpaceId(id));
     }
