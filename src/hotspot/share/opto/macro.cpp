@@ -718,7 +718,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, bool str_al
 #endif /*ASSERT*/
     }
   }
-  assert(!str_alloc || can_eliminate, "OptimizeTempArray must success in Elimination");
+  assert(!str_alloc || can_eliminate, "OptimizeTempArray must succeed in elimination");
 #endif
   return can_eliminate;
 }
@@ -1015,7 +1015,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   return true;
 }
 
-// this is the specialized version of "scalar" replacment, dedicated to j.l.String::value
+// This is the specialized version of "scalar" replacment, dedicated to j.l.String::value
 // the type of value is byte[]. process_users_of_string_allocation has replaced it with
 // ArrayCopy's src.
 //
@@ -1345,14 +1345,15 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
       Node* offset = use->in(AddPNode::Offset);
       int offset_const = (int) _igvn.find_intptr_t_con(offset, Type::OffsetBot);
 
-      // second AddP, just redirect its Base
+      // second AddP: just redirect its Base
       if (use->in(AddPNode::Address) != res) {
+        assert(use->in(AddPNode::Base) == res, "second AddP");
         _igvn.replace_input_of(use, AddPNode::Base, src);
       } else {
-        assert(use->in(AddPNode::Base) == res && use->in(AddPNode::Address) , "must be a direct AddP");
+        assert(use->in(AddPNode::Base) == res && use->in(AddPNode::Address) == res, "must be a direct AddP");
 
-        for (DUIterator_Last jmin, j = use->last_outs(jmin); j >= jmin; ) {
-          Node* n = use->last_out(j);
+        for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
+          Node* n = use->fast_out(j);
           uint oc2 = use->outcnt();
 
           if (offset_const == arrayOopDesc::length_offset_in_bytes()) {
@@ -1371,10 +1372,9 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
             if (n->in(3) == use) { // str2
               _igvn.replace_input_of(n, 3, dst_adr);
             }
+          } if (n->is_AddP()) {
+            // Skip second AddP. This node must be handled by the upper level.
           } else {
-            if (n->is_AddP() && n->in(AddPNode::Base) == res)
-              continue;
-
             assert(n->Opcode() == Op_LoadUB || n->Opcode() == Op_LoadB, "unknow code shape");
 
             if (src_adr == nullptr) {
@@ -1386,19 +1386,31 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
             _igvn.replace_input_of(n, MemNode::Memory,  ac->in(TypeFunc::Memory));
             _igvn.replace_input_of(n, MemNode::Address, dst_adr);
           }
-          j -= (oc2 - use->outcnt());
+
+          if (oc2 > use->outcnt()) {
+            --j;
+            jmax -= oc2 - use->outcnt();
+          }
         }
 
-        _igvn.remove_dead_node(use);
+        if (use->outcnt() > 0) {
+          // all uses are second AddP nodes
+          if (src_adr == nullptr) {
+            src_adr = ConvI2X(ac->in(ArrayCopyNode::SrcPos));
+            src_adr = basic_plus_adr(src, src, src_adr);
+          }
+          _igvn.replace_input_of(use, AddPNode::Base, src);
+          _igvn.replace_input_of(use, AddPNode::Address, src_adr);
+        } else {
+          _igvn.remove_dead_node(use);
+        }
       }
     } else if (use->is_EncodeP()) {
       _igvn.replace_node(use, top());
       _igvn.remove_dead_node(use);
     } else if (use->is_ArrayCopy()) {
-      if (use == ac) continue; // identity
       ArrayCopyNode* ac2 = use->as_ArrayCopy();
-      assert(res == ac2->in(ArrayCopyNode::Src), "only valid if alloc is read by other ArrayCopy nodes");
-
+      if (use == ac || res != ac2->in(ArrayCopyNode::Src)) continue; // identity or res is not the src of ArrayCopy
       Node* pos = transform_later(new AddINode(ac->in(ArrayCopyNode::SrcPos),
                                                ac2->in(ArrayCopyNode::SrcPos)));
       _igvn.replace_input_of(ac2, ArrayCopyNode::Src, src);
