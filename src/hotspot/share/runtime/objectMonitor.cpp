@@ -736,14 +736,14 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 
   ObjectWaiter node(current);
   current->_ParkEvent->reset();
-  node._prev   = (ObjectWaiter *) 0xBAD;
+  node._prev   = (ObjectWaiter*) 0xBAD;
   node.TState  = ObjectWaiter::TS_CXQ;
 
   // Push "current" onto the front of the _cxq.
   // Once on cxq/EntryList, current stays on-queue until it acquires the lock.
   // Note that spinning tends to reduce the rate at which threads
   // enqueue and dequeue on EntryList|cxq.
-  ObjectWaiter * nxt;
+  ObjectWaiter* nxt;
   for (;;) {
     node._next = nxt = _cxq;
     if (Atomic::cmpxchg(&_cxq, nxt, &node) == nxt) break;
@@ -935,7 +935,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 //
 // In the future we should reconcile EnterI() and ReenterI().
 
-void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter * currentNode) {
+void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
   assert(current != NULL, "invariant");
   assert(currentNode != NULL, "invariant");
   assert(currentNode->_thread == current, "invariant");
@@ -1020,15 +1020,15 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter * currentNode) {
 // after the thread acquires the lock in ::enter().  Equally, we could defer
 // unlinking the thread until ::exit()-time.
 
-void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter *currentNode) {
+void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* currentNode) {
   assert(owner_raw() == current, "invariant");
   assert(currentNode->_thread == current, "invariant");
 
   if (currentNode->TState == ObjectWaiter::TS_ENTER) {
     // Normal case: remove current from the DLL EntryList .
     // This is a constant-time operation.
-    ObjectWaiter * nxt = currentNode->_next;
-    ObjectWaiter * prv = currentNode->_prev;
+    ObjectWaiter* nxt = currentNode->_next;
+    ObjectWaiter* prv = currentNode->_prev;
     if (nxt != NULL) nxt->_prev = prv;
     if (prv != NULL) prv->_next = nxt;
     if (currentNode == _EntryList) _EntryList = nxt;
@@ -1049,7 +1049,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter *curren
     // and then unlink current from EntryList.  We have to drain eventually,
     // so it might as well be now.
 
-    ObjectWaiter * v = _cxq;
+    ObjectWaiter* v = _cxq;
     assert(v != NULL, "invariant");
     if (v != currentNode || Atomic::cmpxchg(&_cxq, v, currentNode->_next) != v) {
       // The CAS above can fail from interference IFF a "RAT" arrived.
@@ -1059,8 +1059,8 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter *curren
         assert(_cxq != v, "invariant");
         v = _cxq;          // CAS above failed - start scan at head of list
       }
-      ObjectWaiter * p;
-      ObjectWaiter * q = NULL;
+      ObjectWaiter* p;
+      ObjectWaiter* q = NULL;
       for (p = v; p != NULL && p != currentNode; p = p->_next) {
         q = p;
         assert(p->TState == ObjectWaiter::TS_CXQ, "invariant");
@@ -1076,8 +1076,8 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter *curren
 
 #ifdef ASSERT
   // Diagnostic hygiene ...
-  currentNode->_prev  = (ObjectWaiter *) 0xBAD;
-  currentNode->_next  = (ObjectWaiter *) 0xBAD;
+  currentNode->_prev  = (ObjectWaiter*) 0xBAD;
+  currentNode->_next  = (ObjectWaiter*) 0xBAD;
   currentNode->TState = ObjectWaiter::TS_RUN;
 #endif
 }
@@ -1244,7 +1244,7 @@ void ObjectMonitor::exit(bool not_suspended, JavaThread* current) {
 
     guarantee(owner_raw() == current, "invariant");
 
-    ObjectWaiter * w = NULL;
+    ObjectWaiter* w = NULL;
 
     w = _EntryList;
     if (w != NULL) {
@@ -1274,7 +1274,7 @@ void ObjectMonitor::exit(bool not_suspended, JavaThread* current) {
     // The following loop is tantamount to: w = swap(&cxq, NULL)
     for (;;) {
       assert(w != NULL, "Invariant");
-      ObjectWaiter * u = Atomic::cmpxchg(&_cxq, w, (ObjectWaiter*)NULL);
+      ObjectWaiter* u = Atomic::cmpxchg(&_cxq, w, (ObjectWaiter*)NULL);
       if (u == w) break;
       w = u;
     }
@@ -1292,8 +1292,8 @@ void ObjectMonitor::exit(bool not_suspended, JavaThread* current) {
     // we have faster access to the tail.
 
     _EntryList = w;
-    ObjectWaiter * q = NULL;
-    ObjectWaiter * p;
+    ObjectWaiter* q = NULL;
+    ObjectWaiter* p;
     for (p = w; p != NULL; p = p->_next) {
       guarantee(p->TState == ObjectWaiter::TS_CXQ, "Invariant");
       p->TState = ObjectWaiter::TS_ENTER;
@@ -1318,7 +1318,7 @@ void ObjectMonitor::exit(bool not_suspended, JavaThread* current) {
   }
 }
 
-void ObjectMonitor::ExitEpilog(JavaThread* current, ObjectWaiter * Wakee) {
+void ObjectMonitor::ExitEpilog(JavaThread* current, ObjectWaiter* Wakee) {
   assert(owner_raw() == current, "invariant");
 
   // Exit protocol:
@@ -1674,7 +1674,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
 void ObjectMonitor::INotify(JavaThread* current) {
   Thread::SpinAcquire(&_WaitSetLock, "WaitSet - notify");
-  ObjectWaiter * iterator = DequeueWaiter();
+  ObjectWaiter* iterator = DequeueWaiter();
   if (iterator != NULL) {
     guarantee(iterator->TState == ObjectWaiter::TS_WAIT, "invariant");
     guarantee(iterator->_notified == 0, "invariant");
@@ -1689,7 +1689,7 @@ void ObjectMonitor::INotify(JavaThread* current) {
     iterator->_notified = 1;
     iterator->_notifier_tid = JFR_THREAD_ID(current);
 
-    ObjectWaiter * list = _EntryList;
+    ObjectWaiter* list = _EntryList;
     if (list != NULL) {
       assert(list->_prev == NULL, "invariant");
       assert(list->TState == ObjectWaiter::TS_ENTER, "invariant");
@@ -1703,7 +1703,7 @@ void ObjectMonitor::INotify(JavaThread* current) {
     } else {
       iterator->TState = ObjectWaiter::TS_CXQ;
       for (;;) {
-        ObjectWaiter * front = _cxq;
+        ObjectWaiter* front = _cxq;
         iterator->_next = front;
         if (Atomic::cmpxchg(&_cxq, front, iterator) == front) {
           break;
