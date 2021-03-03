@@ -54,7 +54,7 @@ void VM_Version_Ext::initialize_cpu_information(void) {
 
   int desc_len = snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 ");
   VM_Version::get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
-  desc_len = strlen(_cpu_desc);
+  desc_len = (int)strlen(_cpu_desc);
   snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
 
   _initialized = true;
