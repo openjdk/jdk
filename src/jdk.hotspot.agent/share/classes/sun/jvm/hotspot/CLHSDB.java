@@ -36,7 +36,7 @@ public class CLHSDB {
         pid = -1;
         execPath = null;
         coreFilename = null;
-        remoteMachineName = null;
+        debugServerName = null;
         jvmDebugger = d;
     }
 
@@ -50,7 +50,8 @@ public class CLHSDB {
         // If execPath != null, it is the path of a jdk/bin/java
         // and coreFilename is the pathname of a core file we are
         // supposed to attach to.
-        // Finally, if remoteMachineName != null, we are supposed to connect to remote debug server.
+        // Finally, if debugServerName != null, we are supposed to
+        // connect to remote debug server.
 
         agent = new HotSpotAgent();
 
@@ -66,8 +67,8 @@ public class CLHSDB {
             attachDebugger(pid);
         } else if (execPath != null) {
             attachDebugger(execPath, coreFilename);
-        } else if (remoteMachineName != null) {
-            connect(remoteMachineName);
+        } else if (debugServerName != null) {
+            connect(debugServerName);
         }
 
 
@@ -84,8 +85,8 @@ public class CLHSDB {
                 public void attach(String java, String core) {
                     attachDebugger(java, core);
                 }
-                public void attach(String remoteMachineName) {
-                    connect(remoteMachineName);
+                public void attach(String debugServerName) {
+                    connect(debugServerName);
                 }
                 public void detach() {
                     detachDebugger();
@@ -96,8 +97,8 @@ public class CLHSDB {
                     }
                     if (pid != -1) {
                         attach(pid);
-                    } else if (remoteMachineName != null) {
-                        connect(remoteMachineName);
+                    } else if (debugServerName != null) {
+                        connect(debugServerName);
                     } else {
                         attach(execPath, coreFilename);
                     }
@@ -122,7 +123,7 @@ public class CLHSDB {
     private int pid;
     private String execPath;
     private String coreFilename;
-    private String remoteMachineName;
+    private String debugServerName;
 
     private void doUsage() {
         System.out.println("Usage:  java CLHSDB [[pid] | [path-to-java-executable [path-to-corefile]] | help ]");
@@ -137,7 +138,7 @@ public class CLHSDB {
         pid = -1;
         execPath = null;
         coreFilename = null;
-        remoteMachineName = null;
+        debugServerName = null;
 
         switch (args.length) {
         case (0):
@@ -222,17 +223,17 @@ public class CLHSDB {
     /** NOTE we are in a different thread here than either the main
         thread or the Swing/AWT event handler thread, so we must be very
         careful when creating or removing widgets */
-    private void connect(final String remoteMachineName) {
+    private void connect(final String debugServerName) {
         // Try to open this core file
         try {
             System.out.println("Connecting to debug server, please wait...");
-            agent.attach(remoteMachineName);
-            this.remoteMachineName = remoteMachineName;
+            agent.attach(debugServerName);
+            this.debugServerName = debugServerName;
             attached = true;
         }
         catch (DebuggerException e) {
             final String errMsg = formatMessage(e.getMessage(), 80);
-            System.err.println("Unable to connect to machine \"" + remoteMachineName + "\":\n\n" + errMsg);
+            System.err.println("Unable to connect to machine \"" + debugServerName + "\":\n\n" + errMsg);
             agent.detach();
             e.printStackTrace();
             return;

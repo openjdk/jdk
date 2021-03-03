@@ -116,7 +116,7 @@ public class CommandProcessor {
         public abstract boolean isAttached();
         public abstract void attach(int pid);
         public abstract void attach(String java, String core);
-        public abstract void attach(String remoteMachineName);
+        public abstract void attach(String debugServerName);
         public abstract void detach();
         public abstract void reattach();
     }

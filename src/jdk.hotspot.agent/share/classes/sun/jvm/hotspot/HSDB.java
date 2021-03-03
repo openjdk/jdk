@@ -81,7 +81,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
   private int pid;
   private String execPath;
   private String coreFilename;
-  private String remoteMachineName;
+  private String debugServerName;
 
   private void doUsage() {
     System.out.println("Usage:  java HSDB [[pid] | [path-to-java-executable [path-to-corefile]] | help ]");
@@ -97,7 +97,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     pid = -1;
     execPath = null;
     coreFilename = null;
-    remoteMachineName = null;
+    debugServerName = null;
     jvmDebugger = d;
   }
 
@@ -105,7 +105,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     pid = -1;
     execPath = null;
     coreFilename = null;
-    remoteMachineName = null;
+    debugServerName = null;
 
     switch (args.length) {
     case (0):
@@ -433,7 +433,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     // If execPath != null, it is the path of a jdk/bin/java
     // and coreFilename is the pathname of a core file we are
     // supposed to attach to.
-    // Finally, if remoteMachineName != null, we are supposed to connect to remote debug server.
+    // Finally, if debugServerName != null, we are supposed to
+    // connect to remote debug server.
 
     if (jvmDebugger != null) {
       attach(jvmDebugger);
@@ -441,8 +442,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
       attach(pid);
     } else if (execPath != null) {
       attach(execPath, coreFilename);
-    } else if (remoteMachineName != null) {
-      connect(remoteMachineName);
+    } else if (debugServerName != null) {
+      connect(debugServerName);
     }
   }
 
@@ -1287,7 +1288,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
   /** NOTE we are in a different thread here than either the main
       thread or the Swing/AWT event handler thread, so we must be very
       careful when creating or removing widgets */
-  private void connect(final String remoteMachineName) {
+  private void connect(final String debugServerName) {
     // Try to open this core file
     Runnable remover = new Runnable() {
           public void run() {
@@ -1307,7 +1308,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
           }
         });
 
-      agent.attach(remoteMachineName);
+      agent.attach(debugServerName);
       if (agent.getDebugger().hasConsole()) {
         showDbgConsoleMenuItem.setEnabled(true);
       }
@@ -1321,7 +1322,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
           public void run() {
             setMenuItemsEnabled(attachMenuItems, true);
             JOptionPane.showInternalMessageDialog(desktop,
-                                                  "Unable to connect to machine \"" + remoteMachineName + "\":\n\n" + errMsg,
+                                                  "Unable to connect to machine \"" + debugServerName + "\":\n\n" + errMsg,
                                                   "Unable to Connect",
                                                   JOptionPane.WARNING_MESSAGE);
           }
@@ -1498,8 +1499,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
               }
               public void attach(String java, String core) {
               }
-              public void attach(String remoteMachineName) {
-                  HSDB.this.connect(remoteMachineName);
+              public void attach(String debugServerName) {
+                  HSDB.this.connect(debugServerName);
               }
               public void detach() {
                   detachDebugger();
@@ -1510,8 +1511,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                   }
                   if (pid != -1) {
                       attach(pid);
-                  } else if (remoteMachineName != null) {
-                      connect(remoteMachineName);
+                  } else if (debugServerName != null) {
+                      connect(debugServerName);
                   } else {
                       attach(execPath, coreFilename);
                   }
