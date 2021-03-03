@@ -493,6 +493,7 @@ bool Method::was_executed_more_than(int n) {
 }
 
 void Method::print_invocation_count() {
+  //---<  compose+print method return type, klass, name, and signature  >---
   if (is_static()) tty->print("static ");
   if (is_final()) tty->print("final ");
   if (is_synchronized()) tty->print("synchronized ");
@@ -507,12 +508,22 @@ void Method::print_invocation_count() {
   }
   tty->cr();
 
-  tty->print_cr ("  interpreter_invocation_count: %8d ", interpreter_invocation_count());
-  tty->print_cr ("  invocation_counter:           %8d ", invocation_count());
-  tty->print_cr ("  backedge_counter:             %8d ", backedge_count());
+  // Counting based on signed int counters tends to overflow with
+  // longer-running workloads on fast machines. The counters under
+  // consideration here, however, are limited in range by counting
+  // logic. See InvocationCounter:count_limit for example.
+  // No "overflow precautions" need to be implemented here.
+  tty->print_cr ("  interpreter_invocation_count: " INT32_FORMAT_W(11), interpreter_invocation_count());
+  tty->print_cr ("  invocation_counter:           " INT32_FORMAT_W(11), invocation_count());
+  tty->print_cr ("  backedge_counter:             " INT32_FORMAT_W(11), backedge_count());
+
+  if (method_data() != NULL) {
+    tty->print_cr ("  decompile_count:              " UINT32_FORMAT_W(11), method_data()->decompile_count());
+  }
+
 #ifndef PRODUCT
   if (CountCompiledCalls) {
-    tty->print_cr ("  compiled_invocation_count: %8d ", compiled_invocation_count());
+    tty->print_cr ("  compiled_invocation_count:    " INT64_FORMAT_W(11), compiled_invocation_count());
   }
 #endif
 }
