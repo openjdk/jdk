@@ -266,6 +266,8 @@ bool os::unsetenv(const char* name) {
   return (SetEnvironmentVariable(name, NULL) == TRUE);
 }
 
+char** os::get_environ() { return _environ; }
+
 // No setuid programs under Windows.
 bool os::have_special_privileges() {
   return false;
@@ -5512,7 +5514,7 @@ int os::PlatformMonitor::wait(jlong millis) {
 
 // Run the specified command in a separate process. Return its exit value,
 // or -1 on failure (e.g. can't create a new process).
-int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
+int os::fork_and_exec(const char* cmd) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   DWORD exit_code;

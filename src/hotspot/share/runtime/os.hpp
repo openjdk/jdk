@@ -182,6 +182,8 @@ class os: AllStatic {
 
   // unset environment variable
   static bool unsetenv(const char* name);
+  // Get environ pointer, platform independently
+  static char** get_environ();
 
   static bool have_special_privileges();
 
@@ -501,8 +503,9 @@ class os: AllStatic {
 
   static bool message_box(const char* title, const char* message);
 
-  // run cmd in a separate process and return its exit code; or -1 on failures
-  static int fork_and_exec(char *cmd, bool use_vfork_if_available = false);
+  // run cmd in a separate process and return its exit code; or -1 on failures.
+  // Note: only safe to use in fatal error situations.
+  static int fork_and_exec(const char *cmd);
 
   // Call ::exit() on all platforms but Windows
   static void exit(int num);
