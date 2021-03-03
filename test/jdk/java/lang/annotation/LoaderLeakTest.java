@@ -73,13 +73,13 @@ class Main {
     static void doTest(boolean readAnn) throws Exception {
         ClassLoader loader = new SimpleClassLoader();
         var c = new WeakReference<Class<?>>(loader.loadClass("C"));
-        if (c.get() == null) throw new AssertionError("class missing after loadClass");
+        if (c.refersTo(null)) throw new AssertionError("class missing after loadClass");
         if (c.get().getClassLoader() != loader) throw new AssertionError("wrong classloader");
         if (readAnn) System.out.println(c.get().getAnnotations()[0]);
-        if (c.get() == null) throw new AssertionError("class missing before GC");
+        if (c.refersTo(null)) throw new AssertionError("class missing before GC");
         System.gc();
         System.gc();
-        if (c.get() == null) throw new AssertionError("class missing after GC but before loader is unreachable");
+        if (c.refersTo(null)) throw new AssertionError("class missing after GC but before loader is unreachable");
         System.gc();
         System.gc();
         Reference.reachabilityFence(loader);
@@ -91,7 +91,7 @@ class Main {
         while (true) {
             System.gc();
             Thread.sleep(20);
-            if (c.get() == null) {
+            if (c.refersTo(null)) {
                 break;
             }
         }
