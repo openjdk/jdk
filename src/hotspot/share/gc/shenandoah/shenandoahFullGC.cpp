@@ -143,6 +143,9 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     ShenandoahGCPhase prepare_phase(ShenandoahPhaseTimings::full_gc_prepare);
     // Full GC is supposed to recover from any GC state:
 
+    // a0. Remember if we have forwarded objects
+    bool has_forwarded_objects = heap->has_forwarded_objects();
+
     // a1. Cancel evacuation, if in progress
     if (heap->is_evacuation_in_progress()) {
       heap->set_evacuation_in_progress(false);
@@ -163,7 +166,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
     // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
-    if (heap->has_forwarded_objects()) {
+    if (has_forwarded_objects) {
       update_roots(true /*full_gc*/);
     }
 
@@ -182,6 +185,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     // The rest of prologue:
     BiasedLocking::preserve_marks();
     _preserved_marks->init(heap->workers()->active_workers());
+    
+    assert(heap->has_forwarded_objects() == has_forwarded_objects, "Not expect to change");
   }
 
   if (UseTLAB) {
