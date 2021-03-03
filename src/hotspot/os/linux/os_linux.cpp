@@ -3950,7 +3950,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
   // that is smaller than size_t bytes
   size_t large_page_size = os::page_size_for_region_aligned(bytes, 1);
 
-  assert(large_page_size > os::vm_page_size, "large page size not larger than small page size");
+  assert(large_page_size > (size_t)os::vm_page_size, "large page size not larger than small page size");
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(bytes, large_page_size), "Unaligned size");
   assert(is_aligned(req_addr, large_page_size), "Unaligned address");
@@ -3988,7 +3988,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
   // that is smaller than size_t bytes
   size_t large_page_size = os::page_size_for_region_unaligned(bytes, 1);
 
-  assert(large_page_size > os::vm_page_size, "large page size not larger than small page size");
+  assert(large_page_size > (size_t)os::vm_page_size, "large page size not larger than small page size");
   assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
 
   assert(is_aligned(req_addr, alignment), "Must be");
