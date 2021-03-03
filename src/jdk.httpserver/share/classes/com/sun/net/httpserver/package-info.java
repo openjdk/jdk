@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,14 @@
         }
     });
    </pre></blockquote>
+   <p>
+   The {@link com.sun.net.httpserver.SimpleFileServer} class offers a simple
+   HTTP file server (intended for testing, development and debugging purposes
+   only). A default implementation is provided via the main entry point of the
+   {@code jdk.httpserver} module, which can be used on the command line as such:
+   <pre>
+         {@code java -m jdk.httpserver [-b bind address] [-d directory] [-h to show help message] [-o none|default|verbose] [-p port]}
+   </pre>
 
    @since 1.6
  */

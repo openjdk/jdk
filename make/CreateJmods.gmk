@@ -196,6 +196,11 @@ else # not java.base
   endif
 endif
 
+# Set main class of jdk.httpserver module
+ifeq ($(MODULE), jdk.httpserver)
+    JMOD_FLAGS += --main-class sun.net.httpserver.SimpleFileServerImpl
+endif
+
 # Changes to the jmod tool itself should also trigger a rebuild of all jmods.
 # The variable JMOD_CMD could contain an environment variable assignment before
 # the actual command. Filter that out using wildcard before adding to DEPS.
