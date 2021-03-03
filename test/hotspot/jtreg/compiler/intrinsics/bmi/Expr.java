@@ -105,15 +105,7 @@ public abstract class Expr {
         throw new UnsupportedOperationException();
     }
 
-    public long longExpr(int a, int b) {
-        throw new UnsupportedOperationException();
-    }
-
     public long longExpr(long a, MemL b) {
-        throw new UnsupportedOperationException();
-    }
-
-    public long longExpr(int a, MemL b) {
         throw new UnsupportedOperationException();
     }
 
