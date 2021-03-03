@@ -186,7 +186,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     BiasedLocking::preserve_marks();
     _preserved_marks->init(heap->workers()->active_workers());
 
-    assert(heap->has_forwarded_objects() == has_forwarded_objects, "Not expect to change");
+    assert(heap->has_forwarded_objects() == has_forwarded_objects, "This should not change");
   }
 
   if (UseTLAB) {
