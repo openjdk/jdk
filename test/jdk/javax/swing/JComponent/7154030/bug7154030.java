@@ -175,6 +175,13 @@ public class bug7154030 {
             robot.waitForIdle(500);
             imageShow = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
+            if (Util.compareBufferedImages(imageInit, imageShow)) {
+                ImageIO.write(imageInit, "png", new File("imageInit.png"));
+                ImageIO.write(imageShow, "png", new File("imageShow.png"));
+                ImageIO.write(fullScreen, "png", new File("fullScreenInit.png"));
+                throw new Exception("Failed to show non-opaque button");
+            }
+
             SwingUtilities.invokeAndWait(new Runnable() {
 
                 @Override
@@ -182,13 +189,6 @@ public class bug7154030 {
                     button.hide();
                 }
             });
-
-            if (Util.compareBufferedImages(imageInit, imageShow)) {
-                ImageIO.write(imageInit, "png", new File("imageInit.png"));
-                ImageIO.write(imageShow, "png", new File("imageShow.png"));
-                ImageIO.write(fullScreen, "png", new File("fullScreenInit.png"));
-                throw new Exception("Failed to show non-opaque button");
-            }
 
             robot.waitForIdle(500);
             imageHide = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
