@@ -26,7 +26,7 @@
  * @summary SPNEGO_HTTP_AUTH/WWW_KRB and SPNEGO_HTTP_AUTH/WWW_SPNEGO failed on all non-windows platforms
  * @modules java.security.jgss/sun.security.krb5
  * @run main/othervm -Djdk.net.hosts.file=${test.src}/TestHosts
- *                   -Djava.security.krb5.conf=krb5.conf Test
+ *      -Djava.security.krb5.conf=krb5.conf Test
  */
 
 import sun.security.krb5.PrincipalName;
