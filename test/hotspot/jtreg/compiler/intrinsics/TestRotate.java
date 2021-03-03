@@ -817,29 +817,29 @@ public class TestRotate {
     }
 
     public static void main(String[] args) {
-       testRorOrInts();
-       testRorAddInts();
-       testRorOrIntEors();
-       testRorOrIntAnds();
-       testRorOrIntOrs();
-       testRorOrIntEons();
-       testRorOrIntBics();
-       testRorOrIntOrns();
-       testRorIntApis();
-       testRolIntApis();
-       testRolrIntZeros();
+        testRorOrInts();
+        testRorAddInts();
+        testRorOrIntEors();
+        testRorOrIntAnds();
+        testRorOrIntOrs();
+        testRorOrIntEons();
+        testRorOrIntBics();
+        testRorOrIntOrns();
+        testRorIntApis();
+        testRolIntApis();
+        testRolrIntZeros();
 
-       testRorOrLongs();
-       testRorAddLongs();
-       testRorOrLongEors();
-       testRorOrLongAnds();
-       testRorOrLongOrs();
-       testRorOrLongEons();
-       testRorOrLongBics();
-       testRorOrLongOrns();
-       testRorLongApis();
-       testRolLongApis();
-       testRolrLongZeros();
+        testRorOrLongs();
+        testRorAddLongs();
+        testRorOrLongEors();
+        testRorOrLongAnds();
+        testRorOrLongOrs();
+        testRorOrLongEons();
+        testRorOrLongBics();
+        testRorOrLongOrns();
+        testRorLongApis();
+        testRolLongApis();
+        testRolrLongZeros();
     }
 
 }
