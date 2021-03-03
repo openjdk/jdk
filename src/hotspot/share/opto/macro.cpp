@@ -1372,7 +1372,7 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
             if (n->in(3) == use) { // str2
               _igvn.replace_input_of(n, 3, dst_adr);
             }
-          } if (n->is_AddP()) {
+          } else if (n->is_AddP()) {
             // Skip second AddP. This node must be handled by the upper level.
           } else {
             assert(n->Opcode() == Op_LoadUB || n->Opcode() == Op_LoadB, "unknow code shape");
