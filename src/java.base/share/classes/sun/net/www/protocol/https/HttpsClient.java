@@ -453,6 +453,9 @@ final class HttpsClient extends HttpClient
                                                         host, port, true);
                 } else {
 		    s = (SSLSocket)serverSocket;
+                   if (s instanceof SSLSocketImpl) {
+                       ((SSLSocketImpl)s).setHost(host);
+                   }
 		}
             } catch (IOException ex) {
                 // If we fail to connect through the tunnel, try it
@@ -563,7 +566,9 @@ final class HttpsClient extends HttpClient
                     // will do the spoof checks in SSLSocket.
                     SSLParameters paramaters = s.getSSLParameters();
                     paramaters.setEndpointIdentificationAlgorithm("HTTPS");
-                    paramaters.setServerNames(List.of(new SNIHostName(host)));
+                    if (!(s instanceof SSLSocketImpl)) {
+                        paramaters.setServerNames(List.of(new SNIHostName(host)));
+                    }
                     s.setSSLParameters(paramaters);
 
                     needToCheckSpoofing = false;
