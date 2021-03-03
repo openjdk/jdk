@@ -66,12 +66,7 @@ class Main {
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < 100; i++) {
-            try {
-                doTest(args.length != 0);
-            }
-            catch (NullPointerException npe) {
-                throw new AssertionError("c.get() should never return null", npe);
-            }
+            doTest(args.length != 0);
         }
     }
 
