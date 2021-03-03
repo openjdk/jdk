@@ -66,7 +66,12 @@ class Main {
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < 100; i++) {
-            doTest(args.length != 0);
+            try {
+                doTest(args.length != 0);
+            }
+            catch (NullPointerException npe) {
+                throw new AssertionError("c.get() should never return null", npe);
+            }
         }
     }
 
@@ -74,6 +79,8 @@ class Main {
         ClassLoader loader = new SimpleClassLoader();
         var c = new WeakReference<Class<?>>(loader.loadClass("C"));
         if (c.refersTo(null)) throw new AssertionError("class missing after loadClass");
+        // c.get() should never return null here since we hold a strong
+        // reference to the class loader that loaded the class referred by c.
         if (c.get().getClassLoader() != loader) throw new AssertionError("wrong classloader");
         if (readAnn) System.out.println(c.get().getAnnotations()[0]);
         if (c.refersTo(null)) throw new AssertionError("class missing before GC");
