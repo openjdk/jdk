@@ -2714,10 +2714,16 @@ public final class Formatter implements Closeable, Flushable {
         ArrayList<FormatString> al = new ArrayList<>();
         int i = 0;
         int n = s.indexOf('%');
-        int max = s.length() - 1;
+        int max = s.length();
         while (n < max) {
+            if (n < 0) {
+                // Last format specifier was already found,
+                // any remaining is fixed text
+                al.add(new FixedString(s, i, s.length()));
+                return al;
+            }
             if (i != n) {
-                // Assume previous characters were fixed text
+                // Previous characters were fixed text
                 al.add(new FixedString(s, i, n));
             }
             char c = s.charAt(n + 1);
