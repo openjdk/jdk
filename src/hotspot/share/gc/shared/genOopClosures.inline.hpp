@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_GENOOPCLOSURES_INLINE_HPP
 #define SHARE_GC_SHARED_GENOOPCLOSURES_INLINE_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.hpp"
@@ -82,7 +83,7 @@ void DefNewYoungerGenClosure::barrier(T* p) {
   oop obj = CompressedOops::decode_not_null(heap_oop);
   // If p points to a younger generation, mark the card.
   if (cast_from_oop<HeapWord*>(obj) < _old_gen_start) {
-    _rs->inline_write_ref_field_gc(p, obj);
+    _rs->inline_write_ref_field_gc(p);
   }
 }
 

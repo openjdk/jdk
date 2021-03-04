@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,7 @@ public abstract class Graphics {
      * Sets this graphics context's current color to the specified
      * color. All subsequent graphics operations using this graphics
      * context use this specified color.
+     * A null argument is silently ignored.
      * @param     c   the new rendering color.
      * @see       java.awt.Color
      * @see       java.awt.Graphics#getColor
@@ -353,7 +354,8 @@ public abstract class Graphics {
      * {@code Rectangle} objects.  This method sets the
      * user clip, which is independent of the clipping associated
      * with device bounds and window visibility.
-     * @param clip the {@code Shape} to use to set the clip
+     * @param clip the {@code Shape} to use to set the clip.
+     *             Passing {@code null} clears the current {@code clip}.
      * @see         java.awt.Graphics#getClip()
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)

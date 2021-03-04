@@ -76,7 +76,7 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj_reg, VMClassID klass_id,
+                                 Register obj_reg, vmClassID klass_id,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
 

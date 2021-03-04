@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @summary Test that a class that is a record can be redefined.
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
- *          jdk.jartool/sun.tools.jar
  * @requires vm.jvmti
  * @run main RedefineRecord buildagent
  * @run main/othervm/timeout=6000 RedefineRecord runtest
@@ -41,10 +40,14 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 import java.lang.instrument.IllegalClassFormatException;
+import java.util.spi.ToolProvider;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class RedefineRecord {
+
+    private static final ToolProvider JAR = ToolProvider.findFirst("jar")
+        .orElseThrow(() -> new RuntimeException("ToolProvider for jar not found"));
 
     record Tester(int x, String y, long z) { }
 
@@ -67,6 +70,7 @@ public class RedefineRecord {
             inst.retransformClasses(demoClass);
         }
     }
+
     private static void buildAgent() {
         try {
             ClassFileInstaller.main("RedefineRecord");
@@ -85,11 +89,11 @@ public class RedefineRecord {
             throw new RuntimeException("Could not write manifest file for the agent", e);
         }
 
-        sun.tools.jar.Main jarTool = new sun.tools.jar.Main(System.out, System.err, "jar");
-        if (!jarTool.run(new String[] { "-cmf", "MANIFEST.MF", "redefineagent.jar", "RedefineRecord.class" })) {
+        if (JAR.run(System.out, System.err, "-cmf", "MANIFEST.MF", "redefineagent.jar", "RedefineRecord.class") != 0) {
             throw new RuntimeException("Could not write the agent jar file");
         }
     }
+
     public static void main(String argv[]) throws Exception {
         if (argv.length == 1 && argv[0].equals("buildagent")) {
             buildAgent();

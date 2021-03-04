@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/resolutionErrors.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -34,7 +36,6 @@
 #include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.hpp"
@@ -202,7 +203,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
         // or when invokeinterface is used explicitly.
         // In that case, the method has no itable index and must be invoked as a virtual.
         // Set a flag to keep track of this corner case.
-        assert(holder->is_interface() || holder == SystemDictionary::Object_klass(), "unexpected holder class");
+        assert(holder->is_interface() || holder == vmClasses::Object_klass(), "unexpected holder class");
         assert(method->is_public(), "Calling non-public method in Object with invokeinterface");
         change_to_virtual = true;
 
@@ -304,7 +305,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
       assert(invoke_code == Bytecodes::_invokevirtual ||
              (invoke_code == Bytecodes::_invokeinterface &&
               ((method->is_private() ||
-                (method->is_final() && method->method_holder() == SystemDictionary::Object_klass())))),
+                (method->is_final() && method->method_holder() == vmClasses::Object_klass())))),
              "unexpected invocation mode");
       if (invoke_code == Bytecodes::_invokeinterface &&
           (method->is_private() || method->is_final())) {
@@ -475,7 +476,7 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS) {
 
   assert(HAS_PENDING_EXCEPTION, "No exception got thrown!");
-  assert(PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass()),
+  assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
          "No LinkageError exception");
 
   // Use the resolved_references() lock for this cpCache entry.

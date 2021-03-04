@@ -326,7 +326,7 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
     // than specified by IncreaseFirstTierCompileThresholdAt percentage.
     // The main intention is to keep enough free space for C2 compiled code
     // to achieve peak performance if the code cache is under stress.
-    if (!CompilationModeFlag::disable_intermediate() && TieredStopAtLevel == CompLevel_full_optimization && level != CompLevel_full_optimization)  {
+    if (CompilerConfig::is_tiered() && !CompilationModeFlag::disable_intermediate() && is_c1_compile(level))  {
       double current_reverse_free_ratio = CodeCache::reverse_free_ratio(CodeCache::get_code_blob_type(level));
       if (current_reverse_free_ratio > _increase_threshold_at_ratio) {
         k *= exp(current_reverse_free_ratio - _increase_threshold_at_ratio);
@@ -509,6 +509,17 @@ void CompilationPolicy::initialize() {
 
 #ifdef ASSERT
 bool CompilationPolicy::verify_level(CompLevel level) {
+  if (TieredCompilation && level > TieredStopAtLevel) {
+    return false;
+  }
+  // Check if there is a compiler to process the requested level
+  if (!CompilerConfig::is_c1_enabled() && is_c1_compile(level)) {
+    return false;
+  }
+  if (!CompilerConfig::is_c2_or_jvmci_compiler_enabled() && is_c2_compile(level)) {
+    return false;
+  }
+
   // AOT and interpreter levels are always valid.
   if (level == CompLevel_aot || level == CompLevel_none) {
     return true;
@@ -528,49 +539,54 @@ bool CompilationPolicy::verify_level(CompLevel level) {
 
 
 CompLevel CompilationPolicy::highest_compile_level() {
-  CompLevel max_level = CompLevel_none;
+  CompLevel level = CompLevel_none;
+  // Setup the maximum level availible for the current compiler configuration.
   if (!CompilerConfig::is_interpreter_only()) {
     if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
-      max_level = CompLevel_full_optimization;
+      level = CompLevel_full_optimization;
     } else if (CompilerConfig::is_c1_enabled()) {
       if (CompilerConfig::is_c1_simple_only()) {
-        max_level = CompLevel_simple;
+        level = CompLevel_simple;
       } else {
-        max_level = CompLevel_full_profile;
+        level = CompLevel_full_profile;
       }
     }
-    max_level = MAX2(max_level, (CompLevel) TieredStopAtLevel);
   }
-  return max_level;
+  // Clamp the maximum level with TieredStopAtLevel.
+  if (TieredCompilation) {
+    level = MIN2(level, (CompLevel) TieredStopAtLevel);
+  }
+
+  // Fix it up if after the clamping it has become invalid.
+  // Bring it monotonically down depending on the next available level for
+  // the compilation mode.
+  if (!CompilationModeFlag::normal()) {
+    // a) quick_only - levels 2,3,4 are invalid; levels -1,0,1 are valid;
+    // b) high_only - levels 1,2,3 are invalid; levels -1,0,4 are valid;
+    // c) high_only_quick_internal - levels 2,3 are invalid; levels -1,0,1,4 are valid.
+    if (CompilationModeFlag::quick_only()) {
+      if (level == CompLevel_limited_profile || level == CompLevel_full_profile || level == CompLevel_full_optimization) {
+        level = CompLevel_simple;
+      }
+    } else if (CompilationModeFlag::high_only()) {
+      if (level == CompLevel_simple || level == CompLevel_limited_profile || level == CompLevel_full_profile) {
+        level = CompLevel_none;
+      }
+    } else if (CompilationModeFlag::high_only_quick_internal()) {
+      if (level == CompLevel_limited_profile || level == CompLevel_full_profile) {
+        level = CompLevel_simple;
+      }
+    }
+  }
+
+  assert(verify_level(level), "Invalid highest compilation level: %d", level);
+  return level;
 }
 
 CompLevel CompilationPolicy::limit_level(CompLevel level) {
-  if (CompilationModeFlag::quick_only()) {
-    level = MIN2(level, CompLevel_simple);
-  }
-  assert(verify_level(level), "Invalid compilation level %d", level);
-  if (level <= TieredStopAtLevel) {
-    return level;
-  }
-  // Some compilation levels are not valid depending on a compilation mode:
-  // a) quick_only - levels 2,3,4 are invalid; levels -1,0,1 are valid;
-  // b) high_only - levels 1,2,3 are invalid; levels -1,0,4 are valid;
-  // c) high_only_quick_internal - levels 2,3 are invalid; levels -1,0,1,4 are valid.
-  // The invalid levels are actually sequential so a single comparison is sufficient.
-  // Down here we already have (level > TieredStopAtLevel), which also implies that
-  // (TieredStopAtLevel < Highest Possible Level), so we need to return a level that is:
-  // a) a max level that is strictly less than the highest for a given compilation mode
-  // b) less or equal to TieredStopAtLevel
-  if (CompilationModeFlag::normal() || CompilationModeFlag::quick_only()) {
-    return (CompLevel)TieredStopAtLevel;
-  }
-
-  if (CompilationModeFlag::high_only() || CompilationModeFlag::high_only_quick_internal()) {
-    return MIN2(CompLevel_none, (CompLevel)TieredStopAtLevel);
-  }
-
-  ShouldNotReachHere();
-  return CompLevel_any;
+  level = MIN2(level, highest_compile_level());
+  assert(verify_level(level), "Invalid compilation level: %d", level);
+  return level;
 }
 
 CompLevel CompilationPolicy::initial_compile_level(const methodHandle& method) {
@@ -740,7 +756,7 @@ nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle
 
 // Check if the method can be compiled, change level if necessary
 void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level, TRAPS) {
-  assert(verify_level(level) && level <= TieredStopAtLevel, "Invalid compilation level %d", level);
+  assert(verify_level(level), "Invalid compilation level requested: %d", level);
 
   if (level == CompLevel_none) {
     if (mh->has_compiled_code()) {

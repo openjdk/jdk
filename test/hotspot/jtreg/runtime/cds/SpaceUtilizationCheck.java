@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,7 @@ public class SpaceUtilizationCheck {
     static void test(String... extra_options) throws Exception {
         CDSOptions opts = new CDSOptions();
         opts.addSuffix(extra_options);
-        OutputAnalyzer output = CDSTestUtils.createArchive(opts);
-        CDSTestUtils.checkDump(output);
+        OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
         Pattern pattern = Pattern.compile("(..)  space: *([0-9]+).* out of *([0-9]+) bytes .* at 0x([0-9a0-f]+)");
         WhiteBox wb = WhiteBox.getWhiteBox();
         long reserve_alignment = wb.metaspaceReserveAlignment();

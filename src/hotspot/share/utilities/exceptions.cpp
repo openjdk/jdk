@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "logging/log.hpp"
@@ -73,8 +74,8 @@ void ThreadShadow::clear_pending_exception() {
 
 void ThreadShadow::clear_pending_nonasync_exception() {
   // Do not clear probable async exceptions.
-  if (!_pending_exception->is_a(SystemDictionary::ThreadDeath_klass()) &&
-      (_pending_exception->klass() != SystemDictionary::InternalError_klass() ||
+  if (!_pending_exception->is_a(vmClasses::ThreadDeath_klass()) &&
+      (_pending_exception->klass() != vmClasses::InternalError_klass() ||
        java_lang_InternalError::during_unsafe_access(_pending_exception) != JNI_TRUE)) {
     clear_pending_exception();
   }
@@ -94,7 +95,7 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, H
   // to prevent infinite recursion trying to initialize stack overflow without
   // adequate stack space.
   // This can happen with stress testing a large value of StackShadowPages
-  if (h_exception()->klass() == SystemDictionary::StackOverflowError_klass()) {
+  if (h_exception()->klass() == vmClasses::StackOverflowError_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(h_exception->klass());
     assert(ik->is_initialized(),
            "need to increase java_thread_min_stack_allowed calculation");
@@ -162,15 +163,15 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
     return;
   }
 
-  if (h_exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+  if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
     count_out_of_memory_exceptions(h_exception);
   }
 
-  if (h_exception->is_a(SystemDictionary::LinkageError_klass())) {
+  if (h_exception->is_a(vmClasses::LinkageError_klass())) {
     Atomic::inc(&_linkage_errors);
   }
 
-  assert(h_exception->is_a(SystemDictionary::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
+  assert(h_exception->is_a(vmClasses::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
 
   // set the pending exception
   thread->set_pending_exception(h_exception(), file, line);
@@ -235,7 +236,7 @@ void Exceptions::_throw_cause(Thread* thread, const char* file, int line, Symbol
 void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file, int line, const methodHandle& method) {
   Handle exception;
   if (!THREAD->has_pending_exception()) {
-    InstanceKlass* k = SystemDictionary::StackOverflowError_klass();
+    InstanceKlass* k = vmClasses::StackOverflowError_klass();
     oop e = k->allocate_instance(CHECK);
     exception = Handle(THREAD, e);  // fill_in_stack trace does gc
     assert(k->is_initialized(), "need to increase java_thread_min_stack_allowed calculation");
@@ -310,7 +311,7 @@ Handle Exceptions::new_exception(Thread *thread, Symbol* name,
 
   // Future: object initializer should take a cause argument
   if (h_cause.not_null()) {
-    assert(h_cause->is_a(SystemDictionary::Throwable_klass()),
+    assert(h_cause->is_a(vmClasses::Throwable_klass()),
         "exception cause is not a subclass of java/lang/Throwable");
     JavaValue result1(T_OBJECT);
     JavaCallArguments args1;
@@ -434,7 +435,7 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, Thread* THREAD) {
 
     // See the "Linking Exceptions" section for the invokedynamic instruction
     // in JVMS 6.5.
-    if (exception->is_a(SystemDictionary::Error_klass())) {
+    if (exception->is_a(vmClasses::Error_klass())) {
       // Pass through an Error, including BootstrapMethodError, any other form
       // of linkage error, or say ThreadDeath/OutOfMemoryError
       if (ls != NULL) {
@@ -544,7 +545,7 @@ void Exceptions::debug_check_abort(Handle exception, const char* message) {
 
 void Exceptions::debug_check_abort_helper(Handle exception, const char* message) {
   ResourceMark rm;
-  if (message == NULL && exception->is_a(SystemDictionary::Throwable_klass())) {
+  if (message == NULL && exception->is_a(vmClasses::Throwable_klass())) {
     oop msg = java_lang_Throwable::message(exception());
     if (msg != NULL) {
       message = java_lang_String::as_utf8_string(msg);

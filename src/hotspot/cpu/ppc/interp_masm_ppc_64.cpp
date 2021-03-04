@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,30 +475,37 @@ void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
 }
 
 // Load object from cpool->resolved_references(index).
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Label *L_handle_null) {
-  assert_different_registers(result, index);
+// Kills:
+//   - index
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index,
+                                                                 Register tmp1, Register tmp2,
+                                                                 Label *L_handle_null) {
+  assert_different_registers(result, index, tmp1, tmp2);
+  assert(index->is_nonvolatile(), "needs to survive C-call in resolve_oop_handle");
   get_constant_pool(result);
 
   // Convert from field index to resolved_references() index and from
   // word index to byte offset. Since this is a java object, it can be compressed.
-  Register tmp = index;  // reuse
-  sldi(tmp, index, LogBytesPerHeapOop);
+  sldi(index, index, LogBytesPerHeapOop);
   // Load pointer for resolved_references[] objArray.
   ld(result, ConstantPool::cache_offset_in_bytes(), result);
   ld(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
-  resolve_oop_handle(result);
+  resolve_oop_handle(result, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
 #ifdef ASSERT
   Label index_ok;
   lwa(R0, arrayOopDesc::length_offset_in_bytes(), result);
   sldi(R0, R0, LogBytesPerHeapOop);
-  cmpd(CCR0, tmp, R0);
+  cmpd(CCR0, index, R0);
   blt(CCR0, index_ok);
   stop("resolved reference index out of bounds");
   bind(index_ok);
 #endif
   // Add in the index.
-  add(result, tmp, result);
-  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, tmp, R0, false, 0, L_handle_null);
+  add(result, index, result);
+  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result,
+                tmp1, tmp2,
+                MacroAssembler::PRESERVATION_NONE,
+                0, L_handle_null);
 }
 
 // load cpool->resolved_klass_at(index)

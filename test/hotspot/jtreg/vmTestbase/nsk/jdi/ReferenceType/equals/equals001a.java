@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,15 +48,15 @@ public class equals001a {
 
     // Classes must be loaded and linked, so all fields must be
     // initialized
-    Boolean   Z0 = new Boolean(true),       Z1[]={Z0}, Z2[][]={Z1};
-    Byte      B0 = new Byte((byte)1),       B1[]={B0}, B2[][]={B1};
-    Character C0 = new Character('\u00ff'), C1[]={C0}, C2[][]={C1};
-    Double    D0 = new Double(1.0),         D1[]={D0}, D2[][]={D1};
-    Float     F0 = new Float(1.0f),         F1[]={F0}, F2[][]={F1};
-    Integer   I0 = new Integer(-1),         I1[]={I0}, I2[][]={I1};
-    Long      L0 = new Long(-1l),           L1[]={L0}, L2[][]={L1};
-    String    S0 = new String("4434819"),   S1[]={S0}, S2[][]={S1};
-    Object    O0 = new Object(),            O1[]={O0}, O2[][]={O1};
+    Boolean   Z0 = Boolean.valueOf(true),       Z1[]={Z0}, Z2[][]={Z1};
+    Byte      B0 = Byte.valueOf((byte)1),       B1[]={B0}, B2[][]={B1};
+    Character C0 = Character.valueOf('\u00ff'), C1[]={C0}, C2[][]={C1};
+    Double    D0 = Double.valueOf(1.0),         D1[]={D0}, D2[][]={D1};
+    Float     F0 = Float.valueOf(1.0f),         F1[]={F0}, F2[][]={F1};
+    Integer   I0 = Integer.valueOf(-1),         I1[]={I0}, I2[][]={I1};
+    Long      L0 = Long.valueOf(-1l),           L1[]={L0}, L2[][]={L1};
+    String    S0 = new String("4434819"),       S1[]={S0}, S2[][]={S1};
+    Object    O0 = new Object(),                O1[]={O0}, O2[][]={O1};
 
     static class  s_class {}
     s_class s_class_0 = new s_class(), s_class_1[]={s_class_0},

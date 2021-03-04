@@ -93,8 +93,9 @@ public final class UnixDomainSocketAddress extends SocketAddress {
      * <a href="{@docRoot}/serialized-form.html#java.net.UnixDomainSocketAddress.Ser">
      * Ser</a> containing the path name of this instance.
      *
-     * @return a {@link Ser}
-     * representing the path name of this instance
+     * @return a {@link Ser} representing the path name of this instance
+     *
+     * @throws ObjectStreamException if an error occurs
      */
     @java.io.Serial
     private Object writeReplace() throws ObjectStreamException {

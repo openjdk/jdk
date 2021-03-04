@@ -2629,6 +2629,15 @@ public class Resolve {
         }
     };
 
+    LogResolveHelper silentLogResolveHelper = new LogResolveHelper() {
+        public boolean resolveDiagnosticNeeded(Type site, List<Type> argtypes, List<Type> typeargtypes) {
+            return false;
+        }
+        public List<Type> getArgumentTypes(ResolveError errSym, Symbol accessedSym, Name name, List<Type> argtypes) {
+            return argtypes;
+        }
+    };
+
     LogResolveHelper methodLogResolveHelper = new LogResolveHelper() {
         public boolean resolveDiagnosticNeeded(Type site, List<Type> argtypes, List<Type> typeargtypes) {
             return !site.isErroneous() &&
@@ -3773,7 +3782,7 @@ public class Resolve {
         for (Type t1 : types.interfaces(t)) {
             boolean shouldAdd = true;
             for (Type t2 : types.directSupertypes(t)) {
-                if (t1 != t2 && types.isSubtypeNoCapture(t2, t1)) {
+                if (t1 != t2 && !t2.hasTag(ERROR) && types.isSubtypeNoCapture(t2, t1)) {
                     shouldAdd = false;
                 }
             }

@@ -94,14 +94,31 @@ public class ICC_Profile implements Serializable {
     private transient volatile Profile cmmProfile;
     private transient volatile ProfileDeferralInfo deferralInfo;
 
-    // Registry of singleton profile objects for specific color spaces
-    // defined in the ColorSpace class (e.g. CS_sRGB), see
-    // getInstance(int cspace) factory method.
-    private static ICC_Profile sRGBprofile;
-    private static ICC_Profile XYZprofile;
-    private static ICC_Profile PYCCprofile;
-    private static ICC_Profile GRAYprofile;
-    private static ICC_Profile LINEAR_RGBprofile;
+    /**
+     * The lazy registry of singleton profile objects for specific built-in
+     * color spaces defined in the ColorSpace class (e.g. CS_sRGB),
+     * see getInstance(int cspace) factory method.
+     */
+    private interface BuiltInProfile {
+        /*
+         * Deferral is only used for standard profiles. Enabling the appropriate
+         * access privileges is handled at a lower level.
+         */
+        ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+               "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+
+        ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+                "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+
+        ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
+               "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
+
+        ICC_Profile PYCC = new ICC_Profile(new ProfileDeferralInfo(
+               "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
+
+        ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
+               "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
+    }
 
     /**
      * Profile class is input.
@@ -758,12 +775,13 @@ public class ICC_Profile implements Serializable {
 
     /**
      * Constructs an {@code ICC_Profile} object corresponding to the data in a
-     * byte array. Throws an {@code IllegalArgumentException} if the data does
-     * not correspond to a valid ICC Profile.
+     * byte array.
      *
      * @param  data the specified ICC Profile data
      * @return an {@code ICC_Profile} object corresponding to the data in the
      *         specified {@code data} array
+     * @throws IllegalArgumentException If the byte array does not contain valid
+     *         ICC Profile data
      */
     public static ICC_Profile getInstance(byte[] data) {
     ICC_Profile thisProfile;
@@ -817,89 +835,17 @@ public class ICC_Profile implements Serializable {
      * @throws IllegalArgumentException If {@code cspace} is not one of the
      *         predefined color space types
      */
-    public static ICC_Profile getInstance (int cspace) {
-        ICC_Profile thisProfile = null;
-        switch (cspace) {
-        case ColorSpace.CS_sRGB:
-            synchronized(ICC_Profile.class) {
-                if (sRGBprofile == null) {
-                    /*
-                     * Deferral is only used for standard profiles.
-                     * Enabling the appropriate access privileges is handled
-                     * at a lower level.
-                     */
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("sRGB.pf",
-                                                ColorSpace.TYPE_RGB, 3,
-                                                CLASS_DISPLAY);
-                    sRGBprofile = new ICC_ProfileRGB(pdi);
-                }
-                thisProfile = sRGBprofile;
+    public static ICC_Profile getInstance(int cspace) {
+        return switch (cspace) {
+            case ColorSpace.CS_sRGB -> BuiltInProfile.SRGB;
+            case ColorSpace.CS_LINEAR_RGB -> BuiltInProfile.LRGB;
+            case ColorSpace.CS_CIEXYZ -> BuiltInProfile.XYZ;
+            case ColorSpace.CS_PYCC -> BuiltInProfile.PYCC;
+            case ColorSpace.CS_GRAY -> BuiltInProfile.GRAY;
+            default -> {
+                throw new IllegalArgumentException("Unknown color space");
             }
-
-            break;
-
-        case ColorSpace.CS_CIEXYZ:
-            synchronized(ICC_Profile.class) {
-                if (XYZprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("CIEXYZ.pf",
-                                                ColorSpace.TYPE_XYZ, 3,
-                                                CLASS_ABSTRACT);
-                    XYZprofile = new ICC_Profile(pdi);
-                }
-                thisProfile = XYZprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_PYCC:
-            synchronized(ICC_Profile.class) {
-                if (PYCCprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("PYCC.pf",
-                                                ColorSpace.TYPE_3CLR, 3,
-                                                CLASS_COLORSPACECONVERSION);
-                    PYCCprofile = new ICC_Profile(pdi);
-                }
-                thisProfile = PYCCprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_GRAY:
-            synchronized(ICC_Profile.class) {
-                if (GRAYprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("GRAY.pf",
-                                                ColorSpace.TYPE_GRAY, 1,
-                                                CLASS_DISPLAY);
-                    GRAYprofile = new ICC_ProfileGray(pdi);
-                }
-                thisProfile = GRAYprofile;
-            }
-
-            break;
-
-        case ColorSpace.CS_LINEAR_RGB:
-            synchronized(ICC_Profile.class) {
-                if (LINEAR_RGBprofile == null) {
-                    ProfileDeferralInfo pdi =
-                        new ProfileDeferralInfo("LINEAR_RGB.pf",
-                                                ColorSpace.TYPE_RGB, 3,
-                                                CLASS_DISPLAY);
-                    LINEAR_RGBprofile = new ICC_ProfileRGB(pdi);
-                }
-                thisProfile = LINEAR_RGBprofile;
-            }
-
-            break;
-
-        default:
-            throw new IllegalArgumentException("Unknown color space");
-        }
-
-        return thisProfile;
+        };
     }
 
     /**
@@ -927,10 +873,7 @@ public class ICC_Profile implements Serializable {
      *         not permit read access to the given file
      */
     public static ICC_Profile getInstance(String fileName) throws IOException {
-        ICC_Profile thisProfile;
-        InputStream is = null;
-
-
+        InputStream is;
         File f = getProfileFile(fileName);
         if (f != null) {
             is = new FileInputStream(f);
@@ -940,12 +883,9 @@ public class ICC_Profile implements Serializable {
         if (is == null) {
             throw new IOException("Cannot open file " + fileName);
         }
-
-        thisProfile = getInstance(is);
-
-        is.close();    /* close the file */
-
-        return thisProfile;
+        try (is) {
+            return getInstance(is);
+        }
     }
 
     /**
@@ -963,22 +903,17 @@ public class ICC_Profile implements Serializable {
      *         Profile data
      */
     public static ICC_Profile getInstance(InputStream s) throws IOException {
-        byte[] profileData;
-        if ((profileData = getProfileDataFromStream(s)) == null) {
-            throw new IllegalArgumentException("Invalid ICC Profile Data");
-        }
-
-        return getInstance(profileData);
+        return getInstance(getProfileDataFromStream(s));
     }
 
 
     static byte[] getProfileDataFromStream(InputStream s) throws IOException {
 
         BufferedInputStream bis = new BufferedInputStream(s);
-        bis.mark(128);
+        bis.mark(128); // 128 is the length of the ICC profile header
 
         byte[] header = bis.readNBytes(128);
-        if (header[36] != 0x61 || header[37] != 0x63 ||
+        if (header.length < 128 || header[36] != 0x61 || header[37] != 0x63 ||
             header[38] != 0x73 || header[39] != 0x70) {
             return null;   /* not a valid profile */
         }
@@ -1010,14 +945,13 @@ public class ICC_Profile implements Serializable {
                 if (is == null) {
                     return;
                 }
-                try {
+                try (is) {
                     byte[] data = getProfileDataFromStream(is);
                     if (data != null) {
                         cmmProfile = CMSManager.getModule().loadProfile(data);
                         // from now we cannot use the deferred value, drop it
                         deferralInfo = null;
                     }
-                    is.close();    /* close the stream */
                 } catch (CMMException | IOException ignore) {
                 }
             }
@@ -1174,14 +1108,9 @@ public class ICC_Profile implements Serializable {
      *         error occurs while writing to the file
      */
     public void write(String fileName) throws IOException {
-    FileOutputStream outputFile;
-    byte[] profileData;
-
-        profileData = getData(); /* this will activate deferred
-                                    profiles if necessary */
-        outputFile = new FileOutputStream(fileName);
-        outputFile.write(profileData);
-        outputFile.close ();
+        try (OutputStream out = new FileOutputStream(fileName)) {
+            write(out);
+        }
     }
 
     /**
@@ -1191,11 +1120,7 @@ public class ICC_Profile implements Serializable {
      * @throws IOException If an I/O error occurs while writing to the stream
      */
     public void write(OutputStream s) throws IOException {
-    byte[] profileData;
-
-        profileData = getData(); /* this will activate deferred
-                                    profiles if necessary */
-        s.write(profileData);
+        s.write(getData());
     }
 
     /**
@@ -1206,22 +1131,8 @@ public class ICC_Profile implements Serializable {
      * @see #setData(int, byte[])
      */
     public byte[] getData() {
-    int profileSize;
-    byte[] profileData;
-
         activate();
-
-        PCMM mdl = CMSManager.getModule();
-
-        /* get the number of bytes needed for this profile */
-        profileSize = mdl.getProfileSize(cmmProfile);
-
-        profileData = new byte [profileSize];
-
-        /* get the data for the profile */
-        mdl.getProfileData(cmmProfile, profileData);
-
-        return profileData;
+        return CMSManager.getModule().getProfileData(cmmProfile);
     }
 
     /**
@@ -1245,25 +1156,12 @@ public class ICC_Profile implements Serializable {
     }
 
 
-    static byte[] getData(Profile p, int tagSignature) {
-    int tagSize;
-    byte[] tagData;
-
+    private static byte[] getData(Profile p, int tagSignature) {
         try {
-            PCMM mdl = CMSManager.getModule();
-
-            /* get the number of bytes needed for this tag */
-            tagSize = mdl.getTagSize(p, tagSignature);
-
-            tagData = new byte[tagSize]; /* get an array for the tag */
-
-            /* get the tag's data */
-            mdl.getTagData(p, tagSignature, tagData);
-        } catch(CMMException c) {
-            tagData = null;
+            return CMSManager.getModule().getTagData(p, tagSignature);
+        } catch (CMMException c) {
+            return null;
         }
-
-        return tagData;
     }
 
     /**
@@ -1288,41 +1186,6 @@ public class ICC_Profile implements Serializable {
         activate();
 
         CMSManager.getModule().setTagData(cmmProfile, tagSignature, tagData);
-    }
-
-    /**
-     * Sets the rendering intent of the profile. This is used to select the
-     * proper transform from a profile that has multiple transforms.
-     */
-    void setRenderingIntent(int renderingIntent) {
-        byte[] theHeader = getData(icSigHead);/* getData will activate deferred
-                                                 profiles if necessary */
-        intToBigEndian (renderingIntent, theHeader, icHdrRenderingIntent);
-                                                 /* set the rendering intent */
-        setData (icSigHead, theHeader);
-    }
-
-    /**
-     * Returns the rendering intent of the profile. This is used to select the
-     * proper transform from a profile that has multiple transforms. It is
-     * typically set in a source profile to select a transform from an output
-     * profile.
-     */
-    int getRenderingIntent() {
-        byte[] theHeader = getData(icSigHead);/* getData will activate deferred
-                                                 profiles if necessary */
-
-        int renderingIntent = intFromBigEndian(theHeader, icHdrRenderingIntent);
-                                                 /* set the rendering intent */
-
-        /* According to ICC spec, only the least-significant 16 bits shall be
-         * used to encode the rendering intent. The most significant 16 bits
-         * shall be set to zero. Thus, we are ignoring two most significant
-         * bytes here.
-         *
-         *  See http://www.color.org/ICC1v42_2006-05.pdf, section 7.2.15.
-         */
-        return (0xffff & renderingIntent);
     }
 
     /**
@@ -1646,32 +1509,16 @@ public class ICC_Profile implements Serializable {
         return theColorSpace;
     }
 
-
-    static int intFromBigEndian(byte[] array, int index) {
+    private static int intFromBigEndian(byte[] array, int index) {
         return (((array[index]   & 0xff) << 24) |
                 ((array[index+1] & 0xff) << 16) |
                 ((array[index+2] & 0xff) <<  8) |
                  (array[index+3] & 0xff));
     }
 
-
-    static void intToBigEndian(int value, byte[] array, int index) {
-            array[index]   = (byte) (value >> 24);
-            array[index+1] = (byte) (value >> 16);
-            array[index+2] = (byte) (value >>  8);
-            array[index+3] = (byte) (value);
-    }
-
-
-    static short shortFromBigEndian(byte[] array, int index) {
+    private static short shortFromBigEndian(byte[] array, int index) {
         return (short) (((array[index]   & 0xff) << 8) |
                          (array[index+1] & 0xff));
-    }
-
-
-    static void shortToBigEndian(short value, byte[] array, int index) {
-            array[index]   = (byte) (value >> 8);
-            array[index+1] = (byte) (value);
     }
 
     /**
@@ -1823,15 +1670,15 @@ public class ICC_Profile implements Serializable {
         s.defaultWriteObject();
 
         String csName = null;
-        if (this == sRGBprofile) {
+        if (this == BuiltInProfile.SRGB) {
             csName = "CS_sRGB";
-        } else if (this == XYZprofile) {
+        } else if (this == BuiltInProfile.XYZ) {
             csName = "CS_CIEXYZ";
-        } else if (this == PYCCprofile) {
+        } else if (this == BuiltInProfile.PYCC) {
             csName = "CS_PYCC";
-        } else if (this == GRAYprofile) {
+        } else if (this == BuiltInProfile.GRAY) {
             csName = "CS_GRAY";
-        } else if (this == LINEAR_RGBprofile) {
+        } else if (this == BuiltInProfile.LRGB) {
             csName = "CS_LINEAR_RGB";
         }
 

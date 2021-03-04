@@ -200,7 +200,8 @@ ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
   _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
   _pending_list(NULL),
   _pending_list_tail(&_pending_list),
-  _iterate_discovered_list_id(0U) {
+  _iterate_discovered_list_id(0U),
+  _stats() {
   for (size_t i = 0; i < max_workers; i++) {
     _ref_proc_thread_locals[i].reset();
   }
@@ -595,6 +596,12 @@ void ShenandoahReferenceProcessor::collect_statistics() {
       enqueued[type] += _ref_proc_thread_locals[i].enqueued((ReferenceType)type);
     }
   }
+
+  _stats = ReferenceProcessorStats(discovered[REF_SOFT],
+                                   discovered[REF_WEAK],
+                                   discovered[REF_FINAL],
+                                   discovered[REF_PHANTOM]);
+
   log_info(gc,ref)("Encountered references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
                    encountered[REF_SOFT], encountered[REF_WEAK], encountered[REF_FINAL], encountered[REF_PHANTOM]);
   log_info(gc,ref)("Discovered  references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
@@ -602,3 +609,4 @@ void ShenandoahReferenceProcessor::collect_statistics() {
   log_info(gc,ref)("Enqueued    references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
                    enqueued[REF_SOFT], enqueued[REF_WEAK], enqueued[REF_FINAL], enqueued[REF_PHANTOM]);
 }
+

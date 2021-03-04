@@ -26,7 +26,6 @@
 #import "jni_util.h"
 
 #import <AppKit/AppKit.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "CTrayIcon.h"
 #import "ThreadUtilities.h"
@@ -342,7 +341,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_nativeSetToolTip
 JNI_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
-    NSString *tooltip = JNFJavaToNSString(env, jtooltip);
+    NSString *tooltip = JavaStringToNSString(env, jtooltip);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [icon setTooltip:tooltip];
     }];
@@ -395,8 +394,8 @@ Java_sun_lwawt_macosx_CTrayIcon_nativeShowNotification
 JNI_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
-    NSString *caption = JNFJavaToNSString(env, jcaption);
-    NSString *text = JNFJavaToNSString(env, jtext);
+    NSString *caption = JavaStringToNSString(env, jcaption);
+    NSString *text = JavaStringToNSString(env, jtext);
     NSImage * contentImage = jlong_to_ptr(nsimage);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){

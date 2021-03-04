@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,11 @@ public final class ImageReader implements AutoCloseable {
     public ImageLocation findLocation(String mn, String rn) {
         requireOpen();
         return reader.findLocation(mn, rn);
+    }
+
+    public boolean verifyLocation(String mn, String rn) {
+        requireOpen();
+        return reader.verifyLocation(mn, rn);
     }
 
     public ImageLocation findLocation(String name) {
@@ -740,7 +745,7 @@ public final class ImageReader implements AutoCloseable {
 
         public void walk(Consumer<? super Node> consumer) {
             consumer.accept(this);
-            for ( Node child : children ) {
+            for (Node child : children) {
                 if (child.isDirectory()) {
                     ((Directory)child).walk(consumer);
                 } else {

@@ -1777,6 +1777,9 @@ public final class URI
      *
      * @param  os  The object-output stream to which this object
      *             is to be written
+     *
+     * @throws IOException
+     *         If an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream os)
@@ -1795,6 +1798,12 @@ public final class URI
      *
      * @param  is  The object-input stream from which this object
      *             is being read
+     *
+     * @throws IOException
+     *         If an I/O error occurs
+     *
+     * @throws ClassNotFoundException
+     *         If a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream is)
