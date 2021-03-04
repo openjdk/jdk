@@ -658,12 +658,10 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
       assert (constant->is_instance(), "must be an instance, or not? ");
       return ciConstant(T_OBJECT, constant);
     }
+  } else if (tag.is_unresolved_klass_in_error()) {
+    return ciConstant();
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
     // 4881222: allow ldc to take a class type
-    if (tag.is_unresolved_klass_in_error()) {
-      record_method_not_compilable("has unresolved class in error", true);
-      return ciConstant();
-    }
     ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
