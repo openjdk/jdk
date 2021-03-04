@@ -32,7 +32,7 @@
 #include "memory/referenceType.hpp"
 #include "oops/instanceRefKlass.hpp"
 
-class AbstractClosureContext;
+class AbstractRefProcClosureContext;
 class GCTimer;
 class ReferencePolicy;
 class ReferenceProcessorPhaseTimes;
@@ -236,23 +236,23 @@ private:
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
 
-  void run_task(AbstractGangTask& task, AbstractClosureContext& closure_context, bool marks_oops_alive);
+  void run_task(AbstractGangTask& task, AbstractRefProcClosureContext& closure_context, bool marks_oops_alive);
 
   // Phase 1: Re-evaluate soft ref policy.
-  void process_soft_ref_reconsider(AbstractClosureContext& closure_context,
+  void process_soft_ref_reconsider(AbstractRefProcClosureContext& closure_context,
                                    ReferenceProcessorPhaseTimes& phase_times);
 
   // Phase 2: Drop Soft/Weak/Final references with a NULL or live referent, and clear
   // and enqueue non-Final references.
-  void process_soft_weak_final_refs(AbstractClosureContext& closure_context,
+  void process_soft_weak_final_refs(AbstractRefProcClosureContext& closure_context,
                                     ReferenceProcessorPhaseTimes& phase_times);
 
   // Phase 3: Keep alive followers of Final references, and enqueue.
-  void process_final_keep_alive(AbstractClosureContext& closure_context,
+  void process_final_keep_alive(AbstractRefProcClosureContext& closure_context,
                                 ReferenceProcessorPhaseTimes& phase_times);
 
   // Phase 4: Drop and keep alive live Phantom references, or clear and enqueue if dead.
-  void process_phantom_refs(AbstractClosureContext& closure_context,
+  void process_phantom_refs(AbstractRefProcClosureContext& closure_context,
                             ReferenceProcessorPhaseTimes& phase_times);
 
   // Work methods used by the process_* methods. All methods return the number of
@@ -424,7 +424,7 @@ public:
 
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats
-  process_discovered_references(AbstractClosureContext&  closure_context,
+  process_discovered_references(AbstractRefProcClosureContext&  closure_context,
                                 ReferenceProcessorPhaseTimes& phase_times);
 
   // If a discovery is in process that is being superceded, abandon it: all
@@ -585,15 +585,15 @@ class ReferenceProcessorAtomicMutator: StackObj {
   }
 };
 
-enum class ThreadModel {Multi, Single};
+enum class RefProcThreadModel { Multi, Single };
 
-class AbstractClosureContext {
+class AbstractRefProcClosureContext {
 public:
   virtual BoolObjectClosure* is_alive(uint worker_id) = 0;
   virtual OopClosure* keep_alive(uint worker_id) = 0;
   virtual VoidClosure* complete_gc(uint worker_id) = 0;
-  virtual void prepare_run_task(uint queue_count, ThreadModel tm, bool marks_oops_alive) = 0;
-  uint index(uint id, ThreadModel tm) { return (tm==ThreadModel::Single)?0:id; }
+  virtual void prepare_run_task(uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) = 0;
+  uint index(uint id, RefProcThreadModel tm) { return (tm == RefProcThreadModel::Single) ? 0 : id; }
 };
 
 // Temporarily change the number of workers based on given reference count.

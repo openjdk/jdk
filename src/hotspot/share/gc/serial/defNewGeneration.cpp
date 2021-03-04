@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
-#include "gc/serial/serialClosureContext.hpp"
+#include "gc/serial/serialGcRefProcClosureContext.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
@@ -588,7 +588,7 @@ void DefNewGeneration::collect(bool   full,
   ReferenceProcessor* rp = ref_processor();
   rp->setup_policy(clear_all_soft_refs);
   ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
-  SerialClosureContext closure_context(is_alive, keep_alive, evacuate_followers);
+  SerialGCRefProcClosureContext closure_context(is_alive, keep_alive, evacuate_followers);
   const ReferenceProcessorStats& stats = rp->process_discovered_references(closure_context, pt);
   gc_tracer.report_gc_reference_stats(stats);
   gc_tracer.report_tenuring_threshold(tenuring_threshold());

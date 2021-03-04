@@ -3312,26 +3312,25 @@ public:
   }
 };
 
-class G1STWRefProcClosureContext : public AbstractClosureContext {
-  uint                           _max_workers;
-  uint                           _queues;
-  G1CollectedHeap&               _g1h;
-  G1ParScanThreadStateSet&       _pss;
-  G1ScannerTasksQueueSet&        _task_queues;
-  TaskTerminator                 _terminator;
-  G1STWIsAliveClosure            _is_alive;
-  G1CopyingKeepAliveClosure*     _keep_alive;
+class G1STWRefProcClosureContext : public AbstractRefProcClosureContext {
+  uint _max_workers;
+  uint _queues;
+  G1CollectedHeap& _g1h;
+  G1ParScanThreadStateSet& _pss;
+  G1ScannerTasksQueueSet& _task_queues;
+  TaskTerminator _terminator;
+  G1STWIsAliveClosure _is_alive;
+  G1CopyingKeepAliveClosure* _keep_alive;
   G1ParEvacuateFollowersClosure* _parallel_complete_gc;
-  G1CopyingKeepAliveClosure      _serial_keep_alive;
-  G1STWDrainQueueClosure         _serial_complete_gc;
-  ThreadModel                    _tm;
+  G1CopyingKeepAliveClosure _serial_keep_alive;
+  G1STWDrainQueueClosure _serial_complete_gc;
+  RefProcThreadModel _tm;
 
 public:
-  G1STWRefProcClosureContext(
-    uint max_workers,
-    G1CollectedHeap& g1h,
-    G1ParScanThreadStateSet& pss,
-    G1ScannerTasksQueueSet& task_queues)
+  G1STWRefProcClosureContext(uint max_workers,
+                             G1CollectedHeap& g1h,
+                             G1ParScanThreadStateSet& pss,
+                             G1ScannerTasksQueueSet& task_queues)
     : _max_workers(max_workers),
       _queues(0),
       _g1h(g1h),
@@ -3343,37 +3342,43 @@ public:
       _parallel_complete_gc(NEW_C_HEAP_ARRAY(G1ParEvacuateFollowersClosure, _max_workers, mtGC)),
       _serial_keep_alive(&g1h, _pss.state_for_worker(0)),
       _serial_complete_gc(&g1h, _pss.state_for_worker(0)),
-      _tm(ThreadModel::Single) {}
+      _tm(RefProcThreadModel::Single) {}
 
   ~G1STWRefProcClosureContext() {
     FREE_C_HEAP_ARRAY(G1CopyingKeepAliveClosure, _keep_alive);
     FREE_C_HEAP_ARRAY(G1ParEvacuateFollowersClosure, _parallel_complete_gc);
   }
 
-  BoolObjectClosure* is_alive(uint worker_id) { return &_is_alive; }
-  OopClosure* keep_alive(uint worker_id) {
-    assert(worker_id < _queues || _tm == ThreadModel::Single, "sanity");
-    if (_tm == ThreadModel::Single) {
-      return ::new (&_serial_keep_alive) G1CopyingKeepAliveClosure(&_g1h, _pss.state_for_worker(0));
-    }
-    return ::new (&_keep_alive[worker_id]) G1CopyingKeepAliveClosure(&_g1h, _pss.state_for_worker(worker_id));
-  }
-  VoidClosure* complete_gc(uint worker_id) {
-    assert(worker_id < _queues || _tm == ThreadModel::Single, "sanity");
-    if (_tm == ThreadModel::Single) {
-      return ::new (&_serial_complete_gc) G1STWDrainQueueClosure(&_g1h, _pss.state_for_worker(0));
-    }
-    return ::new (&_parallel_complete_gc[worker_id]) G1ParEvacuateFollowersClosure(&_g1h, _pss.state_for_worker(worker_id), &_task_queues, &_terminator, G1GCPhaseTimes::ObjCopy);
+  BoolObjectClosure* is_alive(uint worker_id) {
+    return &_is_alive;
   }
 
-  void prepare_run_task(uint queue_count, ThreadModel tm, bool marks_oops_alive) {
+  OopClosure* keep_alive(uint worker_id) {
+    assert(worker_id < _queues || _tm == RefProcThreadModel::Single, "sanity");
+    if (_tm == RefProcThreadModel::Single) {
+      return &_serial_keep_alive;
+    } else {
+      return ::new (&_keep_alive[worker_id]) G1CopyingKeepAliveClosure(&_g1h, _pss.state_for_worker(worker_id));
+    }
+  }
+
+  VoidClosure* complete_gc(uint worker_id) {
+    assert(worker_id < _queues || _tm == RefProcThreadModel::Single, "sanity");
+    if (_tm == RefProcThreadModel::Single) {
+      return &_serial_complete_gc;
+    } else {
+      return ::new (&_parallel_complete_gc[worker_id]) G1ParEvacuateFollowersClosure(&_g1h, _pss.state_for_worker(worker_id), &_task_queues, &_terminator, G1GCPhaseTimes::ObjCopy);
+    }
+  }
+
+  void prepare_run_task(uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
     log_debug(gc, ref)("G1STWRefProcClosureContext: prepare_run_task");
     assert(queue_count <= _max_workers, "sanity");
     _queues = queue_count;
     _tm = tm;
 
     for (uint qid = 0; qid < index(queue_count, tm); ++qid ) {
-      _pss.state_for_worker(qid)->set_ref_discoverer(nullptr); // move?, maybe not...
+      _pss.state_for_worker(qid)->set_ref_discoverer(nullptr);
     }
     _terminator.reset_for_reuse(queue_count);
   };

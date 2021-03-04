@@ -32,7 +32,7 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/serial/genMarkSweep.hpp"
-#include "gc/serial/serialClosureContext.hpp"
+#include "gc/serial/serialGcRefProcClosureContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
@@ -199,7 +199,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
     ref_processor()->setup_policy(clear_all_softrefs);
     ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->max_num_queues());
-    SerialClosureContext closure_context(is_alive, keep_alive, follow_stack_closure);
+    SerialGCRefProcClosureContext closure_context(is_alive, keep_alive, follow_stack_closure);
     const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(closure_context, pt);
     pt.print_all_references();
     gc_tracer()->report_gc_reference_stats(stats);

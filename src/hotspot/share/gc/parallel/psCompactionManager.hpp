@@ -42,7 +42,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   friend class CompactionWithStealingTask;
   friend class MarkFromRootsTask;
   friend class ParMarkBitMap;
-  friend class PCRefProcClosureContext;
+  friend class ParallelCompactRefProcClosureContext;
   friend class PSParallelCompact;
   friend class RefProcClosureContext;
   friend class UpdateAndFillClosure;

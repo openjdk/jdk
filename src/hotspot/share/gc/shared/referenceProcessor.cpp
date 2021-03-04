@@ -196,9 +196,8 @@ void ReferenceProcessor::verify_total_count_zero(DiscoveredList lists[], const c
 }
 #endif
 
-ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
-  AbstractClosureContext& closure_context,
-  ReferenceProcessorPhaseTimes& phase_times) {
+ReferenceProcessorStats ReferenceProcessor::process_discovered_references(AbstractRefProcClosureContext& closure_context,
+                                                                          ReferenceProcessorPhaseTimes& phase_times) {
 
   double start_time = os::elapsedTime();
 
@@ -516,14 +515,13 @@ class RefProcTask : public AbstractGangTask {
 protected:
   ReferenceProcessor& _ref_processor;
   ReferenceProcessorPhaseTimes* _phase_times;
-  AbstractClosureContext& _closure_context;
+  AbstractRefProcClosureContext& _closure_context;
 
 public:
-  RefProcTask(
-    const char* name,
-    ReferenceProcessor& ref_processor,
-    ReferenceProcessorPhaseTimes* phase_times,
-    AbstractClosureContext& closure_context)
+  RefProcTask(const char* name,
+              ReferenceProcessor& ref_processor,
+              ReferenceProcessorPhaseTimes* phase_times,
+              AbstractRefProcClosureContext& closure_context)
     : AbstractGangTask(name),
       _ref_processor(ref_processor),
       _phase_times(phase_times),
@@ -532,15 +530,15 @@ public:
 
 class RefProcPhase1Task : public RefProcTask {
 public:
-  RefProcPhase1Task(ReferenceProcessor&           ref_processor,
+  RefProcPhase1Task(ReferenceProcessor& ref_processor,
                     ReferenceProcessorPhaseTimes* phase_times,
-                    ReferencePolicy*              policy,
-                    AbstractClosureContext&       closure_context)
-  : RefProcTask("RefProcPhase1Task",
-            ref_processor,
-            phase_times,
-            closure_context),
-    _policy(policy) { }
+                    ReferencePolicy* policy,
+                    AbstractRefProcClosureContext& closure_context)
+    : RefProcTask("RefProcPhase1Task",
+                  ref_processor,
+                  phase_times,
+                  closure_context),
+      _policy(policy) { }
 
   virtual void work(uint worker_id)
   {
@@ -560,7 +558,7 @@ private:
 class RefProcPhase2Task: public RefProcTask {
   void run_phase2(uint worker_id,
                   DiscoveredList list[],
-                  AbstractClosureContext& closure_context,
+                  AbstractRefProcClosureContext& closure_context,
                   bool do_enqueue_and_clear,
                   ReferenceType ref_type) {
     size_t const removed = _ref_processor.process_soft_weak_final_refs_work(list[worker_id],
@@ -573,11 +571,11 @@ class RefProcPhase2Task: public RefProcTask {
 public:
   RefProcPhase2Task(ReferenceProcessor& ref_processor,
                     ReferenceProcessorPhaseTimes* phase_times,
-                    AbstractClosureContext& closure_context)
+                    AbstractRefProcClosureContext& closure_context)
     : RefProcTask("RefProcPhase2Task",
-              ref_processor,
-              phase_times,
-              closure_context) { }
+                  ref_processor,
+                  phase_times,
+                  closure_context) { }
 
   virtual void work(uint worker_id) {
     ResourceMark rm;
@@ -602,13 +600,13 @@ public:
 
 class RefProcPhase3Task: public RefProcTask {
 public:
-  RefProcPhase3Task(ReferenceProcessor&           ref_processor,
+  RefProcPhase3Task(ReferenceProcessor& ref_processor,
                     ReferenceProcessorPhaseTimes* phase_times,
-                    AbstractClosureContext& closure_context)
+                    AbstractRefProcClosureContext& closure_context)
     : RefProcTask("RefProcPhase3Task",
-              ref_processor,
-              phase_times,
-              closure_context) { }
+                  ref_processor,
+                  phase_times,
+                  closure_context) { }
 
 
   virtual void work(uint worker_id)
@@ -621,13 +619,13 @@ public:
 
 class RefProcPhase4Task: public RefProcTask {
 public:
-  RefProcPhase4Task(ReferenceProcessor&           ref_processor,
+  RefProcPhase4Task(ReferenceProcessor& ref_processor,
                     ReferenceProcessorPhaseTimes* phase_times,
-                    AbstractClosureContext&       closure_context)
+                    AbstractRefProcClosureContext& closure_context)
     : RefProcTask("RefProcPhase4Task",
-              ref_processor,
-              phase_times,
-              closure_context) { }
+                  ref_processor,
+                  phase_times,
+                  closure_context) { }
 
   virtual void work(uint worker_id)
   {
@@ -793,26 +791,28 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
 #endif
 }
 
-void ReferenceProcessor::run_task(AbstractGangTask& task, AbstractClosureContext& closure_context, bool marks_oops_alive) {
+void ReferenceProcessor::run_task(AbstractGangTask& task, AbstractRefProcClosureContext& closure_context, bool marks_oops_alive) {
   WorkGang* gang = Universe::heap()->safepoint_workers();
   assert(gang != NULL || !processing_is_mt(), "can not dispatch multi threaded without a work gang");
   log_debug(gc, ref)("ReferenceProcessor::execute queues: %d, %s, marks_oops_alive: %s",
-    num_queues(), processing_is_mt() ? "ThreadModel::Multi" : "ThreadModel::Single", marks_oops_alive?"true":"false");
-  closure_context.prepare_run_task(num_queues(), processing_is_mt() ? ThreadModel::Multi : ThreadModel::Single, marks_oops_alive);
+                     num_queues(),
+                     processing_is_mt() ? "RefProcThreadModel::Multi" : "RefProcThreadModel::Single",
+                     marks_oops_alive ? "true" : "false");
+
+  closure_context.prepare_run_task(num_queues(), processing_is_mt() ? RefProcThreadModel::Multi : RefProcThreadModel::Single, marks_oops_alive);
   if (gang != NULL && processing_is_mt()) {
     assert(gang->active_workers() >= num_queues(),
            "Ergonomically chosen workers(%u) should be less than or equal to active workers(%u)",
            num_queues(), gang->active_workers());
     gang->run_task(&task, num_queues());
   } else {
-    log_debug(gc, ref)("Serial loop: %d\n", _max_num_queues);
     for (unsigned i = 0; i < _max_num_queues; ++i) {
       task.work(i);
     }
   }
 }
 
-void ReferenceProcessor::process_soft_ref_reconsider(AbstractClosureContext& closure_context,
+void ReferenceProcessor::process_soft_ref_reconsider(AbstractRefProcClosureContext& closure_context,
                                                      ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_soft_refs = total_count(_discoveredSoftRefs);
@@ -844,7 +844,7 @@ void ReferenceProcessor::process_soft_ref_reconsider(AbstractClosureContext& clo
   log_reflist("Phase 1 Soft after", _discoveredSoftRefs, _max_num_queues);
 }
 
-void ReferenceProcessor::process_soft_weak_final_refs(AbstractClosureContext& closure_context,
+void ReferenceProcessor::process_soft_weak_final_refs(AbstractRefProcClosureContext& closure_context,
                                                       ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_soft_refs = total_count(_discoveredSoftRefs);
@@ -884,7 +884,7 @@ void ReferenceProcessor::process_soft_weak_final_refs(AbstractClosureContext& cl
   log_reflist("Phase 2 Final after", _discoveredFinalRefs, _max_num_queues);
 }
 
-void ReferenceProcessor::process_final_keep_alive(AbstractClosureContext& closure_context,
+void ReferenceProcessor::process_final_keep_alive(AbstractRefProcClosureContext& closure_context,
                                                   ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_final_refs = total_count(_discoveredFinalRefs);
@@ -911,7 +911,7 @@ void ReferenceProcessor::process_final_keep_alive(AbstractClosureContext& closur
   verify_total_count_zero(_discoveredFinalRefs, "FinalReference");
 }
 
-void ReferenceProcessor::process_phantom_refs(AbstractClosureContext& closure_context,
+void ReferenceProcessor::process_phantom_refs(AbstractRefProcClosureContext& closure_context,
                                               ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_phantom_refs = total_count(_discoveredPhantomRefs);

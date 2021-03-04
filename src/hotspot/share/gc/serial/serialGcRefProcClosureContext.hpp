@@ -22,22 +22,39 @@
  *
  */
 
-#ifndef SHARE_GC_SERIAL_SERIALCLOSURECONTEXT_HPP
-#define SHARE_GC_SERIAL_SERIALCLOSURECONTEXT_HPP
+#ifndef SHARE_GC_SERIAL_SERIALGCREFPROCCLOSURECONTEXT_HPP
+#define SHARE_GC_SERIAL_SERIALGCREFPROCCLOSURECONTEXT_HPP
 
 #include "gc/shared/referenceProcessor.hpp"
 
-class SerialClosureContext : public AbstractClosureContext {
+class SerialGCRefProcClosureContext : public AbstractRefProcClosureContext {
   BoolObjectClosure& _is_alive;
   OopClosure& _keep_alive;
   VoidClosure& _complete_gc;
+
 public:
-  SerialClosureContext(BoolObjectClosure& is_alive, OopClosure& keep_alive, VoidClosure& complete_gc)
-    : _is_alive(is_alive), _keep_alive(keep_alive), _complete_gc(complete_gc) {};
-  BoolObjectClosure* is_alive(uint worker_id)                                    { return &_is_alive; }
-  OopClosure* keep_alive(uint worker_id)                                         { return &_keep_alive; }
-  VoidClosure* complete_gc(uint worker_id)                                       { return &_complete_gc; }
-  void prepare_run_task(uint queue_count, ThreadModel tm, bool marks_oops_alive) { log_debug(gc, ref)("SerialClosureContext: prepare_run_task"); };
+  SerialGCRefProcClosureContext(BoolObjectClosure& is_alive,
+                                OopClosure& keep_alive,
+                                VoidClosure& complete_gc)
+    : _is_alive(is_alive),
+      _keep_alive(keep_alive),
+      _complete_gc(complete_gc) {}
+
+  BoolObjectClosure* is_alive(uint worker_id) {
+    return &_is_alive;
+  }
+
+  OopClosure* keep_alive(uint worker_id) {
+    return &_keep_alive;
+  }
+
+  VoidClosure* complete_gc(uint worker_id) {
+    return &_complete_gc;
+  }
+
+  void prepare_run_task(uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
+    log_debug(gc, ref)("SerialGCRefProcClosureContext: prepare_run_task");
+  };
 };
 
-#endif /* SHARE_GC_SERIAL_SERIALCLOSURECONTEXT_HPP */
+#endif /* SHARE_GC_SERIAL_SERIALGCREFPROCCLOSURECONTEXT_HPP */
