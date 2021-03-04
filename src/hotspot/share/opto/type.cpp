@@ -63,6 +63,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg, relocInfo::none          },  // Array
 
 #if defined(PPC64)
+  { Bad,             T_ILLEGAL,    "vectorm:",      false, Op_RegVMask,          relocInfo::none          },  // VectorM.
   { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
@@ -70,6 +71,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #elif defined(S390)
+  { Bad,             T_ILLEGAL,    "vectorm:",      false, Op_RegVMask,          relocInfo::none          },  // VectorM.
   { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
@@ -77,6 +79,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #else // all other
+  { Bad,             T_ILLEGAL,    "vectorm:",      false, Op_RegVMask,          relocInfo::none          },  // VectorM.
   { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, Op_VecS,              relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_VecD,              relocInfo::none          },  // VectorD
@@ -560,9 +563,6 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_RegD] = Type::DOUBLE;
   mreg2type[Op_RegL] = TypeLong::LONG;
   mreg2type[Op_RegFlags] = TypeInt::CC;
-  if (Matcher::has_predicated_vectors()) {
-    mreg2type[Op_RegVMask] = Matcher::predicate_reg_type();
-  }
 
   TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), NULL /* current->env()->Object_klass() */, false, arrayOopDesc::length_offset_in_bytes());
 
@@ -660,6 +660,11 @@ void Type::Initialize_shared(Compile* current) {
 
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= NULL;
+
+#if defined(AMD64) || defined(IA32)
+  TypeVect::VMASK = (TypeVect*)(new TypeVectMask(get_const_basic_type(T_BOOLEAN), MaxVectorSize))->hashcons();
+  mreg2type[Op_RegVMask] = TypeVect::VMASK;
+#endif
 
   if (Matcher::supports_scalable_vector()) {
     TypeVect::VECTA = TypeVect::make(T_BYTE, Matcher::scalable_vector_reg_size(T_BYTE));
@@ -2379,6 +2384,7 @@ const TypeVect *TypeVect::VECTD = NULL; //  64-bit vectors
 const TypeVect *TypeVect::VECTX = NULL; // 128-bit vectors
 const TypeVect *TypeVect::VECTY = NULL; // 256-bit vectors
 const TypeVect *TypeVect::VECTZ = NULL; // 512-bit vectors
+const TypeVect *TypeVect::VMASK = NULL; // predicate/mask vector
 
 //------------------------------make-------------------------------------------
 const TypeVect* TypeVect::make(const Type *elem, uint length) {
@@ -2406,6 +2412,14 @@ const TypeVect* TypeVect::make(const Type *elem, uint length) {
   return NULL;
 }
 
+const TypeVect *TypeVect::makemask(const BasicType elem_bt, uint length) {
+  if (Matcher::has_predicated_vectors()) {
+    return (TypeVect*)(new TypeVectMask(get_const_basic_type(T_BOOLEAN), MaxVectorSize))->hashcons();
+  } else {
+    return make(get_const_basic_type(elem_bt), length);
+  }
+}
+
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeVect::xmeet( const Type *t ) const {
@@ -2420,6 +2434,7 @@ const Type *TypeVect::xmeet( const Type *t ) const {
 
   default:                      // All else is a mistake
     typerr(t);
+  case VectorM:
   case VectorA:
   case VectorS:
   case VectorD:
@@ -2487,6 +2502,8 @@ void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
     st->print("vectory["); break;
   case VectorZ:
     st->print("vectorz["); break;
+  case VectorM:
+    st->print("vectorm["); break;
   default:
     ShouldNotReachHere();
   }

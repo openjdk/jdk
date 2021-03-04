@@ -67,9 +67,8 @@ int RegMask::num_registers(uint ireg) {
       return SlotsPerVecX;
     case Op_VecD:
       return SlotsPerVecD;
-#if defined(AMD64) || defined(IA32)
     case Op_RegVMask:
-#endif
+      return SlotsPerRegVmask;
     case Op_RegD:
     case Op_RegL:
 #ifdef _LP64

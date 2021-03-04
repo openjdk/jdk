@@ -1148,7 +1148,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
     // Self copy, no move
     return 0;
   }
-  if (bottom_type()->isa_vect() != NULL) {
+  if (bottom_type()->isa_vect() != NULL && bottom_type()->isa_vectmask() == NULL) {
     uint ireg = ideal_reg();
     assert((src_first_rc != rc_int && dst_first_rc != rc_int), "sanity");
     assert((ireg == Op_VecS || ireg == Op_VecD || ireg == Op_VecX || ireg == Op_VecY || ireg == Op_VecZ ), "sanity");

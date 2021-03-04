@@ -410,16 +410,16 @@ protected:
   bool is_unreachable(PhaseIterGVN &igvn) const;
 
   // Set a required input edge, also updates corresponding output edge
-  virtual void add_req( Node *n ); // Append a NEW required input
+  void add_req( Node *n ); // Append a NEW required input
   void add_req( Node *n0, Node *n1 ) {
     add_req(n0); add_req(n1); }
   void add_req( Node *n0, Node *n1, Node *n2 ) {
     add_req(n0); add_req(n1); add_req(n2); }
-  virtual void add_req_batch( Node* n, uint m ); // Append m NEW required inputs (all n).
-  virtual void del_req( uint idx ); // Delete required edge & compact
-  virtual void del_req_ordered( uint idx ); // Delete required edge & compact with preserved order
-  virtual void ins_req( uint i, Node *n ); // Insert a NEW required input
-  virtual void set_req( uint i, Node *n ) {
+  void add_req_batch( Node* n, uint m ); // Append m NEW required inputs (all n).
+  void del_req( uint idx ); // Delete required edge & compact
+  void del_req_ordered( uint idx ); // Delete required edge & compact with preserved order
+  void ins_req( uint i, Node *n ); // Insert a NEW required input
+  void set_req( uint i, Node *n ) {
     assert( is_not_dead(n), "can not use dead node");
     assert( i < _cnt, "oob: i=%d, _cnt=%d", i, _cnt);
     assert( !VerifyHashTableKeys || _hash_lock == 0,
@@ -431,7 +431,7 @@ protected:
     Compile::current()->record_modified_node(this);
   }
   // Light version of set_req() to init inputs after node creation.
-  virtual void init_req( uint i, Node *n ) {
+  void init_req( uint i, Node *n ) {
     assert( i == 0 && this == n ||
             is_not_dead(n), "can not use dead node");
     assert( i < _cnt, "oob");
@@ -1022,7 +1022,6 @@ public:
   // Check if 'this' node dominates or equal to 'sub'.
   bool dominates(Node* sub, Node_List &nlist);
 
-  virtual const void* meta_data() const { return NULL; }
 protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
 public:

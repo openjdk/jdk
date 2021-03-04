@@ -31,8 +31,8 @@ public:
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // special instructions for EVEX
-  void setvectmask(Register dst, Register src, KRegister mask = k1);
-  void restorevectmask(KRegister mask = k1);
+  void setvectmask(Register dst, Register src, KRegister mask);
+  void restorevectmask(KRegister mask);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   // See full desription in macroAssembler_x86.cpp.

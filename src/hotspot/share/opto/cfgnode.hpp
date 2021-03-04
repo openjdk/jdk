@@ -134,7 +134,6 @@ class PhiNode : public TypeNode {
   // Array elements references have the same alias_idx but different offset.
   const int _inst_offset; // Offset of the instance memory slice.
   // Size is bigger to hold the _adr_type field.
-  bool _has_masked_inputs;
   virtual uint hash() const;    // Check the type
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const { return sizeof(*this); }
@@ -160,8 +159,7 @@ public:
       _inst_mem_id(imid),
       _inst_id(iid),
       _inst_index(iidx),
-      _inst_offset(ioffs),
-      _has_masked_inputs(false)
+      _inst_offset(ioffs)
   {
     init_class_id(Class_Phi);
     init_req(0, r);
@@ -182,8 +180,6 @@ public:
 
   bool is_tripcount(BasicType bt) const;
 
-  bool has_masked_inputs() { return _has_masked_inputs;}
-  void set_has_masked_inputs(bool val = true) { _has_masked_inputs = val;}
   // Determine a unique non-trivial input, if any.
   // Ignore casts if it helps.  Return NULL on failure.
   Node* unique_input(PhaseTransform *phase, bool uncast);
@@ -204,15 +200,6 @@ public:
   virtual int Opcode() const;
   virtual bool pinned() const { return in(0) != 0; }
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
-  virtual uint  ideal_reg() const;
-
-  virtual void add_req(Node *n);
-  virtual void add_req_batch(Node* n, uint m);
-  virtual void del_req(uint idx);
-  virtual void del_req_ordered(uint idx);
-  virtual void ins_req(uint i, Node *n);
-  virtual void set_req(uint i, Node *n);
-  virtual void init_req(uint i, Node *n);
 
   void  set_inst_mem_id(int inst_mem_id) { _inst_mem_id = inst_mem_id; }
   const int inst_mem_id() const { return _inst_mem_id; }
@@ -227,7 +214,6 @@ public:
            inst_offset() == offset &&
            type()->higher_equal(tp);
   }
-  virtual const Type *bottom_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);

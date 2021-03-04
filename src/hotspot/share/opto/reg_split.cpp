@@ -1355,9 +1355,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       }
       // Update the Phi's input edge array
       phi->set_req(i,def);
-      if (def->ideal_reg() == Op_RegVMask) {
-        static_cast<PhiNode*>(phi)->set_has_masked_inputs();
-      }
       // Grab the UP/DOWN sense for the input
       u1 = UP[pidx][slidx];
       if( u1 != (phi_up != 0)) {

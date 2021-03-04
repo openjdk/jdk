@@ -1898,30 +1898,6 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return &_OPMASK_REG_mask;
 }
 
-const bool Matcher::is_predicate_operand(int opcode) {
-  if (!has_predicated_vectors()) {
-    return false;
-  }
-  switch(opcode) {
-    case KREG:
-    case KREG_K0:
-    case KREG_K1:
-    case KREG_K2:
-    case KREG_K3:
-    case KREG_K4:
-    case KREG_K5:
-    case KREG_K6:
-    case KREG_K7:
-      return true;
-    default:
-      return false;
-  }
-}
-
-const Type* Matcher::predicate_reg_type() {
-  return TypeLong::LONG;
-}
-
 const int Matcher::float_pressure(int default_pressure_threshold) {
   int float_pressure_threshold = default_pressure_threshold;
 #ifdef _LP64

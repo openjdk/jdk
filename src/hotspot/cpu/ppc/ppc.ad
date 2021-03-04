@@ -2159,15 +2159,8 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
-const bool Matcher::is_predicate_operand(int opcode) {
-  return false;
-}
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
-}
-const Type* Matcher::predicate_reg_type() {
-  assert(has_predicated_vectors(), "");
-  return Type::BOTTOM;
 }
 
 bool Matcher::supports_vector_variable_shifts(void) {

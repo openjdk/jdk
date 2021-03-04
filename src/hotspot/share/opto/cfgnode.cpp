@@ -122,67 +122,6 @@ static Node *merge_region(RegionNode *region, PhaseGVN *phase) {
   return progress;
 }
 
-
-void PhiNode::add_req(Node *n) {
-  Node::add_req(n);
-  if (Matcher::is_mask_generating_node(n)) {
-    set_has_masked_inputs(true);
-  }
-}
-
-void PhiNode::add_req_batch(Node* n, uint m) {
-  Node::add_req_batch(n, m);
-  if (Matcher::is_mask_generating_node(n)) {
-    set_has_masked_inputs(true);
-  }
-}
-void PhiNode::del_req(uint idx) {
-  Node::del_req(idx);
-  bool remove_masked_inputs_flags = true;
-  for(uint i = 0; i < req() ; i++) {
-     if(Matcher::is_mask_generating_node(in(i))) {
-        remove_masked_inputs_flags = false;
-     }
-  }
-  if (remove_masked_inputs_flags) {
-     set_has_masked_inputs(false);
-  }
-}
-
-void PhiNode::del_req_ordered(uint idx) {
-  Node::del_req_ordered(idx);
-  bool remove_masked_inputs_flags = true;
-  for(uint i = 0; i < req() ; i++) {
-     if(Matcher::is_mask_generating_node(in(i))) {
-        remove_masked_inputs_flags = false;
-     }
-  }
-  if (remove_masked_inputs_flags) {
-     set_has_masked_inputs(false);
-  }
-}
-
-void PhiNode::ins_req(uint i, Node *n) {
-  Node::ins_req(i, n);
-  if (Matcher::is_mask_generating_node(n)) {
-    set_has_masked_inputs(true);
-  }
-}
-
-void PhiNode::set_req(uint i, Node *n) {
-  Node::set_req(i, n);
-  if (Matcher::is_mask_generating_node(n)) {
-    set_has_masked_inputs(true);
-  }
-}
-
-void PhiNode::init_req(uint i, Node *n) {
-  Node::init_req(i, n);
-  if (Matcher::is_mask_generating_node(n)) {
-    set_has_masked_inputs(true);
-  }
-}
-
 //--------------------------------has_phi--------------------------------------
 // Helper function: Return any PhiNode that uses this region or NULL
 PhiNode* RegionNode::has_phi() const {
@@ -2517,29 +2456,10 @@ const RegMask &PhiNode::in_RegMask(uint i) const {
 
 const RegMask &PhiNode::out_RegMask() const {
   uint ideal_reg = _type->ideal_reg();
-  if (_has_masked_inputs) {
-    ideal_reg = Op_RegVMask;
-  }
   assert( ideal_reg != Node::NotAMachineReg, "invalid type at Phi" );
   if( ideal_reg == 0 ) return RegMask::Empty;
   assert(ideal_reg != Op_RegFlags, "flags register is not spillable");
   return *(Compile::current()->matcher()->idealreg2spillmask[ideal_reg]);
-}
-
-uint PhiNode::ideal_reg() const {
-  if (_has_masked_inputs) {
-    return Op_RegVMask;
-  } else {
-    return _type->ideal_reg();
-  }
-}
-
-const Type* PhiNode::bottom_type() const {
-  if (_has_masked_inputs) {
-    return Matcher::predicate_reg_type();
-  } else {
-    return type();
-  }
 }
 
 #ifndef PRODUCT

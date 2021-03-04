@@ -1056,7 +1056,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if( src_first == dst_first && src_second == dst_second )
     return size;            // Self copy, no move
 
-  if (bottom_type()->isa_vect() != NULL) {
+  if (bottom_type()->isa_vect() != NULL && bottom_type()->isa_vectmask() == NULL) {
     uint ireg = ideal_reg();
     assert((src_first_rc != rc_int && dst_first_rc != rc_int), "sanity");
     assert((src_first_rc != rc_float && dst_first_rc != rc_float), "sanity");

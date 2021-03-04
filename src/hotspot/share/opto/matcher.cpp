@@ -2859,29 +2859,6 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
   return false;
 }
 
-
-bool Matcher::is_mask_generating_node(Node* n) {
-  if(!Matcher::has_predicated_vectors() || !n) {
-    return false;
-  }
-  if (n->is_Phi()) {
-    return reinterpret_cast<PhiNode*>(n)->has_masked_inputs();
-  }
-  return is_mask_generating_oper(n->Opcode());
-}
-
-bool Matcher::is_mask_generating_oper(int opcode) {
-  //TODO: Other mask generating nodes are VectorLoadMask
-  //and VectorMaskCmp, will be handled along with changes
-  //to corresponding instruction patterns.
-  switch(opcode) {
-    case Op_VectorMaskGen:
-      return true;
-    default:
-      return false;
-  }
-}
-
 //=============================================================================
 //---------------------------State---------------------------------------------
 State::State(void) : _rule() {

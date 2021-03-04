@@ -322,8 +322,6 @@ public:
     const Type *t = _opnds[0]->type();
     if (t == TypeInt::CC) {
       return Op_RegFlags;
-    } else if (Matcher::is_mask_generating_oper(ideal_Opcode())) {
-      return Op_RegVMask;
     } else {
       return t->ideal_reg();
     }
@@ -1090,14 +1088,6 @@ public:
     _opnds[0] = oper;
   }
   virtual uint size_of() const { return sizeof(MachTempNode); }
-
-  virtual uint ideal_reg() const {
-    if (Matcher::is_predicate_operand(_opnd_array[0]->opcode())) {
-      return Op_RegVMask;
-    } else {
-      return MachNode::ideal_reg();
-    }
-  }
 
 #ifndef PRODUCT
   virtual void format(PhaseRegAlloc *, outputStream *st ) const {}

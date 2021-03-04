@@ -895,15 +895,12 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           break;
         case Op_RegL:           // Check for long or double
         case Op_RegD:
-#if defined(IA32) || defined(AMD64)
-        case Op_RegVMask:
-#endif
           lrg.set_num_regs(2);
           // Define platform specific register pressure
 #if defined(ARM32)
           lrg.set_reg_pressure(2);
 #elif defined(IA32)
-          if( ireg == Op_RegL  || ireg == Op_RegVMask ) {
+          if( ireg == Op_RegL) {
             lrg.set_reg_pressure(2);
           } else {
             lrg.set_reg_pressure(1);
@@ -920,6 +917,10 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
             lrg._fat_proj = 1;
             lrg._is_bound = 1;
           }
+          break;
+        case Op_RegVMask:
+          lrg.set_num_regs(RegMask::SlotsPerRegVmask);
+          lrg.set_reg_pressure(1);
           break;
         case Op_RegF:
         case Op_RegI:
