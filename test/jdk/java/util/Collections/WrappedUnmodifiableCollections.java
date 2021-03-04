@@ -43,12 +43,6 @@ public class WrappedUnmodifiableCollections {
         assertSame(collection1, collection2);
     }
 
-    private static <T, E extends T> void testDoesNotWrap(T collection, Function<T,E> wrapper) {
-        var collection2 = wrapper.apply(collection);
-        assertSame(collection, collection2);
-
-    }
-
     public void testUnmodifiableListsDontWrap() {
         List<List<?>> lists = List.of(List.of(), List.of(1,2,3), List.of(1),
                 List.of(1,2,3,4,5,6),
@@ -102,36 +96,6 @@ public class WrappedUnmodifiableCollections {
 
         //Collections.UnModifiableNavigableMap
         testWrapping((NavigableMap<?,?>) treeMap, Collections::unmodifiableNavigableMap);
-
-    }
-
-    public void testUnmodifiableSetSubclassesDontWrap() {
-        TreeSet<?> treeSet = new TreeSet<>();
-
-        var unmodifiableSortedSet = Collections.unmodifiableSortedSet(treeSet);
-        var unmodifiableNavigableSet = Collections.unmodifiableNavigableSet(treeSet);
-
-        //UnmodifiableSet subclasses
-        testDoesNotWrap((Set<?>) unmodifiableSortedSet, Collections::unmodifiableSet);
-        testDoesNotWrap((Set<?>) unmodifiableNavigableSet, Collections::unmodifiableSet);
-
-        //UnmodifiableSortedSet subclasses
-        testDoesNotWrap((SortedSet<?>) unmodifiableNavigableSet, Collections::unmodifiableSortedSet);
-
-    }
-
-    public void testUnmodifiableMapSublcassesDontWrap() {
-        TreeMap<?,?> treeMap = new TreeMap<>();
-
-        var unmodifiableSortedMap = Collections.unmodifiableSortedMap(treeMap);
-        var unmodifiableNavigableMap = Collections.unmodifiableNavigableMap(treeMap);
-
-        //UnmodifiableMap subclasses
-        testDoesNotWrap((Map<?,?>) unmodifiableSortedMap, Collections::unmodifiableMap);
-        testDoesNotWrap((Map<?,?>) unmodifiableNavigableMap, Collections::unmodifiableMap);
-
-        //UnmodifiableSortedMap subclasses
-        testDoesNotWrap((SortedMap<?,?>) unmodifiableNavigableMap, Collections::unmodifiableSortedMap);
 
     }
 
