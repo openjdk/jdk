@@ -214,6 +214,7 @@ public:
            inst_offset() == offset &&
            type()->higher_equal(tp);
   }
+
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);

@@ -122,6 +122,8 @@ static Node *merge_region(RegionNode *region, PhaseGVN *phase) {
   return progress;
 }
 
+
+
 //--------------------------------has_phi--------------------------------------
 // Helper function: Return any PhiNode that uses this region or NULL
 PhiNode* RegionNode::has_phi() const {

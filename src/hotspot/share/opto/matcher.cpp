@@ -2645,7 +2645,6 @@ MachOper* Matcher::specialize_vector_operand(MachNode* m, uint opnd_idx) {
       }
     }
   }
-
   assert(def->bottom_type()->isa_vect(), "not a vector");
   uint ideal_vreg = def->bottom_type()->ideal_reg();
   return Matcher::pd_specialize_generic_vector_operand(m->_opnds[opnd_idx], ideal_vreg, false /*is_temp*/);

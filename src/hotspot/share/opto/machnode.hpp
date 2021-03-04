@@ -585,11 +585,11 @@ public:
 private:
   const RegMask *_in;           // RegMask for input
   const RegMask *_out;          // RegMask for output
-  const Node *_node;
+  const Type *_type;
   const SpillType _spill_type;
 public:
   MachSpillCopyNode(SpillType spill_type, Node *n, const RegMask &in, const RegMask &out ) :
-    MachIdealNode(), _in(&in), _out(&out), _node(n), _spill_type(spill_type) {
+    MachIdealNode(), _in(&in), _out(&out), _type(n->bottom_type()), _spill_type(spill_type) {
     init_class_id(Class_MachSpillCopy);
     init_flags(Flag_is_Copy);
     add_req(NULL);
@@ -600,16 +600,8 @@ public:
   void set_in_RegMask(const RegMask &in) { _in = &in; }
   virtual const RegMask &out_RegMask() const { return *_out; }
   virtual const RegMask &in_RegMask(uint) const { return *_in; }
-  virtual const class Type *bottom_type() const { return _node->bottom_type(); }
-  virtual uint ideal_reg() const {
-    if(_node->isa_Mach()) {
-      return _node->as_Mach()->ideal_reg();
-    }
-    if (_node->isa_Phi()) {
-      return _node->ideal_reg();
-    }
-    return _node->bottom_type()->ideal_reg();
-  }
+  virtual const class Type *bottom_type() const { return _type; }
+  virtual uint ideal_reg() const { return _type->ideal_reg(); }
   virtual uint oper_input_base() const { return 1; }
   uint implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const;
 

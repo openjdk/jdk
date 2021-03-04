@@ -900,7 +900,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
 #if defined(ARM32)
           lrg.set_reg_pressure(2);
 #elif defined(IA32)
-          if( ireg == Op_RegL) {
+          if( ireg == Op_RegL ) {
             lrg.set_reg_pressure(2);
           } else {
             lrg.set_reg_pressure(1);
