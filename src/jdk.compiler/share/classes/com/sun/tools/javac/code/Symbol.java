@@ -439,10 +439,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
      *  Also includes fields of inner classes which are in
      *  turn local to a method or variable initializer.
      */
-    public boolean isLocal() {
+    public boolean isDirectlyOrIndirectlyLocal() {
         return
             (owner.kind.matches(KindSelector.VAL_MTH) ||
-             (owner.kind == TYP && owner.isLocal()));
+             (owner.kind == TYP && owner.isDirectlyOrIndirectlyLocal()));
     }
 
     /** Has this symbol an empty name? This includes anonymous
@@ -760,7 +760,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         public Symbol baseSymbol() { return other; }
         public Type erasure(Types types) { return other.erasure(types); }
         public Type externalType(Types types) { return other.externalType(types); }
-        public boolean isLocal() { return other.isLocal(); }
+        public boolean isDirectlyOrIndirectlyLocal() { return other.isDirectlyOrIndirectlyLocal(); }
         public boolean isConstructor() { return other.isConstructor(); }
         public Name getQualifiedName() { return other.getQualifiedName(); }
         public Name flatName() { return other.flatName(); }
@@ -1516,7 +1516,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             }
             RecordComponent rc = null;
             if (addIfMissing) {
-                recordComponents = recordComponents.append(rc = new RecordComponent(var, annotations));
+                recordComponents = recordComponents.append(rc = new RecordComponent(var.sym, annotations));
             }
             return rc;
         }
@@ -1525,6 +1525,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @SuppressWarnings("preview")
         public List<? extends RecordComponent> getRecordComponents() {
             return recordComponents;
+        }
+
+        public void setRecordComponents(List<RecordComponent> recordComponents) {
+            this.recordComponents = recordComponents;
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1790,10 +1794,17 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         /**
          * Construct a record component, given its flags, name, type and owner.
          */
-        public RecordComponent(JCVariableDecl fieldDecl, List<JCAnnotation> annotations) {
-            super(PUBLIC, fieldDecl.sym.name, fieldDecl.sym.type, fieldDecl.sym.owner);
+        public RecordComponent(Name name, Type type, Symbol owner) {
+            super(PUBLIC, name, type, owner);
+            pos = -1;
+            originalAnnos = List.nil();
+            isVarargs = false;
+        }
+
+        public RecordComponent(VarSymbol field, List<JCAnnotation> annotations) {
+            super(PUBLIC, field.name, field.type, field.owner);
             this.originalAnnos = annotations;
-            this.pos = fieldDecl.pos;
+            this.pos = field.pos;
             /* it is better to store the original information for this one, instead of relying
              * on the info in the type of the symbol. This is because on the presence of APs
              * the symbol will be blown out and we won't be able to know if the original
@@ -1854,8 +1865,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     public static class BindingSymbol extends VarSymbol {
 
-        public BindingSymbol(Name name, Type type, Symbol owner) {
-            super(Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
+        public BindingSymbol(long flags, Name name, Type type, Symbol owner) {
+            super(flags | Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
         }
 
         public boolean isAliasFor(BindingSymbol b) {

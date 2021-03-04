@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -607,6 +607,21 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_data(0x37363534, relocInfo::none, 0);
     __ emit_data(0x3B3A3938, relocInfo::none, 0);
     __ emit_data(0x3F3E3D3C, relocInfo::none, 0);
+    return start;
+  }
+
+  address generate_vector_byte_shuffle_mask(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data(0x70707070, relocInfo::none, 0);
+    __ emit_data(0x70707070, relocInfo::none, 0);
+    __ emit_data(0x70707070, relocInfo::none, 0);
+    __ emit_data(0x70707070, relocInfo::none, 0);
+    __ emit_data(0xF0F0F0F0, relocInfo::none, 0);
+    __ emit_data(0xF0F0F0F0, relocInfo::none, 0);
+    __ emit_data(0xF0F0F0F0, relocInfo::none, 0);
+    __ emit_data(0xF0F0F0F0, relocInfo::none, 0);
     return start;
   }
 
@@ -3669,17 +3684,32 @@ class StubGenerator: public StubCodeGenerator {
     __ pusha();
 
     // xmm0 and xmm1 may be used for passing float/double arguments
-    const int xmm_size = wordSize * 4;
-    const int xmm_spill_size = xmm_size * 2;
-    __ subptr(rsp, xmm_spill_size);
-    __ movdqu(Address(rsp, xmm_size * 1), xmm1);
-    __ movdqu(Address(rsp, xmm_size * 0), xmm0);
+
+    if (UseSSE >= 2) {
+      const int xmm_size = wordSize * 4;
+      __ subptr(rsp, xmm_size * 2);
+      __ movdbl(Address(rsp, xmm_size * 1), xmm1);
+      __ movdbl(Address(rsp, xmm_size * 0), xmm0);
+    } else if (UseSSE >= 1) {
+      const int xmm_size = wordSize * 2;
+      __ subptr(rsp, xmm_size * 2);
+      __ movflt(Address(rsp, xmm_size * 1), xmm1);
+      __ movflt(Address(rsp, xmm_size * 0), xmm0);
+    }
 
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(address*)>(BarrierSetNMethod::nmethod_stub_entry_barrier)), rbx);
 
-    __ movdqu(xmm0, Address(rsp, xmm_size * 0));
-    __ movdqu(xmm1, Address(rsp, xmm_size * 1));
-    __ addptr(rsp, xmm_spill_size);
+    if (UseSSE >= 2) {
+      const int xmm_size = wordSize * 4;
+      __ movdbl(xmm0, Address(rsp, xmm_size * 0));
+      __ movdbl(xmm1, Address(rsp, xmm_size * 1));
+      __ addptr(rsp, xmm_size * 2);
+    } else if (UseSSE >= 1) {
+      const int xmm_size = wordSize * 2;
+      __ movflt(xmm0, Address(rsp, xmm_size * 0));
+      __ movflt(xmm1, Address(rsp, xmm_size * 1));
+      __ addptr(rsp, xmm_size * 2);
+    }
 
     __ cmpl(rax, 1); // 1 means deoptimize
     __ jcc(Assembler::equal, deoptimize_label);
@@ -3966,6 +3996,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_vector_64_bit_mask = generate_vector_custom_i32("vector_64_bit_mask", Assembler::AVX_512bit,
                                                                         0xFFFFFFFF, 0xFFFFFFFF, 0, 0);
     StubRoutines::x86::_vector_int_shuffle_mask = generate_vector_mask("vector_int_shuffle_mask", 0x03020100);
+    StubRoutines::x86::_vector_byte_shuffle_mask = generate_vector_byte_shuffle_mask("vector_byte_shuffle_mask");
     StubRoutines::x86::_vector_short_shuffle_mask = generate_vector_mask("vector_short_shuffle_mask", 0x01000100);
     StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask_long_double("vector_long_shuffle_mask", 0x00000001, 0x0);
     StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask("vector_byte_perm_mask");

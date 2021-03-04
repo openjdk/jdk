@@ -699,8 +699,29 @@ public abstract class Executable extends AccessibleObject
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
-                resolveToOwnerType(getDeclaringClass()),
+                parameterize(getDeclaringClass()),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
+    }
+
+    Type parameterize(Class<?> c) {
+        Class<?> ownerClass = c.getDeclaringClass();
+        TypeVariable<?>[] typeVars = c.getTypeParameters();
+
+        // base case, static nested classes, according to JLS 8.1.3, has no
+        // enclosing instance, therefore its owner is not generified.
+        if (ownerClass == null || Modifier.isStatic(c.getModifiers())) {
+            if (typeVars.length == 0)
+                return c;
+            else
+                return ParameterizedTypeImpl.make(c, typeVars, null);
+        }
+
+        // Resolve owner
+        Type ownerType = parameterize(ownerClass);
+        if (ownerType instanceof Class<?> && typeVars.length == 0) // We have yet to encounter type parameters
+            return c;
+        else
+            return ParameterizedTypeImpl.make(c, typeVars, ownerType);
     }
 
     /**
@@ -752,25 +773,5 @@ public abstract class Executable extends AccessibleObject
                 getDeclaringClass(),
                 getGenericExceptionTypes(),
                 TypeAnnotation.TypeAnnotationTarget.THROWS);
-    }
-
-    static Type resolveToOwnerType(Class<?> c) {
-        TypeVariable<?>[] v = c.getTypeParameters();
-        Type o = resolveOwner(c);
-        Type t;
-        if (o != null || v.length > 0) {
-            t = ParameterizedTypeImpl.make(c, v, o);
-        } else {
-            t = c;
-        }
-        return t;
-    }
-
-    private static Type resolveOwner(Class<?> t) {
-        if (Modifier.isStatic(t.getModifiers()) || !(t.isLocalClass() || t.isMemberClass() || t.isAnonymousClass())) {
-            return null;
-        }
-        Class<?> d = t.getDeclaringClass();
-        return ParameterizedTypeImpl.make(d, d.getTypeParameters(), resolveOwner(d));
     }
 }

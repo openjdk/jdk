@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -558,7 +558,7 @@ final class ClientHello {
                         cipherSuites = Arrays.asList(sessionSuite,
                             CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
                     } else {    // otherwise, use renegotiation_info extension
-                        cipherSuites = Arrays.asList(sessionSuite);
+                        cipherSuites = List.of(sessionSuite);
                     }
 
                     if (SSLLogger.isOn &&
@@ -1076,7 +1076,7 @@ final class ClientHello {
             // Check and launch ClientHello extensions.
             SSLExtension[] extTypes = shc.sslConfig.getExclusiveExtensions(
                     SSLHandshake.CLIENT_HELLO,
-                    Arrays.asList(SSLExtension.CH_SESSION_TICKET));
+                    List.of(SSLExtension.CH_SESSION_TICKET));
             clientHello.extensions.consumeOnLoad(shc, extTypes);
 
             //

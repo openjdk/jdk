@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -601,6 +601,8 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         List<String> expected = List.of(
             "Base.java:1:46: compiler.err.class.in.module.cant.extend.sealed.in.diff.module: a.Base, mSealed",
+            "- compiler.note.preview.plural: DEFAULT",
+            "- compiler.note.preview.recompile",
             "1 error"
         );
         if (!error.containsAll(expected)) {

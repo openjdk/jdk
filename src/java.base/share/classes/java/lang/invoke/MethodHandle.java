@@ -30,13 +30,13 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static java.lang.invoke.MethodHandleInfo.*;
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -455,9 +455,8 @@ public abstract class MethodHandle implements Constable {
     /*private*/
     MethodHandle asTypeCache;
     // asTypeCache is not private so that invokers can easily fetch it
-    /*non-public*/
-    byte customizationCount;
-    // customizationCount should be accessible from invokers
+
+    private byte customizationCount;
 
     /**
      * Reports the type of this method handle.
@@ -1733,6 +1732,30 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      */
     abstract BoundMethodHandle rebind();
 
+    /* non-public */
+    void maybeCustomize() {
+        if (form.customized == null) {
+            byte count = customizationCount;
+            if (count >= CUSTOMIZE_THRESHOLD) {
+                customize();
+            } else {
+                customizationCount = (byte) (count + 1);
+            }
+        }
+    }
+
+    /** Craft a LambdaForm customized for this particular MethodHandle. */
+    /*non-public*/
+    void customize() {
+        updateForm(new Function<>() {
+                public LambdaForm apply(LambdaForm oldForm) {
+                    return oldForm.customize(MethodHandle.this);
+                }
+            });
+    }
+
+    private volatile boolean updateInProgress; // = false;
+
     /**
      * Replace the old lambda form of this method handle with a new one.
      * The new one must be functionally equivalent to the old one.
@@ -1741,26 +1764,26 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * Use with discretion.
      */
     /*non-public*/
-    void updateForm(LambdaForm newForm) {
-        assert(newForm.customized == null || newForm.customized == this);
-        if (form == newForm)  return;
-        newForm.prepare();  // as in MethodHandle.<init>
-        UNSAFE.putReference(this, FORM_OFFSET, newForm);
-        UNSAFE.fullFence();
-    }
-
-    /** Craft a LambdaForm customized for this particular MethodHandle */
-    /*non-public*/
-    void customize() {
-        final LambdaForm form = this.form;
-        if (form.customized == null) {
-            LambdaForm newForm = form.customize(this);
-            updateForm(newForm);
+    void updateForm(Function<LambdaForm, LambdaForm> updater) {
+        if (UNSAFE.compareAndSetBoolean(this, UPDATE_OFFSET, false, true)) { // updateInProgress = true
+            // Only 1 thread wins the race and updates MH.form field.
+            try {
+                LambdaForm oldForm = form;
+                LambdaForm newForm = updater.apply(oldForm);
+                if (oldForm != newForm) {
+                    assert (newForm.customized == null || newForm.customized == this);
+                    newForm.prepare(); // as in MethodHandle.<init>
+                    UNSAFE.putReference(this, FORM_OFFSET, newForm);
+                    UNSAFE.fullFence();
+                }
+            } finally {
+                updateInProgress = false;
+            }
         } else {
-            assert(form.customized == this);
+            // Update got lost due to concurrent update. But callers don't care.
         }
     }
 
-    private static final long FORM_OFFSET
-            = UNSAFE.objectFieldOffset(MethodHandle.class, "form");
+    private static final long   FORM_OFFSET = UNSAFE.objectFieldOffset(MethodHandle.class, "form");
+    private static final long UPDATE_OFFSET = UNSAFE.objectFieldOffset(MethodHandle.class, "updateInProgress");
 }

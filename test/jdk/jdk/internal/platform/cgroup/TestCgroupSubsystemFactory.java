@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -34,6 +35,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import jdk.internal.platform.CgroupInfo;
 import jdk.internal.platform.CgroupSubsystemFactory;
 import jdk.internal.platform.CgroupSubsystemFactory.CgroupTypeResult;
 import jdk.test.lib.Utils;
@@ -62,6 +64,9 @@ public class TestCgroupSubsystemFactory {
     private Path cgroupv1MntInfoSystemdOnly;
     private Path cgroupv1MntInfoDoubleCpusets;
     private Path cgroupv1MntInfoDoubleCpusets2;
+    private Path cgroupv1SelfCgroup;
+    private Path cgroupv2SelfCgroup;
+    private Path cgroupv1SelfCgroupJoinCtrl;
     private String mntInfoEmpty = "";
     private String cgroupsNonZeroJoinControllers =
             "#subsys_name hierarchy num_cgroups enabled\n" +
@@ -78,6 +83,17 @@ public class TestCgroupSubsystemFactory {
             "hugetlb\t4\t153\t1\n" +
             "pids\t5\t95\t1\n" +
             "rdma\t8\t1\t1\n";
+    private String selfCgroupNonZeroJoinControllers =
+            "9:cpuset:/\n" +
+            "8:perf_event:/\n" +
+            "7:rdma:/\n" +
+            "6:freezer:/\n" +
+            "5:blkio:/user.slice\n" +
+            "4:pids:/user.slice/user-1000.slice/session-3.scope\n" +
+            "3:devices:/user.slice\n" +
+            "2:cpu,cpuacct,memory,net_cls,net_prio,hugetlb:/user.slice/user-1000.slice/session-3.scope\n" +
+            "1:name=systemd:/user.slice/user-1000.slice/session-3.scope\n" +
+            "0::/user.slice/user-1000.slice/session-3.scope\n";
     private String cgroupsZeroHierarchy =
             "#subsys_name hierarchy num_cgroups enabled\n" +
             "cpuset 0 1 1\n" +
@@ -137,6 +153,19 @@ public class TestCgroupSubsystemFactory {
     private String mntInfoCgroupv1MoreCpusetLine = "121 32 0:37 / /cpuset rw,relatime shared:69 - cgroup none rw,cpuset\n";
     private String mntInfoCgroupsV1DoubleCpuset = mntInfoHybrid + mntInfoCgroupv1MoreCpusetLine;
     private String mntInfoCgroupsV1DoubleCpuset2 = mntInfoCgroupv1MoreCpusetLine + mntInfoHybrid;
+    private String cgroupv1SelfCgroupContent = "11:memory:/user.slice/user-1000.slice/user@1000.service\n" +
+            "10:hugetlb:/\n" +
+            "9:cpuset:/\n" +
+            "8:pids:/user.slice/user-1000.slice/user@1000.service\n" +
+            "7:freezer:/\n" +
+            "6:blkio:/\n" +
+            "5:net_cls,net_prio:/\n" +
+            "4:devices:/user.slice\n" +
+            "3:perf_event:/\n" +
+            "2:cpu,cpuacct:/\n" +
+            "1:name=systemd:/user.slice/user-1000.slice/user@1000.service/apps.slice/apps-org.gnome.Terminal.slice/vte-spawn-3c00b338-5b65-439f-8e97-135e183d135d.scope\n" +
+            "0::/user.slice/user-1000.slice/user@1000.service/apps.slice/apps-org.gnome.Terminal.slice/vte-spawn-3c00b338-5b65-439f-8e97-135e183d135d.scope\n";
+    private String cgroupv2SelfCgroupContent = "0::/user.slice/user-1000.slice/session-2.scope";
 
     @Before
     public void setup() {
@@ -172,6 +201,15 @@ public class TestCgroupSubsystemFactory {
 
             cgroupv1MountInfoJoinControllers = Paths.get(existingDirectory.toString(), "mntinfo_cgv1_join_controllers");
             Files.writeString(cgroupv1MountInfoJoinControllers, mntInfoCgroupv1JoinControllers);
+
+            cgroupv1SelfCgroup = Paths.get(existingDirectory.toString(), "self_cgroup_cgv1");
+            Files.writeString(cgroupv1SelfCgroup, cgroupv1SelfCgroupContent);
+
+            cgroupv2SelfCgroup = Paths.get(existingDirectory.toString(), "self_cgroup_cgv2");
+            Files.writeString(cgroupv2SelfCgroup, cgroupv2SelfCgroupContent);
+
+            cgroupv1SelfCgroupJoinCtrl = Paths.get(existingDirectory.toString(), "self_cgroup_cgv1_join_controllers");
+            Files.writeString(cgroupv1SelfCgroupJoinCtrl, selfCgroupNonZeroJoinControllers);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -190,18 +228,22 @@ public class TestCgroupSubsystemFactory {
     public void testCgroupv1JoinControllerCombo() throws IOException {
         String cgroups = cgroupv1CgroupsJoinControllers.toString();
         String mountInfo = cgroupv1MountInfoJoinControllers.toString();
-        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups);
+        String selfCgroup = cgroupv1SelfCgroupJoinCtrl.toString();
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
 
         assertTrue("Expected non-empty cgroup result", result.isPresent());
         CgroupTypeResult res = result.get();
         assertFalse("Join controller combination expected as cgroups v1", res.isCgroupV2());
+        CgroupInfo memoryInfo = res.getInfos().get("memory");
+        assertEquals("/user.slice/user-1000.slice/session-3.scope", memoryInfo.getCgroupPath());
     }
 
     @Test
     public void testCgroupv1SystemdOnly() throws IOException {
         String cgroups = cgroupv1CgInfoZeroHierarchy.toString();
         String mountInfo = cgroupv1MntInfoSystemdOnly.toString();
-        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups);
+        String selfCgroup = cgroupv1SelfCgroup.toString(); // Content doesn't matter
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
 
         assertTrue("zero hierarchy ids with no *relevant* controllers mounted", result.isEmpty());
     }
@@ -215,29 +257,39 @@ public class TestCgroupSubsystemFactory {
     private void doMultipleCpusetMountsTest(Path info) throws IOException {
         String cgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
         String mountInfo = info.toString();
-        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups);
+        String selfCgroup = cgroupv1SelfCgroup.toString();
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
 
         assertTrue("Expected non-empty cgroup result", result.isPresent());
         CgroupTypeResult res = result.get();
         assertFalse("Duplicate cpusets should not influence detection heuristic", res.isCgroupV2());
+        CgroupInfo cpuSetInfo = res.getInfos().get("cpuset");
+        assertEquals("/sys/fs/cgroup/cpuset", cpuSetInfo.getMountPoint());
+        assertEquals("/", cpuSetInfo.getMountRoot());
     }
 
     @Test
     public void testHybridCgroupsV1() throws IOException {
         String cgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
         String mountInfo = cgroupv1MntInfoNonZeroHierarchy.toString();
-        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups);
+        String selfCgroup = cgroupv1SelfCgroup.toString();
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
 
         assertTrue("Expected non-empty cgroup result", result.isPresent());
         CgroupTypeResult res = result.get();
         assertFalse("hybrid hierarchy expected as cgroups v1", res.isCgroupV2());
+        CgroupInfo memoryInfo = res.getInfos().get("memory");
+        assertEquals("/user.slice/user-1000.slice/user@1000.service", memoryInfo.getCgroupPath());
+        assertEquals("/", memoryInfo.getMountRoot());
+        assertEquals("/sys/fs/cgroup/memory", memoryInfo.getMountPoint());
     }
 
     @Test
     public void testZeroHierarchyCgroupsV1() throws IOException {
         String cgroups = cgroupv1CgInfoZeroHierarchy.toString();
         String mountInfo = cgroupv1MntInfoZeroHierarchy.toString();
-        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups);
+        String selfCgroup = cgroupv1SelfCgroup.toString(); // Content doesn't matter
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
 
         assertTrue("zero hierarchy ids with no mounted controllers => empty result", result.isEmpty());
     }
@@ -246,26 +298,44 @@ public class TestCgroupSubsystemFactory {
     public void testZeroHierarchyCgroupsV2() throws IOException {
         String cgroups = cgroupv2CgInfoZeroHierarchy.toString();
         String mountInfo = cgroupv2MntInfoZeroHierarchy.toString();
-        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups);
+        String selfCgroup = cgroupv2SelfCgroup.toString();
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
 
         assertTrue("Expected non-empty cgroup result", result.isPresent());
         CgroupTypeResult res = result.get();
 
         assertTrue("zero hierarchy ids with mounted controllers expected cgroups v2", res.isCgroupV2());
+        CgroupInfo memoryInfo = res.getInfos().get("memory");
+        assertEquals("/user.slice/user-1000.slice/session-2.scope", memoryInfo.getCgroupPath());
+        CgroupInfo cpuInfo = res.getInfos().get("cpu");
+        assertEquals(memoryInfo.getCgroupPath(), cpuInfo.getCgroupPath());
+        assertEquals(memoryInfo.getMountPoint(), cpuInfo.getMountPoint());
+        assertEquals(memoryInfo.getMountRoot(), cpuInfo.getMountRoot());
+        assertEquals("/sys/fs/cgroup", cpuInfo.getMountPoint());
     }
 
     @Test(expected = IOException.class)
     public void mountInfoFileNotFound() throws IOException {
         String cgroups = cgroupv1CgInfoZeroHierarchy.toString(); // any existing file
+        String selfCgroup = cgroupv1SelfCgroup.toString(); // any existing file
         String mountInfo = Paths.get(existingDirectory.toString(), "not-existing-mountinfo").toString();
 
-        CgroupSubsystemFactory.determineType(mountInfo, cgroups);
+        CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
     }
 
     @Test(expected = IOException.class)
     public void cgroupsFileNotFound() throws IOException {
         String cgroups = Paths.get(existingDirectory.toString(), "not-existing-cgroups").toString();
         String mountInfo = cgroupv2MntInfoZeroHierarchy.toString(); // any existing file
-        CgroupSubsystemFactory.determineType(mountInfo, cgroups);
+        String selfCgroup = cgroupv2SelfCgroup.toString(); // any existing file
+        CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
+    }
+
+    @Test(expected = IOException.class)
+    public void selfCgroupsFileNotFound() throws IOException {
+        String cgroups = cgroupv1CgInfoZeroHierarchy.toString(); // any existing file
+        String mountInfo = cgroupv2MntInfoZeroHierarchy.toString(); // any existing file
+        String selfCgroup = Paths.get(existingDirectory.toString(), "not-existing-self-cgroups").toString();
+        CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
     }
 }

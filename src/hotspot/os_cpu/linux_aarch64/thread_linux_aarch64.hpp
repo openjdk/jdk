@@ -39,6 +39,10 @@
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_fp_offset();
   }
 
+  static ByteSize saved_fp_address_offset() {
+    return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::saved_fp_address_offset();
+  }
+
   bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext,
     bool isInJava);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8142968 8253751
  * @library /test/lib
  * @build AutomaticModulesTest
  *        jdk.test.lib.util.JarUtils
@@ -42,7 +43,6 @@ import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -60,8 +60,7 @@ import static org.testng.Assert.*;
 @Test
 public class AutomaticModulesTest {
 
-    private static final Path USER_DIR
-         = Paths.get(System.getProperty("user.dir"));
+    private static final Path USER_DIR = Path.of(System.getProperty("user.dir"));
 
     @DataProvider(name = "jarnames")
     public Object[][] createJarNames() {
@@ -165,7 +164,6 @@ public class AutomaticModulesTest {
         // should throw FindException
         ModuleFinder.of(dir).findAll();
     }
-
 
     @DataProvider(name = "modulenames")
     public Object[][] createModuleNames() {
@@ -911,6 +909,72 @@ public class AutomaticModulesTest {
     }
 
     /**
+     * Basic test for a module requiring an automatic module in a parent
+     * configuration. If an explicit module in a child configuration reads an
+     * automatic module in a parent configuration then it should read all
+     * automatic modules in the parent configuration.
+     */
+    public void testInConfiguration7() throws Exception {
+        // m1 requires auto1
+        ModuleDescriptor descriptor1 = ModuleDescriptor.newModule("m1")
+                .requires("auto1")
+                .build();
+
+        Path dir1 = Files.createTempDirectory(USER_DIR, "mods");
+        createDummyJarFile(dir1.resolve("auto1.jar"), "p1/C.class");
+        createDummyJarFile(dir1.resolve("auto2.jar"), "p2/C.class");
+
+        // module finder locates m1, auto1, and auto2
+        ModuleFinder finder1 = ModuleFinder.compose(ModuleUtils.finderOf(descriptor1),
+                                                    ModuleFinder.of(dir1));
+
+        Configuration parent = ModuleLayer.boot().configuration();
+        ResolvedModule base = parent.findModule("java.base").orElseThrow();
+
+        Configuration cf1 = resolve(parent, finder1, "m1");
+        assertTrue(cf1.modules().size() == 3);
+
+        ResolvedModule m1 = cf1.findModule("m1").orElseThrow();
+        ResolvedModule auto1 = cf1.findModule("auto1").orElseThrow();
+        ResolvedModule auto2 = cf1.findModule("auto2").orElseThrow();
+
+        assertTrue(m1.reads().size() == 3);
+        assertTrue(m1.reads().contains(base));
+        assertTrue(m1.reads().contains(auto1));
+        assertTrue(m1.reads().contains(auto2));
+
+        assertTrue(auto1.reads().contains(base));
+        assertTrue(auto1.reads().contains(m1));
+        assertTrue(auto1.reads().contains(auto2));
+
+        assertTrue(auto2.reads().contains(base));
+        assertTrue(auto2.reads().contains(m1));
+        assertTrue(auto2.reads().contains(auto1));
+
+        // m2 requires auto1
+        ModuleDescriptor descriptor2 = ModuleDescriptor.newModule("m2")
+                .requires("auto1")
+                .build();
+
+        Path dir2 = Files.createTempDirectory(USER_DIR, "mods");
+        createDummyJarFile(dir1.resolve("auto3.jar"), "p3/C.class");
+
+        // module finder locates m2 and auto3
+        ModuleFinder finder2 = ModuleFinder.compose(ModuleUtils.finderOf(descriptor2),
+                                                    ModuleFinder.of(dir2));
+
+        Configuration cf2 = resolve(cf1, finder2, "m2");
+        assertTrue(cf2.modules().size() == 1);   // auto3 should not be resolved
+
+        ResolvedModule m2 = cf2.findModule("m2").orElseThrow();
+
+        assertTrue(m2.reads().size() == 3);
+        assertTrue(m2.reads().contains(base));
+        assertTrue(m2.reads().contains(auto1));
+        assertTrue(m2.reads().contains(auto2));
+    }
+
+    /**
      * Basic test of a configuration created with automatic modules
      *   a requires b* and c*
      *   b* contains p
@@ -1105,7 +1169,7 @@ public class AutomaticModulesTest {
             Files.createFile(file);
         }
 
-        Path[] paths = Stream.of(entries).map(Paths::get).toArray(Path[]::new);
+        Path[] paths = Stream.of(entries).map(Path::of).toArray(Path[]::new);
         JarUtils.createJarFile(jarfile, man, dir, paths);
         return jarfile;
     }

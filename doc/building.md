@@ -382,6 +382,9 @@ If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
 setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
 
+If you have Visual Studio installed but `configure` fails to detect it, it may
+be because of [spaces in path](#spaces-in-path).
+
 ### IBM XL C/C++
 
 Please consult the AIX section of the [Supported Build Platforms](
@@ -653,7 +656,7 @@ features, use `bash configure --help=short` instead.)
 On Linux, BSD and AIX, it is possible to override where Java by default
 searches for runtime/JNI libraries. This can be useful in situations where
 there is a special shared directory for system JNI libraries. This setting
-can in turn be overriden at runtime by setting the `java.library.path` property.
+can in turn be overridden at runtime by setting the `java.library.path` property.
 
   * `--with-jni-libpath=<path>` - Use the specified path as a default
   when searching for runtime libraries.
@@ -719,7 +722,7 @@ hard to use properly. Therefore, `configure` will print a warning if this is
 detected.
 
 However, there are a few `configure` variables, known as *control variables*
-that are supposed to be overriden on the command line. These are variables that
+that are supposed to be overridden on the command line. These are variables that
 describe the location of tools needed by the build, like `MAKE` or `GREP`. If
 any such variable is specified, `configure` will use that value instead of
 trying to autodetect the tool. For instance, `bash configure
@@ -799,7 +802,7 @@ broken build. Unless you're well versed in the build system, this is hard to
 use properly. Therefore, `make` will print a warning if this is detected.
 
 However, there are a few `make` variables, known as *control variables* that
-are supposed to be overriden on the command line. These make up the "make time"
+are supposed to be overridden on the command line. These make up the "make time"
 configuration, as opposed to the "configure time" configuration.
 
 #### General Make Control Variables
@@ -1466,6 +1469,15 @@ This can be a sign of a Cygwin problem. See the information about solving
 problems in the [Cygwin](#cygwin) section. Rebooting the computer might help
 temporarily.
 
+#### Spaces in Path
+
+On Windows, when configuring, `fixpath.sh` may report that some directory
+names have spaces. Usually, it assumes those directories have
+[short paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
+You can run `fsutil file setshortname` in `cmd` on certain directories, such as
+`Microsoft Visual Studio` or `Windows Kits`, to assign arbitrary short paths so
+`configure` can access them.
+
 ### Getting Help
 
 If none of the suggestions in this document helps you, or if you find what you
@@ -1544,8 +1556,8 @@ update. This might speed up the build, but comes at the risk of an incorrect
 build result. This is only recommended if you know what you're doing.
 
 From time to time, you will also need to modify the command line to `configure`
-due to changes. Use `make print-configure` to show the command line used for
-your current configuration.
+due to changes. Use `make print-configuration` to show the command line used
+for your current configuration.
 
 ### Using Fine-Grained Make Targets
 

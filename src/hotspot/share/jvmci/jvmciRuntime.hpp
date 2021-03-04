@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,16 @@
 #ifndef SHARE_JVMCI_JVMCIRUNTIME_HPP
 #define SHARE_JVMCI_JVMCIRUNTIME_HPP
 
+#include "jvm_io.h"
 #include "code/nmethod.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"
 #include "utilities/linkedlist.hpp"
+#if INCLUDE_G1GC
+#include "gc/g1/g1CardTable.hpp"
+#endif // INCLUDE_G1GC
 
 class JVMCIEnv;
 class JVMCICompiler;
@@ -279,6 +284,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Compiles `target` with the JVMCI compiler.
   void compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& target, int entry_bci);
 
+  // Determines if the GC identified by `name` is supported by the JVMCI compiler.
+  bool is_gc_supported(JVMCIEnv* JVMCIENV, CollectedHeap::Name name);
+
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
                        const methodHandle&       target,
@@ -392,8 +400,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // followed by its address.
   static void log_object(JavaThread* thread, oopDesc* object, bool as_string, bool newline);
 #if INCLUDE_G1GC
+  using CardValue = G1CardTable::CardValue;
   static void write_barrier_pre(JavaThread* thread, oopDesc* obj);
-  static void write_barrier_post(JavaThread* thread, void* card);
+  static void write_barrier_post(JavaThread* thread, volatile CardValue* card);
 #endif
   static jboolean validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child);
 

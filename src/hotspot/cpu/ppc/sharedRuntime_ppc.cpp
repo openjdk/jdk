@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,11 @@
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "vmreg_ppc.inline.hpp"
@@ -285,7 +288,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   // save the flags
   // Do the save_LR_CR by hand and adjust the return pc if requested.
   __ mfcr(R30);
-  __ std(R30, frame_size_in_bytes + _abi(cr), R1_SP);
+  __ std(R30, frame_size_in_bytes + _abi0(cr), R1_SP);
   switch (return_pc_location) {
     case return_pc_is_lr: __ mflr(R31); break;
     case return_pc_is_pre_saved: assert(return_pc_adjustment == 0, "unsupported"); break;
@@ -296,7 +299,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
     if (return_pc_adjustment != 0) {
       __ addi(R31, R31, return_pc_adjustment);
     }
-    __ std(R31, frame_size_in_bytes + _abi(lr), R1_SP);
+    __ std(R31, frame_size_in_bytes + _abi0(lr), R1_SP);
   }
 
   // save all registers (ints and floats)
@@ -426,10 +429,10 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
   assert(offset == frame_size_in_bytes, "consistency check");
 
   // restore link and the flags
-  __ ld(R31, frame_size_in_bytes + _abi(lr), R1_SP);
+  __ ld(R31, frame_size_in_bytes + _abi0(lr), R1_SP);
   __ mtlr(R31);
 
-  __ ld(R31, frame_size_in_bytes + _abi(cr), R1_SP);
+  __ ld(R31, frame_size_in_bytes + _abi0(cr), R1_SP);
   __ mtcr(R31);
 
   // restore scratch register's value
@@ -963,13 +966,13 @@ static address gen_c2i_adapter(MacroAssembler *masm,
   // Patch caller's callsite, method_(code) was not NULL which means that
   // compiled code exists.
   __ mflr(return_pc);
-  __ std(return_pc, _abi(lr), R1_SP);
+  __ std(return_pc, _abi0(lr), R1_SP);
   RegisterSaver::push_frame_and_save_argument_registers(masm, tmp, adapter_size, total_args_passed, regs);
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite), R19_method, return_pc);
 
   RegisterSaver::restore_argument_registers_and_pop_frame(masm, adapter_size, total_args_passed, regs);
-  __ ld(return_pc, _abi(lr), R1_SP);
+  __ ld(return_pc, _abi0(lr), R1_SP);
   __ ld(ientry, method_(interpreter_entry)); // preloaded
   __ mtlr(return_pc);
 
@@ -1298,9 +1301,13 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     c2i_no_clinit_check_entry = __ pc();
   }
 
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->c2i_entry_barrier(masm, /* tmp register*/ ic_klass, /* tmp register*/ receiver_klass, /* tmp register*/ code);
+
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, call_interpreter, ientry);
 
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry,
+                                          c2i_no_clinit_check_entry);
 }
 
 // An oop arg. Must pass a handle not the oop itself.
@@ -1618,10 +1625,10 @@ static void gen_special_dispatch(MacroAssembler* masm,
     member_arg_pos = method->size_of_parameters() - 1;  // trailing MemberName argument
     member_reg = R19_method;  // known to be free at this point
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
-  } else if (iid == vmIntrinsics::_invokeBasic) {
+  } else if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
     has_receiver = true;
   } else {
-    fatal("unexpected intrinsic id %d", iid);
+    fatal("unexpected intrinsic id %d", vmIntrinsics::as_int(iid));
   }
 
   if (member_reg != noreg) {
@@ -1970,6 +1977,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ generate_stack_overflow_check(frame_size_in_bytes); // Check before creating frame.
   __ mr(r_callers_sp, R1_SP);                            // Remember frame pointer.
   __ push_frame(frame_size_in_bytes, r_temp_1);          // Push the c2n adapter's frame.
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(masm, r_temp_1);
+
   frame_done_pc = (intptr_t)__ pc();
 
   __ verify_thread();
@@ -2429,7 +2440,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
 
   if (is_reference_type(ret_type)) {
-    __ resolve_jobject(R3_RET, r_temp_1, r_temp_2, /* needs_frame */ false);
+    __ resolve_jobject(R3_RET, r_temp_1, r_temp_2, MacroAssembler::PRESERVATION_NONE);
   }
 
   if (CheckJNICalls) {
@@ -2537,7 +2548,7 @@ static void push_skeleton_frame(MacroAssembler* masm, bool deopt,
 
   __ ld(pc_reg, 0, pcs_reg);
   __ ld(frame_size_reg, 0, frame_sizes_reg);
-  __ std(pc_reg, _abi(lr), R1_SP);
+  __ std(pc_reg, _abi0(lr), R1_SP);
   __ push_frame(frame_size_reg, R0/*tmp*/);
   __ std(R1_SP, _ijava_state_neg(sender_sp), R1_SP);
   __ addi(number_of_frames_reg, number_of_frames_reg, -1);
@@ -2608,7 +2619,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
 
   // In the case where we have resized a c2i frame above, the optional
   // alignment below the locals has size 32 (why?).
-  __ std(R12_scratch2, _abi(lr), R1_SP);
+  __ std(R12_scratch2, _abi0(lr), R1_SP);
 
   // Initialize initial_caller_sp.
  __ std(frame_size_reg, _ijava_state_neg(sender_sp), R1_SP);
@@ -2636,7 +2647,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   // Get the return address pointing into the frame manager.
   __ ld(R0, 0, pcs_reg);
   // Store it in the top interpreter frame.
-  __ std(R0, _abi(lr), R1_SP);
+  __ std(R0, _abi0(lr), R1_SP);
   // Initialize frame_manager_lr of interpreter top frame.
 }
 #endif
@@ -2714,7 +2725,7 @@ void SharedRuntime::generate_deopt_blob() {
   // This is needed since the call to "fetch_unroll_info()" may safepoint.
   __ std(R3_ARG1, in_bytes(JavaThread::exception_oop_offset()), R16_thread);
   __ std(R4_ARG2, in_bytes(JavaThread::exception_pc_offset()),  R16_thread);
-  __ std(R4_ARG2, _abi(lr), R1_SP);
+  __ std(R4_ARG2, _abi0(lr), R1_SP);
 
   // Vanilla deoptimization with an exception pending in exception_oop.
   int exception_in_tls_offset = __ pc() - start;
@@ -3075,13 +3086,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   if (!cause_return) {
     Label no_adjust;
     // If our stashed return pc was modified by the runtime we avoid touching it
-    __ ld(R0, frame_size_in_bytes + _abi(lr), R1_SP);
+    __ ld(R0, frame_size_in_bytes + _abi0(lr), R1_SP);
     __ cmpd(CCR0, R0, R31);
     __ bne(CCR0, no_adjust);
 
     // Adjust return pc forward to step over the safepoint poll instruction
     __ addi(R31, R31, 4);
-    __ std(R31, frame_size_in_bytes + _abi(lr), R1_SP);
+    __ std(R31, frame_size_in_bytes + _abi0(lr), R1_SP);
 
     __ bind(no_adjust);
   }
@@ -3429,4 +3440,12 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   }
 
   reverse_words(m, (unsigned long *)m_ints, longwords);
+}
+
+BufferBlob* SharedRuntime::make_native_invoker(address call_target,
+                                               int shadow_space_bytes,
+                                               const GrowableArray<VMReg>& input_registers,
+                                               const GrowableArray<VMReg>& output_registers) {
+  Unimplemented();
+  return nullptr;
 }

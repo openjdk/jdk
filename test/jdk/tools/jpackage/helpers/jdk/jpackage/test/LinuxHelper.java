@@ -51,7 +51,7 @@ public class LinuxHelper {
     public static String getPackageName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.LINUX);
         return cmd.getArgumentValue("--linux-package-name",
-                () -> cmd.name().toLowerCase());
+                () -> cmd.installerName().toLowerCase());
     }
 
     public static Path getDesktopFile(JPackageCommand cmd) {

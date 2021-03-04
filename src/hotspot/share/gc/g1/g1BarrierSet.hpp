@@ -53,6 +53,10 @@ class G1BarrierSet: public CardTableBarrierSet {
   G1BarrierSet(G1CardTable* table);
   ~G1BarrierSet() { }
 
+  virtual bool card_mark_must_follow_store() const {
+    return true;
+  }
+
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph.
   static void enqueue(oop pre_val);

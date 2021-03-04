@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1285,6 +1285,7 @@ public class ElementsTable {
                 case CONSTRUCTOR: case ENUM_CONSTANT: case EXCEPTION_PARAMETER:
                 case FIELD: case INSTANCE_INIT: case LOCAL_VARIABLE: case PARAMETER:
                 case RESOURCE_VARIABLE: case STATIC_INIT: case TYPE_PARAMETER:
+                case RECORD_COMPONENT:
                     return ElementKind.METHOD;
                 default:
                     throw new AssertionError("unsupported kind: " + kind);

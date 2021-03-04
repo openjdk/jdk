@@ -352,9 +352,8 @@ class DatagramPacket {
      * @since   1.4
      */
     public synchronized void setSocketAddress(SocketAddress address) {
-        if (address == null || !(address instanceof InetSocketAddress))
+        if (!(address instanceof InetSocketAddress addr))
             throw new IllegalArgumentException("unsupported address type");
-        InetSocketAddress addr = (InetSocketAddress) address;
         if (addr.isUnresolved())
             throw new IllegalArgumentException("unresolved address");
         setAddress(addr.getAddress());

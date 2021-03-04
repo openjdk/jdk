@@ -115,6 +115,18 @@ const Type* SubNode::Value(PhaseGVN* phase) const {
 
 }
 
+SubNode* SubNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new SubINode(in1, in2);
+    case T_LONG:
+      return new SubLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return NULL;
+}
+
 //=============================================================================
 //------------------------------Helper function--------------------------------
 

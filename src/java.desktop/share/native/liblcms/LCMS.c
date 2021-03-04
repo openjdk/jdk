@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,68 +311,44 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
 
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
- * Method:    getProfileSizeNative
- * Signature: (J)I
+ * Method:    getProfileDataNative
+ * Signature: (J[B)V
  */
-JNIEXPORT jint JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileSizeNative
+JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileDataNative
   (JNIEnv *env, jobject obj, jlong id)
 {
     lcmsProfile_p sProf = (lcmsProfile_p)jlong_to_ptr(id);
     cmsUInt32Number pfSize = 0;
 
-    if (cmsSaveProfileToMem(sProf->pf, NULL, &pfSize) && ((jint)pfSize > 0)) {
-        return (jint)pfSize;
-    } else {
-      JNU_ThrowByName(env, "java/awt/color/CMMException",
-                      "Can not access specified profile.");
-        return -1;
-    }
-}
-
-/*
- * Class:     sun_java2d_cmm_lcms_LCMS
- * Method:    getProfileDataNative
- * Signature: (J[B)V
- */
-JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileDataNative
-  (JNIEnv *env, jobject obj, jlong id, jbyteArray data)
-{
-    lcmsProfile_p sProf = (lcmsProfile_p)jlong_to_ptr(id);
-    jint size;
-    jbyte* dataArray;
-    cmsUInt32Number pfSize = 0;
-    cmsBool status;
-
     // determine actual profile size
     if (!cmsSaveProfileToMem(sProf->pf, NULL, &pfSize)) {
         JNU_ThrowByName(env, "java/awt/color/CMMException",
                         "Can not access specified profile.");
-        return;
+        return NULL;
     }
 
-    // verify java buffer capacity
-    size = (*env)->GetArrayLength(env, data);
-    if (0 >= size || pfSize > (cmsUInt32Number)size) {
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "Insufficient buffer capacity.");
-        return;
+    jbyteArray data = (*env)->NewByteArray(env, pfSize);
+    if (data == NULL) {
+        // An exception should have already been thrown.
+        return NULL;
     }
 
-    dataArray = (*env)->GetByteArrayElements (env, data, 0);
+    jbyte* dataArray = (*env)->GetByteArrayElements(env, data, 0);
     if (dataArray == NULL) {
         // An exception should have already been thrown.
-        return;
+        return NULL;
     }
 
-    status = cmsSaveProfileToMem(sProf->pf, dataArray, &pfSize);
+    cmsBool status = cmsSaveProfileToMem(sProf->pf, dataArray, &pfSize);
 
-    (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
+    (*env)->ReleaseByteArrayElements(env, data, dataArray, 0);
 
     if (!status) {
         JNU_ThrowByName(env, "java/awt/color/CMMException",
                         "Can not access specified profile.");
-        return;
+        return NULL;
     }
+    return data;
 }
 
 /* Get profile header info */
@@ -649,9 +625,22 @@ JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
     if (pf == NULL) {
         return NULL;
     }
-    fid = (*env)->GetFieldID (env,
-        (*env)->GetObjectClass(env, pf),
-        "cmmProfile", "Lsun/java2d/cmm/Profile;");
+
+    jclass pcls = (*env)->GetObjectClass(env, pf);
+    if (pcls == NULL) {
+        return NULL;
+    }
+    jmethodID mid = (*env)->GetMethodID(env, pcls, "activate", "()V");
+    if (mid == NULL) {
+        return NULL;
+    }
+    (*env)->CallVoidMethod(env, pf, mid);
+    if ((*env)->ExceptionOccurred(env)) {
+        return NULL;
+    }
+
+    fid = (*env)->GetFieldID(env, pcls, "cmmProfile",
+                             "Lsun/java2d/cmm/Profile;");
     if (fid == NULL) {
         return NULL;
     }

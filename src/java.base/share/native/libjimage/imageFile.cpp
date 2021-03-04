@@ -178,8 +178,8 @@ const char* ImageModuleData::package_to_module(const char* package_name) {
     // retrieve package location
     ImageLocation location;
     bool found = _image_file->find_location(path, location);
+    delete[] path;
     if (!found) {
-        delete[] path;
         return NULL;
     }
 

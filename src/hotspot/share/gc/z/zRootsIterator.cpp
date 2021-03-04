@@ -52,7 +52,6 @@ void ZParallelApply<Iterator>::apply(ClosureType* cl) {
   }
 }
 
-
 ZStrongOopStorageSetIterator::ZStrongOopStorageSetIterator() :
     _iter() {}
 
@@ -104,16 +103,16 @@ void ZNMethodsIterator::apply(NMethodClosure* cl) {
   ZNMethod::nmethods_do(cl);
 }
 
-ZConcurrentRootsIterator::ZConcurrentRootsIterator(int cld_claim) {
+ZRootsIterator::ZRootsIterator(int cld_claim) {
   if (cld_claim != ClassLoaderData::_claim_none) {
     ClassLoaderDataGraph::clear_claimed_marks(cld_claim);
   }
 }
 
-void ZConcurrentRootsIterator::apply(OopClosure* cl,
-                                     CLDClosure* cld_cl,
-                                     ThreadClosure* thread_cl,
-                                     NMethodClosure* nm_cl) {
+void ZRootsIterator::apply(OopClosure* cl,
+                           CLDClosure* cld_cl,
+                           ThreadClosure* thread_cl,
+                           NMethodClosure* nm_cl) {
   _oop_storage_set.apply(cl);
   _class_loader_data_graph.apply(cld_cl);
   _java_threads.apply(thread_cl);
@@ -134,10 +133,10 @@ void ZWeakOopStorageSetIterator::report_num_dead() {
   _iter.report_num_dead();
 }
 
-void ZConcurrentWeakRootsIterator::report_num_dead() {
+void ZWeakRootsIterator::report_num_dead() {
   _oop_storage_set.iter().report_num_dead();
 }
 
-void ZConcurrentWeakRootsIterator::apply(OopClosure* cl) {
+void ZWeakRootsIterator::apply(OopClosure* cl) {
   _oop_storage_set.apply(cl);
 }

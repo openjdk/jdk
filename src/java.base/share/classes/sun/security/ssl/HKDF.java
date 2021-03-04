@@ -44,7 +44,6 @@ import java.util.Objects;
  * derivation process.
  */
 final class HKDF {
-    private final String hmacAlg;
     private final Mac hmacObj;
     private final int hmacLen;
 
@@ -61,7 +60,7 @@ final class HKDF {
     HKDF(String hashAlg) throws NoSuchAlgorithmException {
         Objects.requireNonNull(hashAlg,
                 "Must provide underlying HKDF Digest algorithm.");
-        hmacAlg = "Hmac" + hashAlg.replace("-", "");
+        String hmacAlg = "Hmac" + hashAlg.replace("-", "");
         hmacObj = Mac.getInstance(hmacAlg);
         hmacLen = hmacObj.getMacLength();
     }

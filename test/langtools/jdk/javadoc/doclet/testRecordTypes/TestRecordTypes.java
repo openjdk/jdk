@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8225055 8239804 8246774
+ * @bug      8225055 8239804 8246774 8258338 8261976
  * @summary  Record types
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -73,11 +73,11 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R</h1>""",
                 """
-                    public record <span class="type-name-label">R</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -94,11 +94,11 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R</h1>""",
                 """
-                    public record <span class="type-name-label">R</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -115,11 +115,11 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R</h1>""",
                 """
-                    public record <span class="type-name-label">R</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E()">R</a></span>()</code>""");
+                    <code><a href="#%3Cinit%3E()" class="member-name-link">R</a>()</code>""");
     }
 
     @Test
@@ -140,16 +140,16 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R</h1>""",
                 """
-                    public record <span class="type-name-label">R</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
                     <dl class="notes">
                     <dt>Record Components:</dt>
                     <dd><code><span id="param-r1">r1</span></code> - This is a component.</dd>
                     </dl>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -171,9 +171,9 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R&lt;T&gt;</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R&lt;T&gt;</h1>""",
                 """
-                    public record <span class="type-name-label">R&lt;T&gt;</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R&lt;T&gt;</span>""",
                 """
                     <dl class="notes">
                     <dt>Type Parameters:</dt>
@@ -182,7 +182,7 @@ public class TestRecordTypes extends JavadocTester {
                     <dd><code><span id="param-r1">r1</span></code> - This is a component.</dd>
                     </dl>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -206,42 +206,42 @@ public class TestRecordTypes extends JavadocTester {
         // the documentation for the generated members.
         checkOrder("p/R.html",
                 """
-                    <section class="constructor-summary" id="constructor.summary">""",
-                "<a href=\"#%3Cinit%3E(int)\">R</a>",
-                "Creates an instance of a <code>R</code> record.",
+                    <section class="constructor-summary" id="constructor-summary">""",
+                "<a href=\"#%3Cinit%3E(int)\" class=\"member-name-link\">R</a>",
+                "Creates an instance of a <code>R</code> record class.",
                 """
-                    <section class="method-summary" id="method.summary">""",
+                    <section class="method-summary" id="method-summary">""",
                 """
-                    <a href="#equals(java.lang.Object)">equals</a>""",
+                    <a href="#equals(java.lang.Object)" class="member-name-link">equals</a>""",
                 """
                     Indicates whether some other object is "equal to" this one.""",
                 """
-                    <a href="#hashCode()">hashCode</a>""",
+                    <a href="#hashCode()" class="member-name-link">hashCode</a>""",
                 "Returns a hash code value for this object.",
-                "<a href=\"#r1()\">r1</a>",
+                "<a href=\"#r1()\" class=\"member-name-link\">r1</a>",
                 """
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component.""",
                 """
-                    <a href="#toString()">toString</a>""",
-                "Returns a string representation of this record.",
+                    <a href="#toString()" class="member-name-link">toString</a>""",
+                "Returns a string representation of this record class.",
                 "Method Details",
                 """
-                    <span class="member-name">toString</span>""",
-                "Returns a string representation of this record. The representation "
-                + "contains the name of the type, followed by the name and value of "
+                    <span class="element-name">toString</span>""",
+                "Returns a string representation of this record class. The representation "
+                + "contains the name of the class, followed by the name and value of "
                 + "each of the record components.",
                 """
-                    <span class="member-name">hashCode</span>""",
+                    <span class="element-name">hashCode</span>""",
                 "Returns a hash code value for this object. The value is derived "
                 + "from the hash code of each of the record components.",
                 """
-                    <span class="member-name">equals</span>""",
+                    <span class="element-name">equals</span>""",
                 """
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
-                    equal. All components in this record are compared with '=='.""",
+                    equal. All components in this record class are compared with '=='.""",
                 """
-                    <span class="member-name">r1</span>""",
+                    <span class="element-name">r1</span>""",
                 """
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component."""
         );
@@ -269,42 +269,42 @@ public class TestRecordTypes extends JavadocTester {
         // the documentation for the generated members.
         checkOrder("p/R.html",
                 """
-                    <section class="constructor-summary" id="constructor.summary">""",
-                "<a href=\"#%3Cinit%3E(int)\">R</a>",
-                "Creates an instance of a <code>R</code> record.",
+                    <section class="constructor-summary" id="constructor-summary">""",
+                "<a href=\"#%3Cinit%3E(int)\" class=\"member-name-link\">R</a>",
+                "Creates an instance of a <code>R</code> record class.",
                 """
-                    <section class="method-summary" id="method.summary">""",
+                    <section class="method-summary" id="method-summary">""",
                 """
-                    <a href="#equals(java.lang.Object)">equals</a>""",
+                    <a href="#equals(java.lang.Object)" class="member-name-link">equals</a>""",
                 """
                     Indicates whether some other object is "equal to" this one.""",
                 """
-                    <a href="#hashCode()">hashCode</a>""",
+                    <a href="#hashCode()" class="member-name-link">hashCode</a>""",
                 "Returns a hash code value for this object.",
-                "<a href=\"#r1()\">r1</a>",
+                "<a href=\"#r1()\" class=\"member-name-link\">r1</a>",
                 """
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component.""",
                 """
-                    <a href="#toString()">toString</a>""",
-                "Returns a string representation of this record.",
+                    <a href="#toString()" class="member-name-link">toString</a>""",
+                "Returns a string representation of this record class.",
                 "Method Details",
                 """
-                    <span class="member-name">toString</span>""",
-                "Returns a string representation of this record. The representation "
-                + "contains the name of the type, followed by the name and value of "
+                    <span class="element-name">toString</span>""",
+                "Returns a string representation of this record class. The representation "
+                + "contains the name of the class, followed by the name and value of "
                 + "each of the record components.",
                 """
-                    <span class="member-name">hashCode</span>""",
+                    <span class="element-name">hashCode</span>""",
                 "Returns a hash code value for this object. The value is derived "
                 + "from the hash code of each of the record components.",
                 """
-                    <span class="member-name">equals</span>""",
+                    <span class="element-name">equals</span>""",
                 """
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
-                    equal. All components in this record are compared with '=='.""",
+                    equal. All components in this record class are compared with '=='.""",
                 """
-                    <span class="member-name">r1</span>""",
+                    <span class="element-name">r1</span>""",
                 """
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component."""
         );
@@ -313,13 +313,13 @@ public class TestRecordTypes extends JavadocTester {
     @Test
     public void testGeneratedEqualsPrimitive(Path base) throws IOException {
         testGeneratedEquals(base, "int a, int b",
-             "All components in this record are compared with '=='.");
+             "All components in this record class are compared with '=='.");
     }
 
     @Test
     public void testGeneratedEqualsReference(Path base) throws IOException {
         testGeneratedEquals(base, "Object a, Object b",
-             "All components in this record are compared with <code>Objects::equals(Object,Object)</code>");
+             "All components in this record class are compared with <code>Objects::equals(Object,Object)</code>");
     }
 
     @Test
@@ -371,21 +371,21 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOrder("p/R.html",
                 """
-                    <section class="constructor-summary" id="constructor.summary">""",
-                "<a href=\"#%3Cinit%3E(int)\">R</a>",
+                    <section class="constructor-summary" id="constructor-summary">""",
+                "<a href=\"#%3Cinit%3E(int)\" class=\"member-name-link\">R</a>",
                 "User constructor.",
                 """
-                    <section class="method-summary" id="method.summary">""",
+                    <section class="method-summary" id="method-summary">""",
                 """
-                    <a href="#equals(java.lang.Object)">equals</a>""",
+                    <a href="#equals(java.lang.Object)" class="member-name-link">equals</a>""",
                 "User equals.",
                 """
-                    <a href="#hashCode()">hashCode</a>""",
+                    <a href="#hashCode()" class="member-name-link">hashCode</a>""",
                 "User hashCode.",
-                "<a href=\"#r1()\">r1</a>",
+                "<a href=\"#r1()\" class=\"member-name-link\">r1</a>",
                 "User accessor.",
                 """
-                    <a href="#toString()">toString</a>""",
+                    <a href="#toString()" class="member-name-link">toString</a>""",
                 "User toString."
         );
     }
@@ -471,26 +471,93 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <pre>public record <span class="type-name-label">R</span>("""
+                    <div class="type-signature"><span class="modifiers">public record </span><span c\
+                    lass="element-name type-name-label">R</span>("""
                         + rcAnno
                         + """
                             int&nbsp;i)
-                            extends java.lang.Record</pre>""",
+                            <span class="extends-implements">extends java.lang.Record</span></div>""",
                 "<div class=\"member-signature\">"
                         + fAnno
                         + """
                             <span class="modifiers">private final</span>&nbsp;<span class="return-type">int<\
-                            /span>&nbsp;<span class="member-name">i</span></div>""",
+                            /span>&nbsp;<span class="element-name">i</span></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="member-name">R</span>&#8203;<span class="parameters">("""
+                    lass="element-name">R</span>&#8203;<span class="parameters">("""
                         + pAnno
                         + "int&nbsp;i)</span></div>",
                 "<div class=\"member-signature\">"
                         + mAnno
                         + """
                             <span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&\
-                            nbsp;<span class="member-name">i</span>()</div>""");
+                            nbsp;<span class="element-name">i</span>()</div>""");
 
+    }
+
+    @Test
+    public void testDeprecatedRecord(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p; /** This is record R.
+                     * @deprecated Do not use.
+                     */
+                    @Deprecated
+                    public record R(int r1) { }""");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet", "-noindex",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("deprecated-list.html", true,
+                """
+                    <h2 title="Contents">Contents</h2>
+                    <ul>
+                    <li><a href="#record-class">Record Classes</a></li>
+                    </ul>""",
+                """
+                    <div id="record-class">
+                    <div class="caption"><span>Record Classes</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Record Class</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-summary-item-name even-row-color"><a href="p/R.html" title="class in p">p.R</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="deprecation-comment">Do not use.</div>
+                    </div>""");
+    }
+
+    @Test
+    public void testDeprecatedRecordComponent(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p; /** This is record R. */
+                    public record R(@Deprecated int r1) { }""");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet", "-noindex",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("deprecated-list.html", true,
+                """
+                    <h2 title="Contents">Contents</h2>
+                    <ul>
+                    <li><a href="#method">Methods</a></li>
+                    </ul>""",
+                """
+                    <div id="method">
+                    <div class="caption"><span>Methods</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Method</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-summary-item-name even-row-color"><a href="p/R.html#r1()">p.R.r1()</a></div>
+                    <div class="col-last even-row-color"></div>
+                    </div>""");
     }
 }

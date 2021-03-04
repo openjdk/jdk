@@ -53,7 +53,7 @@ import java.util.function.IntFunction;
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
-public abstract class AbstractMemorySegmentImpl implements MemorySegment, MemorySegmentProxy {
+public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy implements MemorySegment {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
@@ -109,6 +109,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
 
     @Override
     public Spliterator<MemorySegment> spliterator(SequenceLayout sequenceLayout) {
+        Objects.requireNonNull(sequenceLayout);
         checkValidState();
         if (sequenceLayout.byteSize() != byteSize()) {
             throw new IllegalArgumentException();
@@ -125,7 +126,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
     }
 
     public void copyFrom(MemorySegment src) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)src;
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(src);
         long size = that.byteSize();
         checkAccess(0, size, false);
         that.checkAccess(0, size, true);
@@ -146,7 +147,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
 
     @Override
     public long mismatch(MemorySegment other) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)other;
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
         final long thisSize = this.byteSize();
         final long thatSize = that.byteSize();
         final long length = Math.min(thisSize, thatSize);
@@ -591,6 +592,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
     }
 
     public static AbstractMemorySegmentImpl ofBuffer(ByteBuffer bb) {
+        Objects.requireNonNull(bb);
         long bbAddress = nioAccess.getBufferAddress(bb);
         Object base = nioAccess.getBufferBase(bb);
         UnmapperProxy unmapper = nioAccess.unmapper(bb);

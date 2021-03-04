@@ -125,7 +125,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     /*
      * Use of session caches is globally enabled/disabled.
      */
-    private static boolean      defaultRejoinable = true;
+    private static final boolean defaultRejoinable = true;
 
     // server name indication
     final SNIServerName         serverNameIndication;
@@ -198,8 +198,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 Collections.unmodifiableCollection(
                         new ArrayList<>(hc.localSupportedSignAlgs));
         this.serverNameIndication = hc.negotiatedServerName;
-        this.requestedServerNames = Collections.unmodifiableList(
-                new ArrayList<>(hc.getRequestedServerNames()));
+        this.requestedServerNames = List.copyOf(hc.getRequestedServerNames());
         if (hc.sslConfig.isClientMode) {
             this.useExtendedMasterSecret =
                 (hc.handshakeExtensions.get(
@@ -308,9 +307,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
-        int i = 0;
-        byte[] b;
-
         boundValues = new ConcurrentHashMap<>();
         this.protocolVersion =
                 ProtocolVersion.valueOf(Short.toUnsignedInt(buf.getShort()));
@@ -324,7 +320,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
         // Local Supported signature algorithms
         ArrayList<SignatureScheme> list = new ArrayList<>();
-        i = Byte.toUnsignedInt(buf.get());
+        int i = Byte.toUnsignedInt(buf.get());
         while (i-- > 0) {
             list.add(SignatureScheme.valueOf(
                     Short.toUnsignedInt(buf.getShort())));
@@ -341,6 +337,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.peerSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
         // PSK
+        byte[] b;
         i = Short.toUnsignedInt(buf.getShort());
         if (i > 0) {
             b = new byte[i];

@@ -87,7 +87,10 @@ final class MethodTypeForm {
             LF_LOOP                    = 19,  // loop
             LF_INVSPECIAL_IFC          = 20,  // DMH invokeSpecial of (private) interface method
             LF_INVNATIVE               = 21,  // NMH invokeNative
-            LF_LIMIT                   = 22;
+            LF_VH_EX_INVOKER           = 22,  // VarHandle exact invoker
+            LF_VH_GEN_INVOKER          = 23,  // VarHandle generic invoker
+            LF_VH_GEN_LINKER           = 24,  // VarHandle generic linker
+            LF_LIMIT                   = 25;
 
     /** Return the type corresponding uniquely (1-1) to this MT-form.
      *  It might have any primitive returns or arguments, but will have no references except Object.

@@ -83,7 +83,7 @@ public:
   void apply(NMethodClosure* cl);
 };
 
-class ZConcurrentRootsIterator {
+class ZRootsIterator {
 private:
   ZParallelApply<ZStrongOopStorageSetIterator> _oop_storage_set;
   ZParallelApply<ZStrongCLDsIterator>          _class_loader_data_graph;
@@ -91,7 +91,7 @@ private:
   ZParallelApply<ZNMethodsIterator>            _nmethods;
 
 public:
-  ZConcurrentRootsIterator(int cld_claim);
+  ZRootsIterator(int cld_claim);
 
   void apply(OopClosure* cl,
              CLDClosure* cld_cl,
@@ -111,7 +111,7 @@ public:
   void report_num_dead();
 };
 
-class ZConcurrentWeakRootsIterator {
+class ZWeakRootsIterator {
 private:
   ZParallelApply<ZWeakOopStorageSetIterator> _oop_storage_set;
 

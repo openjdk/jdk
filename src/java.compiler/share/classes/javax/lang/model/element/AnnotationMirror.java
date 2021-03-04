@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import javax.lang.model.type.DeclaredType;
 
 /**
  * Represents an annotation.  An annotation associates a value with
- * each element of an annotation type.
+ * each element of an annotation interface.
  *
  * <p> Annotations should be compared using the {@code equals}
  * method.  There is no guarantee that any particular annotation will
@@ -44,9 +44,7 @@ import javax.lang.model.type.DeclaredType;
 public interface AnnotationMirror {
 
     /**
-     * Returns the type of this annotation.
-     *
-     * @return the type of this annotation
+     * {@return the type of this annotation}
      */
     DeclaredType getAnnotationType();
 

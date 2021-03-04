@@ -54,6 +54,10 @@ class ConstraintCastNode: public TypeNode {
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
   static Node* make_cast(int opcode,  Node* c, Node *n, const Type *t, bool carry_dependency);
   static Node* make(Node* c, Node *n, const Type *t, BasicType bt);
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return false;
+  }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -87,6 +91,10 @@ class CastIINode: public ConstraintCastNode {
     return false;
 #endif
   }
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_INT;
+  }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const;
@@ -98,6 +106,10 @@ public:
   CastLLNode(Node* n, const Type* t, bool carry_dependency = false)
           : ConstraintCastNode(n, t, carry_dependency){
     init_class_id(Class_CastLL);
+  }
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_LONG;
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegL; }

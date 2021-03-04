@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ inline ClassPathEntry* ClassLoader::classpath_entry(int n) {
     // the _jrt_entry is not included in the _first_append_entry
     // linked list, it must be accounted for when comparing the
     // class path vs. the shared archive class path.
-    ClassPathEntry* e = ClassLoader::_first_append_entry;
+    ClassPathEntry* e = first_append_entry();
     while (--n >= 1) {
       assert(e != NULL, "Not that many classpath entries.");
       e = e->next();
@@ -72,7 +72,7 @@ inline int ClassLoader::num_boot_classpath_entries() {
   Arguments::assert_is_dumping_archive();
   assert(has_jrt_entry(), "must have a java runtime image");
   int num_entries = 1; // count the runtime image
-  ClassPathEntry* e = ClassLoader::_first_append_entry;
+  ClassPathEntry* e = first_append_entry();
   while (e != NULL) {
     num_entries ++;
     e = e->next();
@@ -82,7 +82,7 @@ inline int ClassLoader::num_boot_classpath_entries() {
 
 inline ClassPathEntry* ClassLoader::get_next_boot_classpath_entry(ClassPathEntry* e) {
   if (e == ClassLoader::_jrt_entry) {
-    return ClassLoader::_first_append_entry;
+    return first_append_entry();
   } else {
     return e->next();
   }

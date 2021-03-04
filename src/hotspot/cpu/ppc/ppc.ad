@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2012, 2020 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -980,6 +980,8 @@ source_hpp %{
 
 source %{
 
+#include "oops/klass.inline.hpp"
+
 void PhaseOutput::pd_perform_mach_node_analysis() {
 }
 
@@ -1100,8 +1102,7 @@ int MachCallStaticJavaNode::ret_addr_offset() {
 int MachCallDynamicJavaNode::ret_addr_offset() {
   // Offset is 4 with postalloc expanded calls (bl is one instruction). We use
   // postalloc expanded calls if we use inline caches and do not update method data.
-  if (UseInlineCaches)
-    return 4;
+  if (UseInlineCaches) return 4;
 
   int vtable_index = this->_vtable_index;
   if (vtable_index < 0) {
@@ -1109,17 +1110,27 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
     return 12;
   } else {
-    assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
-    return 24;
+    return 24 + MacroAssembler::instr_size_for_decode_klass_not_null();
   }
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
+  if (rule() == CallRuntimeDirect_rule) {
+    // CallRuntimeDirectNode uses call_c.
 #if defined(ABI_ELFv2)
-  return 28;
+    return 28;
 #else
-  return 40;
+    return 40;
 #endif
+  }
+  assert(rule() == CallLeafDirect_rule, "unexpected node with rule %u", rule());
+  // CallLeafDirectNode uses bl.
+  return 4;
+}
+
+int MachCallNativeNode::ret_addr_offset() {
+  Unimplemented();
+  return -1;
 }
 
 //=============================================================================
@@ -1365,6 +1376,10 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("save return pc\n\t");
     st->print("push frame %ld\n\t", -framesize);
   }
+
+  if (C->stub_function() == NULL) {
+    st->print("nmethod entry barrier\n\t");
+  }
 }
 #endif
 
@@ -1419,7 +1434,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   int bangsize = C->output()->bang_size_in_bytes();
   assert(bangsize >= framesize || bangsize <= 0, "stack bang size incorrect");
-  if (C->output()->need_stack_bang(bangsize) && UseStackBanging) {
+  if (C->output()->need_stack_bang(bangsize)) {
     // Unfortunately we cannot use the function provided in
     // assembler.cpp as we have to emulate the pipes. So I had to
     // insert the code of generate_stack_overflow_check(), see
@@ -1473,7 +1488,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
       bang_offset += page_size;
     }
     // R11 trashed
-  } // C->output()->need_stack_bang(framesize) && UseStackBanging
+  } // C->output()->need_stack_bang(framesize)
 
   unsigned int bytes = (unsigned int)framesize;
   long offset = Assembler::align_addr(bytes, frame::alignment_in_bytes);
@@ -1515,7 +1530,12 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 #endif
   if (!method_is_frameless) {
     // Save return pc.
-    __ std(return_pc, _abi(lr), callers_sp);
+    __ std(return_pc, _abi0(lr), callers_sp);
+  }
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm, push_frame_temp);
   }
 
   C->output()->set_frame_complete(cbuf.insts_size());
@@ -1561,7 +1581,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (!method_is_frameless) {
     // Restore return pc relative to callers' sp.
-    __ ld(return_pc, ((int)framesize) + _abi(lr), R1_SP);
+    __ ld(return_pc, ((int)framesize) + _abi0(lr), R1_SP);
   }
 
   if (method_needs_polling) {
@@ -2141,6 +2161,10 @@ const bool Matcher::has_predicated_vectors(void) {
 }
 
 bool Matcher::supports_vector_variable_shifts(void) {
+  return false; // not supported
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
   return false; // not supported
 }
 
@@ -3011,36 +3035,6 @@ encode %{
     __ stfd($src$$FloatRegister, Idisp, $mem$$base$$Register);
   %}
 
-  // Use release_store for card-marking to ensure that previous
-  // oop-stores are visible before the card-mark change.
-  enc_class enc_cms_card_mark(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
-    // FIXME: Implement this as a cmove and use a fixed condition code
-    // register which is written on every transition to compiled code,
-    // e.g. in call-stub and when returning from runtime stubs.
-    //
-    // Proposed code sequence for the cmove implementation:
-    //
-    // Label skip_release;
-    // __ beq(CCRfixed, skip_release);
-    // __ release();
-    // __ bind(skip_release);
-    // __ stb(card mark);
-
-    C2_MacroAssembler _masm(&cbuf);
-    Label skip_storestore;
-
-    __ li(R0, 0);
-    __ membar(Assembler::StoreStore);
-
-    // Do the store.
-    if ($mem$$index == 0) {
-      __ stb(R0, $mem$$disp, $mem$$base$$Register);
-    } else {
-      assert(0 == $mem$$disp, "no displacement possible with indexed load/stores on ppc");
-      __ stbx(R0, $mem$$base$$Register, $mem$$index$$Register);
-    }
-  %}
-
   enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
 
     if (VM_Version::has_isel()) {
@@ -3568,11 +3562,11 @@ encode %{
     call->_method_handle_invoke = _method_handle_invoke;
     call->_vtable_index      = _vtable_index;
     call->_method            = _method;
-    call->_bci               = _bci;
     call->_optimized_virtual = _optimized_virtual;
     call->_tf                = _tf;
     call->_entry_point       = _entry_point;
     call->_cnt               = _cnt;
+    call->_guaranteed_safepoint = true;
     call->_oop_map           = _oop_map;
     call->_jvms              = _jvms;
     call->_jvmadj            = _jvmadj;
@@ -3623,11 +3617,11 @@ encode %{
     int start_offset = __ offset();
 
     Register Rtoc = (ra_) ? $constanttablebase : R2_TOC;
-#if 0
+
     int vtable_index = this->_vtable_index;
-    if (_vtable_index < 0) {
+    if (vtable_index < 0) {
       // Must be invalid_vtable_index, not nonvirtual_vtable_index.
-      assert(_vtable_index == Method::invalid_vtable_index, "correct sentinel value");
+      assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
       Register ic_reg = as_Register(Matcher::inline_cache_reg_encode());
 
       // Virtual call relocation will point to ic load.
@@ -3644,7 +3638,7 @@ encode %{
       __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
       emit_call_with_trampoline_stub(_masm, (address)$meth$$method, relocInfo::none);
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
-             "Fix constant in ret_addr_offset()");
+             "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     } else {
       assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
       // Go thru the vtable. Get receiver klass. Receiver already
@@ -3653,7 +3647,7 @@ encode %{
 
       __ load_klass(R11_scratch1, R3);
 
-      int entry_offset = in_bytes(Klass::vtable_start_offset()) + _vtable_index * vtableEntry::size_in_bytes();
+      int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
       int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
       __ li(R19_method, v_off);
       __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);
@@ -3664,14 +3658,9 @@ encode %{
       // Call target. Either compiled code or C2I adapter.
       __ mtctr(R11_scratch1);
       __ bctrl();
-      if (((MachCallDynamicJavaNode*)this)->ret_addr_offset() != __ offset() - start_offset) {
-        tty->print(" %d, %d\n", ((MachCallDynamicJavaNode*)this)->ret_addr_offset(),__ offset() - start_offset);
-      }
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
-             "Fix constant in ret_addr_offset()");
+             "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     }
-#endif
-    Unimplemented();  // ret_addr_offset not yet fixed. Depends on compressed oops (load klass!).
   %}
 
   // a runtime call
@@ -3773,13 +3762,13 @@ encode %{
     call->_tf          = _tf;
     call->_entry_point = _entry_point;
     call->_cnt         = _cnt;
+    call->_guaranteed_safepoint = false;
     call->_oop_map     = _oop_map;
     guarantee(!_jvms, "You must clone the jvms and adapt the offsets by fix_jvms().");
     call->_jvms        = NULL;
     call->_jvmadj      = _jvmadj;
     call->_in_rms      = _in_rms;
     call->_nesting     = _nesting;
-
 
     // New call needs all inputs of old call.
     // Req...
@@ -4032,7 +4021,7 @@ operand immIhi16() %{
 %}
 
 operand immInegpow2() %{
-  predicate(is_power_of_2((jlong) (julong) (juint) (-(n->get_int()))));
+  predicate(is_power_of_2(-(juint)(n->get_int())));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -4040,7 +4029,7 @@ operand immInegpow2() %{
 %}
 
 operand immIpow2minus1() %{
-  predicate(is_power_of_2((((jlong) (n->get_int()))+1)));
+  predicate(is_power_of_2((juint)(n->get_int()) + 1u));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -4048,7 +4037,7 @@ operand immIpow2minus1() %{
 %}
 
 operand immIpowerOf2() %{
-  predicate(is_power_of_2((((jlong) (julong) (juint) (n->get_int())))));
+  predicate(is_power_of_2((juint)(n->get_int())));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -4282,7 +4271,7 @@ operand immLhighest16() %{
 %}
 
 operand immLnegpow2() %{
-  predicate(is_power_of_2((jlong)-(n->get_long())));
+  predicate(is_power_of_2(-(julong)(n->get_long())));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -4290,8 +4279,7 @@ operand immLnegpow2() %{
 %}
 
 operand immLpow2minus1() %{
-  predicate(is_power_of_2((((jlong) (n->get_long()))+1)) &&
-            (n->get_long() != (jlong)0xffffffffffffffffL));
+  predicate(is_power_of_2((julong)(n->get_long()) + 1ull));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -6583,37 +6571,15 @@ instruct storeD(memory mem, regD src) %{
 
 //----------Store Instructions With Zeros--------------------------------------
 
-// Card-mark for CMS garbage collection.
-// This cardmark does an optimization so that it must not always
-// do a releasing store. For this, it gets the address of
-// CMSCollectorCardTableBarrierSetBSExt::_requires_release as input.
-// (Using releaseFieldAddr in the match rule is a hack.)
-instruct storeCM_CMS(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
-  match(Set mem (StoreCM mem releaseFieldAddr));
-  effect(TEMP crx);
-  predicate(false);
-  ins_cost(MEMORY_REF_COST);
-
-  // See loadConP.
-  ins_cannot_rematerialize(true);
-
-  format %{ "STB     #0, $mem \t// CMS card-mark byte (must be 0!), checking requires_release in [$releaseFieldAddr]" %}
-  ins_encode( enc_cms_card_mark(mem, releaseFieldAddr, crx) );
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct storeCM_G1(memory mem, immI_0 zero) %{
+instruct storeCM(memory mem, immI_0 zero) %{
   match(Set mem (StoreCM mem zero));
-  predicate(UseG1GC);
   ins_cost(MEMORY_REF_COST);
 
-  ins_cannot_rematerialize(true);
-
-  format %{ "STB     #0, $mem \t// CMS card-mark byte store (G1)" %}
+  format %{ "STB     #0, $mem \t// CMS card-mark byte store" %}
   size(8);
   ins_encode %{
     __ li(R0, 0);
-    //__ release(); // G1: oops are allowed to get visible after dirty marking
+    // No release barrier: Oops are allowed to get visible after marking.
     guarantee($mem$$base$$Register != R1_SP, "use frame_slots_bias");
     __ stb(R0, $mem$$disp, $mem$$base$$Register);
   %}
@@ -9066,9 +9032,8 @@ instruct lShiftI_andI_immInegpow2_imm5(iRegIdst dst, iRegIsrc src1, immInegpow2 
   format %{ "RLWINM  $dst, lShiftI(AndI($src1, $src2), $src3)" %}
   size(4);
   ins_encode %{
-    long src2      = $src2$$constant;
     long src3      = $src3$$constant;
-    long maskbits  = src3 + log2_long((jlong) (julong) (juint) -src2);
+    long maskbits  = src3 + log2i_exact(-(juint)$src2$$constant);
     if (maskbits >= 32) {
       __ li($dst$$Register, 0); // addi
     } else {
@@ -9086,9 +9051,8 @@ instruct lShiftI_andI_immInegpow2_rShiftI_imm5(iRegIdst dst, iRegIsrc src1, immI
   format %{ "RLWINM  $dst, lShiftI(AndI(RShiftI($src1, $src3), $src2), $src3)" %}
   size(4);
   ins_encode %{
-    long src2      = $src2$$constant;
     long src3      = $src3$$constant;
-    long maskbits  = src3 + log2_long((jlong) (julong) (juint) -src2);
+    long maskbits  = src3 + log2i_exact(-(juint)$src2$$constant);
     if (maskbits >= 32) {
       __ li($dst$$Register, 0); // addi
     } else {
@@ -9356,7 +9320,7 @@ instruct andI_urShiftI_regI_immI_immIpow2minus1(iRegIdst dst, iRegIsrc src1, imm
   size(4);
   ins_encode %{
     int rshift = ($src2$$constant) & 0x1f;
-    int length = log2_long(((jlong) $src3$$constant) + 1);
+    int length = log2i_exact((juint)$src3$$constant + 1u);
     if (rshift + length > 32) {
       // if necessary, adjust mask to omit rotated bits.
       length = 32 - rshift;
@@ -9374,7 +9338,7 @@ instruct andL_urShiftL_regL_immI_immLpow2minus1(iRegLdst dst, iRegLsrc src1, imm
   size(4);
   ins_encode %{
     int rshift  = ($src2$$constant) & 0x3f;
-    int length = log2_long(((jlong) $src3$$constant) + 1);
+    int length = log2i_exact((julong)$src3$$constant + 1ull);
     if (rshift + length > 64) {
       // if necessary, adjust mask to omit rotated bits.
       length = 64 - rshift;
@@ -9778,7 +9742,7 @@ instruct andI_reg_immInegpow2(iRegIdst dst, iRegIsrc src1, immInegpow2 src2) %{
   format %{ "ANDWI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ clrrdi($dst$$Register, $src1$$Register, log2_long((jlong)(julong)(juint)-($src2$$constant)));
+    __ clrrdi($dst$$Register, $src1$$Register, log2i_exact(-(juint)$src2$$constant));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9788,7 +9752,7 @@ instruct andI_reg_immIpow2minus1(iRegIdst dst, iRegIsrc src1, immIpow2minus1 src
   format %{ "ANDWI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64-log2_long((((jlong) $src2$$constant)+1)));
+    __ clrldi($dst$$Register, $src1$$Register, 64 - log2i_exact((juint)$src2$$constant + 1u));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9799,8 +9763,8 @@ instruct andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src1, immIpowerOf2 src2) %
   format %{ "ANDWI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ rlwinm($dst$$Register, $src1$$Register, 0,
-              (31-log2_long((jlong) $src2$$constant)) & 0x1f, (31-log2_long((jlong) $src2$$constant)) & 0x1f);
+    int bitpos = 31 - log2i_exact((juint)$src2$$constant);
+    __ rlwinm($dst$$Register, $src1$$Register, 0, bitpos, bitpos);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9838,7 +9802,7 @@ instruct andL_reg_immLnegpow2(iRegLdst dst, iRegLsrc src1, immLnegpow2 src2) %{
   format %{ "ANDDI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ clrrdi($dst$$Register, $src1$$Register, log2_long((jlong)-$src2$$constant));
+    __ clrrdi($dst$$Register, $src1$$Register, log2i_exact(-(julong)$src2$$constant));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9848,7 +9812,7 @@ instruct andL_reg_immLpow2minus1(iRegLdst dst, iRegLsrc src1, immLpow2minus1 src
   format %{ "ANDDI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64-log2_long((((jlong) $src2$$constant)+1)));
+    __ clrldi($dst$$Register, $src1$$Register, 64 - log2i_exact((julong)$src2$$constant + 1ull));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9861,7 +9825,7 @@ instruct convL2I_andL_reg_immLpow2minus1(iRegIdst dst, iRegLsrc src1, immLpow2mi
   format %{ "ANDDI   $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64-log2_long((((jlong) $src2$$constant)+1)));
+    __ clrldi($dst$$Register, $src1$$Register, 64 - log2i_exact((julong)$src2$$constant + 1ull));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -10449,7 +10413,7 @@ instruct convI2Bool_andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src, immIpowerO
   format %{ "RLWINM  $dst, $src, $mask \t// convI2B(AndI($src, $mask))" %}
   size(4);
   ins_encode %{
-    __ rlwinm($dst$$Register, $src$$Register, (32-log2_long((jlong)$mask$$constant)) & 0x1f, 31, 31);
+    __ rlwinm($dst$$Register, $src$$Register, 32 - log2i_exact((juint)($mask$$constant)), 31, 31);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -12144,7 +12108,7 @@ instruct align_addr(iRegPdst dst, iRegPsrc src, immLnegpow2 mask) %{
   format %{ "ANDDI   $dst, $src, $mask \t// next aligned address" %}
   size(4);
   ins_encode %{
-    __ clrrdi($dst$$Register, $src$$Register, log2_long((jlong)-$mask$$constant));
+    __ clrrdi($dst$$Register, $src$$Register, log2i_exact(-(julong)$mask$$constant));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -14495,7 +14459,7 @@ instruct tailjmpInd(iRegPdstNoScratch jump_target, rarg1RegP ex_oop) %{
             "BCTR     \t// TailJump, exception oop: $ex_oop" %}
   size(12);
   ins_encode %{
-    __ ld(R4_ARG2/* issuing pc */, _abi(lr), R1_SP);
+    __ ld(R4_ARG2/* issuing pc */, _abi0(lr), R1_SP);
     __ mtctr($jump_target$$Register);
     __ bctr();
   %}

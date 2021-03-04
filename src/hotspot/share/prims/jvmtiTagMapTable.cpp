@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -49,9 +50,9 @@ oop JvmtiTagMapEntry::object_no_keepalive() {
 JvmtiTagMapTable::JvmtiTagMapTable()
   : Hashtable<WeakHandle, mtServiceability>(_table_size, sizeof(JvmtiTagMapEntry)) {}
 
-JvmtiTagMapTable::~JvmtiTagMapTable() {
-  // Delete this table
-  log_debug(jvmti, table)("JvmtiTagMapTable deleted");
+void JvmtiTagMapTable::clear() {
+  // Clear this table
+  log_debug(jvmti, table)("JvmtiTagMapTable cleared");
   for (int i = 0; i < table_size(); ++i) {
     for (JvmtiTagMapEntry* m = bucket(i); m != NULL;) {
       JvmtiTagMapEntry* entry = m;
@@ -59,9 +60,16 @@ JvmtiTagMapTable::~JvmtiTagMapTable() {
       m = m->next();
       free_entry(entry);
     }
+    JvmtiTagMapEntry** p = bucket_addr(i);
+    *p = NULL; // clear out buckets.
   }
   assert(number_of_entries() == 0, "should have removed all entries");
   assert(new_entry_free_list() == NULL, "entry present on JvmtiTagMapTable's free list");
+}
+
+JvmtiTagMapTable::~JvmtiTagMapTable() {
+  clear();
+  // base class ~BasicHashtable deallocates the buckets.
 }
 
 // Entries are C_Heap allocated
@@ -207,7 +215,7 @@ void JvmtiTagMapTable::remove_dead_entries(JvmtiEnv* env, bool post_object_free)
 
       }
       // get next entry
-      entry = (JvmtiTagMapEntry*)HashtableEntry<WeakHandle, mtServiceability>::make_ptr(*p);
+      entry = *p;
     }
   }
 
@@ -244,7 +252,7 @@ void JvmtiTagMapTable::rehash() {
         p = entry->next_addr();
       }
       // get next entry
-      entry = (JvmtiTagMapEntry*)HashtableEntry<WeakHandle, mtServiceability>::make_ptr(*p);
+      entry = *p;
     }
   }
 

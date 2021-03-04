@@ -841,21 +841,9 @@ abstract class MethodHandleImpl {
             return (asTypeCache = wrapper);
         }
 
-        // Customize target if counting happens for too long.
-        private int invocations = CUSTOMIZE_THRESHOLD;
-        private void maybeCustomizeTarget() {
-            int c = invocations;
-            if (c >= 0) {
-                if (c == 1) {
-                    target.customize();
-                }
-                invocations = c - 1;
-            }
-        }
-
         boolean countDown() {
             int c = count;
-            maybeCustomizeTarget();
+            target.maybeCustomize(); // customize if counting happens for too long
             if (c <= 1) {
                 // Try to limit number of updates. MethodHandle.updateForm() doesn't guarantee LF update visibility.
                 if (isCounting) {
@@ -872,12 +860,15 @@ abstract class MethodHandleImpl {
 
         @Hidden
         static void maybeStopCounting(Object o1) {
-             CountingWrapper wrapper = (CountingWrapper) o1;
+             final CountingWrapper wrapper = (CountingWrapper) o1;
              if (wrapper.countDown()) {
                  // Reached invocation threshold. Replace counting behavior with a non-counting one.
-                 LambdaForm lform = wrapper.nonCountingFormProducer.apply(wrapper.target);
-                 lform.compileToBytecode(); // speed up warmup by avoiding LF interpretation again after transition
-                 wrapper.updateForm(lform);
+                 wrapper.updateForm(new Function<>() {
+                     public LambdaForm apply(LambdaForm oldForm) {
+                         LambdaForm lform = wrapper.nonCountingFormProducer.apply(wrapper.target);
+                         lform.compileToBytecode(); // speed up warmup by avoiding LF interpretation again after transition
+                         return lform;
+                     }});
              }
         }
 

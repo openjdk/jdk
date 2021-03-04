@@ -103,6 +103,7 @@
   template(visitFrame_signature,                                  "(Ljdk/vm/ci/code/stack/InspectedFrame;)Ljava/lang/Object;")            \
   template(compileMethod_name,                                    "compileMethod")                                                        \
   template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)Ljdk/vm/ci/hotspot/HotSpotCompilationRequestResult;") \
+  template(isGCSupported_name,                                    "isGCSupported")                                                        \
   template(encodeThrowable_name,                                  "encodeThrowable")                                                      \
   template(encodeThrowable_signature,                             "(Ljava/lang/Throwable;)Ljava/lang/String;")                            \
   template(decodeThrowable_name,                                  "decodeThrowable")                                                      \

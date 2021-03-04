@@ -41,10 +41,8 @@ import javax.lang.model.type.*;
  */
 public interface ExecutableElement extends Element, Parameterizable {
     /**
-     * Returns the {@linkplain ExecutableType executable type} defined
-     * by this executable element.
-     *
-     * @return the executable type defined by this executable element
+     * {@return the {@linkplain ExecutableType executable type} defined
+     * by this executable element}
      *
      * @see ExecutableType
      */
@@ -61,12 +59,10 @@ public interface ExecutableElement extends Element, Parameterizable {
     List<? extends TypeParameterElement> getTypeParameters();
 
     /**
-     * Returns the return type of this executable.
+     * {@return the return type of this executable}
      * Returns a {@link NoType} with kind {@link TypeKind#VOID VOID}
      * if this executable is not a method, or is a method that does not
      * return a value.
-     *
-     * @return the return type of this executable
      */
     TypeMirror getReturnType();
 
@@ -103,20 +99,14 @@ public interface ExecutableElement extends Element, Parameterizable {
     TypeMirror getReceiverType();
 
     /**
-     * Returns {@code true} if this method or constructor accepts a variable
-     * number of arguments and returns {@code false} otherwise.
-     *
-     * @return {@code true} if this method or constructor accepts a variable
-     * number of arguments and {@code false} otherwise
+     * {@return {@code true} if this method or constructor accepts a variable
+     * number of arguments and returns {@code false} otherwise}
      */
     boolean isVarArgs();
 
     /**
-     * Returns {@code true} if this method is a default method and
-     * returns {@code false} otherwise.
-     *
-     * @return {@code true} if this method is a default method and
-     * {@code false} otherwise
+     * {@return {@code true} if this method is a default method and
+     * returns {@code false} otherwise}
      * @since 1.8
      */
     boolean isDefault();
@@ -133,24 +123,21 @@ public interface ExecutableElement extends Element, Parameterizable {
 
     /**
      * Returns the default value if this executable is an annotation
-     * type element.  Returns {@code null} if this method is not an
-     * annotation type element, or if it is an annotation type element
-     * with no default value.
+     * interface element.  Returns {@code null} if this method is not
+     * an annotation interface element, or if it is an annotation
+     * interface element with no default value.
      *
      * @return the default value, or {@code null} if none
      */
     AnnotationValue getDefaultValue();
 
     /**
-     * Returns the simple name of a constructor, method, or
-     * initializer.  For a constructor, the name {@code "<init>"} is
+     * {@return the simple name of a constructor, method, or
+     * initializer}  For a constructor, the name {@code "<init>"} is
      * returned, for a static initializer, the name {@code "<clinit>"}
      * is returned, and for an anonymous class or instance
      * initializer, an <a href=Name.html#empty_name>empty name</a> is
      * returned.
-     *
-     * @return the simple name of a constructor, method, or
-     * initializer
      */
     @Override
     Name getSimpleName();

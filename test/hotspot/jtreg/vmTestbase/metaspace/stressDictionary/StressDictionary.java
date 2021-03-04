@@ -29,7 +29,7 @@
  * VM Testbase keywords: [nonconcurrent, javac]
  *
  * @library /vmTestbase /test/lib
- * @run main/othervm/timeout=420 metaspace.stressDictionary.StressDictionary -stressTime 30
+ * @run main/othervm/timeout=600 metaspace.stressDictionary.StressDictionary -stressTime 30
  */
 
 package metaspace.stressDictionary;

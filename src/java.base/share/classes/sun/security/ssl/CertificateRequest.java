@@ -67,8 +67,8 @@ final class CertificateRequest {
     // TLS 1.2 and prior versions
     private static enum ClientCertificateType {
         // RFC 2246
-        RSA_SIGN            ((byte)0x01, "rsa_sign", "RSA", true),
-        DSS_SIGN            ((byte)0x02, "dss_sign", "DSA", true),
+        RSA_SIGN            ((byte)0x01, "rsa_sign", List.of("RSA"), true),
+        DSS_SIGN            ((byte)0x02, "dss_sign", List.of("DSA"), true),
         RSA_FIXED_DH        ((byte)0x03, "rsa_fixed_dh"),
         DSS_FIXED_DH        ((byte)0x04, "dss_fixed_dh"),
 
@@ -77,9 +77,10 @@ final class CertificateRequest {
         DSS_EPHEMERAL_DH    ((byte)0x06, "dss_ephemeral_dh"),
         FORTEZZA_DMS        ((byte)0x14, "fortezza_dms"),
 
-        // RFC 4492
+        // RFC 4492 and 8442
         ECDSA_SIGN          ((byte)0x40, "ecdsa_sign",
-                                             "EC", JsseJce.isEcAvailable()),
+                                            List.of("EC", "EdDSA"),
+                                            JsseJce.isEcAvailable()),
         RSA_FIXED_ECDH      ((byte)0x41, "rsa_fixed_ecdh"),
         ECDSA_FIXED_ECDH    ((byte)0x42, "ecdsa_fixed_ecdh");
 
@@ -95,7 +96,7 @@ final class CertificateRequest {
 
         final byte id;
         final String name;
-        final String keyAlgorithm;
+        final List<String> keyAlgorithm;
         final boolean isAvailable;
 
         private ClientCertificateType(byte id, String name) {
@@ -103,7 +104,7 @@ final class CertificateRequest {
         }
 
         private ClientCertificateType(byte id, String name,
-                String keyAlgorithm, boolean isAvailable) {
+                List<String> keyAlgorithm, boolean isAvailable) {
             this.id = id;
             this.name = name;
             this.keyAlgorithm = keyAlgorithm;
@@ -134,7 +135,11 @@ final class CertificateRequest {
             for (byte id : ids) {
                 ClientCertificateType cct = ClientCertificateType.valueOf(id);
                 if (cct.isAvailable) {
-                    keyTypes.add(cct.keyAlgorithm);
+                    cct.keyAlgorithm.forEach(key -> {
+                        if (!keyTypes.contains(key)) {
+                            keyTypes.add(key);
+                        }
+                    });
                 }
             }
 

@@ -362,8 +362,13 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
       *next = '\0';
       str = next + 1;
     } else {
+      str = NULL;
       break;
     }
+  }
+
+  if (str != NULL) {
+    log_warning(logging)("Ignoring excess -Xlog options: \"%s\"", str);
   }
 
   // Parse and apply the separated configuration options

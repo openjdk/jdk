@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "asm/codeBuffer.hpp"
 #include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "logging/log.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/icache.hpp"
@@ -90,7 +92,7 @@ CodeBuffer::CodeBuffer(CodeBlob* blob) {
   // Provide code buffer with meaningful name
   initialize_misc(blob->name());
   initialize(blob->content_begin(), blob->content_size());
-  verify_section_allocation();
+  debug_only(verify_section_allocation();)
 }
 
 void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
@@ -117,7 +119,7 @@ void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
     _insts.initialize_locs(locs_size / sizeof(relocInfo));
   }
 
-  verify_section_allocation();
+  debug_only(verify_section_allocation();)
 }
 
 
@@ -494,7 +496,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
 
   // Done calculating sections; did it come out to the right end?
   assert(buf_offset == total_content_size(), "sanity");
-  dest->verify_section_allocation();
+  debug_only(dest->verify_section_allocation();)
 }
 
 // Append an oop reference that keeps the class alive.
@@ -914,10 +916,10 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 
   // Zap the old code buffer contents, to avoid mistakenly using them.
   debug_only(Copy::fill_to_bytes(bxp->_total_start, bxp->_total_size,
-                                 badCodeHeapFreeVal));
+                                 badCodeHeapFreeVal);)
 
   // Make certain that the new sections are all snugly inside the new blob.
-  verify_section_allocation();
+  debug_only(verify_section_allocation();)
 
 #ifndef PRODUCT
   _decode_begin = NULL;  // sanity
@@ -949,24 +951,23 @@ void CodeBuffer::verify_section_allocation() {
   if (tstart == badAddress)  return;  // smashed by set_blob(NULL)
   address tend   = tstart + _total_size;
   if (_blob != NULL) {
-
     guarantee(tstart >= _blob->content_begin(), "sanity");
     guarantee(tend   <= _blob->content_end(),   "sanity");
   }
   // Verify disjointness.
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     CodeSection* sect = code_section(n);
-    if (!sect->is_allocated() || sect->is_empty())  continue;
-    guarantee((intptr_t)sect->start() % sect->alignment() == 0
-           || sect->is_empty() || _blob == NULL,
+    if (!sect->is_allocated() || sect->is_empty()) {
+      continue;
+    }
+    guarantee(_blob == nullptr || is_aligned(sect->start(), sect->alignment()),
            "start is aligned");
-    for (int m = (int) SECT_FIRST; m < (int) SECT_LIMIT; m++) {
+    for (int m = n + 1; m < (int) SECT_LIMIT; m++) {
       CodeSection* other = code_section(m);
-      if (!other->is_allocated() || other == sect)  continue;
-      guarantee(!other->contains(sect->start()    ), "sanity");
-      // limit is an exclusive address and can be the start of another
-      // section.
-      guarantee(!other->contains(sect->limit() - 1), "sanity");
+      if (!other->is_allocated() || other == sect) {
+        continue;
+      }
+      guarantee(other->disjoint(sect), "sanity");
     }
     guarantee(sect->end() <= tend, "sanity");
     guarantee(sect->end() <= sect->limit(), "sanity");

@@ -25,6 +25,7 @@
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "runtime/globals.hpp"
@@ -71,18 +72,6 @@ void ZArguments::initialize() {
     vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ConcGCThreads=0");
   }
 
-  // Select medium page size so that we can calculate the max reserve
-  ZHeuristics::set_medium_page_size();
-
-  // MinHeapSize/InitialHeapSize must be at least as large as the max reserve
-  const size_t max_reserve = ZHeuristics::max_reserve();
-  if (MinHeapSize < max_reserve) {
-    FLAG_SET_ERGO(MinHeapSize, max_reserve);
-  }
-  if (InitialHeapSize < max_reserve) {
-    FLAG_SET_ERGO(InitialHeapSize, max_reserve);
-  }
-
 #ifdef COMPILER2
   // Enable loop strip mining by default
   if (FLAG_IS_DEFAULT(UseCountedLoopSafepoints)) {
@@ -104,6 +93,10 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(ZVerifyRoots, true);
     FLAG_SET_DEFAULT(ZVerifyObjects, true);
   }
+}
+
+size_t ZArguments::heap_virtual_to_physical_ratio() {
+  return ZHeapViews * ZVirtualToPhysicalRatio;
 }
 
 size_t ZArguments::conservative_max_heap_alignment() {

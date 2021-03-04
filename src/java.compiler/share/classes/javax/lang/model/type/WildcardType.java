@@ -47,20 +47,16 @@ package javax.lang.model.type;
 public interface WildcardType extends TypeMirror {
 
     /**
-     * Returns the upper bound of this wildcard.
+     * {@return the upper bound of this wildcard}
      * If no upper bound is explicitly declared,
      * {@code null} is returned.
-     *
-     * @return the upper bound of this wildcard
      */
     TypeMirror getExtendsBound();
 
     /**
-     * Returns the lower bound of this wildcard.
+     * {@return the lower bound of this wildcard}
      * If no lower bound is explicitly declared,
      * {@code null} is returned.
-     *
-     * @return the lower bound of this wildcard
      */
     TypeMirror getSuperBound();
 }

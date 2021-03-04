@@ -200,6 +200,7 @@ private:
   Dependencies*             _dependencies;
   ExceptionHandlerTable     _exception_handler_table;
   ImplicitExceptionTable    _implicit_exception_table;
+  bool                      _has_auto_box;
 
   bool _immutable_pic_compilation;  // Installer is called for Immutable PIC compilation.
 
@@ -230,7 +231,11 @@ private:
 
 public:
 
-  CodeInstaller(JVMCIEnv* jvmci_env, bool immutable_pic_compilation) : _arena(mtJVMCI), _jvmci_env(jvmci_env), _immutable_pic_compilation(immutable_pic_compilation) {}
+  CodeInstaller(JVMCIEnv* jvmci_env, bool immutable_pic_compilation) :
+    _arena(mtJVMCI),
+    _jvmci_env(jvmci_env),
+    _has_auto_box(false),
+    _immutable_pic_compilation(immutable_pic_compilation) {}
 
 #if INCLUDE_AOT
   JVMCI::CodeInstallResult gather_metadata(JVMCIObject target, JVMCIObject compiled_code, CodeMetadata& metadata, JVMCI_TRAPS);

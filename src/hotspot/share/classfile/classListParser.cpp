@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -41,6 +43,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -48,11 +51,10 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
+volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
 ClassListParser::ClassListParser(const char* file) {
-  assert(_instance == NULL, "must be singleton");
-  _instance = this;
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
@@ -71,12 +73,22 @@ ClassListParser::ClassListParser(const char* file) {
   _line_no = 0;
   _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
   _indy_items = new (ResourceObj::C_HEAP, mtClass) GrowableArray<const char*>(9, mtClass);
+
+  // _instance should only be accessed by the thread that created _instance.
+  assert(_instance == NULL, "must be singleton");
+  _instance = this;
+  Atomic::store(&_parsing_thread, Thread::current());
+}
+
+bool ClassListParser::is_parsing_thread() {
+  return Atomic::load(&_parsing_thread) == Thread::current();
 }
 
 ClassListParser::~ClassListParser() {
   if (_file) {
     fclose(_file);
   }
+  Atomic::store(&_parsing_thread, (Thread*)NULL);
   _instance = NULL;
 }
 
@@ -459,15 +471,34 @@ bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_inde
   }
   return true;
 }
-
 void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
+  ClassListParser::resolve_indy_impl(class_name_symbol, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    ResourceMark rm(THREAD);
+    char* ex_msg = (char*)"";
+    oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+    if (message != NULL) {
+      ex_msg = java_lang_String::as_utf8_string(message);
+    }
+    log_warning(cds)("resolve_indy for class %s has encountered exception: %s %s",
+                     class_name_symbol->as_C_string(),
+                     PENDING_EXCEPTION->klass()->external_name(),
+                     ex_msg);
+    CLEAR_PENDING_EXCEPTION;
+  }
+}
+
+void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   Handle protection_domain;
-  Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, THREAD); // FIXME should really be just a lookup
+  Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, CHECK); // FIXME should really be just a lookup
   if (klass != NULL && klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    MetaspaceShared::try_link_class(ik, THREAD);
-    assert(!HAS_PENDING_EXCEPTION, "unexpected exception");
+    if (SystemDictionaryShared::has_class_failed_verification(ik)) {
+      // don't attempt to resolve indy on classes that has previously failed verification
+      return;
+    }
+    MetaspaceShared::try_link_class(ik, CHECK);
 
     ConstantPool* cp = ik->constants();
     ConstantPoolCache* cpcache = cp->cache();
@@ -479,36 +510,23 @@ void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
       constantPoolHandle pool(THREAD, cp);
       if (pool->tag_at(pool_index).is_invoke_dynamic()) {
         BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
-        Handle bsm = bootstrap_specifier.resolve_bsm(THREAD);
+        Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
         if (!SystemDictionaryShared::is_supported_invokedynamic(&bootstrap_specifier)) {
           log_debug(cds, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
           continue;
         }
-        if (is_matching_cp_entry(pool, pool_index, THREAD)) {
+        bool matched = is_matching_cp_entry(pool, pool_index, CHECK);
+        if (matched) {
           found = true;
           CallInfo info;
-          bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(info, THREAD);
+          bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(info, CHECK);
           if (!is_done) {
             // resolve it
             Handle recv;
-            LinkResolver::resolve_invoke(info, recv, pool, indy_index, Bytecodes::_invokedynamic, THREAD);
+            LinkResolver::resolve_invoke(info, recv, pool, indy_index, Bytecodes::_invokedynamic, CHECK);
             break;
           }
           cpce->set_dynamic_call(pool, info);
-          if (HAS_PENDING_EXCEPTION) {
-            ResourceMark rm(THREAD);
-            tty->print("resolve_indy for class %s has", class_name_symbol->as_C_string());
-            oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
-            if (message != NULL) {
-              char* ex_msg = java_lang_String::as_utf8_string(message);
-              tty->print_cr(" exception pending '%s %s'",
-                         PENDING_EXCEPTION->klass()->external_name(), ex_msg);
-            } else {
-              tty->print_cr(" exception pending %s ",
-                         PENDING_EXCEPTION->klass()->external_name());
-            }
-            exit(1);
-          }
         }
       }
     }
@@ -557,7 +575,7 @@ Klass* ClassListParser::load_current_class(TRAPS) {
 
       JavaCalls::call_virtual(&result,
                               loader, //SystemDictionary::java_system_loader(),
-                              SystemDictionary::ClassLoader_klass(),
+                              vmClasses::ClassLoader_klass(),
                               vmSymbols::loadClass_name(),
                               vmSymbols::string_class_signature(),
                               ext_class_name,

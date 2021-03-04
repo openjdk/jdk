@@ -577,13 +577,15 @@ public abstract class InputStream implements Closeable {
      * @implSpec
      * If {@code n} is zero or negative, then no bytes are skipped.
      * If {@code n} is positive, the default implementation of this method
-     * invokes {@link #skip(long) skip()} with parameter {@code n}.  If the
-     * return value of {@code skip(n)} is non-negative and less than {@code n},
-     * then {@link #read()} is invoked repeatedly until the stream is {@code n}
-     * bytes beyond its position when this method was invoked or end of stream
-     * is reached.  If the return value of {@code skip(n)} is negative or
-     * greater than {@code n}, then an {@code IOException} is thrown.  Any
-     * exception thrown by {@code skip()} or {@code read()} will be propagated.
+     * invokes {@link #skip(long) skip()} repeatedly with its parameter equal
+     * to the remaining number of bytes to skip until the requested number
+     * of bytes has been skipped or an error condition occurs.  If at any
+     * point the return value of {@code skip()} is negative or greater than the
+     * remaining number of bytes to be skipped, then an {@code IOException} is
+     * thrown.  If {@code skip()} ever returns zero, then {@link #read()} is
+     * invoked to read a single byte, and if it returns {@code -1}, then an
+     * {@code EOFException} is thrown.  Any exception thrown by {@code skip()}
+     * or {@code read()} will be propagated.
      *
      * @param      n   the number of bytes to be skipped.
      * @throws     EOFException if end of stream is encountered before the
@@ -596,20 +598,19 @@ public abstract class InputStream implements Closeable {
      * @since 12
      */
     public void skipNBytes(long n) throws IOException {
-        if (n > 0) {
+        while (n > 0) {
             long ns = skip(n);
-            if (ns >= 0 && ns < n) { // skipped too few bytes
+            if (ns > 0 && ns <= n) {
                 // adjust number to skip
                 n -= ns;
-                // read until requested number skipped or EOS reached
-                while (n > 0 && read() != -1) {
-                    n--;
-                }
-                // if not enough skipped, then EOFE
-                if (n != 0) {
+            } else if (ns == 0) { // no bytes skipped
+                // read one byte to check for EOS
+                if (read() == -1) {
                     throw new EOFException();
                 }
-            } else if (ns != n) { // skipped negative or too many bytes
+                // one byte read so decrement number to skip
+                n--;
+            } else { // skipped negative or too many bytes
                 throw new IOException("Unable to skip exactly");
             }
         }

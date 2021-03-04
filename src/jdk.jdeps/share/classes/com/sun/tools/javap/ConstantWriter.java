@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class ConstantWriter extends BasicWriter {
     }
 
     protected void writeConstantPool(ConstantPool constant_pool) {
-        ConstantPool.Visitor<Integer, Void> v = new ConstantPool.Visitor<Integer,Void>() {
+        ConstantPool.Visitor<Integer, Void> v = new ConstantPool.Visitor<>() {
             public Integer visitClass(CONSTANT_Class_info info, Void p) {
                 print("#" + info.name_index);
                 tab();
@@ -545,6 +545,6 @@ public class ConstantWriter extends BasicWriter {
         return buf.toString();
     }
 
-    private ClassWriter classWriter;
-    private Options options;
+    private final ClassWriter classWriter;
+    private final Options options;
 }

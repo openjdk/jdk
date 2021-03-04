@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,5 +33,23 @@ public class Sub<T> extends Base<T> {
     // not a covariant override
     @Override
     public T m3() { }
+    // change visibility to public
+    @Override
+    public void m4() { }
+    // drop checked exception
+    @Override
+    public Object m5() { }
+    // add final modifier
+    @Override
+    public final Object m6() { }
+    // implement abstract method
+    @Override
+    public Object m7() { }
+    // override concrete method as abstract
+    @Override
+    public abstract Object m8();
+    // override abstract method unchanged
+    @Override
+    public abstract Object m9();
 }
 

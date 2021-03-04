@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586 8257453
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -70,9 +70,9 @@ public class Versions {
         Set.of("1.2", "1.3", "1.4", "1.5", "1.6");
 
     public static final Set<String> VALID_SOURCES =
-        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14", "15", "16");
+        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14", "15", "16", "17");
 
-    public static final String LATEST_MAJOR_VERSION = "60.0";
+    public static final String LATEST_MAJOR_VERSION = "61.0";
 
     static enum SourceTarget {
         SEVEN(true,   "51.0",  "7", Versions::checksrc7),
@@ -84,7 +84,8 @@ public class Versions {
         THIRTEEN(false, "57.0", "13", Versions::checksrc13),
         FOURTEEN(false, "58.0", "14", Versions::checksrc14),
         FIFTEEN(false,  "59.0", "15", Versions::checksrc15),
-        SIXTEEN(false,  "60.0", "16", Versions::checksrc16);
+        SIXTEEN(false,  "60.0", "16", Versions::checksrc16),
+        SEVENTEEN(false,  "61.0", "17", Versions::checksrc17);
 
         private final boolean dotOne;
         private final String classFileVer;
@@ -293,13 +294,20 @@ public class Versions {
        printargs("checksrc15", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
                                   "New14.java", "New15.java"));
-       // Add expectedFail after new language features added in a later release.
+        expectedFail(args, List.of("New16.java"));
     }
 
    protected void checksrc16(List<String> args) {
        printargs("checksrc16", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java"));
+                                  "New14.java", "New15.java", "New16.java"));
+       // Add expectedFail after new language features added in a later release.
+    }
+
+   protected void checksrc17(List<String> args) {
+       printargs("checksrc17", args);
+       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
+                                  "New14.java", "New15.java", "New16.java"));
        // Add expectedFail after new language features added in a later release.
     }
 
@@ -511,6 +519,19 @@ public class Versions {
                 Hello, World.
                 \"\"\"
                 ;
+            }
+            """
+        );
+
+        /*
+         * Create a file with a new feature in 16, not in 15 : records
+         */
+        writeSourceFile("New16.java",
+            """
+            public class New16 {
+                public record Record(double rpm) {
+                    public static final Record LONG_PLAY = new Record(100.0/3.0);
+                }
             }
             """
         );

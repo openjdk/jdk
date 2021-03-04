@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
  */
 
 // no precompiled headers
+#include "jvm_io.h"
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -35,6 +38,8 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -50,6 +55,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCritical.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
@@ -101,15 +107,12 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define SAFEPOINT                                                                                            \
-    {                                                                                                        \
-       /* zap freed handles rather than GC'ing them */                                                       \
-       HandleMarkCleaner __hmc(THREAD);                                                                      \
-       if (SafepointMechanism::should_process(THREAD)) {                                                     \
-         CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
-                 handle_exception);                                                                          \
-       }                                                                                                     \
-    }
+#define SAFEPOINT                                                                                         \
+    if (SafepointMechanism::should_process(THREAD)) {                                                     \
+      HandleMarkCleaner __hmc(THREAD);                                                                    \
+      CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
+              handle_exception);                                                                          \
+    }                                                                                                     \
 
 /*
  * VM_JAVA_ERROR - Macro for throwing a java exception from
@@ -418,7 +421,6 @@ void BytecodeInterpreter::run(interpreterState istate) {
 #ifdef ASSERT
   if (istate->_msg != initialize) {
     assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-    IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
   }
   // Verify linkages.
   interpreterState l = istate;
@@ -1372,10 +1374,13 @@ run:
 #define ARRAY_INTRO(arrayOff)                                                  \
       arrayOop arrObj = (arrayOop)STACK_OBJECT(arrayOff);                      \
       jint     index  = STACK_INT(arrayOff + 1);                               \
-      char message[jintAsStringSize];                                          \
+      /* Two integers, the additional message, and the null-terminator */      \
+      char message[2 * jintAsStringSize + 33];                                 \
       CHECK_NULL(arrObj);                                                      \
       if ((uint32_t)index >= (uint32_t)arrObj->length()) {                     \
-          sprintf(message, "%d", index);                                       \
+          jio_snprintf(message, sizeof(message),                               \
+                  "Index %d out of bounds for length %d",                      \
+                  index, arrObj->length());                                    \
           VM_JAVA_ERROR(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), \
                         message);                                              \
       }

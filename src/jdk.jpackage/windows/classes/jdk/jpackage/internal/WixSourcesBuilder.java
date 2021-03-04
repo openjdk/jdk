@@ -157,6 +157,10 @@ class WixSourcesBuilder {
         }
     }
 
+    static boolean is64Bit() {
+        return !("x86".equals(System.getProperty("os.arch")));
+    }
+
     private void normalizeFileAssociation(FileAssociation fa) {
         fa.launcherPath = addExeSuffixToPath(
                 installedAppImage.launchersDirectory().resolve(fa.launcherPath));
@@ -236,7 +240,7 @@ class WixSourcesBuilder {
 
         String of(Path path) {
             if (this == Folder && KNOWN_DIRS.contains(path)) {
-                return path.getFileName().toString();
+                return IOUtils.getFileName(path).toString();
             }
 
             String result = of(path, prefix, name());
@@ -301,7 +305,7 @@ class WixSourcesBuilder {
         static void startElement(XMLStreamWriter xml, String componentId,
                 String componentGuid) throws XMLStreamException, IOException {
             xml.writeStartElement("Component");
-            xml.writeAttribute("Win64", "yes");
+            xml.writeAttribute("Win64", is64Bit() ? "yes" : "no");
             xml.writeAttribute("Id", componentId);
             xml.writeAttribute("Guid", componentGuid);
         }
@@ -437,7 +441,7 @@ class WixSourcesBuilder {
         }
 
         String launcherBasename = IOUtils.replaceSuffix(
-                launcherPath.getFileName(), "").toString();
+                IOUtils.getFileName(launcherPath), "").toString();
 
         Path shortcutPath = folder.getPath(this).resolve(launcherBasename);
         return addComponent(xml, shortcutPath, Component.Shortcut, unused -> {
@@ -547,9 +551,6 @@ class WixSourcesBuilder {
         }
 
         List<String> componentIds = new ArrayList<>();
-        while (!SYSTEM_DIRS.contains(path = path.getParent())) {
-            componentIds.add(addRemoveDirectoryComponent(xml, path));
-        }
 
         return componentIds;
     }
@@ -612,7 +613,7 @@ class WixSourcesBuilder {
             xml.writeAttribute("Id", Id.Folder.of(dir.getParent()));
             xml.writeStartElement("Directory");
             xml.writeAttribute("Id", Id.Folder.of(dir));
-            xml.writeAttribute("Name", dir.getFileName().toString());
+            xml.writeAttribute("Name", IOUtils.getFileName(dir).toString());
             xml.writeEndElement();
             xml.writeEndElement();
         }
@@ -669,7 +670,7 @@ class WixSourcesBuilder {
         srcPathGroup.transform(dstPathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
-                if (src.getFileName().toString().endsWith(".ico")) {
+                if (IOUtils.getFileName(src).toString().endsWith(".ico")) {
                     icoFiles.add(Map.entry(src, dst));
                 }
             }
@@ -823,7 +824,8 @@ class WixSourcesBuilder {
 
     private final static Path DESKTOP_PATH = TARGETDIR.resolve("DesktopFolder");
 
-    private final static Path PROGRAM_FILES = TARGETDIR.resolve("ProgramFiles64Folder");
+    private final static Path PROGRAM_FILES = TARGETDIR.resolve(
+            is64Bit() ? "ProgramFiles64Folder" : "ProgramFilesFolder");
 
     private final static Path LOCAL_PROGRAM_FILES = TARGETDIR.resolve("LocalAppDataFolder");
 

@@ -28,6 +28,7 @@
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/defaultStream.hpp"
 
 static bool initialized;
 static union {
@@ -86,19 +87,47 @@ public:
   }
 };
 
+bool LogFileStreamOutput::flush() {
+  bool result = true;
+  if (fflush(_stream) != 0) {
+    if (!_write_error_is_shown) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Could not flush log: %s (%s (%d))\n", name(), os::strerror(errno), errno);
+      jio_fprintf(_stream, "\nERROR: Could not flush log (%d)\n", errno);
+      _write_error_is_shown = true;
+    }
+    result = false;
+  }
+  return result;
+}
+
+#define WRITE_LOG_WITH_RESULT_CHECK(op, total)                \
+{                                                             \
+  int result = op;                                            \
+  if (result < 0) {                                           \
+    if (!_write_error_is_shown) {                             \
+      jio_fprintf(defaultStream::error_stream(),              \
+                  "Could not write log: %s\n", name());       \
+      jio_fprintf(_stream, "\nERROR: Could not write log\n"); \
+      _write_error_is_shown = true;                           \
+      return -1;                                              \
+    }                                                         \
+  }                                                           \
+  total += result;                                            \
+}
+
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
   const bool use_decorations = !_decorators.is_empty();
 
   int written = 0;
   FileLocker flocker(_stream);
   if (use_decorations) {
-    written += write_decorations(decorations);
-    written += jio_fprintf(_stream, " ");
+    WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
   }
-  written += jio_fprintf(_stream, "%s\n", msg);
-  fflush(_stream);
+  WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
 
-  return written;
+  return flush() ? written : -1;
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
@@ -108,12 +137,11 @@ int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
   FileLocker flocker(_stream);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     if (use_decorations) {
-      written += write_decorations(msg_iterator.decorations());
-      written += jio_fprintf(_stream, " ");
+      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(msg_iterator.decorations()), written);
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
     }
-    written += jio_fprintf(_stream, "%s\n", msg_iterator.message());
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg_iterator.message()), written);
   }
-  fflush(_stream);
 
-  return written;
+  return flush() ? written : -1;
 }

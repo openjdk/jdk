@@ -64,8 +64,7 @@ public:
     }
 
     const MachNode* const mach = node->as_Mach();
-    if (mach->barrier_data() != ZLoadBarrierStrong &&
-        mach->barrier_data() != ZLoadBarrierWeak) {
+    if (mach->barrier_data() == ZLoadBarrierElided) {
       // Don't need liveness data for nodes without barriers
       return NULL;
     }
@@ -84,8 +83,8 @@ static ZBarrierSetC2State* barrier_set_state() {
   return reinterpret_cast<ZBarrierSetC2State*>(Compile::current()->barrier_set_state());
 }
 
-ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref, Register tmp, bool weak) {
-  ZLoadBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2(node, ref_addr, ref, tmp, weak);
+ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) {
+  ZLoadBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2(node, ref_addr, ref, tmp, barrier_data);
   if (!Compile::current()->output()->in_scratch_emit_size()) {
     barrier_set_state()->stubs()->append(stub);
   }
@@ -93,12 +92,12 @@ ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref
   return stub;
 }
 
-ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, bool weak) :
+ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) :
     _node(node),
     _ref_addr(ref_addr),
     _ref(ref),
     _tmp(tmp),
-    _weak(weak),
+    _barrier_data(barrier_data),
     _entry(),
     _continuation() {
   assert_different_registers(ref, ref_addr.base());
@@ -118,7 +117,19 @@ Register ZLoadBarrierStubC2::tmp() const {
 }
 
 address ZLoadBarrierStubC2::slow_path() const {
-  const DecoratorSet decorators = _weak ? ON_WEAK_OOP_REF : ON_STRONG_OOP_REF;
+  DecoratorSet decorators = DECORATORS_NONE;
+  if (_barrier_data & ZLoadBarrierStrong) {
+    decorators |= ON_STRONG_OOP_REF;
+  }
+  if (_barrier_data & ZLoadBarrierWeak) {
+    decorators |= ON_WEAK_OOP_REF;
+  }
+  if (_barrier_data & ZLoadBarrierPhantom) {
+    decorators |= ON_PHANTOM_OOP_REF;
+  }
+  if (_barrier_data & ZLoadBarrierNoKeepalive) {
+    decorators |= AS_NO_KEEPALIVE;
+  }
   return ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators);
 }
 
@@ -318,10 +329,18 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
       MachNode* const mach = node->as_Mach();
       switch (mach->ideal_Opcode()) {
       case Op_LoadP:
+        if ((mach->barrier_data() & ZLoadBarrierStrong) != 0) {
+          barrier_loads.push(mach);
+        }
+        if ((mach->barrier_data() & (ZLoadBarrierStrong | ZLoadBarrierNoKeepalive)) ==
+            ZLoadBarrierStrong) {
+          mem_ops.push(mach);
+        }
+        break;
       case Op_CompareAndExchangeP:
       case Op_CompareAndSwapP:
       case Op_GetAndSetP:
-        if (mach->barrier_data() == ZLoadBarrierStrong) {
+        if ((mach->barrier_data() & ZLoadBarrierStrong) != 0) {
           barrier_loads.push(mach);
         }
       case Op_StoreP:

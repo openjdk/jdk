@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,13 +27,16 @@
 #include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
 #ifdef PRODUCT
@@ -54,7 +57,7 @@ static RegisterOrConstant constant(int value) {
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg,
                                           Register temp_reg, Register temp2_reg) {
   if (VerifyMethodHandles) {
-    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+    verify_klass(_masm, klass_reg, VM_CLASS_ID(java_lang_Class),
                  temp_reg, temp2_reg, "MH argument is a Class");
   }
   __ z_lg(klass_reg, Address(klass_reg, java_lang_Class::klass_offset()));
@@ -73,12 +76,12 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj_reg, SystemDictionary::WKID klass_id,
+                                 Register obj_reg, vmClassID klass_id,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
 
-  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  Klass* klass = SystemDictionary::well_known_klass(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
 
   assert(temp_reg != Z_R0 && // Is used as base register!
          temp_reg != noreg && temp2_reg != noreg, "need valid registers!");
@@ -250,6 +253,13 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ should_not_reach_here();           // Empty stubs make SG sick.
+    return NULL;
+  }
+
   // Z_R10: sender SP (must preserve; see prepare_to_jump_from_interprted)
   // Z_method: method
   // Z_ARG1 (Gargs): incoming argument list (must preserve)
@@ -364,7 +374,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     assert_different_registers(temp1, temp2, temp3, temp4, Z_R10);
   }
 
-  if (iid == vmIntrinsics::_invokeBasic) {
+  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+    if (iid == vmIntrinsics::_linkToNative) {
+      assert(for_compiler_entry, "only compiler entry is supported");
+    }
     __ pc(); // Just for the block comment.
     // Indirect through MH.form.vmentry.vmtarget.
     jump_to_lambda_form(_masm, receiver_reg, Z_method, Z_R1, temp3, for_compiler_entry);
@@ -375,7 +388,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   if (VerifyMethodHandles) {
     // Make sure the trailing argument really is a MemberName (caller responsibility).
     verify_klass(_masm, member_reg,
-                 SystemDictionary::WK_KLASS_ENUM_NAME(MemberName_klass),
+                 VM_CLASS_ID(MemberName_klass),
                  temp1, temp2,
                  "MemberName required for invokeVirtual etc.");
   }
@@ -522,7 +535,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+      fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
       break;
   }
 
@@ -545,17 +558,19 @@ void trace_method_handle_stub(const char* adaptername,
   bool has_mh = (strstr(adaptername, "/static") == NULL &&
                  strstr(adaptername, "linkTo") == NULL);    // Static linkers don't have MH.
   const char* mh_reg_name = has_mh ? "Z_R4_mh" : "Z_R4";
-  tty->print_cr("MH %s %s=" INTPTR_FORMAT " sender_sp=" INTPTR_FORMAT " args=" INTPTR_FORMAT,
-                adaptername, mh_reg_name,
-                p2i(mh), p2i(sender_sp), p2i(args));
+  log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sender_sp=" INTPTR_FORMAT " args=" INTPTR_FORMAT,
+                          adaptername, mh_reg_name,
+                          p2i(mh), p2i(sender_sp), p2i(args));
 
-  if (Verbose) {
+  LogTarget(Trace, methodhandles) lt;
+  if (lt.is_enabled()) {
     // Dumping last frame with frame::describe.
-
+    ResourceMark rm;
+    LogStream ls(lt);
     JavaThread* p = JavaThread::active();
 
-    ResourceMark rm;
-    PRESERVE_EXCEPTION_MARK; // May not be needed by safer and unexpensive here.
+    // may not be needed by safer and unexpensive here
+    PreserveExceptionMark pem(Thread::current());
     FrameValues values;
 
     // Note: We want to allow trace_method_handle from any call site.
@@ -604,12 +619,12 @@ void trace_method_handle_stub(const char* adaptername,
     }
 
     // Note: the unextended_sp may not be correct.
-    tty->print_cr("  stack layout:");
-    values.print(p);
+    ls.print_cr("  stack layout:");
+    values.print_on(p, &ls);
     if (has_mh && oopDesc::is_oop(mh)) {
-      mh->print();
+      mh->print_on(&ls);
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        java_lang_invoke_MethodHandle::form(mh)->print();
+        java_lang_invoke_MethodHandle::form(mh)->print_on(&ls);
       }
     }
   }

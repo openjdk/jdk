@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
+#include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
@@ -357,6 +358,12 @@ JVMFlag::Error JVMFlagAccess::check_range(const JVMFlag* flag, bool verbose) {
 }
 
 JVMFlag::Error JVMFlagAccess::check_constraint(const JVMFlag* flag, void * func, bool verbose) {
+  const int type_enum = flag->type();
+  if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
+    // ccstr and ccstrlist are the same type.
+    return ((JVMFlagConstraintFunc_ccstr)func)(flag->get_ccstr(), verbose);
+  }
+
   return access_impl(flag)->check_constraint(flag, func, verbose);
 }
 

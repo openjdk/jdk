@@ -23,41 +23,37 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.hpp"
 #include "gc/z/zWorkers.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
 
 class ZWorkersInitializeTask : public ZTask {
 private:
-  const uint _nworkers;
-  uint       _started;
-  Monitor    _monitor;
+  const uint     _nworkers;
+  uint           _started;
+  ZConditionLock _lock;
 
 public:
   ZWorkersInitializeTask(uint nworkers) :
       ZTask("ZWorkersInitializeTask"),
       _nworkers(nworkers),
       _started(0),
-      _monitor(Monitor::leaf,
-               "ZWorkersInitialize",
-               false /* allow_vm_block */,
-               Monitor::_safepoint_check_never) {}
+      _lock() {}
 
   virtual void work() {
     // Register as worker
     ZThread::set_worker();
 
     // Wait for all threads to start
-    MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
+    ZLocker<ZConditionLock> locker(&_lock);
     if (++_started == _nworkers) {
       // All threads started
-      ml.notify_all();
+      _lock.notify_all();
     } else {
       while (_started != _nworkers) {
-        ml.wait();
+        _lock.wait();
       }
     }
   }
@@ -79,9 +75,7 @@ ZWorkers::ZWorkers() :
     vm_exit_during_initialization("Failed to create ZWorkers");
   }
 
-  // Execute task to register threads as workers. This also helps
-  // reduce latency in early GC pauses, which otherwise would have
-  // to take on any warmup costs.
+  // Execute task to register threads as workers
   ZWorkersInitializeTask task(nworkers());
   run(&task, nworkers());
 }
@@ -98,10 +92,6 @@ void ZWorkers::run(ZTask* task, uint nworkers) {
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), nworkers);
   _workers.update_active_workers(nworkers);
   _workers.run_task(task->gang_task());
-}
-
-void ZWorkers::run_serial(ZTask* task) {
-  run(task, 1  /* nworkers */);
 }
 
 void ZWorkers::run_parallel(ZTask* task) {

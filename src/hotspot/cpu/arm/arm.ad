@@ -997,6 +997,10 @@ bool Matcher::supports_vector_variable_shifts(void) {
   return VM_Version::has_simd();
 }
 
+bool Matcher::supports_vector_variable_rotates(void) {
+  return false; // not supported
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }

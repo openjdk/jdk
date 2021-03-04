@@ -28,6 +28,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/jniHandles.hpp"
 
 #define __ masm->
 

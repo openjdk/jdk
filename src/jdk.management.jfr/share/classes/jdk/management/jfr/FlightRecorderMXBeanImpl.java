@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.management.ManagementSupport;
+import jdk.jfr.internal.management.StreamManager;
 
 // Instantiated by service provider
 final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements FlightRecorderMXBean, NotificationEmitter {
@@ -147,6 +148,15 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         Instant starttime = MBeanUtils.parseTimestamp(s.get("startTime"), Instant.MIN);
         Instant endtime = MBeanUtils.parseTimestamp(s.get("endTime"), Instant.MAX);
         int blockSize = MBeanUtils.parseBlockSize(s.get("blockSize"), StreamManager.DEFAULT_BLOCK_SIZE);
+        String version = s.get("streamVersion");
+        if (version != null) {
+            if ("1.0".equals(version)) {
+                Recording r = getRecording(id);
+                return streamHandler.createOngoing(r, blockSize, starttime, endtime).getId();
+            }
+            throw new IllegalArgumentException("Unsupported stream version " + version);
+        }
+
         InputStream is = getExistingRecording(id).getStream(starttime, endtime);
         if (is == null) {
             throw new IOException("No recording data available");

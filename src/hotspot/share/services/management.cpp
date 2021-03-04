@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,20 @@
 #include "jmm.h"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -48,6 +52,7 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
@@ -1214,7 +1219,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
     if (locked_monitors) {
       // Constructs Object[] and int[] to contain the object monitor and the stack depth
       // where the thread locked it
-      objArrayOop array = oopFactory::new_objArray(SystemDictionary::Object_klass(), num_locked_monitors, CHECK_NULL);
+      objArrayOop array = oopFactory::new_objArray(vmClasses::Object_klass(), num_locked_monitors, CHECK_NULL);
       objArrayHandle mh(THREAD, array);
       monitors_array = mh;
 
@@ -1256,7 +1261,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       GrowableArray<OopHandle>* locks = (tcl != NULL ? tcl->owned_locks() : NULL);
       int num_locked_synchronizers = (locks != NULL ? locks->length() : 0);
 
-      objArrayOop array = oopFactory::new_objArray(SystemDictionary::Object_klass(), num_locked_synchronizers, CHECK_NULL);
+      objArrayOop array = oopFactory::new_objArray(vmClasses::Object_klass(), num_locked_synchronizers, CHECK_NULL);
       objArrayHandle sh(THREAD, array);
       synchronizers_array = sh;
 
@@ -1396,7 +1401,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
   // last flag entry is always NULL, so subtract 1
   int nFlags = (int) JVMFlag::numFlags - 1;
   // allocate a temp array
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
+  objArrayOop r = oopFactory::new_objArray(vmClasses::String_klass(),
                                            nFlags, CHECK_NULL);
   objArrayHandle flags_ah(THREAD, r);
   int num_entries = 0;
@@ -1416,7 +1421,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
 
   if (num_entries < nFlags) {
     // Return array of right length
-    objArrayOop res = oopFactory::new_objArray(SystemDictionary::String_klass(), num_entries, CHECK_NULL);
+    objArrayOop res = oopFactory::new_objArray(vmClasses::String_klass(), num_entries, CHECK_NULL);
     for(int i = 0; i < num_entries; i++) {
       res->obj_at_put(i, flags_ah->obj_at(i));
     }
@@ -1526,7 +1531,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     objArrayHandle names_ah(THREAD, ta);
     // Make sure we have a String array
     Klass* element_klass = ObjArrayKlass::cast(names_ah->klass())->element_klass();
-    if (element_klass != SystemDictionary::String_klass()) {
+    if (element_klass != vmClasses::String_klass()) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                  "Array element type is not String class", 0);
     }
@@ -1690,7 +1695,7 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
 
   // Make sure we have a String array
   Klass* element_klass = ObjArrayKlass::cast(names_ah->klass())->element_klass();
-  if (element_klass != SystemDictionary::String_klass()) {
+  if (element_klass != vmClasses::String_klass()) {
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                "Array element type is not String class", 0);
   }
@@ -1725,7 +1730,7 @@ static Handle find_deadlocks(bool object_monitors_only, TRAPS) {
     num_threads += cycle->num_threads();
   }
 
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::Thread_klass(), num_threads, CHECK_NH);
+  objArrayOop r = oopFactory::new_objArray(vmClasses::Thread_klass(), num_threads, CHECK_NH);
   objArrayHandle threads_ah(THREAD, r);
 
   int index = 0;
@@ -1933,7 +1938,7 @@ JVM_END
 JVM_ENTRY(jobjectArray, jmm_GetDiagnosticCommands(JNIEnv *env))
   ResourceMark rm(THREAD);
   GrowableArray<const char *>* dcmd_list = DCmdFactory::DCmd_list(DCmd_Source_MBean);
-  objArrayOop cmd_array_oop = oopFactory::new_objArray(SystemDictionary::String_klass(),
+  objArrayOop cmd_array_oop = oopFactory::new_objArray(vmClasses::String_klass(),
           dcmd_list->length(), CHECK_NULL);
   objArrayHandle cmd_array(THREAD, cmd_array_oop);
   for (int i = 0; i < dcmd_list->length(); i++) {
@@ -1956,7 +1961,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
 
   // Make sure we have a String array
   Klass* element_klass = ObjArrayKlass::cast(cmds_ah->klass())->element_klass();
-  if (element_klass != SystemDictionary::String_klass()) {
+  if (element_klass != vmClasses::String_klass()) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                "Array element type is not String class");
   }

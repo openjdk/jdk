@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,29 +28,24 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-NativeCallStack::NativeCallStack(int toSkip, bool fillStack) :
-  _hash_value(0) {
+const NativeCallStack NativeCallStack::_empty_stack; // Uses default ctor
 
-  if (fillStack) {
-    // We need to skip the NativeCallStack::NativeCallStack frame if a tail call is NOT used
-    // to call os::get_native_stack. A tail call is used if _NMT_NOINLINE_ is not defined
-    // (which means this is not a slowdebug build), and we are on 64-bit (except Windows).
-    // This is not necessarily a rule, but what has been obvserved to date.
-#if (defined(_NMT_NOINLINE_) || defined(_WINDOWS) || !defined(_LP64))
-    // Not a tail call.
-    toSkip++;
+NativeCallStack::NativeCallStack(int toSkip) {
+
+  // We need to skip the NativeCallStack::NativeCallStack frame if a tail call is NOT used
+  // to call os::get_native_stack. A tail call is used if _NMT_NOINLINE_ is not defined
+  // (which means this is not a slowdebug build), and we are on 64-bit (except Windows).
+  // This is not necessarily a rule, but what has been obvserved to date.
+#if (defined(_NMT_NOINLINE_) || defined(_WINDOWS) || !defined(_LP64) || defined(PPC64))
+  // Not a tail call.
+  toSkip++;
 #if (defined(_NMT_NOINLINE_) && defined(BSD) && defined(_LP64))
-    // Mac OS X slowdebug builds have this odd behavior where NativeCallStack::NativeCallStack
-    // appears as two frames, so we need to skip an extra frame.
-    toSkip++;
+  // Mac OS X slowdebug builds have this odd behavior where NativeCallStack::NativeCallStack
+  // appears as two frames, so we need to skip an extra frame.
+  toSkip++;
 #endif // Special-case for BSD.
 #endif // Not a tail call.
-    os::get_native_stack(_stack, NMT_TrackingStackDepth, toSkip);
-  } else {
-    for (int index = 0; index < NMT_TrackingStackDepth; index ++) {
-      _stack[index] = NULL;
-    }
-  }
+  os::get_native_stack(_stack, NMT_TrackingStackDepth, toSkip);
 }
 
 NativeCallStack::NativeCallStack(address* pc, int frameCount) {
@@ -63,7 +58,6 @@ NativeCallStack::NativeCallStack(address* pc, int frameCount) {
   for (; index < NMT_TrackingStackDepth; index ++) {
     _stack[index] = NULL;
   }
-  _hash_value = 0;
 }
 
 // number of stack frames captured
@@ -75,21 +69,6 @@ int NativeCallStack::frames() const {
     }
   }
   return index;
-}
-
-// Hash code. Any better algorithm?
-unsigned int NativeCallStack::hash() const {
-  uintptr_t hash_val = _hash_value;
-  if (hash_val == 0) {
-    for (int index = 0; index < NMT_TrackingStackDepth; index++) {
-      if (_stack[index] == NULL) break;
-      hash_val += (uintptr_t)_stack[index];
-    }
-
-    NativeCallStack* p = const_cast<NativeCallStack*>(this);
-    p->_hash_value = (unsigned int)(hash_val & 0xFFFFFFFF);
-  }
-  return _hash_value;
 }
 
 void NativeCallStack::print_on(outputStream* out) const {

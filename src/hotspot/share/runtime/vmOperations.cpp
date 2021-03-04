@@ -41,6 +41,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
@@ -155,11 +156,6 @@ void VM_ZombieAll::doit() {
 }
 
 #endif // !PRODUCT
-
-void VM_Verify::doit() {
-  Universe::heap()->prepare_for_verify();
-  Universe::verify();
-}
 
 bool VM_PrintThreads::doit_prologue() {
   // Get Heap_lock if concurrent locks will be dumped

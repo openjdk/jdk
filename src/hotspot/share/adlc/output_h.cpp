@@ -98,7 +98,7 @@ void ArchDesc::buildMachRegisterNumbers(FILE *fp_hpp) {
   }
 
   fprintf(fp_hpp, "\n// Size of register-mask in ints\n");
-  fprintf(fp_hpp, "#define RM_SIZE %d\n",RegisterForm::RegMask_Size());
+  fprintf(fp_hpp, "#define RM_SIZE %d\n", RegisterForm::RegMask_Size());
   fprintf(fp_hpp, "// Unroll factor for loops over the data in a RegMask\n");
   fprintf(fp_hpp, "#define FORALL_BODY ");
   int len = RegisterForm::RegMask_Size();

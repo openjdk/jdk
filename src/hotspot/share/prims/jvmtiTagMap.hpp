@@ -49,7 +49,6 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   JvmtiTagMap(JvmtiEnv* env);
 
   // accessors
-  inline Mutex* lock()                      { return &_lock; }
   inline JvmtiEnv* env() const              { return _env; }
 
   void check_hashmap(bool post_events);
@@ -60,6 +59,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
  public:
   // indicates if this tag map is locked
   bool is_locked()                          { return lock()->is_locked(); }
+  inline Mutex* lock()                      { return &_lock; }
 
   JvmtiTagMapTable* hashmap() { return _hashmap; }
 
@@ -119,6 +119,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   static void gc_notification(size_t num_dead_entries) NOT_JVMTI_RETURN;
 
   void flush_object_free_events();
+  void clear();  // Clear tagmap table after the env is disposed.
 
   // For ServiceThread
   static void flush_all_object_free_events() NOT_JVMTI_RETURN;

@@ -257,6 +257,8 @@ public class Head extends Content {
         tree.add(getGeneratedBy(showTimestamp, generatedDate));
         tree.add(HtmlTree.TITLE(title));
 
+        tree.add(HtmlTree.META("viewport", "width=device-width, initial-scale=1"));
+
         if (charset != null) { // compatibility; should this be allowed?
             tree.add(HtmlTree.META("Content-Type", "text/html", charset));
         }

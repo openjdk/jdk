@@ -82,6 +82,7 @@ public class GTestWrapper {
         command.add("-jdk");
         command.add(Utils.TEST_JDK);
         command.add("--gtest_output=xml:" + resultFile);
+        command.add("--gtest_catch_exceptions=0" + resultFile);
         for (String a : args) {
             command.add(a);
         }
@@ -118,8 +119,10 @@ public class GTestWrapper {
             return "client";
         } else if (Platform.isMinimal()) {
             return "minimal";
+        } else if (Platform.isZero()) {
+            return "zero";
         } else {
-            throw new Error("TESTBUG: unsuppported vm variant");
+            throw new Error("TESTBUG: unsupported vm variant");
         }
     }
 }

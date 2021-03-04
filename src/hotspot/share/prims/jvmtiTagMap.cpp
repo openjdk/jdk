@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,19 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/arrayOop.inline.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -95,6 +97,14 @@ JvmtiTagMap::~JvmtiTagMap() {
   // finally destroy the hashmap
   delete _hashmap;
   _hashmap = NULL;
+}
+
+// Called by env_dispose() to reclaim memory before deallocation.
+// Remove all the entries but keep the empty table intact.
+// This needs the table lock.
+void JvmtiTagMap::clear() {
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+  _hashmap->clear();
 }
 
 // returns the tag map for the given environments. If the tag map
@@ -227,7 +237,7 @@ class CallbackWrapper : public StackObj {
     _obj_tag = (_entry == NULL) ? 0 : _entry->tag();
 
     // get the class and the class's tag value
-    assert(SystemDictionary::Class_klass()->is_mirror_instance_klass(), "Is not?");
+    assert(vmClasses::Class_klass()->is_mirror_instance_klass(), "Is not?");
 
     _klass_tag = tag_for(tag_map, _o->klass()->java_mirror());
   }
@@ -682,7 +692,7 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
                                          oop str,
                                          void* user_data)
 {
-  assert(str->klass() == SystemDictionary::String_klass(), "not a string");
+  assert(str->klass() == vmClasses::String_klass(), "not a string");
 
   typeArrayOop s_value = java_lang_String::value(str);
 
@@ -763,7 +773,7 @@ static jint invoke_primitive_field_callback_for_static_fields
   // for static fields only the index will be set
   static jvmtiHeapReferenceInfo reference_info = { 0 };
 
-  assert(obj->klass() == SystemDictionary::Class_klass(), "not a class");
+  assert(obj->klass() == vmClasses::Class_klass(), "not a class");
   if (java_lang_Class::is_primitive(obj)) {
     return 0;
   }
@@ -1074,7 +1084,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   if (callbacks()->primitive_field_callback != NULL && obj->is_instance()) {
     jint res;
     jvmtiPrimitiveFieldCallback cb = callbacks()->primitive_field_callback;
-    if (obj->klass() == SystemDictionary::Class_klass()) {
+    if (obj->klass() == vmClasses::Class_klass()) {
       res = invoke_primitive_field_callback_for_static_fields(&wrapper,
                                                                     obj,
                                                                     cb,
@@ -1091,7 +1101,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   // string callback
   if (!is_array &&
       callbacks()->string_primitive_value_callback != NULL &&
-      obj->klass() == SystemDictionary::String_klass()) {
+      obj->klass() == vmClasses::String_klass()) {
     jint res = invoke_string_value_callback(
                 callbacks()->string_primitive_value_callback,
                 &wrapper,
@@ -1158,6 +1168,8 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
 void JvmtiTagMap::remove_dead_entries_locked(bool post_object_free) {
   assert(is_locked(), "precondition");
   if (_needs_cleaning) {
+    // Recheck whether to post object free events under the lock.
+    post_object_free = post_object_free && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE);
     log_info(jvmti, table)("TagMap table needs cleaning%s",
                            (post_object_free ? " and posting" : ""));
     hashmap()->remove_dead_entries(env(), post_object_free);
@@ -2019,7 +2031,7 @@ inline bool CallbackInvoker::report_primitive_array_values(oop obj) {
 
 // invoke the string value callback
 inline bool CallbackInvoker::report_string_value(oop str) {
-  assert(str->klass() == SystemDictionary::String_klass(), "not a string");
+  assert(str->klass() == vmClasses::String_klass(), "not a string");
 
   AdvancedHeapWalkContext* context = advanced_context();
   assert(context->string_primitive_value_callback() != NULL, "no callback");
@@ -2541,7 +2553,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
 
     // super (only if something more interesting than java.lang.Object)
     InstanceKlass* java_super = ik->java_super();
-    if (java_super != NULL && java_super != SystemDictionary::Object_klass()) {
+    if (java_super != NULL && java_super != vmClasses::Object_klass()) {
       oop super = java_super->java_mirror();
       if (!CallbackInvoker::report_superclass_reference(mirror, super)) {
         return false;
@@ -2693,7 +2705,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
 
   // if the object is a java.lang.String
   if (is_reporting_string_values() &&
-      o->klass() == SystemDictionary::String_klass()) {
+      o->klass() == vmClasses::String_klass()) {
     if (!CallbackInvoker::report_string_value(o)) {
       return false;
     }
@@ -2891,7 +2903,7 @@ bool VM_HeapWalkOperation::visit(oop o) {
 
   // instance
   if (o->is_instance()) {
-    if (o->klass() == SystemDictionary::Class_klass()) {
+    if (o->klass() == vmClasses::Class_klass()) {
       if (!java_lang_Class::is_primitive(o)) {
         // a java.lang.Class
         return iterate_over_class(o);

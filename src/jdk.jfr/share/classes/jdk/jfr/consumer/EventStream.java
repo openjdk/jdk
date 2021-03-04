@@ -31,6 +31,7 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -137,7 +138,7 @@ public interface EventStream extends AutoCloseable {
      */
     public static EventStream openRepository() throws IOException {
         Utils.checkAccessFlightRecorder();
-        return new EventDirectoryStream(AccessController.getContext(), null, SecuritySupport.PRIVILEGED, null);
+        return new EventDirectoryStream(AccessController.getContext(), null, SecuritySupport.PRIVILEGED, null, Collections.emptyList());
     }
 
     /**
@@ -160,7 +161,7 @@ public interface EventStream extends AutoCloseable {
     public static EventStream openRepository(Path directory) throws IOException {
         Objects.nonNull(directory);
         AccessControlContext acc = AccessController.getContext();
-        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null);
+        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, Collections.emptyList());
     }
 
     /**
@@ -181,6 +182,22 @@ public interface EventStream extends AutoCloseable {
     static EventStream openFile(Path file) throws IOException {
         return new EventFileStream(AccessController.getContext(), file);
     }
+
+    /**
+     * Registers an action to perform when new metadata arrives in the stream.
+     *
+     * The event type of an event always arrives sometime before the actual event.
+     * The action must be registered before the stream is started.
+     *
+     * @implSpec The default implementation of this method is empty.
+     *
+     * @param action to perform, not {@code null}
+     *
+     * @throws IllegalStateException if an action is added after the stream has
+     *                               started
+     */
+     default void onMetadata(Consumer<MetadataEvent> action) {
+     }
 
     /**
      * Registers an action to perform on all events in the stream.

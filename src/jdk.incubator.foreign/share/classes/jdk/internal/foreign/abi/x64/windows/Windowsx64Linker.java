@@ -36,6 +36,7 @@ import jdk.internal.foreign.abi.UpcallStubs;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static jdk.internal.foreign.PlatformLayouts.*;
@@ -86,6 +87,9 @@ public class Windowsx64Linker implements CLinker {
 
     @Override
     public MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function) {
+        Objects.requireNonNull(symbol);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(function);
         MethodType llMt = SharedUtils.convertVaListCarriers(type, WinVaList.CARRIER);
         MethodHandle handle = CallArranger.arrangeDowncall(symbol, llMt, function);
         handle = SharedUtils.unboxVaLists(type, handle, MH_unboxVaList);
@@ -94,6 +98,8 @@ public class Windowsx64Linker implements CLinker {
 
     @Override
     public MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function) {
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(function);
         target = SharedUtils.boxVaLists(target, MH_boxVaList);
         return UpcallStubs.upcallAddress(CallArranger.arrangeUpcall(target, target.type(), function));
     }

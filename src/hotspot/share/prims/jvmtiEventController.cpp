@@ -307,6 +307,7 @@ public:
   static void trace_changed(jlong now_enabled, jlong changed);
 
   static void flush_object_free_events(JvmtiEnvBase *env);
+  static void set_enabled_events_with_lock(JvmtiEnvBase *env, jlong now_enabled);
 };
 
 bool JvmtiEventControllerPrivate::_initialized = false;
@@ -409,6 +410,19 @@ JvmtiEventControllerPrivate::flush_object_free_events(JvmtiEnvBase* env) {
   }
 }
 
+void
+JvmtiEventControllerPrivate::set_enabled_events_with_lock(JvmtiEnvBase* env, jlong now_enabled) {
+  // The state for ObjectFree events must be enabled or disabled
+  // under the TagMap lock, to allow pending object posting events to complete.
+  JvmtiTagMap* tag_map = env->tag_map_acquire();
+  if (tag_map != NULL) {
+    MutexLocker ml(tag_map->lock(), Mutex::_no_safepoint_check_flag);
+    env->env_event_enable()->_event_enabled.set_bits(now_enabled);
+  } else {
+    env->env_event_enable()->_event_enabled.set_bits(now_enabled);
+  }
+}
+
 // For the specified env: compute the currently truly enabled events
 // set external state accordingly.
 // Return value and set value must include all events.
@@ -442,8 +456,8 @@ JvmtiEventControllerPrivate::recompute_env_enabled(JvmtiEnvBase* env) {
     break;
   }
 
-  // will we really send these events to this env
-  env->env_event_enable()->_event_enabled.set_bits(now_enabled);
+  // Set/reset the event enabled under the tagmap lock.
+  set_enabled_events_with_lock(env, now_enabled);
 
   trace_changed(now_enabled, (now_enabled ^ was_enabled)  & ~THREAD_FILTERED_EVENT_BITS);
 

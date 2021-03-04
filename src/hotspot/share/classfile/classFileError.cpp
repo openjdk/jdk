@@ -26,6 +26,7 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 
 // Keep these in a separate file to prevent inlining

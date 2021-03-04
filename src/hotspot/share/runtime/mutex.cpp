@@ -100,7 +100,7 @@ void Mutex::lock_contended(Thread* self) {
 }
 
 void Mutex::lock(Thread* self) {
-  assert(_owner != self, "invariant");
+  assert(owner() != self, "invariant");
 
   check_safepoint_state(self);
   check_rank(self);
@@ -125,7 +125,7 @@ void Mutex::lock() {
 // in the wrong way this can lead to a deadlock with the safepoint code.
 
 void Mutex::lock_without_safepoint_check(Thread * self) {
-  assert(_owner != self, "invariant");
+  assert(owner() != self, "invariant");
 
   check_no_safepoint_state(self);
   check_rank(self);
@@ -145,7 +145,7 @@ bool Mutex::try_lock_inner(bool do_rank_checks) {
   Thread * const self = Thread::current();
   // Checking the owner hides the potential difference in recursive locking behaviour
   // on some platforms.
-  if (_owner == self) {
+  if (owner() == self) {
     return false;
   }
 
@@ -308,13 +308,13 @@ Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
   Mutex(Rank, name, allow_vm_block, safepoint_check_required) {}
 
 bool Mutex::owned_by_self() const {
-  return _owner == Thread::current();
+  return owner() == Thread::current();
 }
 
 void Mutex::print_on_error(outputStream* st) const {
   st->print("[" PTR_FORMAT, p2i(this));
   st->print("] %s", _name);
-  st->print(" - owner thread: " PTR_FORMAT, p2i(_owner));
+  st->print(" - owner thread: " PTR_FORMAT, p2i(owner()));
 }
 
 // ----------------------------------------------------------------------------------
@@ -332,7 +332,7 @@ const char* print_safepoint_check(Mutex::SafepointCheckRequired safepoint_check)
 
 void Mutex::print_on(outputStream* st) const {
   st->print("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
-            p2i(this), _name, p2i(_owner));
+            p2i(this), _name, p2i(owner()));
   if (_allow_vm_block) {
     st->print("%s", " allow_vm_block");
   }
@@ -350,9 +350,9 @@ void Mutex::assert_owner(Thread * expected) {
   else if (expected == Thread::current()) {
     msg = "should be owned by current thread";
   }
-  assert(_owner == expected,
+  assert(owner() == expected,
          "%s: owner=" INTPTR_FORMAT ", should be=" INTPTR_FORMAT,
-         msg, p2i(_owner), p2i(expected));
+         msg, p2i(owner()), p2i(expected));
 }
 
 Mutex* Mutex::get_least_ranked_lock(Mutex* locks) {
@@ -469,8 +469,8 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     // the thread is acquiring this lock
 
     assert(new_owner == Thread::current(), "Should I be doing this?");
-    assert(_owner == NULL, "setting the owner thread of an already owned mutex");
-    _owner = new_owner; // set the owner
+    assert(owner() == NULL, "setting the owner thread of an already owned mutex");
+    raw_set_owner(new_owner); // set the owner
 
     // link "this" into the owned locks list
     this->_next = new_owner->_owned_locks;
@@ -482,14 +482,14 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
   } else {
     // the thread is releasing this lock
 
-    Thread* old_owner = _owner;
+    Thread* old_owner = owner();
     _last_owner = old_owner;
     _skip_rank_check = false;
 
     assert(old_owner != NULL, "removing the owner thread of an unowned mutex");
     assert(old_owner == Thread::current(), "removing the owner thread of an unowned mutex");
 
-    _owner = NULL; // set the owner
+    raw_set_owner(NULL); // set the owner
 
     Mutex* locks = old_owner->owned_locks();
 

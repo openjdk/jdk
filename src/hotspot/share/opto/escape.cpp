@@ -906,6 +906,12 @@ void ConnectionGraph::add_call_node(CallNode* call) {
          !cik->as_instance_klass()->can_be_instantiated() ||
           cik->as_instance_klass()->has_finalizer()) {
         es = PointsToNode::GlobalEscape;
+      } else {
+        int nfields = cik->as_instance_klass()->nof_nonstatic_fields();
+        if (nfields > EliminateAllocationFieldsLimit) {
+          // Not scalar replaceable if there are too many fields.
+          scalar_replaceable = false;
+        }
       }
     }
     add_java_object(call, es);

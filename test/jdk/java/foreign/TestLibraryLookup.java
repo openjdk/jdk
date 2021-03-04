@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @run testng/othervm -Dforeign.restricted=permit TestLibraryLookup
  */
@@ -41,6 +42,11 @@ import java.util.List;
 
 import static org.testng.Assert.*;
 
+// FYI this test is run on 64-bit platforms only for now,
+// since the windows 32-bit linker fails and there
+// is some fallback behaviour to use the 64-bit linker,
+// where cygwin gets in the way and we accidentally pick up its
+// link.exe
 public class TestLibraryLookup {
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Library not found.*")

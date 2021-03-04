@@ -33,6 +33,7 @@
 #include "interpreter/zero/zeroInterpreterGenerator.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"

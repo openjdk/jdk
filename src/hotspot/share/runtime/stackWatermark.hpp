@@ -130,6 +130,7 @@ public:
   void set_next(StackWatermark* n) { _next = n; }
 
   void link_watermark(StackWatermark* watermark);
+  DEBUG_ONLY(StackWatermark* linked_watermark() const { return _linked_watermark; })
 
   uintptr_t watermark();
   uintptr_t last_processed();

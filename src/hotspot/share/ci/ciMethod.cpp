@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciReplay.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
@@ -138,7 +138,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _method_data = NULL;
   _nmethod_age = h_m->nmethod_age();
   // Take a snapshot of these values, so they will be commensurate with the MDO.
-  if (ProfileInterpreter || TieredCompilation) {
+  if (ProfileInterpreter || CompilerConfig::is_c1_profiling()) {
     int invcnt = h_m->interpreter_invocation_count();
     // if the value overflowed report it as max int
     _interpreter_invocation_count = invcnt < 0 ? max_jint : invcnt ;
@@ -474,15 +474,13 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
           morphism++;
         }
         int epsilon = 0;
-        if (TieredCompilation) {
-          // For a call, it is assumed that either the type of the receiver(s)
-          // is recorded or an associated counter is incremented, but not both. With
-          // tiered compilation, however, both can happen due to the interpreter and
-          // C1 profiling invocations differently. Address that inconsistency here.
-          if (morphism == 1 && count > 0) {
-            epsilon = count;
-            count = 0;
-          }
+        // For a call, it is assumed that either the type of the receiver(s)
+        // is recorded or an associated counter is incremented, but not both. With
+        // tiered compilation, however, both can happen due to the interpreter and
+        // C1 profiling invocations differently. Address that inconsistency here.
+        if (morphism == 1 && count > 0) {
+          epsilon = count;
+          count = 0;
         }
         for (uint i = 0; i < call->row_limit(); i++) {
           ciKlass* receiver = call->receiver(i);
@@ -876,14 +874,8 @@ int ciMethod::scale_count(int count, float prof_factor) {
   if (count > 0 && method_data() != NULL) {
     int counter_life;
     int method_life = interpreter_invocation_count();
-    if (TieredCompilation) {
-      // In tiered the MDO's life is measured directly, so just use the snapshotted counters
-      counter_life = MAX2(method_data()->invocation_count(), method_data()->backedge_count());
-    } else {
-      int current_mileage = method_data()->current_mileage();
-      int creation_mileage = method_data()->creation_mileage();
-      counter_life = current_mileage - creation_mileage;
-    }
+    // In tiered the MDO's life is measured directly, so just use the snapshotted counters
+    counter_life = MAX2(method_data()->invocation_count(), method_data()->backedge_count());
 
     // counter_life due to backedge_counter could be > method_life
     if (counter_life > method_life)
@@ -942,7 +934,7 @@ bool ciMethod::is_compiled_lambda_form() const {
 // ciMethod::is_object_initializer
 //
 bool ciMethod::is_object_initializer() const {
-   return name() == ciSymbol::object_initializer_name();
+   return name() == ciSymbols::object_initializer_name();
 }
 
 // ------------------------------------------------------------------
@@ -1043,17 +1035,17 @@ MethodCounters* ciMethod::ensure_method_counters() {
 // ------------------------------------------------------------------
 // ciMethod::has_option
 //
-bool ciMethod::has_option(const char* option) {
+bool ciMethod::has_option(enum CompileCommand option) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
-  return CompilerOracle::has_option_string(mh, option);
+  return CompilerOracle::has_option(mh, option);
 }
 
 // ------------------------------------------------------------------
 // ciMethod::has_option_value
 //
-bool ciMethod::has_option_value(const char* option, double& value) {
+bool ciMethod::has_option_value(enum CompileCommand option, double& value) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());

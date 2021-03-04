@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -48,7 +48,7 @@
 package sun.security.pkcs11.wrapper;
 
 /**
- * This interface holds constants of the PKCS#11 v2.11 standard.
+ * This interface holds constants of the PKCS#11 v3.00 standard.
  * This is mainly the content of the 'pkcs11t.h' header file.
  *
  * Mapping of primitiv data types to Java types:
@@ -62,11 +62,15 @@ package sun.security.pkcs11.wrapper;
  *   CK_ULONG ...................................... long
  *   CK_LONG ....................................... long
  *   CK_FLAGS ...................................... long
+ *   CK_BYTE_PTR ................................... byte[]
+ *   CK_CHAR_PTR ................................... char[]
+ *   CK_UTF8CHAR_PTR ............................... char[]
+ *   CK_ULONG_PTR .................................. long[]
+ *   CK_VOID_PTR ................................... Object[]
  *   CK_NOTIFICATION ............................... long
  *   CK_SLOT_ID .................................... long
  *   CK_SESSION_HANDLE ............................. long
  *   CK_USER_TYPE .................................. long
- *   CK_SESSION_HANDLE ............................. long
  *   CK_STATE ...................................... long
  *   CK_OBJECT_HANDLE .............................. long
  *   CK_OBJECT_CLASS ............................... long
@@ -74,21 +78,27 @@ package sun.security.pkcs11.wrapper;
  *   CK_KEY_TYPE ................................... long
  *   CK_CERTIFICATE_TYPE ........................... long
  *   CK_ATTRIBUTE_TYPE ............................. long
- *   CK_VOID_PTR ................................... Object[]
- *   CK_BYTE_PTR ................................... byte[]
- *   CK_CHAR_PTR ................................... char[]
- *   CK_UTF8CHAR_PTR ............................... char[]
  *   CK_MECHANISM_TYPE ............................. long
  *   CK_RV ......................................... long
- *   CK_RSA_PKCS_OAEP_MGF_TYPE ..................... long
+ *   CK_RSA_PKCS_MGF_TYPE .......................... long
  *   CK_RSA_PKCS_OAEP_SOURCE_TYPE .................. long
+ *   CK_EC_KDF_TYPE ................................ long
+ *   CK_X9_42_DH_KDF_TYPE .......................... long
  *   CK_RC2_PARAMS ................................. long
  *   CK_MAC_GENERAL_PARAMS ......................... long
  *   CK_EXTRACT_PARAMS ............................. long
  *   CK_PKCS5_PBKD2_PSEUDO_RANDOM_FUNCTION_TYPE .... long
  *   CK_PKCS5_PBKDF2_SALT_SOURCE_TYPE .............. long
- *   CK_EC_KDF_TYPE ................................ long
- *   CK_X9_42_DH_KDF_TYPE .......................... long
+ *   CK_OTP_PARAM_TYPE / CK_PARAM_TYPE ............. long
+ *   CK_GENERATOR_FUNCTION ......................... long
+ *   CK_JAVA_MIDP_SECURITY_DOMAIN .................. long
+ *   CK_CERTIFICATE_CATEGORY ....................... long
+ *   CK_PROFILE_ID ................................. long
+ *   CK_PRF_DATA_TYPE .............................. long
+ *   CK_SP800_108_DKM_LENGTH_METHOD ................ long
+ *   CK_X3DH_KDF_TYPE .............................. long
+ *   CK_X2RATCHET_KDF_TYPE ......................... long
+ *   CK_XEDDSA_HASH_TYPE ........................... long
  * </pre>
  *
  * @author <a href="mailto:Karl.Scheibelhofer@iaik.at"> Karl Scheibelhofer </a>
@@ -201,16 +211,30 @@ public interface PKCS11Constants {
     public static final long  CKO_SECRET_KEY        = 0x00000004L;
     public static final long  CKO_HW_FEATURE        = 0x00000005L;
     public static final long  CKO_DOMAIN_PARAMETERS = 0x00000006L;
+    public static final long  CKO_MECHANISM         = 0x00000007L;
+    public static final long  CKO_OTP_KEY           = 0x00000008L;
+    public static final long  CKO_PROFILE           = 0x00000009L;
+
     public static final long  CKO_VENDOR_DEFINED    = 0x80000000L;
 
     // pseudo object class ANY (for template manager)
     public static final long  PCKO_ANY              = 0x7FFFFF23L;
 
+    /* Uncomment when actually used
+    // Profile ID's
+    public static final long  CKP_INVALID_ID                = 0x00000000L;
+    public static final long  CKP_BASELINE_PROVIDER         = 0x00000001L;
+    public static final long  CKP_EXTENDED_PROVIDER         = 0x00000002L;
+    public static final long  CKP_AUTHENTICATION_TOKEN      = 0x00000003L;
+    public static final long  CKP_PUBLIC_CERTIFICATES_TOKEN = 0x00000004L;
+    public static final long  CKP_VENDOR_DEFINED            = 0x80000000L;
 
-    /* The following hardware feature types are defined */
+    // The following hardware feature types are defined
     public static final long  CKH_MONOTONIC_COUNTER = 0x00000001L;
     public static final long  CKH_CLOCK             = 0x00000002L;
+    public static final long  CKH_USER_INTERFACE    = 0x00000003L;
     public static final long  CKH_VENDOR_DEFINED    = 0x80000000L;
+    */
 
     /* the following key types are defined: */
     public static final long  CKK_RSA                  = 0x00000000L;
@@ -259,7 +283,29 @@ public interface PKCS11Constants {
     public static final long  CKK_GOSTR3410            = 0x00000030L;
     public static final long  CKK_GOSTR3411            = 0x00000031L;
     public static final long  CKK_GOST28147            = 0x00000032L;
-;
+    public static final long  CKK_CHACHA20             = 0x00000033L;
+    public static final long  CKK_POLY1305             = 0x00000034L;
+    public static final long  CKK_AES_XTS              = 0x00000035L;
+
+    public static final long  CKK_SHA3_224_HMAC        = 0x00000036L;
+    public static final long  CKK_SHA3_256_HMAC        = 0x00000037L;
+    public static final long  CKK_SHA3_384_HMAC        = 0x00000038L;
+    public static final long  CKK_SHA3_512_HMAC        = 0x00000039L;
+
+    public static final long  CKK_BLAKE2B_160_HMAC     = 0x0000003aL;
+    public static final long  CKK_BLAKE2B_256_HMAC     = 0x0000003bL;
+    public static final long  CKK_BLAKE2B_384_HMAC     = 0x0000003cL;
+    public static final long  CKK_BLAKE2B_512_HMAC     = 0x0000003dL;
+    public static final long  CKK_SALSA20              = 0x0000003eL;
+    public static final long  CKK_X2RATCHET            = 0x0000003fL;
+    public static final long  CKK_EC_EDWARDS           = 0x00000040L;
+    public static final long  CKK_EC_MONTGOMERY        = 0x00000041L;
+    public static final long  CKK_HKDF                 = 0x00000042L;
+
+    public static final long  CKK_SHA512_224_HMAC      = 0x00000043L;
+    public static final long  CKK_SHA512_256_HMAC      = 0x00000044L;
+    public static final long  CKK_SHA512_T_HMAC        = 0x00000045L;
+
     public static final long  CKK_VENDOR_DEFINED       = 0x80000000L;
 
     // pseudo key type ANY (for template manager)
@@ -271,9 +317,22 @@ public interface PKCS11Constants {
     public static final long  PCKK_TLSRSAPREMASTER     = 0x7FFFFF26L;
     public static final long  PCKK_TLSMASTER           = 0x7FFFFF27L;
 
+    /* Uncomment when actually used
+    public static final long  CK_CERTIFICATE_CATEGORY_UNSPECIFIED   = 0L;
+    public static final long  CK_CERTIFICATE_CATEGORY_TOKEN_USER    = 1L;
+    public static final long  CK_CERTIFICATE_CATEGORY_AUTHORITY     = 2L;
+    public static final long  CK_CERTIFICATE_CATEGORY_OTHER_ENTITY  = 3L;
+
+    public static final long  CK_SECURITY_DOMAIN_UNSPECIFIED   = 0L;
+    public static final long  CK_SECURITY_DOMAIN_MANUFACTURER  = 1L;
+    public static final long  CK_SECURITY_DOMAIN_OPERATOR      = 2L;
+    public static final long  CK_SECURITY_DOMAIN_THIRD_PARTY   = 3L;
+    */
+
     /* The following certificate types are defined: */
     public static final long  CKC_X_509                = 0x00000000L;
     public static final long  CKC_X_509_ATTR_CERT      = 0x00000001L;
+    public static final long  CKC_WTLS                 = 0x00000002L;
     public static final long  CKC_VENDOR_DEFINED       = 0x80000000L;
 
     /* The CKF_ARRAY_ATTRIBUTE flag identifies an attribute which
@@ -281,11 +340,23 @@ public interface PKCS11Constants {
      */
     public static final long  CKF_ARRAY_ATTRIBUTE      = 0x40000000L;
 
+    /* Uncomment when actually used
+    public static final long  CK_OTP_FORMAT_DECIMAL         = 0L;
+    public static final long  CK_OTP_FORMAT_HEXADECIMAL     = 1L;
+    public static final long  CK_OTP_FORMAT_ALPHANUMERIC    = 2L;
+    public static final long  CK_OTP_FORMAT_BINARY          = 3L;
+
+    public static final long  CK_OTP_PARAM_IGNORED          = 0L;
+    public static final long  CK_OTP_PARAM_OPTIONAL         = 1L;
+    public static final long  CK_OTP_PARAM_MANDATORY        = 2L;
+    */
+
     /* The following attribute types are defined: */
     public static final long  CKA_CLASS              = 0x00000000L;
     public static final long  CKA_TOKEN              = 0x00000001L;
     public static final long  CKA_PRIVATE            = 0x00000002L;
     public static final long  CKA_LABEL              = 0x00000003L;
+    public static final long  CKA_UNIQUE_ID          = 0x00000004L;
     public static final long  CKA_APPLICATION        = 0x00000010L;
     public static final long  CKA_VALUE              = 0x00000011L;
     public static final long  CKA_OBJECT_ID          = 0x00000012L;
@@ -343,12 +414,10 @@ public interface PKCS11Constants {
 
     public static final long  CKA_VALUE_BITS         = 0x00000160L;
     public static final long  CKA_VALUE_LEN          = 0x00000161L;
-
     public static final long  CKA_EXTRACTABLE        = 0x00000162L;
     public static final long  CKA_LOCAL              = 0x00000163L;
     public static final long  CKA_NEVER_EXTRACTABLE  = 0x00000164L;
     public static final long  CKA_ALWAYS_SENSITIVE   = 0x00000165L;
-
     public static final long  CKA_KEY_GEN_MECHANISM  = 0x00000166L;
 
     public static final long  CKA_MODIFIABLE         = 0x00000170L;
@@ -406,6 +475,25 @@ public interface PKCS11Constants {
     public static final long  CKA_SUPPORTED_CMS_ATTRIBUTES     = 0x00000503L;
     public static final long  CKA_ALLOWED_MECHANISMS = (CKF_ARRAY_ATTRIBUTE|0x00000600L);
 
+    public static final long  CKA_PROFILE_ID                   = 0x00000601L;
+    public static final long  CKA_X2RATCHET_BAG                = 0x00000602L;
+    public static final long  CKA_X2RATCHET_BAGSIZE            = 0x00000603L;
+    public static final long  CKA_X2RATCHET_BOBS1STMSG         = 0x00000604L;
+    public static final long  CKA_X2RATCHET_CKR                = 0x00000605L;
+    public static final long  CKA_X2RATCHET_CKS                = 0x00000606L;
+    public static final long  CKA_X2RATCHET_DHP                = 0x00000607L;
+    public static final long  CKA_X2RATCHET_DHR                = 0x00000608L;
+    public static final long  CKA_X2RATCHET_DHS                = 0x00000609L;
+    public static final long  CKA_X2RATCHET_HKR                = 0x0000060aL;
+    public static final long  CKA_X2RATCHET_HKS                = 0x0000060bL;
+    public static final long  CKA_X2RATCHET_ISALICE            = 0x0000060cL;
+    public static final long  CKA_X2RATCHET_NHKR               = 0x0000060dL;
+    public static final long  CKA_X2RATCHET_NHKS               = 0x0000060eL;
+    public static final long  CKA_X2RATCHET_NR                 = 0x0000060fL;
+    public static final long  CKA_X2RATCHET_NS                 = 0x00000610L;
+    public static final long  CKA_X2RATCHET_PNS                = 0x00000611L;
+    public static final long  CKA_X2RATCHET_RK                 = 0x00000612L;
+
     public static final long  CKA_VENDOR_DEFINED     = 0x80000000L;
 
     /* the following mechanism types are defined: */
@@ -435,6 +523,10 @@ public interface PKCS11Constants {
     public static final long  CKM_DSA_SHA256                 = 0x00000014L;
     public static final long  CKM_DSA_SHA384                 = 0x00000015L;
     public static final long  CKM_DSA_SHA512                 = 0x00000016L;
+    public static final long  CKM_DSA_SHA3_224               = 0x00000018L;
+    public static final long  CKM_DSA_SHA3_256               = 0x00000019L;
+    public static final long  CKM_DSA_SHA3_384               = 0x0000001AL;
+    public static final long  CKM_DSA_SHA3_512               = 0x0000001BL;
 
     public static final long  CKM_DH_PKCS_KEY_PAIR_GEN       = 0x00000020L;
     public static final long  CKM_DH_PKCS_DERIVE             = 0x00000021L;
@@ -467,6 +559,15 @@ public interface PKCS11Constants {
     public static final long  CKM_SHA512_T_HMAC              = 0x00000051L;
     public static final long  CKM_SHA512_T_HMAC_GENERAL      = 0x00000052L;
     public static final long  CKM_SHA512_T_KEY_DERIVATION    = 0x00000053L;
+
+    public static final long  CKM_SHA3_256_RSA_PKCS          = 0x00000060L;
+    public static final long  CKM_SHA3_384_RSA_PKCS          = 0x00000061L;
+    public static final long  CKM_SHA3_512_RSA_PKCS          = 0x00000062L;
+    public static final long  CKM_SHA3_256_RSA_PKCS_PSS      = 0x00000063L;
+    public static final long  CKM_SHA3_384_RSA_PKCS_PSS      = 0x00000064L;
+    public static final long  CKM_SHA3_512_RSA_PKCS_PSS      = 0x00000065L;
+    public static final long  CKM_SHA3_224_RSA_PKCS          = 0x00000066L;
+    public static final long  CKM_SHA3_224_RSA_PKCS_PSS      = 0x00000067L;
 
     public static final long  CKM_RC2_KEY_GEN                = 0x00000100L;
     public static final long  CKM_RC2_ECB                    = 0x00000101L;
@@ -551,6 +652,23 @@ public interface PKCS11Constants {
     public static final long  CKM_ACTI                       = 0x000002A0L;
     public static final long  CKM_ACTI_KEY_GEN               = 0x000002A1L;
 
+    public static final long  CKM_SHA3_256                   = 0x000002B0L;
+    public static final long  CKM_SHA3_256_HMAC              = 0x000002B1L;
+    public static final long  CKM_SHA3_256_HMAC_GENERAL      = 0x000002B2L;
+    public static final long  CKM_SHA3_256_KEY_GEN           = 0x000002B3L;
+    public static final long  CKM_SHA3_224                   = 0x000002B5L;
+    public static final long  CKM_SHA3_224_HMAC              = 0x000002B6L;
+    public static final long  CKM_SHA3_224_HMAC_GENERAL      = 0x000002B7L;
+    public static final long  CKM_SHA3_224_KEY_GEN           = 0x000002B8L;
+    public static final long  CKM_SHA3_384                   = 0x000002C0L;
+    public static final long  CKM_SHA3_384_HMAC              = 0x000002C1L;
+    public static final long  CKM_SHA3_384_HMAC_GENERAL      = 0x000002C2L;
+    public static final long  CKM_SHA3_384_KEY_GEN           = 0x000002C3L;
+    public static final long  CKM_SHA3_512                   = 0x000002D0L;
+    public static final long  CKM_SHA3_512_HMAC              = 0x000002D1L;
+    public static final long  CKM_SHA3_512_HMAC_GENERAL      = 0x000002D2L;
+    public static final long  CKM_SHA3_512_KEY_GEN           = 0x000002D3L;
+
     public static final long  CKM_CAST_KEY_GEN               = 0x00000300L;
     public static final long  CKM_CAST_ECB                   = 0x00000301L;
     public static final long  CKM_CAST_CBC                   = 0x00000302L;
@@ -611,19 +729,26 @@ public interface PKCS11Constants {
     public static final long  CKM_MD5_KEY_DERIVATION         = 0x00000390L;
     public static final long  CKM_MD2_KEY_DERIVATION         = 0x00000391L;
     public static final long  CKM_SHA1_KEY_DERIVATION        = 0x00000392L;
-
     public static final long  CKM_SHA256_KEY_DERIVATION      = 0x00000393L;
     public static final long  CKM_SHA384_KEY_DERIVATION      = 0x00000394L;
     public static final long  CKM_SHA512_KEY_DERIVATION      = 0x00000395L;
     public static final long  CKM_SHA224_KEY_DERIVATION      = 0x00000396L;
+    public static final long  CKM_SHA3_256_KEY_DERIVATION    = 0x00000397L;
+    public static final long  CKM_SHA3_224_KEY_DERIVATION    = 0x00000398L;
+    public static final long  CKM_SHA3_384_KEY_DERIVATION    = 0x00000399L;
+    public static final long  CKM_SHA3_512_KEY_DERIVATION    = 0x0000039AL;
+    public static final long  CKM_SHAKE_128_KEY_DERIVATION   = 0x0000039BL;
+    public static final long  CKM_SHAKE_256_KEY_DERIVATION   = 0x0000039CL;
 
     public static final long  CKM_PBE_MD2_DES_CBC            = 0x000003A0L;
     public static final long  CKM_PBE_MD5_DES_CBC            = 0x000003A1L;
     public static final long  CKM_PBE_MD5_CAST_CBC           = 0x000003A2L;
     public static final long  CKM_PBE_MD5_CAST3_CBC          = 0x000003A3L;
-    public static final long  CKM_PBE_MD5_CAST5_CBC          = 0x000003A4L;
+    public static final long  CKM_PBE_MD5_CAST5_CBC /*deprecated*/
+                                                             = 0x000003A4L;
     public static final long  CKM_PBE_MD5_CAST128_CBC        = 0x000003A4L;
-    public static final long  CKM_PBE_SHA1_CAST5_CBC         = 0x000003A5L;
+    public static final long  CKM_PBE_SHA1_CAST5_CBC /*deprecated*/
+                                                             = 0x000003A5L;
     public static final long  CKM_PBE_SHA1_CAST128_CBC       = 0x000003A5L;
     public static final long  CKM_PBE_SHA1_RC4_128           = 0x000003A6L;
     public static final long  CKM_PBE_SHA1_RC4_40            = 0x000003A7L;
@@ -643,11 +768,12 @@ public interface PKCS11Constants {
     public static final long  CKM_WTLS_SERVER_KEY_AND_MAC_DERIVE  = 0x000003D4L;
     public static final long  CKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE  = 0x000003D5L;
 
-    public static final long  CKM_TLS10_MAC_SERVER           = 0x000003D6L;
-    public static final long  CKM_TLS10_MAC_CLIENT           = 0x000003D7L;
+    public static final long  CKM_TLS10_MAC_SERVER /*removed in 3.00*/
+                                                             = 0x000003D6L;
+    public static final long  CKM_TLS10_MAC_CLIENT /*removed in 3.00*/
+                                                             = 0x000003D7L;
     public static final long  CKM_TLS12_MAC                  = 0x000003D8L;
     public static final long  CKM_TLS12_KDF                  = 0x000003D9L;
-
     public static final long  CKM_TLS12_MASTER_KEY_DERIVE    = 0x000003E0L;
     public static final long  CKM_TLS12_KEY_AND_MAC_DERIVE   = 0x000003E1L;
     public static final long  CKM_TLS12_MASTER_KEY_DERIVE_DH = 0x000003E2L;
@@ -717,6 +843,7 @@ public interface PKCS11Constants {
     public static final long  CKM_ECDSA_KEY_PAIR_GEN /*deprecated*/
                                                              = 0x00001040L;
     public static final long  CKM_EC_KEY_PAIR_GEN            = 0x00001040L;
+    public static final long  CKM_EC_KEY_PAIR_GEN_W_EXTRA_BITS = 0x0000140BL;
 
     public static final long  CKM_ECDSA                      = 0x00001041L;
     public static final long  CKM_ECDSA_SHA1                 = 0x00001042L;
@@ -724,6 +851,10 @@ public interface PKCS11Constants {
     public static final long  CKM_ECDSA_SHA256               = 0x00001044L;
     public static final long  CKM_ECDSA_SHA384               = 0x00001045L;
     public static final long  CKM_ECDSA_SHA512               = 0x00001046L;
+    public static final long  CKM_ECDSA_SHA3_224             = 0x00001047L;
+    public static final long  CKM_ECDSA_SHA3_256             = 0x00001048L;
+    public static final long  CKM_ECDSA_SHA3_384             = 0x00001049L;
+    public static final long  CKM_ECDSA_SHA3_512             = 0x0000104AL;
 
     public static final long  CKM_ECDH1_DERIVE               = 0x00001050L;
     public static final long  CKM_ECDH1_COFACTOR_DERIVE      = 0x00001051L;
@@ -731,6 +862,10 @@ public interface PKCS11Constants {
 
     public static final long  CKM_ECDH_AES_KEY_WRAP          = 0x00001053L;
     public static final long  CKM_RSA_AES_KEY_WRAP           = 0x00001054L;
+
+    public static final long  CKM_EC_EDWARDS_KEY_PAIR_GEN    = 0x00001055L;
+    public static final long  CKM_EC_MONTGOMERY_KEY_PAIR_GEN = 0x00001056L;
+    public static final long  CKM_EDDSA                      = 0x00001057L;
 
     public static final long  CKM_JUNIPER_KEY_GEN            = 0x00001060L;
     public static final long  CKM_JUNIPER_ECB128             = 0x00001061L;
@@ -740,6 +875,8 @@ public interface PKCS11Constants {
     public static final long  CKM_JUNIPER_WRAP               = 0x00001065L;
     public static final long  CKM_FASTHASH                   = 0x00001070L;
 
+    public static final long  CKM_AES_XTS                    = 0x00001071L;
+    public static final long  CKM_AES_XTS_KEY_GEN            = 0x00001072L;
     public static final long  CKM_AES_KEY_GEN                = 0x00001080L;
     public static final long  CKM_AES_ECB                    = 0x00001081L;
     public static final long  CKM_AES_CBC                    = 0x00001082L;
@@ -784,22 +921,79 @@ public interface PKCS11Constants {
     public static final long  CKM_GOST28147_MAC              = 0x00001223L;
     public static final long  CKM_GOST28147_KEY_WRAP         = 0x00001224L;
 
+    public static final long  CKM_CHACHA20_KEY_GEN           = 0x00001225L;
+    public static final long  CKM_CHACHA20                   = 0x00001226L;
+    public static final long  CKM_POLY1305_KEY_GEN           = 0x00001227L;
+    public static final long  CKM_POLY1305                   = 0x00001228L;
+
     public static final long  CKM_DSA_PARAMETER_GEN          = 0x00002000L;
     public static final long  CKM_DH_PKCS_PARAMETER_GEN      = 0x00002001L;
     public static final long  CKM_X9_42_DH_PARAMETER_GEN     = 0x00002002L;
     public static final long  CKM_DSA_PROBABLISTIC_PARAMETER_GEN = 0x00002003L;
     public static final long  CKM_DSA_SHAWE_TAYLOR_PARAMETER_GEN = 0x00002004L;
+    public static final long  CKM_DSA_FIPS_G_GEN             = 0x00002005L;
 
     public static final long  CKM_AES_OFB                    = 0x00002104L;
     public static final long  CKM_AES_CFB64                  = 0x00002105L;
     public static final long  CKM_AES_CFB8                   = 0x00002106L;
     public static final long  CKM_AES_CFB128                 = 0x00002107L;
     public static final long  CKM_AES_CFB1                   = 0x00002108L;
-    public static final long  CKM_AES_KEY_WRAP               = 0x00002109L;
-    public static final long  CKM_AES_KEY_WRAP_PAD           = 0x0000210AL;
+    public static final long  CKM_AES_KEY_WRAP /* WAS: 0x00001090 */
+                                                             = 0x00002109L;
+    public static final long  CKM_AES_KEY_WRAP_PAD /* WAS: 0x00001091 */
+                                                             = 0x0000210AL;
+    public static final long  CKM_AES_KEY_WRAP_KWP           = 0x0000210BL;
 
     public static final long  CKM_RSA_PKCS_TPM_1_1           = 0x00004001L;
     public static final long  CKM_RSA_PKCS_OAEP_TPM_1_1      = 0x00004002L;
+
+    public static final long  CKM_SHA_1_KEY_GEN              = 0x00004003L;
+    public static final long  CKM_SHA224_KEY_GEN             = 0x00004004L;
+    public static final long  CKM_SHA256_KEY_GEN             = 0x00004005L;
+    public static final long  CKM_SHA384_KEY_GEN             = 0x00004006L;
+    public static final long  CKM_SHA512_KEY_GEN             = 0x00004007L;
+    public static final long  CKM_SHA512_224_KEY_GEN         = 0x00004008L;
+    public static final long  CKM_SHA512_256_KEY_GEN         = 0x00004009L;
+    public static final long  CKM_SHA512_T_KEY_GEN           = 0x0000400aL;
+    public static final long  CKM_NULL                       = 0x0000400bL;
+    public static final long  CKM_BLAKE2B_160                = 0x0000400cL;
+    public static final long  CKM_BLAKE2B_160_HMAC           = 0x0000400dL;
+    public static final long  CKM_BLAKE2B_160_HMAC_GENERAL   = 0x0000400eL;
+    public static final long  CKM_BLAKE2B_160_KEY_DERIVE     = 0x0000400fL;
+    public static final long  CKM_BLAKE2B_160_KEY_GEN        = 0x00004010L;
+    public static final long  CKM_BLAKE2B_256                = 0x00004011L;
+    public static final long  CKM_BLAKE2B_256_HMAC           = 0x00004012L;
+    public static final long  CKM_BLAKE2B_256_HMAC_GENERAL   = 0x00004013L;
+    public static final long  CKM_BLAKE2B_256_KEY_DERIVE     = 0x00004014L;
+    public static final long  CKM_BLAKE2B_256_KEY_GEN        = 0x00004015L;
+    public static final long  CKM_BLAKE2B_384                = 0x00004016L;
+    public static final long  CKM_BLAKE2B_384_HMAC           = 0x00004017L;
+    public static final long  CKM_BLAKE2B_384_HMAC_GENERAL   = 0x00004018L;
+    public static final long  CKM_BLAKE2B_384_KEY_DERIVE     = 0x00004019L;
+    public static final long  CKM_BLAKE2B_384_KEY_GEN        = 0x0000401aL;
+    public static final long  CKM_BLAKE2B_512                = 0x0000401bL;
+    public static final long  CKM_BLAKE2B_512_HMAC           = 0x0000401cL;
+    public static final long  CKM_BLAKE2B_512_HMAC_GENERAL   = 0x0000401dL;
+    public static final long  CKM_BLAKE2B_512_KEY_DERIVE     = 0x0000401eL;
+    public static final long  CKM_BLAKE2B_512_KEY_GEN        = 0x0000401fL;
+    public static final long  CKM_SALSA20                    = 0x00004020L;
+    public static final long  CKM_CHACHA20_POLY1305          = 0x00004021L;
+    public static final long  CKM_SALSA20_POLY1305           = 0x00004022L;
+    public static final long  CKM_X3DH_INITIALIZE            = 0x00004023L;
+    public static final long  CKM_X3DH_RESPOND               = 0x00004024L;
+    public static final long  CKM_X2RATCHET_INITIALIZE       = 0x00004025L;
+    public static final long  CKM_X2RATCHET_RESPOND          = 0x00004026L;
+    public static final long  CKM_X2RATCHET_ENCRYPT          = 0x00004027L;
+    public static final long  CKM_X2RATCHET_DECRYPT          = 0x00004028L;
+    public static final long  CKM_XEDDSA                     = 0x00004029L;
+    public static final long  CKM_HKDF_DERIVE                = 0x0000402aL;
+    public static final long  CKM_HKDF_DATA                  = 0x0000402bL;
+    public static final long  CKM_HKDF_KEY_GEN               = 0x0000402cL;
+    public static final long  CKM_SALSA20_KEY_GEN            = 0x0000402dL;
+
+    public static final long  CKM_SP800_108_COUNTER_KDF      = 0x000003acL;
+    public static final long  CKM_SP800_108_FEEDBACK_KDF     = 0x000003adL;
+    public static final long  CKM_SP800_108_DOUBLE_PIPELINE_KDF = 0x000003aeL;
 
     public static final long  CKM_VENDOR_DEFINED             = 0x80000000L;
 
@@ -813,6 +1007,13 @@ public interface PKCS11Constants {
     /* The flags specify whether or not a mechanism can be used for a
      * particular task */
     public static final long  CKF_HW                 = 0x00000001L;
+    public static final long  CKF_MESSAGE_ENCRYPT    = 0x00000002L;
+    public static final long  CKF_MESSAGE_DECRYPT    = 0x00000004L;
+    public static final long  CKF_MESSAGE_SIGN       = 0x00000008L;
+    public static final long  CKF_MESSAGE_VERIFY     = 0x00000010L;
+    public static final long  CKF_MULTI_MESSAGE      = 0x00000020L;
+    public static final long  CKF_FIND_OBJECTS       = 0x00000040L;
+
     public static final long  CKF_ENCRYPT            = 0x00000100L;
     public static final long  CKF_DECRYPT            = 0x00000200L;
     public static final long  CKF_DIGEST             = 0x00000400L;
@@ -832,12 +1033,14 @@ public interface PKCS11Constants {
     public static final long  CKF_EC_F_P             = 0x00100000L;
     public static final long  CKF_EC_F_2M            = 0x00200000L;
     public static final long  CKF_EC_ECPARAMETERS    = 0x00400000L;
-    public static final long  CKF_EC_NAMEDCURVE      = 0x00800000L;
+    public static final long  CKF_EC_OID             = 0x00400000L;
+    public static final long  CKF_EC_NAMEDCURVE /*deprecated since 3.00*/
+                                                     = CKF_EC_OID;
     public static final long  CKF_EC_UNCOMPRESS      = 0x01000000L;
     public static final long  CKF_EC_COMPRESS        = 0x02000000L;
+    public static final long  CKF_EC_CURVENAME       = 0x04000000L;
 
     public static final long  CKF_EXTENSION          = 0x80000000L;
-
 
     /* Identifies the return value of a Cryptoki function */
     public static final long  CKR_OK                 = 0x00000000L;
@@ -867,6 +1070,7 @@ public interface PKCS11Constants {
     public static final long  CKR_DEVICE_REMOVED            = 0x00000032L;
     public static final long  CKR_ENCRYPTED_DATA_INVALID    = 0x00000040L;
     public static final long  CKR_ENCRYPTED_DATA_LEN_RANGE  = 0x00000041L;
+    public static final long  CKR_AEAD_DECRYPT_FAILED       = 0x00000042L;
     public static final long  CKR_FUNCTION_CANCELED         = 0x00000050L;
     public static final long  CKR_FUNCTION_NOT_PARALLEL     = 0x00000051L;
 
@@ -959,16 +1163,21 @@ public interface PKCS11Constants {
     public static final long  CKR_PIN_TOO_WEAK                   = 0x000001B8L;
     public static final long  CKR_PUBLIC_KEY_INVALID             = 0x000001B9L;
     public static final long  CKR_FUNCTION_REJECTED              = 0x00000200L;
+    public static final long  CKR_TOKEN_RESOURCE_EXCEEDED        = 0x00000201L;
+    public static final long  CKR_OPERATION_CANCEL_FAILED        = 0x00000202L;
 
     public static final long  CKR_VENDOR_DEFINED                 = 0x80000000L;
 
+    /* Uncomment when actually used
+    public static final long  CKF_END_OF_MESSAGE      = 0x00000001L;
+    public static final long  CKF_INTERFACE_FORK_SAFE = 0x00000001L;
+    */
 
     /* flags: bit flags that provide capabilities of the slot
      *        Bit Flag = Mask
      */
     public static final long  CKF_LIBRARY_CANT_CREATE_OS_THREADS = 0x00000001L;
     public static final long  CKF_OS_LOCKING_OK                  = 0x00000002L;
-
 
     /* CKF_DONT_BLOCK is for the function C_WaitForSlotEvent */
     public static final long  CKF_DONT_BLOCK =    1L;
@@ -979,16 +1188,20 @@ public interface PKCS11Constants {
     public static final long  CKG_MGF1_SHA384     = 0x00000003L;
     public static final long  CKG_MGF1_SHA512     = 0x00000004L;
     public static final long  CKG_MGF1_SHA224     = 0x00000005L;
+    public static final long  CKG_MGF1_SHA3_224   = 0x00000006L;
+    public static final long  CKG_MGF1_SHA3_256   = 0x00000007L;
+    public static final long  CKG_MGF1_SHA3_384   = 0x00000008L;
+    public static final long  CKG_MGF1_SHA3_512   = 0x00000009L;
 
     /* The following encoding parameter sources are defined */
     public static final long  CKZ_DATA_SPECIFIED   = 0x00000001L;
 
-
-    /* the following EC Key Derivation Functions are defined */
+    // the following EC Key Derivation Functions are defined
     public static final long  CKD_NULL                 = 0x00000001L;
     public static final long  CKD_SHA1_KDF             = 0x00000002L;
 
-    /* the following X9.42 Diffie-Hellman Key Derivation Functions are defined */
+    /* Uncomment when actually used
+    // the following X9.42 Diffie-Hellman Key Derivation Functions are defined
     public static final long  CKD_SHA1_KDF_ASN1        = 0x00000003L;
     public static final long  CKD_SHA1_KDF_CONCATENATE = 0x00000004L;
     public static final long  CKD_SHA224_KDF           = 0x00000005L;
@@ -996,6 +1209,23 @@ public interface PKCS11Constants {
     public static final long  CKD_SHA384_KDF           = 0x00000007L;
     public static final long  CKD_SHA512_KDF           = 0x00000008L;
     public static final long  CKD_CPDIVERSIFY_KDF      = 0x00000009L;
+    public static final long  CKD_SHA3_224_KDF         = 0x0000000AL;
+    public static final long  CKD_SHA3_256_KDF         = 0x0000000BL;
+    public static final long  CKD_SHA3_384_KDF         = 0x0000000CL;
+    public static final long  CKD_SHA3_512_KDF         = 0x0000000DL;
+    public static final long  CKD_SHA1_KDF_SP800       = 0x0000000EL;
+    public static final long  CKD_SHA224_KDF_SP800     = 0x0000000FL;
+    public static final long  CKD_SHA256_KDF_SP800     = 0x00000010L;
+    public static final long  CKD_SHA384_KDF_SP800     = 0x00000011L;
+    public static final long  CKD_SHA512_KDF_SP800     = 0x00000012L;
+    public static final long  CKD_SHA3_224_KDF_SP800   = 0x00000013L;
+    public static final long  CKD_SHA3_256_KDF_SP800   = 0x00000014L;
+    public static final long  CKD_SHA3_384_KDF_SP800   = 0x00000015L;
+    public static final long  CKD_SHA3_512_KDF_SP800   = 0x00000016L;
+    public static final long  CKD_BLAKE2B_160_KDF      = 0x00000017L;
+    public static final long  CKD_BLAKE2B_256_KDF      = 0x00000018L;
+    public static final long  CKD_BLAKE2B_384_KDF      = 0x00000019L;
+    public static final long  CKD_BLAKE2B_512_KDF      = 0x0000001aL;
 
     public static final long  CKP_PKCS5_PBKD2_HMAC_SHA1        = 0x00000001L;
     public static final long  CKP_PKCS5_PBKD2_HMAC_GOSTR3411   = 0x00000002L;
@@ -1024,33 +1254,53 @@ public interface PKCS11Constants {
     public static final long  CKF_EXCLUDE_PIN         = 0x00000010L;
     public static final long  CKF_USER_FRIENDLY_OTP   = 0x00000020L;
 
+    public static final long  CKG_NO_GENERATE      = 0x00000000L;
+    public static final long  CKG_GENERATE         = 0x00000001L;
+    public static final long  CKG_GENERATE_COUNTER = 0x00000002L;
+    public static final long  CKG_GENERATE_RANDOM  = 0x00000003L;
+
+    public static final long  CK_SP800_108_ITERATION_VARIABLE = 0x00000001L;
+    public static final long  CK_SP800_108_OPTIONAL_COUNTER   = 0x00000002L;
+    public static final long  CK_SP800_108_DKM_LENGTH         = 0x00000003L;
+    public static final long  CK_SP800_108_BYTE_ARRAY         = 0x00000004L;
+    public static final long  CK_SP800_108_DKM_LENGTH_SUM_OF_KEYS
+                                                              = 0x00000001L;
+    public static final long  CK_SP800_108_DKM_LENGTH_SUM_OF_SEGMENTS
+                                                              = 0x00000002L;
+
+    public static final long  CKF_HKDF_SALT_NULL   = 0x00000001L;
+    public static final long  CKF_HKDF_SALT_DATA   = 0x00000002L;
+    public static final long  CKF_HKDF_SALT_KEY    = 0x00000004L;
+    */
+
     // private NSS attribute (for DSA and DH private keys)
     public static final long  CKA_NETSCAPE_DB         = 0xD5A0DB00L;
 
     // base number of NSS private attributes
-    public static final long  CKA_NETSCAPE_BASE       = 0x80000000L + 0x4E534350L;
+    public static final long  CKA_NETSCAPE_BASE /*0x80000000L + 0x4E534350L*/
+                                                      = 0xCE534350L;
 
     // object type for NSS trust
-    public static final long  CKO_NETSCAPE_TRUST      = CKA_NETSCAPE_BASE + 3;
+    public static final long  CKO_NETSCAPE_TRUST      = 0xCE534353L;
 
     // base number for NSS trust attributes
-    public static final long  CKA_NETSCAPE_TRUST_BASE = CKA_NETSCAPE_BASE + 0x2000;
+    public static final long  CKA_NETSCAPE_TRUST_BASE = 0xCE536350L;
 
     // attributes for NSS trust
-    public static final long  CKA_NETSCAPE_TRUST_SERVER_AUTH      = CKA_NETSCAPE_TRUST_BASE +   8;
-    public static final long  CKA_NETSCAPE_TRUST_CLIENT_AUTH      = CKA_NETSCAPE_TRUST_BASE +   9;
-    public static final long  CKA_NETSCAPE_TRUST_CODE_SIGNING     = CKA_NETSCAPE_TRUST_BASE +  10;
-    public static final long  CKA_NETSCAPE_TRUST_EMAIL_PROTECTION = CKA_NETSCAPE_TRUST_BASE +  11;
-    public static final long  CKA_NETSCAPE_CERT_SHA1_HASH         = CKA_NETSCAPE_TRUST_BASE + 100;
-    public static final long  CKA_NETSCAPE_CERT_MD5_HASH          = CKA_NETSCAPE_TRUST_BASE + 101;
+    public static final long  CKA_NETSCAPE_TRUST_SERVER_AUTH      = 0xCE536358L;
+    public static final long  CKA_NETSCAPE_TRUST_CLIENT_AUTH      = 0xCE536359L;
+    public static final long  CKA_NETSCAPE_TRUST_CODE_SIGNING     = 0xCE53635AL;
+    public static final long  CKA_NETSCAPE_TRUST_EMAIL_PROTECTION = 0xCE53635BL;
+    public static final long  CKA_NETSCAPE_CERT_SHA1_HASH         = 0xCE5363B4L;
+    public static final long  CKA_NETSCAPE_CERT_MD5_HASH          = 0xCE5363B5L;
 
     // trust values for each of the NSS trust attributes
-    public static final long  CKT_NETSCAPE_TRUSTED           = CKA_NETSCAPE_BASE + 1;
-    public static final long  CKT_NETSCAPE_TRUSTED_DELEGATOR = CKA_NETSCAPE_BASE + 2;
-    public static final long  CKT_NETSCAPE_UNTRUSTED         = CKA_NETSCAPE_BASE + 3;
-    public static final long  CKT_NETSCAPE_MUST_VERIFY       = CKA_NETSCAPE_BASE + 4;
-    public static final long  CKT_NETSCAPE_TRUST_UNKNOWN     = CKA_NETSCAPE_BASE + 5; /* default */
-    public static final long  CKT_NETSCAPE_VALID             = CKA_NETSCAPE_BASE + 10;
-    public static final long  CKT_NETSCAPE_VALID_DELEGATOR   = CKA_NETSCAPE_BASE + 11;
-
+    public static final long  CKT_NETSCAPE_TRUSTED           = 0xCE534351L;
+    public static final long  CKT_NETSCAPE_TRUSTED_DELEGATOR = 0xCE534352L;
+    public static final long  CKT_NETSCAPE_UNTRUSTED         = 0xCE534353L;
+    public static final long  CKT_NETSCAPE_MUST_VERIFY       = 0xCE534354L;
+    public static final long  CKT_NETSCAPE_TRUST_UNKNOWN /* default */
+                                                             = 0xCE534355L;
+    public static final long  CKT_NETSCAPE_VALID             = 0xCE53435AL;
+    public static final long  CKT_NETSCAPE_VALID_DELEGATOR   = 0xCE53435BL;
 }

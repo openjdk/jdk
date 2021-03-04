@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.List;
 import jdk.jpackage.internal.Arguments.CLIOptions;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 
 /*
  * AddLauncherArguments
@@ -158,8 +159,10 @@ class AddLauncherArguments {
         Map<String, ? super Object> tmp = new HashMap<>(original);
         List.of(exclude).forEach(tmp::remove);
 
-        // remove LauncherData from map so it will re-run the defaultValueFunction
+        // remove LauncherData from map so it will be re-computed
         tmp.remove(LAUNCHER_DATA.getID());
+        // remove "application-name" so it will be re-computed
+        tmp.remove(APP_NAME.getID());
 
         if (additional.containsKey(CLIOptions.MODULE.getId())) {
             tmp.remove(CLIOptions.MAIN_JAR.getId());

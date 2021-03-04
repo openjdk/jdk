@@ -68,7 +68,7 @@ $(GENSRC_DIR)/module-info.java.extra: $(GENSRC_DIR)/_gensrc_proc_done
 	($(CD) $(GENSRC_DIR)/META-INF/providers && \
 	    p=""; \
 	    impl=""; \
-	    for i in $$($(NAWK) '$$0=FILENAME" "$$0' * | $(SORT) -k 2 | $(SED) 's/ .*//'); do \
+	    for i in $$($(AWK) '$$0=FILENAME" "$$0' * | $(SORT) -k 2 | $(SED) 's/ .*//'); do \
 	      c=$$($(CAT) $$i | $(TR) -d '\n\r'); \
 	      if test x$$p != x$$c; then \
                 if test x$$p != x; then \

@@ -50,11 +50,14 @@ import java.util.Spliterator;
  * operations on a segment cannot occur after a memory segment has been closed (see {@link MemorySegment#close()}).
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
- * use of identity-sensitive operations (including reference equality ({@code ==}), identity hash code, or synchronization) on
- * instances of {@code MemorySegment} may have unpredictable results and should be avoided. The {@code equals} method should
- * be used for comparisons.
+ * programmers should treat instances that are {@linkplain Object#equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may occur. For example, in a future release,
+ * synchronization may fail. The {@code equals} method should be used for comparisons.
  * <p>
  * Non-platform classes should not implement {@linkplain MemorySegment} directly.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
  * <h2>Constructing memory segments</h2>
  *
@@ -323,7 +326,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @param newBase The new segment base address.
      * @param newSize The new segment size, specified in bytes.
      * @return a new memory segment view with updated base/limit addresses.
-     * @throws NullPointerException if {@code newBase == null}.
      * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()}, {@code newSize < 0}, or {@code newSize > byteSize() - offset}
      */
     default MemorySegment asSlice(MemoryAddress newBase, long newSize) {
@@ -367,7 +369,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      *
      * @param newBase The new segment base offset (relative to the current segment base address), specified in bytes.
      * @return a new memory segment view with updated base/limit addresses.
-     * @throws NullPointerException if {@code newBase == null}.
      * @throws IndexOutOfBoundsException if {@code address.segmentOffset(this) < 0}, or {@code address.segmentOffset(this) > byteSize()}.
      */
     default MemorySegment asSlice(MemoryAddress newBase) {
@@ -431,7 +432,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment.
      * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
-     * @throws NullPointerException if {@code thread == null}
      */
     MemorySegment handoff(Thread thread);
 
@@ -459,7 +459,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment.
      * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
-     * @throws NullPointerException if {@code nativeScope == null}.
      */
     MemorySegment handoff(NativeScope nativeScope);
 
@@ -823,6 +822,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalArgumentException if the specified layout has illegal size or alignment constraint.
      */
     static MemorySegment allocateNative(MemoryLayout layout) {
+        Objects.requireNonNull(layout);
         return allocateNative(layout.byteSize(), layout.byteAlignment());
     }
 
@@ -876,10 +876,9 @@ allocateNative(bytesSize, 1);
      * @param mapMode a file mapping mode, see {@link FileChannel#map(FileChannel.MapMode, long, long)}; the chosen mapping mode
      *                might affect the behavior of the returned memory mapped segment (see {@link MappedMemorySegments#force(MemorySegment)}).
      * @return a new confined mapped memory segment.
-     * @throws IllegalArgumentException if {@code bytesOffset < 0}.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}.
-     * @throws UnsupportedOperationException if an unsupported map mode is specified, or if the {@code path} is associated
-     * with a provider that does not support creating file channels.
+     * @throws IllegalArgumentException if {@code bytesOffset < 0}, {@code bytesSize < 0}, or if {@code path} is not associated
+     * with the default file system.
+     * @throws UnsupportedOperationException if an unsupported map mode is specified.
      * @throws IOException if the specified path does not point to an existing file, or if some other I/O error occurs.
      * @throws  SecurityException If a security manager is installed and it denies an unspecified permission required by the implementation.
      * In the case of the default provider, the {@link SecurityManager#checkRead(String)} method is invoked to check

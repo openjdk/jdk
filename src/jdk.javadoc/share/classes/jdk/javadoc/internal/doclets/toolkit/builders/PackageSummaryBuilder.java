@@ -108,7 +108,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildPackageDoc() throws DocletException {
-        Content contentTree = packageWriter.getPackageHeader(utils.getPackageName(packageElement));
+        Content contentTree = packageWriter.getPackageHeader();
 
         buildContent();
 
@@ -128,6 +128,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     protected void buildContent() throws DocletException {
         Content packageContentTree = packageWriter.getContentHeader();
 
+        packageWriter.addPackageSignature(packageContentTree);
         buildPackageDescription(packageContentTree);
         buildPackageTags(packageContentTree);
         buildSummary(packageContentTree);

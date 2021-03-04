@@ -33,6 +33,7 @@ import jdk.internal.foreign.Utils;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
 import java.nio.ByteOrder;
+import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -53,6 +54,9 @@ import java.util.stream.Stream;
  * (see {@link MemorySegment#handoff(NativeScope)}). This might be useful to allow one or more segments which were independently
  * created to share the same life-cycle as a given native scope - which in turns enables a client to group all memory
  * allocation and usage under a single <em>try-with-resources block</em>.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
  * @apiNote In the future, if the Java language permits, {@link NativeScope}
  * may become a {@code sealed} interface, which would prohibit subclassing except by
@@ -90,6 +94,7 @@ public interface NativeScope extends AutoCloseable {
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a byte value.
      */
     default MemorySegment allocate(ValueLayout layout, byte value) {
+        Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle(byte.class);
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
@@ -108,6 +113,7 @@ public interface NativeScope extends AutoCloseable {
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a char value.
      */
     default MemorySegment allocate(ValueLayout layout, char value) {
+        Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle(char.class);
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
@@ -126,6 +132,7 @@ public interface NativeScope extends AutoCloseable {
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a short value.
      */
     default MemorySegment allocate(ValueLayout layout, short value) {
+        Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle(short.class);
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
@@ -144,6 +151,7 @@ public interface NativeScope extends AutoCloseable {
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a int value.
      */
     default MemorySegment allocate(ValueLayout layout, int value) {
+        Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle(int.class);
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
@@ -162,6 +170,7 @@ public interface NativeScope extends AutoCloseable {
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a float value.
      */
     default MemorySegment allocate(ValueLayout layout, float value) {
+        Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle(float.class);
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
@@ -180,6 +189,7 @@ public interface NativeScope extends AutoCloseable {
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a long value.
      */
     default MemorySegment allocate(ValueLayout layout, long value) {
+        Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle(long.class);
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
@@ -198,6 +208,7 @@ public interface NativeScope extends AutoCloseable {
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a double value.
      */
     default MemorySegment allocate(ValueLayout layout, double value) {
+        Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle(double.class);
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
@@ -218,6 +229,8 @@ public interface NativeScope extends AutoCloseable {
      * @throws IllegalArgumentException if {@code layout.byteSize() != MemoryLayouts.ADDRESS.byteSize()}.
      */
     default MemorySegment allocate(ValueLayout layout, Addressable value) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(layout);
         if (MemoryLayouts.ADDRESS.byteSize() != layout.byteSize()) {
             throw new IllegalArgumentException("Layout size mismatch - " + layout.byteSize() + " != " + MemoryLayouts.ADDRESS.byteSize());
         }
@@ -346,6 +359,9 @@ public interface NativeScope extends AutoCloseable {
      * @throws IllegalArgumentException if {@code layout.byteSize() != MemoryLayouts.ADDRESS.byteSize()}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, Addressable[] array) {
+        Objects.requireNonNull(elementLayout);
+        Objects.requireNonNull(array);
+        Stream.of(array).forEach(Objects::requireNonNull);
         if (MemoryLayouts.ADDRESS.byteSize() != elementLayout.byteSize()) {
             throw new IllegalArgumentException("Layout size mismatch - " + elementLayout.byteSize() + " != " + MemoryLayouts.ADDRESS.byteSize());
         }
@@ -362,6 +378,8 @@ public interface NativeScope extends AutoCloseable {
 
     private <Z> MemorySegment copyArrayWithSwapIfNeeded(Z array, ValueLayout elementLayout,
                                                         Function<Z, MemorySegment> heapSegmentFactory) {
+        Objects.requireNonNull(array);
+        Objects.requireNonNull(elementLayout);
         Utils.checkPrimitiveCarrierCompat(array.getClass().componentType(), elementLayout);
         MemorySegment addr = allocate(MemoryLayout.ofSequence(Array.getLength(array), elementLayout));
         if (elementLayout.byteSize() == 1 || (elementLayout.order() == ByteOrder.nativeOrder())) {
@@ -381,6 +399,7 @@ public interface NativeScope extends AutoCloseable {
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
      */
     default MemorySegment allocate(MemoryLayout layout) {
+        Objects.requireNonNull(layout);
         return allocate(layout.byteSize(), layout.byteAlignment());
     }
 
@@ -399,6 +418,7 @@ public interface NativeScope extends AutoCloseable {
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * count)}.
      */
     default MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
+        Objects.requireNonNull(elementLayout);
         return allocate(MemoryLayout.ofSequence(count, elementLayout));
     }
 

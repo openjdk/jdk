@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,9 +638,9 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             }
         }
         if (e != null) {
-            throw new Error(msg, e);
+            throw new InternalError(msg, e);
         } else {
-            throw new Error(msg);
+            throw new InternalError(msg);
         }
     }
 
@@ -716,7 +716,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 Compilation c = log.compiles.get(ble.getId());
                 if (c == null) {
                     if (!(ble instanceof NMethod)) {
-                        throw new InternalError("only nmethods should have a null compilation, here's a " + ble.getClass());
+                        if (ble instanceof MakeNotEntrantEvent && ((MakeNotEntrantEvent) ble).getCompileKind().equals("c2n")) {
+                            // this is ok for c2n
+                            assert ((MakeNotEntrantEvent) ble).getLevel().equals("0") : "Should be level 0";
+                        } else {
+                            throw new InternalError("only nmethods should have a null compilation, here's a " + ble.getClass());
+                        }
                     }
                     continue;
                 }
@@ -995,44 +1000,52 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             }
             methods.put(id, m);
         } else if (qname.equals("call")) {
-            if (methodHandleSite != null) {
-                methodHandleSite = null;
-            }
-            Method m = method(search(atts, "method"));
-            if (lateInlining && scopes.size() == 0) {
-                // re-attempting already seen call site (late inlining for MH invokes)
-                if (m != site.getMethod()) {
-                    if (current_bci != site.getBci()) {
-                        System.err.println(m + " bci: " + current_bci);
-                        System.err.println(site.getMethod() +  " bci: " + site.getBci());
-                        reportInternalError("bci mismatch after late inlining");
-                    }
-                    site.setMethod(m);
+            Phase p = phaseStack.peek();
+            if (scopes.peek() == null && p != null) {
+                // Do not process other phases when scopes is null
+                if (p.getName().equals("parse")) {
+                  reportInternalError( "should not be in parse here:" + p.getName());
                 }
             } else {
-                // We're dealing with a new call site; the called method is
-                // likely to be parsed next.
-                site = new CallSite(current_bci, m);
-            }
-            site.setCount(Integer.parseInt(search(atts, "count", "0")));
-            String receiver = atts.getValue("receiver");
-            if (receiver != null) {
-                site.setReceiver(type(receiver));
-                site.setReceiver_count(Integer.parseInt(search(atts, "receiver_count")));
-            }
-            int methodHandle = Integer.parseInt(search(atts, "method_handle_intrinsic", "0"));
-            if (lateInlining && scopes.size() == 0) {
-                // The call was already added before this round of late
-                // inlining. Ignore.
-            } else if (methodHandle == 0) {
-                scopes.peek().add(site);
-            } else {
-                // method handle call site can be followed by another
-                // call (in case it is inlined). If that happens we
-                // discard the method handle call site. So we keep
-                // track of it but don't add it to the list yet.
-                methodHandleSite = site;
-            }
+              if (methodHandleSite != null) {
+                  methodHandleSite = null;
+              }
+              Method m = method(search(atts, "method"));
+              if (lateInlining && scopes.size() == 0) {
+                  // re-attempting already seen call site (late inlining for MH invokes)
+                  if (m != site.getMethod()) {
+                      if (current_bci != site.getBci()) {
+                          System.err.println(m + " bci: " + current_bci);
+                          System.err.println(site.getMethod() +  " bci: " + site.getBci());
+                          reportInternalError("bci mismatch after late inlining");
+                      }
+                      site.setMethod(m);
+                  }
+              } else {
+                  // We're dealing with a new call site; the called method is
+                  // likely to be parsed next.
+                  site = new CallSite(current_bci, m);
+              }
+              site.setCount(Integer.parseInt(search(atts, "count", "0")));
+              String receiver = atts.getValue("receiver");
+              if (receiver != null) {
+                  site.setReceiver(type(receiver));
+                  site.setReceiver_count(Integer.parseInt(search(atts, "receiver_count")));
+              }
+              int methodHandle = Integer.parseInt(search(atts, "method_handle_intrinsic", "0"));
+              if (lateInlining && scopes.size() == 0) {
+                  // The call was already added before this round of late
+                  // inlining. Ignore.
+              } else if (methodHandle == 0) {
+                  scopes.peek().add(site);
+              } else {
+                  // method handle call site can be followed by another
+                  // call (in case it is inlined). If that happens we
+                  // discard the method handle call site. So we keep
+                  // track of it but don't add it to the list yet.
+                  methodHandleSite = site;
+              }
+          }
         } else if (qname.equals("intrinsic")) {
             String id = atts.getValue("id");
             assert id != null : "intrinsic id is null";
@@ -1044,15 +1057,23 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
         } else if (qname.equals("replace_string_concat")) {
             expectStringConcatTrap = true;
         } else if (qname.equals("inline_fail")) {
-            if (methodHandleSite != null) {
-                scopes.peek().add(methodHandleSite);
-                methodHandleSite = null;
-            }
-            if (lateInlining && scopes.size() == 0) {
-                site.setReason("fail: " + search(atts, "reason"));
-                lateInlining = false;
+            Phase p = phaseStack.peek();
+            if (scopes.peek() == null && p != null) {
+                // Do not process other phases when scopes is null
+                if (p.getName().equals("parse")) {
+                  reportInternalError( "should not be in parse here:" + p.getName());
+                }
             } else {
-                scopes.peek().last().setReason("fail: " + search(atts, "reason"));
+                if (methodHandleSite != null) {
+                    scopes.peek().add(methodHandleSite);
+                    methodHandleSite = null;
+                }
+                if (lateInlining && scopes.size() == 0) {
+                    site.setReason("fail: " + search(atts, "reason"));
+                    lateInlining = false;
+                } else {
+                    scopes.peek().last().setReason("fail: " + search(atts, "reason"));
+                }
             }
         } else if (qname.equals("inline_success")) {
             if (methodHandleSite != null) {
@@ -1071,8 +1092,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             String id = makeId(atts);
             NMethod nm = nmethods.get(id);
             if (nm == null) reportInternalError("nm == null");
-            LogEvent e = new MakeNotEntrantEvent(Double.parseDouble(search(atts, "stamp")), id,
+            MakeNotEntrantEvent e = new MakeNotEntrantEvent(Double.parseDouble(search(atts, "stamp")), id,
                                                  atts.getValue("zombie") != null, nm);
+            String compileKind = atts.getValue("compile_kind");
+            e.setCompileKind(compileKind);
+            String level = atts.getValue("level");
+            e.setLevel(level);
             events.add(e);
         } else if (qname.equals("uncommon_trap")) {
             String id = atts.getValue("compile_id");
@@ -1091,10 +1116,11 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                     return;
                 }
                 try {
+                    String currBytecode = current_bytecode >= 0 ? bytecodes[current_bytecode] : "<unknown>";
                     UncommonTrap unc = new UncommonTrap(Integer.parseInt(search(atts, "bci")),
                             search(atts, "reason"),
                             search(atts, "action"),
-                            bytecodes[current_bytecode]);
+                            currBytecode);
                     if (scopes.size() == 0) {
                         // There may be a dangling site not yet in scopes after a late_inline
                         if (site != null) {
@@ -1283,8 +1309,9 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 if (scopes.size() == 0) {
                     lateInlining = false;
                 }
-                // Don't carry a stale site to the next parse
+                // Clear the bytecode and site from the last parse
                 site = null;
+                current_bytecode = -1;
             } else if (qname.equals("uncommon_trap")) {
                 currentTrap = null;
             } else if (qname.startsWith("eliminate_lock")) {

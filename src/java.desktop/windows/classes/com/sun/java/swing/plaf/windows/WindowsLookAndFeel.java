@@ -958,7 +958,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "PopupMenu.background", MenuBackgroundColor,
             "PopupMenu.foreground", MenuTextColor,
             "PopupMenu.popupSound", "win.sound.menuPopup",
-            "PopupMenu.consumeEventOnClose", Boolean.TRUE,
+            "PopupMenu.consumeEventOnClose", Boolean.FALSE,
 
             // Menus
             "Menu.font", MenuFont,

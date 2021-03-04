@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,20 +51,17 @@ public class ReferenceEnqueue {
         }
 
         void run() throws InterruptedException {
+            boolean enqueued = false;
             System.gc();
             for (int i = 0; i < iterations; i++) {
                 System.gc();
-                if (ref.isEnqueued()) {
-                    break;
-                }
-
-                Thread.sleep(100);
+                enqueued = (queue.remove(100) == ref);
+                if (enqueued) break;
             }
 
-            if (ref.isEnqueued() == false) {
+            if (!enqueued) {
                 // GC have not enqueued refWeak for the timeout period
-                System.out.println("Reference not enqueued yet");
-                return;
+                throw new RuntimeException("Error: reference not enqueued");
             }
 
             if (ref.enqueue() == true) {
@@ -72,12 +69,6 @@ public class ReferenceEnqueue {
                 // ref is already enqueued by the GC
                 throw new RuntimeException("Error: enqueue() returned true;"
                         + " expected false");
-            }
-
-            if (queue.poll() == null) {
-                // poll() should return ref enqueued by the GC
-                throw new RuntimeException("Error: poll() returned null;"
-                        + " expected ref object");
             }
         }
     }
@@ -90,7 +81,7 @@ public class ReferenceEnqueue {
         ExplicitEnqueue() {
             this.refs.add(new SoftReference<>(new Object(), queue));
             this.refs.add(new WeakReference<>(new Object(), queue));
-            // Can't test PhantomReference because get() always returns null.
+            this.refs.add(new PhantomReference<>(new Object(), queue));
         }
 
         void run() throws InterruptedException {
@@ -98,7 +89,7 @@ public class ReferenceEnqueue {
                 if (ref.enqueue() == false) {
                     throw new RuntimeException("Error: enqueue failed");
                 }
-                if (ref.get() != null) {
+                if (!ref.refersTo(null)) {
                     throw new RuntimeException("Error: referent must be cleared");
                 }
             }

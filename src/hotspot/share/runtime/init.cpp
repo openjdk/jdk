@@ -26,6 +26,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"

@@ -28,14 +28,6 @@
 # First include the real base spec.gmk file
 include @SPEC@
 
-# Check that the user did not try to specify a different java to use for compiling.
-# On windows we need to account for fixpath being first word.
-ifeq ($(firstword $(JAVA)),$(FIXPATH))
-  JAVA_EXEC_POS=2
-else
-  JAVA_EXEC_POS=1
-endif
-
 # Override specific values to do a boot cycle build
 
 # Use a different Boot JDK
@@ -47,10 +39,9 @@ OUTPUTDIR:=$(OLD_OUTPUTDIR)/bootcycle-build
 # No spaces in patsubst to avoid leading space in variable
 JAVAC_SERVER_DIR:=$(patsubst $(OLD_OUTPUTDIR)%,$(OUTPUTDIR)%,$(JAVAC_SERVER_DIR))
 
-JAVA_CMD:=$(BOOT_JDK)/bin/java
-JAVAC_CMD:=$(BOOT_JDK)/bin/javac
-JAR_CMD:=$(BOOT_JDK)/bin/jar
-JARSIGNER_CMD:=$(BOOT_JDK)/bin/jarsigner
+JAVA_CMD := $(FIXPATH) $(BOOT_JDK)/bin/java
+JAVAC_CMD := $(FIXPATH) $(BOOT_JDK)/bin/javac
+JAR_CMD := $(FIXPATH) $(BOOT_JDK)/bin/jar
 # The bootcycle JVM arguments may differ from the original boot jdk.
 JAVA_FLAGS_BIG := @BOOTCYCLE_JVM_ARGS_BIG@
 # Any CDS settings generated for the bootjdk are invalid in the bootcycle build.
@@ -58,5 +49,3 @@ JAVA_FLAGS_BIG := @BOOTCYCLE_JVM_ARGS_BIG@
 # settings for CDS.
 JAVA_FLAGS := $(filter-out -XX:SharedArchiveFile% -Xshare%, $(JAVA_FLAGS))
 
-# Pandoc cannot be used without the jjs plugin, which was removed with Nashorn.
-ENABLE_PANDOC := false

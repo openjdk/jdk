@@ -51,11 +51,11 @@ public class TestMethodSignature extends JavadocTester {
         checkOutput("pkg/C.html", true,
                 """
                     <div class="member-signature"><span class="annotations">@Generated("GeneratedConstructor")
-                    </span><span class="modifiers">public</span>&nbsp;<span class="member-name">C</span>()</div>""",
+                    </span><span class="modifiers">public</span>&nbsp;<span class="element-name">C</span>()</div>""",
 
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="return-type">void</span>&nbsp;<span class="member-name">simpleMetho\
+                    <span class="return-type">void</span>&nbsp;<span class="element-name">simpleMetho\
                     d</span>&#8203;<span class="parameters">(int&nbsp;i,
                      java.lang.String&nbsp;s,
                      boolean&nbsp;b)</span></div>""",
@@ -65,8 +65,8 @@ public class TestMethodSignature extends JavadocTester {
                                date="a date",
                                comments="some comment about the method below")
                     </span><span class="modifiers">public static</span>&nbsp;<span class="return-typ\
-                    e">void</span>&nbsp;<span class="member-name">annotatedMethod</span>&#8203;<span\
-                     class="parameters">(int&nbsp;i,
+                    e">void</span>&nbsp;<span class="element-name">annotatedMethod</span>&#8203;<span class=\
+                    "parameters">(int&nbsp;i,
                      java.lang.String&nbsp;s,
                      boolean&nbsp;b)</span></div>""",
 
@@ -83,9 +83,9 @@ public class TestMethodSignature extends JavadocTester {
                     T8 extends java.lang.AutoCloseable&gt;</span>
                     <span class="return-type"><a href="C.With8Types.html" title="class in pkg">C.Wit\
                     h8Types</a>&lt;T1,&#8203;T2,&#8203;T3,&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#\
-                    8203;T8&gt;</span>&nbsp;<span class="member-name">bigGenericMethod</span>&#8203;\
-                    <span class="parameters">(<a href="C.F0.html" title="interface in pkg">C.F0</a>&\
-                    lt;? extends T1&gt;&nbsp;t1,
+                    8203;T8&gt;</span>&nbsp;<span class="element-name">bigGenericMethod</span>&#8203;<span c\
+                    lass="parameters">(<a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? ex\
+                    tends T1&gt;&nbsp;t1,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T2&gt;&nbsp;t2,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T3&gt;&nbsp;t3,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T4&gt;&nbsp;t4,
@@ -111,9 +111,9 @@ public class TestMethodSignature extends JavadocTester {
                     T8 extends java.lang.AutoCloseable&gt;</span>
                     <span class="return-type"><a href="C.With8Types.html" title="class in pkg">C.Wit\
                     h8Types</a>&lt;T1,&#8203;T2,&#8203;T3,&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#\
-                    8203;T8&gt;</span>&nbsp;<span class="member-name">bigGenericAnnotatedMethod</spa\
-                    n>&#8203;<span class="parameters">(<a href="C.F0.html" title="interface in pkg">\
-                    C.F0</a>&lt;? extends T1&gt;&nbsp;t1,
+                    8203;T8&gt;</span>&nbsp;<span class="element-name">bigGenericAnnotatedMethod</span>&#820\
+                    3;<span class="parameters">(<a href="C.F0.html" title="interface in pkg">C.F0</a\
+                    >&lt;? extends T1&gt;&nbsp;t1,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T2&gt;&nbsp;t2,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T3&gt;&nbsp;t3,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T4&gt;&nbsp;t4,

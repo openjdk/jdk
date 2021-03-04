@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,31 +29,31 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class RetryExecutor {
-    RetryExecutor() {
+    public RetryExecutor() {
         setMaxAttemptsCount(5);
         setAttemptTimeoutMillis(2 * 1000);
     }
 
-    RetryExecutor setMaxAttemptsCount(int v) {
+    public RetryExecutor setMaxAttemptsCount(int v) {
         attempts = v;
         return this;
     }
 
-    RetryExecutor setAttemptTimeoutMillis(int v) {
+    public RetryExecutor setAttemptTimeoutMillis(int v) {
         timeoutMillis = v;
         return this;
     }
 
-    RetryExecutor setExecutorInitializer(Consumer<Executor> v) {
+    public RetryExecutor setExecutorInitializer(Consumer<Executor> v) {
         executorInitializer = v;
         return this;
     }
 
-    void abort() {
+    public void abort() {
         aborted = true;
     }
 
-    boolean isAborted() {
+    public boolean isAborted() {
         return aborted;
     }
 
@@ -68,11 +68,11 @@ public final class RetryExecutor {
         });
     }
 
-    void execute(String cmdline[]) throws IOException {
+    public void execute(String cmdline[]) throws IOException {
         executeLoop(() -> Executor.of(cmdline));
     }
 
-    void execute(ProcessBuilder pb) throws IOException {
+    public void execute(ProcessBuilder pb) throws IOException {
         executeLoop(() -> Executor.of(pb));
     }
 
