@@ -123,7 +123,7 @@ public abstract class HttpsServer extends HttpServer {
      * @param path    the root URI path of the context, must be absolute
      * @param handler the HttpHandler for the context
      * @param filters the Filters for the context, optional
-     * @return the HttpServer
+     * @return the HttpsServer
      * @throws BindException            if the server cannot bind to the address
      * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if path is invalid
