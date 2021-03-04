@@ -183,14 +183,14 @@ void ParCompactionManager::remove_all_shadow_regions() {
 #ifdef ASSERT
 void ParCompactionManager::verify_all_marking_stack_empty() {
   uint parallel_gc_threads = ParallelGCThreads;
-  for (uint i=0; i<=parallel_gc_threads; i++) {
+  for (uint i = 0; i <= parallel_gc_threads; i++) {
     assert(_manager_array[i]->marking_stacks_empty(), "Marking stack should be empty");
   }
 }
 
 void ParCompactionManager::verify_all_region_stack_empty() {
   uint parallel_gc_threads = ParallelGCThreads;
-  for (uint i=0; i<=parallel_gc_threads; i++) {
+  for (uint i = 0; i <= parallel_gc_threads; i++) {
     assert(_manager_array[i]->region_stack()->is_empty(), "Region stack should be empty");
   }
 }

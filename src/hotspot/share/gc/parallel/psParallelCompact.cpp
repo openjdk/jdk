@@ -2620,9 +2620,9 @@ void PSParallelCompact::compact() {
 
   {
     GCTraceTime(Trace, gc, phases) tm("Deferred Updates", &_gc_timer);
-    // Update the deferred objects, if any. Any compaction manager can be used.
-    // However, since the current thread is VM thread, we use the rightful one
-    // to keep the verification logic happy.
+    // Update the deferred objects, if any. In principle, any compaction
+    // manager can be used. However, since the current thread is VM thread, we
+    // use the rightful one to keep the verification logic happy.
     ParCompactionManager* cm = ParCompactionManager::get_vmthread_cm();
     for (unsigned int id = old_space_id; id < last_space_id; ++id) {
       update_deferred_objects(cm, SpaceId(id));
