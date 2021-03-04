@@ -24,6 +24,7 @@
 #ifndef GTEST_CONCURRENT_TEST_RUNNER_INLINE_HPP
 #define GTEST_CONCURRENT_TEST_RUNNER_INLINE_HPP
 
+#include "memory/allocation.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
 #include "threadHelper.inline.hpp"
@@ -71,9 +72,7 @@ public:
   void run() {
     Semaphore done(0);
 
-    size_t sz = sizeof(UnitTestThread*) * nrOfThreads;
-    UnitTestThread** t = (UnitTestThread**) os::malloc(sz, mtInternal);
-    memset((void*)t, 0, sz);
+    UnitTestThread** t = NEW_C_HEAP_ARRAY(UnitTestThread*, nrOfThreads, mtInternal);
 
     for (int i = 0; i < nrOfThreads; i++) {
       t[i] = new UnitTestThread(unitTestRunnable, &done, testDurationMillis);
@@ -87,7 +86,7 @@ public:
       done.wait();
     }
 
-    os::free(t);
+    FREE_C_HEAP_ARRAY(UnitTestThread**, t);
   }
 
 private:
@@ -96,4 +95,4 @@ private:
   const long testDurationMillis;
 };
 
-#endif // include guard
+#endif // GTEST_CONCURRENT_TEST_RUNNER_INLINE_HPP
