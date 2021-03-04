@@ -28,9 +28,11 @@
  * @bug 8134708
  * @summary Check if LDAP resources from CRLDP and AIA extensions can be loaded
  * @run main/othervm -Djdk.net.hosts.file=${test.src}/CRLDP
+ *      -Dcom.sun.security.enableCRLDP=true
  *      ExtensionsWithLDAP CRLDP ldap.host.for.crldp
  * @modules jdk.security.auth
  * @run main/othervm -Djdk.net.hosts.file=${test.src}/AIA
+ *      -Dcom.sun.security.enableAIAcaIssuers=true
  *      ExtensionsWithLDAP AIA ldap.host.for.aia
  */
 
@@ -130,10 +132,6 @@ public class ExtensionsWithLDAP {
     public static void main(String[] args) throws Exception {
         String extension = args[0];
         String targetHost = args[1];
-
-        // enable CRLDP and AIA extensions
-        System.setProperty("com.sun.security.enableCRLDP", "true");
-        System.setProperty("com.sun.security.enableAIAcaIssuers", "true");
 
         X509Certificate trustedCert = loadCertificate(CA_CERT);
         X509Certificate eeCert = loadCertificate(EE_CERT);
