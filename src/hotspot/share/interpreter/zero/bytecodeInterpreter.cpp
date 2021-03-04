@@ -1636,7 +1636,7 @@ run:
             if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
               OrderAccess::fence();
             }
-            switch(tos_type) {
+            switch (tos_type) {
               case btos:
               case ztos:
                 SET_STACK_INT(obj->byte_field_acquire(field_offset), -1);
@@ -1773,7 +1773,7 @@ run:
           //
           int field_offset = cache->f2_as_index();
           if (cache->is_volatile()) {
-            switch(tos_type) {
+            switch (tos_type) {
               case ztos:
                 obj->release_byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
                 break;
@@ -1809,7 +1809,7 @@ run:
             }
             OrderAccess::storeload();
           } else {
-            switch(tos_type) {
+            switch (tos_type) {
               case ztos:
                 obj->byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
                 break;
