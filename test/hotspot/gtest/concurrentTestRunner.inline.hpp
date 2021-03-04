@@ -24,6 +24,8 @@
 #ifndef GTEST_CONCURRENT_TEST_RUNNER_INLINE_HPP
 #define GTEST_CONCURRENT_TEST_RUNNER_INLINE_HPP
 
+#include "runtime/semaphore.hpp"
+#include "runtime/thread.inline.hpp"
 #include "threadHelper.inline.hpp"
 
 // This file contains helper classes to run unit tests concurrently in multiple threads.
@@ -65,8 +67,6 @@ public:
     unitTestRunnable(runnableArg),
     nrOfThreads(nrOfThreadsArg),
     testDurationMillis(testDurationMillisArg) {}
-
-  virtual ~ConcurrentTestRunner() {}
 
   void run() {
     Semaphore done(0);
