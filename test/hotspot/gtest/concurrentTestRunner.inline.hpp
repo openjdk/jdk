@@ -71,9 +71,12 @@ public:
   void run() {
     Semaphore done(0);
 
-    std::vector<UnitTestThread*> t;
+    size_t sz = sizeof(UnitTestThread*) * nrOfThreads;
+    UnitTestThread** t = (UnitTestThread**) os::malloc(sz, mtInternal);
+    memset((void*)t, 0, sz);
+
     for (int i = 0; i < nrOfThreads; i++) {
-      t.push_back(new UnitTestThread(unitTestRunnable, &done, testDurationMillis));
+      t[i] = new UnitTestThread(unitTestRunnable, &done, testDurationMillis);
     }
 
     for (int i = 0; i < nrOfThreads; i++) {
@@ -83,6 +86,8 @@ public:
     for (int i = 0; i < nrOfThreads; i++) {
       done.wait();
     }
+
+    os::free(t);
   }
 
 private:
