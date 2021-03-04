@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,25 +53,19 @@ import jdk.jpackage.test.HelloApp;
 
 public final class NoMPathRuntimeTest {
 
-    public NoMPathRuntimeTest(String javaAppDesc, String jlinkOutputSubdir,
-            String runtimeSubdir) {
-        this.javaAppDesc = javaAppDesc;
+    public NoMPathRuntimeTest(String jlinkOutputSubdir, String runtimeSubdir) {
         this.jlinkOutputSubdir = Path.of(jlinkOutputSubdir);
         this.runtimeSubdir = Path.of(runtimeSubdir);
     }
 
     @Test
     public void test() throws IOException {
-        JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
+        JavaAppDesc appDesc = JavaAppDesc.parse("com.foo/com.foo.main.Aloha");
 
         JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);
 
-        final String moduleName = appDesc.moduleName();
-
-        if (moduleName != null) {
-            // Build module jar.
-            cmd.executePrerequisiteActions();
-        }
+        // Build module jar.
+        cmd.executePrerequisiteActions();
 
         final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
         final Path jlinkOutputDir = workDir.resolve(jlinkOutputSubdir);
@@ -93,28 +87,33 @@ public final class NoMPathRuntimeTest {
                 "--no-header-files",
                 "--no-man-pages");
 
-        if (moduleName != null) {
-            jlink.addArguments("--add-modules", moduleName, "--module-path",
-                    Path.of(cmd.getArgumentValue("--module-path")).resolve(
-                            "hello.jar").toString());
-        }
+        jlink.addArguments("--add-modules", appDesc.moduleName(),
+               "--module-path", Path.of(cmd.getArgumentValue("--module-path"))
+               .resolve("hello.jar").toString());
 
         jlink.execute();
-
-        // create a non-modular jar in the current directory
-        HelloApp.createBundle(JavaAppDesc.parse("junk.jar:Hello"), Path.of("."));
 
         // non-modular jar in current dir caused error whe no module-path given
         cmd.removeArgumentWithValue("--module-path");
 
         cmd.setArgumentValue("--runtime-image", workDir.resolve(runtimeSubdir));
-        cmd.executeAndAssertHelloAppImageCreated();
+        Path junkJar = null;
+        try {
+            // create a non-modular jar in the current directory
+            junkJar = HelloApp.createBundle(
+                    JavaAppDesc.parse("junk.jar:Hello"), Path.of("."));
+
+            cmd.executeAndAssertHelloAppImageCreated();
+        } finally {
+            if (junkJar != null) {
+                TKit.deleteIfExists(junkJar);
+            }
+        }
+            
     }
 
     @Parameters
     public static Collection data() {
-        final List<String> javaAppDescs = List.of("Hello",
-                "com.foo/com.foo.main.Aloha");
 
         final List<String[]> paths = new ArrayList<>();
         paths.add(new String[] { "", "" });
@@ -125,16 +124,13 @@ public final class NoMPathRuntimeTest {
         }
 
         List<Object[]> data = new ArrayList<>();
-        for (var javaAppDesc : javaAppDescs) {
-            for (var pathCfg : paths) {
-                data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1] });
-            }
+        for (var pathCfg : paths) {
+            data.add(new Object[] { pathCfg[0], pathCfg[1] });
         }
 
         return data;
     }
 
-    private final String javaAppDesc;
     private final Path jlinkOutputSubdir;
     private final Path runtimeSubdir;
 }
