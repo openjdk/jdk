@@ -110,11 +110,13 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         // Get identifier from app image if user provided
                         // app image and did not provide the identifier via CLI.
                         String identifier = extractBundleIdentifier(params);
-                        if (identifier != null) {
-                            return identifier;
+                        if (identifier == null) {
+                            identifier =  MacAppBundler.getIdentifier(params);
                         }
-
-                        return MacAppBundler.getIdentifier(params);
+                        if (identifier == null) {
+                            identifier = APP_NAME.fetchFrom(params);
+                        }
+                        return identifier;
                     },
                     (s, p) -> s);
 

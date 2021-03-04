@@ -108,7 +108,11 @@ public abstract class ColorSpace implements Serializable {
      * The number of components in the color space.
      */
     private final int numComponents;
-    private transient String [] compName = null;
+
+    /**
+     * Lazy-initialized names of components in the color space.
+     */
+    private transient volatile String [] compName;
 
     /**
      * The lazy cache of singletons for the predefined built-in color spaces.
@@ -447,60 +451,37 @@ public abstract class ColorSpace implements Serializable {
     /**
      * Returns the name of the component given the component index.
      *
-     * @param  idx the component index
+     * @param  component the component index
      * @return the name of the component at the specified index
-     * @throws IllegalArgumentException if {@code idx} is less than 0 or greater
-     *         than {@code numComponents - 1}
+     * @throws IllegalArgumentException if {@code component} is less than 0 or
+     *         greater than {@code numComponents - 1}
      */
-    public String getName (int idx) {
-        /* REMIND - handle common cases here */
-        rangeCheck(idx);
+    public String getName(int component) {
+        rangeCheck(component);
         if (compName == null) {
-            switch (type) {
-                case ColorSpace.TYPE_XYZ:
-                    compName = new String[] {"X", "Y", "Z"};
-                    break;
-                case ColorSpace.TYPE_Lab:
-                    compName = new String[] {"L", "a", "b"};
-                    break;
-                case ColorSpace.TYPE_Luv:
-                    compName = new String[] {"L", "u", "v"};
-                    break;
-                case ColorSpace.TYPE_YCbCr:
-                    compName = new String[] {"Y", "Cb", "Cr"};
-                    break;
-                case ColorSpace.TYPE_Yxy:
-                    compName = new String[] {"Y", "x", "y"};
-                    break;
-                case ColorSpace.TYPE_RGB:
-                    compName = new String[] {"Red", "Green", "Blue"};
-                    break;
-                case ColorSpace.TYPE_GRAY:
-                    compName = new String[] {"Gray"};
-                    break;
-                case ColorSpace.TYPE_HSV:
-                    compName = new String[] {"Hue", "Saturation", "Value"};
-                    break;
-                case ColorSpace.TYPE_HLS:
-                    compName = new String[] {"Hue", "Lightness",
-                                             "Saturation"};
-                    break;
-                case ColorSpace.TYPE_CMYK:
-                    compName = new String[] {"Cyan", "Magenta", "Yellow",
-                                             "Black"};
-                    break;
-                case ColorSpace.TYPE_CMY:
-                    compName = new String[] {"Cyan", "Magenta", "Yellow"};
-                    break;
-                default:
-                    String [] tmp = new String[numComponents];
+            compName = switch (type) {
+                case TYPE_XYZ -> new String[]{"X", "Y", "Z"};
+                case TYPE_Lab -> new String[]{"L", "a", "b"};
+                case TYPE_Luv -> new String[]{"L", "u", "v"};
+                case TYPE_YCbCr -> new String[]{"Y", "Cb", "Cr"};
+                case TYPE_Yxy -> new String[]{"Y", "x", "y"};
+                case TYPE_RGB -> new String[]{"Red", "Green", "Blue"};
+                case TYPE_GRAY -> new String[]{"Gray"};
+                case TYPE_HSV -> new String[]{"Hue", "Saturation", "Value"};
+                case TYPE_HLS -> new String[]{"Hue", "Lightness", "Saturation"};
+                case TYPE_CMYK -> new String[]{"Cyan", "Magenta", "Yellow",
+                                               "Black"};
+                case TYPE_CMY -> new String[]{"Cyan", "Magenta", "Yellow"};
+                default -> {
+                    String[] tmp = new String[getNumComponents()];
                     for (int i = 0; i < tmp.length; i++) {
                         tmp[i] = "Unnamed color component(" + i + ")";
                     }
-                    compName = tmp;
-            }
+                    yield tmp;
+                }
+            };
         }
-        return compName[idx];
+        return compName[component];
     }
 
     /**

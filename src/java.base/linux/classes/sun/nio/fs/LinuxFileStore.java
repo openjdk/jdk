@@ -105,27 +105,6 @@ class LinuxFileStore
         throw new IOException("Mount point not found");
     }
 
-    // returns true if extended attributes enabled on file system where given
-    // file resides, returns false if disabled or unable to determine.
-    private boolean isExtendedAttributesEnabled(UnixPath path) {
-        int fd = -1;
-        try {
-            fd = path.openForAttributeAccess(false);
-
-            // fgetxattr returns size if called with size==0
-            byte[] name = Util.toBytes("user.java");
-            LinuxNativeDispatcher.fgetxattr(fd, name, 0L, 0);
-            return true;
-        } catch (UnixException e) {
-            // attribute does not exist
-            if (e.errno() == UnixConstants.ENODATA)
-                return true;
-        } finally {
-            UnixNativeDispatcher.close(fd);
-        }
-        return false;
-    }
-
     // get kernel version as a three element array {major, minor, micro}
     private static int[] getKernelVersion() {
         Pattern pattern = Pattern.compile("\\D+");
