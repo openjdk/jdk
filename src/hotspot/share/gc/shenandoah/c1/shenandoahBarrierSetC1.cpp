@@ -221,26 +221,21 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
   }
 
   // 3: apply keep-alive barrier if ShenandoahSATBBarrier is set
-  if (ShenandoahSATBBarrier) {
-    bool is_weak = (decorators & ON_WEAK_OOP_REF) != 0;
-    bool is_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
+  if (ShenandoahSATBBarrier && ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     bool is_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
 
-    if ((is_weak || is_phantom || is_anonymous) && keep_alive) {
-      // Register the value in the referent field with the pre-barrier
-      LabelObj *Lcont_anonymous;
-      if (is_anonymous) {
-        Lcont_anonymous = new LabelObj();
-        generate_referent_check(access, Lcont_anonymous);
-      }
-      pre_barrier(gen, access.access_emit_info(), decorators, LIR_OprFact::illegalOpr /* addr_opr */,
-                  result /* pre_val */);
-      if (is_anonymous) {
-        __ branch_destination(Lcont_anonymous->label());
-      }
+    // Register the value in the referent field with the pre-barrier
+    LabelObj *Lcont_anonymous;
+    if (is_anonymous) {
+      Lcont_anonymous = new LabelObj();
+      generate_referent_check(access, Lcont_anonymous);
     }
- }
+    pre_barrier(gen, access.access_emit_info(), decorators, LIR_OprFact::illegalOpr /* addr_opr */,
+                result /* pre_val */);
+    if (is_anonymous) {
+      __ branch_destination(Lcont_anonymous->label());
+    }
+  }
 }
 
 class C1ShenandoahPreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
