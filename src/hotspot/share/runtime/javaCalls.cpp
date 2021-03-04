@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -37,6 +36,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jniCheck.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -136,6 +136,14 @@ JavaCallWrapper::~JavaCallWrapper() {
   // Release handles after we are marked as being inside the VM again, since this
   // operation might block
   JNIHandleBlock::release_block(_old_handles, _thread);
+
+  if (_thread->has_pending_exception() && _thread->has_last_Java_frame()) {
+    // If we get here, the Java code threw an exception that unwound a frame.
+    // It could be that the new frame anchor has not passed through the required
+    // StackWatermark barriers. Therefore, we process any such deferred unwind
+    // requests here.
+    StackWatermarkSet::after_unwind(_thread);
+  }
 }
 
 
@@ -378,9 +386,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   // When we reenter Java, we need to reenable the reserved/yellow zone which
   // might already be disabled when we are in VM.
-  if (!thread->stack_guards_enabled()) {
-    thread->reguard_stack();
-  }
+  thread->stack_overflow_state()->reguard_stack_if_needed();
 
   // Check that there are shadow pages available before changing thread state
   // to Java. Calculate current_stack_pointer here to make sure

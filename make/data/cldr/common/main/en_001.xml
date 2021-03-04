@@ -17,16 +17,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<languages>
 			<language type="mus" draft="contributed">Creek</language>
 			<language type="nds_NL">West Low German</language>
+			<language type="sah">Yakut</language>
 		</languages>
 		<territories>
-			<territory type="BL">St Barthélemy</territory>
-			<territory type="KN">St Kitts &amp; Nevis</territory>
-			<territory type="LC">St Lucia</territory>
-			<territory type="MF">St Martin</territory>
-			<territory type="PM">St Pierre &amp; Miquelon</territory>
-			<territory type="SH">St Helena</territory>
 			<territory type="UM">US Outlying Islands</territory>
-			<territory type="VC">St Vincent &amp; Grenadines</territory>
 			<territory type="VI">US Virgin Islands</territory>
 		</territories>
 		<keys>
@@ -156,7 +150,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="Bhms">h:mm.ss B</dateFormatItem>
 						<dateFormatItem id="EBhm">E, h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E, h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
@@ -743,6 +736,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/St_Kitts">
 				<exemplarCity>St Kitts</exemplarCity>
 			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>Aktau</exemplarCity>
+			</zone>
 			<zone type="America/St_Lucia">
 				<exemplarCity>St Lucia</exemplarCity>
 			</zone>
@@ -815,6 +811,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</dates>
 	<numbers>
 		<currencies>
+			<currency type="AFN">
+				<displayName count="one">Afghan afghani</displayName>
+				<displayName count="other">Afghan afghanis</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>Bermudian Dollar</displayName>
+				<displayName count="one">Bermudian dollar</displayName>
+				<displayName count="other">Bermudian dollars</displayName>
+			</currency>
 			<currency type="BYB">
 				<displayName>Belarusian New Rouble (1994–1999)</displayName>
 				<displayName count="one">Belarusian new rouble (1994–1999)</displayName>
@@ -830,13 +835,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Belarusian rouble (2000–2016)</displayName>
 				<displayName count="other">Belarusian roubles (2000–2016)</displayName>
 			</currency>
+			<currency type="ETB">
+				<displayName count="other">Ethiopian birr</displayName>
+			</currency>
 			<currency type="JPY">
 				<symbol>JP¥</symbol>
+			</currency>
+			<currency type="LSL">
+				<displayName count="other">Lesotho maloti</displayName>
 			</currency>
 			<currency type="LVR">
 				<displayName>Latvian Rouble</displayName>
 				<displayName count="one">Latvian rouble</displayName>
 				<displayName count="other">Latvian roubles</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName count="other">Malagasy ariary</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName count="other">Maldivian rufiyaa</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>Philippine Peso</displayName>
+				<displayName count="one">Philippine peso</displayName>
+				<displayName count="other">Philippine pesos</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>Russian Rouble</displayName>
@@ -861,10 +883,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="USD">
 				<symbol>US$</symbol>
 			</currency>
+			<currency type="VUV">
+				<displayName count="other">Vanuatu vatu</displayName>
+			</currency>
 		</currencies>
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deca{0}</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>metres per second squared</displayName>
 				<unitPattern count="one">{0} metre per second squared</unitPattern>
@@ -933,6 +961,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mile per gallon</unitPattern>
 				<unitPattern count="other">{0} miles per gallon</unitPattern>
 			</unit>
+			<unit type="energy-kilowatt-hour">
+				<unitPattern count="one">{0} kilowatt-hour</unitPattern>
+			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>pixels per centimetre</displayName>
 				<unitPattern count="one">{0} pixel per centimetre</unitPattern>
@@ -942,6 +973,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dots per centimetre</displayName>
 				<unitPattern count="one">{0} dot per centimetre</unitPattern>
 				<unitPattern count="other">{0} dots per centimetre</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<unitPattern count="other">{0} dots</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="other">{0} earth radii</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometres</displayName>
@@ -986,6 +1023,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} picometre</unitPattern>
 				<unitPattern count="other">{0} picometres</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>Scandinavian mile</displayName>
+				<unitPattern count="one">{0} Scandinavian mile</unitPattern>
+				<unitPattern count="other">{0} Scandinavian miles</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<unitPattern count="other">{0} candelas</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="other">{0} lumens</unitPattern>
+			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>tonnes</displayName>
 				<unitPattern count="one">{0} tonne</unitPattern>
@@ -995,6 +1043,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>stone</displayName>
 				<unitPattern count="one">{0} stone</unitPattern>
 				<unitPattern count="other">{0} stone</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<unitPattern count="other">{0} grains</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>millimetres of mercury</displayName>
@@ -1010,6 +1061,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>metres per second</displayName>
 				<unitPattern count="one">{0} metre per second</unitPattern>
 				<unitPattern count="other">{0} metres per second</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>degree</displayName>
 			</unit>
 			<unit type="temperature-kelvin">
 				<displayName>kelvin</displayName>
@@ -1081,15 +1135,50 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} gallons</unitPattern>
 				<perUnitPattern>{0} per gallon</perUnitPattern>
 			</unit>
+			<unit type="volume-quart">
+				<displayName>US quarts</displayName>
+				<unitPattern count="one">{0} US quart</unitPattern>
+				<unitPattern count="other">{0} US quarts</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>US fluid ounces</displayName>
 				<unitPattern count="one">{0} US fluid ounce</unitPattern>
 				<unitPattern count="other">{0} US fluid ounces</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>US dessertspoon</displayName>
+				<unitPattern count="one">{0} US dessertspoon</unitPattern>
+				<unitPattern count="other">{0} US dessertspoons</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dessertspoon</displayName>
+				<unitPattern count="one">{0} dessertspoon</unitPattern>
+				<unitPattern count="other">{0} dessertspoons</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<unitPattern count="other">{0} drops</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<unitPattern count="other">{0} drams</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="other">{0} jiggers</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<unitPattern count="other">{0} pinches</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>quart</displayName>
+				<unitPattern count="one">{0} quart</unitPattern>
+				<unitPattern count="other">{0} quarts</unitPattern>
+			</unit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>metres/sec²</displayName>
+			</unit>
+			<unit type="angle-revolution">
+				<unitPattern count="other">{0} revs</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>metres²</displayName>
@@ -1105,7 +1194,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mg/dl</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
-				<displayName>millimol/litre</displayName>
+				<displayName>millimole/litre</displayName>
 				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
@@ -1126,7 +1215,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>miles/gal US</displayName>
+				<displayName>miles/US gal</displayName>
 				<unitPattern count="one">{0} mpg US</unitPattern>
 				<unitPattern count="other">{0} mpg US</unitPattern>
 			</unit>
@@ -1147,6 +1236,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} sec</unitPattern>
 				<unitPattern count="other">{0} secs</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>μsecs</displayName>
+				<unitPattern count="one">{0} μs</unitPattern>
+				<unitPattern count="other">{0} μs</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<unitPattern count="one">{0} dot</unitPattern>
+				<unitPattern count="other">{0} dots</unitPattern>
+			</unit>
 			<unit type="length-meter">
 				<displayName>metres</displayName>
 			</unit>
@@ -1156,8 +1254,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-stone">
 				<displayName>stone</displayName>
 			</unit>
-			<unit type="pressure-inch-ofhg">
-				<displayName>inHG</displayName>
+			<unit type="mass-carat">
+				<unitPattern count="one">{0} ct</unitPattern>
+				<unitPattern count="other">{0} ct</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<unitPattern count="one">{0} grains</unitPattern>
+				<unitPattern count="other">{0} grains</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>metres/sec</displayName>
@@ -1195,8 +1298,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>US gal</displayName>
-				<unitPattern count="one">{0} gal US</unitPattern>
-				<unitPattern count="other">{0} gal US</unitPattern>
+				<unitPattern count="one">{0} US gal</unitPattern>
+				<unitPattern count="other">{0} US gal</unitPattern>
+				<perUnitPattern>{0}/US gal</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName>gal</displayName>
@@ -1204,10 +1308,46 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-quart">
+				<displayName>US qts</displayName>
+				<unitPattern count="one">{0} US qt</unitPattern>
+				<unitPattern count="other">{0} US qt</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>US fl oz</displayName>
 				<unitPattern count="one">{0} US fl oz</unitPattern>
 				<unitPattern count="other">{0} US fl oz</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>US dstspn</displayName>
+				<unitPattern count="one">{0} US dstspn</unitPattern>
+				<unitPattern count="other">{0} US dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<unitPattern count="one">{0} drops</unitPattern>
+				<unitPattern count="other">{0} drops</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram</displayName>
+				<unitPattern count="one">{0} dram</unitPattern>
+				<unitPattern count="other">{0} drams</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="other">{0} jiggers</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<unitPattern count="one">{0} pinches</unitPattern>
+				<unitPattern count="other">{0} pinches</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt</displayName>
+				<unitPattern count="one">{0} qt</unitPattern>
+				<unitPattern count="other">{0} qt</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -1253,6 +1393,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>mph</displayName>
 			</unit>
 			<unit type="temperature-celsius">
 				<unitPattern count="one">{0}°</unitPattern>

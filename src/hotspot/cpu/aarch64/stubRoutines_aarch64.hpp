@@ -43,7 +43,6 @@ class aarch64 {
  friend class StubGenerator;
 
  private:
-  static address _get_previous_fp_entry;
   static address _get_previous_sp_entry;
 
   static address _f2i_fixup;
@@ -51,6 +50,7 @@ class aarch64 {
   static address _d2i_fixup;
   static address _d2l_fixup;
 
+  static address _vector_iota_indices;
   static address _float_sign_mask;
   static address _float_sign_flip;
   static address _double_sign_mask;
@@ -76,11 +76,6 @@ class aarch64 {
 
  public:
 
-  static address get_previous_fp_entry()
-  {
-    return _get_previous_fp_entry;
-  }
-
   static address get_previous_sp_entry()
   {
     return _get_previous_sp_entry;
@@ -104,6 +99,10 @@ class aarch64 {
   static address d2l_fixup()
   {
     return _d2l_fixup;
+  }
+
+  static address vector_iota_indices() {
+    return _vector_iota_indices;
   }
 
   static address float_sign_mask()

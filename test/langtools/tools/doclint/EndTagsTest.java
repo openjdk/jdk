@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8006236
+ * @bug 8006236 8247957
  * @summary doclint: structural issue hidden
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
@@ -10,10 +10,10 @@
 
 /** */
 public class EndTagsTest {
-    /** <p>  <a name="a1"> text <img alt="image" src="image.png"> </a> </p> */
+    /** <p>  <a id="a1"> text <img alt="image" src="image.png"> </a> </p> */
     public void valid_all() { }
 
-    /** <p>  <a name="a2"> text <img alt="image" src="image.png"> </a> */
+    /** <p>  <a id="a2"> text <img alt="image" src="image.png"> </a> */
     public void valid_omit_optional_close() { }
 
     /** </a> */

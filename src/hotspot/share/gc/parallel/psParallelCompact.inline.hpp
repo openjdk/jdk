@@ -113,10 +113,9 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
     oop new_obj = (oop)summary_data().calc_new_pointer(obj, cm);
-    assert(new_obj != NULL,                    // is forwarding ptr?
-           "should be forwarded");
-    // Just always do the update unconditionally?
-    if (new_obj != NULL) {
+    assert(new_obj != NULL, "non-null address for live objects");
+    // Is it actually relocated at all?
+    if (new_obj != obj) {
       assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
              "should be in object space");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
@@ -134,8 +133,6 @@ public:
   virtual void do_oop(oop* p)                { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)          { do_oop_nv(p); }
 
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops() { return false; })
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 private:
   ParCompactionManager* _cm;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,24 @@
  */
 
 import java.awt.BorderLayout;
+import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
-import java.awt.GraphicsConfiguration;
+import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.Canvas;
-import java.awt.Component;
-import java.awt.GradientPaint;
-import java.awt.Graphics2D;
-import java.awt.Paint;
-import java.util.Random;
 import java.awt.geom.Ellipse2D;
-import javax.swing.JApplet;
+import java.util.Random;
+
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -107,31 +104,6 @@ public class TSFrame {
             setUndecorated(true);
         }
     }
-    private static class NonOpaqueJAppletFrame extends JFrame {
-        JPanel p;
-        NonOpaqueJAppletFrame() {
-            super("NonOpaque Swing JAppletFrame");
-            JApplet ja = new JApplet() {
-                public void paint(Graphics g) {
-                    super.paint(g);
-                    System.err.println("JAppletFrame paint called");
-                }
-            };
-            p = new JPanel() {
-                public void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    render(g, getWidth(), getHeight(), true);
-                    g.setColor(Color.red);
-                    g.drawString("Non-Opaque Swing JFrame", 10, 15);
-                }
-            };
-            p.setDoubleBuffered(false);
-            p.setOpaque(false);
-            ja.add(p);
-            add(ja);
-            setUndecorated(true);
-        }
-    }
     private static class NonOpaqueFrame extends Frame {
         NonOpaqueFrame() {
             super("NonOpaque AWT Frame");
@@ -177,7 +149,6 @@ public class TSFrame {
         if (useNonOpaque) {
             if (useSwing) {
                 frame = new NonOpaqueJFrame();
-//                frame = new NonOpaqueJAppletFrame(gc);
             } else {
                 frame = new NonOpaqueFrame();
             }
@@ -224,11 +195,7 @@ public class TSFrame {
             }
         });
         frame.setPreferredSize(new Dimension(800, 600));
-
-        if (useShape) {
-            frame.setUndecorated(true);
-        }
-
+        frame.setUndecorated(true);
         frame.setLocation(450, 10);
         frame.pack();
 

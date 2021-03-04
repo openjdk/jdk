@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,14 +23,12 @@
  *
  */
 #include "precompiled.hpp"
-
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.hpp"
 #include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-
 
 namespace metaspace {
 
@@ -39,7 +37,7 @@ PrintMetaspaceInfoKlassClosure::PrintMetaspaceInfoKlassClosure(outputStream* out
 {}
 
 void PrintMetaspaceInfoKlassClosure::do_klass(Klass* k) {
-  _cnt ++;
+  _cnt++;
   _out->cr_indent();
   _out->print(UINTX_FORMAT_W(4) ": ", _cnt);
 

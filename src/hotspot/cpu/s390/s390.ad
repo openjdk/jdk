@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2017, 2020 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -278,9 +278,7 @@ alloc_class chunk2(
 // information in this architecture description.
 
 // 1) reg_class inline_cache_reg           (as defined in frame section)
-// 2) reg_class compiler_method_reg        (as defined in frame section)
-// 2) reg_class interpreter_method_reg     (as defined in frame section)
-// 3) reg_class stack_slots(/* one chunk of stack-based "registers" */)
+// 2) reg_class stack_slots(/* one chunk of stack-based "registers" */)
 
 // Integer Register Classes
 reg_class z_int_reg(
@@ -641,6 +639,11 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return 12 + MacroAssembler::call_far_patchable_ret_addr_offset();
 }
 
+int MachCallNativeNode::ret_addr_offset() {
+  Unimplemented();
+  return -1;
+}
+
 // Compute padding required for nodes which need alignment
 //
 // The addresses of the call instructions needs to be 4-byte aligned to
@@ -859,7 +862,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   // careful, because some VM calls (such as call site linkage) can
   // use several kilobytes of stack. But the stack safety zone should
   // account for that. See bugs 4446381, 4468289, 4497237.
-  if (C->output()->need_stack_bang(bangsize) && UseStackBanging) {
+  if (C->output()->need_stack_bang(bangsize)) {
     st->print_cr("# stack bang"); st->print("\t");
   }
   st->print_cr("push_frame %d", (int)-framesize);
@@ -900,7 +903,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // careful, because some VM calls (such as call site linkage) can
   // use several kilobytes of stack. But the stack safety zone should
   // account for that. See bugs 4446381, 4468289, 4497237.
-  if (C->output()->need_stack_bang(bangsize) && UseStackBanging) {
+  if (C->output()->need_stack_bang(bangsize)) {
     __ generate_stack_overflow_check(bangsize);
   }
 
@@ -1322,6 +1325,8 @@ source_hpp %{
 // To keep related declarations/definitions/uses close together,
 // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
+#include "oops/klass.inline.hpp"
+
 //--------------------------------------------------------------
 // Used for optimization in Compile::Shorten_branches
 //--------------------------------------------------------------
@@ -1513,64 +1518,40 @@ static Register reg_to_register_object(int register_encoding) {
 }
 
 const bool Matcher::match_rule_supported(int opcode) {
-  if (!has_match_rule(opcode)) return false;
+  if (!has_match_rule(opcode)) {
+    return false; // no match rule present
+  }
 
   switch (opcode) {
-    case Op_CountLeadingZerosI:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosI:
-    case Op_CountTrailingZerosL:
-      // Implementation requires FLOGR instruction, which is available since z9.
-      return true;
-
     case Op_ReverseBytesI:
     case Op_ReverseBytesL:
       return UseByteReverseInstruction;
-
-    // PopCount supported by H/W from z/Architecture G5 (z196) on.
     case Op_PopCountI:
     case Op_PopCountL:
-      return UsePopCountInstruction && VM_Version::has_PopCount();
-
-    case Op_StrComp:
-      return SpecialStringCompareTo;
-    case Op_StrEquals:
-      return SpecialStringEquals;
-    case Op_StrIndexOf:
-    case Op_StrIndexOfChar:
-      return SpecialStringIndexOf;
-
-    case Op_GetAndAddI:
-    case Op_GetAndAddL:
-      return true;
-      // return VM_Version::has_AtomicMemWithImmALUOps();
-    case Op_GetAndSetI:
-    case Op_GetAndSetL:
-    case Op_GetAndSetP:
-    case Op_GetAndSetN:
-      return true;  // General CAS implementation, always available.
-
-    default:
-      return true;  // Per default match rules are supported.
-                    // BUT: make sure match rule is not disabled by a false predicate!
+      // PopCount supported by H/W from z/Architecture G5 (z196) on.
+      return (UsePopCountInstruction && VM_Version::has_PopCount());
   }
 
-  return true;  // Per default match rules are supported.
-                // BUT: make sure match rule is not disabled by a false predicate!
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  // TODO
-  // Identify extra cases that we might want to provide match rules for
-  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen.
-  bool ret_value = match_rule_supported(opcode);
-  // Add rules here.
-
-  return ret_value;  // Per default match rules are supported.
+  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
+    return false;
+  }
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::has_predicated_vectors(void) {
   return false;
+}
+
+bool Matcher::supports_vector_variable_shifts(void) {
+  return false; // not supported
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
+  return false; // not supported
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -1616,11 +1597,6 @@ const int Matcher::scalable_vector_reg_size(const BasicType bt) {
 // z/Architecture does support misaligned store/load at minimal extra cost.
 const bool Matcher::misaligned_vectors_ok() {
   return true;
-}
-
-// Not yet ported to z/Architecture.
-const bool Matcher::pass_original_key_for_aes() {
-  return false;
 }
 
 // RETURNS: whether this branch offset is short enough that a short
@@ -2462,12 +2438,6 @@ frame %{
   // Tos is loaded in run_compiled_code to Z_ARG5=Z_R6.
   // interpreter_arg_ptr_reg(Z_R6);
 
-  // Temporary in compiled entry-points
-  // compiler_method_reg(Z_R1);//Z_R1_scratch
-
-  // Method Register when calling interpreter
-  interpreter_method_reg(Z_R9);//Z_method
-
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset].
   cisc_spilling_operand_name(indOffset12);
@@ -2490,8 +2460,6 @@ frame %{
   // Use alignment_in_bytes instead of log_2_of_alignment_in_bits.
   stack_alignment(frame::alignment_in_bytes);
 
-  in_preserve_stack_slots(frame::jit_in_preserve_size_in_4_byte_units);
-
   // A `slot' is assumed 4 bytes here!
   // out_preserve_stack_slots(frame::jit_out_preserve_size_in_4_byte_units);
 
@@ -2505,38 +2473,6 @@ frame %{
   // representing the register number (i.e. - use a register name) or
   // stack slot.
   return_addr(REG Z_R14);
-
-  // This is the body of the function
-  //
-  // void Matcher::calling_convention(OptoRegPair* sig /* array of ideal regs */,
-  //                                  uint length      /* length of array */,
-  //                                  bool is_outgoing)
-  //
-  // The `sig' array is to be updated. Sig[j] represents the location
-  // of the j-th argument, either a register or a stack slot.
-
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots. Passed an array
-  // of ideal registers called "sig" and a "length" count. Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE. Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-  calling_convention %{
-    // No difference between ingoing/outgoing just pass false.
-    SharedRuntime::java_calling_convention(sig_bt, regs, length, false);
-  %}
-
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots. Passed an array
-  // of ideal registers called "sig" and a "length" count. Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE. Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-  c_calling_convention %{
-    // This is obviously always outgoing.
-    // C argument must be in register AND stack slot.
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
-  %}
 
   // Location of native (C/C++) and interpreter return values. This
   // is specified to be the same as Java. In the 32-bit VM, long
@@ -3526,20 +3462,6 @@ operand rscratchRegF() %{
 // Method Register
 operand inline_cache_regP(iRegP reg) %{
   constraint(ALLOC_IN_RC(z_r9_regP)); // inline_cache_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand compiler_method_regP(iRegP reg) %{
-  constraint(ALLOC_IN_RC(z_r1_RegP)); // compiler_method_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand interpreter_method_regP(iRegP reg) %{
-  constraint(ALLOC_IN_RC(z_r9_regP)); // interpreter_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);
@@ -5434,6 +5356,13 @@ instruct castII(iRegI dst) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct castLL(iRegL dst) %{
+  match(Set dst (CastLL dst));
+  size(0);
+  format %{ "# castLL of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
 
 //----------Conditional_store--------------------------------------------------
 // Conditional-store of the updated heap-top.
@@ -10172,13 +10101,29 @@ instruct string_compareUL(iRegP str1, iRegP str2, rarg2RegI cnt1, rarg5RegI cnt2
 instruct indexOfChar_U(iRegP haystack, iRegI haycnt, iRegI ch, iRegI result, roddRegL oddReg, revenRegL evenReg, flagsReg cr) %{
   match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
   effect(TEMP_DEF result, TEMP evenReg, TEMP oddReg, KILL cr); // R0, R1 are killed, too.
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
   ins_cost(200);
-  format %{ "String IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
+  format %{ "StringUTF16 IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($result$$Register,
                            $haystack$$Register, $haycnt$$Register,
                            $ch$$Register, 0 /* unused, ch is in register */,
                            $oddReg$$Register, $evenReg$$Register, false /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct indexOfChar_L(iRegP haystack, iRegI haycnt, iRegI ch, iRegI result, roddRegL oddReg, revenRegL evenReg, flagsReg cr) %{
+  match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
+  effect(TEMP_DEF result, TEMP evenReg, TEMP oddReg, KILL cr); // R0, R1 are killed, too.
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
+  ins_cost(200);
+  format %{ "StringLatin1 IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
+  ins_encode %{
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           $ch$$Register, 0 /* unused, ch is in register */,
+                           $oddReg$$Register, $evenReg$$Register, true /*is_byte*/);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10809,7 +10754,7 @@ instruct Repl2F_imm0(iRegL dst, immFp0 src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// Store
+// Load/Store vector
 
 // Store Aligned Packed Byte register to memory (8 Bytes).
 instruct storeA8B(memory mem, iRegL src) %{
@@ -10823,8 +10768,6 @@ instruct storeA8B(memory mem, iRegL src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// Load
-
 instruct loadV8(iRegL dst, memory mem) %{
   match(Set dst (LoadVector mem));
   predicate(n->as_LoadVector()->memory_size() == 8);
@@ -10833,6 +10776,15 @@ instruct loadV8(iRegL dst, memory mem) %{
   format %{ "LG      $dst,$mem\t # L(packed8B)" %}
   opcode(LG_ZOPC, LG_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, mem));
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Reinterpret: only one vector size used
+instruct reinterpret(iRegL dst) %{
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(0);
+  format %{ "reinterpret $dst" %}
+  ins_encode( /*empty*/ );
   ins_pipe(pipe_class_dummy);
 %}
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Cavium. All rights reserved. (By BELLSOFT)
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "macroAssembler_aarch64.hpp"
 
 // The following code is a optimized version of fdlibm sin/cos implementation
@@ -689,7 +688,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
       RECOMP_FOR1_CHECK;
   Register tmp2 = r1, n = r2, jv = r4, tmp5 = r5, jx = r6,
       tmp3 = r7, iqBase = r10, ih = r11, tmp4 = r12, tmp1 = r13,
-      jz = r14, j = r15, twoOverPiBase = r16, i = r17, qBase = r18;
+      jz = r14, j = r15, twoOverPiBase = r16, i = r17, qBase = r19;
     // jp = jk == init_jk[prec] = init_jk[2] == {2,3,4,6}[2] == 4
     // jx = nx - 1
     lea(twoOverPiBase, ExternalAddress(two_over_pi));
@@ -1421,6 +1420,12 @@ void MacroAssembler::generate_dsin_dcos(bool isCos, address npio2_hw,
   Label DONE, ARG_REDUCTION, TINY_X, RETURN_SIN, EARLY_CASE;
   Register X = r0, absX = r1, n = r2, ix = r3;
   FloatRegister y0 = v4, y1 = v5;
+
+  enter();
+  // r19 is used in TemplateInterpreterGenerator::generate_math_entry
+  RegSet saved_regs = RegSet::of(r19);
+  push (saved_regs, sp);
+
     block_comment("check |x| ~< pi/4, NaN, Inf and |x| < 2**-27 cases"); {
       fmovd(X, v0);
       mov(rscratch2, 0x3e400000);
@@ -1438,14 +1443,14 @@ void MacroAssembler::generate_dsin_dcos(bool isCos, address npio2_hw,
       // Set last bit unconditionally to make it NaN
       orr(r10, r10, 1);
       fmovd(v0, r10);
-      ret(lr);
+      b(DONE);
     }
   block_comment("kernel_sin/kernel_cos: if(ix<0x3e400000) {<fast return>}"); {
     bind(TINY_X);
       if (isCos) {
         fmovd(v0, 1.0);
       }
-      ret(lr);
+      b(DONE);
   }
   bind(ARG_REDUCTION); /* argument reduction needed */
     block_comment("n = __ieee754_rem_pio2(x,y);"); {
@@ -1465,7 +1470,7 @@ void MacroAssembler::generate_dsin_dcos(bool isCos, address npio2_hw,
         tbz(n, 1, DONE);
       }
       fnegd(v0, v0);
-      ret(lr);
+      b(DONE);
     bind(RETURN_SIN);
       generate_kernel_sin(y0, true, dsin_coef);
       if (isCos) {
@@ -1474,7 +1479,7 @@ void MacroAssembler::generate_dsin_dcos(bool isCos, address npio2_hw,
         tbz(n, 1, DONE);
       }
       fnegd(v0, v0);
-      ret(lr);
+      b(DONE);
     }
   bind(EARLY_CASE);
     eor(y1, T8B, y1, y1);
@@ -1484,5 +1489,7 @@ void MacroAssembler::generate_dsin_dcos(bool isCos, address npio2_hw,
       generate_kernel_sin(v0, false, dsin_coef);
     }
   bind(DONE);
+    pop(saved_regs, sp);
+    leave();
     ret(lr);
 }

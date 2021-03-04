@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1123,7 +1123,12 @@ class WindowsNativeDispatcher {
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
-    static NativeBuffer asNativeBuffer(String s) {
+    static NativeBuffer asNativeBuffer(String s) throws WindowsException {
+        if (s.length() > (Integer.MAX_VALUE - 2)/2) {
+            throw new WindowsException
+                ("String too long to convert to native buffer");
+        }
+
         int stringLengthInBytes = s.length() << 1;
         int sizeInBytes = stringLengthInBytes + 2;  // char terminator
 

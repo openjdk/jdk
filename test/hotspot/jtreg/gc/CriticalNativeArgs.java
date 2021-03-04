@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,12 @@ package gc;
  * @requires os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386"
  * @requires vm.gc.Epsilon
  * @summary test argument unpacking nmethod wrapper of critical native method
- * @run main/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xcomp -Xmx256M -XX:+CriticalJNINatives gc.CriticalNativeArgs
+ * @run main/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xcomp -Xmx256M
+ *                          -XX:-CriticalJNINatives
+ *                          gc.CriticalNativeArgs
+ * @run main/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xcomp -Xmx256M
+ *                          -XX:+CriticalJNINatives
+ *                          gc.CriticalNativeArgs
  */
 
 /*
@@ -41,14 +47,52 @@ package gc;
  * @requires os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386"
  * @requires vm.gc.Shenandoah
  * @summary test argument unpacking nmethod wrapper of critical native method
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive    -XX:+ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.CriticalNativeArgs
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive    -XX:-ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.CriticalNativeArgs
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.CriticalNativeArgs
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xcomp -Xmx512M
+ *                          -XX:+UseShenandoahGC
+ *                          -XX:-CriticalJNINatives
+ *                          gc.CriticalNativeArgs
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xcomp -Xmx512M
+ *                          -XX:+UseShenandoahGC
+ *                          -XX:+CriticalJNINatives
+ *                          gc.CriticalNativeArgs
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC                                                                        -Xcomp -Xmx256M -XX:+CriticalJNINatives gc.CriticalNativeArgs
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=iu        -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.CriticalNativeArgs
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.CriticalNativeArgs
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xcomp -Xmx512M
+ *                          -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive -XX:+ShenandoahDegeneratedGC
+ *                          -XX:+CriticalJNINatives
+ *                          gc.CriticalNativeArgs
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xcomp -Xmx512M
+ *                          -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive -XX:-ShenandoahDegeneratedGC
+ *                          -XX:+CriticalJNINatives
+ *                          gc.CriticalNativeArgs
+ *
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xcomp -Xmx512M
+ *                          -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *                          -XX:+CriticalJNINatives
+ *                          gc.CriticalNativeArgs
+ *
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xcomp -Xmx512M
+ *                          -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
+ *                          -XX:+CriticalJNINatives
+ *                          gc.CriticalNativeArgs
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xcomp -Xmx512M
+ *                          -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *                          -XX:+CriticalJNINatives
+ *                          gc.CriticalNativeArgs
+ */
+
+/*
+ * @test CriticalNativeStress
+ * @bug 8199868 8233343
+ * @library /
+ * @requires os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386" | os.arch=="ppc64" | os.arch=="ppc64le" | os.arch=="s390x"
+ * @summary test argument unpacking nmethod wrapper of critical native method
+ * @run main/othervm/native -Xcomp -Xmx512M
+ *                          -XX:-CriticalJNINatives
+ *                          gc.CriticalNativeArgs
+ * @run main/othervm/native -Xcomp -Xmx512M
+ *                          -XX:+CriticalJNINatives
+ *                          gc.CriticalNativeArgs
  */
 public class CriticalNativeArgs {
     public static void main(String[] args) {

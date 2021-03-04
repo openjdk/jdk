@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 #ifndef SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/parallel/psCompactionManager.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/arrayOop.inline.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -47,9 +48,6 @@ public:
   template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
   virtual void do_oop(oop* p)                     { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
-
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops()    { return false; })
 };
 
 class PCIterateMarkAndPushClosure: public MetadataVisitingOopIterateClosure {
@@ -64,9 +62,6 @@ public:
 
   void do_klass_nv(Klass* k)                      { _compaction_manager->follow_klass(k); }
   void do_cld_nv(ClassLoaderData* cld)            { _compaction_manager->follow_class_loader(cld); }
-
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops()    { return false; })
 };
 
 inline bool ParCompactionManager::steal(int queue_num, oop& t) {

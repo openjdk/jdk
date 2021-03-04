@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ package java.lang;
  * a string to one of the numeric types, but that the string does not
  * have the appropriate format.
  *
- * @author  unascribed
  * @see     java.lang.Integer#parseInt(String)
  * @since   1.0
  */

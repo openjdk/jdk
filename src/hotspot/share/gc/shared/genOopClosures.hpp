@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,12 +93,9 @@ public:
 
 class CLDScanClosure: public CLDClosure {
   DefNewScanClosure* _scavenge_closure;
-  // true if the the modified oops state should be saved.
-  bool               _accumulate_modified_oops;
  public:
-  CLDScanClosure(DefNewScanClosure* scavenge_closure,
-                 bool accumulate_modified_oops) :
-       _scavenge_closure(scavenge_closure), _accumulate_modified_oops(accumulate_modified_oops) {}
+  CLDScanClosure(DefNewScanClosure* scavenge_closure) :
+       _scavenge_closure(scavenge_closure) {}
   void do_cld(ClassLoaderData* cld);
 };
 

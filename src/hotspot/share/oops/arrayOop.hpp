@@ -90,7 +90,9 @@ class arrayOopDesc : public oopDesc {
 
   // Returns the address of the first element. The elements in the array will not
   // relocate from this address until a subsequent thread transition.
-  inline void* base(BasicType type) const;
+  void* base(BasicType type) const {
+    return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + base_offset_in_bytes(type));
+  }
 
   template <typename T>
   static T* obj_offset_to_raw(arrayOop obj, size_t offset_in_bytes, T* raw) {

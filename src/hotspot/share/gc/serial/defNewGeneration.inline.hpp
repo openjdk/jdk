@@ -45,7 +45,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   }
 #endif // ASSERT
 
-  Devirtualizer::do_oop_no_verify(_cl, p);
+  Devirtualizer::do_oop(_cl, p);
 
   // Card marking is trickier for weak refs.
   // This oop is a 'next' field which was filled in while we
@@ -61,8 +61,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   // dirty cards in the young gen are never scanned, so the
   // extra check probably isn't worthwhile.
   if (GenCollectedHeap::heap()->is_in_reserved(p)) {
-    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-    _rs->inline_write_ref_field_gc(p, obj);
+    _rs->inline_write_ref_field_gc(p);
   }
 }
 
@@ -77,14 +76,14 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   }
 #endif // ASSERT
 
-  Devirtualizer::do_oop_no_verify(_cl, p);
+  Devirtualizer::do_oop(_cl, p);
 
   // Optimized for Defnew generation if it's the youngest generation:
   // we set a younger_gen card if we have an older->youngest
   // generation pointer.
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
   if ((cast_from_oop<HeapWord*>(obj) < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
-    _rs->inline_write_ref_field_gc(p, obj);
+    _rs->inline_write_ref_field_gc(p);
   }
 }
 

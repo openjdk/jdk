@@ -82,7 +82,7 @@ import java.util.stream.IntStream;
 @Measurement(iterations = 10, time = 1)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Fork(value = 1, warmups = 0, jvmArgsAppend = "--enable-preview")
+@Fork(value = 1, warmups = 0)
 public class RecordDeserialization {
 
     public record PointR(int x, int y) implements Serializable {}

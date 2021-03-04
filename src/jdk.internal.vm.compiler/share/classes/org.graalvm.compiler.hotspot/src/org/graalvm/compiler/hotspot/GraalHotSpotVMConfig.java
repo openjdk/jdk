@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
 
     public final int stackShadowPages = getFlag("StackShadowPages", Integer.class);
     public final int stackReservedPages = getFlag("StackReservedPages", Integer.class, 0, JDK >= 9);
-    public final boolean useStackBanging = getFlag("UseStackBanging", Boolean.class);
+    public final boolean useStackBanging = getFlag("UseStackBanging", Boolean.class, true, JDK < 17);
     public final int stackBias = getConstant("STACK_BIAS", Integer.class, 0, JDK < 15);
     public final int vmPageSize = getFieldValue("CompilerToVM::Data::vm_page_size", Integer.class, "int");
 
@@ -395,7 +395,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     public final int threadObjectResultOffset = getFieldOffset("JavaThread::_vm_result", Integer.class, "oop");
     public final int jvmciCountersThreadOffset = getFieldOffset("JavaThread::_jvmci_counters", Integer.class, "jlong*");
     public final int doingUnsafeAccessOffset = getFieldOffset("JavaThread::_doing_unsafe_access", Integer.class, "bool", Integer.MAX_VALUE, JVMCI || JDK >= 14);
-    public final int javaThreadReservedStackActivationOffset = JDK <= 8 ? 0 : getFieldOffset("JavaThread::_reserved_stack_activation", Integer.class, "address"); // JDK-8046936
+    public final int javaThreadReservedStackActivationOffset = JDK <= 8 ? 0 : getFieldOffset("JavaThread::_stack_overflow_state._reserved_stack_activation", Integer.class, "address"); // JDK-8046936
     public final int jniEnvironmentOffset = getFieldOffset("JavaThread::_jni_environment", Integer.class, "JNIEnv", Integer.MIN_VALUE, JVMCI || JDK >= 14);
 
     public boolean requiresReservedStackCheck(List<ResolvedJavaMethod> methods) {
@@ -658,8 +658,11 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
         // JDK-8237497
         if (JDK < 15) {
             threadPollingPageOffset = getFieldOffset("Thread::_polling_page", Integer.class, "address", -1, JDK >= 10);
-        } else {
+        } else if (JDK < 16) {
             threadPollingPageOffset = getFieldOffset("Thread::_polling_page", Integer.class, "volatile void*");
+        } else {
+            threadPollingPageOffset = getFieldOffset("Thread::_poll_data", Integer.class, "SafepointMechanism::ThreadData") +
+                                      getFieldOffset("SafepointMechanism::ThreadData::_polling_page", Integer.class, "volatile uintptr_t");
         }
     }
 

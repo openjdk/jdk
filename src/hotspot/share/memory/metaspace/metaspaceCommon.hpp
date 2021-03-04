@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACECOMMON_HPP
 #define SHARE_MEMORY_METASPACE_METASPACECOMMON_HPP
 
+#include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -33,14 +35,28 @@ class outputStream;
 
 namespace metaspace {
 
-enum ChunkSizes {    // in words.
-  ClassSpecializedChunk = 128,
-  SpecializedChunk = 128,
-  ClassSmallChunk = 256,
-  SmallChunk = 512,
-  ClassMediumChunk = 4 * K,
-  MediumChunk = 8 * K
-};
+// Metaspace allocation alignment:
+
+// 1) Metaspace allocations have to be aligned such that 64bit values are aligned
+//  correctly.
+//
+// 2) Klass* structures allocated from Metaspace have to be aligned to KlassAlignmentInBytes.
+//
+// At the moment LogKlassAlignmentInBytes is 3, so KlassAlignmentInBytes == 8,
+//  so (1) and (2) can both be fulfilled with an alignment of 8. Should we increase
+//  KlassAlignmentInBytes at any time this will increase the necessary alignment as well. In
+//  that case we may think about introducing a separate alignment just for the class space
+//  since that alignment would only be needed for Klass structures.
+
+static const size_t AllocationAlignmentByteSize = 8;
+STATIC_ASSERT(AllocationAlignmentByteSize == (size_t)KlassAlignmentInBytes);
+
+static const size_t AllocationAlignmentWordSize = AllocationAlignmentByteSize / BytesPerWord;
+
+// Returns the raw word size allocated for a given net allocation
+size_t get_raw_word_size_for_requested_word_size(size_t word_size);
+
+// Utility functions
 
 // Print a size, in words, scaled.
 void print_scaled_words(outputStream* st, size_t word_size, size_t scale = 0, int width = -1);
@@ -59,91 +75,71 @@ void print_human_readable_size(outputStream* st, size_t byte_size, size_t scale 
 // larger than 99% but not 100% are displayed as ">100%".
 void print_percentage(outputStream* st, size_t total, size_t part);
 
-
+#ifdef ASSERT
 #define assert_is_aligned(value, alignment)                  \
   assert(is_aligned((value), (alignment)),                   \
          SIZE_FORMAT_HEX " is not aligned to "               \
-         SIZE_FORMAT, (size_t)(uintptr_t)value, (alignment))
-
-// Internal statistics.
-#ifdef ASSERT
-struct  internal_statistics_t {
-  // Number of allocations.
-  uintx num_allocs;
-  // Number of times a ClassLoaderMetaspace was born...
-  uintx num_metaspace_births;
-  // ... and died.
-  uintx num_metaspace_deaths;
-  // Number of times VirtualSpaceListNodes were created...
-  uintx num_vsnodes_created;
-  // ... and purged.
-  uintx num_vsnodes_purged;
-  // Number of times we expanded the committed section of the space.
-  uintx num_committed_space_expanded;
-  // Number of deallocations
-  uintx num_deallocs;
-  // Number of deallocations triggered from outside ("real" deallocations).
-  uintx num_external_deallocs;
-  // Number of times an allocation was satisfied from deallocated blocks.
-  uintx num_allocs_from_deallocated_blocks;
-  // Number of times a chunk was added to the freelist
-  uintx num_chunks_added_to_freelist;
-  // Number of times a chunk was removed from the freelist
-  uintx num_chunks_removed_from_freelist;
-  // Number of chunk merges
-  uintx num_chunk_merges;
-  // Number of chunk splits
-  uintx num_chunk_splits;
-};
-extern internal_statistics_t g_internal_statistics;
+         SIZE_FORMAT_HEX, (size_t)(uintptr_t)value, (size_t)(alignment))
+#else
+#define assert_is_aligned(value, alignment)
 #endif
-
-// ChunkIndex defines the type of chunk.
-// Chunk types differ by size: specialized < small < medium, chunks
-// larger than medium are humongous chunks of varying size.
-enum ChunkIndex {
-  ZeroIndex = 0,
-  SpecializedIndex = ZeroIndex,
-  SmallIndex = SpecializedIndex + 1,
-  MediumIndex = SmallIndex + 1,
-  HumongousIndex = MediumIndex + 1,
-  NumberOfFreeLists = 3,
-  NumberOfInUseLists = 4
-};
-
-// Utility functions.
-size_t get_size_for_nonhumongous_chunktype(ChunkIndex chunk_type, bool is_class);
-ChunkIndex get_chunk_type_by_size(size_t size, bool is_class);
-
-ChunkIndex next_chunk_index(ChunkIndex i);
-ChunkIndex prev_chunk_index(ChunkIndex i);
-// Returns a descriptive name for a chunk type.
-const char* chunk_size_name(ChunkIndex index);
-
-// Verify chunk sizes.
-inline bool is_valid_chunksize(bool is_class, size_t size) {
-  const size_t reasonable_maximum_humongous_chunk_size = 1 * G;
-  return is_aligned(size, sizeof(MetaWord)) &&
-         size < reasonable_maximum_humongous_chunk_size &&
-         is_class ?
-             (size == ClassSpecializedChunk || size == ClassSmallChunk || size >= ClassMediumChunk) :
-             (size == SpecializedChunk || size == SmallChunk || size >= MediumChunk);
-}
-
-// Verify chunk type.
-inline bool is_valid_chunktype(ChunkIndex index) {
-  return index == SpecializedIndex || index == SmallIndex ||
-         index == MediumIndex || index == HumongousIndex;
-}
-
-inline bool is_valid_nonhumongous_chunktype(ChunkIndex index) {
-  return is_valid_chunktype(index) && index != HumongousIndex;
-}
 
 // Pretty printing helpers
 const char* classes_plural(uintx num);
 const char* loaders_plural(uintx num);
 void print_number_of_classes(outputStream* out, uintx classes, uintx classes_shared);
+
+// Since Metaspace verifications are expensive, we want to do them at a reduced rate,
+// but not completely avoiding them.
+// For that we introduce the macros SOMETIMES() and ASSERT_SOMETIMES() which will
+// execute code or assert at intervals controlled via VerifyMetaspaceInterval.
+#ifdef ASSERT
+
+#define EVERY_NTH(n)          \
+{ static int counter_ = 0;    \
+  if (n > 0) {                \
+    counter_++;              \
+    if (counter_ >= n) {      \
+      counter_ = 0;           \
+
+#define END_EVERY_NTH         } } }
+
+#define SOMETIMES(code) \
+    EVERY_NTH(VerifyMetaspaceInterval) \
+    { code } \
+    END_EVERY_NTH
+
+#define ASSERT_SOMETIMES(condition, ...) \
+    EVERY_NTH(VerifyMetaspaceInterval) \
+    assert( (condition), __VA_ARGS__); \
+    END_EVERY_NTH
+
+#else
+
+#define SOMETIMES(code)
+#define ASSERT_SOMETIMES(condition, ...)
+
+#endif // ASSERT
+
+///////// Logging //////////////
+
+// What we log at which levels:
+
+// "info" : metaspace failed allocation, commit failure, reserve failure, metaspace oom, metaspace gc threshold changed, Arena created, destroyed, metaspace purged
+
+// "debug" : "info" + vslist extended, memory committed/uncommitted, chunk created/split/merged/enlarged, chunk returned
+
+// "trace" : "debug" + every single allocation and deallocation, internals
+
+#define HAVE_UL
+
+#ifdef HAVE_UL
+#define UL(level, message)        log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS);
+#define UL2(level, message, ...)  log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS, __VA_ARGS__);
+#else
+#define UL(level, ...)
+#define UL2(level, ...)
+#endif
 
 } // namespace metaspace
 

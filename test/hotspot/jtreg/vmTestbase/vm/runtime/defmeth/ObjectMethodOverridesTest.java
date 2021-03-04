@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(VerifyError.class).done()
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
         .run();
     }
 
@@ -158,7 +158,7 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(VerifyError.class).done()
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
         .run();
     }
 
@@ -174,7 +174,7 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(VerifyError.class).done()
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
         .run();
     }
 
@@ -208,7 +208,7 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(VerifyError.class).done()
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
         .run();
     }
 
@@ -224,7 +224,7 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(VerifyError.class).done()
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
         .run();
     }
 
@@ -240,7 +240,7 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(VerifyError.class).done()
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
         .run();
     }
 }

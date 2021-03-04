@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -74,7 +74,6 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem generating the file
      */
     private void generateIndexFile() throws DocFileIOException {
-        Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
                 .setTimestamp(!options.noTimestamp())
                 .setDescription("index redirect")
@@ -103,14 +102,14 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         bodyContent.add(HtmlTree.NOSCRIPT(
                 HtmlTree.P(contents.getContent("doclet.No_Script_Message"))));
 
-        bodyContent.add(HtmlTree.P(HtmlTree.A(targetPath, new StringContent(targetPath))));
+        bodyContent.add(HtmlTree.P(HtmlTree.A(targetPath, Text.of(targetPath))));
 
         Content body = new HtmlTree(TagName.BODY).setStyle(HtmlStyle.indexRedirectPage);
         HtmlTree main = HtmlTree.MAIN(bodyContent);
         body.add(main);
 
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
-        HtmlDocument htmlDocument = new HtmlDocument(htmlComment, htmlTree);
+        HtmlDocument htmlDocument = new HtmlDocument(
+                HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body));
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "vmreg_aarch64.inline.hpp"
@@ -353,6 +354,7 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map->include_argument_oops(), "should be set by clear");
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+
   return fr;
 }
 
@@ -476,8 +478,8 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 }
 
 //------------------------------------------------------------------------------
-// frame::sender
-frame frame::sender(RegisterMap* map) const {
+// frame::sender_raw
+frame frame::sender_raw(RegisterMap* map) const {
   // Default is we done have to follow them. The sender_for_xxx will
   // update it accordingly
    map->set_include_argument_oops(false);
@@ -497,6 +499,16 @@ frame frame::sender(RegisterMap* map) const {
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
   return frame(sender_sp(), link(), sender_pc());
+}
+
+frame frame::sender(RegisterMap* map) const {
+  frame result = sender_raw(map);
+
+  if (map->process_frames()) {
+    StackWatermarkSet::on_iteration(map->thread(), result);
+  }
+
+  return result;
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
@@ -583,7 +595,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
         oop* obj_p = (oop*)tos_addr;
         obj = (obj_p == NULL) ? (oop)NULL : *obj_p;
       }
-      assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
+      assert(Universe::is_in_heap_or_null(obj), "sanity check");
       *oop_result = obj;
       break;
     }
@@ -651,11 +663,12 @@ intptr_t* frame::real_fp() const {
 
 #undef DESCRIBE_FP_OFFSET
 
-#define DESCRIBE_FP_OFFSET(name)                                        \
-  {                                                                     \
-    uintptr_t *p = (uintptr_t *)fp;                                     \
-    printf("0x%016lx 0x%016lx %s\n", (uintptr_t)(p + frame::name##_offset), \
-           p[frame::name##_offset], #name);                             \
+#define DESCRIBE_FP_OFFSET(name)                     \
+  {                                                  \
+    uintptr_t *p = (uintptr_t *)fp;                  \
+    printf(INTPTR_FORMAT " " INTPTR_FORMAT " %s\n",  \
+           (uintptr_t)(p + frame::name##_offset),    \
+           p[frame::name##_offset], #name);          \
   }
 
 static THREAD_LOCAL uintptr_t nextfp;

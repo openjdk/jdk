@@ -79,6 +79,32 @@ void ConversionStub::emit_code(LIR_Assembler* ce) {
 }
 #endif // !_LP64
 
+void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  InternalAddress safepoint_pc(ce->masm()->pc() - ce->masm()->offset() + safepoint_offset());
+#ifdef _LP64
+  __ lea(rscratch1, safepoint_pc);
+  __ movptr(Address(r15_thread, JavaThread::saved_exception_pc_offset()), rscratch1);
+#else
+  const Register tmp1 = rcx;
+  const Register tmp2 = rdx;
+  __ push(tmp1);
+  __ push(tmp2);
+
+  __ lea(tmp1, safepoint_pc);
+  __ get_thread(tmp2);
+  __ movptr(Address(tmp2, JavaThread::saved_exception_pc_offset()), tmp1);
+
+  __ pop(tmp2);
+  __ pop(tmp1);
+#endif /* _LP64 */
+  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+         "polling page return stub not created yet");
+
+  address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  __ jump(RuntimeAddress(stub));
+}
+
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   Metadata *m = _method->as_constant_ptr()->as_metadata();
@@ -483,7 +509,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   //
   VMRegPair args[5];
   BasicType signature[5] = { T_OBJECT, T_INT, T_OBJECT, T_INT, T_INT};
-  SharedRuntime::java_calling_convention(signature, args, 5, true);
+  SharedRuntime::java_calling_convention(signature, args, 5);
 
   // push parameters
   // (src, src_pos, dest, destPos, length)

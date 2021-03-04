@@ -99,7 +99,6 @@ import jdk.internal.vm.annotation.Stable;
  * }</pre>
  *
  * @since 9
- * @spec JPMS
  * @see java.lang.ModuleLayer
  */
 public final class Configuration {

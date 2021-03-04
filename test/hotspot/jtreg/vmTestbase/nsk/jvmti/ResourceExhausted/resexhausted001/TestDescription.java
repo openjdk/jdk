@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8253916
  *
  * @summary converted from VM Testbase nsk/jvmti/ResourceExhausted/resexhausted001.
  * VM Testbase keywords: [jpda, jvmti, noras, vm6, nonconcurrent, quarantine, exclude]
@@ -37,11 +38,12 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @ignore 7013634
- * @run main/othervm/native
+ * @run main/othervm/native/manual
  *      -agentlib:resexhausted=-waittime=5
  *      -XX:-UseGCOverheadLimit
+ *      -Xms16m
+ *      -Xmx16m
  *      nsk.jvmti.ResourceExhausted.resexhausted001
- *      -stressTime 1200
+ *      -stressTime 220
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutex.hpp"
 #include "utilities/align.hpp"
+#include "utilities/copy.hpp"
 
 class BytecodeStream;
 
@@ -236,12 +238,15 @@ public:
 
   ProfileData* data_in();
 
+  int size_in_bytes() {
+    int cells = cell_count();
+    assert(cells >= 0, "invalid number of cells");
+    return DataLayout::compute_size_in_bytes(cells);
+  }
+  int cell_count();
+
   // GC support
   void clean_weak_klass_links(bool always_clean);
-
-  // Redefinition support
-  void clean_weak_method_links();
-  DEBUG_ONLY(void verify_clean_weak_method_links();)
 };
 
 
@@ -454,10 +459,6 @@ public:
 
   // GC support
   virtual void clean_weak_klass_links(bool always_clean) {}
-
-  // Redefinition support
-  virtual void clean_weak_method_links() {}
-  DEBUG_ONLY(virtual void verify_clean_weak_method_links() {})
 
   // CI translation: ProfileData can represent both MethodDataOop data
   // as well as CIMethodData data. This function is provided for translating
@@ -1931,12 +1932,15 @@ class FailedSpeculation: public CHeapObj<mtCompiler> {
 };
 #endif
 
+class ciMethodData;
+
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 private:
   friend class ProfileData;
   friend class TypeEntriesAtCall;
+  friend class ciMethodData;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -1952,10 +1956,9 @@ private:
 
   Mutex _extra_data_lock;
 
-  MethodData(const methodHandle& method, int size, TRAPS);
+  MethodData(const methodHandle& method);
 public:
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
-  MethodData() : _extra_data_lock(Mutex::leaf, "MDO extra data lock") {}; // For ciMethodData
 
   virtual bool is_methodData() const { return true; }
   void initialize();
@@ -1966,14 +1969,74 @@ public:
     _trap_hist_mask     = max_jubyte,
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
+
+  // Compiler-related counters.
+  class CompilerCounters {
+    friend class VMStructs;
+    friend class JVMCIVMStructs;
+
+    uint _nof_decompiles;             // count of all nmethod removals
+    uint _nof_overflow_recompiles;    // recompile count, excluding recomp. bits
+    uint _nof_overflow_traps;         // trap count, excluding _trap_hist
+    union {
+      intptr_t _align;
+      u1 _array[JVMCI_ONLY(2 *) MethodData::_trap_hist_limit];
+    } _trap_hist;
+
+  public:
+    CompilerCounters() : _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
+#ifndef ZERO
+      // Some Zero platforms do not have expected alignment, and do not use
+      // this code. static_assert would still fire and fail for them.
+      static_assert(sizeof(_trap_hist) % HeapWordSize == 0, "align");
+#endif
+      uint size_in_words = sizeof(_trap_hist) / HeapWordSize;
+      Copy::zero_to_words((HeapWord*) &_trap_hist, size_in_words);
+    }
+
+    // Return (uint)-1 for overflow.
+    uint trap_count(int reason) const {
+      assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
+      return (int)((_trap_hist._array[reason]+1) & _trap_hist_mask) - 1;
+    }
+
+    uint inc_trap_count(int reason) {
+      // Count another trap, anywhere in this method.
+      assert(reason >= 0, "must be single trap");
+      assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
+      uint cnt1 = 1 + _trap_hist._array[reason];
+      if ((cnt1 & _trap_hist_mask) != 0) {  // if no counter overflow...
+        _trap_hist._array[reason] = cnt1;
+        return cnt1;
+      } else {
+        return _trap_hist_mask + (++_nof_overflow_traps);
+      }
+    }
+
+    uint overflow_trap_count() const {
+      return _nof_overflow_traps;
+    }
+    uint overflow_recompile_count() const {
+      return _nof_overflow_recompiles;
+    }
+    uint inc_overflow_recompile_count() {
+      return ++_nof_overflow_recompiles;
+    }
+    uint decompile_count() const {
+      return _nof_decompiles;
+    }
+    uint inc_decompile_count() {
+      return ++_nof_decompiles;
+    }
+
+    // Support for code generation
+    static ByteSize trap_history_offset() {
+      return byte_offset_of(CompilerCounters, _trap_hist._array);
+    }
+  };
+
 private:
-  uint _nof_decompiles;             // count of all nmethod removals
-  uint _nof_overflow_recompiles;    // recompile count, excluding recomp. bits
-  uint _nof_overflow_traps;         // trap count, excluding _trap_hist
-  union {
-    intptr_t _align;
-    u1 _array[JVMCI_ONLY(2 *) _trap_hist_limit];
-  } _trap_hist;
+  CompilerCounters _compiler_counters;
 
   // Support for interprocedural escape analysis, from Thomas Kotzmann.
   intx              _eflags;          // flags on escape information
@@ -1981,7 +2044,7 @@ private:
   intx              _arg_stack;       // bit set of stack-allocatable arguments
   intx              _arg_returned;    // bit set of returned arguments
 
-  int _creation_mileage;              // method mileage at MDO creation
+  int               _creation_mileage; // method mileage at MDO creation
 
   // How many invocations has this MDO seen?
   // These counters are used to determine the exact age of MDO.
@@ -2061,14 +2124,15 @@ private:
     assert(!out_of_bounds(di), "hint_di out of bounds");
     _hint_di = di;
   }
-  ProfileData* data_before(int bci) {
+
+  DataLayout* data_layout_before(int bci) {
     // avoid SEGV on this edge case
     if (data_size() == 0)
       return NULL;
-    int hint = hint_di();
-    if (data_layout_at(hint)->bci() <= bci)
-      return data_at(hint);
-    return first_data();
+    DataLayout* layout = data_layout_at(hint_di());
+    if (layout->bci() <= bci)
+      return layout;
+    return data_layout_at(first_di());
   }
 
   // What is the index of the first data entry?
@@ -2089,6 +2153,7 @@ private:
 
   static bool profile_jsr292(const methodHandle& m, int bci);
   static bool profile_unsafe(const methodHandle& m, int bci);
+  static bool profile_memory_access(const methodHandle& m, int bci);
   static int profile_arguments_flag();
   static bool profile_all_arguments();
   static bool profile_arguments_for_invoke(const methodHandle& m, int bci);
@@ -2126,8 +2191,8 @@ public:
   int size_in_bytes() const { return _size; }
   int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
 
-  int      creation_mileage() const  { return _creation_mileage; }
-  void set_creation_mileage(int x)   { _creation_mileage = x; }
+  int      creation_mileage() const { return _creation_mileage; }
+  void set_creation_mileage(int x)  { _creation_mileage = x; }
 
   int invocation_count() {
     if (invocation_counter()->carry()) {
@@ -2251,7 +2316,9 @@ public:
   // Walk through the data in order.
   ProfileData* first_data() const { return data_at(first_di()); }
   ProfileData* next_data(ProfileData* current) const;
+  DataLayout*  next_data_layout(DataLayout* current) const;
   bool is_valid(ProfileData* current) const { return current != NULL; }
+  bool is_valid(DataLayout*  current) const { return current != NULL; }
 
   // Convert a dp (data pointer) to a di (data index).
   int dp_to_di(address dp) const {
@@ -2300,42 +2367,33 @@ public:
 
   // Return (uint)-1 for overflow.
   uint trap_count(int reason) const {
-    assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
-    return (int)((_trap_hist._array[reason]+1) & _trap_hist_mask) - 1;
+    return _compiler_counters.trap_count(reason);
   }
   // For loops:
   static uint trap_reason_limit() { return _trap_hist_limit; }
   static uint trap_count_limit()  { return _trap_hist_mask; }
   uint inc_trap_count(int reason) {
-    // Count another trap, anywhere in this method.
-    assert(reason >= 0, "must be single trap");
-    assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
-    uint cnt1 = 1 + _trap_hist._array[reason];
-    if ((cnt1 & _trap_hist_mask) != 0) {  // if no counter overflow...
-      _trap_hist._array[reason] = cnt1;
-      return cnt1;
-    } else {
-      return _trap_hist_mask + (++_nof_overflow_traps);
-    }
+    return _compiler_counters.inc_trap_count(reason);
   }
 
   uint overflow_trap_count() const {
-    return _nof_overflow_traps;
+    return _compiler_counters.overflow_trap_count();
   }
   uint overflow_recompile_count() const {
-    return _nof_overflow_recompiles;
+    return _compiler_counters.overflow_recompile_count();
   }
-  void inc_overflow_recompile_count() {
-    _nof_overflow_recompiles += 1;
+  uint inc_overflow_recompile_count() {
+    return _compiler_counters.inc_overflow_recompile_count();
   }
   uint decompile_count() const {
-    return _nof_decompiles;
+    return _compiler_counters.decompile_count();
   }
-  void inc_decompile_count() {
-    _nof_decompiles += 1;
-    if (decompile_count() > (uint)PerMethodRecompilationCutoff) {
+  uint inc_decompile_count() {
+    uint dec_count = _compiler_counters.inc_decompile_count();
+    if (dec_count > (uint)PerMethodRecompilationCutoff) {
       method()->set_not_compilable("decompile_count > PerMethodRecompilationCutoff", CompLevel_full_optimization);
     }
+    return dec_count;
   }
   uint tenure_traps() const {
     return _tenure_traps;
@@ -2361,7 +2419,7 @@ public:
   }
 
   static ByteSize trap_history_offset() {
-    return byte_offset_of(MethodData, _trap_hist._array);
+    return byte_offset_of(MethodData, _compiler_counters) + CompilerCounters::trap_history_offset();
   }
 
   static ByteSize invocation_counter_offset() {
@@ -2415,7 +2473,6 @@ public:
 
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
-  DEBUG_ONLY(void verify_clean_weak_method_links();)
   Mutex* extra_data_lock() { return &_extra_data_lock; }
 };
 

@@ -39,16 +39,16 @@
  * @run main/othervm TestDriver
  */
 
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.compiler.CompilerUtils;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.util.JarUtils;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.JarUtils;
 
 public class TestDriver {
     public static void main(String[] args) throws Throwable {

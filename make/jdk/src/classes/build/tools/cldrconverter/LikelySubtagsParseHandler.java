@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,8 @@ class LikelySubtagsParseHandler extends AbstractLDMLHandler<String> {
             String from = attributes.getValue("from");
             if (!from.startsWith("und")) {
                 // Ignore the "undefined" language for now
-                put(from, attributes.getValue("to"));
+                put(CLDRConverter.toLanguageTag(from),
+                    CLDRConverter.toLanguageTag(attributes.getValue("to")));
             }
             pushIgnoredContainer(qName);
             break;

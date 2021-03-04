@@ -274,6 +274,7 @@ public:
   // Fast int or long constant.  Same as TypeInt::make(i) or TypeLong::make(l).
   ConINode* intcon(jint i);
   ConLNode* longcon(jlong l);
+  ConNode* integercon(jlong l, BasicType bt);
 
   // Fast zero or null constant.  Same as makecon(Type::get_zero_type(bt)).
   ConNode* zerocon(BasicType bt);
@@ -281,11 +282,6 @@ public:
   // Return a node which computes the same function as this node, but
   // in a faster or cheaper fashion.
   virtual Node *transform( Node *n ) = 0;
-
-  // Return whether two Nodes are equivalent.
-  // Must not be recursive, since the recursive version is built from this.
-  // For pessimistic optimizations this is simply pointer equivalence.
-  bool eqv(const Node* n1, const Node* n2) const { return n1 == n2; }
 
   // For pessimistic passes, the return type must monotonically narrow.
   // For optimistic  passes, the return type must monotonically widen.
@@ -339,9 +335,6 @@ public:
                                const Type* limit_type) const
   { ShouldNotCallThis(); return NULL; }
 
-  // Delayed node rehash if this is an IGVN phase
-  virtual void igvn_rehash_node_delayed(Node* n) {}
-
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
 
@@ -373,18 +366,18 @@ public:
 class PhaseValues : public PhaseTransform {
 protected:
   NodeHash  _table;             // Hash table for value-numbering
-
+  bool      _iterGVN;
 public:
-  PhaseValues( Arena *arena, uint est_max_size );
-  PhaseValues( PhaseValues *pt );
-  NOT_PRODUCT( ~PhaseValues(); )
-  virtual PhaseIterGVN *is_IterGVN() { return 0; }
+  PhaseValues(Arena* arena, uint est_max_size);
+  PhaseValues(PhaseValues* pt);
+  NOT_PRODUCT(~PhaseValues();)
+  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : NULL; }
 
   // Some Ideal and other transforms delete --> modify --> insert values
-  bool   hash_delete(Node *n)     { return _table.hash_delete(n); }
-  void   hash_insert(Node *n)     { _table.hash_insert(n); }
-  Node  *hash_find_insert(Node *n){ return _table.hash_find_insert(n); }
-  Node  *hash_find(const Node *n) { return _table.hash_find(n); }
+  bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
+  void   hash_insert(Node* n)     { _table.hash_insert(n); }
+  Node*  hash_find_insert(Node* n){ return _table.hash_find_insert(n); }
+  Node*  hash_find(const Node* n) { return _table.hash_find(n); }
 
   // Used after parsing to eliminate values that are no longer in program
   void   remove_useless_nodes(VectorSet &useful) {
@@ -395,8 +388,8 @@ public:
 
   virtual ConNode* uncached_makecon(const Type* t);  // override from PhaseTransform
 
-  virtual const Type* saturate(const Type* new_type, const Type* old_type,
-                               const Type* limit_type) const
+  const Type* saturate(const Type* new_type, const Type* old_type,
+                       const Type* limit_type) const
   { return new_type; }
 
 #ifndef PRODUCT
@@ -467,14 +460,12 @@ protected:
   // improvement, such that it would take many (>>10) steps to reach 2**32.
 
 public:
-  PhaseIterGVN( PhaseIterGVN *igvn ); // Used by CCP constructor
-  PhaseIterGVN( PhaseGVN *gvn ); // Used after Parser
+  PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
+  PhaseIterGVN(PhaseGVN* gvn); // Used after Parser
 
   // Idealize new Node 'n' with respect to its inputs and its value
   virtual Node *transform( Node *a_node );
   virtual void record_for_igvn(Node *n) { }
-
-  virtual PhaseIterGVN *is_IterGVN() { return this; }
 
   Unique_Node_List _worklist;       // Iterative worklist
 
@@ -531,10 +522,6 @@ public:
     _worklist.push(n);
   }
 
-  void igvn_rehash_node_delayed(Node* n) {
-    rehash_node_delayed(n);
-  }
-
   // Replace ith edge of "n" with "in"
   void replace_input_of(Node* n, int i, Node* in) {
     rehash_node_delayed(n);
@@ -559,6 +546,7 @@ public:
   }
 
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
+  bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
 protected:

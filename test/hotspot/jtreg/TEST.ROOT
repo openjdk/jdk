@@ -31,7 +31,8 @@
 # headful:              test can be run only on headful host
 # intermittent:         flaky test, known to fail intermittently
 # randomness:           test uses randomness, test cases differ from run to run
-keys=stress headful intermittent randomness
+# cgroups:              test uses cgroups
+keys=stress headful intermittent randomness cgroups
 
 groups=TEST.groups TEST.quick-groups
 
@@ -73,8 +74,9 @@ requires.properties= \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
+    vm.musl \
     docker.support \
-    test.vm.gc.nvdimm
+    jdk.containerized
 
 # Minimum jtreg version
 requiredVersion=5.1 b1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,10 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/vmError.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -111,8 +110,6 @@ address StubRoutines::_arrayof_jlong_disjoint_arraycopy  = CAST_FROM_FN_PTR(addr
 address StubRoutines::_arrayof_oop_disjoint_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
 address StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
 
-address StubRoutines::_zero_aligned_words = CAST_FROM_FN_PTR(address, Copy::zero_to_words);
-
 address StubRoutines::_data_cache_writeback              = NULL;
 address StubRoutines::_data_cache_writeback_sync         = NULL;
 
@@ -137,6 +134,7 @@ address StubRoutines::_electronicCodeBook_decryptAESCrypt  = NULL;
 address StubRoutines::_counterMode_AESCrypt                = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
+address StubRoutines::_base64_decodeBlock                  = NULL;
 
 address StubRoutines::_md5_implCompress      = NULL;
 address StubRoutines::_md5_implCompressMB    = NULL;
@@ -146,6 +144,8 @@ address StubRoutines::_sha256_implCompress   = NULL;
 address StubRoutines::_sha256_implCompressMB = NULL;
 address StubRoutines::_sha512_implCompress   = NULL;
 address StubRoutines::_sha512_implCompressMB = NULL;
+address StubRoutines::_sha3_implCompress     = NULL;
+address StubRoutines::_sha3_implCompressMB   = NULL;
 
 address StubRoutines::_updateBytesCRC32 = NULL;
 address StubRoutines::_crc_table_adr =    NULL;
@@ -267,40 +267,7 @@ static void test_arraycopy_func(address func, int alignment) {
     assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
   }
 }
-
-// simple test for SafeFetch32
-static void test_safefetch32() {
-  if (CanUseSafeFetch32()) {
-    int dummy = 17;
-    int* const p_invalid = (int*) VMError::get_segfault_address();
-    int* const p_valid = &dummy;
-    int result_invalid = SafeFetch32(p_invalid, 0xABC);
-    assert(result_invalid == 0xABC, "SafeFetch32 error");
-    int result_valid = SafeFetch32(p_valid, 0xABC);
-    assert(result_valid == 17, "SafeFetch32 error");
-  }
-}
-
-// simple test for SafeFetchN
-static void test_safefetchN() {
-  if (CanUseSafeFetchN()) {
-#ifdef _LP64
-    const intptr_t v1 = UCONST64(0xABCD00000000ABCD);
-    const intptr_t v2 = UCONST64(0xDEFD00000000DEFD);
-#else
-    const intptr_t v1 = 0xABCDABCD;
-    const intptr_t v2 = 0xDEFDDEFD;
-#endif
-    intptr_t dummy = v1;
-    intptr_t* const p_invalid = (intptr_t*) VMError::get_segfault_address();
-    intptr_t* const p_valid = &dummy;
-    intptr_t result_invalid = SafeFetchN(p_invalid, v2);
-    assert(result_invalid == v2, "SafeFetchN error");
-    intptr_t result_valid = SafeFetchN(p_valid, v2);
-    assert(result_valid == v1, "SafeFetchN error");
-  }
-}
-#endif
+#endif // ASSERT
 
 void StubRoutines::initialize2() {
   if (_code2 == NULL) {
@@ -391,13 +358,6 @@ void StubRoutines::initialize2() {
   // Aligned to BytesPerLong
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
-
-  // test safefetch routines
-  // Not on Windows 32bit until 8074860 is fixed
-#if ! (defined(_WIN32) && defined(_M_IX86))
-  test_safefetch32();
-  test_safefetchN();
-#endif
 
 #endif
 }
@@ -523,6 +483,7 @@ address StubRoutines::select_fill_function(BasicType t, bool aligned, const char
   case T_NARROWOOP:
   case T_NARROWKLASS:
   case T_ADDRESS:
+  case T_VOID:
     // Currently unsupported
     return NULL;
 

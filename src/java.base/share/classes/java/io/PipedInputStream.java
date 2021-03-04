@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,8 @@ public class PipedInputStream extends InputStream {
     /**
      * The index of the position in the circular buffer at which the
      * next byte of data will be stored when received from the connected
-     * piped output stream. <code>in&lt;0</code> implies the buffer is empty,
-     * {@code in==out} implies the buffer is full
+     * piped output stream. {@code in < 0} implies the buffer is empty,
+     * {@code in == out} implies the buffer is full
      * @since   1.1
      */
     protected int in = -1;

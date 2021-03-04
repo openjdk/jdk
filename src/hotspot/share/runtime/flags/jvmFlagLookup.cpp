@@ -30,9 +30,9 @@
 #define DO_FLAG(type, name,...) DO_HASH(FLAG_MEMBER_ENUM(name), XSTR(name))
 
 #define DO_HASH(flag_enum, flag_name) {          \
-  u2 hash = hash_code(flag_name);                \
+  unsigned int hash = hash_code(flag_name);      \
   int bucket_index = (int)(hash % NUM_BUCKETS);  \
-  _hashes[flag_enum] = hash;                     \
+  _hashes[flag_enum] = (u2)(hash);               \
   _table[flag_enum] = _buckets[bucket_index];    \
   _buckets[bucket_index] = (short)flag_enum;     \
 }
@@ -54,10 +54,10 @@ constexpr JVMFlagLookup::JVMFlagLookup() : _buckets(), _table(), _hashes() {
 constexpr JVMFlagLookup _flag_lookup_table;
 
 JVMFlag* JVMFlagLookup::find_impl(const char* name, size_t length) const {
-  u2 hash = hash_code(name, length);
+  unsigned int hash = hash_code(name, length);
   int bucket_index = (int)(hash % NUM_BUCKETS);
   for (int flag_enum = _buckets[bucket_index]; flag_enum >= 0; ) {
-    if (_hashes[flag_enum] == hash) {
+    if (_hashes[flag_enum] == (u2)hash) {
       JVMFlag* flag = JVMFlag::flags + flag_enum;
       if (strncmp(name, flag->name(), length) == 0) {
         // We know flag->name() has at least <length> bytes.

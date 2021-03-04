@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key stress randomness
  * @bug 8139771
  * @summary Eliminating CastPP nodes at Phis when they all come from a unique input may cause crash
  * @requires vm.gc=="Serial" | vm.gc=="Parallel"

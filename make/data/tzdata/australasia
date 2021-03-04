@@ -36,17 +36,14 @@
 
 # Please see the notes below for the controversy about "EST" versus "AEST" etc.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Aus	1917	only	-	Jan	 1	0:01	1:00	D
-Rule	Aus	1917	only	-	Mar	25	2:00	0	S
-Rule	Aus	1942	only	-	Jan	 1	2:00	1:00	D
-Rule	Aus	1942	only	-	Mar	29	2:00	0	S
-Rule	Aus	1942	only	-	Sep	27	2:00	1:00	D
-Rule	Aus	1943	1944	-	Mar	lastSun	2:00	0	S
-Rule	Aus	1943	only	-	Oct	 3	2:00	1:00	D
-# Go with Whitman and the Australian National Standards Commission, which
-# says W Australia didn't use DST in 1943/1944.  Ignore Whitman's claim that
-# 1944/1945 was just like 1943/1944.
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	Aus	1917	only	-	Jan	 1	2:00s	1:00	D
+Rule	Aus	1917	only	-	Mar	lastSun	2:00s	0	S
+Rule	Aus	1942	only	-	Jan	 1	2:00s	1:00	D
+Rule	Aus	1942	only	-	Mar	lastSun	2:00s	0	S
+Rule	Aus	1942	only	-	Sep	27	2:00s	1:00	D
+Rule	Aus	1943	1944	-	Mar	lastSun	2:00s	0	S
+Rule	Aus	1943	only	-	Oct	 3	2:00s	1:00	D
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Northern Territory
@@ -55,7 +52,7 @@ Zone Australia/Darwin	 8:43:20 -	LMT	1895 Feb
 			 9:30	Aus	AC%sT
 # Western Australia
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AW	1974	only	-	Oct	lastSun	2:00s	1:00	D
 Rule	AW	1975	only	-	Mar	Sun>=1	2:00s	0	S
 Rule	AW	1983	only	-	Oct	lastSun	2:00s	1:00	D
@@ -93,7 +90,7 @@ Zone Australia/Eucla	 8:35:28 -	LMT	1895 Dec
 # applies to all of the Whitsundays.
 # http://www.australia.gov.au/about-australia/australian-story/austn-islands
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AQ	1971	only	-	Oct	lastSun	2:00s	1:00	D
 Rule	AQ	1972	only	-	Feb	lastSun	2:00s	0	S
 Rule	AQ	1989	1991	-	Oct	lastSun	2:00s	1:00	D
@@ -109,7 +106,7 @@ Zone Australia/Lindeman  9:55:56 -	LMT	1895
 			10:00	Holiday	AE%sT
 
 # South Australia
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AS	1971	1985	-	Oct	lastSun	2:00s	1:00	D
 Rule	AS	1986	only	-	Oct	19	2:00s	1:00	D
 Rule	AS	1987	2007	-	Oct	lastSun	2:00s	1:00	D
@@ -137,9 +134,13 @@ Zone Australia/Adelaide	9:14:20 -	LMT	1895 Feb
 # http://www.bom.gov.au/climate/averages/tables/dst_times.shtml
 # says King Island didn't observe DST from WWII until late 1971.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	AT	1916	only	-	Oct	Sun>=1	2:00s	1:00	D
+Rule	AT	1917	only	-	Mar	lastSun	2:00s	0	S
+Rule	AT	1917	1918	-	Oct	Sun>=22	2:00s	1:00	D
+Rule	AT	1918	1919	-	Mar	Sun>=1	2:00s	0	S
 Rule	AT	1967	only	-	Oct	Sun>=1	2:00s	1:00	D
-Rule	AT	1968	only	-	Mar	lastSun	2:00s	0	S
+Rule	AT	1968	only	-	Mar	Sun>=29	2:00s	0	S
 Rule	AT	1968	1985	-	Oct	lastSun	2:00s	1:00	D
 Rule	AT	1969	1971	-	Mar	Sun>=8	2:00s	0	S
 Rule	AT	1972	only	-	Feb	lastSun	2:00s	0	S
@@ -159,18 +160,12 @@ Rule	AT	2007	only	-	Mar	lastSun	2:00s	0	S
 Rule	AT	2008	max	-	Apr	Sun>=1	2:00s	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Australia/Hobart	9:49:16	-	LMT	1895 Sep
-			10:00	-	AEST	1916 Oct  1  2:00
-			10:00	1:00	AEDT	1917 Feb
+			10:00	AT	AE%sT	1919 Oct 24
 			10:00	Aus	AE%sT	1967
-			10:00	AT	AE%sT
-Zone Australia/Currie	9:35:28	-	LMT	1895 Sep
-			10:00	-	AEST	1916 Oct  1  2:00
-			10:00	1:00	AEDT	1917 Feb
-			10:00	Aus	AE%sT	1971 Jul
 			10:00	AT	AE%sT
 
 # Victoria
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AV	1971	1985	-	Oct	lastSun	2:00s	1:00	D
 Rule	AV	1972	only	-	Feb	lastSun	2:00s	0	S
 Rule	AV	1973	1985	-	Mar	Sun>=1	2:00s	0	S
@@ -191,7 +186,7 @@ Zone Australia/Melbourne 9:39:52 -	LMT	1895 Feb
 			10:00	AV	AE%sT
 
 # New South Wales
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AN	1971	1985	-	Oct	lastSun	2:00s	1:00	D
 Rule	AN	1972	only	-	Feb	27	2:00s	0	S
 Rule	AN	1973	1981	-	Mar	Sun>=1	2:00s	0	S
@@ -220,7 +215,7 @@ Zone Australia/Broken_Hill 9:25:48 -	LMT	1895 Feb
 			9:30	AS	AC%sT
 
 # Lord Howe Island
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	LH	1981	1984	-	Oct	lastSun	2:00	1:00	-
 Rule	LH	1982	1985	-	Mar	Sun>=1	2:00	0	-
 Rule	LH	1985	only	-	Oct	lastSun	2:00	0:30	-
@@ -275,8 +270,9 @@ Zone Antarctica/Macquarie 0	-	-00	1899 Nov
 			10:00	Aus	AE%sT	1919 Apr  1  0:00s
 			0	-	-00	1948 Mar 25
 			10:00	Aus	AE%sT	1967
-			10:00	AT	AE%sT	2010 Apr  4  3:00
-			11:00	-	+11
+			10:00	AT	AE%sT	2010
+			10:00	1:00	AEDT	2011
+			10:00	AT	AE%sT
 
 # Christmas
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -403,7 +399,20 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # From Michael Deckers (2019-08-06):
 # https://www.laws.gov.fj/LawsAsMade/downloadfile/848
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# From Raymond Kumar (2020-10-08):
+# [DST in Fiji] is from December 20th 2020, till 17th January 2021.
+# From Alan Mintz (2020-10-08):
+# https://www.laws.gov.fj/LawsAsMade/GetFile/1071
+# From Tim Parenti (2020-10-08):
+# https://www.fijivillage.com/news/Daylight-saving-from-Dec-20th-this-year-to-Jan-17th-2021-8rf4x5/
+# "Minister for Employment, Parveen Bala says they had never thought of
+# stopping daylight saving. He says it was just to decide on when it should
+# start and end.  Bala says it is a short period..."
+# Since the end date is still in line with our ongoing predictions, assume for
+# now that the later-than-usual start date is a one-time departure from the
+# recent second Sunday in November pattern.
+
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
 Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	-
@@ -414,7 +423,9 @@ Rule	Fiji	2012	2013	-	Jan	Sun>=18	3:00	0	-
 Rule	Fiji	2014	only	-	Jan	Sun>=18	2:00	0	-
 Rule	Fiji	2014	2018	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Fiji	2015	max	-	Jan	Sun>=12	3:00	0	-
-Rule	Fiji	2019	max	-	Nov	Sun>=8	2:00	1:00	-
+Rule	Fiji	2019	only	-	Nov	Sun>=8	2:00	1:00	-
+Rule	Fiji	2020	only	-	Dec	20	2:00	1:00	-
+Rule	Fiji	2021	max	-	Nov	Sun>=8	2:00	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
 			12:00	Fiji	+12/+13
@@ -432,7 +443,7 @@ Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct # Papeete
 
 # Guam
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # http://guamlegislature.com/Public_Laws_5th/PL05-025.pdf
 # http://documents.guam.gov/wp-content/uploads/E.O.-59-7-Guam-Daylight-Savings-Time-May-6-1959.pdf
 Rule	Guam	1959	only	-	Jun	27	2:00	1:00	D
@@ -543,7 +554,7 @@ Zone	Pacific/Nauru	11:07:40 -	LMT	1921 Jan 15 # Uaobe
 			12:00	-	+12
 
 # New Caledonia
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	NC	1977	1978	-	Dec	Sun>=1	0:00	1:00	-
 Rule	NC	1978	1979	-	Feb	27	0:00	0	-
 Rule	NC	1996	only	-	Dec	 1	2:00s	1:00	-
@@ -558,7 +569,7 @@ Zone	Pacific/Noumea	11:05:48 -	LMT	1912 Jan 13 # Nouméa
 
 # New Zealand
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	NZ	1927	only	-	Nov	 6	2:00	1:00	S
 Rule	NZ	1928	only	-	Mar	 4	2:00	0	M
 Rule	NZ	1928	1933	-	Oct	Sun>=8	2:00	0:30	S
@@ -610,7 +621,7 @@ Link Pacific/Auckland Antarctica/McMurdo
 
 # Cook Is
 # From Shanks & Pottenger:
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Cook	1978	only	-	Nov	12	0:00	0:30	-
 Rule	Cook	1979	1991	-	Mar	Sun>=1	0:00	0	-
 Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	-
@@ -755,7 +766,7 @@ Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 # That web page currently lists transitions for 2012/3 and 2013/4.
 # Assume the pattern instituted in 2012 will continue indefinitely.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	WS	2010	only	-	Sep	lastSun	0:00	1	-
 Rule	WS	2011	only	-	Apr	Sat>=1	4:00	0	-
 Rule	WS	2011	only	-	Sep	lastSat	3:00	1	-
@@ -799,7 +810,7 @@ Zone	Pacific/Fakaofo	-11:24:56 -	LMT	1901
 			13:00	-	+13
 
 # Tonga
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Tonga	1999	only	-	Oct	 7	2:00s	1:00	-
 Rule	Tonga	2000	only	-	Mar	19	2:00s	0	-
 Rule	Tonga	2000	2001	-	Nov	Sun>=1	2:00	1:00	-
@@ -880,13 +891,36 @@ Zone	Pacific/Wake	11:06:28 -	LMT	1901
 
 
 # Vanuatu
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Vanuatu	1983	only	-	Sep	25	0:00	1:00	-
-Rule	Vanuatu	1984	1991	-	Mar	Sun>=23	0:00	0	-
-Rule	Vanuatu	1984	only	-	Oct	23	0:00	1:00	-
-Rule	Vanuatu	1985	1991	-	Sep	Sun>=23	0:00	1:00	-
-Rule	Vanuatu	1992	1993	-	Jan	Sun>=23	0:00	0	-
-Rule	Vanuatu	1992	only	-	Oct	Sun>=23	0:00	1:00	-
+
+# From P Chan (2020-11-27):
+# Joint Daylight Saving Regulation No 59 of 1973
+# New Hebrides Condominium Gazette No 336. December 1973
+# http://www.paclii.org/vu/other/VUNHGovGaz//1973/11.pdf#page=15
+#
+# Joint Daylight Saving (Repeal) Regulation No 10 of 1974
+# New Hebrides Condominium Gazette No 336. March 1974
+# http://www.paclii.org/vu/other/VUNHGovGaz//1974/3.pdf#page=11
+#
+# Summer Time Act No. 35 of 1982 [commenced 1983-09-01]
+# http://www.paclii.org/vu/other/VUGovGaz/1982/32.pdf#page=48
+#
+# Summer Time Act (Cap 157)
+# Laws of the Republic of Vanuatu Revised Edition 1988
+# http://www.paclii.org/cgi-bin/sinodisp/vu/legis/consol_act1988/sta147/sta147.html
+#
+# Summer Time (Amendment) Act No. 6 of 1991 [commenced 1991-11-11]
+# http://www.paclii.org/vu/legis/num_act/sta1991227/
+#
+# Summer Time (Repeal) Act No. 4 of 1993 [commenced 1993-05-03]
+# http://www.paclii.org/vu/other/VUGovGaz/1993/15.pdf#page=59
+
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	Vanuatu	1973	only	-	Dec	22	12:00u	1:00	-
+Rule	Vanuatu	1974	only	-	Mar	30	12:00u	0	-
+Rule	Vanuatu	1983	1991	-	Sep	Sat>=22	24:00	1:00	-
+Rule	Vanuatu	1984	1991	-	Mar	Sat>=22	24:00	0	-
+Rule	Vanuatu	1992	1993	-	Jan	Sat>=22	24:00	0	-
+Rule	Vanuatu	1992	only	-	Oct	Sat>=22	24:00	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 			11:00	Vanuatu	+11/+12
@@ -964,6 +998,25 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # about fading curtains and crazed farm animals."
 # Electronic Journal of Australian and New Zealand History (1997-03-03)
 # http://www.jcu.edu.au/aff/history/reviews/davison.htm
+
+# From P Chan (2020-11-20):
+# Daylight Saving Act 1916 (No. 40 of 1916) [1916-12-21, commenced 1917-01-01]
+# http://classic.austlii.edu.au/au/legis/cth/num_act/dsa1916401916192/
+#
+# Daylight Saving Repeal Act 1917 (No. 35 of 1917) [1917-09-25]
+# http://classic.austlii.edu.au/au/legis/cth/num_act/dsra1917351917243/
+#
+# Statutory Rules 1941, No. 323 [1941-12-24]
+# https://www.legislation.gov.au/Details/C1941L00323
+#
+# Statutory Rules 1942, No. 392 [1942-09-10]
+# https://www.legislation.gov.au/Details/C1942L00392
+#
+# Statutory Rules 1943, No. 241 [1943-09-29]
+# https://www.legislation.gov.au/Details/C1943L00241
+#
+# All transition times should be 02:00 standard time.
+
 
 # From Paul Eggert (2005-12-08):
 # Implementation Dates of Daylight Saving Time within Australia
@@ -1356,6 +1409,27 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # See "southeast Australia" above for 2008 and later.
 
 # Tasmania
+
+# From P Chan (2020-11-20):
+# Tasmania observed DST in 1916-1919.
+#
+# Daylight Saving Act, 1916 (7 Geo V, No 2) [1916-09-22]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/tdsa19167gvn2267/
+#
+# Daylight Saving Amendment Act, 1917 (8 Geo V, No 5) [1917-10-01]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/tdsaa19178gvn5347/
+#
+# Daylight Saving Act Repeal Act, 1919 (10 Geo V, No 9) [1919-10-24]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/tdsara191910gvn9339/
+#
+# King Island is mentioned in the 1967 Act but not the 1968 Act.
+# Therefore it possibly observed DST from 1968/69.
+#
+# Daylight Saving Act 1967 (No. 33 of 1967) [1967-09-22]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/dsa196733o1967211/
+#
+# Daylight Saving Act 1968 (No. 42 of 1968) [1968-10-15]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/dsa196842o1968211/
 
 # The rules for 1967 through 1991 were reported by George Shepherd
 # via Simon Woodhead via Robert Elz (1991-03-06):

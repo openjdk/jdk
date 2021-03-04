@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import javax.imageio.ImageIO;
 
 public class MultiResolutionImageObserverTest {
 
-    private static final int TIMEOUT = 500;
+    private static final int TIMEOUT = 2000;
 
     public static void main(String[] args) throws Exception {
 
@@ -70,7 +70,7 @@ public class MultiResolutionImageObserverTest {
         long endTime = System.currentTimeMillis() + TIMEOUT;
 
         while (!observer.loaded && System.currentTimeMillis() < endTime) {
-            Thread.sleep(TIMEOUT / 10);
+            Thread.sleep(TIMEOUT / 100);
         }
 
         if (!observer.loaded) {
@@ -101,7 +101,7 @@ public class MultiResolutionImageObserverTest {
     private static class LoadImageObserver implements ImageObserver {
 
         private final int infoflags;
-        private boolean loaded;
+        private volatile boolean loaded;
 
         public LoadImageObserver(int flags) {
             this.infoflags = flags;

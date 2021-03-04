@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,21 +65,19 @@ public class Completions {
     }
 
     /**
-     * Returns a completion of the value and message.
+     * {@return a completion of the value and message}
      *
      * @param value the text of the completion
      * @param message a message about the completion
-     * @return a completion of the provided value and message
      */
     public static Completion of(String value, String message) {
         return new SimpleCompletion(value, message);
     }
 
     /**
-     * Returns a completion of the value and an empty message
+     * {@return a completion of the value and an empty message}
      *
      * @param value the text of the completion
-     * @return a completion of the value and an empty message
      */
     public static Completion of(String value) {
         return new SimpleCompletion(value, "");

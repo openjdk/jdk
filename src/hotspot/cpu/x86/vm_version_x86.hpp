@@ -27,6 +27,7 @@
 
 #include "memory/universe.hpp"
 #include "runtime/abstract_vm_version.hpp"
+#include "utilities/macros.hpp"
 
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
@@ -1021,6 +1022,10 @@ public:
     return LP64_ONLY(true) NOT_LP64(false); // not implemented on x86_32
   }
 
+  constexpr static bool supports_stack_watermark_barrier() {
+    return true;
+  }
+
   // there are several insns to force cache line sync to memory which
   // we can use to ensure mapped non-volatile memory is up to date with
   // pending in-cache changes.
@@ -1057,6 +1062,11 @@ public:
   // Note: CPU_FLUSHOPT and CPU_CLWB bits should always be zero for 32-bit
   static bool supports_clflushopt() { return ((_features & CPU_FLUSHOPT) != 0); }
   static bool supports_clwb() { return ((_features & CPU_CLWB) != 0); }
+
+#ifdef __APPLE__
+  // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
+  static bool is_cpu_emulated();
+#endif
 
   // support functions for virtualization detection
  private:

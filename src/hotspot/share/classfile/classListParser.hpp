@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,44 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
 
+#define LAMBDA_PROXY_TAG "@lambda-proxy"
+#define LAMBDA_FORM_TAG  "@lambda-form-invoker"
+
+class Thread;
+
 class ID2KlassTable : public KVHashtable<int, InstanceKlass*, mtInternal> {
 public:
   ID2KlassTable() : KVHashtable<int, InstanceKlass*, mtInternal>(1987) {}
+};
+
+class CDSIndyInfo {
+  GrowableArray<const char*>* _items;
+public:
+  CDSIndyInfo() : _items(NULL) {}
+  void add_item(const char* item) {
+    if (_items == NULL) {
+      _items = new GrowableArray<const char*>(9);
+    }
+    assert(_items != NULL, "sanity");
+    _items->append(item);
+  }
+  void add_ref_kind(int ref_kind) {
+    switch (ref_kind) {
+    case JVM_REF_getField         : _items->append("REF_getField"); break;
+    case JVM_REF_getStatic        : _items->append("REF_getStatic"); break;
+    case JVM_REF_putField         : _items->append("REF_putField"); break;
+    case JVM_REF_putStatic        : _items->append("REF_putStatic"); break;
+    case JVM_REF_invokeVirtual    : _items->append("REF_invokeVirtual"); break;
+    case JVM_REF_invokeStatic     : _items->append("REF_invokeStatic"); break;
+    case JVM_REF_invokeSpecial    : _items->append("REF_invokeSpecial"); break;
+    case JVM_REF_newInvokeSpecial : _items->append("REF_newInvokeSpecial"); break;
+    case JVM_REF_invokeInterface  : _items->append("REF_invokeInterface"); break;
+    default                       : ShouldNotReachHere();
+    }
+  }
+  GrowableArray<const char*>* items() {
+    return _items;
+  }
 };
 
 class ClassListParser : public StackObj {
@@ -48,6 +83,7 @@ class ClassListParser : public StackObj {
     _line_buf_size        = _max_allowed_line_len + _line_buf_extra
   };
 
+  static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
   FILE* _file;
@@ -61,13 +97,16 @@ class ClassListParser : public StackObj {
   int                 _line_len;              // Original length of the input line.
   int                 _line_no;               // Line number for current line being parsed
   const char*         _class_name;
+  GrowableArray<const char*>* _indy_items;    // items related to invoke dynamic for archiving lambda proxy classes
   int                 _id;
   int                 _super;
   GrowableArray<int>* _interfaces;
   bool                _interfaces_specified;
   const char*         _source;
+  bool                _lambda_form_line;
 
   bool parse_int_option(const char* option_name, int* value);
+  bool parse_uint_option(const char* option_name, int* value);
   InstanceKlass* load_class_from_source(Symbol* class_name, TRAPS);
   ID2KlassTable *table() {
     return &_id2klass_table;
@@ -75,18 +114,30 @@ class ClassListParser : public StackObj {
   InstanceKlass* lookup_class_by_id(int id);
   void print_specified_interfaces();
   void print_actual_interfaces(InstanceKlass *ik);
+  bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
+
+  void resolve_indy(Symbol* class_name_symbol, TRAPS);
+  void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
 public:
   ClassListParser(const char* file);
   ~ClassListParser();
 
+  static bool is_parsing_thread();
   static ClassListParser* instance() {
+    assert(is_parsing_thread(), "call this only in the thread that created ClassListParsing::_instance");
+    assert(_instance != NULL, "must be");
     return _instance;
   }
+
   bool parse_one_line();
+  void split_tokens_by_whitespace(int offset);
+  int split_at_tag_from_line();
+  bool parse_at_tags();
   char* _token;
   void error(const char* msg, ...);
   void parse_int(int* value);
-  bool try_parse_int(int* value);
+  void parse_uint(int* value);
+  bool try_parse_uint(int* value);
   bool skip_token(const char* option_name);
   void skip_whitespaces();
   void skip_non_whitespaces();
@@ -122,9 +173,13 @@ public:
 
   bool is_loading_from_source();
 
+  bool lambda_form_line() { return _lambda_form_line; }
+
   // Look up the super or interface of the current class being loaded
   // (in this->load_current_class()).
   InstanceKlass* lookup_super_for_current_class(Symbol* super_name);
   InstanceKlass* lookup_interface_for_current_class(Symbol* interface_name);
+
+  static void populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS);
 };
 #endif // SHARE_CLASSFILE_CLASSLISTPARSER_HPP

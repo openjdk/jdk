@@ -23,12 +23,12 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary InvalidClassException is thrown when the canonical constructor
  *          cannot be found during deserialization.
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @compile --enable-preview -source ${jdk.version} BadCanonicalCtrTest.java
- * @run testng/othervm --enable-preview BadCanonicalCtrTest
+ * @run testng BadCanonicalCtrTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -59,7 +59,6 @@ import static org.testng.Assert.expectThrows;
  * constructor cannot be found during deserialization.
  */
 public class BadCanonicalCtrTest {
-    private static final String VERSION = Integer.toString(Runtime.version().feature());
 
     // ClassLoader for creating instances of the records to test with.
     ClassLoader goodRecordClassLoader;
@@ -79,8 +78,7 @@ public class BadCanonicalCtrTest {
     public void setup() {
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("R1",
-                    "public record R1 () implements java.io.Serializable { }",
-                    "--enable-preview", "-source", VERSION);
+                    "public record R1 () implements java.io.Serializable { }");
             goodRecordClassLoader = new ByteCodeLoader("R1", byteCode, BadCanonicalCtrTest.class.getClassLoader());
             byte[] bc1 = removeConstructor(byteCode);
             missingCtrClassLoader = new ByteCodeLoader("R1", bc1, BadCanonicalCtrTest.class.getClassLoader());
@@ -89,8 +87,7 @@ public class BadCanonicalCtrTest {
         }
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("R2",
-                    "public record R2 (int x, int y) implements java.io.Serializable { }",
-                    "--enable-preview", "-source", VERSION);
+                    "public record R2 (int x, int y) implements java.io.Serializable { }");
             goodRecordClassLoader = new ByteCodeLoader("R2", byteCode, goodRecordClassLoader);
             byte[] bc1 = removeConstructor(byteCode);
             missingCtrClassLoader = new ByteCodeLoader("R2", bc1, missingCtrClassLoader);
@@ -101,8 +98,7 @@ public class BadCanonicalCtrTest {
             byte[] byteCode = InMemoryJavaCompiler.compile("R3",
                     "public record R3 (long l) implements java.io.Externalizable {" +
                     "    public void writeExternal(java.io.ObjectOutput out) { }" +
-                    "    public void readExternal(java.io.ObjectInput in)    { } }",
-                    "--enable-preview", "-source", VERSION);
+                    "    public void readExternal(java.io.ObjectInput in)    { } }");
             goodRecordClassLoader = new ByteCodeLoader("R3", byteCode, goodRecordClassLoader);
             byte[] bc1 = removeConstructor(byteCode);
             missingCtrClassLoader = new ByteCodeLoader("R3", bc1, missingCtrClassLoader);

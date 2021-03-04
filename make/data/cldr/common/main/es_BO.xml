@@ -38,28 +38,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
 				<dateFormats>
 					<dateFormatLength type="medium">
 						<dateFormat>
@@ -69,11 +47,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 			</calendar>
 		</calendars>
-		<fields>
-			<field type="dayperiod">
-				<displayName draft="contributed">a. m./p. m.</displayName>
-			</field>
-		</fields>
 		<timeZoneNames>
 			<metazone type="Bolivia">
 				<short>

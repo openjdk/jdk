@@ -557,11 +557,15 @@ class Inet6Address extends InetAddress {
     }
 
     /**
-     * @serialField ipaddress byte[]
-     * @serialField scope_id int
-     * @serialField scope_id_set boolean
-     * @serialField scope_ifname_set boolean
-     * @serialField ifname String
+     * @serialField ipaddress byte[] holds a 128-bit (16 bytes) IPv6 address
+     * @serialField scope_id int the address scope id. {@code 0} if undefined
+     * @serialField scope_id_set boolean {@code true} when the scope_id field
+     *              contains  a valid integer scope_id
+     * @serialField scope_ifname_set boolean {@code true} if the object is
+     *              constructed with a scoped interface instead of a numeric
+     *              scope id
+     * @serialField ifname String the name of the scoped network interface.
+     *              {@code null} if undefined
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
@@ -578,9 +582,13 @@ class Inet6Address extends InetAddress {
                 Inet6Address.class, "holder6");
 
     /**
-     * restore the state of this object from stream
-     * including the scope information, only if the
-     * scoped interface name is valid on this system
+     * Restores the state of this object from the stream.
+     * This includes the scope information, but only if the
+     * scoped interface name is valid on this system.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream s)
@@ -642,9 +650,12 @@ class Inet6Address extends InetAddress {
     }
 
     /**
-     * default behavior is overridden in order to write the
-     * scope_ifname field as a String, rather than a NetworkInterface
-     * which is not serializable
+     * The default behavior of this method is overridden in order to
+     * write the scope_ifname field as a {@code String}, rather than a
+     * {@code NetworkInterface} which is not serializable.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private synchronized void writeObject(ObjectOutputStream s)
@@ -878,12 +889,10 @@ class Inet6Address extends InetAddress {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof Inet6Address))
-            return false;
-
-        Inet6Address inetAddr = (Inet6Address)obj;
-
-        return holder6.equals(inetAddr.holder6);
+        if (obj instanceof Inet6Address inetAddr) {
+            return holder6.equals(inetAddr.holder6);
+        }
+        return false;
     }
 
     /**

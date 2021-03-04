@@ -41,16 +41,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="cy">Wels</language>
 			<language type="da">Danuwa</language>
 			<language type="de">Almaa</language>
+			<language type="de_AT">Almaa bu Ótiriis</language>
+			<language type="de_CH">Almaa bu Kawe bu Swis</language>
 			<language type="dsb">Sorab-Suuf</language>
 			<language type="dv">Diweyi</language>
 			<language type="dz">Dsongkaa</language>
 			<language type="el">Gereg</language>
 			<language type="en">Àngale</language>
+			<language type="en_AU">Àngale bu Óstraali</language>
+			<language type="en_CA">Àngale bu Kanadaa</language>
+			<language type="en_GB">Àngale bu Grànd Brëtaañ</language>
 			<language type="en_GB" alt="short">Àngale (RI)</language>
+			<language type="en_US">Àngale bu Amerik</language>
 			<language type="en_US" alt="short">Àngale (ES)</language>
 			<language type="eo">Esperantoo</language>
 			<language type="es">Español</language>
-			<language type="es_419">Español (Amerik Latin)</language>
+			<language type="es_419">Español bu Amerik Latin</language>
+			<language type="es_ES">Español bu Tugël</language>
+			<language type="es_MX">Español bu Meksik</language>
 			<language type="et">Estoñiye</language>
 			<language type="eu">Bask</language>
 			<language type="fa">Pers</language>
@@ -59,6 +67,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fil">Filipiye</language>
 			<language type="fo">Feroos</language>
 			<language type="fr">Farañse</language>
+			<language type="fr_CA">Frañse bu Kanadaa</language>
+			<language type="fr_CH">Frañse bu Swis</language>
 			<language type="ga">Irlànde</language>
 			<language type="gd">Galuwaa bu Ekos</language>
 			<language type="gl">Galisiye</language>
@@ -123,6 +133,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pl">Polone</language>
 			<language type="ps">Pasto</language>
 			<language type="pt">Purtugees</language>
+			<language type="pt_BR">Purtugees bu Bresil</language>
+			<language type="pt_PT">Portugees bu Tugël</language>
 			<language type="qu">Kesuwa</language>
 			<language type="quc">Kishe</language>
 			<language type="rm">Romaas</language>
@@ -168,7 +180,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yo">Yoruba</language>
 			<language type="zh">Sinuwaa</language>
 			<language type="zh_Hans">Sinuwaa buñ woyofal</language>
+			<language type="zh_Hans" alt="long">Sinuwaa buñ woyofal</language>
 			<language type="zh_Hant">Sinuwaa bu cosaan</language>
+			<language type="zh_Hant" alt="long">Sinuwaa bu cosaan</language>
 		</languages>
 		<scripts>
 			<script type="Arab">Araab</script>
@@ -450,6 +464,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a à b c d e é ë f g i j k l m n ñ ŋ o ó p q r s t u w x y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ã h v z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N Ŋ O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , ; \: ! ? . ( ) \[ \] \{ \}]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -909,87 +925,531 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>at</displayName>
+				<relative type="-1">daaw</relative>
+				<relative type="0">ren</relative>
+				<relative type="1">dewen</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} at</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} at ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-short">
 				<displayName>at.</displayName>
+				<relative type="-1">daaw</relative>
+				<relative type="0">ren</relative>
+				<relative type="1">dewen</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} at</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} at ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName>at.</displayName>
+				<relative type="-1">daaw</relative>
+				<relative type="0">ren</relative>
+				<relative type="1">dewen</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} at</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} at ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName>ñeenti-weer</displayName>
+				<relative type="-1">trimestre bi weesu</relative>
+				<relative type="0">trimestre bii</relative>
+				<relative type="1">trimestre biy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} trimestre</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} trimestre ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter-short">
 				<displayName>ñw.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} trim.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} trim. ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
 				<displayName>ñw.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} trim.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} trim. ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>weer</displayName>
+				<relative type="-1">weer wi weesu</relative>
+				<relative type="0">weer wii</relative>
+				<relative type="1">weer wiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} weer</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} weer ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month-short">
 				<displayName>we.</displayName>
+				<relative type="-1">we. wi wees</relative>
+				<relative type="0">we. wii</relative>
+				<relative type="1">we. wiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} we.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} we. ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month-narrow">
 				<displayName>we.</displayName>
+				<relative type="-1">we. wi wees</relative>
+				<relative type="0">we. wii</relative>
+				<relative type="1">we. wiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} we.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} we. ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="week">
 				<displayName>ayu-bis</displayName>
+				<relative type="-1">ayu-bis bi weesu</relative>
+				<relative type="0">ayu-bis bii</relative>
+				<relative type="1">ayu-bis biy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} ayi-bis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ayi-bis ci ginaaw</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>ayu-bisu {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>ayu-b.</displayName>
+				<relative type="-1">ayu-b bi wees</relative>
+				<relative type="0">ayu-b bii</relative>
+				<relative type="1">ayu-b. ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} ayi-b.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ayi-b. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>ayu-b. {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>ayu-b.</displayName>
+				<relative type="-1">ayu-b bi wees</relative>
+				<relative type="0">ayu-b bii</relative>
+				<relative type="1">ayu-b. ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} ayi-b.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ayi-b. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>ayu-b. {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>ayu-bisu weer</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>ayu-b. we.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>ayu-b. we.</displayName>
 			</field>
 			<field type="day">
 				<displayName>fan</displayName>
 				<relative type="-1">démb</relative>
 				<relative type="0">tay</relative>
 				<relative type="1">suba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} fan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} fan ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="day-short">
 				<displayName>fan</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} fan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} fan ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="day-narrow">
 				<displayName>fan</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} fan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} fan ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>bisu at mi</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>bisu at</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>bisu at</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>bisu ayu-bis</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>bisu ayu-bisu weer wi</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>bisu ayu-b. weer</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>bisu ayu-b. weer</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">dibéer bi weesu</relative>
+				<relative type="0">tay ci dibéer bi</relative>
+				<relative type="1">dibéer biy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} dibéer</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} dibéer ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">dib. bi weesu</relative>
+				<relative type="0">tay ci dib. bi</relative>
+				<relative type="1">dib. biy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} dib.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} dib. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">dib. bi weesu</relative>
+				<relative type="0">tay ci dib. bi</relative>
+				<relative type="1">dib. biy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} dib.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} dib. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">altine ji weesu</relative>
+				<relative type="0">tay ci altine ji</relative>
+				<relative type="1">altine jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} altine</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} altine ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">alti. ji weesu</relative>
+				<relative type="0">tay ci alti. ji</relative>
+				<relative type="1">alti. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} alti.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} alti. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">alt. ji weesu</relative>
+				<relative type="0">tay ci alt. ji</relative>
+				<relative type="1">alt. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} alt.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} alt. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">talaata ji weesu</relative>
+				<relative type="0">tay ci talaata ji</relative>
+				<relative type="1">talaata jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} talaata</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} talaata ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">tal. ji weesu</relative>
+				<relative type="0">tay ci tal. ji</relative>
+				<relative type="1">tal. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} tal.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} tal. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">ta. ji weesu</relative>
+				<relative type="0">tay ci ta. ji</relative>
+				<relative type="1">ta. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} ta.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ta. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">àllarba ji weesu</relative>
+				<relative type="0">tay ci àllarba ji</relative>
+				<relative type="1">àllarba jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} àllarba</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} àllarba ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">àlla. ji weesu</relative>
+				<relative type="0">tay ci àlla. ji</relative>
+				<relative type="1">àlla. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} àlla.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} àlla. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">àla. ji weesu</relative>
+				<relative type="0">tay ci àla. ji</relative>
+				<relative type="1">àla. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} àla.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} àla. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">alxamis ji weesu</relative>
+				<relative type="0">tay ci alxamis ji</relative>
+				<relative type="1">alxamis jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} alxamis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} alxamis ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">alxa. ji weesu</relative>
+				<relative type="0">tay ci alxa. ji</relative>
+				<relative type="1">alxa. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} alxa.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} alxa. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">alx. ji weesu</relative>
+				<relative type="0">tay ci alx. ji</relative>
+				<relative type="1">alx. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} alx.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} alx. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">àjjuma ji weesu</relative>
+				<relative type="0">tay ci àjjuma ji</relative>
+				<relative type="1">àjjuma jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} àjjuma</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} àjjuma ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">àjj. ji weesu</relative>
+				<relative type="0">tay ci àjj. ji</relative>
+				<relative type="1">àjj. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} àjj.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} àjj. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">àj. ji weesu</relative>
+				<relative type="0">tay ci àj. ji</relative>
+				<relative type="1">àj. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} àj.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} àj. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">gàwwu ji weesu</relative>
+				<relative type="0">tay ci gàwwu ji</relative>
+				<relative type="1">gàwwu jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} gàwwu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} gàwwu ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">gàw. ji weesu</relative>
+				<relative type="0">tay ci gàw. ji</relative>
+				<relative type="1">gàw. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} gàw.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} gàw. ci ginaaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">gà. ji weesu</relative>
+				<relative type="0">tay ci gà. ji</relative>
+				<relative type="1">gà. jiy ñëw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} gà.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} gà. ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="dayperiod">
 				<displayName>Sub/Ngo</displayName>
 			</field>
 			<field type="hour">
-				<displayName>waxtu</displayName>
+				<displayName>waxt</displayName>
+				<relative type="0">ci waxtu wii</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} waxtu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} waxtu ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="hour-short">
 				<displayName>wxt.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} wax.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} wax. ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="hour-narrow">
 				<displayName>wxt.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} wax.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} wax. ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>simili</displayName>
+				<relative type="0">ci simili bii</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} simili</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} simili ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-short">
 				<displayName>sim.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} sim.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} sim. ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-narrow">
 				<displayName>sim.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} sim.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} sim. ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second">
 				<displayName>saa</displayName>
+				<relative type="0">leegi</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} saa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} saa ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-short">
 				<displayName>saa.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} saa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} saa ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-narrow">
 				<displayName>saa.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">fileek {0} saa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} saa ci ginaaw</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="zone">
 				<displayName>goxu waxtu</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>goxu</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>gox</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>

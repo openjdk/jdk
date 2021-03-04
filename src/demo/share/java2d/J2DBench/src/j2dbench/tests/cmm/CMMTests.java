@@ -73,14 +73,16 @@ public class CMMTests extends Test {
             ColorSpace.CS_sRGB,
             ColorSpace.CS_GRAY,
             ColorSpace.CS_LINEAR_RGB,
-            ColorSpace.CS_CIEXYZ
+            ColorSpace.CS_CIEXYZ,
+            ColorSpace.CS_PYCC
         };
 
         String[] csNames = new String[]{
             "CS_sRGB",
             "CS_GRAY",
             "CS_LINEAR_RGB",
-            "CS_CIEXYZ"
+            "CS_CIEXYZ",
+            "CS_PYCC"
         };
 
         csList = new Option.IntList(cmmOptRoot,

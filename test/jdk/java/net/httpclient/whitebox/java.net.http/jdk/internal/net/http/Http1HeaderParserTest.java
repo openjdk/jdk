@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 import static java.lang.System.out;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.stream.Collectors.toList;
 import static org.testng.Assert.*;
@@ -65,6 +66,12 @@ public class Http1HeaderParserTest {
               "123456789",
 
               "HTTP/1.1 200 OK\r\n" +
+              "Content-Length: 9\r\n" +
+              "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+              "XXXXX",
+
+              "HTTP/1.1 200 OK\r\n" +
+              "X-Header: U\u00ffU\r\n" + // value with U+00FF - Extended Latin-1
               "Content-Length: 9\r\n" +
               "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
               "XXXXX",
@@ -222,13 +229,19 @@ public class Http1HeaderParserTest {
              "XXXXX",
 
              "HTTP/1.1 200 OK\r\n" +
-             ": no header\r\n\r\n" +  // no/empty header-name, followed by header
+             "X-foo: bar\r\n" +
+             " : no header\r\n" +  // fold, not a blank header-name
+             "Content-Length: 65\r\n\r\n" +
              "XXXXX",
 
              "HTTP/1.1 200 OK\r\n" +
-             "Conte\r" +
-             " nt-Length: 9\r\n" +    // fold/bad header name ???
-             "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+             "X-foo: bar\r\n" +
+             " \t : no header\r\n" +  // fold, not a blank header-name
+             "Content-Length: 65\r\n\r\n" +
+             "XXXXX",
+
+             "HTTP/1.1 200 OK\r\n" +
+             ": no header\r\n\r\n" +  // no/empty header-name, followed by header
              "XXXXX",
 
              "HTTP/1.1 200 OK\r\n" +
@@ -310,7 +323,7 @@ public class Http1HeaderParserTest {
                 .replace("\r", "<CR>")
                 .replace("\n","<LF>")
                 .replace("LF>", "LF>\n\t"));
-        byte[] bytes = respString.getBytes(US_ASCII);
+        byte[] bytes = respString.getBytes(ISO_8859_1);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         MessageHeader m = new MessageHeader(bais);
         Map<String,List<String>> messageHeaderMap = m.getHeaders();
@@ -326,7 +339,7 @@ public class Http1HeaderParserTest {
         String statusLine1 = messageHeaderMap.get(null).get(0);
         String statusLine2 = decoder.statusLine();
         if (statusLine1.startsWith("HTTP")) {// skip the case where MH's messes up the status-line
-            assertEquals(statusLine1, statusLine2, "Status-line not equal");
+            assertEquals(statusLine2, statusLine1, "Status-line not equal");
         } else {
             assertTrue(statusLine2.startsWith("HTTP/1."), "Status-line not HTTP/1.");
         }
@@ -384,7 +397,53 @@ public class Http1HeaderParserTest {
 
              "HTTP/1.1 -22\r\n",
 
-             "HTTP/1.1 -20 \r\n"
+             "HTTP/1.1 -20 \r\n",
+
+             "HTTP/1.1 200 OK\r\n" +
+             "X-fo\u00ffo: foo\r\n" +     // invalid char in name
+             "Content-Length: 5\r\n" +
+             "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+             "XXXXX",
+
+             "HTTP/1.1 200 OK\r\n" +
+             "HTTP/1.1 200 OK\r\n" +
+             "X-foo : bar\r\n" +          //  trim space after name
+             "Content-Length: 5\r\n" +
+             "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+             "XXXXX",
+
+             "HTTP/1.1 200 OK\r\n" +
+             " X-foo: bar\r\n" +          // trim space before name
+             "Content-Length: 5\r\n" +
+             "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+             "XXXXX",
+
+             "HTTP/1.1 200 OK\r\n" +
+             "X foo: bar\r\n" +           // invalid space in name
+             "Content-Length: 5\r\n" +
+             "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+             "XXXXX",
+
+             "HTTP/1.1 200 OK\r\n" +
+             "Content-Length: 5\r\n" +
+             "Content Type: text/html; charset=UTF-8\r\n\r\n" + // invalid space in name
+             "XXXXX",
+
+             "HTTP/1.1 200 OK\r\n" +
+             "Conte\r" +
+             " nt-Length: 9\r\n" +    // fold results in space in header name
+             "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+             "XXXXX",
+
+             "HTTP/1.1 200 OK\r\n" +
+             " : no header\r\n" +  // all blank header-name (not fold)
+             "Content-Length: 65\r\n\r\n" +
+             "XXXXX",
+
+             "HTTP/1.1 200 OK\r\n" +
+             " \t : no header\r\n" +  // all blank header-name (not fold)
+             "Content-Length: 65\r\n\r\n" +
+             "XXXXX",
 
            };
         Arrays.stream(bad).forEach(responses::add);

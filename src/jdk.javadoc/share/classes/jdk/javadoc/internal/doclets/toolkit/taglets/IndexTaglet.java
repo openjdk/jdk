@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.IndexTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
@@ -46,6 +47,6 @@ public class IndexTaglet extends BaseTaglet {
 
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return writer.indexTagOutput(element, tag);
+        return writer.indexTagOutput(element, (IndexTree) tag);
     }
 }

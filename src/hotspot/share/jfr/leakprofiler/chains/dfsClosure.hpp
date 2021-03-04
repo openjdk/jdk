@@ -54,7 +54,6 @@ class DFSClosure : public BasicOopIterateClosure {
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }
-  virtual bool should_verify_oops() { return false; }
 
   static void find_leaks_from_edge(EdgeStore* edge_store, BitSet* mark_bits, const Edge* start_edge);
   static void find_leaks_from_root_set(EdgeStore* edge_store, BitSet* mark_bits);

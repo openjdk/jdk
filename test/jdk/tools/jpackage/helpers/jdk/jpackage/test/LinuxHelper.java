@@ -38,7 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.incubator.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
@@ -51,7 +51,7 @@ public class LinuxHelper {
     public static String getPackageName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.LINUX);
         return cmd.getArgumentValue("--linux-package-name",
-                () -> cmd.name().toLowerCase());
+                () -> cmd.installerName().toLowerCase());
     }
 
     public static Path getDesktopFile(JPackageCommand cmd) {
@@ -229,8 +229,17 @@ public class LinuxHelper {
         final Path packageFile = cmd.outputBundle();
         switch (cmd.packageType()) {
             case LINUX_DEB:
-                return Long.parseLong(getDebBundleProperty(packageFile,
+                Long estimate = Long.parseLong(getDebBundleProperty(packageFile,
                         "Installed-Size"));
+                if (estimate == 0L) {
+                    // if the estimate in KB is 0, check if it is really empty
+                    // or just < 1KB as with AppImagePackageTest.testEmpty()
+                    if (getPackageFiles(cmd).count() > 01L) {
+                        // there is something there so round up to 1 KB
+                        estimate = 01L;
+                    }
+                }
+                return estimate;
 
             case LINUX_RPM:
                 String size = getRpmBundleProperty(packageFile, "Size");

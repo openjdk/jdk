@@ -122,9 +122,9 @@ abstract class HelloCookieManager {
             class D10HelloCookieManager extends HelloCookieManager {
 
         final SecureRandom secureRandom;
-        private int         cookieVersion;  // allow to wrap, version + sequence
-        private byte[]      cookieSecret;
-        private byte[]      legacySecret;
+        private int               cookieVersion;  // allow to wrap, version + sequence
+        private final byte[]      cookieSecret;
+        private final byte[]      legacySecret;
 
         private final ReentrantLock d10ManagerLock = new ReentrantLock();
 

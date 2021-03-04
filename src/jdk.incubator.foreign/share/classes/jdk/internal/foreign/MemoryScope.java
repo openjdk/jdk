@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,287 +26,282 @@
 
 package jdk.internal.foreign;
 
+import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.ref.PhantomCleanable;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.util.Objects;
-import java.util.concurrent.atomic.LongAdder;
-import java.util.concurrent.locks.StampedLock;
 
 /**
  * This class manages the temporal bounds associated with a memory segment as well
- * as thread confinement.
- * A scope has a liveness bit, which is updated when the scope is closed
- * (this operation is triggered by {@link AbstractMemorySegmentImpl#close()}).
- * A scope may also have an associated "owner" thread that confines some operations to
- * associated owner thread such as {@link #close()} or {@link #dup(Thread)}.
- * Furthermore, a scope is either root scope ({@link #create(Object, Runnable) created}
- * when memory segment is allocated) or child scope ({@link #acquire() acquired} from root scope).
- * When a child scope is acquired from another child scope, it is actually acquired from
- * the root scope. There is only a single level of children. All child scopes are peers.
- * A child scope can be {@link #close() closed} at any time, but root scope can only
- * be closed after all its children have been closed, at which time any associated
- * cleanup action is executed (the associated memory segment is freed).
- * Besides thread-confined checked scopes, {@linkplain #createUnchecked(Thread, Object, Runnable)}
- * method may be used passing {@code null} as the "owner" thread to create a
- * scope that doesn't check for thread-confinement while its temporal bounds are
- * enforced reliably only under condition that thread that closes the scope is also
- * the single thread performing the checked access or there is an external synchronization
- * in place that prevents concurrent access and closing of the scope.
+ * as thread confinement. A scope has a liveness bit, which is updated when the scope is closed
+ * (this operation is triggered by {@link AbstractMemorySegmentImpl#close()}). This bit is consulted prior
+ * to memory access (see {@link #checkValidState()}).
+ * There are two kinds of memory scope: confined memory scope and shared memory scope.
+ * A confined memory scope has an associated owner thread that confines some operations to
+ * associated owner thread such as {@link #close()} or {@link #checkValidState()}.
+ * Shared scopes do not feature an owner thread - meaning their operations can be called, in a racy
+ * manner, by multiple threads. To guarantee temporal safety in the presence of concurrent thread,
+ * shared scopes use a more sophisticated synchronization mechanism, which guarantees that no concurrent
+ * access is possible when a scope is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
-abstract class MemoryScope {
+abstract class MemoryScope implements ScopedMemoryAccess.Scope {
 
-    /**
-     * Creates a root MemoryScope with given ref, cleanupAction and current
-     * thread as the "owner" thread.
-     * This method may be called in any thread.
-     * The returned instance may be published unsafely to and used in any thread,
-     * but methods that explicitly state that they may only be called in "owner" thread,
-     * must strictly be called in the thread that created the scope
-     * or else IllegalStateException is thrown.
-     *
-     * @param ref           an optional reference to an instance that needs to be kept reachable
-     * @param cleanupAction an optional cleanup action to be executed when returned scope is closed
-     * @return a root MemoryScope
-     */
-    static MemoryScope create(Object ref, Runnable cleanupAction) {
-        return new Root(Thread.currentThread(), ref, cleanupAction);
+    static final Runnable DUMMY_CLEANUP_ACTION = () -> { };
+
+    private MemoryScope(Object ref, Runnable cleanupAction, Cleaner cleaner) {
+        Objects.requireNonNull(cleanupAction);
+        this.ref = ref;
+        this.cleanupAction = cleanupAction;
+        this.scopeCleanable = cleaner != null ?
+                new ScopeCleanable(this, cleaner, cleanupAction) :
+                null;
     }
 
     /**
-     * Creates a root MemoryScope with given ref, cleanupAction and "owner" thread.
-     * This method may be called in any thread.
-     * The returned instance may be published unsafely to and used in any thread,
-     * but methods that explicitly state that they may only be called in "owner" thread,
-     * must strictly be called in given owner thread or else IllegalStateException is thrown.
-     * If given owner thread is null, the returned MemoryScope is unchecked, meaning
-     * that all methods may be called in any thread and that {@link #checkValidState()}
-     * does not check for temporal bounds.
-     *
-     * @param owner         the desired owner thread. If {@code owner == null},
-     *                      the returned scope is <em>not</em> thread-confined and not checked.
+     * Creates a confined memory scope with given attachment and cleanup action. The returned scope
+     * is assumed to be confined on the current thread.
      * @param ref           an optional reference to an instance that needs to be kept reachable
-     * @param cleanupAction an optional cleanup action to be executed when returned scope is closed
-     * @return a root MemoryScope
+     * @param cleanupAction a cleanup action to be executed when returned scope is closed
+     * @return a confined memory scope
      */
-    static MemoryScope createUnchecked(Thread owner, Object ref, Runnable cleanupAction) {
-        return new Root(owner, ref, cleanupAction);
+    static MemoryScope createConfined(Object ref, Runnable cleanupAction, Cleaner cleaner) {
+        return new ConfinedScope(Thread.currentThread(), ref, cleanupAction, cleaner);
     }
 
-    private final Thread owner;
-    private boolean closed; // = false
-    private static final VarHandle CLOSED;
+    /**
+     * Creates a shared memory scope with given attachment and cleanup action.
+     * @param ref           an optional reference to an instance that needs to be kept reachable
+     * @param cleanupAction a cleanup action to be executed when returned scope is closed
+     * @return a shared memory scope
+     */
+    static MemoryScope createShared(Object ref, Runnable cleanupAction, Cleaner cleaner) {
+        return new SharedScope(ref, cleanupAction, cleaner);
+    }
 
-    static {
+    protected final Object ref;
+    protected final ScopeCleanable scopeCleanable;
+    protected final Runnable cleanupAction;
+
+    /**
+     * Closes this scope, executing any cleanup action (where provided).
+     * @throws IllegalStateException if this scope is already closed or if this is
+     * a confined scope and this method is called outside of the owner thread.
+     */
+    final void close() {
         try {
-            CLOSED = MethodHandles.lookup().findVarHandle(MemoryScope.class, "closed", boolean.class);
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
+            justClose();
+            cleanupAction.run();
+            if (scopeCleanable != null) {
+                scopeCleanable.clear();
+            }
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 
-    private MemoryScope(Thread owner) {
-        this.owner = owner;
-    }
-
-    /**
-     * Acquires a child scope (or peer scope if this is a child) with current
-     * thread as the "owner" thread.
-     * This method may be called in any thread.
-     * The returned instance may be published unsafely to and used in any thread,
-     * but methods that explicitly state that they may only be called in "owner" thread,
-     * must strictly be called in the thread that acquired the scope
-     * or else IllegalStateException is thrown.
-     *
-     * @return a child (or peer) scope
-     * @throws IllegalStateException if root scope is already closed
-     */
-    abstract MemoryScope acquire();
-
-    /**
-     * Closes this scope, executing any cleanup action if this is the root scope.
-     * This method may only be called in the "owner" thread of this scope unless the
-     * scope is a root scope with no owner thread - i.e. is not checked.
-     *
-     * @throws IllegalStateException if this scope is already closed or if this is
-     *                               a root scope and there is/are still active child
-     *                               scope(s) or if this method is called outside of
-     *                               owner thread in checked scope
-     */
-    abstract void close();
+    abstract void justClose();
 
     /**
      * Duplicates this scope with given new "owner" thread and {@link #close() closes} it.
-     * If this is a root scope, a new root scope is returned; this root scope is closed, but
-     * without executing the cleanup action, which is instead transferred to the duped scope.
-     * If this is a child scope, a new child scope is returned.
-     * This method may only be called in the "owner" thread of this scope unless the
-     * scope is a root scope with no owner thread - i.e. is not checked.
-     * The returned instance may be published unsafely to and used in any thread,
-     * but methods that explicitly state that they may only be called in "owner" thread,
-     * must strictly be called in given new "owner" thread
-     * or else IllegalStateException is thrown.
-     *
-     * @param newOwner new owner thread of the returned MemoryScope
-     * @return a duplicate of this scope
-     * @throws NullPointerException  if given owner thread is null
+     * @param newOwner new owner thread of the returned memory scope
+     * @return a new confined scope, which is a duplicate of this scope, but with a new owner thread.
      * @throws IllegalStateException if this scope is already closed or if this is
-     *                               a root scope and there is/are still active child
-     *                               scope(s) or if this method is called outside of
-     *                               owner thread in checked scope
+     * a confined scope and this method is called outside of the owner thread.
      */
-    abstract MemoryScope dup(Thread newOwner);
+    final MemoryScope confineTo(Thread newOwner) {
+        try {
+            justClose();
+            if (scopeCleanable != null) {
+                scopeCleanable.clear();
+            }
+            return new ConfinedScope(newOwner, ref, cleanupAction, scopeCleanable != null ?
+                    scopeCleanable.cleaner : null);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+    }
+
+    /**
+     * Duplicates this scope with given new "owner" thread and {@link #close() closes} it.
+     * @return a new shared scope, which is a duplicate of this scope.
+     * @throws IllegalStateException if this scope is already closed or if this is
+     * a confined scope and this method is called outside of the owner thread,
+     * or if this is already a shared scope.
+     */
+    final MemoryScope share() {
+        try {
+            justClose();
+            if (scopeCleanable != null) {
+                scopeCleanable.clear();
+            }
+            return new SharedScope(ref, cleanupAction, scopeCleanable != null ?
+                    scopeCleanable.cleaner : null);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+    }
+
+    final MemoryScope cleanable(Cleaner cleaner) {
+        if (scopeCleanable != null) {
+            throw new IllegalStateException("Already registered with a cleaner");
+        }
+        try {
+            justClose();
+            return ownerThread() == null ?
+                    new SharedScope(ref, cleanupAction, cleaner) :
+                    new ConfinedScope(ownerThread(), ref, cleanupAction, cleaner);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+    }
 
     /**
      * Returns "owner" thread of this scope.
-     *
-     * @return owner thread (or null for unchecked scope)
+     * @return owner thread (or null for a shared scope)
      */
-    final Thread ownerThread() {
-        return owner;
-    }
+    public abstract Thread ownerThread();
 
     /**
-     * This method may be called in any thread.
-     *
+     * Returns true, if this scope is still alive. This method may be called in any thread.
      * @return {@code true} if this scope is not closed yet.
      */
-    final boolean isAlive() {
-        return !((boolean)CLOSED.getVolatile(this));
+    public abstract boolean isAlive();
+
+    /**
+     * Checks that this scope is still alive (see {@link #isAlive()}).
+     * @throws IllegalStateException if this scope is already closed or if this is
+     * a confined scope and this method is called outside of the owner thread.
+     */
+    public abstract void checkValidState();
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException();
     }
 
     /**
-     * Checks that this scope is still alive and that this method is executed
-     * in the "owner" thread of this scope or this scope is unchecked (not associated
-     * with owner thread).
-     *
-     * @throws IllegalStateException if this scope is already closed or this
-     *                               method is executed outside owning thread
-     *                               in checked scope
+     * A confined scope, which features an owner thread. The liveness check features an additional
+     * confinement check - that is, calling any operation on this scope from a thread other than the
+     * owner thread will result in an exception. Because of this restriction, checking the liveness bit
+     * can be performed in plain mode (see {@link #checkAliveRaw(MemoryScope)}).
      */
-    @ForceInline
-    final void checkValidState() {
-        if (owner != null && owner != Thread.currentThread()) {
-            throw new IllegalStateException("Attempted access outside owning thread");
+    static class ConfinedScope extends MemoryScope {
+
+        private boolean closed; // = false
+        final Thread owner;
+
+        public ConfinedScope(Thread owner, Object ref, Runnable cleanupAction, Cleaner cleaner) {
+            super(ref, cleanupAction, cleaner);
+            this.owner = owner;
         }
-        checkAliveConfined(this);
+
+        @ForceInline
+        public final void checkValidState() {
+            if (owner != Thread.currentThread()) {
+                throw new IllegalStateException("Attempted access outside owning thread");
+            }
+            if (closed) {
+                throw ScopedAccessError.INSTANCE;
+            }
+        }
+
+        @Override
+        public boolean isAlive() {
+            return !closed;
+        }
+
+        void justClose() {
+            checkValidState();
+            closed = true;
+        }
+
+        @Override
+        public Thread ownerThread() {
+            return owner;
+        }
     }
 
     /**
-     * Checks that this scope is still alive.
-     *
-     * @throws IllegalStateException if this scope is already closed
+     * A shared scope, which can be shared across multiple threads. Closing a shared scope has to ensure that
+     * (i) only one thread can successfully close a scope (e.g. in a close vs. close race) and that
+     * (ii) no other thread is accessing the memory associated with this scope while the segment is being
+     * closed. To ensure the former condition, a CAS is performed on the liveness bit. Ensuring the latter
+     * is trickier, and require a complex synchronization protocol (see {@link jdk.internal.misc.ScopedMemoryAccess}).
+     * Since it is the responsibility of the closing thread to make sure that no concurrent access is possible,
+     * checking the liveness bit upon access can be performed in plain mode (see {@link #checkAliveRaw(MemoryScope)}),
+     * as in the confined case.
      */
-    @ForceInline
-    private static void checkAliveConfined(MemoryScope scope) {
-        if (scope.closed) {
-            throw new IllegalStateException("This segment is already closed");
+    static class SharedScope extends MemoryScope {
+
+        static ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+
+        final static int ALIVE = 0;
+        final static int CLOSING = 1;
+        final static int CLOSED = 2;
+
+        int state = ALIVE;
+
+        private static final VarHandle STATE;
+
+        static {
+            try {
+                STATE = MethodHandles.lookup().findVarHandle(SharedScope.class, "state", int.class);
+            } catch (Throwable ex) {
+                throw new ExceptionInInitializerError(ex);
+            }
+        }
+
+        SharedScope(Object ref, Runnable cleanupAction, Cleaner cleaner) {
+            super(ref, cleanupAction, cleaner);
+        }
+
+        @Override
+        public Thread ownerThread() {
+            return null;
+        }
+
+        @Override
+        public void checkValidState() {
+            if (state != ALIVE) {
+                throw ScopedAccessError.INSTANCE;
+            }
+        }
+
+        void justClose() {
+            if (!STATE.compareAndSet(this, ALIVE, CLOSING)) {
+                throw new IllegalStateException("Already closed");
+            }
+            boolean success = SCOPED_MEMORY_ACCESS.closeScope(this);
+            STATE.setVolatile(this, success ? CLOSED : ALIVE);
+            if (!success) {
+                throw new IllegalStateException("Cannot close while another thread is accessing the segment");
+            }
+        }
+
+        @Override
+        public boolean isAlive() {
+            return (int)STATE.getVolatile(this) != CLOSED;
         }
     }
 
-    private static final class Root extends MemoryScope {
-        private final StampedLock lock = new StampedLock();
-        private final LongAdder acquired = new LongAdder();
-        private final Object ref;
-        private final Runnable cleanupAction;
+    static class ScopeCleanable extends PhantomCleanable<MemoryScope> {
+        final Cleaner cleaner;
+        final Runnable cleanupAction;
 
-        private Root(Thread owner, Object ref, Runnable cleanupAction) {
-            super(owner);
-            this.ref = ref;
+        public ScopeCleanable(MemoryScope referent, Cleaner cleaner, Runnable cleanupAction) {
+            super(referent, cleaner);
+            this.cleaner = cleaner;
             this.cleanupAction = cleanupAction;
         }
 
         @Override
-        MemoryScope acquire() {
-            // try to optimistically acquire the lock
-            long stamp = lock.tryOptimisticRead();
-            try {
-                for (; ; stamp = lock.readLock()) {
-                    if (stamp == 0L)
-                        continue;
-                    checkAliveConfined(this); // plain read is enough here (either successful optimistic read, or full read lock)
-
-                    // increment acquires
-                    acquired.increment();
-                    // did a call to close() occur since we acquired the lock?
-                    if (lock.validate(stamp)) {
-                        // no, just return the acquired scope
-                        return new Child(Thread.currentThread());
-                    } else {
-                        // yes, just back off and retry (close might have failed, after all)
-                        acquired.decrement();
-                    }
-                }
-            } finally {
-                if (StampedLock.isReadLockStamp(stamp))
-                    lock.unlockRead(stamp);
-            }
-        }
-
-        @Override
-        MemoryScope dup(Thread newOwner) {
-            Objects.requireNonNull(newOwner, "newOwner");
-            // pre-allocate duped scope so we don't get OOME later and be left with this scope closed
-            var duped = new Root(newOwner, ref, cleanupAction);
-            justClose();
-            return duped;
-        }
-
-        @Override
-        void close() {
-            justClose();
-            if (cleanupAction != null) {
-                cleanupAction.run();
-            }
-        }
-
-        @ForceInline
-        private void justClose() {
-            // enter critical section - no acquires are possible past this point
-            long stamp = lock.writeLock();
-            try {
-                checkValidState(); // plain read is enough here (full write lock)
-                // check for absence of active acquired children
-                if (acquired.sum() > 0) {
-                    throw new IllegalStateException("Cannot close this scope as it has active acquired children");
-                }
-                // now that we made sure there's no active acquired children, we can mark scope as closed
-                CLOSED.set(this, true); // plain write is enough here (full write lock)
-            } finally {
-                // leave critical section
-                lock.unlockWrite(stamp);
-            }
-        }
-
-        private final class Child extends MemoryScope {
-
-            private Child(Thread owner) {
-                super(owner);
-            }
-
-            @Override
-            MemoryScope acquire() {
-                return Root.this.acquire();
-            }
-
-            @Override
-            MemoryScope dup(Thread newOwner) {
-                checkValidState(); // child scope is always checked
-                // pre-allocate duped scope so we don't get OOME later and be left with this scope closed
-                var duped = new Child(newOwner);
-                CLOSED.setVolatile(this, true);
-                return duped;
-            }
-
-            @Override
-            void close() {
-                checkValidState(); // child scope is always checked
-                CLOSED.set(this, true);
-                // following acts as a volatile write after plain write above so
-                // plain write gets flushed too (which is important for isAliveThreadSafe())
-                Root.this.acquired.decrement();
-            }
+        protected void performCleanup() {
+            cleanupAction.run();
         }
     }
 }

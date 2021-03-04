@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,6 +350,13 @@ final class P11AEADCipher extends CipherSpi {
                         0, buffer, 0, bufLen);
             }
         } catch (PKCS11Exception e) {
+            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+                // Cancel Operation may be invoked after an error on a PKCS#11
+                // call. If the operation inside the token was already cancelled,
+                // do not fail here. This is part of a defensive mechanism for
+                // PKCS#11 libraries that do not strictly follow the standard.
+                return;
+            }
             if (encrypt) {
                 throw new ProviderException("Cancel failed", e);
             }
@@ -616,6 +623,12 @@ final class P11AEADCipher extends CipherSpi {
             }
             return k;
         } catch (PKCS11Exception e) {
+            // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are not expected here because the output length
+            // is checked in the OpenJDK side before making the PKCS#11 call.
+            // Thus, doCancel can safely be 'false'.
             doCancel = false;
             handleException(e);
             throw new ProviderException("doFinal() failed", e);
@@ -702,6 +715,12 @@ final class P11AEADCipher extends CipherSpi {
             outBuffer.position(outBuffer.position() + k);
             return k;
         } catch (PKCS11Exception e) {
+            // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are not expected here because the output length
+            // is checked in the OpenJDK side before making the PKCS#11 call.
+            // Thus, doCancel can safely be 'false'.
             doCancel = false;
             handleException(e);
             throw new ProviderException("doFinal() failed", e);

@@ -66,7 +66,7 @@ struct ankr
   {
     const NNOffsetTo<GlyphAnchors> *offset = (this+lookupTable).get_value (glyph_id, num_glyphs);
     if (!offset)
-      return Null(Anchor);
+      return Null (Anchor);
     const GlyphAnchors &anchors = &(this+anchorData) + *offset;
     return anchors[i];
   }
@@ -76,13 +76,14 @@ struct ankr
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
                           version == 0 &&
+                          c->check_range (this, anchorData) &&
                           lookupTable.sanitize (c, this, &(this+anchorData))));
   }
 
   protected:
   HBUINT16      version;        /* Version number (set to zero) */
   HBUINT16      flags;          /* Flags (currently unused; set to zero) */
-  LOffsetTo<Lookup<NNOffsetTo<GlyphAnchors> > >
+  LOffsetTo<Lookup<NNOffsetTo<GlyphAnchors>>>
                 lookupTable;    /* Offset to the table's lookup table */
   LNNOffsetTo<HBUINT8>
                 anchorData;     /* Offset to the glyph data table */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public class TestMemberInheritance extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "pkg", "diamond", "inheritDist", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
 
@@ -101,11 +102,13 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("pkg1/Implementer.html", true,
                 // ensure the method makes it
                 """
-                    <td class="col-first"><code>static java.time.Period</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#between(java.time.LocalDate,java.time.LocalDate)">between</a></span>&#8203;(ja\
-                    va.time.LocalDate&nbsp;startDateInclusive,
-                     java.time.LocalDate&nbsp;endDateExclusive)</code></th>""");
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab1 method-summary-table-tab4"><code>static java.time.Period</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab1 method-summary-table-tab4"><code><a href="#between(java.time.LocalDate,java\
+                    .time.LocalDate)" class="member-name-link">between</a>&#8203;(java.time.LocalDat\
+                    e&nbsp;startDateInclusive,
+                     java.time.LocalDate&nbsp;endDateExclusive)</code></div>""");
 
         checkOutput("pkg1/Implementer.html", false,
                 """
@@ -118,19 +121,21 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="description">
                     <hr>
-                    <pre>public abstract class <span class="type-name-label">DocumentedNonGenericChild</span>
-                    extends java.lang.Object</pre>
+                    <div class="type-signature"><span class="modifiers">public abstract class </span\
+                    ><span class="element-name type-name-label">DocumentedNonGenericChild</span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>
                     </section>""");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <td class="col-first"><code>protected abstract java.lang.String</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#parentMethod(T)">parentMethod</a></span>&#8203;(java.lang.String&nbsp;t)</code\
-                    ></th>
-                    <td class="col-last">
+                    <div class="col-first even-row-color method-summary-table method-summary-table-tab2 m\
+                    ethod-summary-table-tab3"><code>protected abstract java.lang.String</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
+                    method-summary-table-tab3"><code><a href="#parentMethod(T)" class="member-name-link">\
+                    parentMethod</a>&#8203;(java.lang.String&nbsp;t)</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-tab2 me\
+                    thod-summary-table-tab3">
                     <div class="block">Returns some value with an inherited search tag.</div>
-                    </td>
                     """);
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
@@ -138,8 +143,8 @@ public class TestMemberInheritance extends JavadocTester {
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
-                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="member-\
-                    name">parentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
+                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">p\
+                    arentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
                     t)</span>
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
@@ -156,48 +161,48 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <td class="col-first"><code>java.lang.String</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#parentField">parentField</a></span></code></th>
-                    <td class="col-last">
+                    <div class="col-first even-row-color"><code>java.lang.String</code></div>
+                    <div class="col-second even-row-color"><code><a href="#parentField" class="membe\
+                    r-name-link">parentField</a></code></div>
+                    <div class="col-last even-row-color">
                     <div class="block">A field.</div>""",
                 """
                     <section class="detail" id="parentField">
                     <h3>parentField</h3>
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">java.lang.String</span>&nbsp;<span class="member-name">parent\
-                    Field</span></div>
+                    lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">parentField</\
+                    span></div>
                     <div class="block">A field.</div>
                     </section>""");
 
         checkOutput("pkg3/PrivateGenericParent.PublicChild.html", true,
                 """
-                    <td class="col-first"><code>java.lang.String</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#method(T)">method</a></span>&#8203;(java.lang.String&nbsp;t)</code></th>""",
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code>java.lang.String</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><a href="#method(T)" class="member-name-li\
+                    nk">method</a>&#8203;(java.lang.String&nbsp;t)</code></div>""",
                 """
                     <section class="detail" id="method(T)">
                     <h3 id="method(java.lang.Object)">method</h3>
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">java.lang.String</span>&nbsp;<span class="member-name">method\
-                    </span>&#8203;<span class="parameters">(java.lang.String&nbsp;t)</span></div>
+                    lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">metho\
+                    d</span>&#8203;<span class="parameters">(java.lang.String&nbsp;t)</span></div>
                     </section>""");
 
         checkOutput("index-all.html", true,
                 """
-                    <dt><span class="member-name-link"><a href="pkg2/DocumentedNonGenericChild.html#\
-                    parentField">parentField</a></span> - Variable in class pkg2.<a href="pkg2/Docum\
-                    entedNonGenericChild.html" title="class in pkg2">DocumentedNonGenericChild</a></\
-                    dt>
+                    <dt><a href="pkg2/DocumentedNonGenericChild.html#parentField" class="member-name\
+                    -link">parentField</a> - Variable in class pkg2.<a href="pkg2/DocumentedNonGener\
+                    icChild.html" title="class in pkg2">DocumentedNonGenericChild</a></dt>
                     <dd>
                     <div class="block">A field.</div>
                     </dd>
                     """,
                 """
-                    <dt><span class="member-name-link"><a href="pkg2/DocumentedNonGenericChild.html#\
-                    parentMethod(T)">parentMethod(String)</a></span> - Method in class pkg2.<a href=\
-                    "pkg2/DocumentedNonGenericChild.html" title="class in pkg2">DocumentedNonGeneric\
-                    Child</a></dt>
+                    <dt><a href="pkg2/DocumentedNonGenericChild.html#parentMethod(T)" class="member-\
+                    name-link">parentMethod(String)</a> - Method in class pkg2.<a href="pkg2/Documen\
+                    tedNonGenericChild.html" title="class in pkg2">DocumentedNonGenericChild</a></dt>
                     <dd>
                     <div class="block">Returns some value with an inherited search tag.</div>
                     </dd>""");
@@ -218,6 +223,7 @@ public class TestMemberInheritance extends JavadocTester {
         javadoc("-d", "out-split",
                 "-splitindex",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "pkg", "diamond", "inheritDist", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
 
@@ -226,8 +232,8 @@ public class TestMemberInheritance extends JavadocTester {
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
-                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="member-\
-                    name">parentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
+                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">p\
+                    arentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
                     t)</span>
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
@@ -237,19 +243,17 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("index-files/index-9.html", true,
                 """
-                    <dt><span class="member-name-link"><a href="../pkg2/DocumentedNonGenericChild.ht\
-                    ml#parentField">parentField</a></span> - Variable in class pkg2.<a href="../pkg2\
-                    /DocumentedNonGenericChild.html" title="class in pkg2">DocumentedNonGenericChild\
-                    </a></dt>
+                    <dt><a href="../pkg2/DocumentedNonGenericChild.html#parentField" class="member-n\
+                    ame-link">parentField</a> - Variable in class pkg2.<a href="../pkg2/DocumentedNo\
+                    nGenericChild.html" title="class in pkg2">DocumentedNonGenericChild</a></dt>
                     <dd>
                     <div class="block">A field.</div>
                     </dd>
                     """,
                 """
-                    <dt><span class="member-name-link"><a href="../pkg2/DocumentedNonGenericChild.ht\
-                    ml#parentMethod(T)">parentMethod(String)</a></span> - Method in class pkg2.<a hr\
-                    ef="../pkg2/DocumentedNonGenericChild.html" title="class in pkg2">DocumentedNonG\
-                    enericChild</a></dt>
+                    <dt><a href="../pkg2/DocumentedNonGenericChild.html#parentMethod(T)" class="memb\
+                    er-name-link">parentMethod(String)</a> - Method in class pkg2.<a href="../pkg2/D\
+                    ocumentedNonGenericChild.html" title="class in pkg2">DocumentedNonGenericChild</a></dt>
                     <dd>
                     <div class="block">Returns some value with an inherited search tag.</div>
                     </dd>""");

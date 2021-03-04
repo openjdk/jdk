@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,18 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/stringUtils.hpp"
 #include "utilities/utf8.hpp"
 
@@ -167,7 +170,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
   for (int x = 0; x < num_packages; x++) {
     oop pkg_str = pkgs->obj_at(x);
 
-    if (pkg_str == NULL || pkg_str->klass() != SystemDictionary::String_klass()) {
+    if (pkg_str == NULL || pkg_str->klass() != vmClasses::String_klass()) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("Bad package name"));
     }
@@ -324,7 +327,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
   GrowableArray<Symbol*>* pkg_list = new GrowableArray<Symbol*>(num_packages);
   for (int x = 0; x < num_packages; x++) {
     oop pkg_str = packages_h->obj_at(x);
-    if (pkg_str == NULL || pkg_str->klass() != SystemDictionary::String_klass()) {
+    if (pkg_str == NULL || pkg_str->klass() != vmClasses::String_klass()) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("Bad package name"));
     }
@@ -452,6 +455,24 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
   if (h_loader.is_null() && !ClassLoader::has_jrt_entry()) {
     ClassLoader::add_to_exploded_build_list(module_symbol, CHECK);
   }
+
+#ifdef COMPILER2
+  // Special handling of jdk.incubator.vector
+  if (strcmp(module_name, "jdk.incubator.vector") == 0) {
+    if (FLAG_IS_DEFAULT(EnableVectorSupport)) {
+      FLAG_SET_DEFAULT(EnableVectorSupport, true);
+    }
+    if (EnableVectorSupport && FLAG_IS_DEFAULT(EnableVectorReboxing)) {
+      FLAG_SET_DEFAULT(EnableVectorReboxing, true);
+    }
+    if (EnableVectorSupport && EnableVectorReboxing && FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing)) {
+      FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, true);
+    }
+    log_info(compilation)("EnableVectorSupport=%s",            (EnableVectorSupport            ? "true" : "false"));
+    log_info(compilation)("EnableVectorReboxing=%s",           (EnableVectorReboxing           ? "true" : "false"));
+    log_info(compilation)("EnableVectorAggressiveReboxing=%s", (EnableVectorAggressiveReboxing ? "true" : "false"));
+  }
+#endif // COMPILER2
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

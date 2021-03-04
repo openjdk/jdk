@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
         System.out.println("  -s:   sort events by start time (default)");
         System.out.println("  -e:   sort events by elapsed time");
         System.out.println("  -n:   sort events by name and start");
+        System.out.println("  -z:   sort events by compiled code size");
         System.out.println("  -C:   compare logs (give files to compare on command line)");
         System.out.println("  -d:   do not print compilation IDs");
         System.exit(exitcode);
@@ -94,6 +95,9 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
                 index++;
             } else if (a.equals("-s")) {
                 sort = LogParser.sortByStart;
+                index++;
+            } else if (a.equals("-z")) {
+                sort = LogParser.sortByNMethodSize;
                 index++;
             } else if (a.equals("-t")) {
                 printTimeStamps = true;
@@ -478,9 +482,6 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
                 BasicLogEvent ble = (BasicLogEvent) e;
                 Compilation c = ble.getCompilation();
                 if (c == null) {
-                    if (!(ble instanceof NMethod)) {
-                        throw new InternalError("only nmethods should have a null compilation; here's a " + ble.getClass());
-                    }
                     continue;
                 }
                 String name = c.getMethod().getFullName();

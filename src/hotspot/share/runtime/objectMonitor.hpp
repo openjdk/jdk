@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 
 class ObjectMonitor;
 
@@ -127,7 +127,7 @@ class ObjectWaiter : public StackObj {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 #endif
 
-class ObjectMonitor {
+class ObjectMonitor : public CHeapObj<mtInternal> {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
@@ -139,29 +139,21 @@ class ObjectMonitor {
   // Enforced by the assert() in header_addr().
   volatile markWord _header;        // displaced object header word - mark
   WeakHandle _object;               // backward object pointer
-  typedef enum {
-    Free = 0,  // Free must be 0 for monitor to be free after memset(..,0,..).
-    New,
-    Old,
-    ChainMarker
-  } AllocationState;
-  AllocationState _allocation_state;
   // Separate _header and _owner on different cache lines since both can
-  // have busy multi-threaded access. _header, _object and _allocation_state
-  // are set at initial inflation. _object and _allocation_state don't
-  // change until deflation so _object and _allocation_state are good
-  // choices to share the cache line with _header.
+  // have busy multi-threaded access. _header and _object are set at initial
+  // inflation. The _object does not change, so it is a good choice to share
+  // its cache line with _header.
   DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +
-                        sizeof(WeakHandle) + sizeof(AllocationState));
+                        sizeof(WeakHandle));
   // Used by async deflation as a marker in the _owner field:
   #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
-  void* volatile _owner;            // pointer to owning thread OR BasicLock
+  void* _owner;                     // pointer to owning thread OR BasicLock
   volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void*) +
                         sizeof(volatile jlong));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
@@ -179,7 +171,7 @@ class ObjectMonitor {
   jint  _contentions;               // Number of active contentions in enter(). It is used by is_busy()
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
-                                    // ObjectSynchronizer::deflate_monitor_using_JT().
+                                    // ObjectMonitor::deflate_monitor().
  protected:
   ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
   volatile jint  _waiters;          // number of waiting threads
@@ -250,8 +242,8 @@ class ObjectMonitor {
     if (contentions() > 0) {
       ret_code |= contentions();
     }
-    if (_owner != DEFLATER_MARKER) {
-      ret_code |= intptr_t(_owner);
+    if (!owner_is_DEFLATER_MARKER()) {
+      ret_code |= intptr_t(owner_raw());
     }
     return ret_code;
   }
@@ -260,16 +252,15 @@ class ObjectMonitor {
   intptr_t  is_entered(Thread* current) const;
 
   void*     owner() const;  // Returns NULL if DEFLATER_MARKER is observed.
+  void*     owner_raw() const;
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
-  bool      owner_is_DEFLATER_MARKER();
+  bool      owner_is_DEFLATER_MARKER() const;
   // Returns true if 'this' is being async deflated and false otherwise.
   bool      is_being_async_deflated();
   // Clear _owner field; current value must match old_value.
   void      release_clear_owner(void* old_value);
   // Simply set _owner field to new_value; current value must match old_value.
   void      set_owner_from(void* old_value, void* new_value);
-  // Simply set _owner field to new_value; current value must match old_value1 or old_value2.
-  void      set_owner_from(void* old_value1, void* old_value2, void* new_value);
   // Simply set _owner field to self; current value must match basic_lock_p.
   void      set_owner_from_BasicLock(void* basic_lock_p, Thread* self);
   // Try to set _owner field to new_value if the current value matches
@@ -301,55 +292,15 @@ class ObjectMonitor {
   ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
   Thread* thread_of_waiter(ObjectWaiter* o)                            { return o->_thread; }
 
- protected:
-  // We don't typically expect or want the ctors or dtors to run.
-  // normal ObjectMonitors are type-stable and immortal.
-  ObjectMonitor() { ::memset((void*)this, 0, sizeof(*this)); }
-
-  ~ObjectMonitor() {
-    // TODO: Add asserts ...
-    // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
-    // _contentions == 0 _EntryList  == NULL etc
-  }
-
- private:
-  void Recycle() {
-    // TODO: add stronger asserts ...
-    // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
-    // _contentions == 0 EntryList  == NULL
-    // _recursions == 0 _WaitSet == NULL
-#ifdef ASSERT
-    stringStream ss;
-    assert((is_busy() | _recursions) == 0, "freeing in-use monitor: %s, "
-           "recursions=" INTX_FORMAT, is_busy_to_string(&ss), _recursions);
-#endif
-    _succ          = NULL;
-    _EntryList     = NULL;
-    _cxq           = NULL;
-    _WaitSet       = NULL;
-    _recursions    = 0;
-  }
-
- public:
+  ObjectMonitor(oop object);
+  ~ObjectMonitor();
 
   oop       object() const;
   oop       object_peek() const;
-  oop*      object_addr();
-  void      set_object(oop obj);
-  void      release_set_allocation_state(AllocationState s);
-  void      set_allocation_state(AllocationState s);
-  AllocationState allocation_state() const;
-  AllocationState allocation_state_acquire() const;
-  bool      is_free() const;
-  bool      is_old() const;
-  bool      is_new() const;
-  bool      is_chainmarker() const;
 
   // Returns true if the specified thread owns the ObjectMonitor. Otherwise
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(Thread* THREAD);
-  void      clear();
-  void      clear_common();
 
   bool      enter(TRAPS);
   void      exit(bool not_suspended, TRAPS);
@@ -380,6 +331,9 @@ class ObjectMonitor {
   int       TrySpin(Thread* self);
   void      ExitEpilog(Thread* self, ObjectWaiter* Wakee);
   bool      ExitSuspendEquivalent(JavaThread* self);
+
+  // Deflation support
+  bool      deflate_monitor();
   void      install_displaced_markword_in_object(const oop obj);
 };
 

@@ -96,7 +96,7 @@ public class TestPrintXML {
 
         // Verify that all data was written correctly
         List<RecordedEvent> events = RecordingFile.readAllEvents(recordingFile);
-        Collections.sort(events, (e1, e2) -> e1.getEndTime().compareTo(e2.getEndTime()));
+        Collections.sort(events, new EndTicksComparator());
         Iterator<RecordedEvent> it = events.iterator();
         for (XMLEvent xmlEvent : handler.events) {
             RecordedEvent re = it.next();

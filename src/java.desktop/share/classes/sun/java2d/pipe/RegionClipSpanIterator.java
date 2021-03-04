@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,15 +377,4 @@ public class RegionClipSpanIterator implements SpanIterator {
     public long getNativeIterator() {
         return 0;
     }
-
-    /*
-     * Cleans out all internal data structures.
-     */
-    //public native void dispose();
-
-    @SuppressWarnings("deprecation")
-    protected void finalize() {
-        //dispose();
-    }
-
 }

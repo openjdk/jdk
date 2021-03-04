@@ -95,7 +95,7 @@ import jdk.internal.access.JavaSecurityAccess;
  * @since       1.1
  */
 public class EventQueue {
-    private static final AtomicInteger threadInitNumber = new AtomicInteger(0);
+    private static final AtomicInteger threadInitNumber = new AtomicInteger();
 
     private static final int LOW_PRIORITY = 0;
     private static final int NORM_PRIORITY = 1;
@@ -1105,6 +1105,7 @@ public class EventQueue {
         }
     }
 
+    @SuppressWarnings({"deprecation", "removal"})
     final void initDispatchThread() {
         pushPopLock.lock();
         try {

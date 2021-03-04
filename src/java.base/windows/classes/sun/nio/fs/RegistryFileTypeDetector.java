@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,15 @@ public class RegistryFileTypeDetector
 
         // query HKEY_CLASSES_ROOT\<ext>
         String key = filename.substring(dot);
-        NativeBuffer keyBuffer = WindowsNativeDispatcher.asNativeBuffer(key);
-        NativeBuffer nameBuffer = WindowsNativeDispatcher.asNativeBuffer("Content Type");
+        NativeBuffer keyBuffer = null;
+        NativeBuffer nameBuffer = null;
         try {
+            keyBuffer = WindowsNativeDispatcher.asNativeBuffer(key);
+            nameBuffer = WindowsNativeDispatcher.asNativeBuffer("Content Type");
             return queryStringValue(keyBuffer.address(), nameBuffer.address());
+        } catch (WindowsException we) {
+            we.rethrowAsIOException(file.toString());
+            return null; // keep compiler happy
         } finally {
             nameBuffer.release();
             keyBuffer.release();

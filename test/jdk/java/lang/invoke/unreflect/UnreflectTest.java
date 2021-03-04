@@ -21,10 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8238358 8247444
- * @run testng/othervm --enable-preview UnreflectTest
+ * @run testng/othervm UnreflectTest
  * @summary Test Lookup::unreflectSetter and Lookup::unreflectVarHandle on
  *          trusted final fields (declared in hidden classes and records)
  */
@@ -99,7 +99,6 @@ public class UnreflectTest {
      * Test Lookup::unreflectSetter and Lookup::unreflectVarHandle that
      * cannot write the value of a non-static final field in a record class
      */
-    @SuppressWarnings("preview")
     public void testFieldsInRecordClass() throws Throwable {
         assertTrue(TestRecord.class.isRecord());
         Object o = new TestRecord(1);

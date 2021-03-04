@@ -235,9 +235,9 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
 
     protected void joinGroup(SocketAddress mcastaddr, NetworkInterface netIf)
         throws IOException {
-        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress addr))
             throw new IllegalArgumentException("Unsupported address type");
-        join(((InetSocketAddress)mcastaddr).getAddress(), netIf);
+        join(addr.getAddress(), netIf);
     }
 
     protected abstract void join(InetAddress inetaddr, NetworkInterface netIf)
@@ -253,9 +253,9 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected void leaveGroup(SocketAddress mcastaddr, NetworkInterface netIf)
         throws IOException {
-        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress addr))
             throw new IllegalArgumentException("Unsupported address type");
-        leave(((InetSocketAddress)mcastaddr).getAddress(), netIf);
+        leave(addr.getAddress(), netIf);
     }
 
     protected abstract void leave(InetAddress inetaddr, NetworkInterface netIf)
@@ -292,7 +292,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
              * PlainSocketImpl.setOption().
              */
          case SO_TIMEOUT:
-             if (o == null || !(o instanceof Integer)) {
+             if (!(o instanceof Integer)) {
                  throw new SocketException("bad argument for SO_TIMEOUT");
              }
              int tmp = ((Integer) o).intValue();
@@ -301,18 +301,18 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
              timeout = tmp;
              return;
          case IP_TOS:
-             if (o == null || !(o instanceof Integer)) {
+             if (!(o instanceof Integer)) {
                  throw new SocketException("bad argument for IP_TOS");
              }
              trafficClass = ((Integer)o).intValue();
              break;
          case SO_REUSEADDR:
-             if (o == null || !(o instanceof Boolean)) {
+             if (!(o instanceof Boolean)) {
                  throw new SocketException("bad argument for SO_REUSEADDR");
              }
              break;
          case SO_BROADCAST:
-             if (o == null || !(o instanceof Boolean)) {
+             if (!(o instanceof Boolean)) {
                  throw new SocketException("bad argument for SO_BROADCAST");
              }
              break;
@@ -320,26 +320,26 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
              throw new SocketException("Cannot re-bind Socket");
          case SO_RCVBUF:
          case SO_SNDBUF:
-             if (o == null || !(o instanceof Integer) ||
+             if (!(o instanceof Integer) ||
                  ((Integer)o).intValue() < 0) {
                  throw new SocketException("bad argument for SO_SNDBUF or " +
                                            "SO_RCVBUF");
              }
              break;
          case IP_MULTICAST_IF:
-             if (o == null || !(o instanceof InetAddress))
+             if (!(o instanceof InetAddress))
                  throw new SocketException("bad argument for IP_MULTICAST_IF");
              break;
          case IP_MULTICAST_IF2:
-             if (o == null || !(o instanceof NetworkInterface))
+             if (!(o instanceof NetworkInterface))
                  throw new SocketException("bad argument for IP_MULTICAST_IF2");
              break;
          case IP_MULTICAST_LOOP:
-             if (o == null || !(o instanceof Boolean))
+             if (!(o instanceof Boolean))
                  throw new SocketException("bad argument for IP_MULTICAST_LOOP");
              break;
          case SO_REUSEPORT:
-             if (o == null || !(o instanceof Boolean)) {
+             if (!(o instanceof Boolean)) {
                  throw new SocketException("bad argument for SO_REUSEPORT");
              }
              if (!supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT)) {

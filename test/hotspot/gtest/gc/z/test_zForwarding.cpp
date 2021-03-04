@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
+#include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "unittest.hpp"
@@ -66,7 +67,9 @@ public:
     for (size_t i = 0; i < entries_to_check; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
-      EXPECT_FALSE(forwarding->find(from_index).populated()) << CAPTURE2(from_index, size);
+      ZForwardingCursor cursor;
+      ZForwardingEntry entry = forwarding->find(from_index, &cursor);
+      EXPECT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
     }
   }
 
@@ -89,7 +92,8 @@ public:
     for (size_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
-      ZForwardingEntry entry = forwarding->find(from_index);
+      ZForwardingCursor cursor;
+      ZForwardingEntry entry = forwarding->find(from_index, &cursor);
       ASSERT_TRUE(entry.populated()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
@@ -131,7 +135,8 @@ public:
     for (size_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::odd(i);
 
-      ZForwardingEntry entry = forwarding->find(from_index);
+      ZForwardingCursor cursor;
+      ZForwardingEntry entry = forwarding->find(from_index, &cursor);
 
       ASSERT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
     }
@@ -157,14 +162,16 @@ public:
     const size_t live_bytes = live_objects * object_size;
     page.inc_live(live_objects, live_bytes);
 
+    // Setup allocator
+    ZForwardingAllocator allocator;
+    const uint32_t nentries = ZForwarding::nentries(&page);
+    allocator.reset((sizeof(ZForwarding)) + (nentries * sizeof(ZForwardingEntry)));
+
     // Setup forwarding
-    ZForwarding* const forwarding = ZForwarding::create(&page);
+    ZForwarding* const forwarding = ZForwarding::alloc(&allocator, &page);
 
     // Actual test function
     (*function)(forwarding);
-
-    // Teardown forwarding
-    ZForwarding::destroy(forwarding);
   }
 
   // Run the given function with a few different input values.

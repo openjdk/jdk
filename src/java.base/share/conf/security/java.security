@@ -441,21 +441,22 @@ networkaddress.cache.negative.ttl=10
 # Policy for failed Kerberos KDC lookups:
 #
 # When a KDC is unavailable (network error, service failure, etc), it is
-# put inside a blacklist and accessed less often for future requests. The
+# put inside a secondary list and accessed less often for future requests. The
 # value (case-insensitive) for this policy can be:
 #
 # tryLast
-#    KDCs in the blacklist are always tried after those not on the list.
+#    KDCs in the secondary list are always tried after those not on the list.
 #
 # tryLess[:max_retries,timeout]
-#    KDCs in the blacklist are still tried by their order in the configuration,
-#    but with smaller max_retries and timeout values. max_retries and timeout
-#    are optional numerical parameters (default 1 and 5000, which means once
-#    and 5 seconds). Please notes that if any of the values defined here is
-#    more than what is defined in krb5.conf, it will be ignored.
+#    KDCs in the secondary list are still tried by their order in the
+#    configuration, but with smaller max_retries and timeout values.
+#    max_retries and timeout are optional numerical parameters (default 1 and
+#    5000, which means once and 5 seconds). Please note that if any of the
+#    values defined here are more than what is defined in krb5.conf, it will be
+#    ignored.
 #
-# Whenever a KDC is detected as available, it is removed from the blacklist.
-# The blacklist is reset when krb5.conf is reloaded. You can add
+# Whenever a KDC is detected as available, it is removed from the secondary
+# list. The secondary list is reset when krb5.conf is reloaded. You can add
 # refreshKrb5Config=true to a JAAS configuration file so that krb5.conf is
 # reloaded whenever a JAAS authentication is attempted.
 #
@@ -731,8 +732,8 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
 #       rsa_pkcs1_sha1, secp224r1
-jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, \
-    EC keySize < 224, 3DES_EDE_CBC, anon, NULL
+jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
+    DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
@@ -924,10 +925,11 @@ jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37
 crypto.policy=crypto.policydir-tbd
 
 #
-# The policy for the XML Signature secure validation mode. The mode is
-# enabled by setting the property "org.jcp.xml.dsig.secureValidation" to
-# true with the javax.xml.crypto.XMLCryptoContext.setProperty() method,
-# or by running the code with a SecurityManager.
+# The policy for the XML Signature secure validation mode. Validation of
+# XML Signatures that violate any of these constraints will fail. The
+# mode is enforced by default. The mode can be disabled by setting the
+# property "org.jcp.xml.dsig.secureValidation" to Boolean.FALSE with the
+# javax.xml.crypto.XMLCryptoContext.setProperty() method.
 #
 #   Policy:
 #       Constraint {"," Constraint }
@@ -954,8 +956,8 @@ crypto.policy=crypto.policydir-tbd
 # MaxReferencesConstraint or KeySizeConstraint (for the same key type) is
 # specified more than once, only the last entry is enforced.
 #
-# Note: This property is currently used by the JDK Reference implementation. It
-# is not guaranteed to be examined and used by other implementations.
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
 #
 jdk.xml.dsig.secureValidationPolicy=\
     disallowAlg http://www.w3.org/TR/1999/REC-xslt-19991116,\
@@ -1144,33 +1146,33 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # The algorithm used to encrypt a certificate. This can be any non-Hmac PBE
 # algorithm defined in the Cipher section of the Java Security Standard
 # Algorithm Names Specification. When set to "NONE", the certificate
-# is not encrypted. The default value is "PBEWithSHA1AndRC2_40".
-#keystore.pkcs12.certProtectionAlgorithm = PBEWithSHA1AndRC2_40
+# is not encrypted. The default value is "PBEWithHmacSHA256AndAES_256".
+#keystore.pkcs12.certProtectionAlgorithm = PBEWithHmacSHA256AndAES_256
 
 # The iteration count used by the PBE algorithm when encrypting a certificate.
-# This value must be a positive integer. The default value is 50000.
-#keystore.pkcs12.certPbeIterationCount = 50000
+# This value must be a positive integer. The default value is 10000.
+#keystore.pkcs12.certPbeIterationCount = 10000
 
 # The algorithm used to encrypt a private key or secret key. This can be
 # any non-Hmac PBE algorithm defined in the Cipher section of the Java
 # Security Standard Algorithm Names Specification. The value must not be "NONE".
-# The default value is "PBEWithSHA1AndDESede".
-#keystore.pkcs12.keyProtectionAlgorithm = PBEWithSHA1AndDESede
+# The default value is "PBEWithHmacSHA256AndAES_256".
+#keystore.pkcs12.keyProtectionAlgorithm = PBEWithHmacSHA256AndAES_256
 
 # The iteration count used by the PBE algorithm when encrypting a private key
 # or a secret key. This value must be a positive integer. The default value
-# is 50000.
-#keystore.pkcs12.keyPbeIterationCount = 50000
+# is 10000.
+#keystore.pkcs12.keyPbeIterationCount = 10000
 
 # The algorithm used to calculate the optional MacData at the end of a PKCS12
 # file. This can be any HmacPBE algorithm defined in the Mac section of the
 # Java Security Standard Algorithm Names Specification. When set to "NONE",
-# no Mac is generated. The default value is "HmacPBESHA1".
-#keystore.pkcs12.macAlgorithm = HmacPBESHA1
+# no Mac is generated. The default value is "HmacPBESHA256".
+#keystore.pkcs12.macAlgorithm = HmacPBESHA256
 
 # The iteration count used by the MacData algorithm. This value must be a
-# positive integer. The default value is 100000.
-#keystore.pkcs12.macIterationCount = 100000
+# positive integer. The default value is 10000.
+#keystore.pkcs12.macIterationCount = 10000
 
 #
 # Enhanced exception message information
@@ -1309,3 +1311,13 @@ jdk.io.permissionsUseCanonicalPath=false
 # System value prevails. The default value of the property is "false".
 #
 #jdk.security.allowNonCaAnchor=true
+
+#
+# The default Character set name (java.nio.charset.Charset.forName())
+# for converting TLS ALPN values between byte arrays and Strings.
+# Prior versions of the JDK may use UTF-8 as the default charset. If
+# you experience interoperability issues, setting this property to UTF-8
+# may help.
+#
+# jdk.tls.alpnCharset=UTF-8
+jdk.tls.alpnCharset=ISO_8859_1

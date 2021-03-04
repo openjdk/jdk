@@ -28,41 +28,22 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 
-class ShenandoahRootVerifier : public StackObj {
-public:
-  enum RootTypes {
-    None                = 0,
-    SerialRoots         = 1 << 0,
-    ThreadRoots         = 1 << 1,
-    CodeRoots           = 1 << 2,
-    CLDGRoots           = 1 << 3,
-    SerialWeakRoots     = 1 << 4,
-    ConcurrentWeakRoots = 1 << 5,
-    WeakRoots           = (SerialWeakRoots | ConcurrentWeakRoots),
-    StringDedupRoots    = 1 << 6,
-    JNIHandleRoots      = 1 << 7,
-    AllRoots            = (SerialRoots | ThreadRoots | CodeRoots | CLDGRoots | WeakRoots | StringDedupRoots | JNIHandleRoots)
-  };
-
+class ShenandoahGCStateResetter : public StackObj {
 private:
-  RootTypes _types;
+  ShenandoahHeap* const _heap;
+  const char _gc_state;
+  const bool _concurrent_weak_root_in_progress;
 
 public:
-  ShenandoahRootVerifier(RootTypes types = AllRoots);
+  ShenandoahGCStateResetter();
+  ~ShenandoahGCStateResetter();
+};
 
-  void excludes(RootTypes types);
-  void oops_do(OopClosure* cl);
-
+class ShenandoahRootVerifier : public AllStatic {
+public:
   // Used to seed ShenandoahVerifier, do not honor root type filter
-  void roots_do(OopClosure* cl);
-  void strong_roots_do(OopClosure* cl);
-
-  static RootTypes combine(RootTypes t1, RootTypes t2);
-private:
-  bool verify(RootTypes type) const;
-
-  void serial_weak_roots_do(OopClosure* cl);
-  void concurrent_weak_roots_do(OopClosure* cl);
+  static void roots_do(OopClosure* cl);
+  static void strong_roots_do(OopClosure* cl);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP

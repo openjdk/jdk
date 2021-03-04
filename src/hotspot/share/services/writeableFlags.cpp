@@ -97,7 +97,7 @@ static void print_flag_error_message_if_needed(JVMFlag::Error error, const JVMFl
 }
 
 // set a boolean global flag
-JVMFlag::Error WriteableFlags::set_bool_flag(const char* name, const char* arg, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_bool_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   if ((strcasecmp(arg, "true") == 0) || (*arg == '1' && *(arg + 1) == 0)) {
     return set_bool_flag(name, true, origin, err_msg);
   } else if ((strcasecmp(arg, "false") == 0) || (*arg == '0' && *(arg + 1) == 0)) {
@@ -107,7 +107,7 @@ JVMFlag::Error WriteableFlags::set_bool_flag(const char* name, const char* arg, 
   return JVMFlag::WRONG_FORMAT;
 }
 
-JVMFlag::Error WriteableFlags::set_bool_flag(const char* name, bool value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_bool_flag(const char* name, bool value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::boolAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
@@ -115,7 +115,7 @@ JVMFlag::Error WriteableFlags::set_bool_flag(const char* name, bool value, JVMFl
 }
 
 // set a int global flag
-JVMFlag::Error WriteableFlags::set_int_flag(const char* name, const char* arg, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_int_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   int value;
 
   if (sscanf(arg, "%d", &value) == 1) {
@@ -125,7 +125,7 @@ JVMFlag::Error WriteableFlags::set_int_flag(const char* name, const char* arg, J
   return JVMFlag::WRONG_FORMAT;
 }
 
-JVMFlag::Error WriteableFlags::set_int_flag(const char* name, int value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_int_flag(const char* name, int value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::intAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
@@ -133,7 +133,7 @@ JVMFlag::Error WriteableFlags::set_int_flag(const char* name, int value, JVMFlag
 }
 
 // set a uint global flag
-JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, const char* arg, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   uint value;
 
   if (sscanf(arg, "%u", &value) == 1) {
@@ -143,7 +143,7 @@ JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, const char* arg, 
   return JVMFlag::WRONG_FORMAT;
 }
 
-JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, uint value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, uint value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::uintAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
@@ -151,7 +151,7 @@ JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, uint value, JVMFl
 }
 
 // set a intx global flag
-JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, const char* arg, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   intx value;
 
   if (sscanf(arg, INTX_FORMAT, &value) == 1) {
@@ -161,7 +161,7 @@ JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, const char* arg, 
   return JVMFlag::WRONG_FORMAT;
 }
 
-JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, intx value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, intx value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::intxAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
@@ -169,7 +169,7 @@ JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, intx value, JVMFl
 }
 
 // set a uintx global flag
-JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, const char* arg, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   uintx value;
 
   if (sscanf(arg, UINTX_FORMAT, &value) == 1) {
@@ -179,7 +179,7 @@ JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, const char* arg,
   return JVMFlag::WRONG_FORMAT;
 }
 
-JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, uintx value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, uintx value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::uintxAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
@@ -187,7 +187,7 @@ JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, uintx value, JVM
 }
 
 // set a uint64_t global flag
-JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, const char* arg, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   uint64_t value;
 
   if (sscanf(arg, UINT64_FORMAT, &value) == 1) {
@@ -197,7 +197,7 @@ JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, const char* a
   return JVMFlag::WRONG_FORMAT;
 }
 
-JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, uint64_t value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, uint64_t value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::uint64_tAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
@@ -205,7 +205,7 @@ JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, uint64_t valu
 }
 
 // set a size_t global flag
-JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, const char* arg, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   size_t value;
 
   if (sscanf(arg, SIZE_FORMAT, &value) == 1) {
@@ -215,7 +215,7 @@ JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, const char* arg
   return JVMFlag::WRONG_FORMAT;
 }
 
-JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, size_t value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, size_t value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::size_tAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
@@ -223,7 +223,7 @@ JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, size_t value, J
 }
 
 // set a double global flag
-JVMFlag::Error WriteableFlags::set_double_flag(const char* name, const char* arg, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_double_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   double value;
 
   if (sscanf(arg, "%lf", &value) == 1) {
@@ -233,7 +233,7 @@ JVMFlag::Error WriteableFlags::set_double_flag(const char* name, const char* arg
   return JVMFlag::WRONG_FORMAT;
 }
 
-JVMFlag::Error WriteableFlags::set_double_flag(const char* name, double value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_double_flag(const char* name, double value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::doubleAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
@@ -241,7 +241,7 @@ JVMFlag::Error WriteableFlags::set_double_flag(const char* name, double value, J
 }
 
 // set a string global flag using value from AttachOperation
-JVMFlag::Error WriteableFlags::set_ccstr_flag(const char* name, const char* value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_ccstr_flag(const char* name, const char* value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::ccstrAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
@@ -253,7 +253,7 @@ JVMFlag::Error WriteableFlags::set_ccstr_flag(const char* name, const char* valu
  * - return status is one of the WriteableFlags::err enum values
  * - an eventual error message will be generated to the provided err_msg buffer
  */
-JVMFlag::Error WriteableFlags::set_flag(const char* flag_name, const char* flag_value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_flag(const char* flag_name, const char* flag_value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   return set_flag(flag_name, &flag_value, set_flag_from_char, origin, err_msg);
 }
 
@@ -262,12 +262,12 @@ JVMFlag::Error WriteableFlags::set_flag(const char* flag_name, const char* flag_
  * - return status is one of the WriteableFlags::err enum values
  * - an eventual error message will be generated to the provided err_msg buffer
  */
-JVMFlag::Error WriteableFlags::set_flag(const char* flag_name, jvalue flag_value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_flag(const char* flag_name, jvalue flag_value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   return set_flag(flag_name, &flag_value, set_flag_from_jvalue, origin, err_msg);
 }
 
 // a writeable flag setter accepting either 'jvalue' or 'char *' values
-JVMFlag::Error WriteableFlags::set_flag(const char* name, const void* value, JVMFlag::Error(*setter)(JVMFlag*,const void*,JVMFlag::Flags,FormatBuffer<80>&), JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_flag(const char* name, const void* value, JVMFlag::Error(*setter)(JVMFlag*,const void*,JVMFlagOrigin,FormatBuffer<80>&), JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   if (name == NULL) {
     err_msg.print("flag name is missing");
     return JVMFlag::MISSING_NAME;
@@ -293,7 +293,7 @@ JVMFlag::Error WriteableFlags::set_flag(const char* name, const void* value, JVM
 }
 
 // a writeable flag setter accepting 'char *' values
-JVMFlag::Error WriteableFlags::set_flag_from_char(JVMFlag* f, const void* value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
+JVMFlag::Error WriteableFlags::set_flag_from_char(JVMFlag* f, const void* value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   char* flag_value = *(char**)value;
   if (flag_value == NULL) {
     err_msg.print("flag value is missing");
@@ -324,7 +324,7 @@ JVMFlag::Error WriteableFlags::set_flag_from_char(JVMFlag* f, const void* value,
 }
 
 // a writeable flag setter accepting 'jvalue' values
-JVMFlag::Error WriteableFlags::set_flag_from_jvalue(JVMFlag* f, const void* value, JVMFlag::Flags origin,
+JVMFlag::Error WriteableFlags::set_flag_from_jvalue(JVMFlag* f, const void* value, JVMFlagOrigin origin,
                                                  FormatBuffer<80>& err_msg) {
   jvalue new_value = *(jvalue*)value;
   if (f->is_bool()) {

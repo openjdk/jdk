@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 package java.math;
 
 import static java.math.BigInteger.LONG_MASK;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -63,33 +64,38 @@ import java.util.Objects;
  * <p>When a {@code MathContext} object is supplied with a precision
  * setting of 0 (for example, {@link MathContext#UNLIMITED}),
  * arithmetic operations are exact, as are the arithmetic methods
- * which take no {@code MathContext} object.  (This is the only
- * behavior that was supported in releases prior to 5.)  As a
- * corollary of computing the exact result, the rounding mode setting
- * of a {@code MathContext} object with a precision setting of 0 is
- * not used and thus irrelevant.  In the case of divide, the exact
- * quotient could have an infinitely long decimal expansion; for
- * example, 1 divided by 3.  If the quotient has a nonterminating
- * decimal expansion and the operation is specified to return an exact
- * result, an {@code ArithmeticException} is thrown.  Otherwise, the
- * exact result of the division is returned, as done for other
- * operations.
+ * which take no {@code MathContext} object. As a corollary of
+ * computing the exact result, the rounding mode setting of a {@code
+ * MathContext} object with a precision setting of 0 is not used and
+ * thus irrelevant.  In the case of divide, the exact quotient could
+ * have an infinitely long decimal expansion; for example, 1 divided
+ * by 3.  If the quotient has a nonterminating decimal expansion and
+ * the operation is specified to return an exact result, an {@code
+ * ArithmeticException} is thrown.  Otherwise, the exact result of the
+ * division is returned, as done for other operations.
  *
- * <p>When the precision setting is not 0, the rules of
- * {@code BigDecimal} arithmetic are broadly compatible with selected
- * modes of operation of the arithmetic defined in ANSI X3.274-1996
- * and ANSI X3.274-1996/AM 1-2000 (section 7.4).  Unlike those
- * standards, {@code BigDecimal} includes many rounding modes, which
- * were mandatory for division in {@code BigDecimal} releases prior
- * to 5.  Any conflicts between these ANSI standards and the
- * {@code BigDecimal} specification are resolved in favor of
- * {@code BigDecimal}.
+ * <p>When the precision setting is not 0, the rules of {@code
+ * BigDecimal} arithmetic are broadly compatible with selected modes
+ * of operation of the arithmetic defined in ANSI X3.274-1996 and ANSI
+ * X3.274-1996/AM 1-2000 (section 7.4).  Unlike those standards,
+ * {@code BigDecimal} includes many rounding modes.  Any conflicts
+ * between these ANSI standards and the {@code BigDecimal}
+ * specification are resolved in favor of {@code BigDecimal}.
  *
  * <p>Since the same numerical value can have different
  * representations (with different scales), the rules of arithmetic
  * and rounding must specify both the numerical result and the scale
  * used in the result's representation.
  *
+ * The different representations of the same numerical value are
+ * called members of the same <i>cohort</i>. The {@linkplain
+ * compareTo(BigDecimal) natural order} of {@code BigDecimal}
+ * considers members of the same cohort to be equal to each other. In
+ * contrast, the {@link equals equals} method requires both the
+ * numerical value and representation to be the same for equality to
+ * hold. The results of methods like {@link scale} and {@link
+ * unscaledValue} will differ for numerically equal values with
+ * different representations.
  *
  * <p>In general the rounding modes and precision setting determine
  * how operations return results with a limited number of digits when
@@ -206,13 +212,13 @@ import java.util.Objects;
  * {@code NullPointerException} when passed a {@code null} object
  * reference for any input parameter.
  *
- * @apiNote Care should be exercised if {@code BigDecimal} objects
- * are used as keys in a {@link java.util.SortedMap SortedMap} or
- * elements in a {@link java.util.SortedSet SortedSet} since
- * {@code BigDecimal}'s <i>natural ordering</i> is <em>inconsistent
- * with equals</em>.  See {@link Comparable}, {@link
- * java.util.SortedMap} or {@link java.util.SortedSet} for more
- * information.
+ * @apiNote Care should be exercised if {@code BigDecimal} objects are
+ * used as keys in a {@link java.util.SortedMap SortedMap} or elements
+ * in a {@link java.util.SortedSet SortedSet} since {@code
+ * BigDecimal}'s <i>{@linkplain compareTo(BigDecimal) natural
+ * ordering}</i> is <em>inconsistent with equals</em>.  See {@link
+ * Comparable}, {@link java.util.SortedMap} or {@link
+ * java.util.SortedSet} for more information.
  *
  * @see     BigInteger
  * @see     MathContext
@@ -3040,16 +3046,21 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     // Comparison Operations
 
     /**
-     * Compares this {@code BigDecimal} with the specified
+     * Compares this {@code BigDecimal} numerically with the specified
      * {@code BigDecimal}.  Two {@code BigDecimal} objects that are
      * equal in value but have a different scale (like 2.0 and 2.00)
-     * are considered equal by this method.  This method is provided
-     * in preference to individual methods for each of the six boolean
-     * comparison operators ({@literal <}, ==,
-     * {@literal >}, {@literal >=}, !=, {@literal <=}).  The
-     * suggested idiom for performing these comparisons is:
-     * {@code (x.compareTo(y)} &lt;<i>op</i>&gt; {@code 0)}, where
+     * are considered equal by this method. Such values are in the
+     * same <i>cohort</i>.
+     *
+     * This method is provided in preference to individual methods for
+     * each of the six boolean comparison operators ({@literal <}, ==,
+     * {@literal >}, {@literal >=}, !=, {@literal <=}).  The suggested
+     * idiom for performing these comparisons is: {@code
+     * (x.compareTo(y)} &lt;<i>op</i>&gt; {@code 0)}, where
      * &lt;<i>op</i>&gt; is one of the six comparison operators.
+
+     * @apiNote
+     * Note: this class has a natural ordering that is inconsistent with equals.
      *
      * @param  val {@code BigDecimal} to which this {@code BigDecimal} is
      *         to be compared.
@@ -3125,12 +3136,23 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * Compares this {@code BigDecimal} with the specified
-     * {@code Object} for equality.  Unlike {@link
-     * #compareTo(BigDecimal) compareTo}, this method considers two
-     * {@code BigDecimal} objects equal only if they are equal in
-     * value and scale (thus 2.0 is not equal to 2.00 when compared by
-     * this method).
+     * Compares this {@code BigDecimal} with the specified {@code
+     * Object} for equality.  Unlike {@link #compareTo(BigDecimal)
+     * compareTo}, this method considers two {@code BigDecimal}
+     * objects equal only if they are equal in value and
+     * scale. Therefore 2.0 is not equal to 2.00 when compared by this
+     * method since the former has [{@code BigInteger}, {@code scale}]
+     * components equal to [20, 1] while the latter has components
+     * equal to [200, 2].
+     *
+     * @apiNote
+     * One example that shows how 2.0 and 2.00 are <em>not</em>
+     * substitutable for each other under some arithmetic operations
+     * are the two expressions:<br>
+     * {@code new BigDecimal("2.0" ).divide(BigDecimal.valueOf(3),
+     * HALF_UP)} which evaluates to 0.7 and <br>
+     * {@code new BigDecimal("2.00").divide(BigDecimal.valueOf(3),
+     * HALF_UP)} which evaluates to 0.67.
      *
      * @param  x {@code Object} to which this {@code BigDecimal} is
      *         to be compared.
@@ -3193,8 +3215,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     // Hash Function
 
     /**
-     * Returns the hash code for this {@code BigDecimal}.  Note that
-     * two {@code BigDecimal} objects that are numerically equal but
+     * Returns the hash code for this {@code BigDecimal}.
+     * The hash code is computed as a function of the {@linkplain
+     * unscaledValue() unscaled value} and the {@linkplain scale()
+     * scale} of this {@code BigDecimal}.
+     *
+     * @apiNote
+     * Two {@code BigDecimal} objects that are numerically equal but
      * differ in scale (like 2.0 and 2.00) will generally <em>not</em>
      * have the same hash code.
      *
@@ -4214,7 +4241,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
+        throws IOException, ClassNotFoundException {
         // Read in all fields
         s.defaultReadObject();
         // validate possibly bad fields
@@ -4234,7 +4261,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     */
     @java.io.Serial
    private void writeObject(java.io.ObjectOutputStream s)
-       throws java.io.IOException {
+       throws IOException {
        // Must inflate to maintain compatible serial form.
        if (this.intVal == null)
            UnsafeHolder.setIntValVolatile(this, BigInteger.valueOf(this.intCompact));

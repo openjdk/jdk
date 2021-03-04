@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -785,7 +785,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             if (i >= cnt) {    // Found one unique input
               assert(_lrg_map.find_id(n) == _lrg_map.find_id(u), "should be the same lrg");
               n->replace_by(u); // Then replace with unique input
-              n->disconnect_inputs(NULL, C);
+              n->disconnect_inputs(C);
               b->remove_node(insidx);
               insidx--;
               b->_ihrp_index--;

@@ -32,7 +32,7 @@ import java.util.List;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.incubator.jpackage.internal.AppImageFile;
+import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.Annotations.Test;
@@ -51,7 +51,7 @@ import org.w3c.dom.Document;
  * @summary jpackage for app's module linked in external runtime
  * @library ../../../../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ModulePathTest3.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.ModulePathTest3
@@ -62,7 +62,7 @@ import org.w3c.dom.Document;
  * @summary jpackage for app's module linked in external runtime
  * @library ../../../../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ModulePathTest3.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.ModulePathTest3

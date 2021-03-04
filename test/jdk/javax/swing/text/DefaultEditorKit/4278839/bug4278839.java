@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,12 +62,6 @@ public class bug4278839 extends JFrame {
             robo.waitForIdle();
 
             area.setCaretPosition(0);
-
-            if ("Aqua".equals(UIManager.getLookAndFeel().getID())) {
-                Util.hitKeys(robo, KeyEvent.VK_HOME);
-            } else {
-                Util.hitKeys(robo, KeyEvent.VK_CONTROL, KeyEvent.VK_HOME);
-            }
             robo.waitForIdle();
 
             passed &= moveCaret(true) == 1;
@@ -152,6 +146,7 @@ public class bug4278839 extends JFrame {
         frame = new JFrame();
         frame.setTitle("Bug# 4278839");
         frame.setSize(200, 200);
+        frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         area = new JTextArea("\naaa bbb\nccc ddd\n");
         frame.getContentPane().add(new JScrollPane(area));

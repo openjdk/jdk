@@ -91,7 +91,9 @@ public:
   void print(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
     va_list args;
     va_start(args, fmt);
-    _tagset->vwrite(_level, fmt, args);
+    if (is_enabled()) {
+      _tagset->vwrite(_level, fmt, args);
+    }
     va_end(args);
   }
 

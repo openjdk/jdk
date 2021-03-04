@@ -30,18 +30,6 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 
-inline HeapWord* PLAB::allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes) {
-  HeapWord* res = CollectedHeap::align_allocation_or_fail(_top, _end, alignment_in_bytes);
-  if (res == NULL) {
-    return NULL;
-  }
-
-  // Set _top so that allocate(), which expects _top to be correctly set,
-  // can be used below.
-  _top = res;
-  return allocate(word_sz);
-}
-
 void PLABStats::add_allocated(size_t v) {
   Atomic::add(&_allocated, v);
 }

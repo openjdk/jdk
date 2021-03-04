@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.Set;
 /**
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
- *    7044019 8008577 8176853
+ *    7044019 8008577 8176853 8255086
  * @summary test API changes to Locale
  * @library /java/text/testlib
  * @modules jdk.localedata
@@ -504,7 +504,7 @@ public class LocaleEnhanceTest extends IntlTest {
 
     public void testForLanguageTag() {
         // forLanguageTag implements the 'Language-Tag' production of
-        // BCP47, so it handles private use and grandfathered tags,
+        // BCP47, so it handles private use and legacy language tags,
         // unlike locale builder.  Tags listed below (except for the
         // sample private use tags) come from 4646bis Feb 29, 2009.
 
@@ -514,7 +514,7 @@ public class LocaleEnhanceTest extends IntlTest {
             { "x-a-b-c", "x-a-b-c" },
             { "x-a-12345678", "x-a-12345678" },
 
-            // grandfathered tags with preferred mappings
+            // legacy language tags with preferred mappings
             { "i-ami", "ami" },
             { "i-bnn", "bnn" },
             { "i-hak", "hak" },
@@ -536,7 +536,7 @@ public class LocaleEnhanceTest extends IntlTest {
             { "zh-min-nan", "nan" },
             { "zh-xiang", "hsn" },
 
-            // grandfathered irregular tags, no preferred mappings, drop illegal fields
+            // irregular legacy language tags, no preferred mappings, drop illegal fields
             // from end.  If no subtag is mappable, fallback to 'und'
             { "i-default", "en-x-i-default" },
             { "i-enochian", "x-i-enochian" },
@@ -548,7 +548,7 @@ public class LocaleEnhanceTest extends IntlTest {
         for (int i = 0; i < tests.length; ++i) {
             String[] test = tests[i];
             Locale locale = Locale.forLanguageTag(test[0]);
-            assertEquals("grandfathered case " + i, test[1], locale.toLanguageTag());
+            assertEquals("legacy language tag case " + i, test[1], locale.toLanguageTag());
         }
 
         // forLanguageTag ignores everything past the first place it encounters
@@ -615,7 +615,7 @@ public class LocaleEnhanceTest extends IntlTest {
 
         Locale.setDefault(Locale.US);
         assertEquals("latn US", "Latin", latnLocale.getDisplayScript());
-        assertEquals("hans US", "Simplified Han", hansLocale.getDisplayScript());
+        assertEquals("hans US", "Simplified", hansLocale.getDisplayScript());
 
         Locale.setDefault(Locale.GERMANY);
         assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript());
@@ -629,7 +629,7 @@ public class LocaleEnhanceTest extends IntlTest {
         Locale hansLocale = Locale.forLanguageTag("und-hans");
 
         assertEquals("latn US", "Latin", latnLocale.getDisplayScript(Locale.US));
-        assertEquals("hans US", "Simplified Han", hansLocale.getDisplayScript(Locale.US));
+        assertEquals("hans US", "Simplified", hansLocale.getDisplayScript(Locale.US));
 
         assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript(Locale.GERMANY));
         assertEquals("hans DE", "Vereinfachte Chinesische Schrift", hansLocale.getDisplayScript(Locale.GERMANY));
@@ -656,10 +656,10 @@ public class LocaleEnhanceTest extends IntlTest {
                 "United States",
                 "Norwegian (Norway,Nynorsk)",
                 "Nynorsk",
-                "Chinese (Simplified Han)",
-                "Chinese (Traditional Han)",
-                "Chinese (Simplified Han,China)",
-                "Simplified Han",
+                "Chinese (Simplified)",
+                "Chinese (Traditional)",
+                "Chinese (Simplified,China)",
+                "Simplified",
         };
 
         final String[] displayNameSimplifiedChinese = {

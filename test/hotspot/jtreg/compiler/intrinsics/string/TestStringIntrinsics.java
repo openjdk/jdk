@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,15 @@
  * @test
  * @bug 8054307
  * @summary Tests correctness of string related intrinsics and C2 optimizations.
+ * @library /test/lib
  *
  * @run main/timeout=240 compiler.intrinsics.string.TestStringIntrinsics
  */
 
 package compiler.intrinsics.string;
+
+import jdk.test.lib.format.Format;
+import jdk.test.lib.format.ArrayCodec;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -77,8 +81,8 @@ public class TestStringIntrinsics {
         for (Method m : TestStringIntrinsics.class.getMethods()) {
             if (m.isAnnotationPresent(Test.class)) {
                 System.out.print("Checking " + m.getName() + "... ");
-                Operation op = m.getAnnotation(Test.class).op();
                 Test antn = m.getAnnotation(Test.class);
+                Operation op = antn.op();
                 if (isStringConcatTest(op)) {
                     checkStringConcat(op, m, antn);
                 } else {
@@ -121,13 +125,13 @@ public class TestStringIntrinsics {
 
             switch (op) {
             case ARR_EQUALS_B:
-                invokeAndCheck(m, (incL == 0), latin1.getBytes("ISO-8859-1"), latin1Copy.getBytes("ISO-8859-1"));
-                invokeAndCheck(m, true, new byte[] {1, 2, 3}, new byte[] {1, 2, 3});
-                invokeAndCheck(m, true, new byte[] {1}, new byte[] {1});
-                invokeAndCheck(m, true, new byte[] {}, new byte[] {});
+                invokeAndCompareArrays(m, (incL == 0), latin1.getBytes("ISO-8859-1"), latin1Copy.getBytes("ISO-8859-1"));
+                invokeAndCompareArrays(m, true, new byte[] {1, 2, 3}, new byte[] {1, 2, 3});
+                invokeAndCompareArrays(m, true, new byte[] {1}, new byte[] {1});
+                invokeAndCompareArrays(m, true, new byte[] {}, new byte[] {});
                 break;
             case ARR_EQUALS_C:
-                invokeAndCheck(m, (incU == 0), utf16.toCharArray(), arrU);
+                invokeAndCompareArrays(m, (incU == 0), utf16.toCharArray(), arrU);
                 break;
             case EQUALS:
                 invokeAndCheck(m, (incL == 0), latin1, latin1Copy);
@@ -241,17 +245,48 @@ public class TestStringIntrinsics {
     }
 
     /**
+     * Invokes method 'm' by passing arguments the two 'args' (which are supposed to be arrays)
+     * checks if the returned value. In case of error and arrays being not equal, prints their difference.
+     */
+    private void invokeAndCompareArrays(Method m, boolean expectedResult, Object arg0, Object arg1) throws Exception {
+        boolean result = (Boolean)m.invoke(null, arg0, arg1);
+        if (expectedResult == result)
+            return;
+
+        String cause = String.format("Result: (%b) of '%s' is not equal to expected (%b)",
+                        result, m.getName(), expectedResult);
+
+        if (expectedResult == true) {
+            System.err.println(cause);
+            System.err.println(Format.arrayDiff(arg0, arg1));
+        } else {
+            System.err.println(cause);
+            System.err.printf("First array argument: %n    %s%n", ArrayCodec.format(arg0));
+        }
+
+        throw new RuntimeException(cause);
+    }
+
+    /**
      * Invokes method 'm' by passing arguments 'args' and checks if the
      * returned value equals 'expectedResult'.
      */
     private void invokeAndCheck(Method m, Object expectedResult, Object... args) throws Exception {
-        Object result = m.invoke(null, args);
-        if (!result.equals(expectedResult)) {
-//            System.out.println("Expected:");
-//            System.out.println(expectedResult);
-//            System.out.println("Returned:");
-//            System.out.println(result);
-            throw new RuntimeException("Result of '" + m.getName() + "' not equal to expected value.");
+        Object actualResult = m.invoke(null, args);
+        if (!actualResult.equals(expectedResult)) {
+            var nl = System.lineSeparator();
+            StringBuilder msgBuilder = new StringBuilder();
+            msgBuilder.append("Actual result of '" + m.getName() + "' is not equal to expected value." + nl);
+            msgBuilder.append("Expected: " + Format.asLiteral(expectedResult) + nl);
+            msgBuilder.append("Actual: " + Format.asLiteral(actualResult));
+
+            for (int i = 0; i < args.length; i++) {
+                msgBuilder.append(nl + "    Arg" + i + ": " + Format.asLiteral(args[i]));
+            }
+
+            final String message = msgBuilder.toString();
+            System.err.println(message);
+            throw new RuntimeException(message);
         }
     }
 

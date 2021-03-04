@@ -32,7 +32,7 @@ import jdk.jfr.internal.handlers.EventHandler;
 
 public final class ThrowableTracer {
 
-    private static final AtomicLong numThrowables = new AtomicLong(0);
+    private static final AtomicLong numThrowables = new AtomicLong();
 
     public static void traceError(Error e, String message) {
         if (e instanceof OutOfMemoryError) {

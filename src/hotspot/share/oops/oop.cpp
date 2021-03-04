@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,14 @@ bool oopDesc::has_klass_gap() {
   return UseCompressedClassPointers;
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+void oopDesc::set_narrow_klass(narrowKlass nk) {
+  assert(DumpSharedSpaces, "Used by CDS only. Do not abuse!");
+  assert(UseCompressedClassPointers, "must be");
+  _metadata._compressed_klass = nk;
+}
+#endif
+
 void* oopDesc::load_klass_raw(oop obj) {
   if (UseCompressedClassPointers) {
     narrowKlass narrow_klass = obj->_metadata._compressed_klass;
@@ -157,7 +165,7 @@ void* oopDesc::load_oop_raw(oop obj, int offset) {
   uintptr_t addr = (uintptr_t)(void*)obj + (uint)offset;
   if (UseCompressedOops) {
     narrowOop narrow_oop = *(narrowOop*)addr;
-    if (narrow_oop == 0) return NULL;
+    if (CompressedOops::is_null(narrow_oop)) return NULL;
     return (void*)CompressedOops::decode_raw(narrow_oop);
   } else {
     return *(void**)addr;
@@ -214,4 +222,7 @@ void oopDesc::verify_forwardee(oop forwardee) {
          "forwarding archive object");
 #endif
 }
+
+bool oopDesc::get_UseParallelGC() { return UseParallelGC; }
+bool oopDesc::get_UseG1GC()       { return UseG1GC;       }
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,16 @@ import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
 import javax.swing.SwingConstants;
 
 // NOTE: This class supersedes Win32ShellFolder, which was removed from
@@ -368,6 +376,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * is a not a normal directory, then returns the first non-removable
      * drive (normally "C:\").
      */
+    @Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return invoke(new Callable<File>() {
             public File call() {

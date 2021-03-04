@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1630,7 +1630,8 @@ public abstract class ColorModel implements Transparency{
      *     See the specification for {@link Object#finalize()} for further
      *     information about migration options.
      */
-    @Deprecated(since="9")
+    @Deprecated(since = "9", forRemoval = true)
+    @SuppressWarnings("removal")
     public void finalize() {
     }
 
@@ -1704,15 +1705,11 @@ public abstract class ColorModel implements Transparency{
     static Map<ICC_ColorSpace, short[]> lg16Toog16Map = null; // 16-bit linear to 16-bit "other" gray
 
     static boolean isLinearRGBspace(ColorSpace cs) {
-        // Note: CMM.LINEAR_RGBspace will be null if the linear
-        // RGB space has not been created yet.
-        return (cs == CMSManager.LINEAR_RGBspace);
+        return cs == ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB);
     }
 
     static boolean isLinearGRAYspace(ColorSpace cs) {
-        // Note: CMM.GRAYspace will be null if the linear
-        // gray space has not been created yet.
-        return (cs == CMSManager.GRAYspace);
+        return cs == ColorSpace.getInstance(ColorSpace.CS_GRAY);
     }
 
     static byte[] getLinearRGB8TosRGB8LUT() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,35 @@
 #define SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
 
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
-
-enum JVMFlagsEnum : int;
+#include "utilities/vmEnums.hpp"
+#include <type_traits>
 
 class outputStream;
 
+enum class JVMFlagOrigin : int {
+  // This is the value returned by JVMFlag::get_origin(). It records who
+  // has most recently changed the value of a JVMFlag. DEFAULT means that the
+  // flag was never changed, or was most recently changed by FLAG_SET_DEFAULT.
+  DEFAULT          = 0,
+  COMMAND_LINE     = 1,
+  ENVIRON_VAR      = 2,
+  CONFIG_FILE      = 3,
+  MANAGEMENT       = 4,
+  ERGONOMIC        = 5,
+  ATTACH_ON_DEMAND = 6,
+  INTERNAL         = 7,
+  JIMAGE_RESOURCE  = 8,
+};
+
+ENUMERATOR_RANGE(JVMFlagOrigin, JVMFlagOrigin::DEFAULT, JVMFlagOrigin::JIMAGE_RESOURCE)
+
 class JVMFlag {
   friend class VMStructs;
+
 public:
   enum Flags : int {
-    // latest value origin
-    DEFAULT          = 0,
-    COMMAND_LINE     = 1,
-    ENVIRON_VAR      = 2,
-    CONFIG_FILE      = 3,
-    MANAGEMENT       = 4,
-    ERGONOMIC        = 5,
-    ATTACH_ON_DEMAND = 6,
-    INTERNAL         = 7,
-    JIMAGE_RESOURCE  = 8,
-
-    LAST_VALUE_ORIGIN = JIMAGE_RESOURCE,
     VALUE_ORIGIN_BITS = 4,
     VALUE_ORIGIN_MASK = right_n_bits(VALUE_ORIGIN_BITS),
 
@@ -65,10 +72,15 @@ public:
     KIND_LP64_PRODUCT       = 1 << 14,
     KIND_JVMCI              = 1 << 15,
 
-    // set this bit if the flag was set on the command line
-    ORIG_COMMAND_LINE       = 1 << 17,
+    // Note the difference:
+    // f->get_origin() == COMMAND_LINE
+    //    f was mostly recently set by the command-line
+    // f->_flags & WAS_SET_ON_COMMAND_LINE
+    //    f was specified on the command-line (but may have since been updated by
+    //    someone else like FLAG_SET_ERGO)
+    WAS_SET_ON_COMMAND_LINE = 1 << 17,
 
-    KIND_MASK = ~(VALUE_ORIGIN_MASK | ORIG_COMMAND_LINE)
+    KIND_MASK = ~(VALUE_ORIGIN_MASK | WAS_SET_ON_COMMAND_LINE)
   };
 
   enum Error {
@@ -233,20 +245,20 @@ public:
     *static_cast<T*>(_addr) = value;
   }
 
-  Flags get_origin() const        {  return Flags(_flags & VALUE_ORIGIN_MASK);   }
-  void set_origin(Flags origin);
+  JVMFlagOrigin get_origin() const {  return JVMFlagOrigin(_flags & VALUE_ORIGIN_MASK);   }
+  void set_origin(JVMFlagOrigin origin);
 
-  bool is_default() const         { return (get_origin() == DEFAULT);            }
-  bool is_ergonomic() const       { return (get_origin() == ERGONOMIC);          }
-  bool is_command_line() const    { return (_flags & ORIG_COMMAND_LINE) != 0;    }
-  void set_command_line()         {  _flags = Flags(_flags | ORIG_COMMAND_LINE); }
-  bool is_jimage_resource() const { return (get_origin() == JIMAGE_RESOURCE);    }
-  bool is_product() const         { return (_flags & KIND_PRODUCT) != 0;         }
-  bool is_manageable() const      { return (_flags & KIND_MANAGEABLE) != 0;      }
-  bool is_diagnostic() const      { return (_flags & KIND_DIAGNOSTIC) != 0;      }
-  bool is_experimental() const    { return (_flags & KIND_EXPERIMENTAL) != 0;    }
-  bool is_notproduct() const      { return (_flags & KIND_NOT_PRODUCT) != 0;     }
-  bool is_develop() const         { return (_flags & KIND_DEVELOP) != 0;         }
+  bool is_default() const         { return (get_origin() == JVMFlagOrigin::DEFAULT);          }
+  bool is_ergonomic() const       { return (get_origin() == JVMFlagOrigin::ERGONOMIC);        }
+  bool is_command_line() const    { return (_flags & WAS_SET_ON_COMMAND_LINE) != 0;           }
+  void set_command_line()         { _flags = Flags(_flags | WAS_SET_ON_COMMAND_LINE);         }
+  bool is_jimage_resource() const { return (get_origin() == JVMFlagOrigin::JIMAGE_RESOURCE);  }
+  bool is_product() const         { return (_flags & KIND_PRODUCT) != 0;                      }
+  bool is_manageable() const      { return (_flags & KIND_MANAGEABLE) != 0;                   }
+  bool is_diagnostic() const      { return (_flags & KIND_DIAGNOSTIC) != 0;                   }
+  bool is_experimental() const    { return (_flags & KIND_EXPERIMENTAL) != 0;                 }
+  bool is_notproduct() const      { return (_flags & KIND_NOT_PRODUCT) != 0;                  }
+  bool is_develop() const         { return (_flags & KIND_DEVELOP) != 0;                      }
 
   bool is_constant_in_binary() const;
 
@@ -263,7 +275,6 @@ public:
   void set_product();
 
   JVMFlag::MsgType get_locked_message(char*, int) const;
-  JVMFlag::MsgType get_locked_message_ext(char*, int) const;
 
   static bool is_default(JVMFlagsEnum flag);
   static bool is_ergo(JVMFlagsEnum flag);
@@ -279,6 +290,26 @@ public:
   void print_as_flag(outputStream* st) const;
 
   static const char* flag_error_str(JVMFlag::Error error);
+
+  // type checking
+#define CHECK_COMPATIBLE(type) \
+  case TYPE_##type: \
+    assert(sizeof(T) == sizeof(type) && \
+           std::is_integral<T>::value == std::is_integral<type>::value && \
+           std::is_signed  <T>::value == std::is_signed  <type>::value, "must be"); \
+    break;
+
+  template <typename T>
+  static void assert_compatible_type(int type_enum) {
+#ifndef PRODUCT
+    switch (type_enum) {
+      JVM_FLAG_NON_STRING_TYPES_DO(CHECK_COMPATIBLE);
+      default: ShouldNotReachHere();
+    }
+#endif
+  }
+
+#undef CHECK_COMPATIBLE
 
 public:
   static void printSetFlags(outputStream* out);

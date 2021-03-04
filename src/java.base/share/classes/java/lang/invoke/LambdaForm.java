@@ -501,6 +501,9 @@ class LambdaForm {
 
     /** Customize LambdaForm for a particular MethodHandle */
     LambdaForm customize(MethodHandle mh) {
+        if (customized == mh) {
+            return this;
+        }
         LambdaForm customForm = new LambdaForm(arity, names, result, forceInline, mh, kind);
         if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If shared LambdaForm has been compiled, compile customized version as well.

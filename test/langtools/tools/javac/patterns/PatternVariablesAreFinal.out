@@ -1,4 +1,0 @@
-PatternVariablesAreFinal.java:11:13: compiler.err.pattern.binding.may.not.be.assigned: s
-- compiler.note.preview.filename: PatternVariablesAreFinal.java
-- compiler.note.preview.recompile
-1 error

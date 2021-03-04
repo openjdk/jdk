@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
@@ -97,9 +98,6 @@ class PSPushContentsClosure: public BasicOopIterateClosure {
 
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-
-  // Don't use the oop verification code in the oop_oop_iterate framework.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 //
@@ -196,13 +194,13 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
           // Do we allocate directly, or flush and refill?
           if (new_obj_size > (OldPLABSize / 2)) {
             // Allocate this object directly
-            new_obj = (oop)old_gen()->cas_allocate(new_obj_size);
+            new_obj = (oop)old_gen()->allocate(new_obj_size);
             promotion_trace_event(new_obj, o, new_obj_size, age, true, NULL);
           } else {
             // Flush and fill
             _old_lab.flush();
 
-            HeapWord* lab_base = old_gen()->cas_allocate(OldPLABSize);
+            HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
             if(lab_base != NULL) {
 #ifdef ASSERT
               // Delay the initialization of the promotion lab (plab).

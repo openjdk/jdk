@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -42,7 +43,8 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/arguments.hpp"
@@ -265,7 +267,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
 
 bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
   Symbol* name = klass->name();
-  Klass* refl_magic_klass = SystemDictionary::reflect_MagicAccessorImpl_klass();
+  Klass* refl_magic_klass = vmClasses::reflect_MagicAccessorImpl_klass();
 
   bool is_reflect = refl_magic_klass != NULL && klass->is_subtype_of(refl_magic_klass);
 
@@ -3147,7 +3149,7 @@ void ClassVerifier::verify_return_value(
   if (return_type == VerificationType::bogus_type()) {
     verify_error(ErrorContext::bad_type(bci,
         current_frame->stack_top_ctx(), TypeOrigin::signature(return_type)),
-        "Method expects a return value");
+        "Method does not expect a return value");
     return;
   }
   bool match = return_type.is_assignable_from(type, this, false, CHECK_VERIFY(this));

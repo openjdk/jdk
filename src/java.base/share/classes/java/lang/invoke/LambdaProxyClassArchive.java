@@ -29,28 +29,6 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.CDS;
 
 final class LambdaProxyClassArchive {
-    private static final boolean dumpArchive;
-    private static final boolean sharingEnabled;
-
-    static {
-        dumpArchive = CDS.isDynamicDumpingEnabled();
-        sharingEnabled = CDS.isSharingEnabled();
-    }
-
-    /**
-     * Check if CDS dynamic dump is enabled.
-     */
-    static boolean isDumpArchive() {
-        return dumpArchive;
-    }
-
-    /**
-     * Check if CDS sharing is enabled.
-     */
-    static boolean isSharingEnabled() {
-        return sharingEnabled;
-    }
-
     /**
      * Check if the class is loaded by a built-in class loader.
      */
@@ -72,8 +50,7 @@ final class LambdaProxyClassArchive {
                                                    MethodType invokedType,
                                                    MethodType samMethodType,
                                                    MemberName implMethod,
-                                                   MethodType instantiatedMethodType,
-                                                   boolean initialize);
+                                                   MethodType instantiatedMethodType);
 
     /**
      * Registers the lambdaProxyClass into CDS archive.
@@ -94,7 +71,7 @@ final class LambdaProxyClassArchive {
                             Class<?>[] markerInterfaces,
                             MethodType[] additionalBridges,
                             Class<?> lambdaProxyClass) {
-        if (!isDumpArchive())
+        if (!CDS.isDumpingArchive())
             throw new IllegalStateException("should only register lambda proxy class at dump time");
 
         if (loadedByBuiltinLoader(caller) &&
@@ -123,16 +100,15 @@ final class LambdaProxyClassArchive {
                          MethodType instantiatedMethodType,
                          boolean isSerializable,
                          Class<?>[] markerInterfaces,
-                         MethodType[] additionalBridges,
-                         boolean initialize) {
-        if (isDumpArchive())
+                         MethodType[] additionalBridges) {
+        if (CDS.isDumpingArchive())
             throw new IllegalStateException("cannot load class from CDS archive at dump time");
 
         if (!loadedByBuiltinLoader(caller) ||
-            !isSharingEnabled() || isSerializable || markerInterfaces.length > 0 || additionalBridges.length > 0)
+            !CDS.isSharingEnabled() || isSerializable || markerInterfaces.length > 0 || additionalBridges.length > 0)
             return null;
 
         return findFromArchive(caller, invokedName, invokedType, samMethodType,
-                               implMethod.internalMemberName(), instantiatedMethodType, initialize);
+                               implMethod.internalMemberName(), instantiatedMethodType);
     }
 }

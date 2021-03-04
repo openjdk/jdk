@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,13 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
-#include "memory/heapInspection.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -48,6 +47,7 @@
 class AbstractGangTask;
 class AdaptiveSizePolicy;
 class BarrierSet;
+class GCHeapLog;
 class GCHeapSummary;
 class GCTimer;
 class GCTracer;
@@ -61,31 +61,6 @@ class ThreadClosure;
 class VirtualSpaceSummary;
 class WorkGang;
 class nmethod;
-
-class GCMessage : public FormatBuffer<1024> {
- public:
-  bool is_before;
-
- public:
-  GCMessage() {}
-};
-
-class CollectedHeap;
-
-class GCHeapLog : public EventLogBase<GCMessage> {
- private:
-  void log_heap(CollectedHeap* heap, bool before);
-
- public:
-  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History", "gc") {}
-
-  void log_heap_before(CollectedHeap* heap) {
-    log_heap(heap, true);
-  }
-  void log_heap_after(CollectedHeap* heap) {
-    log_heap(heap, false);
-  }
-};
 
 class ParallelObjectIterator : public CHeapObj<mtGC> {
 public:
@@ -271,14 +246,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   virtual uint32_t hash_oop(oop obj) const;
 
-  void set_gc_cause(GCCause::Cause v) {
-     if (UsePerfData) {
-       _gc_lastcause = _gc_cause;
-       _perf_gc_lastcause->set_value(GCCause::to_string(_gc_lastcause));
-       _perf_gc_cause->set_value(GCCause::to_string(v));
-     }
-    _gc_cause = v;
-  }
+  void set_gc_cause(GCCause::Cause v);
   GCCause::Cause gc_cause() { return _gc_cause; }
 
   oop obj_allocate(Klass* klass, int size, TRAPS);
@@ -309,12 +277,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
   virtual size_t min_dummy_object_size() const;
   size_t tlab_alloc_reserve() const;
-
-  // Return the address "addr" aligned by "alignment_in_bytes" if such
-  // an address is below "end".  Return NULL otherwise.
-  inline static HeapWord* align_allocation_or_fail(HeapWord* addr,
-                                                   HeapWord* end,
-                                                   unsigned short alignment_in_bytes);
 
   // Some heaps may offer a contiguous region for shared non-blocking
   // allocation, via inlined code (by exporting the address of the top and
@@ -369,6 +331,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     guarantee(false, "thread-local allocation buffers not supported");
     return 0;
   }
+
+  // If a GC uses a stack watermark barrier, the stack processing is lazy, concurrent,
+  // incremental and cooperative. In order for that to work well, mechanisms that stop
+  // another thread might want to ensure its roots are in a sane state.
+  virtual bool uses_stack_watermark_barrier() const { return false; }
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the
@@ -511,11 +478,13 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual oop pin_object(JavaThread* thread, oop obj);
   virtual void unpin_object(JavaThread* thread, oop obj);
 
+  // Is the given object inside a CDS archive area?
+  virtual bool is_archived_object(oop object) const;
+
   // Deduplicate the string, iff the GC supports string deduplication.
   virtual void deduplicate_string(oop str);
 
   virtual bool is_oop(oop object) const;
-
   // Non product verification and debugging.
 #ifndef PRODUCT
   // Support for PromotionFailureALot.  Return true if it's time to cause a

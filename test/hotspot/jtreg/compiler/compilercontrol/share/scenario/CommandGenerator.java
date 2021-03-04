@@ -24,6 +24,7 @@
 package compiler.compilercontrol.share.scenario;
 
 import compiler.compilercontrol.share.method.MethodDescriptor;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 import java.util.List;
@@ -87,6 +88,15 @@ public class CommandGenerator {
         }
         return type.createCompileCommand(command, md, generateCompiler());
     }
+
+    public CompileCommand generateCompileCommand(Command command,
+            MethodDescriptor md, Scenario.Type type, String argument) {
+        if (type == null) {
+            type = Utils.getRandomElement(Scenario.Type.values());
+        }
+        return type.createCompileCommand(command, md, generateCompiler(), argument);
+    }
+
 
     /**
      * Generates type of compiler that should be used for the command, or null

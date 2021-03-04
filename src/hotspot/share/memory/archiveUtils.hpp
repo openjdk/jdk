@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,11 @@
 
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/virtualspace.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.hpp"
 
+class BootstrapInfo;
 class ReservedSpace;
 class VirtualSpace;
 
@@ -38,15 +40,18 @@ class VirtualSpace;
 // mark_pointer(/*ptr_loc=*/&k->_name). It's required that (_prt_base <= ptr_loc < _ptr_end). _ptr_base is
 // fixed, but _ptr_end can be expanded as more objects are dumped.
 class ArchivePtrMarker : AllStatic {
-  static CHeapBitMap* _ptrmap;
-  static address*     _ptr_base;
-  static address*     _ptr_end;
+  static CHeapBitMap*  _ptrmap;
+  static VirtualSpace* _vs;
 
   // Once _ptrmap is compacted, we don't allow bit marking anymore. This is to
   // avoid unintentional copy operations after the bitmap has been finalized and written.
   static bool         _compacted;
+
+  static address* ptr_base() { return (address*)_vs->low();  } // committed lower bound (inclusive)
+  static address* ptr_end()  { return (address*)_vs->high(); } // committed upper bound (exclusive)
+
 public:
-  static void initialize(CHeapBitMap* ptrmap, address* ptr_base, address* ptr_end);
+  static void initialize(CHeapBitMap* ptrmap, VirtualSpace* vs);
   static void mark_pointer(address* ptr_loc);
   static void clear_pointer(address* ptr_loc);
   static void compact(address relocatable_base, address relocatable_end);
@@ -61,11 +66,6 @@ public:
   static void set_and_mark_pointer(T* ptr_loc, T ptr_value) {
     *ptr_loc = ptr_value;
     mark_pointer(ptr_loc);
-  }
-
-  static void expand_ptr_end(address *new_ptr_end) {
-    assert(_ptr_end <= new_ptr_end, "must be");
-    _ptr_end = new_ptr_end;
   }
 
   static CHeapBitMap* ptrmap() {
@@ -84,7 +84,6 @@ public:
 // If the archive ends up being mapped at a different address (e.g. 0x810000000), SharedDataRelocator
 // is used to shift each marked pointer by a delta (0x10000000 in this example), so that it points to
 // the actually mapped location of the target object.
-template <bool COMPACTING>
 class SharedDataRelocator: public BitMapClosure {
   // for all (address** p), where (is_marked(p) && _patch_base <= p && p < _patch_end) { *p += delta; }
 
@@ -103,17 +102,10 @@ class SharedDataRelocator: public BitMapClosure {
   // How much to relocate for each pointer.
   intx _delta;
 
-  // The following fields are used only when COMPACTING == true;
-  // The highest offset (inclusive) in the bitmap that contains a non-null pointer.
-  // This is used at dump time to reduce the size of the bitmap (which may have been over-allocated).
-  size_t _max_non_null_offset;
-  CHeapBitMap* _ptrmap;
-
  public:
   SharedDataRelocator(address* patch_base, address* patch_end,
                       address valid_old_base, address valid_old_end,
-                      address valid_new_base, address valid_new_end, intx delta,
-                      CHeapBitMap* ptrmap = NULL) :
+                      address valid_new_base, address valid_new_end, intx delta) :
     _patch_base(patch_base), _patch_end(patch_end),
     _valid_old_base(valid_old_base), _valid_old_end(valid_old_end),
     _valid_new_base(valid_new_base), _valid_new_end(valid_new_end),
@@ -124,23 +116,9 @@ class SharedDataRelocator: public BitMapClosure {
     log_debug(cds, reloc)("SharedDataRelocator::_valid_old_end  = " PTR_FORMAT, p2i(_valid_old_end));
     log_debug(cds, reloc)("SharedDataRelocator::_valid_new_base = " PTR_FORMAT, p2i(_valid_new_base));
     log_debug(cds, reloc)("SharedDataRelocator::_valid_new_end  = " PTR_FORMAT, p2i(_valid_new_end));
-    if (COMPACTING) {
-      assert(ptrmap != NULL, "must be");
-      _max_non_null_offset = 0;
-      _ptrmap = ptrmap;
-    } else {
-      // Don't touch the _max_non_null_offset and _ptrmap fields. Hopefully a good C++ compiler can
-      // elide them.
-      assert(ptrmap == NULL, "must be");
-    }
   }
 
-  size_t max_non_null_offset() {
-    assert(COMPACTING, "must be");
-    return _max_non_null_offset;
-  }
-
-  inline bool do_bit(size_t offset);
+  bool do_bit(size_t offset);
 };
 
 class DumpRegion {
@@ -149,15 +127,20 @@ private:
   char* _base;
   char* _top;
   char* _end;
+  uintx _max_delta;
   bool _is_packed;
   ReservedSpace* _rs;
   VirtualSpace* _vs;
 
+  void commit_to(char* newtop);
+
 public:
-  DumpRegion(const char* name) : _name(name), _base(NULL), _top(NULL), _end(NULL), _is_packed(false) {}
+  DumpRegion(const char* name, uintx max_delta = 0)
+    : _name(name), _base(NULL), _top(NULL), _end(NULL),
+      _max_delta(max_delta), _is_packed(false) {}
 
   char* expand_top_to(char* newtop);
-  char* allocate(size_t num_bytes, size_t alignment=BytesPerWord);
+  char* allocate(size_t num_bytes);
 
   void append_intptr_t(intptr_t n, bool need_to_mark = false);
 
@@ -237,6 +220,12 @@ public:
   void do_oop(oop *p);
   void do_region(u_char* start, size_t size);
   bool reading() const { return true; }
+};
+
+class ArchiveUtils {
+public:
+  static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
+  static void check_for_oom(oop exception) NOT_CDS_RETURN;
 };
 
 #endif // SHARE_MEMORY_ARCHIVEUTILS_HPP

@@ -148,6 +148,7 @@ public class MatchBindingsComputer extends TreeScanner {
                     (v1.flags() & CLASH) == 0 &&
                     (v2.flags() & CLASH) == 0) {
                     log.error(pos, Errors.MatchBindingExists);
+                    v2.flags_field |= CLASH;
                     list = list.append(v2);
                 }
             }
@@ -166,6 +167,7 @@ public class MatchBindingsComputer extends TreeScanner {
                         (ov.flags() & CLASH) == 0 &&
                         (v.flags() & CLASH) == 0) {
                         log.error(pos, Errors.MatchBindingExists);
+                        v.flags_field |= CLASH;
                     }
                 }
                 list = list.append(v);

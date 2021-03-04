@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -372,7 +372,6 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * @see ResourceBundleProvider
  * @since 1.1
  * @revised 9
- * @spec JPMS
  */
 public abstract class ResourceBundle {
 
@@ -893,7 +892,6 @@ public abstract class ResourceBundle {
      *         if this method is called in a named module
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName,
@@ -953,7 +951,6 @@ public abstract class ResourceBundle {
      *         specified module
      * @return a resource bundle for the given base name and the default locale
      * @since 9
-     * @spec JPMS
      * @see ResourceBundleProvider
      * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
@@ -1007,7 +1004,6 @@ public abstract class ResourceBundle {
      *         be found in the specified {@code module}
      * @return a resource bundle for the given base name and locale in the module
      * @since 9
-     * @spec JPMS
      * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
@@ -1056,7 +1052,6 @@ public abstract class ResourceBundle {
      *         if this method is called in a named module
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -1270,7 +1265,6 @@ public abstract class ResourceBundle {
      *        if no resource bundle for the specified base name can be found
      * @since 1.2
      * @revised 9
-     * @spec JPMS
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
     @CallerSensitive
@@ -1496,7 +1490,6 @@ public abstract class ResourceBundle {
      *         if this method is called in a named module
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -1762,7 +1755,7 @@ public abstract class ResourceBundle {
                 // Otherwise, remove the cached one since we can't keep
                 // the same bundles having different parents.
                 BundleReference bundleRef = cacheList.get(cacheKey);
-                if (bundleRef != null && bundleRef.get() == bundle) {
+                if (bundleRef != null && bundleRef.refersTo(bundle)) {
                     cacheList.remove(cacheKey, bundleRef);
                 }
             }
@@ -2234,7 +2227,6 @@ public abstract class ResourceBundle {
      *
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      * @see ResourceBundle.Control#getTimeToLive(String,Locale)
      */
     @CallerSensitive
@@ -2524,7 +2516,6 @@ public abstract class ResourceBundle {
      *
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      * @see java.util.spi.ResourceBundleProvider
      */
     public static class Control {
@@ -2899,15 +2890,17 @@ public abstract class ResourceBundle {
                 }
                 if (language.equals("nb") || isNorwegianBokmal) {
                     List<Locale> tmpList = getDefaultList("nb", script, region, variant);
-                    // Insert a locale replacing "nb" with "no" for every list entry
+                    // Insert a locale replacing "nb" with "no" for every list entry with precedence
                     List<Locale> bokmalList = new LinkedList<>();
-                    for (Locale l : tmpList) {
-                        bokmalList.add(l);
-                        if (l.getLanguage().isEmpty()) {
+                    for (Locale l_nb : tmpList) {
+                        var isRoot = l_nb.getLanguage().isEmpty();
+                        var l_no = Locale.getInstance(isRoot ? "" : "no",
+                                l_nb.getScript(), l_nb.getCountry(), l_nb.getVariant(), null);
+                        bokmalList.add(isNorwegianBokmal ? l_no : l_nb);
+                        if (isRoot) {
                             break;
                         }
-                        bokmalList.add(Locale.getInstance("no", l.getScript(), l.getCountry(),
-                                l.getVariant(), null));
+                        bokmalList.add(isNorwegianBokmal ? l_nb : l_no);
                     }
                     return bokmalList;
                 } else if (language.equals("nn") || isNorwegianNynorsk) {
@@ -3154,7 +3147,6 @@ public abstract class ResourceBundle {
          *        any I/O operations
          * @see java.util.spi.ResourceBundleProvider#getBundle(String, Locale)
          * @revised 9
-         * @spec JPMS
          */
         public ResourceBundle newBundle(String baseName, Locale locale, String format,
                                         ClassLoader loader, boolean reload)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -191,7 +192,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     // c_rarg1: scratch (rsi on non-Win64, rdx on Win64)
 
     Label slow_path;
-    __ safepoint_poll(slow_path, r15_thread, rscratch1);
+    __ safepoint_poll(slow_path, r15_thread, true /* at_return */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.
@@ -237,7 +238,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
     // r13: senderSP must preserved for slow path, set SP to it on fast path
 
     Label slow_path;
-    __ safepoint_poll(slow_path, r15_thread, rscratch1);
+    __ safepoint_poll(slow_path, r15_thread, false /* at_return */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.

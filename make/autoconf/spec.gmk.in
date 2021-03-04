@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,8 @@ OPENJDK_TARGET_CPU_ARCH:=@OPENJDK_TARGET_CPU_ARCH@
 OPENJDK_TARGET_CPU_BITS:=@OPENJDK_TARGET_CPU_BITS@
 OPENJDK_TARGET_CPU_ENDIAN:=@OPENJDK_TARGET_CPU_ENDIAN@
 
+OPENJDK_TARGET_LIBC:=@OPENJDK_TARGET_LIBC@
+
 COMPILE_TYPE:=@COMPILE_TYPE@
 
 # Legacy support
@@ -95,6 +97,8 @@ HOTSPOT_TARGET_CPU := @HOTSPOT_TARGET_CPU@
 HOTSPOT_TARGET_CPU_ARCH := @HOTSPOT_TARGET_CPU_ARCH@
 HOTSPOT_TARGET_CPU_DEFINE := @HOTSPOT_TARGET_CPU_DEFINE@
 
+HOTSPOT_TARGET_LIBC := @HOTSPOT_TARGET_LIBC@
+
 OPENJDK_TARGET_BUNDLE_PLATFORM:=@OPENJDK_TARGET_BUNDLE_PLATFORM@
 JDK_ARCH_ABI_PROP_NAME := @JDK_ARCH_ABI_PROP_NAME@
 
@@ -109,6 +113,8 @@ OPENJDK_BUILD_CPU_ARCH:=@OPENJDK_BUILD_CPU_ARCH@
 OPENJDK_BUILD_CPU_BITS:=@OPENJDK_BUILD_CPU_BITS@
 OPENJDK_BUILD_CPU_ENDIAN:=@OPENJDK_BUILD_CPU_ENDIAN@
 
+OPENJDK_BUILD_LIBC:=@OPENJDK_BUILD_LIBC@
+
 OPENJDK_BUILD_OS_INCLUDE_SUBDIR:=@OPENJDK_TARGET_OS_INCLUDE_SUBDIR@
 
 # Target platform value in ModuleTarget class file attribute.
@@ -117,6 +123,7 @@ OPENJDK_MODULE_TARGET_PLATFORM:=@OPENJDK_MODULE_TARGET_PLATFORM@
 # OS_* properties in release file
 RELEASE_FILE_OS_NAME:=@RELEASE_FILE_OS_NAME@
 RELEASE_FILE_OS_ARCH:=@RELEASE_FILE_OS_ARCH@
+RELEASE_FILE_LIBC:=@RELEASE_FILE_LIBC@
 
 SOURCE_DATE := @SOURCE_DATE@
 ENABLE_REPRODUCIBLE_BUILD := @ENABLE_REPRODUCIBLE_BUILD@
@@ -124,20 +131,24 @@ ENABLE_REPRODUCIBLE_BUILD := @ENABLE_REPRODUCIBLE_BUILD@
 LIBM:=@LIBM@
 LIBDL:=@LIBDL@
 
-# colon or semicolon
-PATH_SEP:=@PATH_SEP@
+WINENV_ROOT := @WINENV_ROOT@
+WINENV_PREFIX := @WINENV_PREFIX@
+
+ifneq ($(findstring windows.wsl, @OPENJDK_BUILD_OS_ENV@), )
+  # Tell WSL to convert PATH between linux and windows
+  export WSLENV := PATH/l
+else ifeq (@OPENJDK_BUILD_OS_ENV@, windows.msys2)
+  # Prohibit msys2 from attemping any path wrangling
+  export MSYS2_ARG_CONV_EXCL := "*"
+endif
 
 # Save the original path before replacing it with the Visual Studio tools
-ORIGINAL_PATH:=@ORIGINAL_PATH@
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  # On Windows, the Visual Studio toolchain needs the PATH to be adjusted
-  # to include Visual Studio tools (this needs to be in cygwin/msys style).
-  ifeq ($(OPENJDK_TARGET_OS_ENV), windows.wsl)
-    export FIXPATH_PATH:=@VS_PATH_WINDOWS@
-    export WSLENV:=$(WSLENV):FIXPATH_PATH:DEBUG_FIXPATH
-  else
-    export PATH:=@VS_PATH@
-  endif
+ORIGINAL_PATH := @ORIGINAL_PATH@
+
+ifeq (@TOOLCHAIN_TYPE@, microsoft)
+  # The Visual Studio toolchain needs the PATH to be adjusted to include
+  # Visual Studio tools.
+  export PATH := @TOOLCHAIN_PATH@:$(PATH)
 endif
 
 SYSROOT_CFLAGS := @SYSROOT_CFLAGS@
@@ -244,7 +255,7 @@ VERSION_CFLAGS := \
     #
 
 ifneq ($(COMPANY_NAME),)
-  # COMPANY_NAME is set to "N/A" in $AUTOCONF_DIR/version-numbers by default,
+  # COMPANY_NAME is set to "N/A" in make/conf/branding.conf by default,
   # but can be customized with the '--with-vendor-name' configure option.
   # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
   # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
@@ -481,7 +492,7 @@ ADLC_LANGSTD_CXXFLAGS=@ADLC_LANGSTD_CXXFLAGS@
 ADLC_LDFLAGS=@ADLC_LDFLAGS@
 
 # Tools that potentially need to be cross compilation aware.
-CC:=@FIXPATH@ @CCACHE@ @ICECC@ @CC@
+CC := @CCACHE@ @ICECC@ @CC@
 
 # CFLAGS used to compile the jdk native libraries (C-code)
 CFLAGS_JDKLIB:=@CFLAGS_JDKLIB@
@@ -503,12 +514,12 @@ EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 EXTRA_ASFLAGS = @EXTRA_ASFLAGS@
 
-CXX:=@FIXPATH@ @CCACHE@ @ICECC@ @CXX@
+CXX := @CCACHE@ @ICECC@ @CXX@
 
-CPP:=@FIXPATH@ @CPP@
+CPP := @CPP@
 
 # The linker can be gcc or ld on unix systems, or link.exe on windows systems.
-LD:=@FIXPATH@ @LD@
+LD := @LD@
 
 # Linker used by the jaotc tool for AOT compilation.
 LD_JAOTC:=@LD_JAOTC@
@@ -528,7 +539,7 @@ JDKEXE_LIBS:=@JDKEXE_LIBS@
 LDFLAGS_CXX_JDK:=@LDFLAGS_CXX_JDK@
 
 # Sometimes a different linker is needed for c++ libs
-LDCXX:=@FIXPATH@ @LDCXX@
+LDCXX := @LDCXX@
 # The flags for linking libstdc++ linker.
 LIBCXX:=@LIBCXX@
 
@@ -537,22 +548,22 @@ LDFLAGS_TESTEXE:=@LDFLAGS_TESTEXE@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
-BUILD_CC:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CC@
-BUILD_CXX:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CXX@
-BUILD_LD:=@FIXPATH@ @BUILD_LD@
-BUILD_LDCXX:=@FIXPATH@ @BUILD_LDCXX@
-BUILD_AS:=@FIXPATH@ @BUILD_AS@
-BUILD_AR:=@FIXPATH@ @BUILD_AR@
-BUILD_NM:=@FIXPATH@ @BUILD_NM@
+BUILD_CC := @BUILD_ICECC@ @BUILD_CC@
+BUILD_CXX := @BUILD_ICECC@ @BUILD_CXX@
+BUILD_LD := @BUILD_LD@
+BUILD_LDCXX := @BUILD_LDCXX@
+BUILD_AS := @BUILD_AS@
+BUILD_AR := @BUILD_AR@
+BUILD_NM := @BUILD_NM@
 BUILD_OBJCOPY:=@BUILD_OBJCOPY@
 BUILD_STRIP:=@BUILD_STRIP@
 BUILD_SYSROOT_CFLAGS:=@BUILD_SYSROOT_CFLAGS@
 BUILD_SYSROOT_LDFLAGS:=@BUILD_SYSROOT_LDFLAGS@
 
-AS:=@FIXPATH@ @AS@
+AS := @AS@
 
 # AR is used to create a static library (is ar in unix, lib.exe in windows)
-AR:=@FIXPATH@ @AR@
+AR := @AR@
 ARFLAGS:=@ARFLAGS@
 
 NM:=@NM@
@@ -601,7 +612,7 @@ STATIC_LIBRARY=@STATIC_LIBRARY@
 LIBRARY_PREFIX:=@LIBRARY_PREFIX@
 SHARED_LIBRARY_SUFFIX:=@SHARED_LIBRARY_SUFFIX@
 STATIC_LIBRARY_SUFFIX:=@STATIC_LIBRARY_SUFFIX@
-EXE_SUFFIX:=@EXE_SUFFIX@
+EXECUTABLE_SUFFIX:=@EXECUTABLE_SUFFIX@
 OBJ_SUFFIX:=@OBJ_SUFFIX@
 STATIC_BUILD:=@STATIC_BUILD@
 
@@ -622,22 +633,22 @@ JAVADOC_CMD:=@JAVADOC@
 JAR_CMD:=@JAR@
 JLINK_CMD := @JLINK@
 JMOD_CMD := @JMOD@
-JARSIGNER_CMD:=@JARSIGNER@
 # These variables are meant to be used. They are defined with = instead of := to make
 # it possible to override only the *_CMD variables.
-JAVA=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
-JAVA_SMALL=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
-JAVA_DETACH =@FIXPATH@ @FIXPATH_DETACH_FLAG@ $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
-JAVAC=@FIXPATH@ $(JAVAC_CMD)
-JAVADOC=@FIXPATH@ $(JAVADOC_CMD)
-JAR=@FIXPATH@ $(JAR_CMD)
-JLINK = @FIXPATH@ $(JLINK_CMD)
-JMOD = @FIXPATH@ $(JMOD_CMD) $(JAVA_TOOL_FLAGS_SMALL)
-JARSIGNER=@FIXPATH@ $(JARSIGNER_CMD)
+JAVA = $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
+JAVA_SMALL = $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
+JAVAC = $(JAVAC_CMD)
+JAVADOC = $(JAVADOC_CMD)
+JAR = $(JAR_CMD)
+JLINK = $(JLINK_CMD)
+JMOD = $(JMOD_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 
 BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
+BUILD_JAVAC=@FIXPATH@ $(BUILD_JDK)/bin/javac
 BUILD_JAR=@FIXPATH@ $(BUILD_JDK)/bin/jar
+
+DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
 
 # Interim langtools modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
@@ -647,6 +658,8 @@ INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim \
     --add-exports java.base/jdk.internal.misc=jdk.compiler.interim \
     --add-exports java.base/sun.invoke.util=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=java.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
     #
 INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
     $(INTERIM_LANGTOOLS_MODULES))))
@@ -654,6 +667,7 @@ INTERIM_LANGTOOLS_ARGS := \
     --limit-modules java.base,jdk.zipfs,$(INTERIM_LANGTOOLS_MODULES_COMMA) \
     --add-modules $(INTERIM_LANGTOOLS_MODULES_COMMA) \
     --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
+    --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
     $(INTERIM_LANGTOOLS_ADD_EXPORTS) \
     #
 JAVAC_MAIN_CLASS = -m jdk.compiler.interim/com.sun.tools.javac.Main
@@ -677,9 +691,7 @@ CCACHE:=@CCACHE@
 CD:=cd
 CHMOD:=@CHMOD@
 CODESIGN:=@CODESIGN@
-COMM:=@COMM@
 CP:=@CP@
-CPIO:=@CPIO@
 CUT:=@CUT@
 DATE:=@DATE@
 DIFF:=@DIFF@
@@ -699,9 +711,8 @@ LN:=@LN@
 MIG:=@MIG@
 MKDIR:=@MKDIR@
 MV:=@MV@
-NAWK:=@NAWK@
 NICE:=@NICE@
-PANDOC:=@FIXPATH@ @PANDOC@
+PANDOC:=@PANDOC@
 PATCH:=@PATCH@
 PRINTF:=@PRINTF@
 READLINK:=@READLINK@
@@ -717,15 +728,14 @@ TIME:=@TIME@
 IS_GNU_TIME:=@IS_GNU_TIME@
 TR:=@TR@
 TOUCH:=@TOUCH@
-UNIQ:=@UNIQ@
 WC:=@WC@
 XARGS:=@XARGS@
 ZIPEXE:=@ZIPEXE@
 UNZIP:=@UNZIP@
-MT:=@FIXPATH@ @MT@
-RC:=@FIXPATH@ @RC@
-DUMPBIN:=@FIXPATH@ @DUMPBIN@
-CYGPATH:=@CYGPATH@
+MT:=@MT@
+RC:=@RC@
+DUMPBIN:=@DUMPBIN@
+PATHTOOL:=@PATHTOOL@
 WSLPATH:=@WSLPATH@
 LDD:=@LDD@
 OTOOL:=@OTOOL@
@@ -742,7 +752,8 @@ JT_HOME:=@JT_HOME@
 JIB_HOME:=@JIB_HOME@
 XCODEBUILD=@XCODEBUILD@
 DTRACE := @DTRACE@
-FIXPATH:=@FIXPATH@
+FIXPATH := @FIXPATH@
+FIXPATH_BASE := @FIXPATH_BASE@
 ULIMIT:=@ULIMIT@
 
 TAR_TYPE:=@TAR_TYPE@
@@ -751,7 +762,6 @@ TAR_SUPPORTS_TRANSFORM:=@TAR_SUPPORTS_TRANSFORM@
 
 # Build setup
 ENABLE_AOT:=@ENABLE_AOT@
-ENABLE_INTREE_EC:=@ENABLE_INTREE_EC@
 USE_EXTERNAL_LIBJPEG:=@USE_EXTERNAL_LIBJPEG@
 USE_EXTERNAL_LIBGIF:=@USE_EXTERNAL_LIBGIF@
 USE_EXTERNAL_LIBZ:=@USE_EXTERNAL_LIBZ@
@@ -869,10 +879,14 @@ INTERIM_JMODS_DIR := $(SUPPORT_OUTPUTDIR)/interim-jmods
 INTERIM_IMAGE_DIR := $(SUPPORT_OUTPUTDIR)/interim-image
 
 # Docs image
-DOCS_IMAGE_SUBDIR := docs
-DOCS_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_IMAGE_SUBDIR)
+DOCS_JDK_IMAGE_SUBDIR := docs
+DOCS_JDK_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_JDK_IMAGE_SUBDIR)
+DOCS_JAVASE_IMAGE_SUBDIR := docs-javase
+DOCS_JAVASE_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_JAVASE_IMAGE_SUBDIR)
+DOCS_REFERENCE_IMAGE_SUBDIR := docs-reference
+DOCS_REFERENCE_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_REFERENCE_IMAGE_SUBDIR)
 # Output docs directly into image
-DOCS_OUTPUTDIR := $(DOCS_IMAGE_DIR)
+DOCS_OUTPUTDIR := $(DOCS_JDK_IMAGE_DIR)
 
 # Static libs image
 STATIC_LIBS_IMAGE_SUBDIR := static-libs
@@ -915,7 +929,9 @@ JRE_BUNDLE_NAME := jre-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
 JDK_SYMBOLS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART)-symbols.tar.gz
 TEST_DEMOS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests-demos$(DEBUG_PART).tar.gz
 TEST_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests$(DEBUG_PART).tar.gz
-DOCS_BUNDLE_NAME := jdk-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
+DOCS_JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
+DOCS_JAVASE_BUNDLE_NAME := javase-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
+DOCS_REFERENCE_BUNDLE_NAME := jdk-reference-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
 STATIC_LIBS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs$(DEBUG_PART).tar.gz
 JCOV_BUNDLE_NAME := jdk-jcov-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
 
@@ -924,7 +940,9 @@ JRE_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(JRE_BUNDLE_NAME)
 JDK_SYMBOLS_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(JDK_SYMBOLS_BUNDLE_NAME)
 TEST_DEMOS_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(TEST_DEMOS_BUNDLE_NAME)
 TEST_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(TEST_BUNDLE_NAME)
-DOCS_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(DOCS_BUNDLE_NAME)
+DOCS_JDK_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(DOCS_JDK_BUNDLE_NAME)
+DOCS_JAVASE_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(DOCS_JAVASE_BUNDLE_NAME)
+DOCS_REFERENCE_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(DOCS_REFERENCE_BUNDLE_NAME)
 JCOV_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JCOV_BUNDLE_NAME)
 
 # This macro is called to allow inclusion of closed source counterparts.

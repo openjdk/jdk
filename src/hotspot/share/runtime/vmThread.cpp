@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
@@ -36,8 +37,10 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
@@ -169,13 +172,6 @@ void VMThread::run() {
     assert(should_terminate(), "termination flag must be set");
   }
 
-  if (log_is_enabled(Info, monitorinflation)) {
-    // Do a deflation in order to reduce the in-use monitor population
-    // that is reported by ObjectSynchronizer::log_in_use_monitor_details()
-    // at VM exit.
-    ObjectSynchronizer::request_deflate_idle_monitors();
-  }
-
   // 4526887 let VM thread exit at Safepoint
   _cur_vm_operation = &halt_op;
   SafepointSynchronize::begin();
@@ -194,6 +190,11 @@ void VMThread::run() {
   // wait for threads (compiler threads or daemon threads) in the
   // _thread_in_native state to block.
   VM_Exit::wait_for_threads_in_native_to_block();
+
+  // The ObjectMonitor subsystem uses perf counters so do this before
+  // we signal that the VM thread is gone. We don't want to run afoul
+  // of perfMemory_exit() in exit_globals().
+  ObjectSynchronizer::do_final_audit_and_print_stats();
 
   // signal other threads that VM process is gone
   {

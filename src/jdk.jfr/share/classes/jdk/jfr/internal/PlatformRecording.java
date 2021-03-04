@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -86,6 +87,7 @@ public final class PlatformRecording implements AutoCloseable {
     private boolean shouldWriteActiveRecordingEvent = true;
     private Duration flushInterval = Duration.ofSeconds(1);
     private long finalStartChunkNanos = Long.MIN_VALUE;
+    private long startNanos = -1;
 
     PlatformRecording(PlatformRecorder recorder, long id) {
         // Typically the access control context is taken
@@ -103,7 +105,6 @@ public final class PlatformRecording implements AutoCloseable {
     public long start() {
         RecordingState oldState;
         RecordingState newState;
-        long startNanos = -1;
         synchronized (recorder) {
             oldState = getState();
             if (!Utils.isBefore(state, RecordingState.RUNNING)) {
@@ -331,6 +332,8 @@ public final class PlatformRecording implements AutoCloseable {
         clone.setShouldWriteActiveRecordingEvent(false);
         clone.setName(getName());
         clone.setToDisk(true);
+        clone.setMaxAge(getMaxAge());
+        clone.setMaxSize(getMaxSize());
         // We purposely don't clone settings here, since
         // a union a == a
         if (!isToDisk()) {
@@ -824,11 +827,43 @@ public final class PlatformRecording implements AutoCloseable {
         }
     }
 
+    public long getStartNanos() {
+        return startNanos;
+    }
+
     public long getFinalChunkStartNanos() {
         return finalStartChunkNanos;
     }
 
     public void setFinalStartnanos(long chunkStartNanos) {
        this.finalStartChunkNanos = chunkStartNanos;
+    }
+
+    public void removeBefore(Instant timestamp) {
+        synchronized (recorder) {
+            while (!chunks.isEmpty()) {
+                RepositoryChunk oldestChunk = chunks.peek();
+                if (!oldestChunk.getEndTime().isBefore(timestamp)) {
+                    return;
+                }
+                chunks.removeFirst();
+                removed(oldestChunk);
+            }
+        }
+
+    }
+
+    public void removePath(SafePath path) {
+        synchronized (recorder) {
+            Iterator<RepositoryChunk> it = chunks.iterator();
+            while (it.hasNext()) {
+                RepositoryChunk c = it.next();
+                if (c.getFile().equals(path)) {
+                    it.remove();
+                    removed(c);
+                    return;
+                }
+            }
+        }
     }
 }

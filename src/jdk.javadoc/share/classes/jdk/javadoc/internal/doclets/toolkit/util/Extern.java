@@ -36,8 +36,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
@@ -45,9 +47,8 @@ import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.DocumentationTool;
 
-import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import jdk.javadoc.doclet.Reporter;
+import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 
@@ -223,6 +224,134 @@ public class Extern {
         return link(url, elemlisturl, reporter, true);
     }
 
+    /**
+     * Check whether links to platform documentation are configured. If not then configure
+     * links using the the documentation URL defined in {@code linkPlatformProperties} or the
+     * default documentation URL if that parameter is {@code null}.
+     *
+     * @param linkPlatformProperties path or URL to properties file containing
+     *                               platform documentation URLs, or null
+     * @param reporter the {@code DocErrorReporter} used to report errors
+     */
+    public void checkPlatformLinks(String linkPlatformProperties, Reporter reporter) {
+        PackageElement javaLang = utils.elementUtils.getPackageElement("java.lang");
+        if (utils.isIncluded(javaLang)) {
+            return;
+        }
+        DocLink link = getExternalLink(javaLang, DocPath.empty, DocPaths.PACKAGE_SUMMARY.getPath());
+        if (link != null) {
+            // Links to platform docs are already configure, nothing to do here.
+            return;
+        }
+        try {
+            int versionNumber = getSourceVersionNumber();
+            String docUrl;
+
+            if (linkPlatformProperties != null) {
+                docUrl = getCustomPlatformDocs(versionNumber, linkPlatformProperties);
+            } else {
+                docUrl = getDefaultPlatformDocs(versionNumber);
+            }
+            if (docUrl == null) {
+                return;
+            }
+            DocPath elementListPath = getPlatformElementList(versionNumber);
+            URL elementListUrl = AbstractDoclet.class.getResource(elementListPath.getPath());
+            if (elementListUrl == null) {
+                reporter.print(Kind.WARNING, resources.getText("doclet.Resource_error", elementListPath.getPath()));
+            } else {
+                try (InputStream in = open(elementListUrl)) {
+                    readElementList(in, docUrl, false, versionNumber);
+                } catch (IOException exc) {
+                    throw new Fault(resources.getText(
+                            "doclet.Resource_error", elementListPath.getPath()), exc);
+                }
+            }
+        } catch (Fault f) {
+            reporter.print(Kind.ERROR, f.getMessage());
+        }
+    }
+
+    /**
+     * Return the resource path for the package or element list for the given {@code version}.
+     * @param version the platform version number
+     * @return the resource path
+     */
+    private DocPath getPlatformElementList(int version) {
+        String filename = version <= 8
+                ? "package-list-" + version + ".txt"
+                : "element-list-" + version + ".txt";
+        return DocPaths.RESOURCES.resolve("releases").resolve(filename);
+    }
+
+    /**
+     * Return the default URL for the platform API documentation for the given {@code version}.
+     * @param version the platform version number
+     * @return the URL as String
+     */
+    private String getDefaultPlatformDocs(int version) {
+        Resources resources = configuration.getDocResources();
+        return version <= 10
+                ? resources.getText("doclet.platform.docs.old", version)
+                : isPrerelease(version)
+                    ? resources.getText("doclet.platform.docs.ea", version)
+                    : resources.getText("doclet.platform.docs.new", version);
+    }
+
+    /**
+     * Retrieve and return the custom URL for the platform API documentation for the given
+     * {@code version} from the properties file at {@code linkPlatformProperties}.
+     * @param version the platform version number
+     * @param linkPlatformProperties path pointing to a properties file
+     * @return the custom URL as String
+     */
+    private String getCustomPlatformDocs(int version, String linkPlatformProperties) throws Fault {
+        String url;
+        try {
+            Properties props = new Properties();
+            InputStream inputStream;
+            if (isUrl(linkPlatformProperties)) {
+                inputStream = toURL(linkPlatformProperties).openStream();
+            } else {
+                inputStream = DocFile.createFileForInput(configuration, linkPlatformProperties).openInputStream();
+            }
+            try (inputStream) {
+                props.load(inputStream);
+            }
+            url = props.getProperty("doclet.platform.docs." + version);
+        } catch (MalformedURLException exc) {
+            throw new Fault(resources.getText("doclet.MalformedURL", linkPlatformProperties), exc);
+        } catch (IOException exc) {
+            throw new Fault(resources.getText("doclet.URL_error", linkPlatformProperties), exc);
+        } catch (DocFileIOException exc) {
+            throw new Fault(resources.getText("doclet.File_error", linkPlatformProperties), exc);
+        }
+        return url;
+    }
+
+    /**
+     * Return the source version number used in the current execution of javadoc.
+     * @return the source version number
+     */
+    private int getSourceVersionNumber() {
+        SourceVersion sourceVersion = configuration.docEnv.getSourceVersion();
+        // TODO it would be nice if this was provided by SourceVersion
+        String versionNumber = sourceVersion.name().substring(8);
+        assert SourceVersion.valueOf("RELEASE_" + versionNumber) == sourceVersion;
+        return Integer.parseInt(versionNumber);
+    }
+
+    /**
+     * Return true if the given {@code sourceVersion} is the same as the current doclet version
+     * and is a pre-release version.
+     * @param sourceVersion the source version number
+     * @return true if it is a pre-release version
+     */
+    private boolean isPrerelease(int sourceVersion) {
+        Runtime.Version docletVersion = configuration.getDocletVersion();
+        return docletVersion.feature() == sourceVersion && docletVersion.pre().isPresent();
+    }
+
     /*
      * Build the extern element list from given URL or the directory path.
      * Flag error if the "-link" or "-linkoffline" option is already used.
@@ -296,12 +425,12 @@ public class Extern {
         try {
             URL link = elemlisturlpath.toURI().resolve(DocPaths.ELEMENT_LIST.getPath()).toURL();
             try (InputStream in = open(link)) {
-                readElementList(in, urlpath, false);
+                readElementList(in, urlpath, false, 0);
             }
         } catch (URISyntaxException | MalformedURLException exc) {
             throw new Fault(resources.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
         } catch (IOException exc) {
-            readAlternateURL(urlpath, elemlisturlpath);
+            readPackageListFromURL(urlpath, elemlisturlpath);
         }
     }
 
@@ -311,11 +440,11 @@ public class Extern {
      * @param urlpath        Path to the packages.
      * @param elemlisturlpath URL or the path to the "package-list" file.
      */
-    private void readAlternateURL(String urlpath, URL elemlisturlpath) throws Fault {
+    private void readPackageListFromURL(String urlpath, URL elemlisturlpath) throws Fault {
         try {
             URL link = elemlisturlpath.toURI().resolve(DocPaths.PACKAGE_LIST.getPath()).toURL();
             try (InputStream in = open(link)) {
-                readElementList(in, urlpath, false);
+                readElementList(in, urlpath, false, 0);
             }
         } catch (URISyntaxException | MalformedURLException exc) {
             throw new Fault(resources.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
@@ -359,7 +488,7 @@ public class Extern {
                 boolean pathIsRelative
                         = !isUrl(path)
                         && !DocFile.createFileForInput(configuration, path).isAbsolute();
-                readElementList(file.openInputStream(), path, pathIsRelative);
+                readElementList(file.openInputStream(), path, pathIsRelative, 0);
             } else {
                 throw new Fault(resources.getText("doclet.File_error", file.getPath()), null);
             }
@@ -375,9 +504,11 @@ public class Extern {
      * @param input     InputStream from the "element-list" file.
      * @param path     URL or the directory path to the elements.
      * @param relative Is path relative?
+     * @param platformVersion The version of platform libraries the element list belongs to,
+     *                        or {@code 0} if it does not belong to a platform libraries doc bundle.
      * @throws IOException if there is a problem reading or closing the stream
      */
-    private void readElementList(InputStream input, String path, boolean relative)
+    private void readElementList(InputStream input, String path, boolean relative, int platformVersion)
                          throws IOException {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(input))) {
             String elemname;
@@ -394,12 +525,20 @@ public class Extern {
                         moduleItems.put(moduleName, item);
                     } else {
                         DocPath pkgPath = DocPath.create(elemname.replace('.', '/'));
-                        if (moduleName != null) {
+                        // Although being modular, JDKs 9 and 10 do not use module names in javadoc URL paths.
+                        if (moduleName != null && platformVersion != 9 && platformVersion != 10) {
                             elempath = elempath.resolve(DocPath.create(moduleName).resolve(pkgPath));
                         } else {
                             elempath = elempath.resolve(pkgPath);
                         }
-                        String actualModuleName = checkLinkCompatibility(elemname, moduleName, path, issueWarning);
+                        String actualModuleName;
+                        // For user provided libraries we check whether modularity matches the actual library.
+                        // We trust modularity to be correct for platform library element lists.
+                        if (platformVersion == 0) {
+                            actualModuleName = checkLinkCompatibility(elemname, moduleName, path, issueWarning);
+                        } else {
+                            actualModuleName = moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName;
+                        }
                         Item item = new Item(elemname, elempath, relative);
                         packageItems.computeIfAbsent(actualModuleName, k -> new TreeMap<>())
                             .putIfAbsent(elemname, item); // first-one-wins semantics
@@ -434,7 +573,7 @@ public class Extern {
                 return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
                 // suppress the warning message in the case of automatic modules
-                if (!isAutomaticModule(me) && issueWarning) {
+                if (!configuration.workArounds.isAutomaticModule(me) && issueWarning) {
                     configuration.getReporter().print(Kind.WARNING,
                             resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
                 }
@@ -443,16 +582,6 @@ public class Extern {
             }
         }
         return moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName;
-    }
-
-    // The following should be replaced by a new method such as Elements.isAutomaticModule
-    private boolean isAutomaticModule(ModuleElement me) {
-        if (me == null) {
-            return false;
-        } else {
-            ModuleSymbol msym = (ModuleSymbol) me;
-            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
-        }
     }
 
     public boolean isUrl (String urlCandidate) {

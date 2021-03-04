@@ -68,7 +68,7 @@ abstract class AbstractShortCircuitTask<P_IN, P_OUT, R,
     protected AbstractShortCircuitTask(PipelineHelper<P_OUT> helper,
                                        Spliterator<P_IN> spliterator) {
         super(helper, spliterator);
-        sharedResult = new AtomicReference<>(null);
+        sharedResult = new AtomicReference<>();
     }
 
     /**

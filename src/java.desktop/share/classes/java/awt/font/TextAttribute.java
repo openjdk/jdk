@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,11 @@
 package java.awt.font;
 
 import java.io.InvalidObjectException;
+import java.io.Serial;
 import java.text.AttributedCharacterIterator.Attribute;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+
 import jdk.internal.access.SharedSecrets;
 
 /**
@@ -266,6 +268,7 @@ public final class TextAttribute extends Attribute {
     /**
      * Resolves instances being deserialized to the predefined constants.
      */
+    @Serial
     protected Object readResolve() throws InvalidObjectException {
         if (this.getClass() != TextAttribute.class) {
             throw new InvalidObjectException(
@@ -280,11 +283,13 @@ public final class TextAttribute extends Attribute {
         }
     }
 
-    // Serialization compatibility with Java 2 platform v1.2.
-    // 1.2 will throw an InvalidObjectException if ever asked to
-    // deserialize INPUT_METHOD_UNDERLINE.
-    // This shouldn't happen in real life.
-    static final long serialVersionUID = 7744112784117861702L;
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
+     * 1.2 will throw an InvalidObjectException if ever asked to deserialize
+     * INPUT_METHOD_UNDERLINE. This shouldn't happen in real life.
+     */
+    @Serial
+    private static final long serialVersionUID = 7744112784117861702L;
 
     //
     // For use with Font.

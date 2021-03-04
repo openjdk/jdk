@@ -31,6 +31,7 @@ import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 
+import static java.math.BigInteger.*;
 import sun.security.jca.JCAUtil;
 import sun.security.rsa.RSAUtil.KeyType;
 
@@ -48,6 +49,16 @@ import static sun.security.util.SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZ
  */
 public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
 
+    private static final BigInteger SQRT_2048;
+    private static final BigInteger SQRT_3072;
+    private static final BigInteger SQRT_4096;
+
+    static {
+        SQRT_2048 = TWO.pow(2047).sqrt();
+        SQRT_3072 = TWO.pow(3071).sqrt();
+        SQRT_4096 = TWO.pow(4095).sqrt();
+    }
+
     // public exponent to use
     private BigInteger publicExponent;
 
@@ -59,6 +70,10 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
 
     // PRNG to use
     private SecureRandom random;
+
+    // whether to generate key pairs following the new guidelines from
+    // FIPS 186-4 and later
+    private boolean useNew;
 
     RSAKeyPairGenerator(KeyType type, int defKeySize) {
         this.type = type;
@@ -86,30 +101,42 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
 
         RSAKeyGenParameterSpec rsaSpec = (RSAKeyGenParameterSpec)params;
         int tmpKeySize = rsaSpec.getKeysize();
-        BigInteger tmpPublicExponent = rsaSpec.getPublicExponent();
+        BigInteger tmpPubExp = rsaSpec.getPublicExponent();
         AlgorithmParameterSpec tmpParams = rsaSpec.getKeyParams();
 
-        if (tmpPublicExponent == null) {
-            tmpPublicExponent = RSAKeyGenParameterSpec.F4;
+        // use the new approach for even key sizes >= 2048 AND when the
+        // public exponent is within FIPS valid range
+        boolean useNew = (tmpKeySize >= 2048 && ((tmpKeySize & 1) == 0));
+
+        if (tmpPubExp == null) {
+            tmpPubExp = RSAKeyGenParameterSpec.F4;
         } else {
-            if (tmpPublicExponent.compareTo(RSAKeyGenParameterSpec.F0) < 0) {
+            if (!tmpPubExp.testBit(0)) {
                 throw new InvalidAlgorithmParameterException
-                        ("Public exponent must be 3 or larger");
+                    ("Public exponent must be an odd number");
             }
-            if (!tmpPublicExponent.testBit(0)) {
+            // current impl checks that  F0 <= e < 2^keysize
+            // vs FIPS 186-4 checks that F4 <= e < 2^256
+            // for backward compatibility, we keep the same checks
+            BigInteger minValue = RSAKeyGenParameterSpec.F0;
+            int maxBitLength = tmpKeySize;
+            if (tmpPubExp.compareTo(RSAKeyGenParameterSpec.F0) < 0) {
                 throw new InvalidAlgorithmParameterException
-                        ("Public exponent must be an odd number");
+                        ("Public exponent must be " + minValue + " or larger");
             }
-            if (tmpPublicExponent.bitLength() > tmpKeySize) {
+            if (tmpPubExp.bitLength() > maxBitLength) {
                 throw new InvalidAlgorithmParameterException
-                        ("Public exponent must be smaller than key size");
+                        ("Public exponent must be no longer than " +
+                        maxBitLength + " bits");
             }
+            useNew &= ((tmpPubExp.compareTo(RSAKeyGenParameterSpec.F4) >= 0) &&
+                    (tmpPubExp.bitLength() < 256));
         }
 
         // do not allow unreasonably large key sizes, probably user error
         try {
-            RSAKeyFactory.checkKeyLengths(tmpKeySize, tmpPublicExponent,
-                512, 64 * 1024);
+            RSAKeyFactory.checkKeyLengths(tmpKeySize, tmpPubExp, 512,
+                    64 * 1024);
         } catch (InvalidKeyException e) {
             throw new InvalidAlgorithmParameterException(
                 "Invalid key sizes", e);
@@ -123,70 +150,129 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
         }
 
         this.keySize = tmpKeySize;
-        this.publicExponent = tmpPublicExponent;
-        this.random = random;
+        this.publicExponent = tmpPubExp;
+        this.random = (random == null? JCAUtil.getSecureRandom() : random);
+        this.useNew = useNew;
     }
 
-    // generate the keypair. See JCA doc
+    // FIPS 186-4 B.3.3 / FIPS 186-5 A.1.3
+    // Generation of Random Primes that are Probably Prime
     public KeyPair generateKeyPair() {
-        // accommodate odd key sizes in case anybody wants to use them
-        int lp = (keySize + 1) >> 1;
-        int lq = keySize - lp;
-        if (random == null) {
-            random = JCAUtil.getSecureRandom();
-        }
         BigInteger e = publicExponent;
-        while (true) {
-            // generate two random primes of size lp/lq
-            BigInteger p = BigInteger.probablePrime(lp, random);
-            BigInteger q, n;
-            do {
-                q = BigInteger.probablePrime(lq, random);
-                // convention is for p > q
-                if (p.compareTo(q) < 0) {
-                    BigInteger tmp = p;
-                    p = q;
-                    q = tmp;
-                }
-                // modulus n = p * q
-                n = p.multiply(q);
-                // even with correctly sized p and q, there is a chance that
-                // n will be one bit short. re-generate the smaller prime if so
-            } while (n.bitLength() < keySize);
+        BigInteger minValue = (useNew? getSqrt(keySize) : ZERO);
+        int lp = (keySize + 1) >> 1;;
+        int lq = keySize - lp;
+        int pqDiffSize = lp - 100;
 
-            // phi = (p - 1) * (q - 1) must be relative prime to e
-            // otherwise RSA just won't work ;-)
-            BigInteger p1 = p.subtract(BigInteger.ONE);
-            BigInteger q1 = q.subtract(BigInteger.ONE);
-            BigInteger phi = p1.multiply(q1);
-            // generate new p and q until they work. typically
-            // the first try will succeed when using F4
-            if (e.gcd(phi).equals(BigInteger.ONE) == false) {
+        while (true) {
+            BigInteger p = null;
+            BigInteger q = null;
+
+            int i = 0;
+            while (i++ < 10*lp) {
+                BigInteger tmpP = BigInteger.probablePrime(lp, random);
+                if ((!useNew || tmpP.compareTo(minValue) == 1) &&
+                        isRelativePrime(e, tmpP.subtract(ONE))) {
+                    p = tmpP;
+                    break;
+                }
+            }
+            if (p == null) {
+                throw new ProviderException("Cannot find prime P");
+            }
+
+            i = 0;
+
+            while (i++ < 20*lq) {
+                BigInteger tmpQ = BigInteger.probablePrime(lq, random);
+
+                if ((!useNew || tmpQ.compareTo(minValue) == 1) &&
+                        (p.subtract(tmpQ).abs().compareTo
+                                (TWO.pow(pqDiffSize)) == 1) &&
+                        isRelativePrime(e, tmpQ.subtract(ONE))) {
+                    q = tmpQ;
+                    break;
+                }
+            }
+            if (q == null) {
+                throw new ProviderException("Cannot find prime Q");
+            }
+
+            BigInteger n = p.multiply(q);
+            if (n.bitLength() != keySize) {
+                // regenerate P, Q if n is not the right length; should
+                // never happen for the new case but check it anyway
                 continue;
             }
 
-            // private exponent d is the inverse of e mod phi
-            BigInteger d = e.modInverse(phi);
+            KeyPair kp = createKeyPair(type, keyParams, n, e, p, q);
+            // done, return the generated keypair;
+            if (kp != null) return kp;
+        }
+    }
 
-            // 1st prime exponent pe = d mod (p - 1)
-            BigInteger pe = d.mod(p1);
-            // 2nd prime exponent qe = d mod (q - 1)
-            BigInteger qe = d.mod(q1);
+    private static BigInteger getSqrt(int keySize) {
+        BigInteger sqrt = null;
+        switch (keySize) {
+            case 2048:
+                sqrt = SQRT_2048;
+                break;
+            case 3072:
+                sqrt = SQRT_3072;
+                break;
+            case 4096:
+                sqrt = SQRT_4096;
+                break;
+            default:
+                sqrt = TWO.pow(keySize-1).sqrt();
+        }
+        return sqrt;
+    }
 
-            // crt coefficient coeff is the inverse of q mod p
-            BigInteger coeff = q.modInverse(p);
+    private static boolean isRelativePrime(BigInteger e, BigInteger bi) {
+        // optimize for common known public exponent prime values
+        if (e.compareTo(RSAKeyGenParameterSpec.F4) == 0 ||
+                e.compareTo(RSAKeyGenParameterSpec.F0) == 0) {
+            return !bi.mod(e).equals(ZERO);
+        } else {
+            return e.gcd(bi).equals(ONE);
+        }
+    }
 
-            try {
-                PublicKey publicKey = new RSAPublicKeyImpl(type, keyParams,
-                        n, e);
-                PrivateKey privateKey = new RSAPrivateCrtKeyImpl(type,
-                        keyParams, n, e, d, p, q, pe, qe, coeff);
-                return new KeyPair(publicKey, privateKey);
-            } catch (InvalidKeyException exc) {
-                // invalid key exception only thrown for keys < 512 bit,
-                // will not happen here
-                throw new RuntimeException(exc);
-            }
+    private static KeyPair createKeyPair(KeyType type,
+            AlgorithmParameterSpec keyParams,
+            BigInteger n, BigInteger e, BigInteger p, BigInteger q) {
+        // phi = (p - 1) * (q - 1) must be relative prime to e
+        // otherwise RSA just won't work ;-)
+        BigInteger p1 = p.subtract(ONE);
+        BigInteger q1 = q.subtract(ONE);
+        BigInteger phi = p1.multiply(q1);
+
+        BigInteger gcd = p1.gcd(q1);
+        BigInteger lcm = (gcd.equals(ONE)?  phi : phi.divide(gcd));
+
+        BigInteger d = e.modInverse(lcm);
+
+        if (d.compareTo(TWO.pow(p.bitLength())) != 1) {
+            return null;
+        }
+
+        // 1st prime exponent pe = d mod (p - 1)
+        BigInteger pe = d.mod(p1);
+        // 2nd prime exponent qe = d mod (q - 1)
+        BigInteger qe = d.mod(q1);
+        // crt coefficient coeff is the inverse of q mod p
+        BigInteger coeff = q.modInverse(p);
+
+        try {
+            PublicKey publicKey = new RSAPublicKeyImpl(type, keyParams, n, e);
+            PrivateKey privateKey = new RSAPrivateCrtKeyImpl(
+                type, keyParams, n, e, d, p, q, pe, qe, coeff);
+            return new KeyPair(publicKey, privateKey);
+        } catch (InvalidKeyException exc) {
+            // invalid key exception only thrown for keys < 512 bit,
+            // will not happen here
+            throw new RuntimeException(exc);
         }
     }
 

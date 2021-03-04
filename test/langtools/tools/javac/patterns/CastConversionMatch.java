@@ -1,8 +1,8 @@
 /*
- * @test /nodynamicopyright/
+ * @test /nodynamiccopyright/
  * @bug 8231827
  * @summary Match which involves a cast conversion
- * @compile/fail/ref=CastConversionMatch.out -XDrawDiagnostics --enable-preview -source ${jdk.version} CastConversionMatch.java
+ * @compile/fail/ref=CastConversionMatch.out -XDrawDiagnostics CastConversionMatch.java
  */
 
 public class CastConversionMatch {

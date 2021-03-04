@@ -68,17 +68,18 @@ class VirtualMemory {
 };
 
 // Virtual memory allocation site, keeps track where the virtual memory is reserved.
-class VirtualMemoryAllocationSite : public AllocationSite<VirtualMemory> {
+class VirtualMemoryAllocationSite : public AllocationSite {
+  VirtualMemory _c;
  public:
   VirtualMemoryAllocationSite(const NativeCallStack& stack, MEMFLAGS flag) :
-    AllocationSite<VirtualMemory>(stack, flag) { }
+    AllocationSite(stack, flag) { }
 
-  inline void reserve_memory(size_t sz)  { data()->reserve_memory(sz);  }
-  inline void commit_memory (size_t sz)  { data()->commit_memory(sz);   }
-  inline void uncommit_memory(size_t sz) { data()->uncommit_memory(sz); }
-  inline void release_memory(size_t sz)  { data()->release_memory(sz);  }
-  inline size_t reserved() const  { return peek()->reserved(); }
-  inline size_t committed() const { return peek()->committed(); }
+  inline void reserve_memory(size_t sz)  { _c.reserve_memory(sz);  }
+  inline void commit_memory (size_t sz)  { _c.commit_memory(sz);   }
+  inline void uncommit_memory(size_t sz) { _c.uncommit_memory(sz); }
+  inline void release_memory(size_t sz)  { _c.release_memory(sz);  }
+  inline size_t reserved() const  { return _c.reserved(); }
+  inline size_t committed() const { return _c.committed(); }
 };
 
 class VirtualMemorySummary;
@@ -340,6 +341,8 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return *this;
   }
 
+  const char* flag_name() { return NMTUtil::flag_to_name(_flag); }
+
  private:
   // The committed region contains the uncommitted region, subtract the uncommitted
   // region from this committed region
@@ -396,7 +399,7 @@ class VirtualMemoryTracker : AllStatic {
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
 };
 
-
+// Todo: clean up after jep387, see JDK-8251392
 class MetaspaceSnapshot : public ResourceObj {
 private:
   size_t  _reserved_in_bytes[Metaspace::MetadataTypeCount];

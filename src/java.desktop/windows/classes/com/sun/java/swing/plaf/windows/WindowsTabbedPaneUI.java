@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,28 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import java.awt.*;
-
-import javax.swing.plaf.basic.*;
-import javax.swing.plaf.*;
-import javax.swing.*;
-import java.util.Set;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.Rectangle;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.util.HashSet;
-import java.awt.event.*;
+import java.util.Set;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
+import javax.swing.JComponent;
+import javax.swing.KeyStroke;
+import javax.swing.UIManager;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicTabbedPaneUI;
+
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
-
 
 /**
  * Windows rendition of the component.
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
  */
 public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
     /**

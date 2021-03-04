@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public enum ElementKind {
     PACKAGE,
 
     // Declared types
-    /** An enum type. */
+    /** An enum class. */
     ENUM,
     /**
      * A class not described by a more specific kind (like {@code
@@ -52,7 +52,7 @@ public enum ElementKind {
      */
     CLASS,
 
-    /** An annotation type. */
+    /** An annotation interface. (Formerly known as an annotation type.) */
     ANNOTATION_TYPE,
     /**
      * An interface not described by a more specific kind (like
@@ -105,55 +105,25 @@ public enum ElementKind {
     /**
      * A module.
      * @since 9
-     * @spec JPMS
      */
      MODULE,
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This enum constant is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
-     * A record type.
-     * @since 14
+     * A record class.
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
     RECORD,
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This enum constant is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * A record component of a {@code record}.
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
     RECORD_COMPONENT,
 
     /**
-     * {@preview Associated with pattern matching for {@code
-     * instanceof}, a preview feature of the Java language.
-     *
-     *           This enum constant is associated with <i>pattern
-     *           matching for {@code instanceof}</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
-     * A binding variable in a pattern .
-     * @since 14
+     * A binding variable in a pattern.
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
-                                 essentialAPI=false)
     BINDING_VARIABLE;
 
     /**

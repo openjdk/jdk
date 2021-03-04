@@ -723,6 +723,8 @@ public class Http2TestServerConnection {
                 }
                 //System.err.printf("TestServer: received frame %s\n", frame);
                 int stream = frame.streamid();
+                int next = nextstream;
+                int nextPush = nextPushStreamId;
                 if (stream == 0) {
                     if (frame.type() == WindowUpdateFrame.TYPE) {
                         WindowUpdateFrame wup = (WindowUpdateFrame) frame;
@@ -770,6 +772,16 @@ public class Http2TestServerConnection {
                                 // but the continuation, even after a reset
                                 // should be handle gracefully by the client
                                 // anyway.
+                            } else if (isClientStreamId(stream) && stream < next) {
+                                // We may receive a reset on a client stream that has already
+                                // been closed. Just ignore it.
+                                System.err.println("TestServer: received ResetFrame on closed stream: " + stream);
+                                System.err.println(frame);
+                            } else if (isServerStreamId(stream) && stream < nextPush) {
+                                // We may receive a reset on a push stream that has already
+                                // been closed. Just ignore it.
+                                System.err.println("TestServer: received ResetFrame on closed push stream: " + stream);
+                                System.err.println(frame);
                             } else {
                                 System.err.println("TestServer: Unexpected frame on: " + stream);
                                 System.err.println(frame);
@@ -788,6 +800,14 @@ public class Http2TestServerConnection {
             }
             close(ErrorFrame.PROTOCOL_ERROR);
         }
+    }
+
+    static boolean isClientStreamId(int streamid) {
+        return (streamid & 0x01) == 0x01;
+    }
+
+    static boolean isServerStreamId(int streamid) {
+        return (streamid & 0x01) == 0x00;
     }
 
     /** Encodes an group of headers, without any ordering guarantees. */

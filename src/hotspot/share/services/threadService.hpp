@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/init.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
@@ -194,7 +194,7 @@ private:
   // protected by a ThreadsListSetter (ThreadDumpResult).
   JavaThread* _thread;
   OopHandle   _threadObj;
-  java_lang_Thread::ThreadStatus _thread_status;
+  JavaThreadStatus _thread_status;
 
   bool    _is_ext_suspended;
   bool    _is_in_native;
@@ -223,7 +223,7 @@ private:
 public:
   ~ThreadSnapshot();
 
-  java_lang_Thread::ThreadStatus thread_status() { return _thread_status; }
+  JavaThreadStatus thread_status() { return _thread_status; }
 
   oop         threadObj() const;
 
@@ -418,7 +418,7 @@ public:
 // abstract utility class to set new thread states, and restore previous after the block exits
 class JavaThreadStatusChanger : public StackObj {
  private:
-  java_lang_Thread::ThreadStatus _old_state;
+  JavaThreadStatus _old_state;
   JavaThread*  _java_thread;
   bool _is_alive;
 
@@ -432,23 +432,23 @@ class JavaThreadStatusChanger : public StackObj {
 
  public:
   static void set_thread_status(JavaThread* java_thread,
-                                java_lang_Thread::ThreadStatus state) {
+                                JavaThreadStatus state) {
     java_lang_Thread::set_thread_status(java_thread->threadObj(), state);
   }
 
-  void set_thread_status(java_lang_Thread::ThreadStatus state) {
+  void set_thread_status(JavaThreadStatus state) {
     if (is_alive()) {
       set_thread_status(_java_thread, state);
     }
   }
 
   JavaThreadStatusChanger(JavaThread* java_thread,
-                          java_lang_Thread::ThreadStatus state) : _old_state(java_lang_Thread::NEW) {
+                          JavaThreadStatus state) : _old_state(JavaThreadStatus::NEW) {
     save_old_state(java_thread);
     set_thread_status(state);
   }
 
-  JavaThreadStatusChanger(JavaThread* java_thread) : _old_state(java_lang_Thread::NEW) {
+  JavaThreadStatusChanger(JavaThread* java_thread) : _old_state(JavaThreadStatus::NEW) {
     save_old_state(java_thread);
   }
 
@@ -474,7 +474,7 @@ class JavaThreadInObjectWaitState : public JavaThreadStatusChanger {
  public:
   JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed) :
     JavaThreadStatusChanger(java_thread,
-                            timed ? java_lang_Thread::IN_OBJECT_WAIT_TIMED : java_lang_Thread::IN_OBJECT_WAIT) {
+                            timed ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED : JavaThreadStatus::IN_OBJECT_WAIT) {
     if (is_alive()) {
       _stat = java_thread->get_thread_stat();
       _active = ThreadService::is_thread_monitoring_contention();
@@ -503,7 +503,7 @@ class JavaThreadParkedState : public JavaThreadStatusChanger {
  public:
   JavaThreadParkedState(JavaThread *java_thread, bool timed) :
     JavaThreadStatusChanger(java_thread,
-                            timed ? java_lang_Thread::PARKED_TIMED : java_lang_Thread::PARKED) {
+                            timed ? JavaThreadStatus::PARKED_TIMED : JavaThreadStatus::PARKED) {
     if (is_alive()) {
       _stat = java_thread->get_thread_stat();
       _active = ThreadService::is_thread_monitoring_contention();
@@ -530,7 +530,7 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
   bool _active;
 
   static bool contended_enter_begin(JavaThread *java_thread) {
-    set_thread_status(java_thread, java_lang_Thread::BLOCKED_ON_MONITOR_ENTER);
+    set_thread_status(java_thread, JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER);
     ThreadStatistics* stat = java_thread->get_thread_stat();
     stat->contended_enter();
     bool active = ThreadService::is_thread_monitoring_contention();
@@ -556,7 +556,7 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
     if (active) {
       java_thread->get_thread_stat()->contended_enter_end();
     }
-    set_thread_status(java_thread, java_lang_Thread::RUNNABLE);
+    set_thread_status(java_thread, JavaThreadStatus::RUNNABLE);
   }
 
   JavaThreadBlockedOnMonitorEnterState(JavaThread *java_thread, ObjectMonitor *obj_m) :
@@ -587,7 +587,7 @@ class JavaThreadSleepState : public JavaThreadStatusChanger {
   bool _active;
  public:
   JavaThreadSleepState(JavaThread *java_thread) :
-    JavaThreadStatusChanger(java_thread, java_lang_Thread::SLEEPING) {
+    JavaThreadStatusChanger(java_thread, JavaThreadStatus::SLEEPING) {
     if (is_alive()) {
       _stat = java_thread->get_thread_stat();
       _active = ThreadService::is_thread_monitoring_contention();

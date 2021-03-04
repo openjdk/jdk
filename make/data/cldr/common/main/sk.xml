@@ -506,7 +506,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="twq">tasawaq</language>
 			<language type="ty">tahitčina</language>
 			<language type="tyv">tuviančina</language>
-			<language type="tzm">tuaregčina (stredomarocká)</language>
+			<language type="tzm">tamazight (stredomarocký)</language>
 			<language type="udm">udmurtčina</language>
 			<language type="ug">ujgurčina</language>
 			<language type="uga">ugaritčina</language>
@@ -4230,9 +4230,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moskva</exemplarCity>
 			</zone>
@@ -4427,6 +4424,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kyjev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Záporožie</exemplarCity>
@@ -5268,9 +5268,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">norfolský čas</generic>
-					<standard draft="contributed">norfolský štandardný čas</standard>
-					<daylight draft="contributed">norfolský letný čas</daylight>
+					<generic>norfolský čas</generic>
+					<standard>norfolský štandardný čas</standard>
+					<daylight>norfolský letný čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5562,6 +5562,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">+</plusSign>
 			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>e</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -8355,6 +8356,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -8926,6 +8951,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} bodu na palec</unitPattern>
 				<unitPattern count="other">{0} bodov na palec</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>bod</displayName>
+				<unitPattern count="one">{0} bod</unitPattern>
+				<unitPattern count="few">{0} body</unitPattern>
+				<unitPattern count="many">{0} bodu</unitPattern>
+				<unitPattern count="other">{0} bodov</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometre</displayName>
 				<unitPattern count="one">{0} kilometer</unitPattern>
@@ -9036,6 +9068,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} astronomickej jednotky</unitPattern>
 				<unitPattern count="other">{0} astronomických jednotiek</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>furlongy</displayName>
+				<unitPattern count="one">{0} furlong</unitPattern>
+				<unitPattern count="few">{0} furlongy</unitPattern>
+				<unitPattern count="many">{0} furlongu</unitPattern>
+				<unitPattern count="other">{0} furlongov</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>siahy</displayName>
+				<unitPattern count="one">{0} siaha</unitPattern>
+				<unitPattern count="few">{0} siahy</unitPattern>
+				<unitPattern count="many">{0} siahy</unitPattern>
+				<unitPattern count="other">{0} siah</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>námorné míle</displayName>
 				<unitPattern count="one">{0} námorná míľa</unitPattern>
@@ -9051,11 +9097,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} škandinávskych míľ</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName>body</displayName>
-				<unitPattern count="one">{0} bod</unitPattern>
-				<unitPattern count="few">{0} body</unitPattern>
-				<unitPattern count="many">{0} bodu</unitPattern>
-				<unitPattern count="other">{0} bodov</unitPattern>
+				<displayName>typografické body</displayName>
+				<unitPattern count="one">{0} typografický bod</unitPattern>
+				<unitPattern count="few">{0} typografické body</unitPattern>
+				<unitPattern count="many">{0} typografického bodu</unitPattern>
+				<unitPattern count="other">{0} typografických bodov</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>polomer Slnka</displayName>
@@ -9070,6 +9116,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} luxy</unitPattern>
 				<unitPattern count="many">{0} luxu</unitPattern>
 				<unitPattern count="other">{0} luxov</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandely</displayName>
+				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="few">{0} kandely</unitPattern>
+				<unitPattern count="many">{0} kandely</unitPattern>
+				<unitPattern count="other">{0} kandel</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lúmeny</displayName>
+				<unitPattern count="one">{0} lúmen</unitPattern>
+				<unitPattern count="few">{0} lúmeny</unitPattern>
+				<unitPattern count="many">{0} lúmenu</unitPattern>
+				<unitPattern count="other">{0} lúmenov</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>svietivosti Slnka</displayName>
@@ -9123,11 +9183,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} amerických ton</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">kamene</displayName>
-				<unitPattern count="one" draft="contributed">{0} kameň</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} kamene</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} kameňa</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kameňov</unitPattern>
+				<displayName>kamene</displayName>
+				<unitPattern count="one">{0} kameň</unitPattern>
+				<unitPattern count="few">{0} kamene</unitPattern>
+				<unitPattern count="many">{0} kameňa</unitPattern>
+				<unitPattern count="other">{0} kameňov</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>libry</displayName>
@@ -9179,6 +9239,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} hmotnosti Slnka</unitPattern>
 				<unitPattern count="many">{0} hmotnosti Slnka</unitPattern>
 				<unitPattern count="other">{0} hmotností Slnka</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="few">{0} grany</unitPattern>
+				<unitPattern count="many">{0} granu</unitPattern>
+				<unitPattern count="other">{0} granov</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigawatty</displayName>
@@ -9477,6 +9544,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} akrovej stopy</unitPattern>
 				<unitPattern count="other">{0} akrových stôp</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>bušle</displayName>
+				<unitPattern count="one">{0} bušel</unitPattern>
+				<unitPattern count="few">{0} bušle</unitPattern>
+				<unitPattern count="many">{0} bušla</unitPattern>
+				<unitPattern count="other">{0} bušlov</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>galóny</displayName>
 				<unitPattern count="one">{0} galón</unitPattern>
@@ -9549,6 +9623,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} barelu</unitPattern>
 				<unitPattern count="other">{0} barelov</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dezertné lyžičky</displayName>
+				<unitPattern count="one">{0} dezertná lyžička</unitPattern>
+				<unitPattern count="few">{0} dezertné lyžičky</unitPattern>
+				<unitPattern count="many">{0} dezertnej lyžičky</unitPattern>
+				<unitPattern count="other">{0} dezertných lyžičiek</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>britské dezertné lyžičky</displayName>
+				<unitPattern count="one">{0} britská dezertná lyžička</unitPattern>
+				<unitPattern count="few">{0} britské dezertné lyžičky</unitPattern>
+				<unitPattern count="many">{0} britskej dezertnej lyžičky</unitPattern>
+				<unitPattern count="other">{0} britských dezertných lyžičiek</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>kvapky</displayName>
+				<unitPattern count="one">{0} kvapka</unitPattern>
+				<unitPattern count="few">{0} kvapky</unitPattern>
+				<unitPattern count="many">{0} kvapky</unitPattern>
+				<unitPattern count="other">{0} kvapiek</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>drachmy</displayName>
+				<unitPattern count="one">{0} drachma</unitPattern>
+				<unitPattern count="few">{0} drachmy</unitPattern>
+				<unitPattern count="many">{0} drachmy</unitPattern>
+				<unitPattern count="other">{0} drachiem</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>barmanské odmerky</displayName>
+				<unitPattern count="one">{0} barmanská odmerka</unitPattern>
+				<unitPattern count="few">{0} barmanské odmerky</unitPattern>
+				<unitPattern count="many">{0} barmanskej odmerky</unitPattern>
+				<unitPattern count="other">{0} barmanských odmeriek</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>štipky</displayName>
+				<unitPattern count="one">{0} štipka</unitPattern>
+				<unitPattern count="few">{0} štipky</unitPattern>
+				<unitPattern count="many">{0} štipky</unitPattern>
+				<unitPattern count="other">{0} štipiek</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>britské kvarty</displayName>
+				<unitPattern count="one">{0} britský kvart</unitPattern>
+				<unitPattern count="few">{0} britské kvarty</unitPattern>
+				<unitPattern count="many">{0} britského kvartu</unitPattern>
+				<unitPattern count="other">{0} britských kvartov</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>svetová strana</displayName>
 				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
@@ -9560,6 +9683,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<unitLength type="short">
 			<compoundUnit type="10p18">
 				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -10125,6 +10272,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>bod</displayName>
+				<unitPattern count="one">{0} bod</unitPattern>
+				<unitPattern count="few">{0} body</unitPattern>
+				<unitPattern count="many">{0} bodu</unitPattern>
+				<unitPattern count="other">{0} bodov</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
@@ -10235,6 +10389,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} au</unitPattern>
 				<unitPattern count="other">{0} au</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>fur</displayName>
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="few">{0} fur</unitPattern>
+				<unitPattern count="many">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fth</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="few">{0} fth</unitPattern>
+				<unitPattern count="many">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>NM</displayName>
 				<unitPattern count="one">{0} NM</unitPattern>
@@ -10269,6 +10437,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} lx</unitPattern>
 				<unitPattern count="many">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="few">{0} cd</unitPattern>
+				<unitPattern count="many">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="few">{0} lm</unitPattern>
+				<unitPattern count="many">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
@@ -10322,11 +10504,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} to</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">st</displayName>
-				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
+				<displayName>st</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="few">{0} st</unitPattern>
+				<unitPattern count="many">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>lb</displayName>
@@ -10378,6 +10560,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} M☉</unitPattern>
 				<unitPattern count="many">{0} M☉</unitPattern>
 				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="few">{0} grany</unitPattern>
+				<unitPattern count="many">{0} granu</unitPattern>
+				<unitPattern count="other">{0} granov</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -10662,6 +10851,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ac ft</unitPattern>
 				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="few">{0} bu</unitPattern>
+				<unitPattern count="many">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
 				<unitPattern count="one">{0} gal</unitPattern>
@@ -10734,6 +10930,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} bbl</unitPattern>
 				<unitPattern count="other">{0} bbl</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="few">{0} dstspn</unitPattern>
+				<unitPattern count="many">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="few">{0} dstspn Imp</unitPattern>
+				<unitPattern count="many">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>kvapky</displayName>
+				<unitPattern count="one">{0} kvapka</unitPattern>
+				<unitPattern count="few">{0} kvapky</unitPattern>
+				<unitPattern count="many">{0} kvapky</unitPattern>
+				<unitPattern count="other">{0} kvapiek</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dr</displayName>
+				<unitPattern count="one">{0} dr</unitPattern>
+				<unitPattern count="few">{0} dr</unitPattern>
+				<unitPattern count="many">{0} dr</unitPattern>
+				<unitPattern count="other">{0} dr</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>odmerky</displayName>
+				<unitPattern count="one">{0} odmerka</unitPattern>
+				<unitPattern count="few">{0} odmerky</unitPattern>
+				<unitPattern count="many">{0} odmerky</unitPattern>
+				<unitPattern count="other">{0} odmeriek</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>štipky</displayName>
+				<unitPattern count="one">{0} štipka</unitPattern>
+				<unitPattern count="few">{0} štipky</unitPattern>
+				<unitPattern count="many">{0} štipky</unitPattern>
+				<unitPattern count="other">{0} štipiek</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0} qt Imp</unitPattern>
+				<unitPattern count="few">{0} qt Imp</unitPattern>
+				<unitPattern count="many">{0} qt Imp</unitPattern>
+				<unitPattern count="other">{0} qt Imp</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>svetová strana</displayName>
 				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
@@ -10745,6 +10990,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<unitLength type="narrow">
 			<compoundUnit type="10p18">
 				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -11514,6 +11783,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="strokes" count="few">{0} ťahy</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="many">{0} ťahu</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} ťahov</characterLabelPattern>
+		<characterLabelPattern type="subscript">{0} – dolný index</characterLabelPattern>
+		<characterLabelPattern type="superscript">{0} – horný index</characterLabelPattern>
 		<characterLabel type="activities">aktivity</characterLabel>
 		<characterLabel type="african_scripts">africké písma</characterLabel>
 		<characterLabel type="american_scripts">americké písma</characterLabel>

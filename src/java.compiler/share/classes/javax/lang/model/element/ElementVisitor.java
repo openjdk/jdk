@@ -205,20 +205,12 @@ public interface ElementVisitor<R, P> {
      * @param p  a visitor-specified parameter
      * @return a visitor-specified result
      * @since 9
-     * @spec JPMS
      */
     default R visitModule(ModuleElement e, P p) {
         return visitUnknown(e, p);
     }
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Visits a record component element.
      *
      * @implSpec The default implementation visits a {@code
@@ -227,11 +219,8 @@ public interface ElementVisitor<R, P> {
      * @param e  the element to visit
      * @param p  a visitor-specified parameter
      * @return a visitor-specified result
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
-    @SuppressWarnings("preview")
     default R visitRecordComponent(RecordComponentElement e, P p) {
         return visitUnknown(e, p);
     }

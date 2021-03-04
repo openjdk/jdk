@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,17 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -36,7 +44,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.util.DocTreePath;
-
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -44,13 +51,16 @@ import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.Versions;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
+import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * Configure the output based on the command-line options.
@@ -90,17 +100,62 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public TypeElement currentTypeElement = null;  // Set this TypeElement in the ClassWriter.
 
-    protected SearchIndexItems searchItems;
+    /**
+     * The collections of items for the main index.
+     * This field is only initialized if {@code options.createIndex()}
+     * is {@code true}.
+     * This index is populated somewhat lazily:
+     * 1. items found in doc comments are found while generating declaration pages
+     * 2. items for elements are added in bulk before generating the index files
+     * 3. additional items are added as needed
+     */
+    protected HtmlIndexBuilder mainIndex;
 
-    public final Contents contents;
+    /**
+     * The collection of deprecated items, if any, to be displayed on the deprecated-list page,
+     * or null if the page should not be generated.
+     * The page will not be generated if {@link BaseOptions#noDeprecated() no deprecated items}
+     * are to be included in the documentation,
+     * or if the page is {@link HtmlOptions#noDeprecatedList() not wanted},
+     * or if there are no deprecated elements being documented.
+     */
+    protected DeprecatedAPIListBuilder deprecatedAPIListBuilder;
+
+    /**
+     * The collection of preview items, if any, to be displayed on the preview-list page,
+     * or null if the page should not be generated.
+     * The page will not be generated if there are no preview elements being documented.
+     */
+    protected PreviewAPIListBuilder previewAPIListBuilder;
+
+    public Contents contents;
 
     protected final Messages messages;
 
     public DocPaths docPaths;
 
+    public HtmlIds htmlIds;
+
     public Map<Element, List<DocPath>> localStylesheetMap = new HashMap<>();
 
     private final HtmlOptions options;
+
+    /**
+     * Kinds of conditional pages.
+     */
+    // Note: this should (eventually) be merged with Navigation.PageMode,
+    // which performs a somewhat similar role
+    public enum ConditionalPage {
+        CONSTANT_VALUES, DEPRECATED, PREVIEW, SERIALIZED_FORM, SYSTEM_PROPERTIES
+    }
+
+    /**
+     * A set of values indicating which conditional pages should be generated.
+     * The set is computed lazily, although values must (obviously) be set before
+     * they are required, such as when deciding whether or not to generate links
+     * to these files in the navigation par, on each page, the help file, and so on.
+     */
+    public final Set<ConditionalPage> conditionalPages;
 
     /**
      * Constructs the full configuration needed by the doclet, including
@@ -138,7 +193,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
 
         messages = new Messages(this, msgResources);
-        contents = new Contents(this);
         options = new HtmlOptions(this);
 
         Runtime.Version v;
@@ -149,6 +203,14 @@ public class HtmlConfiguration extends BaseConfiguration {
             v = Runtime.version(); // arguably, the only sensible default
         }
         docletVersion = v;
+
+        conditionalPages = EnumSet.noneOf(ConditionalPage.class);
+    }
+    protected void initConfiguration(DocletEnvironment docEnv,
+                                     Function<String, String> resourceKeyMapper) {
+        super.initConfiguration(docEnv, resourceKeyMapper);
+        contents = new Contents(this);
+        htmlIds = new HtmlIds(this);
     }
 
     private final Runtime.Version docletVersion;
@@ -170,7 +232,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      * @return a utility object providing commonly used fragments of content
      */
     public Contents getContents() {
-        return contents;
+        return Objects.requireNonNull(contents);
     }
 
     @Override
@@ -198,10 +260,13 @@ public class HtmlConfiguration extends BaseConfiguration {
                 }
             }
         }
+        if (options.createIndex()) {
+            mainIndex = new HtmlIndexBuilder(this);
+        }
         docPaths = new DocPaths(utils);
         setCreateOverview();
-        setTopFile(docEnv);
-        workArounds.initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
+        setTopFile();
+        initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
     }
 
@@ -212,11 +277,9 @@ public class HtmlConfiguration extends BaseConfiguration {
      * "package-summary.html" of the respective package if there is only one
      * package to document. It will be a class page(first in the sorted order),
      * if only classes are provided on the command line.
-     *
-     * @param docEnv the doclet environment
      */
-    protected void setTopFile(DocletEnvironment docEnv) {
-        if (!checkForDeprecation(docEnv)) {
+    protected void setTopFile() {
+        if (!checkForDeprecation()) {
             return;
         }
         if (options.createOverview()) {
@@ -248,7 +311,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         return null;
     }
 
-    protected boolean checkForDeprecation(DocletEnvironment docEnv) {
+    protected boolean checkForDeprecation() {
         for (TypeElement te : getIncludedTypeElements()) {
             if (isGeneratedDoc(te)) {
                 return true;
@@ -321,12 +384,12 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     @Override
     public boolean showMessage(DocTreePath path, String key) {
-        return (path == null || workArounds.haveDocLint());
+        return (path == null || !haveDocLint());
     }
 
     @Override
     public boolean showMessage(Element e, String key) {
-        return (e == null || workArounds.haveDocLint());
+        return (e == null || !haveDocLint());
     }
 
     @Override
@@ -348,11 +411,5 @@ public class HtmlConfiguration extends BaseConfiguration {
             }
         }
         return super.finishOptionSettings0();
-    }
-
-    @Override
-    protected void initConfiguration(DocletEnvironment docEnv) {
-        super.initConfiguration(docEnv);
-        searchItems = new SearchIndexItems(utils);
     }
 }

@@ -210,6 +210,11 @@ final class StringLatin1 {
             // Note: fromIndex might be near -1>>>1.
             return -1;
         }
+        return indexOfChar(value, ch, fromIndex, max);
+    }
+
+    @IntrinsicCandidate
+    private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
         for (int i = fromIndex; i < max; i++) {
             if (value[i] == c) {

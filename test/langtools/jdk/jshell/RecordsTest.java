@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8235474 8236715
+ * @bug 8235474 8236715 8246774
  * @summary Tests for evalution of records
  * @modules jdk.jshell
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
@@ -75,11 +75,5 @@ public class RecordsTest extends KullaTesting {
         assertEquals(methodKey(assertEval("String record(String record) { return record + record; }")).name(), "record");
         assertEval("record(\"r\")", "\"rr\"");
         assertEval("record(\"r\").length()", "2");
-    }
-
-    @BeforeMethod
-    public void setUp() {
-        setUp(b -> b.compilerOptions("--enable-preview", "-source", String.valueOf(SourceVersion.latest().ordinal()))
-                    .remoteVMOptions("--enable-preview"));
     }
 }

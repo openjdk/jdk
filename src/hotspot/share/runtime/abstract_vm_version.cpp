@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "compiler/compilerDefinitions.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/vm_version.hpp"
@@ -90,16 +91,16 @@ int Abstract_VM_Version::_vm_build_number = VERSION_BUILD;
 #endif
 
 #ifndef VMTYPE
-  #ifdef TIERED
+  #if COMPILER1_AND_COMPILER2
     #define VMTYPE "Server"
-  #else // TIERED
+  #else // COMPILER1_AND_COMPILER2
   #ifdef ZERO
     #define VMTYPE "Zero"
   #else // ZERO
      #define VMTYPE COMPILER1_PRESENT("Client")   \
                     COMPILER2_PRESENT("Server")
   #endif // ZERO
-  #endif // TIERED
+  #endif // COMPILER1_AND_COMPILER2
 #endif
 
 #ifndef HOTSPOT_VM_DISTRO
@@ -129,32 +130,26 @@ const char* Abstract_VM_Version::vm_info_string() {
       if (UseSharedSpaces) {
         if (UseAOT) {
           return "mixed mode, aot, sharing";
-#ifdef TIERED
-        } else if(is_client_compilation_mode_vm()) {
+        } else if (CompilationModeFlag::quick_only()) {
           return "mixed mode, emulated-client, sharing";
-#endif
         } else {
           return "mixed mode, sharing";
          }
       } else {
         if (UseAOT) {
           return "mixed mode, aot";
-#ifdef TIERED
-        } else if(is_client_compilation_mode_vm()) {
+        } else if (CompilationModeFlag::quick_only()) {
           return "mixed mode, emulated-client";
-#endif
         } else {
           return "mixed mode";
         }
       }
     case Arguments::_comp:
-#ifdef TIERED
-      if (is_client_compilation_mode_vm()) {
+      if (CompilationModeFlag::quick_only()) {
          return UseSharedSpaces ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
       }
-#endif
-      return UseSharedSpaces ? "compiled mode, sharing"    : "compiled mode";
-  };
+      return UseSharedSpaces ? "compiled mode, sharing" : "compiled mode";
+  }
   ShouldNotReachHere();
   return "";
 }
@@ -235,6 +230,16 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.2 (VS2019)"
       #elif _MSC_VER == 1923
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.3 (VS2019)"
+      #elif _MSC_VER == 1924
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.4 (VS2019)"
+      #elif _MSC_VER == 1925
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.5 (VS2019)"
+      #elif _MSC_VER == 1926
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.6 (VS2019)"
+      #elif _MSC_VER == 1927
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.7 (VS2019)"
+      #elif _MSC_VER == 1928
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.8 (VS2019)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
@@ -257,12 +262,18 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
     #define FLOAT_ARCH_STR XSTR(FLOAT_ARCH)
   #endif
 
+  #ifdef MUSL_LIBC
+    #define LIBC_STR "-" XSTR(LIBC)
+  #else
+    #define LIBC_STR ""
+  #endif
+
   #ifndef HOTSPOT_BUILD_TIME
     #define HOTSPOT_BUILD_TIME __DATE__ " " __TIME__
   #endif
 
   #define INTERNAL_VERSION_SUFFIX VM_RELEASE ")" \
-         " for " OS "-" CPU FLOAT_ARCH_STR \
+         " for " OS "-" CPU FLOAT_ARCH_STR LIBC_STR \
          " JRE (" VERSION_STRING "), built on " HOTSPOT_BUILD_TIME \
          " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER
 

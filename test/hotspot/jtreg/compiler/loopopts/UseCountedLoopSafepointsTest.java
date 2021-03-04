@@ -73,12 +73,12 @@ public class UseCountedLoopSafepointsTest {
         List<Node> safePoints = new ArrayList<>();
         List<Node> loopEnds = new ArrayList<>();
         for (String line : oa.getOutput().split("\\n")) {
-            int separatorIndex = line.indexOf("\t===");
+            int separatorIndex = line.indexOf("  ===");
             if (separatorIndex > -1) {
                 String header = line.substring(0, separatorIndex);
-                if (header.endsWith("\tSafePoint")) {
+                if (header.endsWith("SafePoint")) {
                     safePoints.add(new Node("SafePoint", line));
-                } else if (header.endsWith("\tCountedLoopEnd")) {
+                } else if (header.endsWith("CountedLoopEnd")) {
                     loopEnds.add(new Node("CountedLoopEnd", line));
                 }
             }
@@ -110,7 +110,7 @@ public class UseCountedLoopSafepointsTest {
             List<Integer> tmpFrom = new ArrayList<>();
             List<Integer> tmpTo = new ArrayList<>();
             // parse string like: " $id    $name       ===  $to1 $to2 ...   [[ $from1 $from2 ... ]] $anything"
-            // example:  318    SafePoint       ===  317  1  304  1  1  10  308  [[ 97  74 ]]  ...
+            // example:  318    SafePoint  ===  317  1  304  1  1  10  308  [[ 97  74 ]]  ...
             id = Integer.parseInt(str.substring(1, str.indexOf(name)).trim());
             Arrays.stream(str.substring(str.indexOf("===") + 4, str.indexOf("[[")).trim().split("\\s+"))
                   .map(Integer::parseInt)

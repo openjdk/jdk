@@ -50,10 +50,6 @@ class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 class ThreadClosure;
 
-PRAGMA_DIAG_PUSH
-// warning C4522: multiple assignment operators specified
-PRAGMA_DISABLE_MSVC_WARNING(4522)
-
 // This is a container class for either an oop or a continuation address for
 // mark stack entries. Both are pushed onto the mark stack.
 class G1TaskQueueEntry {
@@ -88,8 +84,6 @@ public:
   bool is_array_slice() const { return ((uintptr_t)_holder & ArraySliceBit) != 0; }
   bool is_null() const { return _holder == NULL; }
 };
-
-PRAGMA_DIAG_POP
 
 typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
@@ -374,8 +368,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   void report_object_count(bool mark_completed);
 
-  void swap_mark_bitmaps();
-
   void reclaim_empty_regions();
 
   // After reclaiming empty regions, update heap sizes.
@@ -539,8 +531,8 @@ public:
   // to be called concurrently to the mutator. It will yield to safepoint requests.
   void cleanup_for_next_mark();
 
-  // Clear the previous marking bitmap during safepoint.
-  void clear_prev_bitmap(WorkGang* workers);
+  // Clear the next marking bitmap during safepoint.
+  void clear_next_bitmap(WorkGang* workers);
 
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
@@ -562,6 +554,8 @@ public:
   void preclean();
 
   void remark();
+
+  void swap_mark_bitmaps();
 
   void cleanup();
   // Mark in the previous bitmap. Caution: the prev bitmap is usually read-only, so use

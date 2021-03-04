@@ -18,11 +18,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 
         <!-- 2: one,other -->
 
-        <pluralRules locales="am as bn fa gu hi kn pcm zu">
+        <pluralRules locales="am as bn doi fa gu hi kn pcm zu">
             <pluralRule count="one">i = 0 or n = 1 @integer 0, 1 @decimal 0.0~1.0, 0.00~0.04</pluralRule>
             <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 1.1~2.6, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
-        <pluralRules locales="ff fr hy kab">
+        <pluralRules locales="ff hy kab">
             <pluralRule count="one">i = 0,1 @integer 0, 1 @decimal 0.0~1.5</pluralRule>
             <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 2.0~3.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
@@ -30,7 +30,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <pluralRule count="one">i = 0..1 @integer 0, 1 @decimal 0.0~1.5</pluralRule>
             <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 2.0~3.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
-        <pluralRules locales="ast ca de en et fi fy gl ia io it ji nl pt_PT sc scn sv sw ur yi">
+        <pluralRules locales="ast ca de en et fi fy gl ia io it ji lij nl pt_PT sc scn sv sw ur yi">
             <pluralRule count="one">i = 1 and v = 0 @integer 1</pluralRule>
             <pluralRule count="other"> @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
@@ -111,6 +111,14 @@ For terms of use, see http://www.unicode.org/copyright.html
             <pluralRule count="other"> @integer 0, 5~19, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0, 0.5~1.0, 1.5~2.0, 2.5~2.7, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
 
+        <!-- 3: one,many,other -->
+
+        <pluralRules locales="fr">
+            <pluralRule count="one">i = 0,1 @integer 0, 1 @decimal 0.0~1.5</pluralRule>
+            <pluralRule count="many">e = 0 and i != 0 and i % 1000000 = 0 and v = 0 or e != 0..5 @integer 1000000, 1e6, 2e6, 3e6, 4e6, 5e6, 6e6, … @decimal 1.0000001e6, 1.1e6, 2.0000001e6, 2.1e6, 3.0000001e6, 3.1e6, …</pluralRule>
+            <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1e3, 2e3, 3e3, 4e3, 5e3, 6e3, … @decimal 2.0~3.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 1.0001e3, 1.1e3, 2.0001e3, 2.1e3, 3.0001e3, 3.1e3, …</pluralRule>
+        </pluralRules>
+
         <!-- 4: one,two,few,other -->
 
         <pluralRules locales="gd">
@@ -186,7 +194,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <pluralRule count="one">n % 10 = 1 and n % 100 != 11,71,91 @integer 1, 21, 31, 41, 51, 61, 81, 101, 1001, … @decimal 1.0, 21.0, 31.0, 41.0, 51.0, 61.0, 81.0, 101.0, 1001.0, …</pluralRule>
             <pluralRule count="two">n % 10 = 2 and n % 100 != 12,72,92 @integer 2, 22, 32, 42, 52, 62, 82, 102, 1002, … @decimal 2.0, 22.0, 32.0, 42.0, 52.0, 62.0, 82.0, 102.0, 1002.0, …</pluralRule>
             <pluralRule count="few">n % 10 = 3..4,9 and n % 100 != 10..19,70..79,90..99 @integer 3, 4, 9, 23, 24, 29, 33, 34, 39, 43, 44, 49, 103, 1003, … @decimal 3.0, 4.0, 9.0, 23.0, 24.0, 29.0, 33.0, 34.0, 103.0, 1003.0, …</pluralRule>
-            <pluralRule count="many">n != 0 and n % 1000000 = 0 @integer 1000000, … @decimal 1000000.0, 1000000.00, 1000000.000, …</pluralRule>
+            <pluralRule count="many">n != 0 and n % 1000000 = 0 @integer 1000000, … @decimal 1000000.0, 1000000.00, 1000000.000, 1000000.0000, …</pluralRule>
             <pluralRule count="other"> @integer 0, 5~8, 10~20, 100, 1000, 10000, 100000, … @decimal 0.0~0.9, 1.1~1.6, 10.0, 100.0, 1000.0, 10000.0, 100000.0, …</pluralRule>
         </pluralRules>
         <pluralRules locales="ga">

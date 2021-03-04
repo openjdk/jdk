@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 
-#include "classfile/vmSymbols.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
+#include "utilities/vmEnums.hpp"
 
 // The dictionary in each ClassLoaderData stores all loaded classes, either
 // initiatied by its class loader or defined by its class loader:
@@ -73,7 +73,6 @@ class BootstrapInfo;
 class ClassFileStream;
 class ClassLoadInfo;
 class Dictionary;
-class PlaceholderTable;
 class LoaderConstraintTable;
 template <MEMFLAGS F> class HashtableBucket;
 class ResolutionErrorTable;
@@ -86,164 +85,12 @@ class EventClassLoad;
 class Symbol;
 class TableStatistics;
 
-#define WK_KLASS_ENUM_NAME(kname)    kname##_knum
-
-// Certain classes, such as java.lang.Object and java.lang.String,
-// are "well-known", in the sense that no class loader is allowed
-// to provide a different definition.
-//
-// Each well-known class has a short klass name (like object_klass),
-// and a vmSymbol name (like java_lang_Object).
-//
-// The order of these definitions is significant: the classes are
-// resolved during early VM start-up by resolve_well_known_classes
-// in this order. Changing the order may require careful restructuring
-// of the VM start-up sequence.
-//
-#define WK_KLASSES_DO(do_klass)                                                                                 \
-  /* well-known classes */                                                                                      \
-  do_klass(Object_klass,                                java_lang_Object                                      ) \
-  do_klass(String_klass,                                java_lang_String                                      ) \
-  do_klass(Class_klass,                                 java_lang_Class                                       ) \
-  do_klass(Cloneable_klass,                             java_lang_Cloneable                                   ) \
-  do_klass(ClassLoader_klass,                           java_lang_ClassLoader                                 ) \
-  do_klass(Serializable_klass,                          java_io_Serializable                                  ) \
-  do_klass(System_klass,                                java_lang_System                                      ) \
-  do_klass(Throwable_klass,                             java_lang_Throwable                                   ) \
-  do_klass(Error_klass,                                 java_lang_Error                                       ) \
-  do_klass(ThreadDeath_klass,                           java_lang_ThreadDeath                                 ) \
-  do_klass(Exception_klass,                             java_lang_Exception                                   ) \
-  do_klass(RuntimeException_klass,                      java_lang_RuntimeException                            ) \
-  do_klass(SecurityManager_klass,                       java_lang_SecurityManager                             ) \
-  do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain                        ) \
-  do_klass(AccessControlContext_klass,                  java_security_AccessControlContext                    ) \
-  do_klass(AccessController_klass,                      java_security_AccessController                        ) \
-  do_klass(SecureClassLoader_klass,                     java_security_SecureClassLoader                       ) \
-  do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException                      ) \
-  do_klass(Record_klass,                                java_lang_Record                                      ) \
-  do_klass(NoClassDefFoundError_klass,                  java_lang_NoClassDefFoundError                        ) \
-  do_klass(LinkageError_klass,                          java_lang_LinkageError                                ) \
-  do_klass(ClassCastException_klass,                    java_lang_ClassCastException                          ) \
-  do_klass(ArrayStoreException_klass,                   java_lang_ArrayStoreException                         ) \
-  do_klass(VirtualMachineError_klass,                   java_lang_VirtualMachineError                         ) \
-  do_klass(InternalError_klass,                         java_lang_InternalError                               ) \
-  do_klass(OutOfMemoryError_klass,                      java_lang_OutOfMemoryError                            ) \
-  do_klass(StackOverflowError_klass,                    java_lang_StackOverflowError                          ) \
-  do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException                ) \
-  do_klass(Reference_klass,                             java_lang_ref_Reference                               ) \
-                                                                                                                \
-  /* ref klasses and set reference types */                                                                     \
-  do_klass(SoftReference_klass,                         java_lang_ref_SoftReference                           ) \
-  do_klass(WeakReference_klass,                         java_lang_ref_WeakReference                           ) \
-  do_klass(FinalReference_klass,                        java_lang_ref_FinalReference                          ) \
-  do_klass(PhantomReference_klass,                      java_lang_ref_PhantomReference                        ) \
-  do_klass(Finalizer_klass,                             java_lang_ref_Finalizer                               ) \
-                                                                                                                \
-  do_klass(Thread_klass,                                java_lang_Thread                                      ) \
-  do_klass(ThreadGroup_klass,                           java_lang_ThreadGroup                                 ) \
-  do_klass(Properties_klass,                            java_util_Properties                                  ) \
-  do_klass(Module_klass,                                java_lang_Module                                      ) \
-  do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject                    ) \
-  do_klass(reflect_Field_klass,                         java_lang_reflect_Field                               ) \
-  do_klass(reflect_Parameter_klass,                     java_lang_reflect_Parameter                           ) \
-  do_klass(reflect_Method_klass,                        java_lang_reflect_Method                              ) \
-  do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor                         ) \
-                                                                                                                \
-  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                     \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                 \
-  do_klass(reflect_MagicAccessorImpl_klass,             reflect_MagicAccessorImpl                             ) \
-  do_klass(reflect_MethodAccessorImpl_klass,            reflect_MethodAccessorImpl                            ) \
-  do_klass(reflect_ConstructorAccessorImpl_klass,       reflect_ConstructorAccessorImpl                       ) \
-  do_klass(reflect_DelegatingClassLoader_klass,         reflect_DelegatingClassLoader                         ) \
-  do_klass(reflect_ConstantPool_klass,                  reflect_ConstantPool                                  ) \
-  do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, reflect_UnsafeStaticFieldAccessorImpl                 ) \
-  do_klass(reflect_CallerSensitive_klass,               reflect_CallerSensitive                               ) \
-  do_klass(reflect_NativeConstructorAccessorImpl_klass, reflect_NativeConstructorAccessorImpl                 ) \
-                                                                                                                \
-  /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                   \
-  do_klass(DirectMethodHandle_klass,                    java_lang_invoke_DirectMethodHandle                   ) \
-  do_klass(MethodHandle_klass,                          java_lang_invoke_MethodHandle                         ) \
-  do_klass(VarHandle_klass,                             java_lang_invoke_VarHandle                            ) \
-  do_klass(MemberName_klass,                            java_lang_invoke_MemberName                           ) \
-  do_klass(ResolvedMethodName_klass,                    java_lang_invoke_ResolvedMethodName                   ) \
-  do_klass(MethodHandleNatives_klass,                   java_lang_invoke_MethodHandleNatives                  ) \
-  do_klass(LambdaForm_klass,                            java_lang_invoke_LambdaForm                           ) \
-  do_klass(MethodType_klass,                            java_lang_invoke_MethodType                           ) \
-  do_klass(BootstrapMethodError_klass,                  java_lang_BootstrapMethodError                        ) \
-  do_klass(CallSite_klass,                              java_lang_invoke_CallSite                             ) \
-  do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext  ) \
-  do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
-  do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \
-  do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite                     ) \
-  /* Note: MethodHandle must be first, and VolatileCallSite last in group */                                    \
-                                                                                                                \
-  do_klass(AssertionStatusDirectives_klass,             java_lang_AssertionStatusDirectives                   ) \
-  do_klass(StringBuffer_klass,                          java_lang_StringBuffer                                ) \
-  do_klass(StringBuilder_klass,                         java_lang_StringBuilder                               ) \
-  do_klass(UnsafeConstants_klass,                       jdk_internal_misc_UnsafeConstants                     ) \
-  do_klass(internal_Unsafe_klass,                       jdk_internal_misc_Unsafe                              ) \
-  do_klass(module_Modules_klass,                        jdk_internal_module_Modules                           ) \
-                                                                                                                \
-  /* support for CDS */                                                                                         \
-  do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream                          ) \
-  do_klass(URL_klass,                                   java_net_URL                                          ) \
-  do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest                                ) \
-  do_klass(jdk_internal_loader_BuiltinClassLoader_klass,jdk_internal_loader_BuiltinClassLoader                ) \
-  do_klass(jdk_internal_loader_ClassLoaders_klass,      jdk_internal_loader_ClassLoaders                      ) \
-  do_klass(jdk_internal_loader_ClassLoaders_AppClassLoader_klass,      jdk_internal_loader_ClassLoaders_AppClassLoader) \
-  do_klass(jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass, jdk_internal_loader_ClassLoaders_PlatformClassLoader) \
-  do_klass(CodeSource_klass,                            java_security_CodeSource                              ) \
-  do_klass(ConcurrentHashMap_klass,                     java_util_concurrent_ConcurrentHashMap                ) \
-  do_klass(ArrayList_klass,                             java_util_ArrayList                                   ) \
-                                                                                                                \
-  do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement                           ) \
-                                                                                                                \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                 \
-  do_klass(nio_Buffer_klass,                            java_nio_Buffer                                       ) \
-                                                                                                                \
-  /* Stack Walking */                                                                                           \
-  do_klass(StackWalker_klass,                           java_lang_StackWalker                                 ) \
-  do_klass(AbstractStackWalker_klass,                   java_lang_StackStreamFactory_AbstractStackWalker      ) \
-  do_klass(StackFrameInfo_klass,                        java_lang_StackFrameInfo                              ) \
-  do_klass(LiveStackFrameInfo_klass,                    java_lang_LiveStackFrameInfo                          ) \
-                                                                                                                \
-  /* support for stack dump lock analysis */                                                                    \
-  do_klass(java_util_concurrent_locks_AbstractOwnableSynchronizer_klass, java_util_concurrent_locks_AbstractOwnableSynchronizer) \
-                                                                                                                \
-  /* boxing klasses */                                                                                          \
-  do_klass(Boolean_klass,                               java_lang_Boolean                                     ) \
-  do_klass(Character_klass,                             java_lang_Character                                   ) \
-  do_klass(Float_klass,                                 java_lang_Float                                       ) \
-  do_klass(Double_klass,                                java_lang_Double                                      ) \
-  do_klass(Byte_klass,                                  java_lang_Byte                                        ) \
-  do_klass(Short_klass,                                 java_lang_Short                                       ) \
-  do_klass(Integer_klass,                               java_lang_Integer                                     ) \
-  do_klass(Long_klass,                                  java_lang_Long                                        ) \
-                                                                                                                \
-  /* force inline of iterators */                                                                               \
-  do_klass(Iterator_klass,                              java_util_Iterator                                    ) \
-                                                                                                                \
-  /* support for records */                                                                                     \
-  do_klass(RecordComponent_klass,                       java_lang_reflect_RecordComponent                     ) \
-                                                                                                                \
-  /*end*/
-
 class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
+  friend class vmClasses;
   friend class VMStructs;
 
  public:
-  enum WKID {
-    NO_WKID = 0,
-
-    #define WK_KLASS_ENUM(name, symbol) WK_KLASS_ENUM_NAME(name), WK_KLASS_ENUM_NAME(symbol) = WK_KLASS_ENUM_NAME(name),
-    WK_KLASSES_DO(WK_KLASS_ENUM)
-    #undef WK_KLASS_ENUM
-
-    WKID_LIMIT,
-
-    FIRST_WKID = NO_WKID + 1
-  };
 
   // Returns a class with a given class name and class loader.  Loads the
   // class if needed. If not found a NoClassDefFoundError or a
@@ -253,24 +100,23 @@ class SystemDictionary : AllStatic {
 
   static Klass* resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS);
   // Convenient call for null loader and protection domain.
-  static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS);
-protected:
-  // handle error translation for resolve_or_null results
-  static Klass* handle_resolution_exception(Symbol* class_name, bool throw_error, Klass* klass, TRAPS);
-
-public:
+  static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS) {
+    return resolve_or_fail(class_name, Handle(), Handle(), throw_error, THREAD);
+  }
 
   // Returns a class with a given class name and class loader.
   // Loads the class if needed. If not found NULL is returned.
   static Klass* resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
   // Version with null loader and protection domain
-  static Klass* resolve_or_null(Symbol* class_name, TRAPS);
+  static Klass* resolve_or_null(Symbol* class_name, TRAPS) {
+    return resolve_or_null(class_name, Handle(), Handle(), THREAD);
+  }
 
   // Resolve a superclass or superinterface. Called from ClassFileParser,
   // parse_interfaces, resolve_instance_class_or_null, load_shared_class
-  // "child_name" is the class whose super class or interface is being resolved.
-  static InstanceKlass* resolve_super_or_fail(Symbol* child_name,
-                                              Symbol* class_name,
+  // "class_name" is the class whose super class or interface is being resolved.
+  static InstanceKlass* resolve_super_or_fail(Symbol* class_name,
+                                              Symbol* super_name,
                                               Handle class_loader,
                                               Handle protection_domain,
                                               bool is_superclass,
@@ -293,15 +139,14 @@ public:
                                             TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
-  static Klass* find(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static InstanceKlass* find_instance_klass(Symbol* class_name, Handle class_loader, Handle protection_domain);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
   // If not found NULL is returned.
   static Klass* find_instance_or_array_klass(Symbol* class_name,
-                                               Handle class_loader,
-                                               Handle protection_domain,
-                                               TRAPS);
+                                             Handle class_loader,
+                                             Handle protection_domain);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
@@ -326,7 +171,7 @@ public:
   // to local linkage and access checks.
   static Klass* find_constrained_instance_or_array_klass(Symbol* class_name,
                                                            Handle class_loader,
-                                                           TRAPS);
+                                                           Thread* THREAD);
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
@@ -339,13 +184,9 @@ public:
   // loaders.  Returns "true" iff something was unloaded.
   static bool do_unloading(GCTimer* gc_timer);
 
-  // System loader lock
-  static oop system_loader_lock();
-
   // Protection Domain Table
   static ProtectionDomainCacheTable* pd_cache_table() { return _pd_cache_table; }
 
-public:
   // Printing
   static void print();
   static void print_on(outputStream* st);
@@ -357,67 +198,12 @@ public:
   // Initialization
   static void initialize(TRAPS);
 
-  // Checked fast access to the well-known classes -- so that you don't try to use them
-  // before they are resolved.
-  static InstanceKlass* check_klass(InstanceKlass* k) {
-    assert(k != NULL, "klass not loaded");
-    return k;
-  }
-
-  static bool resolve_wk_klass(WKID id, TRAPS);
-  static void resolve_wk_klasses_until(WKID limit_id, WKID &start_id, TRAPS);
-  static void resolve_wk_klasses_through(WKID end_id, WKID &start_id, TRAPS) {
-    int limit = (int)end_id + 1;
-    resolve_wk_klasses_until((WKID) limit, start_id, THREAD);
-  }
-public:
-  #define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
-
-  #define WK_KLASS_DECLARE(name, symbol) \
-    static InstanceKlass* name() { return check_klass(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); } \
-    static InstanceKlass** name##_addr() {                                                              \
-      return &_well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)];                          \
-    }                                                                                                   \
-    static bool name##_is_loaded() {                                                                    \
-      return is_wk_klass_loaded(WK_KLASS(name));                                                        \
-    }
-  WK_KLASSES_DO(WK_KLASS_DECLARE);
-  #undef WK_KLASS_DECLARE
-
-  static InstanceKlass* well_known_klass(WKID id) {
-    assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
-    return _well_known_klasses[id];
-  }
-
-  static InstanceKlass** well_known_klass_addr(WKID id) {
-    assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
-    return &_well_known_klasses[id];
-  }
-  static void well_known_klasses_do(MetaspaceClosure* it);
-
-  static InstanceKlass* box_klass(BasicType t) {
-    assert((uint)t < T_VOID+1, "range check");
-    return check_klass(_box_klasses[t]);
-  }
-  static BasicType box_klass_type(Klass* k);  // inverse of box_klass
-#ifdef ASSERT
-  static bool is_well_known_klass(Klass* k);
-  static bool is_well_known_klass(Symbol* class_name);
-#endif
-
 protected:
   // Returns the class loader data to be used when looking up/updating the
   // system dictionary.
   static ClassLoaderData *class_loader_data(Handle class_loader);
-  static bool is_wk_klass_loaded(InstanceKlass* klass);
 
 public:
-  static bool Object_klass_loaded()         { return is_wk_klass_loaded(WK_KLASS(Object_klass));             }
-  static bool Class_klass_loaded()          { return is_wk_klass_loaded(WK_KLASS(Class_klass));              }
-  static bool Cloneable_klass_loaded()      { return is_wk_klass_loaded(WK_KLASS(Cloneable_klass));          }
-  static bool Parameter_klass_loaded()      { return is_wk_klass_loaded(WK_KLASS(reflect_Parameter_klass));  }
-  static bool ClassLoader_klass_loaded()    { return is_wk_klass_loaded(WK_KLASS(ClassLoader_klass));        }
-
   // Returns java system loader
   static oop java_system_loader();
 
@@ -429,19 +215,8 @@ public:
 
   // Register a new class loader
   static ClassLoaderData* register_loader(Handle class_loader, bool create_mirror_cld = false);
-protected:
-  // Mirrors for primitive classes (created eagerly)
-  static oop check_mirror(oop m) {
-    assert(m != NULL, "mirror not initialized");
-    return m;
-  }
 
 public:
-  // Note:  java_lang_Class::primitive_type is the inverse of java_mirror
-
-  // Check class loader constraints
-  static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
-                                    Handle loader2, TRAPS);
   static Symbol* check_signature_loaders(Symbol* signature, Klass* klass_being_linked,
                                          Handle loader1, Handle loader2, bool is_method, TRAPS);
 
@@ -456,7 +231,7 @@ public:
                                             TRAPS);
   // for a given signature, find the internal MethodHandle method (linkTo* or invokeBasic)
   // (does not ask Java, since this is a low-level intrinsic defined by the JVM)
-  static Method* find_method_handle_intrinsic(vmIntrinsics::ID iid,
+  static Method* find_method_handle_intrinsic(vmIntrinsicID iid,
                                               Symbol* signature,
                                               TRAPS);
 
@@ -515,23 +290,8 @@ public:
 
   static ProtectionDomainCacheEntry* cache_get(Handle protection_domain);
 
- protected:
-
-  enum Constants {
-    _loader_constraint_size = 107,                     // number of entries in constraint table
-    _resolution_error_size  = 107,                     // number of entries in resolution error table
-    _invoke_method_size     = 139,                     // number of entries in invoke method table
-    _placeholder_table_size = 1009                     // number of entries in hash table for placeholders
-  };
-
-
+ private:
   // Static tables owned by the SystemDictionary
-
-  // Hashtable holding placeholders for classes being loaded.
-  static PlaceholderTable*       _placeholders;
-
-  // Lock object for system class loader
-  static OopHandle               _system_loader_lock_obj;
 
   // Constraints on class loaders
   static LoaderConstraintTable*  _loader_constraints;
@@ -546,35 +306,52 @@ public:
   static ProtectionDomainCacheTable*   _pd_cache_table;
 
 protected:
+  static InstanceKlass* _well_known_klasses[];
+
+private:
+  // table of box klasses (int_klass, etc.)
+  static InstanceKlass* _box_klasses[T_VOID+1];
+
+  static OopHandle  _java_system_loader;
+  static OopHandle  _java_platform_loader;
+
   static void validate_protection_domain(InstanceKlass* klass,
                                          Handle class_loader,
                                          Handle protection_domain, TRAPS);
 
   friend class VM_PopulateDumpSharedSpace;
-  friend class TraversePlaceholdersClosure;
-  static PlaceholderTable*   placeholders() { return _placeholders; }
   static LoaderConstraintTable* constraints() { return _loader_constraints; }
   static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
   static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
-  static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
 
+private:
   // Basic loading operations
   static InstanceKlass* resolve_instance_class_or_null_helper(Symbol* name,
                                                               Handle class_loader,
                                                               Handle protection_domain,
                                                               TRAPS);
-  static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
-  static Klass* resolve_array_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
-  static InstanceKlass* handle_parallel_super_load(Symbol* class_name, Symbol* supername, Handle class_loader, Handle protection_domain, Handle lockObject, TRAPS);
+  static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name,
+                                                       Handle class_loader,
+                                                       Handle protection_domain, TRAPS);
+  static Klass* resolve_array_class_or_null(Symbol* class_name,
+                                            Handle class_loader,
+                                            Handle protection_domain, TRAPS);
+  static InstanceKlass* handle_parallel_super_load(Symbol* class_name,
+                                                   Symbol* supername,
+                                                   Handle class_loader,
+                                                   Handle protection_domain,
+                                                   Handle lockObject, TRAPS);
   // Wait on SystemDictionary_lock; unlocks lockObject before
   // waiting; relocks lockObject with correct recursion count
   // after waiting, but before reentering SystemDictionary_lock
   // to preserve lock order semantics.
-  static void double_lock_wait(Handle lockObject, TRAPS);
-  static void define_instance_class(InstanceKlass* k, TRAPS);
-  static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
-                                                Handle class_loader,
-                                                InstanceKlass* k, TRAPS);
+  static void double_lock_wait(Thread* thread, Handle lockObject);
+  static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
+  static InstanceKlass* find_or_define_helper(Symbol* class_name,
+                                              Handle class_loader,
+                                              InstanceKlass* k, TRAPS);
+  static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
+
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
                                       PackageEntry* pkg_entry,
                                       Handle class_loader, TRAPS);
@@ -582,11 +359,19 @@ protected:
                                            InstanceKlass* ik,
                                            PackageEntry* pkg_entry,
                                            Handle class_loader, TRAPS);
-  static bool check_shared_class_super_type(InstanceKlass* child, InstanceKlass* super,
+  static bool check_shared_class_super_type(InstanceKlass* klass, InstanceKlass* super,
                                             Handle class_loader,  Handle protection_domain,
                                             bool is_superclass, TRAPS);
   static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader,
                                                Handle protection_domain, TRAPS);
+  // Second part of load_shared_class
+  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) NOT_CDS_RETURN;
+protected:
+  // Used by SystemDictionaryShared
+
+  static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
+                                    Handle loader2, TRAPS);
+  static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
   static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
                                                        Handle class_loader,
                                                        Handle protection_domain,
@@ -598,17 +383,13 @@ protected:
                                           const ClassFileStream *cfs,
                                           PackageEntry* pkg_entry,
                                           TRAPS);
-  // Second part of load_shared_class
-  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) NOT_CDS_RETURN;
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                PackageEntry* pkg_entry,
                                                TRAPS);
-  static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
-  static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
-  static void check_loader_lock_contention(Handle loader_lock, TRAPS);
-  static bool is_parallelCapable(Handle class_loader);
-  static bool is_parallelDefine(Handle class_loader);
-
+  static Handle get_loader_lock_or_null(Handle class_loader);
+  static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
+                                                      Handle class_loader,
+                                                      InstanceKlass* k, TRAPS);
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
@@ -624,40 +405,22 @@ public:
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
-protected:
   // Setup link to hierarchy
-  static void add_to_hierarchy(InstanceKlass* k, TRAPS);
+  static void add_to_hierarchy(InstanceKlass* k);
+protected:
 
   // Basic find on loaded classes
-  static InstanceKlass* find_class(unsigned int hash,
-                                   Symbol* name, Dictionary* dictionary);
   static InstanceKlass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
 
   // Basic find on classes in the midst of being loaded
   static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
 
-  // Resolve well-known classes so they can be used like SystemDictionary::String_klass()
-  static void resolve_well_known_classes(TRAPS);
-  // quick resolve using CDS for well-known classes only.
-  static void quick_resolve(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) NOT_CDS_RETURN;
-
   // Class loader constraints
   static void check_constraints(unsigned int hash,
                                 InstanceKlass* k, Handle loader,
                                 bool defining, TRAPS);
-  static void update_dictionary(unsigned int d_hash,
-                                int p_index, unsigned int p_hash,
-                                InstanceKlass* k, Handle loader,
-                                TRAPS);
-
-  static InstanceKlass* _well_known_klasses[];
-
-  // table of box klasses (int_klass, etc.)
-  static InstanceKlass* _box_klasses[T_VOID+1];
-
-private:
-  static OopHandle  _java_system_loader;
-  static OopHandle  _java_platform_loader;
+  static void update_dictionary(unsigned int hash,
+                                InstanceKlass* k, Handle loader);
 
 public:
   static TableStatistics placeholders_statistics();

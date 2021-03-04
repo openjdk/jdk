@@ -109,17 +109,20 @@ class klassVtable {
   void copy_vtable_to(vtableEntry* start);
   int  initialize_from_super(Klass* super);
   void put_method_at(Method* m, int index);
-  static bool needs_new_vtable_entry(const methodHandle& m,
+  static bool needs_new_vtable_entry(Method* m,
                                      const Klass* super,
                                      Handle classloader,
                                      Symbol* classname,
                                      AccessFlags access_flags,
-                                     u2 major_version,
-                                     TRAPS);
+                                     u2 major_version);
 
-  bool update_inherited_vtable(InstanceKlass* klass, const methodHandle& target_method, int super_vtable_len, int default_index, bool checkconstraints, TRAPS);
- InstanceKlass* find_transitive_override(InstanceKlass* initialsuper, const methodHandle& target_method, int vtable_index,
-                                         Handle target_loader, Symbol* target_classname, Thread* THREAD);
+  bool update_inherited_vtable(const methodHandle& target_method,
+                               int super_vtable_len,
+                               int default_index,
+                               bool checkconstraints, TRAPS);
+ InstanceKlass* find_transitive_override(InstanceKlass* initialsuper,
+                                         const methodHandle& target_method, int vtable_index,
+                                         Handle target_loader, Symbol* target_classname);
 
   // support for miranda methods
   bool is_miranda_entry_at(int i);

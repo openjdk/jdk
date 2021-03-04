@@ -35,8 +35,10 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1SharedDirtyCardQueue.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -55,6 +57,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
 #include "utilities/ticks.hpp"
 
@@ -287,7 +290,7 @@ public:
     _collection_set_iter_state(NULL),
     _card_table_scan_state(NULL),
     _scan_chunks_per_region(get_chunks_per_region(HeapRegion::LogOfHRGrainBytes)),
-    _log_scan_chunks_per_region(log2_uint(_scan_chunks_per_region)),
+    _log_scan_chunks_per_region(log2i(_scan_chunks_per_region)),
     _region_scan_chunks(NULL),
     _num_total_scan_chunks(0),
     _scan_chunks_shift(0),
@@ -311,7 +314,7 @@ public:
     _num_total_scan_chunks = max_reserved_regions * _scan_chunks_per_region;
     _region_scan_chunks = NEW_C_HEAP_ARRAY(bool, _num_total_scan_chunks, mtGC);
 
-    _scan_chunks_shift = (uint8_t)log2_intptr(HeapRegion::CardsPerRegion / _scan_chunks_per_region);
+    _scan_chunks_shift = (uint8_t)log2i(HeapRegion::CardsPerRegion / _scan_chunks_per_region);
     _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_reserved_regions, mtGC);
   }
 
@@ -480,6 +483,118 @@ public:
   }
 };
 
+class G1YoungRemSetSamplingClosure : public HeapRegionClosure {
+  SuspendibleThreadSetJoiner* _sts;
+  size_t _regions_visited;
+  size_t _sampled_rs_length;
+public:
+  G1YoungRemSetSamplingClosure(SuspendibleThreadSetJoiner* sts) :
+    HeapRegionClosure(), _sts(sts), _regions_visited(0), _sampled_rs_length(0) { }
+
+  virtual bool do_heap_region(HeapRegion* r) {
+    size_t rs_length = r->rem_set()->occupied();
+    _sampled_rs_length += rs_length;
+
+    // Update the collection set policy information for this region
+    G1CollectedHeap::heap()->collection_set()->update_young_region_prediction(r, rs_length);
+
+    _regions_visited++;
+
+    if (_regions_visited == 10) {
+      if (_sts->should_yield()) {
+        _sts->yield();
+        // A gc may have occurred and our sampling data is stale and further
+        // traversal of the collection set is unsafe
+        return true;
+      }
+      _regions_visited = 0;
+    }
+    return false;
+  }
+
+  size_t sampled_rs_length() const { return _sampled_rs_length; }
+};
+
+// Task handling young gen remembered set sampling.
+class G1RemSetSamplingTask : public G1ServiceTask {
+  // Helper to account virtual time.
+  class VTimer {
+    double _start;
+  public:
+    VTimer() : _start(os::elapsedVTime()) { }
+    double duration() { return os::elapsedVTime() - _start; }
+  };
+
+  double _vtime_accum;  // Accumulated virtual time.
+  void update_vtime_accum(double duration) {
+    _vtime_accum += duration;
+  }
+
+  // Sample the current length of remembered sets for young.
+  //
+  // At the end of the GC G1 determines the length of the young gen based on
+  // how much time the next GC can take, and when the next GC may occur
+  // according to the MMU.
+  //
+  // The assumption is that a significant part of the GC is spent on scanning
+  // the remembered sets (and many other components), so this thread constantly
+  // reevaluates the prediction for the remembered set scanning costs, and potentially
+  // G1Policy resizes the young gen. This may do a premature GC or even
+  // increase the young gen size to keep pause time length goal.
+  void sample_young_list_rs_length(SuspendibleThreadSetJoiner* sts){
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    G1Policy* policy = g1h->policy();
+    VTimer vtime;
+
+    if (policy->use_adaptive_young_list_length()) {
+      G1YoungRemSetSamplingClosure cl(sts);
+
+      G1CollectionSet* g1cs = g1h->collection_set();
+      g1cs->iterate(&cl);
+
+      if (cl.is_complete()) {
+        policy->revise_young_list_target_length_if_necessary(cl.sampled_rs_length());
+      }
+    }
+    update_vtime_accum(vtime.duration());
+  }
+
+  // There is no reason to do the sampling if a GC occurred recently. We use the
+  // G1ConcRefinementServiceIntervalMillis as the metric for recently and calculate
+  // the diff to the last GC. If the last GC occurred longer ago than the interval
+  // 0 is returned.
+  jlong reschedule_delay_ms() {
+    Tickspan since_last_gc = G1CollectedHeap::heap()->time_since_last_collection();
+    jlong delay = (jlong) (G1ConcRefinementServiceIntervalMillis - since_last_gc.milliseconds());
+    return MAX2<jlong>(0L, delay);
+  }
+
+public:
+  G1RemSetSamplingTask(const char* name) : G1ServiceTask(name) { }
+  virtual void execute() {
+    SuspendibleThreadSetJoiner sts;
+
+    // Reschedule if a GC happened too recently.
+    jlong delay_ms = reschedule_delay_ms();
+    if (delay_ms > 0) {
+      schedule(delay_ms);
+      return;
+    }
+
+    // Do the actual sampling.
+    sample_young_list_rs_length(&sts);
+    schedule(G1ConcRefinementServiceIntervalMillis);
+  }
+
+  double vtime_accum() {
+    // Only report vtime if supported by the os.
+    if (!os::supports_vtime()) {
+      return 0.0;
+    }
+    return _vtime_accum;
+  }
+};
+
 G1RemSet::G1RemSet(G1CollectedHeap* g1h,
                    G1CardTable* ct,
                    G1HotCardCache* hot_card_cache) :
@@ -488,15 +603,28 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1h,
   _g1h(g1h),
   _ct(ct),
   _g1p(_g1h->policy()),
-  _hot_card_cache(hot_card_cache) {
+  _hot_card_cache(hot_card_cache),
+  _sampling_task(NULL) {
 }
 
 G1RemSet::~G1RemSet() {
   delete _scan_state;
+  delete _sampling_task;
 }
 
 void G1RemSet::initialize(uint max_reserved_regions) {
   _scan_state->initialize(max_reserved_regions);
+}
+
+void G1RemSet::initialize_sampling_task(G1ServiceThread* thread) {
+  assert(_sampling_task == NULL, "Sampling task already initialized");
+  _sampling_task = new G1RemSetSamplingTask("Remembered Set Sampling Task");
+  thread->register_task(_sampling_task);
+}
+
+double G1RemSet::sampling_task_vtime() {
+  assert(_sampling_task != NULL, "Must have been initialized");
+  return _sampling_task->vtime_accum();
 }
 
 // Helper class to scan and detect ranges of cards that need to be scanned on the
@@ -906,14 +1034,27 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
   }
 }
 
-void G1RemSet::prepare_region_for_scan(HeapRegion* region) {
-  uint hrm_index = region->hrm_index();
+#ifdef ASSERT
+void G1RemSet::assert_scan_top_is_null(uint hrm_index) {
+  assert(_scan_state->scan_top(hrm_index) == NULL,
+         "scan_top of region %u is unexpectedly " PTR_FORMAT,
+         hrm_index, p2i(_scan_state->scan_top(hrm_index)));
+}
+#endif
 
-  if (region->is_old_or_humongous_or_archive()) {
-    _scan_state->set_scan_top(hrm_index, region->top());
+void G1RemSet::prepare_region_for_scan(HeapRegion* r) {
+  uint hrm_index = r->hrm_index();
+
+  // Only update non-collection set old regions, others must have already been set
+  // to NULL (don't scan) in the initialization.
+  if (r->in_collection_set()) {
+    assert_scan_top_is_null(hrm_index);
+  } else if (r->is_old_or_humongous_or_archive()) {
+    _scan_state->set_scan_top(hrm_index, r->top());
   } else {
-    assert(region->in_collection_set() || region->is_free(),
-           "Should only be free or in the collection set at this point %s", region->get_type_str());
+    assert_scan_top_is_null(hrm_index);
+    assert(r->is_free(),
+           "Region %u should be free region but is %s", hrm_index, r->get_type_str());
   }
 }
 
@@ -1291,7 +1432,7 @@ void G1RemSet::cleanup_after_scan_heap_roots() {
 inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #ifdef ASSERT
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  assert(g1h->is_in_exact(ct->addr_for(card_ptr)),
+  assert(g1h->is_in(ct->addr_for(card_ptr)),
          "Card at " PTR_FORMAT " index " SIZE_FORMAT " representing heap at " PTR_FORMAT " (%u) must be in committed heap",
          p2i(card_ptr),
          ct->index_for(ct->addr_for(card_ptr)),

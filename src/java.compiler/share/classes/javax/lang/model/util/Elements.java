@@ -51,11 +51,30 @@ import javax.lang.model.element.*;
 public interface Elements {
 
     /**
-     * Returns a package given its fully qualified name if the package is unique in the environment.
-     * If running with modules, all modules in the modules graph are searched for matching packages.
+     * Returns a package given its fully qualified name if the package is uniquely
+     * determinable in the environment.
      *
-     * @param name  fully qualified package name, or an empty string for an unnamed package
-     * @return the specified package, or {@code null} if it cannot be uniquely found
+     * If running with modules, packages of the given name are searched in a
+     * two-stage process:
+     * <ul>
+     *     <li>find non-empty packages with the given name returned by
+     *         {@link #getPackageElement(ModuleElement, CharSequence)},
+     *         where the provided ModuleSymbol is any
+     *         <a href="../../../../../java.base/java/lang/module/package-summary.html#root-modules">root module</a>,
+     *     </li>
+     *     <li>if the above yields an empty list, search
+     *         {@link #getAllModuleElements() all modules} for observable
+     *         packages with the given name
+     *     </li>
+     * </ul>
+     *
+     * If this process leads to a list with a single element,
+     * the single element is returned, otherwise null is returned.
+     *
+     * @param name fully qualified package name,
+     *             or an empty string for an unnamed package
+     * @return the specified package,
+     *         or {@code null} if no package can be uniquely determined.
      */
     PackageElement getPackageElement(CharSequence name);
 
@@ -119,12 +138,29 @@ public interface Elements {
     }
 
     /**
-     * Returns a type element given its canonical name if the type element is unique in the environment.
-     * If running with modules, all modules in the modules graph are searched for matching
-     * type elements.
+     * Returns a type element given its canonical name if the type element is uniquely
+     * determinable in the environment.
      *
-     * @param name  the canonical name
-     * @return the named type element, or {@code null} if it cannot be uniquely found
+     * If running with modules, type elements of the given name are
+     * searched in a two-stage process:
+     * <ul>
+     *     <li>find type elements with the given name returned by
+     *         {@link #getTypeElement(ModuleElement, CharSequence)},
+     *         where the provided ModuleSymbol is any
+     *         <a href="../../../../../java.base/java/lang/module/package-summary.html#root-modules">root module</a>,
+     *     </li>
+     *     <li>if the above yields an empty list, search
+     *         {@link #getAllModuleElements() all modules} for observable
+     *         type elements with the given name
+     *     </li>
+     * </ul>
+     *
+     * If this process leads to a list with a single element,
+     * the single element is returned, otherwise null is returned.
+     *
+     * @param name the canonical name
+     * @return the named type element,
+     *         or {@code null} if no type element can be uniquely determined.
      */
     TypeElement getTypeElement(CharSequence name);
 
@@ -203,7 +239,6 @@ public interface Elements {
      * @return the named module element, or {@code null} if it cannot be found
      * @see #getAllModuleElements
      * @since 9
-     * @spec JPMS
      */
     default ModuleElement getModuleElement(CharSequence name) {
         return null;
@@ -231,11 +266,10 @@ public interface Elements {
     }
 
     /**
-     * Returns the values of an annotation's elements, including defaults.
+     * {@return the values of an annotation's elements, including defaults}
      *
      * @see AnnotationMirror#getElementValues()
      * @param a  annotation to examine
-     * @return the values of the annotation's elements, including defaults
      */
     Map<? extends ExecutableElement, ? extends AnnotationValue>
             getElementValuesWithDefaults(AnnotationMirror a);
@@ -267,15 +301,14 @@ public interface Elements {
     String getDocComment(Element e);
 
     /**
-     * Returns {@code true} if the element is deprecated, {@code false} otherwise.
+     * {@return {@code true} if the element is deprecated, {@code false} otherwise}
      *
      * @param e  the element being examined
-     * @return {@code true} if the element is deprecated, {@code false} otherwise
      */
     boolean isDeprecated(Element e);
 
     /**
-     * Returns the <em>origin</em> of the given element.
+     * {@return the <em>origin</em> of the given element}
      *
      * <p>Note that if this method returns {@link Origin#EXPLICIT
      * EXPLICIT} and the element was created from a class file, then
@@ -291,7 +324,6 @@ public interface Elements {
      * {@link Origin#EXPLICIT EXPLICIT}.
      *
      * @param e  the element being examined
-     * @return the origin of the given element
      * @since 9
      */
     default Origin getOrigin(Element e) {
@@ -299,12 +331,12 @@ public interface Elements {
     }
 
     /**
-     * Returns the <em>origin</em> of the given annotation mirror.
+     * {@return the <em>origin</em> of the given annotation mirror}
      *
      * An annotation mirror is {@linkplain Origin#MANDATED mandated}
      * if it is an implicitly declared <em>container annotation</em>
      * used to hold repeated annotations of a repeatable annotation
-     * type.
+     * interface.
      *
      * <p>Note that if this method returns {@link Origin#EXPLICIT
      * EXPLICIT} and the annotation mirror was created from a class
@@ -321,9 +353,8 @@ public interface Elements {
      *
      * @param c the construct the annotation mirror modifies
      * @param a the annotation mirror being examined
-     * @return the origin of the given annotation mirror
      * @jls 9.6.3 Repeatable Annotation Types
-     * @jls 9.7.5 Multiple Annotations of the Same Type
+     * @jls 9.7.5 Multiple Annotations of the Same Interface
      * @since 9
      */
     default Origin getOrigin(AnnotatedConstruct c,
@@ -332,7 +363,7 @@ public interface Elements {
     }
 
     /**
-     * Returns the <em>origin</em> of the given module directive.
+     * {@return the <em>origin</em> of the given module directive}
      *
      * <p>Note that if this method returns {@link Origin#EXPLICIT
      * EXPLICIT} and the module directive was created from a class
@@ -355,7 +386,6 @@ public interface Elements {
      *
      * @param m the module of the directive
      * @param directive  the module directive being examined
-     * @return the origin of the given directive
      * @since 9
      */
     default Origin getOrigin(ModuleElement m,
@@ -393,12 +423,12 @@ public interface Elements {
          *
          * Another example of a mandated construct is an implicitly
          * declared <em>container annotation</em> used to hold
-         * multiple annotations of a repeatable annotation type.
+         * multiple annotations of a repeatable annotation interface.
          *
          * @jls 8.8.9 Default Constructor
          * @jls 8.9.3 Enum Members
          * @jls 9.6.3 Repeatable Annotation Types
-         * @jls 9.7.5 Multiple Annotations of the Same Type
+         * @jls 9.7.5 Multiple Annotations of the Same Interface
          */
         MANDATED,
 
@@ -422,14 +452,12 @@ public interface Elements {
     }
 
     /**
-     * Returns {@code true} if the executable element is a bridge
-     * method, {@code false} otherwise.
+     * {@return {@code true} if the executable element is a bridge
+     * method, {@code false} otherwise}
      *
      * @implSpec The default implementation of this method returns {@code false}.
      *
      * @param e  the executable being examined
-     * @return {@code true} if the executable element is a bridge
-     * method, {@code false} otherwise
      * @since 9
      */
     default boolean isBridge(ExecutableElement e) {
@@ -437,10 +465,9 @@ public interface Elements {
     }
 
     /**
-     * Returns the <i>binary name</i> of a type element.
+     * {@return the <i>binary name</i> of a type element}
      *
      * @param type  the type element being examined
-     * @return the binary name
      *
      * @see TypeElement#getQualifiedName
      * @jls 13.1 The Form of a Binary
@@ -449,22 +476,21 @@ public interface Elements {
 
 
     /**
-     * Returns the package of an element.  The package of a package is
+     * {@return the package of an element}  The package of a package is
      * itself.
      * The package of a module is {@code null}.
      *
-     * The package of a top-level type is its {@linkplain
+     * The package of a top-level class or interface is its {@linkplain
      * TypeElement#getEnclosingElement enclosing package}. Otherwise,
      * the package of an element is equal to the package of the
      * {@linkplain Element#getEnclosingElement enclosing element}.
      *
      * @param e the element being examined
-     * @return the package of an element
      */
     PackageElement getPackageOf(Element e);
 
     /**
-     * Returns the module of an element.  The module of a module is
+     * {@return the module of an element}  The module of a module is
      * itself.
      *
      * If a package has a module as its {@linkplain
@@ -487,9 +513,7 @@ public interface Elements {
      * {@code null}.
      *
      * @param e the element being examined
-     * @return the module of an element
      * @since 9
-     * @spec JPMS
      */
     default ModuleElement getModuleOf(Element e) {
         return null;
@@ -535,7 +559,7 @@ public interface Elements {
     boolean hides(Element hider, Element hidden);
 
     /**
-     * Tests whether one method, as a member of a given type,
+     * Tests whether one method, as a member of a given class or interface,
      * overrides another method.
      * When a non-abstract method overrides an abstract one, the
      * former is also said to <i>implement</i> the latter.
@@ -554,8 +578,8 @@ public interface Elements {
      * </blockquote>
      *
      * A more interesting case can be illustrated by the following example
-     * in which a method in type {@code A} does not override a
-     * like-named method in type {@code B}:
+     * in which a method in class {@code A} does not override a
+     * like-named method in interface {@code B}:
      *
      * <blockquote>
      * {@code class A { public void m() {} } }<br>
@@ -567,7 +591,7 @@ public interface Elements {
      *          elements.getTypeElement("A")); }
      * </blockquote>
      *
-     * When viewed as a member of a third type {@code C}, however,
+     * When viewed as a member of a third class {@code C}, however,
      * the method in {@code A} does override the one in {@code B}:
      *
      * <blockquote>
@@ -579,7 +603,7 @@ public interface Elements {
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
-     * @param type   the type of which the first method is a member
+     * @param type   the class or interface of which the first method is a member
      * @return {@code true} if and only if the first method overrides
      *          the second
      * @jls 8.4.8 Inheritance, Overriding, and Hiding
@@ -615,32 +639,24 @@ public interface Elements {
     void printElements(java.io.Writer w, Element... elements);
 
     /**
-     * Return a name with the same sequence of characters as the
-     * argument.
+     * {@return a name with the same sequence of characters as the
+     * argument}
      *
      * @param cs the character sequence to return as a name
-     * @return a name with the same sequence of characters as the argument
      */
     Name getName(CharSequence cs);
 
     /**
-     * Returns {@code true} if the type element is a functional interface, {@code false} otherwise.
+     * {@return {@code true} if the type element is a functional
+     * interface, {@code false} otherwise}
      *
      * @param type the type element being examined
-     * @return {@code true} if the element is a functional interface, {@code false} otherwise
      * @jls 9.8 Functional Interfaces
      * @since 1.8
      */
     boolean isFunctionalInterface(TypeElement type);
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns the record component for the given accessor. Returns null if the
      * given method is not a record component accessor.
      *
@@ -655,11 +671,8 @@ public interface Elements {
      * @param accessor the method for which the record component should be found.
      * @return the record component, or null if the given method is not an record
      * component accessor
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
-    @SuppressWarnings("preview")
     default RecordComponentElement recordComponentFor(ExecutableElement accessor) {
         if (accessor.getEnclosingElement().getKind() == ElementKind.RECORD) {
             for (RecordComponentElement rec : ElementFilter.recordComponentsIn(accessor.getEnclosingElement().getEnclosedElements())) {

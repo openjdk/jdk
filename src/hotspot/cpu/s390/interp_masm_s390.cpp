@@ -121,7 +121,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;
-      const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+      const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
       z_braz(dispatch);
@@ -969,8 +969,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   if (UseHeavyMonitors) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor, /*check_for_exceptions=*/false);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
     return;
   }
 
@@ -1000,9 +999,9 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // Load markWord from object into displaced_header.
   z_lg(displaced_header, oopDesc::mark_offset_in_bytes(), object);
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Z_R1_scratch, object);
-    testbit(Address(Z_R1_scratch, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_BOX_CLASS));
+    testbit(Address(Z_R1_scratch, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     z_btrue(slow_case);
   }
 
@@ -1061,9 +1060,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // None of the above fast optimizations worked so we have to get into the
   // slow case of monitor enter.
   bind(slow_case);
-
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-          monitor, /*check_for_exceptions=*/false);
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
 
   // }
 
@@ -1809,11 +1806,11 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       get_method(tmp);
       // Supplement to 8139891: _intrinsic_id exceeded 1-byte size limit.
       if (Method::intrinsic_id_size_in_bytes() == 1) {
-        z_cli(Method::intrinsic_id_offset_in_bytes(), tmp, vmIntrinsics::_compiledLambdaForm);
+        z_cli(Method::intrinsic_id_offset_in_bytes(), tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       } else {
         assert(Method::intrinsic_id_size_in_bytes() == 2, "size error: check Method::_intrinsic_id");
         z_lh(tmp, Method::intrinsic_id_offset_in_bytes(), Z_R0, tmp);
-        z_chi(tmp, vmIntrinsics::_compiledLambdaForm);
+        z_chi(tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       }
       z_brne(profile_continue);
 

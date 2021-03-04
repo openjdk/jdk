@@ -31,7 +31,7 @@
  *          BadClassFileVersion.jcod
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.compiler.CompilerUtils
- * @run testng/othervm --enable-preview BasicTest
+ * @run testng/othervm BasicTest
  */
 
 import java.io.File;
@@ -77,8 +77,7 @@ public class BasicTest {
 
     @BeforeTest
     static void setup() throws IOException {
-        compileSources(SRC_DIR, CLASSES_DIR,
-                "--enable-preview", "-source", String.valueOf(Runtime.version().feature()));
+        compileSources(SRC_DIR, CLASSES_DIR);
         hiddenClassBytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenClass.class"));
 
         // compile with --release 10 with no NestHost and NestMembers attribute

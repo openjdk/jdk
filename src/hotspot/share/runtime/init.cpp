@@ -26,6 +26,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -36,6 +37,8 @@
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/universalNativeInvoker.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
@@ -168,15 +171,6 @@ void exit_globals() {
   static bool destructorsCalled = false;
   if (!destructorsCalled) {
     destructorsCalled = true;
-    if (log_is_enabled(Info, monitorinflation)) {
-      // The ObjectMonitor subsystem uses perf counters so
-      // do this before perfMemory_exit().
-      // This other audit_and_print_stats() call is done at the
-      // Debug level at a safepoint:
-      // - for async deflation auditing:
-      //   ObjectSynchronizer::do_safepoint_work()
-      ObjectSynchronizer::audit_and_print_stats(true /* on_exit */);
-    }
     perfMemory_exit();
     SafepointTracing::statistics_exit_log();
     if (PrintStringTableStatistics) {

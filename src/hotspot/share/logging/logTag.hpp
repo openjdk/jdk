@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@
   LOG_TAG(classhisto) \
   LOG_TAG(cleanup) \
   LOG_TAG(codecache) \
+  NOT_PRODUCT(LOG_TAG(codestrings)) \
   LOG_TAG(compaction) \
   LOG_TAG(compilation) \
   LOG_TAG(condy) \
@@ -76,9 +77,11 @@
   LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
+  NOT_PRODUCT(LOG_TAG(generate)) \
   LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
+  NOT_PRODUCT(LOG_TAG(heapsampling)) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
   LOG_TAG(iklass) \
@@ -91,13 +94,16 @@
   LOG_TAG(jfr) \
   LOG_TAG(jit) \
   LOG_TAG(jni) \
+  LOG_TAG(jvmci) \
   LOG_TAG(jvmti) \
+  LOG_TAG(lambda) \
   LOG_TAG(library) \
   LOG_TAG(liveness) \
   LOG_TAG(load) /* Trace all classes loaded */ \
   LOG_TAG(loader) \
   LOG_TAG(logging) \
   LOG_TAG(malloc) \
+  LOG_TAG(map) \
   LOG_TAG(mark) \
   LOG_TAG(marking) \
   LOG_TAG(membername) \
@@ -113,6 +119,7 @@
   LOG_TAG(monitormismatch) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
+  LOG_TAG(nmt) \
   LOG_TAG(normalize) \
   LOG_TAG(numa) \
   LOG_TAG(objecttagging) \
@@ -132,9 +139,9 @@
   LOG_TAG(periodic) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
+  LOG_TAG(placeholders) \
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
-  LOG_TAG(primitivewrappers) \
   LOG_TAG(promotion) \
   LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ptrqueue) \
@@ -153,6 +160,7 @@
   LOG_TAG(sealed) \
   LOG_TAG(setting) \
   LOG_TAG(smr) \
+  LOG_TAG(stackbarrier) \
   LOG_TAG(stackmap) \
   LOG_TAG(stacktrace) \
   LOG_TAG(stackwalk) \
@@ -172,6 +180,7 @@
   LOG_TAG(task) \
   DEBUG_ONLY(LOG_TAG(test)) \
   LOG_TAG(thread) \
+  LOG_TAG(throttle) \
   LOG_TAG(time) \
   LOG_TAG(timer) \
   LOG_TAG(tlab) \
@@ -179,6 +188,7 @@
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unshareable) \
   LOG_TAG(update) \
+  LOG_TAG(valuebasedclasses) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmmutex) \

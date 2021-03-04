@@ -60,6 +60,8 @@ public:
   // Supplied function to return the additive identity type.
   // This is returned whenever the subtracts inputs are the same.
   virtual const Type *add_id() const = 0;
+
+  static SubNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
 
@@ -140,12 +142,18 @@ public:
   const Type *bottom_type() const { return TypeInt::CC; }
   virtual uint ideal_reg() const { return Op_RegFlags; }
 
+  static CmpNode *make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp = false);
+
 #ifndef PRODUCT
   // CmpNode and subclasses include all data inputs (until hitting a control
   // boundary) in their related node set, as well as all outputs until and
   // including eventual control nodes and their projections.
   virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return false;
+  }
 };
 
 //------------------------------CmpINode---------------------------------------
@@ -156,6 +164,10 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_INT && signed_int;
+  }
 };
 
 //------------------------------CmpUNode---------------------------------------
@@ -167,6 +179,10 @@ public:
   virtual const Type *sub( const Type *, const Type * ) const;
   const Type* Value(PhaseGVN* phase) const;
   bool is_index_range_check() const;
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_INT && !signed_int;
+  }
 };
 
 //------------------------------CmpPNode---------------------------------------
@@ -197,6 +213,10 @@ public:
   virtual int    Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_LONG && signed_int;
+  }
 };
 
 //------------------------------CmpULNode---------------------------------------
@@ -206,6 +226,10 @@ public:
   CmpULNode(Node* in1, Node* in2) : CmpNode(in1, in2) { }
   virtual int Opcode() const;
   virtual const Type* sub(const Type*, const Type*) const;
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_LONG && !signed_int;
+  }
 };
 
 //------------------------------CmpL3Node--------------------------------------
@@ -402,6 +426,28 @@ public:
 class NegNode : public Node {
 public:
   NegNode( Node *in1 ) : Node(0,in1) {}
+};
+
+//------------------------------NegINode---------------------------------------
+// Negate value an int.  For int values, negation is the same as subtraction
+// from zero
+class NegINode : public NegNode {
+public:
+  NegINode(Node *in1) : NegNode(in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------NegLNode---------------------------------------
+// Negate value an int.  For int values, negation is the same as subtraction
+// from zero
+class NegLNode : public NegNode {
+public:
+  NegLNode(Node *in1) : NegNode(in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
 };
 
 //------------------------------NegFNode---------------------------------------

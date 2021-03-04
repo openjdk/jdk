@@ -39,7 +39,7 @@
  * </strong></p>
  * <ul>
  *   <li><a href="{@docRoot}/../specs/serialization/index.html">
- *       Java Object Serialization Specification </a>
+ *       <cite>Java Object Serialization Specification</cite></a>
  *   <li>{@extLink serialization_filter_guide Serial Filtering} best practices</li>
  *   <li>{@extLink serialver_tool_reference The serialver tool}</li>
  * </ul>

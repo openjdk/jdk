@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8167273
+ * @bug 8167273 8251317
  * @summary Test
  * Era names retrieved from Calendar and DateFormatSymbols class
  * should match for default providers preference
@@ -83,7 +83,7 @@ public class Bug8167273 {
     public static void testEraName() {
         Set<Locale> allLocales = Set.of(Locale.getAvailableLocales());
         Set<Locale> JpThlocales = Set.of(
-                new Locale("th", "TH"),
+                new Locale("th", "TH"), Locale.forLanguageTag("th-Thai-TH"),
                 new Locale("ja", "JP", "JP"), new Locale("th", "TH", "TH")
         );
         Set<Locale> allLocs = new HashSet<>(allLocales);

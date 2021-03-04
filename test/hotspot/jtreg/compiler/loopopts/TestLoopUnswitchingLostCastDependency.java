@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key stress randomness
  * @bug 8241900
  * @summary Loop unswitching may cause dependence on null check to be lost
  *

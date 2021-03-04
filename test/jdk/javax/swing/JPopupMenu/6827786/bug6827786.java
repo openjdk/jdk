@@ -49,9 +49,10 @@ public class bug6827786 {
     public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
-            robot.setAutoDelay(50);
+            robot.setAutoDelay(100);
             // move mouse outside menu to prevent auto selection
-           robot.mouseMove(100,100);
+            robot.mouseMove(100,100);
+            robot.waitForIdle();
 
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -61,6 +62,7 @@ public class bug6827786 {
             });
 
             robot.waitForIdle();
+            robot.delay(1000);
 
             SwingUtilities.invokeAndWait(new Runnable() {
 

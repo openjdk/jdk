@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZWORKERS_HPP
 
 #include "gc/shared/workgroup.hpp"
-#include "memory/allocation.hpp"
 
 class ThreadClosure;
 class ZTask;

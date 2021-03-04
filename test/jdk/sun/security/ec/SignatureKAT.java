@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class SignatureKAT {
         private BigInteger pubY;
 
         private static BigInteger toBigInteger(String hex) {
-            byte[] bytes = Convert.hexStringToByteArray(checkHex(hex));
+            byte[] bytes = HexFormat.of().parseHex(checkHex(hex));
             return new BigInteger(1, bytes);
         }
         CurveData(String name, String msg, String priv, String pubX,
@@ -79,7 +79,7 @@ public class SignatureKAT {
                 s != checkHex(s)) {
                 throw new RuntimeException("Error: invalid r, s");
             }
-            this.expSig = Convert.hexStringToByteArray(r + s);
+            this.expSig = HexFormat.of().parseHex(r + s);
         }
     }
 

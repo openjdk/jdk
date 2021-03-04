@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8000612
+ * @bug 8000612 8254627 8247994
  * @summary need test program to validate javadoc resource bundles
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:open
@@ -34,6 +34,8 @@
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.tools.*;
 import com.sun.tools.classfile.*;
 
@@ -149,6 +151,9 @@ public class CheckResourceKeys {
             // ignore these synthesized keys, tested by usageTests
             if (rk.matches("main\\.opt\\..*\\.(arg|desc)"))
                 continue;
+            // ignore this partial key
+            if (rk.startsWith("doclet.Declared_Using_Preview."))
+                continue;
             if (codeKeys.contains(rk))
                 continue;
 
@@ -200,10 +205,21 @@ public class CheckResourceKeys {
                 }
             }
 
+            // special handling for strings in search.js.template
+            FileObject fo = fm.getFileForInput(javadocLoc,
+                    "jdk.javadoc.internal.doclets.formats.html",
+                    "resources/search.js.template");
+            CharSequence search_js = fo.getCharContent(true);
+            Pattern p = Pattern.compile("##REPLACE:(?<key>[A-Za-z0-9._]+)##");
+            Matcher m = p.matcher(search_js);
+            while (m.find()) {
+                results.add(m.group("key"));
+            }
+
             // special handling for code strings synthesized in
-            // com.sun.tools.doclets.internal.toolkit.util.Util.getTypeName
+            // jdk.javadoc.internal.doclets.toolkit.util.Utils.getTypeName
             String[] extras = {
-                "AnnotationType", "Class", "Enum", "Error", "Exception", "Interface"
+                "AnnotationType", "Class", "Enum", "EnumClass", "Error", "Exception", "Interface", "RecordClass"
             };
             for (String s: extras) {
                 if (results.contains("doclet." + s))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,9 @@
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "logging/logMessage.hpp"
-#include "memory/dynamicArchive.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/vmThread.hpp"
@@ -74,11 +73,11 @@ CompactHashtableWriter::~CompactHashtableWriter() {
 
 size_t CompactHashtableWriter::estimate_size(int num_entries) {
   int num_buckets = calculate_num_buckets(num_entries);
-  size_t bucket_bytes = MetaspaceShared::ro_array_bytesize<u4>(num_buckets + 1);
+  size_t bucket_bytes = ArchiveBuilder::ro_array_bytesize<u4>(num_buckets + 1);
 
   // In worst case, we have no VALUE_ONLY_BUCKET_TYPE, so each entry takes 2 slots
   int entries_space = 2 * num_entries;
-  size_t entry_bytes = MetaspaceShared::ro_array_bytesize<u4>(entries_space);
+  size_t entry_bytes = ArchiveBuilder::ro_array_bytesize<u4>(entries_space);
 
   return bucket_bytes
        + entry_bytes
@@ -109,13 +108,15 @@ void CompactHashtableWriter::allocate_table() {
                                   "Too many entries.");
   }
 
-  _compact_buckets = MetaspaceShared::new_ro_array<u4>(_num_buckets + 1);
-  _compact_entries = MetaspaceShared::new_ro_array<u4>(entries_space);
+  _compact_buckets = ArchiveBuilder::new_ro_array<u4>(_num_buckets + 1);
+  _compact_entries = ArchiveBuilder::new_ro_array<u4>(entries_space);
 
   _stats->bucket_count    = _num_buckets;
-  _stats->bucket_bytes    = _compact_buckets->size() * BytesPerWord;
+  _stats->bucket_bytes    = align_up(_compact_buckets->size() * BytesPerWord,
+                                     SharedSpaceObjectAlignment);
   _stats->hashentry_count = _num_entries_written;
-  _stats->hashentry_bytes = _compact_entries->size() * BytesPerWord;
+  _stats->hashentry_bytes = align_up(_compact_entries->size() * BytesPerWord,
+                                     SharedSpaceObjectAlignment);
 }
 
 // Write the compact table's buckets
@@ -196,13 +197,8 @@ void SimpleCompactHashtable::init(address base_address, u4 entry_count, u4 bucke
   _bucket_count = bucket_count;
   _entry_count = entry_count;
   _base_address = base_address;
-  if (DynamicDumpSharedSpaces) {
-    _buckets = DynamicArchive::buffer_to_target(buckets);
-    _entries = DynamicArchive::buffer_to_target(entries);
-  } else {
-    _buckets = buckets;
-    _entries = entries;
-  }
+  _buckets = buckets;
+  _entries = entries;
 }
 
 size_t SimpleCompactHashtable::calculate_header_size() {

@@ -236,10 +236,12 @@ public class SpinnerListModel extends AbstractSpinnerModel implements Serializab
 
         do {
             Object value = list.get(counter);
-            String string = value.toString();
+            if (value != null) {
+                String string = value.toString();
 
-            if (string != null && string.startsWith(substring)) {
-                return value;
+                if (string != null && string.startsWith(substring)) {
+                    return value;
+                }
             }
             counter = (counter + 1) % max;
         } while (counter != index);

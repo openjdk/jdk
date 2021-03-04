@@ -116,8 +116,9 @@ public class Messages {
      * @param args optional arguments to be replaced in the message.
      */
     public void warning(DocTreePath path, String key, Object... args) {
-        if (configuration.showMessage(path, key))
+        if (configuration.showMessage(path, key)) {
             report(WARNING, path, resources.getText(key, args));
+        }
     }
 
     /**

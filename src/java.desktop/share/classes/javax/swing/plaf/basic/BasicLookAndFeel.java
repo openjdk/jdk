@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,6 @@ import java.beans.PropertyChangeEvent;
  * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
- *
- * @author unattributed
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class BasicLookAndFeel extends LookAndFeel implements Serializable

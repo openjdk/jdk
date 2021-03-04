@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -33,11 +34,13 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_x86.inline.hpp"
 
@@ -517,8 +520,7 @@ int LIR_Assembler::emit_deopt_handler() {
   return offset;
 }
 
-
-void LIR_Assembler::return_op(LIR_Opr result) {
+void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == rax, "word returns are in rax,");
   if (!result->is_illegal() && result->is_float_kind() && !result->is_xmm_register()) {
     assert(result->fpu() == 0, "result must already be on TOS");
@@ -531,22 +533,18 @@ void LIR_Assembler::return_op(LIR_Opr result) {
     __ reserved_stack_check();
   }
 
-  bool result_is_oop = result->is_valid() ? result->is_oop() : false;
-
   // Note: we do not need to round double result; float result has the right precision
   // the poll sets the condition code, but no data registers
 
 #ifdef _LP64
-  const Register poll_addr = rscratch1;
-  __ movptr(poll_addr, Address(r15_thread, Thread::polling_page_offset()));
+  const Register thread = r15_thread;
 #else
-  const Register poll_addr = rbx;
-  assert(FrameMap::is_caller_save_register(poll_addr), "will overwrite");
-  __ get_thread(poll_addr);
-  __ movptr(poll_addr, Address(poll_addr, Thread::polling_page_offset()));
+  const Register thread = rbx;
+  __ get_thread(thread);
 #endif
+  code_stub->set_safepoint_offset(__ offset());
   __ relocate(relocInfo::poll_return_type);
-  __ testl(rax, Address(poll_addr, 0));
+  __ safepoint_poll(*code_stub->entry(), thread, true /* at_return */, true /* in_nmethod */);
   __ ret(0);
 }
 
@@ -2633,7 +2631,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
         __ andl(rdx, divisor - 1);
         __ addl(lreg, rdx);
       }
-      __ sarl(lreg, log2_jint(divisor));
+      __ sarl(lreg, log2i_exact(divisor));
       move_regs(lreg, dreg);
     } else if (code == lir_irem) {
       Label done;

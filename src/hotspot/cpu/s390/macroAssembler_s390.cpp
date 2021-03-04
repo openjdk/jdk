@@ -1163,7 +1163,7 @@ void MacroAssembler::load_const_32to64(Register t, int64_t x, bool sign_extend) 
 // Load narrow oop constant, no decompression.
 void MacroAssembler::load_narrow_oop(Register t, narrowOop a) {
   assert(UseCompressedOops, "must be on to call this method");
-  load_const_32to64(t, a, false /*sign_extend*/);
+  load_const_32to64(t, CompressedOops::narrow_oop_value(a), false /*sign_extend*/);
 }
 
 // Load narrow klass constant, compression required.
@@ -1181,7 +1181,7 @@ void MacroAssembler::load_narrow_klass(Register t, Klass* k) {
 void MacroAssembler::compare_immediate_narrow_oop(Register oop1, narrowOop oop2) {
   assert(UseCompressedOops, "must be on to call this method");
 
-  Assembler::z_clfi(oop1, oop2);
+  Assembler::z_clfi(oop1, CompressedOops::narrow_oop_value(oop2));
 }
 
 // Compare narrow oop in reg with narrow oop constant, no decompression.
@@ -1273,9 +1273,7 @@ int MacroAssembler::patch_compare_immediate_32(address pos, int64_t np) {
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_load_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
-
-  narrowOop no = CompressedOops::encode(o);
-  return patch_load_const_32to64(pos, no);
+  return patch_load_const_32to64(pos, CompressedOops::narrow_oop_value(o));
 }
 
 // Patching the immediate value of CPU version dependent load_narrow_klass sequence.
@@ -1291,9 +1289,7 @@ int MacroAssembler::patch_load_narrow_klass(address pos, Klass* k) {
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_compare_immediate_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
-
-  narrowOop no = CompressedOops::encode(o);
-  return patch_compare_immediate_32(pos, no);
+  return patch_compare_immediate_32(pos, CompressedOops::narrow_oop_value(o));
 }
 
 // Patching the immediate value of CPU version dependent compare_immediate_narrow_klass sequence.
@@ -1812,34 +1808,6 @@ void MacroAssembler::c2bool(Register r, Register t) {
   z_lcr(t, r);   // t = -r
   z_or(r, t);    // r = -r OR r
   z_srl(r, 31);  // Yields 0 if r was 0, 1 otherwise.
-}
-
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp,
-                                                      int offset) {
-  intptr_t value = *delayed_value_addr;
-  if (value != 0) {
-    return RegisterOrConstant(value + offset);
-  }
-
-  BLOCK_COMMENT("delayed_value {");
-  // Load indirectly to solve generation ordering problem.
-  load_absolute_address(tmp, (address) delayed_value_addr); // tmp = a;
-  z_lg(tmp, 0, tmp);                   // tmp = *tmp;
-
-#ifdef ASSERT
-  NearLabel L;
-  compare64_and_branch(tmp, (intptr_t)0L, Assembler::bcondNotEqual, L);
-  z_illtrap();
-  bind(L);
-#endif
-
-  if (offset != 0) {
-    z_agfi(tmp, offset);               // tmp = tmp + offset;
-  }
-
-  BLOCK_COMMENT("} delayed_value");
-  return RegisterOrConstant(tmp);
 }
 
 // Patch instruction `inst' at offset `inst_pos' to refer to `dest_pos'
@@ -2684,7 +2652,7 @@ uint MacroAssembler::get_poll_register(address instr_loc) {
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+  const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
   // Armed page has poll_bit set.
   z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
   z_brnaz(slow_path);
@@ -3358,11 +3326,11 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   // Load markWord from oop into mark.
   z_lg(displacedHeader, 0, oop);
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Z_R1_scratch, oop);
     z_l(Z_R1_scratch, Address(Z_R1_scratch, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_BOX_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(Z_R1_scratch, JVM_ACC_IS_BOX_CLASS >> 16);
+    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
+    z_nilh(Z_R1_scratch, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
     z_brne(done);
   }
 
@@ -3635,6 +3603,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided. (dst == src) also possible.
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
+  bool     need_zero_extend = base != 0;
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass encoder {");
@@ -3651,28 +3620,76 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   bind(ok);
 #endif
 
-  if (base != NULL) {
-    unsigned int base_h = ((unsigned long)base)>>32;
-    unsigned int base_l = (unsigned int)((unsigned long)base);
-    if ((base_h != 0) && (base_l == 0) && VM_Version::has_HighWordInstr()) {
-      lgr_if_needed(dst, current);
-      z_aih(dst, -((int)base_h));     // Base has no set bits in lower half.
-    } else if ((base_h == 0) && (base_l != 0)) {
-      lgr_if_needed(dst, current);
-      z_agfi(dst, -(int)base_l);
-    } else {
-      load_const(Z_R0, base);
-      lgr_if_needed(dst, current);
-      z_sgr(dst, Z_R0);
-    }
-    current = dst;
-  }
+  // Scale down the incoming klass pointer first.
+  // We then can be sure we calculate an offset that fits into 32 bit.
+  // More generally speaking: all subsequent calculations are purely 32-bit.
   if (shift != 0) {
     assert (LogKlassAlignmentInBytes == shift, "decode alg wrong");
     z_srlg(dst, current, shift);
     current = dst;
   }
-  lgr_if_needed(dst, current); // Move may be required (if neither base nor shift != 0).
+
+  if (base != NULL) {
+    // Use scaled-down base address parts to match scaled-down klass pointer.
+    unsigned int base_h = ((unsigned long)base)>>(32+shift);
+    unsigned int base_l = (unsigned int)(((unsigned long)base)>>shift);
+
+    // General considerations:
+    //  - when calculating (current_h - base_h), all digits must cancel (become 0).
+    //    Otherwise, we would end up with a compressed klass pointer which doesn't
+    //    fit into 32-bit.
+    //  - Only bit#33 of the difference could potentially be non-zero. For that
+    //    to happen, (current_l < base_l) must hold. In this case, the subtraction
+    //    will create a borrow out of bit#32, nicely killing bit#33.
+    //  - With the above, we only need to consider current_l and base_l to
+    //    calculate the result.
+    //  - Both values are treated as unsigned. The unsigned subtraction is
+    //    replaced by adding (unsigned) the 2's complement of the subtrahend.
+
+    if (base_l == 0) {
+      //  - By theory, the calculation to be performed here (current_h - base_h) MUST
+      //    cancel all high-word bits. Otherwise, we would end up with an offset
+      //    (i.e. compressed klass pointer) that does not fit into 32 bit.
+      //  - current_l remains unchanged.
+      //  - Therefore, we can replace all calculation with just a
+      //    zero-extending load 32 to 64 bit.
+      //  - Even that can be replaced with a conditional load if dst != current.
+      //    (this is a local view. The shift step may have requested zero-extension).
+    } else {
+      if ((base_h == 0) && is_uimm(base_l, 31)) {
+        // If we happen to find that (base_h == 0), and that base_l is within the range
+        // which can be represented by a signed int, then we can use 64bit signed add with
+        // (-base_l) as 32bit signed immediate operand. The add will take care of the
+        // upper 32 bits of the result, saving us the need of an extra zero extension.
+        // For base_l to be in the required range, it must not have the most significant
+        // bit (aka sign bit) set.
+        lgr_if_needed(dst, current); // no zero/sign extension in this case!
+        z_agfi(dst, -(int)base_l);   // base_l must be passed as signed.
+        need_zero_extend = false;
+        current = dst;
+      } else {
+        // To begin with, we may need to copy and/or zero-extend the register operand.
+        // We have to calculate (current_l - base_l). Because there is no unsigend
+        // subtract instruction with immediate operand, we add the 2's complement of base_l.
+        if (need_zero_extend) {
+          z_llgfr(dst, current);
+          need_zero_extend = false;
+        } else {
+          llgfr_if_needed(dst, current);
+        }
+        current = dst;
+        z_alfi(dst, -base_l);
+      }
+    }
+  }
+
+  if (need_zero_extend) {
+    // We must zero-extend the calculated result. It may have some leftover bits in
+    // the hi-word because we only did optimized calculations.
+    z_llgfr(dst, current);
+  } else {
+    llgfr_if_needed(dst, current); // zero-extension while copying comes at no extra cost.
+  }
 
   BLOCK_COMMENT("} cKlass encoder");
 }

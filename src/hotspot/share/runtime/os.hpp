@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 #ifndef SHARE_RUNTIME_OS_HPP
 #define SHARE_RUNTIME_OS_HPP
 
-#include "jvm.h"
-#include "jvmtifiles/jvmti.h"
+#include "jvm_md.h"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -51,6 +50,8 @@ class NativeCallStack;
 class methodHandle;
 class OSThread;
 class Mutex;
+
+struct jvmtiTimerInfo;
 
 template<class E> class GrowableArray;
 
@@ -99,24 +100,34 @@ class os: AllStatic {
 #endif
 
  public:
-  enum { page_sizes_max = 9 }; // Size of _page_sizes array (8 plus a sentinel)
+
+  // A simple value class holding a set of page sizes (similar to sigset_t)
+  class PageSizes {
+    size_t _v; // actually a bitmap.
+  public:
+    PageSizes() : _v(0) {}
+    void add(size_t pagesize);
+    bool contains(size_t pagesize) const;
+    // Given a page size, return the next smaller page size in this set, or 0.
+    size_t next_smaller(size_t pagesize) const;
+    // Given a page size, return the next larger page size in this set, or 0.
+    size_t next_larger(size_t pagesize) const;
+    // Returns the largest page size in this set, or 0 if set is empty.
+    size_t largest() const;
+    // Returns the smallest page size in this set, or 0 if set is empty.
+    size_t smallest() const;
+    // Prints one line of comma separated, human readable page sizes, "empty" if empty.
+    void print_on(outputStream* st) const;
+  };
 
  private:
   static OSThread*          _starting_thread;
   static address            _polling_page;
- public:
-  static size_t             _page_sizes[page_sizes_max];
+  static PageSizes          _page_sizes;
 
- private:
-  static void init_page_sizes(size_t default_page_size) {
-    _page_sizes[0] = default_page_size;
-    _page_sizes[1] = 0; // sentinel
-  }
+  static char*  pd_reserve_memory(size_t bytes, bool executable);
 
-  static char*  pd_reserve_memory(size_t bytes, size_t alignment_hint);
-
-  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
-  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
 
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -128,8 +139,10 @@ class os: AllStatic {
   static void   pd_commit_memory_or_exit(char* addr, size_t size,
                                          size_t alignment_hint,
                                          bool executable, const char* mesg);
-  static bool   pd_uncommit_memory(char* addr, size_t bytes);
+  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_release_memory(char* addr, size_t bytes);
+
+  static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
@@ -177,7 +190,6 @@ class os: AllStatic {
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
   static void   run_periodic_checks();
-  static bool   supports_monotonic_clock();
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -224,7 +236,7 @@ class os: AllStatic {
 
   static julong available_memory();
   static julong physical_memory();
-  static bool has_allocatable_memory_limit(julong* limit);
+  static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
 
   // Returns the id of the processor on which the calling thread is currently executing.
@@ -272,6 +284,10 @@ class os: AllStatic {
   // Return the default page size.
   static int    vm_page_size();
 
+  // The set of page sizes which the VM is allowed to use (may be a subset of
+  //  the page sizes actually available on the platform).
+  static const PageSizes& page_sizes() { return _page_sizes; }
+
   // Returns the page size to use for a region of memory.
   // region_size / min_pages will always be greater than or equal to the
   // returned value. The returned value will divide region_size.
@@ -283,10 +299,7 @@ class os: AllStatic {
   static size_t page_size_for_region_unaligned(size_t region_size, size_t min_pages);
 
   // Return the largest page size that can be used
-  static size_t max_page_size() {
-    // The _page_sizes array is sorted in descending order.
-    return _page_sizes[0];
-  }
+  static size_t max_page_size() { return page_sizes().largest(); }
 
   // Return a lower bound for page sizes. Also works before os::init completed.
   static size_t min_page_size() { return 4 * K; }
@@ -313,29 +326,14 @@ class os: AllStatic {
   static int    vm_allocation_granularity();
 
   // Reserves virtual memory.
-  // alignment_hint - currently only used by AIX
-  static char*  reserve_memory(size_t bytes, size_t alignment_hint = 0, MEMFLAGS flags = mtOther);
-
-  // Reserves virtual memory.
-  // if file_desc != -1, also attaches the memory to the file.
-  static char*  reserve_memory_with_fd(size_t bytes, size_t alignment_hint, int file_desc);
+  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtOther);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, int file_desc = -1);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc = -1);
-
-  // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
-  //  [base+split, base+size).
-  //  This may remove the original mapping, so its content may be lost.
-  // Both base and split point must be aligned to allocation granularity; split point shall
-  //  be >0 and <size.
-  // Splitting guarantees that the resulting two memory regions can be released independently
-  //  from each other using os::release_memory(). It also means NMT will track these regions
-  //  individually, allowing different tags to be set.
-  static void   split_reserved_memory(char *base, size_t size, size_t split);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -347,8 +345,13 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes);
+  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
+
+  // A diagnostic function to print memory mappings in the given range.
+  static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
+  // Prints all mappings
+  static void print_memory_mappings(outputStream* st);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
   // to make the OS back the memory range with actual memory.
@@ -370,7 +373,10 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
+  static char* map_memory_to_file(size_t size, int fd);
+  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
   static char* map_memory_to_file(char* base, size_t size, int fd);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
@@ -482,6 +488,7 @@ class os: AllStatic {
 
   static address    fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(const void* ucVoid);
+  static frame      fetch_compiled_frame_from_context(const void* ucVoid);
 
   static void breakpoint();
   static bool start_debugging(char *buf, int buflen);
@@ -580,6 +587,24 @@ class os: AllStatic {
   // and offset is set to -1 (if offset is non-NULL).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
+
+  // Given an address, attempt to locate both the symbol and the library it
+  // resides in. If at least one of these steps was successful, prints information
+  // and returns true.
+  // - if no scratch buffer is given, stack is used
+  // - shorten_paths: path is omitted from library name
+  // - demangle: function name is demangled
+  // - strip_arguments: arguments are stripped (requires demangle=true)
+  // On success prints either one of:
+  // "<function name>+<offset> in <library>"
+  // "<function name>+<offset>"
+  // "<address> in <library>+<offset>"
+  static bool print_function_and_library_name(outputStream* st,
+                                              address addr,
+                                              char* buf = NULL, int buflen = 0,
+                                              bool shorten_paths = true,
+                                              bool demangle = true,
+                                              bool strip_arguments = false);
 
   // Find out whether the pc is in the static code for jvm.dll/libjvm.so.
   static bool address_is_in_vm(address addr);
@@ -686,7 +711,11 @@ class os: AllStatic {
   // return current frame. pc() and sp() are set to NULL on failure.
   static frame      current_frame();
 
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize);
+  static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
+                             int bytes_per_line, address logical_start);
+  static void print_hex_dump(outputStream* st, address start, address end, int unitsize) {
+    print_hex_dump(st, start, end, unitsize, /*bytes_per_line=*/16, /*logical_start=*/start);
+  }
 
   // returns a string to describe the exception/signal;
   // returns NULL if exception_code is not an OS exception/signal.
@@ -965,7 +994,6 @@ class os: AllStatic {
     }
   };
 #endif // !WINDOWS
-
 
  protected:
   static volatile unsigned int _rand_seed;    // seed for random number generator

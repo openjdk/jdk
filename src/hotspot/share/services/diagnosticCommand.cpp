@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 #include "jvm.h"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
@@ -41,7 +44,10 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vmOperations.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
@@ -61,7 +67,7 @@ static void loadAgentModule(TRAPS) {
   JavaValue result(T_OBJECT);
   Handle h_module_name = java_lang_String::create_from_str("jdk.management.agent", CHECK);
   JavaCalls::call_static(&result,
-                         SystemDictionary::module_Modules_klass(),
+                         vmClasses::module_Modules_klass(),
                          vmSymbols::loadModule_name(),
                          vmSymbols::loadModule_signature(),
                          h_module_name,
@@ -110,6 +116,9 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export, true, false));
+#ifdef LINUX
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
+#endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TouchedMethodsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
@@ -276,7 +285,7 @@ void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   FormatBuffer<80> err_msg("%s", "");
-  int ret = WriteableFlags::set_flag(_flag.value(), val, JVMFlag::MANAGEMENT, err_msg);
+  int ret = WriteableFlags::set_flag(_flag.value(), val, JVMFlagOrigin::MANAGEMENT, err_msg);
 
   if (ret != JVMFlag::SUCCESS) {
     output()->print_cr("%s", err_msg.buffer());
@@ -301,6 +310,7 @@ void JVMTIDataDumpDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #if INCLUDE_SERVICES
+#if INCLUDE_JVMTI
 JVMTIAgentLoadDCmd::JVMTIAgentLoadDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _libpath("library path", "Absolute path of the JVMTI agent to load.",
@@ -360,6 +370,7 @@ int JVMTIAgentLoadDCmd::num_arguments() {
     return 0;
   }
 }
+#endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
@@ -441,7 +452,7 @@ void SystemGCDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
-  Klass* k = SystemDictionary::System_klass();
+  Klass* k = vmClasses::System_klass();
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, k,
                          vmSymbols::run_finalization_name(),
@@ -892,6 +903,12 @@ void CodeListDCmd::execute(DCmdSource source, TRAPS) {
 void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
   CodeCache::print_layout(output());
 }
+
+#ifdef LINUX
+void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
+  CodeCache::write_perf_map();
+}
+#endif // LINUX
 
 //---<  BEGIN  >--- CodeHeap State Analytics.
 CodeHeapAnalyticsDCmd::CodeHeapAnalyticsDCmd(outputStream* output, bool heap) :

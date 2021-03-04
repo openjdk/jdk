@@ -54,16 +54,17 @@ public class TestPrivateClasses extends JavadocTester {
     public void testDefault() {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "pkg", "pkg2");
         checkExit(Exit.OK);
 
         checkOutput("pkg/PublicChild.html", true,
                 // Field inheritence from non-public superclass.
                 """
-                    <a href="#fieldInheritedFromParent">fieldInheritedFromParent</a>""",
+                    <a href="#fieldInheritedFromParent" class="member-name-link">fieldInheritedFromParent</a>""",
                 // Method inheritance from non-public superclass.
                 """
-                    <a href="#methodInheritedFromParent(int)">methodInheritedFromParent</a>""",
+                    <a href="#methodInheritedFromParent(int)" class="member-name-link">methodInheritedFromParent</a>""",
                 // private class does not show up in tree
                 """
                     <div class="inheritance" title="Inheritance Tree">java.lang.Object
@@ -72,8 +73,8 @@ public class TestPrivateClasses extends JavadocTester {
                 // Method is documented as though it is declared in the inheriting method.
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">void</span>&nbsp;<span class="member-name">methodInheritedFro\
-                    mParent</span>&#8203;<span class="parameters">(int&nbsp;p1)</span>
+                    lass="return-type">void</span>&nbsp;<span class="element-name">methodInheritedFromParent\
+                    </span>&#8203;<span class="parameters">(int&nbsp;p1)</span>
                                                    throws <span class="exceptions">java.lang.Exception</span></div>""",
                 """
                     <dl class="notes">
@@ -112,10 +113,10 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PublicInterface.html", true,
                 // Field inheritance from non-public superinterface.
                 """
-                    <a href="#fieldInheritedFromInterface">fieldInheritedFromInterface</a>""",
+                    <a href="#fieldInheritedFromInterface" class="member-name-link">fieldInheritedFromInterface</a>""",
                 // Method inheritance from non-public superinterface.
                 """
-                    <a href="#methodInterface(int)">methodInterface</a>""",
+                    <a href="#methodInterface(int)" class="member-name-link">methodInterface</a>""",
                 //Make sure implemented interfaces from private superclass are inherited
                 """
                     <dl class="notes">
@@ -149,6 +150,7 @@ public class TestPrivateClasses extends JavadocTester {
     public void testPrivate() {
         javadoc("-d", "out-private",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "-private",
                 "pkg", "pkg2");
         checkExit(Exit.OK);
@@ -189,7 +191,8 @@ public class TestPrivateClasses extends JavadocTester {
                     blicInterface</a></code></dd>
                     </dl>""",
                 """
-                    <pre>public class <span class="type-name-label">PublicChild</span>""");
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name type-name-label">PublicChild</span>""");
 
         checkOutput("pkg/PublicInterface.html", true,
                 // Field inheritence from non-public superinterface.
@@ -214,7 +217,7 @@ public class TestPrivateClasses extends JavadocTester {
 
         checkOutput("pkg/PrivateInterface.html", true,
                 """
-                    <a href="#methodInterface(int)">methodInterface</a>"""
+                    <a href="#methodInterface(int)" class="member-name-link">methodInterface</a>"""
         );
 
         checkOutput("pkg2/C.html", true,
@@ -233,10 +236,12 @@ public class TestPrivateClasses extends JavadocTester {
                 //Make sure when no modifier appear in the class signature, the
                 //signature is displayed correctly without extra space at the beginning.
                 """
-                    <pre>class <span class="type-name-label">PrivateParent</span>""");
+                    <div class="type-signature"><span class="modifiers">class </span><span class="el\
+                    ement-name type-name-label">PrivateParent</span>""");
 
         checkOutput("pkg/PrivateParent.html", false,
                 """
-                    <pre> class <span class="type-name-label">PrivateParent</span>""");
+                    <div class="type-signature"><span class="modifiers"> class </span><span class="el\
+                    ement-name type-name-label">PrivateParent</span>""");
     }
 }

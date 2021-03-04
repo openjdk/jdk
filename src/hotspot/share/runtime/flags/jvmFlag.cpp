@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
@@ -41,10 +42,15 @@ static bool is_product_build() {
 #endif
 }
 
-void JVMFlag::set_origin(Flags origin) {
+void JVMFlag::set_origin(JVMFlagOrigin new_origin) {
+  int old_flags = _flags;
+  int origin = static_cast<int>(new_origin);
   assert((origin & VALUE_ORIGIN_MASK) == origin, "sanity");
-  Flags new_origin = Flags((origin == COMMAND_LINE) ? Flags(origin | ORIG_COMMAND_LINE) : origin);
-  _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | new_origin);
+  int was_in_cmdline = (new_origin == JVMFlagOrigin::COMMAND_LINE) ? WAS_SET_ON_COMMAND_LINE : 0;
+  _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | origin | was_in_cmdline);
+  if ((old_flags & WAS_SET_ON_COMMAND_LINE) != 0) {
+    assert((_flags & WAS_SET_ON_COMMAND_LINE) != 0, "once initialized, should never change");
+  }
 }
 
 /**
@@ -376,29 +382,28 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) const {
 }
 
 void JVMFlag::print_origin(outputStream* st, unsigned int width) const {
-  int origin = _flags & VALUE_ORIGIN_MASK;
   st->print("{");
-  switch(origin) {
-    case DEFAULT:
+  switch(get_origin()) {
+    case JVMFlagOrigin::DEFAULT:
       st->print("default"); break;
-    case COMMAND_LINE:
+    case JVMFlagOrigin::COMMAND_LINE:
       st->print("command line"); break;
-    case ENVIRON_VAR:
+    case JVMFlagOrigin::ENVIRON_VAR:
       st->print("environment"); break;
-    case CONFIG_FILE:
+    case JVMFlagOrigin::CONFIG_FILE:
       st->print("config file"); break;
-    case MANAGEMENT:
+    case JVMFlagOrigin::MANAGEMENT:
       st->print("management"); break;
-    case ERGONOMIC:
-      if (_flags & ORIG_COMMAND_LINE) {
+    case JVMFlagOrigin::ERGONOMIC:
+      if (_flags & WAS_SET_ON_COMMAND_LINE) {
         st->print("command line, ");
       }
       st->print("ergonomic"); break;
-    case ATTACH_ON_DEMAND:
+    case JVMFlagOrigin::ATTACH_ON_DEMAND:
       st->print("attach"); break;
-    case INTERNAL:
+    case JVMFlagOrigin::INTERNAL:
       st->print("internal"); break;
-    case JIMAGE_RESOURCE:
+    case JVMFlagOrigin::JIMAGE_RESOURCE:
       st->print("jimage"); break;
   }
   st->print("}");
@@ -462,7 +467,7 @@ const char* JVMFlag::flag_error_str(JVMFlag::Error error) {
 //----------------------------------------------------------------------
 // Build flagTable[]
 
-// Find out the number of LP64/JVMCI/COMPILER1/COMPILER1/ARCH flags,
+// Find out the number of LP64/ARCH/JVMCI/COMPILER1/COMPILER2 flags,
 // for JVMFlag::flag_group()
 
 #define ENUM_F(type, name, ...)  enum_##name,
@@ -470,24 +475,24 @@ const char* JVMFlag::flag_error_str(JVMFlag::Error error) {
 
 //                                                  dev     dev-pd  pro     pro-pd  notpro  range     constraint
 enum FlagCounter_LP64  { LP64_RUNTIME_FLAGS(        ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)  num_flags_LP64   };
+enum FlagCounter_ARCH  { ARCH_FLAGS(                ENUM_F,         ENUM_F,         ENUM_F, IGNORE_F, IGNORE_F)  num_flags_ARCH   };
 enum FlagCounter_JVMCI { JVMCI_ONLY(JVMCI_FLAGS(    ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_JVMCI  };
 enum FlagCounter_C1    { COMPILER1_PRESENT(C1_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C1     };
 enum FlagCounter_C2    { COMPILER2_PRESENT(C2_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C2     };
-enum FlagCounter_ARCH  { ARCH_FLAGS(                ENUM_F,         ENUM_F,         ENUM_F, IGNORE_F, IGNORE_F)  num_flags_ARCH   };
 
 const int first_flag_enum_LP64   = 0;
-const int first_flag_enum_JVMCI  = first_flag_enum_LP64  + num_flags_LP64;
+const int first_flag_enum_ARCH   = first_flag_enum_LP64  + num_flags_LP64;
+const int first_flag_enum_JVMCI  = first_flag_enum_ARCH  + num_flags_ARCH;
 const int first_flag_enum_C1     = first_flag_enum_JVMCI + num_flags_JVMCI;
 const int first_flag_enum_C2     = first_flag_enum_C1    + num_flags_C1;
-const int first_flag_enum_ARCH   = first_flag_enum_C2    + num_flags_C2;
-const int first_flag_enum_other  = first_flag_enum_ARCH  + num_flags_ARCH;
+const int first_flag_enum_other  = first_flag_enum_C2    + num_flags_C2;
 
 static constexpr int flag_group(int flag_enum) {
-  if (flag_enum < first_flag_enum_JVMCI) return JVMFlag::KIND_LP64_PRODUCT;
+  if (flag_enum < first_flag_enum_ARCH)  return JVMFlag::KIND_LP64_PRODUCT;
+  if (flag_enum < first_flag_enum_JVMCI) return JVMFlag::KIND_ARCH;
   if (flag_enum < first_flag_enum_C1)    return JVMFlag::KIND_JVMCI;
   if (flag_enum < first_flag_enum_C2)    return JVMFlag::KIND_C1;
-  if (flag_enum < first_flag_enum_ARCH)  return JVMFlag::KIND_C2;
-  if (flag_enum < first_flag_enum_other) return JVMFlag::KIND_ARCH;
+  if (flag_enum < first_flag_enum_other) return JVMFlag::KIND_C2;
 
   return 0;
 }
@@ -495,7 +500,7 @@ static constexpr int flag_group(int flag_enum) {
 constexpr JVMFlag::JVMFlag(int flag_enum, FlagType type, const char* name,
                            void* addr, int flags, int extra_flags, const char* doc) :
   _addr(addr), _name(name), _flags(), _type(type) NOT_PRODUCT(COMMA _doc(doc)) {
-  flags = flags | extra_flags | JVMFlag::DEFAULT | flag_group(flag_enum);
+  flags = flags | extra_flags | static_cast<int>(JVMFlagOrigin::DEFAULT) | flag_group(flag_enum);
   if ((flags & JVMFlag::KIND_PRODUCT) != 0) {
     if (flags & (JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_MANAGEABLE | JVMFlag::KIND_EXPERIMENTAL)) {
       // Backwards compatibility. This will be relaxed in JDK-7123237.
@@ -653,7 +658,7 @@ void JVMFlag::printSetFlags(outputStream* out) {
 
   // Print
   for (size_t i = 0; i < length; i++) {
-    if (array[i]->get_origin() /* naked field! */) {
+    if (array[i]->get_origin() != JVMFlagOrigin::DEFAULT) {
       array[i]->print_as_flag(out);
       out->print(" ");
     }

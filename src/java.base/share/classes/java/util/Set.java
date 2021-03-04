@@ -82,10 +82,12 @@ package java.util;
  * passed to a static factory method result in {@code IllegalArgumentException}.
  * <li>The iteration order of set elements is unspecified and is subject to change.
  * <li>They are <a href="../lang/doc-files/ValueBased.html">value-based</a>.
- * Callers should make no assumptions about the identity of the returned instances.
- * Factories are free to create new instances or reuse existing ones. Therefore,
- * identity-sensitive operations on these instances (reference equality ({@code ==}),
- * identity hash code, and synchronization) are unreliable and should be avoided.
+ * Programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use them for synchronization, or
+ * unpredictable behavior may occur. For example, in a future release,
+ * synchronization may fail. Callers should make no assumptions
+ * about the identity of the returned instances. Factories are free to
+ * create new instances or reuse existing ones.
  * <li>They are serialized as specified on the
  * <a href="{@docRoot}/serialized-form.html#java.util.CollSer">Serialized Form</a>
  * page.

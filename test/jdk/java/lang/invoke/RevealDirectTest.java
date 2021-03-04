@@ -158,6 +158,10 @@ public class RevealDirectTest {
         // CS methods have to be revealed with a matching lookupClass
         testOnMembersNoReveal("testCallerSensitiveNegative/2", mems, Simple.localLookup(), publicLookup());
         testOnMembersNoReveal("testCallerSensitiveNegative/3", mems, Simple.localLookup(), Nestmate.localLookup());
+        // CS methods have to have original access
+        Lookup lookup = Simple.localLookup().dropLookupMode(Lookup.ORIGINAL);
+        testOnMembersNoLookup("testCallerSensitiveNegative/4", mems, lookup);
+        testOnMembersNoReveal("testCallerSensitiveNegative/5", mems, Simple.localLookup(), lookup);
     }
     @Test public void testMethodHandleNatives() throws Throwable {
         if (VERBOSE)  System.out.println("@Test testMethodHandleNatives");

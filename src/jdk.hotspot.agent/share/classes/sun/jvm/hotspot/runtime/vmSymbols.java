@@ -50,8 +50,9 @@ public class vmSymbols {
   private static int SID_LIMIT;
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type            = db.lookupType("vmSymbols");
-    symbolsAddress       = type.getAddressField("_symbols[0]").getStaticFieldAddress();
+    // All VM symbols are now stored in: Symbol* Symbol::_vm_symbols[];
+    Type type            = db.lookupType("Symbol");
+    symbolsAddress       = type.getAddressField("_vm_symbols[0]").getStaticFieldAddress();
     FIRST_SID            = db.lookupIntConstant("vmSymbols::FIRST_SID");
     SID_LIMIT            = db.lookupIntConstant("vmSymbols::SID_LIMIT");
   }

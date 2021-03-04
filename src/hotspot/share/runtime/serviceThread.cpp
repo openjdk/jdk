@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/universe.hpp"
@@ -41,6 +42,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
@@ -94,7 +96,7 @@ void ServiceThread::initialize() {
   // Initialize thread_oop to put it into the system threadGroup
   Handle thread_group (THREAD, Universe::system_thread_group());
   Handle thread_oop = JavaCalls::construct_new_instance(
-                          SystemDictionary::Thread_klass(),
+                          vmClasses::Thread_klass(),
                           vmSymbols::threadgroup_string_void_signature(),
                           thread_group,
                           string,
@@ -125,9 +127,8 @@ void ServiceThread::initialize() {
 }
 
 static void cleanup_oopstorages() {
-  OopStorageSet::Iterator it = OopStorageSet::all_iterator();
-  for ( ; !it.is_end(); ++it) {
-    it->delete_empty_blocks();
+  for (OopStorage* storage : OopStorageSet::Range<OopStorageSet::Id>()) {
+    storage->delete_empty_blocks();
   }
 }
 
@@ -143,10 +144,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool thread_id_table_work = false;
     bool protection_domain_table_work = false;
     bool oopstorage_work = false;
-    bool deflate_idle_monitors = false;
     JvmtiDeferredEvent jvmti_event;
     bool oop_handles_to_release = false;
     bool cldg_cleanup_work = false;
+    bool jvmti_tagmap_work = false;
     {
       // Need state transition ThreadBlockInVM so that this thread
       // will be handled by safepoint correctly when this thread is
@@ -175,12 +176,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
               (oop_handles_to_release = (_oop_handle_list != NULL)) |
               (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
-              (deflate_idle_monitors = ObjectSynchronizer::is_async_deflation_needed())
+              (jvmti_tagmap_work = JvmtiTagMap::has_object_free_events_and_reset())
              ) == 0) {
         // Wait until notified that there is some work to do.
-        // We wait for GuaranteedSafepointInterval so that
-        // is_async_deflation_needed() is checked at the same interval.
-        ml.wait(GuaranteedSafepointInterval);
+        ml.wait();
       }
 
       if (has_jvmti_events) {
@@ -233,16 +232,16 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
       cleanup_oopstorages();
     }
 
-    if (deflate_idle_monitors) {
-      ObjectSynchronizer::deflate_idle_monitors_using_JT();
-    }
-
     if (oop_handles_to_release) {
       release_oop_handles();
     }
 
     if (cldg_cleanup_work) {
       ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
+    }
+
+    if (jvmti_tagmap_work) {
+      JvmtiTagMap::flush_all_object_free_events();
     }
   }
 }
@@ -257,8 +256,8 @@ void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   Service_lock->notify_all();
  }
 
-void ServiceThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
-  JavaThread::oops_do(f, cf);
+void ServiceThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
+  JavaThread::oops_do_no_frames(f, cf);
   // The ServiceThread "owns" the JVMTI Deferred events, scan them here
   // to keep them alive until they are processed.
   if (_jvmti_event != NULL) {

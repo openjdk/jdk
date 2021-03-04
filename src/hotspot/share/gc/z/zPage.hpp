@@ -82,6 +82,7 @@ public:
   void set_last_used();
 
   void reset();
+  void reset_for_in_place_relocation();
 
   ZPage* retype(uint8_t type);
   ZPage* split(size_t size);
@@ -109,6 +110,8 @@ public:
 
   void print_on(outputStream* out) const;
   void print() const;
+
+  void verify_live(uint32_t live_objects, size_t live_bytes) const;
 };
 
 class ZPageClosure {

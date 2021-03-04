@@ -34,8 +34,8 @@
 class SignatureHandlerGenerator: public NativeSignatureIterator {
  private:
   MacroAssembler* _masm;
-  unsigned int _num_fp_args;
-  unsigned int _num_int_args;
+  unsigned int _num_reg_fp_args;
+  unsigned int _num_reg_int_args;
   int _stack_offset;
 
   void pass_int();
@@ -43,6 +43,10 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
   void pass_float();
   void pass_double();
   void pass_object();
+
+  Register next_gpr();
+  FloatRegister next_fpr();
+  int next_stack_offset();
 
  public:
   // Creation

@@ -48,14 +48,16 @@ final class HotSpotJVMCICompilerConfig {
     private static class DummyCompilerFactory implements JVMCICompilerFactory, JVMCICompiler {
 
         private final String reason;
+        private final HotSpotJVMCIRuntime runtime;
 
-        DummyCompilerFactory(String reason) {
+        DummyCompilerFactory(String reason, HotSpotJVMCIRuntime runtime) {
             this.reason = reason;
+            this.runtime = runtime;
         }
 
         @Override
         public HotSpotCompilationRequestResult compileMethod(CompilationRequest request) {
-            throw new JVMCIError("no JVMCI compiler selected: " + reason);
+            throw runtime.exitHotSpotWithMessage(1, "Cannot use JVMCI compiler: %s%n", reason);
         }
 
         @Override
@@ -64,8 +66,13 @@ final class HotSpotJVMCICompilerConfig {
         }
 
         @Override
-        public JVMCICompiler createCompiler(JVMCIRuntime runtime) {
+        public JVMCICompiler createCompiler(JVMCIRuntime rt) {
             return this;
+        }
+
+        @Override
+        public boolean isGCSupported(int gcIdentifier) {
+            return false;
         }
     }
 
@@ -81,15 +88,16 @@ final class HotSpotJVMCICompilerConfig {
      * @throws SecurityException if a security manager is present and it denies
      *             {@link JVMCIPermission} for any {@link JVMCIServiceLocator} loaded by this method
      */
-    static JVMCICompilerFactory getCompilerFactory() {
+    static JVMCICompilerFactory getCompilerFactory(HotSpotJVMCIRuntime runtime) {
         if (compilerFactory == null) {
             JVMCICompilerFactory factory = null;
             String compilerName = Option.Compiler.getString();
             if (compilerName != null) {
+                String compPropertyName = Option.Compiler.getPropertyName();
                 if (compilerName.isEmpty()) {
-                    factory = new DummyCompilerFactory(" empty \"\" is specified");
+                    factory = new DummyCompilerFactory("Value of " + compPropertyName + " is empty", runtime);
                 } else if (compilerName.equals("null")) {
-                    factory = new DummyCompilerFactory("\"null\" is specified");
+                    factory = new DummyCompilerFactory("Value of " + compPropertyName + " is \"null\"", runtime);
                 } else {
                     for (JVMCICompilerFactory f : getJVMCICompilerFactories()) {
                         if (f.getCompilerName().equals(compilerName)) {
@@ -98,29 +106,29 @@ final class HotSpotJVMCICompilerConfig {
                     }
                     if (factory == null) {
                         if (Services.IS_IN_NATIVE_IMAGE) {
-                            throw new JVMCIError("JVMCI compiler '%s' not found in JVMCI native library.%n" +
-                                            "Use -XX:-UseJVMCINativeLibrary when specifying a JVMCI compiler available on a class path with %s.",
-                                            compilerName, Option.Compiler.getPropertyName());
+                            throw runtime.exitHotSpotWithMessage(1, "JVMCI compiler '%s' not found in JVMCI native library.%n" +
+                                            "Use -XX:-UseJVMCINativeLibrary when specifying a JVMCI compiler available on a class path with %s.%n",
+                                            compilerName, compPropertyName);
                         }
-                        throw new JVMCIError("JVMCI compiler '%s' not found", compilerName);
+                        throw runtime.exitHotSpotWithMessage(1, "JVMCI compiler '%s' specified by %s not found%n", compilerName, compPropertyName);
                     }
                 }
             } else {
                 // Auto select a single available compiler
-                String reason = "default compiler is not found";
+                String reason = "No JVMCI compiler found";
                 for (JVMCICompilerFactory f : getJVMCICompilerFactories()) {
                     if (factory == null) {
                         openJVMCITo(f.getClass().getModule());
                         factory = f;
                     } else {
                         // Multiple factories seen - cancel auto selection
-                        reason = "multiple factories seen: \"" + factory.getCompilerName() + "\" and \"" + f.getCompilerName() + "\"";
+                        reason = "Multiple JVMCI compilers found: \"" + factory.getCompilerName() + "\" and \"" + f.getCompilerName() + "\"";
                         factory = null;
                         break;
                     }
                 }
                 if (factory == null) {
-                    factory = new DummyCompilerFactory(reason);
+                    factory = new DummyCompilerFactory(reason, runtime);
                 }
             }
             factory.onSelection();

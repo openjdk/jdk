@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key cgroups
  * @summary Test JVM's CPU resource awareness when running inside docker container
  * @requires docker.support
  * @library /test/lib

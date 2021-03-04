@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,7 @@ jobject AwtClipboard::theCurrentClipboard;
 BOOL AwtClipboard::isGettingOwnership = FALSE;
 
 volatile jmethodID AwtClipboard::handleContentsChangedMID;
-volatile BOOL AwtClipboard::skipInitialWmDrawClipboardMsg = TRUE;
 volatile BOOL AwtClipboard::isClipboardViewerRegistered = FALSE;
-volatile HWND AwtClipboard::hwndNextViewer = NULL;
 
 #define GALLOCFLG (GMEM_DDESHARE | GMEM_MOVEABLE | GMEM_ZEROINIT)
 
@@ -59,27 +57,11 @@ void AwtClipboard::LostOwnership(JNIEnv *env) {
     }
 }
 
-void AwtClipboard::WmChangeCbChain(WPARAM wParam, LPARAM lParam) {
-    if ((HWND)wParam == hwndNextViewer) {
-        hwndNextViewer = (HWND)lParam;
-    } else if (hwndNextViewer != NULL) {
-        ::SendMessage(hwndNextViewer, WM_CHANGECBCHAIN, wParam, lParam);
-    }
-}
-
-void AwtClipboard::WmDrawClipboard(JNIEnv *env, WPARAM wParam, LPARAM lParam) {
-    if (skipInitialWmDrawClipboardMsg) {
-        // skipping the first contents change notification as it comes
-        // immediately after registering the clipboard viewer window
-        // and it is not caused by an actual contents change.
-        skipInitialWmDrawClipboardMsg = FALSE;
-        return;
-    }
+void AwtClipboard::WmClipboardUpdate(JNIEnv *env) {
     if (theCurrentClipboard != NULL) {
         env->CallVoidMethod(theCurrentClipboard, handleContentsChangedMID);
         DASSERT(!safe_ExceptionOccurred(env));
     }
-    ::SendMessage(hwndNextViewer, WM_DRAWCLIPBOARD, wParam, lParam);
 }
 
 void AwtClipboard::RegisterClipboardViewer(JNIEnv *env, jobject jclipboard) {
@@ -96,7 +78,7 @@ void AwtClipboard::RegisterClipboardViewer(JNIEnv *env, jobject jclipboard) {
             env->GetMethodID(cls, "handleContentsChanged", "()V");
     DASSERT(AwtClipboard::handleContentsChangedMID != NULL);
 
-    hwndNextViewer = ::SetClipboardViewer(AwtToolkit::GetInstance().GetHWnd());
+    ::AddClipboardFormatListener(AwtToolkit::GetInstance().GetHWnd());
     isClipboardViewerRegistered = TRUE;
 }
 
@@ -104,10 +86,8 @@ void AwtClipboard::UnregisterClipboardViewer(JNIEnv *env) {
     TRY;
 
     if (isClipboardViewerRegistered) {
-        ::ChangeClipboardChain(AwtToolkit::GetInstance().GetHWnd(), AwtClipboard::hwndNextViewer);
-        AwtClipboard::hwndNextViewer = NULL;
+        ::RemoveClipboardFormatListener(AwtToolkit::GetInstance().GetHWnd());
         isClipboardViewerRegistered = FALSE;
-        skipInitialWmDrawClipboardMsg = TRUE;
     }
 
     CATCH_BAD_ALLOC;

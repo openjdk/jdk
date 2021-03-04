@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import java.time.Instant;
 import java.time.LocalTime;
 
 /**
- * <P>A thin wrapper around the <code>java.util.Date</code> class that allows the JDBC
- * API to identify this as an SQL <code>TIME</code> value. The <code>Time</code>
+ * <P>A thin wrapper around the {@code java.util.Date} class that allows the JDBC
+ * API to identify this as an SQL {@code TIME} value. The {@code Time}
  * class adds formatting and
  * parsing operations to support the JDBC escape syntax for time
  * values.
@@ -42,12 +42,12 @@ import java.time.LocalTime;
 public class Time extends java.util.Date {
 
     /**
-     * Constructs a <code>Time</code> object initialized with the
+     * Constructs a {@code Time} object initialized with the
      * given values for the hour, minute, and second.
      * The driver sets the date components to January 1, 1970.
      * Any method that attempts to access the date components of a
-     * <code>Time</code> object will throw a
-     * <code>java.lang.IllegalArgumentException</code>.
+     * {@code Time} object will throw a
+     * {@code java.lang.IllegalArgumentException}.
      * <P>
      * The result is undefined if a given argument is out of bounds.
      *
@@ -64,7 +64,7 @@ public class Time extends java.util.Date {
     }
 
     /**
-     * Constructs a <code>Time</code> object using a milliseconds time value.
+     * Constructs a {@code Time} object using a milliseconds time value.
      *
      * @param time milliseconds since January 1, 1970, 00:00:00 GMT;
      *             a negative number is milliseconds before
@@ -75,7 +75,7 @@ public class Time extends java.util.Date {
     }
 
     /**
-     * Sets a <code>Time</code> object using a milliseconds time value.
+     * Sets a {@code Time} object using a milliseconds time value.
      *
      * @param time milliseconds since January 1, 1970, 00:00:00 GMT;
      *             a negative number is milliseconds before
@@ -86,10 +86,10 @@ public class Time extends java.util.Date {
     }
 
     /**
-     * Converts a string in JDBC time escape format to a <code>Time</code> value.
+     * Converts a string in JDBC time escape format to a {@code Time} value.
      *
      * @param s time in format "hh:mm:ss"
-     * @return a corresponding <code>Time</code> object
+     * @return a corresponding {@code Time} object
      */
     public static Time valueOf(String s) {
         if (s == null) throw new java.lang.IllegalArgumentException();
@@ -115,7 +115,7 @@ public class Time extends java.util.Date {
     /**
      * Formats a time in JDBC time escape format.
      *
-     * @return a <code>String</code> in hh:mm:ss format
+     * @return a {@code String} in hh:mm:ss format
      */
     @SuppressWarnings("deprecation")
     public String toString () {
@@ -136,12 +136,12 @@ public class Time extends java.util.Date {
     // Override all the date operations inherited from java.util.Date;
 
    /**
-    * This method is deprecated and should not be used because SQL <code>TIME</code>
+    * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a year component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this
-    *           method is invoked
+    * @throws java.lang.IllegalArgumentException if this
+    *         method is invoked
     * @see #setYear
     */
     @Deprecated(since="1.2")
@@ -150,12 +150,12 @@ public class Time extends java.util.Date {
     }
 
    /**
-    * This method is deprecated and should not be used because SQL <code>TIME</code>
+    * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a month component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this
-    *           method is invoked
+    * @throws java.lang.IllegalArgumentException if this
+    *         method is invoked
     * @see #setMonth
     */
     @Deprecated(since="1.2")
@@ -164,12 +164,12 @@ public class Time extends java.util.Date {
     }
 
    /**
-    * This method is deprecated and should not be used because SQL <code>TIME</code>
+    * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a day component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this
-    *           method is invoked
+    * @throws java.lang.IllegalArgumentException if this
+    *         method is invoked
     */
     @Deprecated(since="1.2")
     public int getDay() {
@@ -177,12 +177,12 @@ public class Time extends java.util.Date {
     }
 
    /**
-    * This method is deprecated and should not be used because SQL <code>TIME</code>
+    * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a date component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this
-    *           method is invoked
+    * @throws java.lang.IllegalArgumentException if this
+    *         method is invoked
     * @see #setDate
     */
     @Deprecated(since="1.2")
@@ -191,12 +191,12 @@ public class Time extends java.util.Date {
     }
 
    /**
-    * This method is deprecated and should not be used because SQL <code>TIME</code>
+    * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a year component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this
-    *           method is invoked
+    * @throws java.lang.IllegalArgumentException if this
+    *         method is invoked
     * @see #getYear
     */
     @Deprecated(since="1.2")
@@ -205,12 +205,12 @@ public class Time extends java.util.Date {
     }
 
    /**
-    * This method is deprecated and should not be used because SQL <code>TIME</code>
+    * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a month component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this
-    *           method is invoked
+    * @throws java.lang.IllegalArgumentException if this
+    *         method is invoked
     * @see #getMonth
     */
     @Deprecated(since="1.2")
@@ -219,12 +219,12 @@ public class Time extends java.util.Date {
     }
 
    /**
-    * This method is deprecated and should not be used because SQL <code>TIME</code>
+    * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a date component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this
-    *           method is invoked
+    * @throws java.lang.IllegalArgumentException if this
+    *         method is invoked
     * @see #getDate
     */
     @Deprecated(since="1.2")
@@ -246,7 +246,7 @@ public class Time extends java.util.Date {
      *
      * @param time a {@code LocalTime} to convert
      * @return a {@code Time} object
-     * @exception NullPointerException if {@code time} is null
+     * @throws NullPointerException if {@code time} is null
      * @since 1.8
      */
     @SuppressWarnings("deprecation")
@@ -274,7 +274,7 @@ public class Time extends java.util.Date {
     * not be used because SQL {@code Time} values do not have a date
     * component.
     *
-    * @exception java.lang.UnsupportedOperationException if this method is invoked
+    * @throws java.lang.UnsupportedOperationException if this method is invoked
     */
     @Override
     public Instant toInstant() {

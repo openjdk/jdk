@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Class redefinition must preclude changes to Record attributes
  * @comment This is a copy of test/jdk/java/lang/instrument/RedefineNestmateAttr/
  * @comment modified for records and the Record attribute.
@@ -33,15 +34,14 @@
  *          java.instrument
  * @compile ../NamedBuffer.java
  * @run main RedefineClassHelper
- * @compile --enable-preview -source ${jdk.version} Host/Host.java
- * @compile --enable-preview -source ${jdk.version} TestRecordAttr.java
- * @run main/othervm -javaagent:redefineagent.jar --enable-preview -Xlog:redefine+class+record=trace TestRecordAttr Host
- * @compile --enable-preview -source ${jdk.version} HostA/Host.java
- * @run main/othervm -javaagent:redefineagent.jar --enable-preview -Xlog:redefine+class+record=trace TestRecordAttr HostA
- * @compile --enable-preview -source ${jdk.version} HostAB/Host.java
- * @run main/othervm -javaagent:redefineagent.jar --enable-preview -Xlog:redefine+class+record=trace TestRecordAttr HostAB
- * @compile --enable-preview -source ${jdk.version} HostABC/Host.java
- * @run main/othervm -javaagent:redefineagent.jar --enable-preview -Xlog:redefine+class+record=trace TestRecordAttr HostABC
+ * @compile Host/Host.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace TestRecordAttr Host
+ * @compile HostA/Host.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace TestRecordAttr HostA
+ * @compile HostAB/Host.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace TestRecordAttr HostAB
+ * @compile HostABC/Host.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace TestRecordAttr HostABC
  */
 
 /* Test Description
@@ -269,8 +269,6 @@ public class TestRecordAttr {
                                         "            to: " + dst);
         CompilerUtils.compile(src.toPath(),
                               dst.toPath(),
-                              false /* don't recurse */,
-                              "--enable-preview",
-                              "--source", VERSION);
+                              false /* don't recurse */);
     }
 }

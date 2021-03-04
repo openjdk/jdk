@@ -100,7 +100,6 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   void set_idle();
   void start_full_mark();
   void start_undo_mark();
-  void set_in_progress();
 
   bool idle() const;
   // Returns true from the moment a concurrent cycle is

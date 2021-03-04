@@ -25,7 +25,7 @@ package jdk.jpackage.test;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.incubator.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.IOUtils;
 
 
 final public class FileAssociations {

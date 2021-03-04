@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,15 +110,24 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * A single well formed tagged-value is read and annotated.
      *
      * @param in  a DataInputStream
-     * @throws IOException if an I/O error occurs
      */
-    public String annotate(DataInputStream in) throws IOException {
+    public String annotate(DataInputStream in) {
         StringBuilder sb = new StringBuilder();
         try {
             this.annotate(in, sb);
-        } finally {
-            return sb.toString();
+        } catch (IOException e) {
+            /*
+             * Formatters are designed to be nested, where one formatter can call another and the valuable output
+             * is the formatted string that has been accumulated from the beginning of the stream.
+             *
+             * The choice of DataInputStream was chosen for the convenience of the methods to read different types.
+             * and (declared) exceptions are an unwelcome artifact.
+             *
+             * If an exception was percolated up and the formatted output discarded, it would defeat the purpose.
+             * So we just catch it here and still return useful information about the stream to this point.
+             */
         }
+        return sb.toString();
     }
 
     /**
@@ -165,8 +174,12 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 // multi-byte encoded length
                 int nbytes = len & 0x7f;
                 if (nbytes > 4) {
-                    out.append("***** Tag: " + tagName(tag) +
-                            ", Range of length error: " + len + " bytes" + System.lineSeparator());
+                    out.append("***** Tag: ")
+                            .append(tagName(tag))
+                            .append(", Range of length error: ")
+                            .append(Integer.toString(len))
+                            .append(" bytes");
+                    out.append(System.lineSeparator());
                     return available;       // return the unread length
                 }
                 len = 0;
@@ -185,9 +198,10 @@ public class ASN1Formatter implements HexPrinter.Formatter {
             out.append(prefix);     // start with indent
             switch (tag) {
                 case TAG_EndOfContent:    // End-of-contents octets; len == 0
-                    out.append("END-OF-CONTENT " + System.lineSeparator());
-                    // end of indefinite-length constructed, return any remaining
-                    return 0;          // unknown, but nothing left
+                    out.append("END-OF-CONTENT");
+                    out.append(System.lineSeparator());
+                    // end of indefinite-length constructed, return zero remaining
+                    return 0;
                 case TAG_Integer:
                 case TAG_Enumerated:
                     switch (len) {
@@ -319,7 +333,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     }
                 }
             }
-            out.append(System.lineSeparator());   // End with EOL
+            out.append(System.lineSeparator());
         }
         return available;
     }
@@ -407,7 +421,6 @@ public class ASN1Formatter implements HexPrinter.Formatter {
             // Look up the OID; if the class is not accessible just return the numeric form
             Class<?> cl = Class.forName("sun.security.util.KnownOIDs");
             Method findMatch = cl.getDeclaredMethod("findMatch", String.class);
-            findMatch.setAccessible(true);
             Object oid = findMatch.invoke(null, noid);
             return (oid == null) ? noid : noid + " (" + oid.toString() + ")";
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {

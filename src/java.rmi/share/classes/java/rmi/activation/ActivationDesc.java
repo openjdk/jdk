@@ -109,8 +109,8 @@ public final class ActivationDesc implements Serializable {
      * loaded)
      * @param data the object's initialization (activation) data contained
      * in marshalled form.
-     * @exception ActivationException if the current group is nonexistent
-     * @exception UnsupportedOperationException if and only if activation is
+     * @throws ActivationException if the current group is nonexistent
+     * @throws UnsupportedOperationException if and only if activation is
      * not supported by this implementation
      * @since 1.2
      */
@@ -148,8 +148,8 @@ public final class ActivationDesc implements Serializable {
      * activated on demand.  Specifying <code>restart</code> to be
      * <code>true</code> does not force an initial immediate activation of
      * a newly registered object;  initial activation is lazy.
-     * @exception ActivationException if the current group is nonexistent
-     * @exception UnsupportedOperationException if and only if activation is
+     * @throws ActivationException if the current group is nonexistent
+     * @throws UnsupportedOperationException if and only if activation is
      * not supported by this implementation
      * @since 1.2
      */
@@ -184,8 +184,8 @@ public final class ActivationDesc implements Serializable {
      * loaded)
      * @param data  the object's initialization (activation) data contained
      * in marshalled form.
-     * @exception IllegalArgumentException if <code>groupID</code> is null
-     * @exception UnsupportedOperationException if and only if activation is
+     * @throws IllegalArgumentException if <code>groupID</code> is null
+     * @throws UnsupportedOperationException if and only if activation is
      * not supported by this implementation
      * @since 1.2
      */
@@ -218,8 +218,8 @@ public final class ActivationDesc implements Serializable {
      * activated on demand.  Specifying <code>restart</code> to be
      * <code>true</code> does not force an initial immediate activation of
      * a newly registered object;  initial activation is lazy.
-     * @exception IllegalArgumentException if <code>groupID</code> is null
-     * @exception UnsupportedOperationException if and only if activation is
+     * @throws IllegalArgumentException if <code>groupID</code> is null
+     * @throws UnsupportedOperationException if and only if activation is
      * not supported by this implementation
      * @since 1.2
      */

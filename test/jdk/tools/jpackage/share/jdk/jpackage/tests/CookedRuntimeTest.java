@@ -44,7 +44,7 @@ import jdk.jpackage.test.TKit;
  * @summary test '--runtime-image' option of jpackage
  * @library ../../../../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile CookedRuntimeTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.CookedRuntimeTest

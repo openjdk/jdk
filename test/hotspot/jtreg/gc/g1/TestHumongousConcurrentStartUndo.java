@@ -45,8 +45,7 @@ import sun.hotspot.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.lang.ref.Reference;
 
 public class TestHumongousConcurrentStartUndo {
     // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to
@@ -80,48 +79,64 @@ public class TestHumongousConcurrentStartUndo {
     }
 
     static class EdenObjectAllocatorWithHumongousAllocation {
-        private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+        private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-        private static void allocateHumongous(int num, int objSize, Queue keeper) {
-            for (int i = 1; i <= num; i++) {
+        private static final int M = 1024 * 1024;
+        // Make humongous object size 75% of region size
+        private static final int HumongousObjectSize =
+                (int)(HeapRegionSize * M * 0.75);
+        // Number of objects to allocate to go above IHOP
+        private static final int NumHumongousObjectAllocations =
+                (int)(((HeapSize - YoungSize) * 80 / 100.0) / HeapRegionSize);
+
+
+        private static void allocateHumongous(int num, Object[] holder) {
+            for (int i = 0; i < num; i++) {
                 if (i % 10 == 0) {
                     System.out.println("Allocating humongous object " + i + "/" + num +
-                                       " of size " + objSize + " bytes");
+                                       " of size " + HumongousObjectSize + " bytes");
                 }
-                byte[] e = new byte[objSize];
-                if (!keeper.offer(e)) {
-                    keeper.remove();
-                    keeper.offer(e);
-                }
+                holder[i % holder.length] = new byte[HumongousObjectSize];
             }
         }
 
+        private static void runConcurrentUndoCycle() {
+            // Start from an "empty" heap.
+            WB.fullGC();
+            // The queue only holds one element, so only one humongous object
+            // will be reachable and the concurrent operation should be undone.
+            allocateHumongous(NumHumongousObjectAllocations, new Object[1]);
+            Helpers.waitTillCMCFinished(WB, 1);
+        }
+
+        private static void runConcurrentMarkCycle() {
+            Object[] a = new Object[NumHumongousObjectAllocations];
+            // Start from an "empty" heap.
+            WB.fullGC();
+            // Try to trigger a concurrent mark cycle. Block concurrent operation
+            // while we are allocating more humongous objects than the IHOP threshold.
+            // After releasing control, trigger the full cycle.
+            try {
+                System.out.println("Acquire CM control");
+                WB.concurrentGCAcquireControl();
+                allocateHumongous(NumHumongousObjectAllocations, a);
+            } finally {
+                System.out.println("Release CM control");
+                WB.concurrentGCReleaseControl();
+            }
+            // At this point we kept NumHumongousObjectAllocations humongous objects live
+            // in "a" which is larger than the IHOP threshold. Another dummy humongous
+            // allocation must trigger a concurrent cycle that is not an Undo Cycle.
+            allocateHumongous(1, new Object[1]);
+            Helpers.waitTillCMCFinished(WB, 1);
+
+            Reference.reachabilityFence(a);
+        }
+
         public static void main(String [] args) throws Exception {
-            final int M = 1024 * 1024;
-            // Make humongous object size 75% of region size
-            final int humongousObjectSize =
-                (int)(HeapRegionSize * M * 0.75);
-
-            // Number of objects to allocate to go above IHOP
-            final int humongousObjectAllocations =
-                (int)(((HeapSize - YoungSize) * 80 / 100.0) / HeapRegionSize);
-
-            ArrayBlockingQueue a;
             for (int iterate = 0; iterate < 3; iterate++) {
-                WHITE_BOX.fullGC();
-
-                a = new ArrayBlockingQueue(1);
-                allocateHumongous(humongousObjectAllocations, humongousObjectSize, a);
-                Helpers.waitTillCMCFinished(WHITE_BOX, 1);
-                a = null;
-
-                a = new ArrayBlockingQueue(humongousObjectAllocations);
-                allocateHumongous(humongousObjectAllocations, humongousObjectSize, a);
-                Helpers.waitTillCMCFinished(WHITE_BOX, 1);
-                a = null;
-
-                allocateHumongous(1, humongousObjectSize, new ArrayBlockingQueue(1));
-                Helpers.waitTillCMCFinished(WHITE_BOX, 1);
+                runConcurrentUndoCycle();
+                runConcurrentMarkCycle();
             }
         }
     }

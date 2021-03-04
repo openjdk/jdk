@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,14 @@
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -67,7 +67,7 @@ const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 #if INCLUDE_CDS_JAVA_HEAP
 inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
   assert(sizeof(narrowOop) == sizeof(offset), "must be");
-  narrowOop v = (narrowOop)offset;
+  narrowOop v = CompressedOops::narrow_oop_cast(offset);
   return HeapShared::decode_from_archive(v);
 }
 
@@ -91,11 +91,11 @@ static size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
 volatile bool _alt_hash = false;
-static juint murmur_seed = 0;
+static uint64_t _alt_hash_seed = 0;
 
 uintx hash_string(const jchar* s, int len, bool useAlt) {
   return  useAlt ?
-    AltHashing::murmur3_32(murmur_seed, s, len) :
+    AltHashing::halfsiphash_32(_alt_hash_seed, s, len) :
     java_lang_String::hash_code(s, len);
 }
 
@@ -523,7 +523,7 @@ void StringTable::rehash_table() {
     return;
   }
 
-  murmur_seed = AltHashing::compute_seed();
+  _alt_hash_seed = AltHashing::compute_seed();
   {
     if (do_rehash()) {
       rehashed = true;
@@ -542,7 +542,7 @@ static int literal_size(oop obj) {
   // array is not shared anymore.
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == SystemDictionary::String_klass()) {
+  } else if (obj->klass() == vmClasses::String_klass()) {
     return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
   } else {
     return obj->size();
@@ -717,17 +717,18 @@ oop StringTable::lookup_shared(const jchar* name, int len, unsigned int hash) {
   return _shared_table.lookup(name, hash, len);
 }
 
-oop StringTable::create_archived_string(oop s, Thread* THREAD) {
+oop StringTable::create_archived_string(oop s) {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
+  assert(java_lang_String::is_instance(s), "sanity");
   assert(!HeapShared::is_archived_object(s), "sanity");
 
   oop new_s = NULL;
   typeArrayOop v = java_lang_String::value_no_keepalive(s);
-  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v, THREAD);
+  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v);
   if (new_v == NULL) {
     return NULL;
   }
-  new_s = HeapShared::archive_heap_object(s, THREAD);
+  new_s = HeapShared::archive_heap_object(s);
   if (new_s == NULL) {
     return NULL;
   }
@@ -744,13 +745,13 @@ public:
   bool do_entry(oop s, bool value_ignored) {
     assert(s != NULL, "sanity");
     unsigned int hash = java_lang_String::hash_code(s);
-    oop new_s = StringTable::create_archived_string(s, Thread::current());
+    oop new_s = StringTable::create_archived_string(s);
     if (new_s == NULL) {
       return true;
     }
 
     // add to the compact table
-    _writer->add(hash, CompressedOops::encode(new_s));
+    _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
     return true;
   }
 };
@@ -759,7 +760,7 @@ void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_
   assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
 
   _shared_table.reset();
-  CompactHashtableWriter writer(_items_count, &MetaspaceShared::stats()->string);
+  CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
 
   // Copy the interned strings into the "string space" within the java heap
   CopyToArchive copier(&writer);

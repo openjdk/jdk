@@ -149,8 +149,13 @@ do {                                                                            
 enum VMErrorType {
   INTERNAL_ERROR   = 0xe0000000,
   OOM_MALLOC_ERROR = 0xe0000001,
-  OOM_MMAP_ERROR   = 0xe0000002
+  OOM_MMAP_ERROR   = 0xe0000002,
+  OOM_MPROTECT_ERROR = 0xe0000003
 };
+
+// Set to suppress secondary error reporting.
+// Really should have a qualified name or something.
+extern bool Debugging;
 
 // error reporting helper functions
 void report_vm_error(const char* file, int line, const char* error_msg);

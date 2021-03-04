@@ -26,7 +26,6 @@
 #import "jni_util.h"
 
 #import <AppKit/AppKit.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "CTrayIcon.h"
 #import "ThreadUtilities.h"
@@ -75,7 +74,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 
 -(void) dealloc {
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-    JNFDeleteGlobalRef(env, peer);
+    (*env)->DeleteGlobalRef(env, peer);
 
     [[NSStatusBar systemStatusBar] removeStatusItem: theItem];
 
@@ -104,7 +103,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     return peer;
 }
 
-- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize {
+- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize template:(BOOL)isTemplate {
     NSSize imageSize = [imagePtr size];
     NSSize scaledSize = ScaledImageSizeForStatusBar(imageSize, autosize);
     if (imageSize.width != scaledSize.width ||
@@ -115,6 +114,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     CGFloat itemLength = scaledSize.width + 2.0*kImageInset;
     [theItem setLength:itemLength];
 
+    [imagePtr setTemplate: isTemplate];
     [view setImage:imagePtr];
 }
 
@@ -146,9 +146,9 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
         deltaY = [event scrollingDeltaY] * 0.1;
     }
 
-    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
-    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDDI)V");
-    jobject jEvent = JNFNewObject(env, jctor_NSEvent,
+    DECLARE_CLASS(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
+    DECLARE_METHOD(jctor_NSEvent, jc_NSEvent, "<init>", "(IIIIIIIIDDI)V");
+    jobject jEvent = (*env)->NewObject(env, jc_NSEvent, jctor_NSEvent,
                                   [event type],
                                   [event modifierFlags],
                                   clickCount,
@@ -160,9 +160,10 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
                                   [AWTToolkit scrollStateWithEvent: event]);
     CHECK_NULL(jEvent);
 
-    static JNF_CLASS_CACHE(jc_TrayIcon, "sun/lwawt/macosx/CTrayIcon");
-    static JNF_MEMBER_CACHE(jm_handleMouseEvent, jc_TrayIcon, "handleMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
-    JNFCallVoidMethod(env, peer, jm_handleMouseEvent, jEvent);
+    DECLARE_CLASS(jc_TrayIcon, "sun/lwawt/macosx/CTrayIcon");
+    DECLARE_METHOD(jm_handleMouseEvent, jc_TrayIcon, "handleMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
+    (*env)->CallVoidMethod(env, peer, jm_handleMouseEvent, jEvent);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jEvent);
 }
 
@@ -175,8 +176,8 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     self = [super initWithFrame:NSMakeRect(0, 0, 1, 1)];
 
     [self setTrayIcon: theTrayIcon];
+    [self setImage: nil];
     isHighlighted = NO;
-    image = nil;
     trackingArea = nil;
 
     [self addTrackingArea];
@@ -196,7 +197,6 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 }
 
 -(void) dealloc {
-    [image release];
     [trackingArea release];
     [super dealloc];
 }
@@ -205,16 +205,6 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 {
     if (isHighlighted != aFlag) {
         isHighlighted = aFlag;
-        [self setNeedsDisplay:YES];
-    }
-}
-
-- (void)setImage:(NSImage*)anImage {
-    [anImage retain];
-    [image release];
-    image = anImage;
-
-    if (image != nil) {
         [self setNeedsDisplay:YES];
     }
 }
@@ -236,29 +226,15 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 
 - (void)drawRect:(NSRect)dirtyRect
 {
-    if (image == nil) {
+    if (self.image == nil) {
         return;
     }
 
     NSRect bounds = [self bounds];
-    NSSize imageSize = [image size];
-
-    NSRect drawRect = {{ (bounds.size.width - imageSize.width) / 2.0,
-        (bounds.size.height - imageSize.height) / 2.0 }, imageSize};
-
-    // don't cover bottom pixels of the status bar with the image
-    if (drawRect.origin.y < 1.0) {
-        drawRect.origin.y = 1.0;
-    }
-    drawRect = NSIntegralRect(drawRect);
-
     [trayIcon.theItem drawStatusBarBackgroundInRect:bounds
                                 withHighlight:isHighlighted];
-    [image drawInRect:drawRect
-             fromRect:NSZeroRect
-            operation:NSCompositeSourceOver
-             fraction:1.0
-     ];
+
+    [super drawRect: dirtyRect];
 }
 
 - (void)mouseDown:(NSEvent *)event {
@@ -268,9 +244,10 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     if (([event modifierFlags] & NSControlKeyMask) == 0) {
         //find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
         JNIEnv *env = [ThreadUtilities getJNIEnv];
-        static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
-        static JNF_MEMBER_CACHE(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
-        jlong res = JNFCallLongMethod(env, trayIcon.peer, jm_getPopupMenuModel);
+        DECLARE_CLASS(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
+        DECLARE_METHOD(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
+        jlong res = (*env)->CallLongMethod(env, trayIcon.peer, jm_getPopupMenuModel);
+        CHECK_EXCEPTION();
 
         if (res != 0) {
             CPopupMenu *cmenu = jlong_to_ptr(res);
@@ -331,14 +308,14 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CTrayIcon_nativeCreate
 (JNIEnv *env, jobject peer) {
     __block AWTTrayIcon *trayIcon = nil;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
-    jobject thePeer = JNFNewGlobalRef(env, peer);
+    jobject thePeer = (*env)->NewGlobalRef(env, peer);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         trayIcon = [[AWTTrayIcon alloc] initWithPeer:thePeer];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return ptr_to_jlong(trayIcon);
 }
@@ -361,32 +338,32 @@ JNIEXPORT void JNICALL Java_java_awt_TrayIcon_initIDs
  */
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_nativeSetToolTip
 (JNIEnv *env, jobject self, jlong model, jstring jtooltip) {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
-    NSString *tooltip = JNFJavaToNSString(env, jtooltip);
+    NSString *tooltip = JavaStringToNSString(env, jtooltip);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [icon setTooltip:tooltip];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
  * Class:     sun_lwawt_macosx_CTrayIcon
  * Method:    setNativeImage
- * Signature: (JJZ)V
+ * Signature: (JJZZ)V
  */
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_setNativeImage
-(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize) {
-JNF_COCOA_ENTER(env);
+(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize, jboolean isTemplate) {
+JNI_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize];
+        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize template:isTemplate];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 JNIEXPORT jobject JNICALL
@@ -394,7 +371,7 @@ Java_sun_lwawt_macosx_CTrayIcon_nativeGetIconLocation
 (JNIEnv *env, jobject self, jlong model) {
     jobject jpt = NULL;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     __block NSPoint pt = NSZeroPoint;
     AWTTrayIcon *icon = jlong_to_ptr(model);
@@ -405,7 +382,7 @@ JNF_COCOA_ENTER(env);
 
     jpt = NSToJavaPoint(env, pt);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return jpt;
 }
@@ -414,11 +391,11 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CTrayIcon_nativeShowNotification
 (JNIEnv *env, jobject self, jlong model, jobject jcaption, jobject jtext,
               long nsimage) {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
-    NSString *caption = JNFJavaToNSString(env, jcaption);
-    NSString *text = JNFJavaToNSString(env, jtext);
+    NSString *caption = JavaStringToNSString(env, jcaption);
+    NSString *text = JavaStringToNSString(env, jtext);
     NSImage * contentImage = jlong_to_ptr(nsimage);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
@@ -432,5 +409,5 @@ JNF_COCOA_ENTER(env);
             deliverNotification:notification];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }

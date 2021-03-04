@@ -58,7 +58,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ShortcutHintTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ShortcutHintTest
@@ -72,7 +72,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
  * @requires jpackage.test.SQETest != null
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ShortcutHintTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ShortcutHintTest.testBasic

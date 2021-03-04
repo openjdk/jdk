@@ -493,8 +493,8 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitBindingPattern(BindingPatternTree node, P p) {
         JCBindingPattern t = (JCBindingPattern) node;
-        JCTree vartype = copy(t.vartype, p);
-        return M.at(t.pos).BindingPattern(t.name, vartype);
+        JCVariableDecl var = copy(t.var, p);
+        return M.at(t.pos).BindingPattern(var);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,40 +63,6 @@ public:
   static jint set_minimum_stack_sizes();
   static size_t get_initial_stack_size(ThreadType thr_type, size_t req_stack_size);
 
-  // Returns true if signal is valid.
-  static bool is_valid_signal(int sig);
-  static bool is_sig_ignored(int sig);
-
-  // Helper function, returns a string (e.g. "SIGILL") for a signal.
-  // Returned string is a constant. For unknown signals "UNKNOWN" is returned.
-  static const char* get_signal_name(int sig, char* out, size_t outlen);
-
-  // Helper function, returns a signal number for a given signal name, e.g. 11
-  // for "SIGSEGV". Name can be given with or without "SIG" prefix, so both
-  // "SEGV" or "SIGSEGV" work. Name must be uppercase.
-  // Returns -1 for an unknown signal name.
-  static int get_signal_number(const char* signal_name);
-
-  // Returns one-line short description of a signal set in a user provided buffer.
-  static const char* describe_signal_set_short(const sigset_t* set, char* buffer, size_t size);
-
-  // Prints a short one-line description of a signal set.
-  static void print_signal_set_short(outputStream* st, const sigset_t* set);
-
-  // unblocks the signal masks for current thread
-  static int unblock_thread_signal_mask(const sigset_t *set);
-
-  // Writes a one-line description of a combination of sigaction.sa_flags
-  // into a user provided buffer. Returns that buffer.
-  static const char* describe_sa_flags(int flags, char* buffer, size_t size);
-
-  // Prints a one-line description of a combination of sigaction.sa_flags.
-  static void print_sa_flags(outputStream* st, int flags);
-
-  static address ucontext_get_pc(const ucontext_t* ctx);
-  // Set PC into context. Needed for continuation after signal.
-  static void ucontext_set_pc(ucontext_t* ctx, address pc);
-
   // Helper function; describes pthread attributes as short string. String is written
   // to buf with len buflen; buf is returned.
   static char* describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr);
@@ -118,35 +84,23 @@ public:
   // effective gid, or if given uid is root.
   static bool matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid);
 
-  static struct sigaction *get_preinstalled_handler(int);
-  static void save_preinstalled_handler(int, struct sigaction&);
-
   static void print_umask(outputStream* st, mode_t umsk);
 
   static void print_user_info(outputStream* st);
 
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
-private:
-  static bool _supports_monotonic_clock;
-  // These need to be members so we can access them from inline functions
-  static int (*_clock_gettime)(clockid_t, struct timespec *);
-  static int (*_clock_getres)(clockid_t, struct timespec *);
-public:
-  static bool supports_monotonic_clock();
-  static bool supports_clock_gettime();
-  static int clock_gettime(clockid_t clock_id, struct timespec *tp);
-  static int clock_getres(clockid_t clock_id, struct timespec *tp);
-#else
-  static bool supports_monotonic_clock() { return false; }
-  static bool supports_clock_gettime() { return false; }
-#endif
+  // Set PC into context. Needed for continuation after signal.
+  static address ucontext_get_pc(const ucontext_t* ctx);
+  static void    ucontext_set_pc(ucontext_t* ctx, address pc);
 
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
+
+  static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
+                                    const void* ucVoid,
+                                    address* stub);
 };
 
 /*
- * Crash protection for the watcher thread. Wrap the callback
+ * Crash protection for the JfrSampler thread. Wrap the callback
  * with a sigsetjmp and in case of a SIGSEGV/SIGBUS we siglongjmp
  * back.
  * To be able to use this - don't take locks, don't rely on destructors,
@@ -167,7 +121,6 @@ public:
 private:
   static Thread* _protected_thread;
   static ThreadCrashProtection* _crash_protection;
-  static volatile intptr_t _crash_mux;
   void restore();
   sigjmp_buf _jmpbuf;
 };
@@ -214,21 +167,21 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
 // API updates of course). But Parker methods use fastpaths that break that
 // level of encapsulation - so combining the two remains a future project.
 
-class PlatformParker : public CHeapObj<mtSynchronizer> {
+class PlatformParker {
+  NONCOPYABLE(PlatformParker);
  protected:
   enum {
     REL_INDEX = 0,
     ABS_INDEX = 1
   };
+  volatile int _counter;
   int _cur_index;  // which cond is in use: -1, 0, 1
   pthread_mutex_t _mutex[1];
   pthread_cond_t  _cond[2]; // one for relative times and one for absolute
 
- public:       // TODO-FIXME: make dtor private
-  ~PlatformParker() { guarantee(false, "invariant"); }
-
  public:
   PlatformParker();
+  ~PlatformParker();
 };
 
 // Workaround for a bug in macOSX kernel's pthread support (fixed in Mojave?).
@@ -241,7 +194,10 @@ class PlatformParker : public CHeapObj<mtSynchronizer> {
 #define PLATFORM_MONITOR_IMPL_INDIRECT 0
 #endif
 
-// Platform specific implementations that underpin VM Mutex/Monitor classes
+// Platform specific implementations that underpin VM Mutex/Monitor classes.
+// Note that we use "normal" pthread_mutex_t attributes so that recursive
+// locking is not supported, which matches the expected semantics of the
+// VM Mutex class.
 
 class PlatformMutex : public CHeapObj<mtSynchronizer> {
 #if PLATFORM_MONITOR_IMPL_INDIRECT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "aot/aotLoader.hpp"
-#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
@@ -41,6 +42,7 @@
 #endif
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/dynamicArchive.hpp"
@@ -65,15 +67,17 @@
 #include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #ifdef COMPILER1
@@ -93,9 +97,11 @@
 GrowableArray<Method*>* collected_profiled_methods;
 
 int compare_methods(Method** a, Method** b) {
-  // %%% there can be 32-bit overflow here
-  return ((*b)->invocation_count() + (*b)->compiled_invocation_count())
-       - ((*a)->invocation_count() + (*a)->compiled_invocation_count());
+  // compiled_invocation_count() returns int64_t, forcing the entire expression
+  // to be evaluated as int64_t. Overflow is not an issue.
+  int64_t diff = (((*b)->invocation_count() + (*b)->compiled_invocation_count())
+                - ((*a)->invocation_count() + (*a)->compiled_invocation_count()));
+  return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
 }
 
 void collect_profiled_methods(Method* m) {
@@ -147,14 +153,15 @@ void print_method_profiling_data() {
 GrowableArray<Method*>* collected_invoked_methods;
 
 void collect_invoked_methods(Method* m) {
-  if (m->invocation_count() + m->compiled_invocation_count() >= 1 ) {
+  if (m->invocation_count() + m->compiled_invocation_count() >= 1) {
     collected_invoked_methods->push(m);
   }
 }
 
 
-
-
+// Invocation count accumulators should be unsigned long to shift the
+// overflow border. Longer-running workloads tend to create invocation
+// counts which already overflow 32-bit counters for individual methods.
 void print_method_invocation_histogram() {
   ResourceMark rm;
   collected_invoked_methods = new GrowableArray<Method*>(1024);
@@ -165,31 +172,45 @@ void print_method_invocation_histogram() {
   tty->print_cr("Histogram Over Method Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
-  unsigned total = 0, int_total = 0, comp_total = 0, static_total = 0, final_total = 0,
-      synch_total = 0, nativ_total = 0, acces_total = 0;
+  uint64_t total        = 0,
+           int_total    = 0,
+           comp_total   = 0,
+           special_total= 0,
+           static_total = 0,
+           final_total  = 0,
+           synch_total  = 0,
+           native_total = 0,
+           access_total = 0;
   for (int index = 0; index < collected_invoked_methods->length(); index++) {
+    // Counter values returned from getter methods are signed int.
+    // To shift the overflow border by a factor of two, we interpret
+    // them here as unsigned long. A counter can't be negative anyway.
     Method* m = collected_invoked_methods->at(index);
-    int c = m->invocation_count() + m->compiled_invocation_count();
-    if (c >= MethodHistogramCutoff) m->print_invocation_count();
-    int_total  += m->invocation_count();
-    comp_total += m->compiled_invocation_count();
-    if (m->is_final())        final_total  += c;
-    if (m->is_static())       static_total += c;
-    if (m->is_synchronized()) synch_total  += c;
-    if (m->is_native())       nativ_total  += c;
-    if (m->is_accessor())     acces_total  += c;
+    uint64_t iic = (uint64_t)m->invocation_count();
+    uint64_t cic = (uint64_t)m->compiled_invocation_count();
+    if ((iic + cic) >= (uint64_t)MethodHistogramCutoff) m->print_invocation_count();
+    int_total  += iic;
+    comp_total += cic;
+    if (m->is_final())        final_total  += iic + cic;
+    if (m->is_static())       static_total += iic + cic;
+    if (m->is_synchronized()) synch_total  += iic + cic;
+    if (m->is_native())       native_total += iic + cic;
+    if (m->is_accessor())     access_total += iic + cic;
   }
   tty->cr();
   total = int_total + comp_total;
-  tty->print_cr("Invocations summary:");
-  tty->print_cr("\t%9d (%4.1f%%) interpreted",  int_total,    100.0 * int_total    / total);
-  tty->print_cr("\t%9d (%4.1f%%) compiled",     comp_total,   100.0 * comp_total   / total);
-  tty->print_cr("\t%9d (100%%)  total",         total);
-  tty->print_cr("\t%9d (%4.1f%%) synchronized", synch_total,  100.0 * synch_total  / total);
-  tty->print_cr("\t%9d (%4.1f%%) final",        final_total,  100.0 * final_total  / total);
-  tty->print_cr("\t%9d (%4.1f%%) static",       static_total, 100.0 * static_total / total);
-  tty->print_cr("\t%9d (%4.1f%%) native",       nativ_total,  100.0 * nativ_total  / total);
-  tty->print_cr("\t%9d (%4.1f%%) accessor",     acces_total,  100.0 * acces_total  / total);
+  special_total = final_total + static_total +synch_total + native_total + access_total;
+  tty->print_cr("Invocations summary for %d methods:", collected_invoked_methods->length());
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (100%%)  total",           total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- interpreted", int_total,     100.0 * int_total    / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- compiled",    comp_total,    100.0 * comp_total   / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- special methods (interpreted and compiled)",
+                                                                         special_total, 100.0 * special_total/ total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- synchronized",synch_total,   100.0 * synch_total  / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- final",       final_total,   100.0 * final_total  / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- static",      static_total,  100.0 * static_total / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- native",      native_total,  100.0 * native_total / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- accessor",    access_total,  100.0 * access_total / total);
   tty->cr();
   SharedRuntime::print_call_statistics(comp_total);
 }
@@ -203,25 +224,6 @@ void print_bytecode_count() {
 
 // General statistics printing (profiling ...)
 void print_statistics() {
-#ifdef ASSERT
-
-  if (CountRuntimeCalls) {
-    extern Histogram *RuntimeHistogram;
-    RuntimeHistogram->print();
-  }
-
-  if (CountJNICalls) {
-    extern Histogram *JNIHistogram;
-    JNIHistogram->print();
-  }
-
-  if (CountJVMCalls) {
-    extern Histogram *JVMHistogram;
-    JVMHistogram->print();
-  }
-
-#endif
-
   if (MemProfiling) {
     MemProfiler::disengage();
   }
@@ -344,6 +346,10 @@ void print_statistics() {
     MemTracker::final_report(tty);
   }
 
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
+  }
+
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -384,6 +390,10 @@ void print_statistics() {
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
+  }
+
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
@@ -477,6 +487,12 @@ void before_exit(JavaThread* thread) {
     BytecodeHistogram::print();
   }
 
+#ifdef LINUX
+  if (DumpPerfMapAtExit) {
+    CodeCache::write_perf_map();
+  }
+#endif
+
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_end(thread);
   }
@@ -569,6 +585,13 @@ void vm_direct_exit(int code) {
   notify_vm_shutdown();
   os::wait_for_keypress_at_exit();
   os::exit(code);
+}
+
+void vm_direct_exit(int code, const char* message) {
+  if (message != nullptr) {
+    tty->print_cr("%s", message);
+  }
+  vm_direct_exit(code);
 }
 
 void vm_perform_shutdown_actions() {
@@ -687,6 +710,7 @@ void vm_shutdown_during_initialization(const char* error, const char* message) {
 }
 
 JDK_Version JDK_Version::_current;
+const char* JDK_Version::_java_version;
 const char* JDK_Version::_runtime_name;
 const char* JDK_Version::_runtime_version;
 const char* JDK_Version::_runtime_vendor_version;

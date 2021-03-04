@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,16 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciReplay.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
@@ -59,6 +63,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
@@ -82,9 +87,9 @@
 
 ciObject*              ciEnv::_null_object_instance;
 
-#define WK_KLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
-WK_KLASSES_DO(WK_KLASS_DEFN)
-#undef WK_KLASS_DEFN
+#define VM_CLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
+VM_CLASSES_DO(VM_CLASS_DEFN)
+#undef VM_CLASS_DEFN
 
 ciSymbol*        ciEnv::_unloaded_cisymbol = NULL;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = NULL;
@@ -241,6 +246,7 @@ bool ciEnv::cache_jvmti_state() {
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
   _jvmti_can_pop_frame                  = JvmtiExport::can_pop_frame();
   _jvmti_can_get_owned_monitor_info     = JvmtiExport::can_get_owned_monitor_info();
+  _jvmti_can_walk_any_space             = JvmtiExport::can_walk_any_space();
   return _task != NULL && _task->method()->is_old();
 }
 
@@ -270,6 +276,10 @@ bool ciEnv::jvmti_state_changed() const {
       JvmtiExport::can_get_owned_monitor_info()) {
     return true;
   }
+  if (!_jvmti_can_walk_any_space &&
+      JvmtiExport::can_walk_any_space()) {
+    return true;
+  }
 
   return false;
 }
@@ -280,11 +290,9 @@ void ciEnv::cache_dtrace_flags() {
   // Need lock?
   _dtrace_extended_probes = ExtendedDTraceProbes;
   if (_dtrace_extended_probes) {
-    _dtrace_monitor_probes  = true;
     _dtrace_method_probes   = true;
     _dtrace_alloc_probes    = true;
   } else {
-    _dtrace_monitor_probes  = DTraceMonitorProbes;
     _dtrace_method_probes   = DTraceMethodProbes;
     _dtrace_alloc_probes    = DTraceAllocProbes;
   }
@@ -296,10 +304,10 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
   VM_ENTRY_MARK;
   if (handle == NULL) {
     // Cf. universe.cpp, creation of Universe::_null_ptr_exception_instance.
-    Klass* k = SystemDictionary::find(name, Handle(), Handle(), THREAD);
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(name, Handle(), Handle());
     jobject objh = NULL;
-    if (!HAS_PENDING_EXCEPTION && k != NULL) {
-      oop obj = InstanceKlass::cast(k)->allocate_instance(THREAD);
+    if (ik != NULL) {
+      oop obj = ik->allocate_instance(THREAD);
       if (!HAS_PENDING_EXCEPTION)
         objh = JNIHandles::make_global(Handle(THREAD, obj));
     }
@@ -360,21 +368,6 @@ ciMethod* ciEnv::get_method_from_handle(Method* method) {
   VM_ENTRY_MARK;
   return get_metadata(method)->as_method();
 }
-
-// ------------------------------------------------------------------
-// ciEnv::array_element_offset_in_bytes
-int ciEnv::array_element_offset_in_bytes(ciArray* a_h, ciObject* o_h) {
-  VM_ENTRY_MARK;
-  objArrayOop a = (objArrayOop)a_h->get_oop();
-  assert(a->is_objArray(), "");
-  int length = a->length();
-  oop o = o_h->get_oop();
-  for (int i = 0; i < length; i++) {
-    if (a->obj_at(i) == o)  return i;
-  }
-  return -1;
-}
-
 
 // ------------------------------------------------------------------
 // ciEnv::check_klass_accessiblity
@@ -452,11 +445,9 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     MutexLocker ml(Compile_lock);
     Klass* kls;
     if (!require_local) {
-      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader,
-                                                                       CHECK_AND_CLEAR_(fail_type));
+      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader, THREAD);
     } else {
-      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain,
-                                                           CHECK_AND_CLEAR_(fail_type));
+      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
     found_klass = kls;
   }
@@ -755,34 +746,29 @@ Method* ciEnv::lookup_method(ciInstanceKlass* accessor,
                              Symbol*          sig,
                              Bytecodes::Code  bc,
                              constantTag      tag) {
-  // Accessibility checks are performed in ciEnv::get_method_by_index_impl.
-  assert(check_klass_accessibility(accessor, holder->get_Klass()), "holder not accessible");
-
   InstanceKlass* accessor_klass = accessor->get_instanceKlass();
   Klass* holder_klass = holder->get_Klass();
-  Method* dest_method;
-  LinkInfo link_info(holder_klass, name, sig, accessor_klass, LinkInfo::AccessCheck::required, LinkInfo::LoaderConstraintCheck::required, tag);
-  switch (bc) {
-  case Bytecodes::_invokestatic:
-    dest_method =
-      LinkResolver::resolve_static_call_or_null(link_info);
-    break;
-  case Bytecodes::_invokespecial:
-    dest_method =
-      LinkResolver::resolve_special_call_or_null(link_info);
-    break;
-  case Bytecodes::_invokeinterface:
-    dest_method =
-      LinkResolver::linktime_resolve_interface_method_or_null(link_info);
-    break;
-  case Bytecodes::_invokevirtual:
-    dest_method =
-      LinkResolver::linktime_resolve_virtual_method_or_null(link_info);
-    break;
-  default: ShouldNotReachHere();
-  }
 
-  return dest_method;
+  // Accessibility checks are performed in ciEnv::get_method_by_index_impl.
+  assert(check_klass_accessibility(accessor, holder_klass), "holder not accessible");
+
+  LinkInfo link_info(holder_klass, name, sig, accessor_klass,
+                     LinkInfo::AccessCheck::required,
+                     LinkInfo::LoaderConstraintCheck::required,
+                     tag);
+  switch (bc) {
+    case Bytecodes::_invokestatic:
+      return LinkResolver::resolve_static_call_or_null(link_info);
+    case Bytecodes::_invokespecial:
+      return LinkResolver::resolve_special_call_or_null(link_info);
+    case Bytecodes::_invokeinterface:
+      return LinkResolver::linktime_resolve_interface_method_or_null(link_info);
+    case Bytecodes::_invokevirtual:
+      return LinkResolver::linktime_resolve_virtual_method_or_null(link_info);
+    default:
+      fatal("Unhandled bytecode: %s", Bytecodes::name(bc));
+      return NULL; // silence compiler warnings
+  }
 }
 
 
@@ -812,8 +798,8 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     }
 
     // Fake a method that is equivalent to a declared method.
-    ciInstanceKlass* holder    = get_instance_klass(SystemDictionary::MethodHandle_klass());
-    ciSymbol*        name      = ciSymbol::invokeBasic_name();
+    ciInstanceKlass* holder    = get_instance_klass(vmClasses::MethodHandle_klass());
+    ciSymbol*        name      = ciSymbols::invokeBasic_name();
     ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
     return get_unloaded_method(holder, name, signature, accessor);
   } else {
@@ -968,10 +954,23 @@ void ciEnv::register_method(ciMethod* target,
                             AbstractCompiler* compiler,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
-                            RTMState  rtm_state) {
+                            RTMState  rtm_state,
+                            const GrowableArrayView<RuntimeStub*>& native_invokers) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
+    methodHandle method(THREAD, target->get_Method());
+
+    // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+    if (method->get_method_counters(THREAD) == NULL) {
+      record_failure("can't create method counters");
+      // All buffers in the CodeBuffer are allocated in the CodeCache.
+      // If the code buffer is created on each compile attempt
+      // as in C2, then it must be freed.
+      code_buffer->free_blob();
+      return;
+    }
+
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
@@ -1011,9 +1010,6 @@ void ciEnv::register_method(ciMethod* target,
       // Check for {class loads, evolution, breakpoints, ...} during compilation
       validate_compile_task_dependencies(target);
     }
-
-    methodHandle method(THREAD, target->get_Method());
-
 #if INCLUDE_RTM_OPT
     if (!failing() && (rtm_state != NoRTM) &&
         (method()->method_data() != NULL) &&
@@ -1048,7 +1044,8 @@ void ciEnv::register_method(ciMethod* target,
                                debug_info(), dependencies(), code_buffer,
                                frame_words, oop_map_set,
                                handler_table, inc_table,
-                               compiler, task()->comp_level());
+                               compiler, task()->comp_level(),
+                               native_invokers);
 
     // Free codeBlobs
     code_buffer->free_blob();
@@ -1117,18 +1114,10 @@ void ciEnv::register_method(ciMethod* target,
   }
 }
 
-
-// ------------------------------------------------------------------
-// ciEnv::find_system_klass
-ciKlass* ciEnv::find_system_klass(ciSymbol* klass_name) {
-  VM_ENTRY_MARK;
-  return get_klass_by_name_impl(NULL, constantPoolHandle(), klass_name, false);
-}
-
 // ------------------------------------------------------------------
 // ciEnv::comp_level
 int ciEnv::comp_level() {
-  if (task() == NULL)  return CompLevel_highest_tier;
+  if (task() == NULL)  return CompilationPolicy::highest_compile_level();
   return task()->comp_level();
 }
 

@@ -25,6 +25,15 @@
 #ifndef SHARE_CLASSFILE_VMINTRINSICS_HPP
 #define SHARE_CLASSFILE_VMINTRINSICS_HPP
 
+#include "jfr/support/jfrIntrinsics.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/enumIterator.hpp"
+#include "utilities/vmEnums.hpp"
+
+class Method;
+class methodHandle;
+
 // Here are all the intrinsics known to the runtime and the CI.
 // Each intrinsic consists of a public enum name (like _hashCode),
 // followed by a specification of its klass, name, and signature:
@@ -309,6 +318,7 @@
   do_intrinsic(_indexOfIU,                java_lang_StringUTF16, indexOf_name, indexOfI_signature,               F_S)   \
   do_intrinsic(_indexOfIUL,               java_lang_StringUTF16, indexOfUL_name, indexOfI_signature,             F_S)   \
   do_intrinsic(_indexOfU_char,            java_lang_StringUTF16, indexOfChar_name, indexOfChar_signature,        F_S)   \
+  do_intrinsic(_indexOfL_char,            java_lang_StringLatin1,indexOfChar_name, indexOfChar_signature,        F_S)   \
    do_name(     indexOf_name,                                    "indexOf")                                             \
    do_name(     indexOfChar_name,                                "indexOfChar")                                         \
    do_name(     indexOfUL_name,                                  "indexOfLatin1")                                       \
@@ -328,6 +338,8 @@
                                                                                                                         \
   do_intrinsic(_Preconditions_checkIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkIndex_signature, F_S)   \
    do_signature(Preconditions_checkIndex_signature,              "(IILjava/util/function/BiFunction;)I")                \
+  do_intrinsic(_Preconditions_checkLongIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkLongIndex_signature, F_S)   \
+   do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
   do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
@@ -379,6 +391,8 @@
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \
   do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \
+  do_intrinsic(_Reference_refersTo0,     java_lang_ref_Reference, refersTo0_name, object_boolean_signature, F_R)        \
+  do_intrinsic(_PhantomReference_refersTo0, java_lang_ref_PhantomReference, refersTo0_name, object_boolean_signature, F_R) \
                                                                                                                         \
   /* support for com.sun.crypto.provider.AESCrypt and some of its callers */                                            \
   do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AESCrypt")                                   \
@@ -423,6 +437,10 @@
   do_class(sun_security_provider_sha5,                             "sun/security/provider/SHA5")                        \
   do_intrinsic(_sha5_implCompress, sun_security_provider_sha5, implCompress_name, implCompress_signature, F_R)          \
                                                                                                                         \
+  /* support for sun.security.provider.SHA3 */                                                                          \
+  do_class(sun_security_provider_sha3,                             "sun/security/provider/SHA3")                        \
+  do_intrinsic(_sha3_implCompress, sun_security_provider_sha3, implCompress_name, implCompress_signature, F_R)          \
+                                                                                                                        \
   /* support for sun.security.provider.DigestBase */                                                                    \
   do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
   do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, implCompressMB_signature, F_R)   \
@@ -434,6 +452,12 @@
   do_intrinsic(_base64_encodeBlock, java_util_Base64_Encoder, encodeBlock_name, encodeBlock_signature, F_R)             \
   do_name(encodeBlock_name, "encodeBlock")                                                                              \
   do_signature(encodeBlock_signature, "([BII[BIZ)V")                                                                    \
+                                                                                                                        \
+  /* support for java.util.Base64.Decoder*/                                                                             \
+  do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
+  do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
+   do_name(decodeBlock_name, "decodeBlock")                                                                             \
+   do_signature(decodeBlock_signature, "([BII[BIZ)I")                                                                   \
                                                                                                                         \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
@@ -471,6 +495,7 @@
   /* support for Unsafe */                                                                                              \
   do_class(jdk_internal_misc_Unsafe,               "jdk/internal/misc/Unsafe")                                          \
   do_class(sun_misc_Unsafe,                        "sun/misc/Unsafe")                                                   \
+  do_class(jdk_internal_misc_ScopedMemoryAccess,   "jdk/internal/misc/ScopedMemoryAccess")                              \
                                                                                                                         \
   do_intrinsic(_writeback0,               jdk_internal_misc_Unsafe,     writeback0_name, long_void_signature , F_RN)             \
    do_name(     writeback0_name,                                        "writeback0")                                            \
@@ -504,6 +529,10 @@
   do_intrinsic(_isCompileConstant, java_lang_invoke_MethodHandleImpl, isCompileConstant_name, isCompileConstant_signature, F_S) \
    do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
    do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
+                                                                                                                        \
+  do_intrinsic(_getObjectSize,   sun_instrument_InstrumentationImpl, getObjectSize_name, getObjectSize_signature, F_RN) \
+   do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
+   do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
@@ -777,6 +806,122 @@
   do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_R) \
    do_name(     getAndSetReference_name,                                "getAndSetReference")                                  \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
+                                                                                                                                               \
+  /* Vector API intrinsification support */                                                                                                    \
+                                                                                                                                               \
+  do_intrinsic(_VectorUnaryOp, jdk_internal_vm_vector_VectorSupport, vector_unary_op_name, vector_unary_op_sig, F_S)                           \
+   do_signature(vector_unary_op_sig, "(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object;") \
+   do_name(vector_unary_op_name,     "unaryOp")                                                                                                \
+                                                                                                                                               \
+  do_intrinsic(_VectorBinaryOp, jdk_internal_vm_vector_VectorSupport, vector_binary_op_name, vector_binary_op_sig, F_S)                        \
+   do_signature(vector_binary_op_sig, "(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/lang/Object;"                              \
+                                       "Ljava/util/function/BiFunction;)Ljava/lang/Object;")                                                   \
+   do_name(vector_binary_op_name,     "binaryOp")                                                                                              \
+                                                                                                                                               \
+  do_intrinsic(_VectorTernaryOp, jdk_internal_vm_vector_VectorSupport, vector_ternary_op_name, vector_ternary_op_sig, F_S)                     \
+   do_signature(vector_ternary_op_sig, "(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/lang/Object;"                             \
+                                        "Ljava/lang/Object;Ljdk/internal/vm/vector/VectorSupport$TernaryOperation;)Ljava/lang/Object;")        \
+   do_name(vector_ternary_op_name,     "ternaryOp")                                                                                            \
+                                                                                                                                               \
+  do_intrinsic(_VectorBroadcastCoerced, jdk_internal_vm_vector_VectorSupport, vector_broadcast_coerced_name, vector_broadcast_coerced_sig, F_S)\
+   do_signature(vector_broadcast_coerced_sig, "(Ljava/lang/Class;Ljava/lang/Class;IJLjdk/internal/vm/vector/VectorSupport$VectorSpecies;"      \
+                                               "Ljdk/internal/vm/vector/VectorSupport$BroadcastOperation;)Ljava/lang/Object;")                 \
+   do_name(vector_broadcast_coerced_name, "broadcastCoerced")                                                                                  \
+                                                                                                                                               \
+  do_intrinsic(_VectorShuffleIota, jdk_internal_vm_vector_VectorSupport, vector_shuffle_step_iota_name, vector_shuffle_step_iota_sig, F_S)     \
+   do_signature(vector_shuffle_step_iota_sig, "(Ljava/lang/Class;Ljava/lang/Class;Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"        \
+                                               "IIIILjdk/internal/vm/vector/VectorSupport$ShuffleIotaOperation;)Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;") \
+   do_name(vector_shuffle_step_iota_name, "shuffleIota")                                                                                       \
+                                                                                                                                               \
+  do_intrinsic(_VectorShuffleToVector, jdk_internal_vm_vector_VectorSupport, vector_shuffle_to_vector_name, vector_shuffle_to_vector_sig, F_S) \
+   do_signature(vector_shuffle_to_vector_sig, "(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;" \
+                                               "ILjdk/internal/vm/vector/VectorSupport$ShuffleToVectorOperation;)Ljava/lang/Object;")          \
+   do_name(vector_shuffle_to_vector_name, "shuffleToVector")                                                                                   \
+                                                                                                                                               \
+  do_intrinsic(_VectorLoadOp, jdk_internal_vm_vector_VectorSupport, vector_load_op_name, vector_load_op_sig, F_S)                              \
+   do_signature(vector_load_op_sig, "(Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;JLjava/lang/Object;"                                \
+                                     "ILjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadOperation;)Ljava/lang/Object;") \
+   do_name(vector_load_op_name,     "load")                                                                                                    \
+                                                                                                                                               \
+  do_intrinsic(_VectorStoreOp, jdk_internal_vm_vector_VectorSupport, vector_store_op_name, vector_store_op_sig, F_S)                           \
+   do_signature(vector_store_op_sig, "(Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$Vector;"    \
+                                      "Ljava/lang/Object;ILjdk/internal/vm/vector/VectorSupport$StoreVectorOperation;)V")                      \
+   do_name(vector_store_op_name,     "store")                                                                                                  \
+                                                                                                                                               \
+  do_intrinsic(_VectorReductionCoerced, jdk_internal_vm_vector_VectorSupport, vector_reduction_coerced_name, vector_reduction_coerced_sig, F_S) \
+   do_signature(vector_reduction_coerced_sig, "(ILjava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljava/util/function/Function;)J") \
+   do_name(vector_reduction_coerced_name, "reductionCoerced")                                                                                  \
+                                                                                                                                               \
+  do_intrinsic(_VectorTest, jdk_internal_vm_vector_VectorSupport, vector_test_name, vector_test_sig, F_S)                                      \
+   do_signature(vector_test_sig, "(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/lang/Object;Ljava/util/function/BiFunction;)Z") \
+   do_name(vector_test_name, "test")                                                                                                           \
+                                                                                                                                               \
+  do_intrinsic(_VectorBlend, jdk_internal_vm_vector_VectorSupport, vector_blend_name, vector_blend_sig, F_S)                                   \
+   do_signature(vector_blend_sig, "(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;I"                                                      \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$VectorMask;" \
+                                   "Ljdk/internal/vm/vector/VectorSupport$VectorBlendOp;)Ljdk/internal/vm/vector/VectorSupport$Vector;")       \
+   do_name(vector_blend_name, "blend")                                                                                                         \
+                                                                                                                                               \
+  do_intrinsic(_VectorCompare, jdk_internal_vm_vector_VectorSupport, vector_compare_name, vector_compare_sig, F_S)                             \
+   do_signature(vector_compare_sig, "(ILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;I"                                                   \
+                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;" "Ljdk/internal/vm/vector/VectorSupport$Vector;"           \
+                                     "Ljdk/internal/vm/vector/VectorSupport$VectorCompareOp;" ")" "Ljdk/internal/vm/vector/VectorSupport$VectorMask;") \
+   do_name(vector_compare_name, "compare")                                                                                                     \
+                                                                                                                                               \
+  do_intrinsic(_VectorRearrange, jdk_internal_vm_vector_VectorSupport, vector_rearrange_name, vector_rearrange_sig, F_S)                       \
+   do_signature(vector_rearrange_sig, "(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;I"                                                  \
+                                       "Ljdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;"     \
+                                       "Ljdk/internal/vm/vector/VectorSupport$VectorRearrangeOp;)Ljdk/internal/vm/vector/VectorSupport$Vector;") \
+   do_name(vector_rearrange_name, "rearrangeOp")                                                                                               \
+                                                                                                                                               \
+  do_intrinsic(_VectorExtract, jdk_internal_vm_vector_VectorSupport, vector_extract_name, vector_extract_sig, F_S)                             \
+   do_signature(vector_extract_sig, "(Ljava/lang/Class;Ljava/lang/Class;I"                                                                     \
+                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;I"                                                          \
+                                     "Ljdk/internal/vm/vector/VectorSupport$VecExtractOp;)J")                                                  \
+   do_name(vector_extract_name, "extract")                                                                                                     \
+                                                                                                                                               \
+ do_intrinsic(_VectorInsert, jdk_internal_vm_vector_VectorSupport, vector_insert_name, vector_insert_sig, F_S)                                 \
+   do_signature(vector_insert_sig, "(Ljava/lang/Class;Ljava/lang/Class;I"                                                                      \
+                                    "Ljdk/internal/vm/vector/VectorSupport$Vector;IJ"                                                          \
+                                    "Ljdk/internal/vm/vector/VectorSupport$VecInsertOp;)Ljdk/internal/vm/vector/VectorSupport$Vector;")        \
+   do_name(vector_insert_name, "insert")                                                                                                       \
+                                                                                                                                               \
+  do_intrinsic(_VectorBroadcastInt, jdk_internal_vm_vector_VectorSupport, vector_broadcast_int_name, vector_broadcast_int_sig, F_S)            \
+   do_signature(vector_broadcast_int_sig, "(ILjava/lang/Class;Ljava/lang/Class;I"                                                              \
+                                           "Ljdk/internal/vm/vector/VectorSupport$Vector;I"                                                    \
+                                           "Ljdk/internal/vm/vector/VectorSupport$VectorBroadcastIntOp;)Ljdk/internal/vm/vector/VectorSupport$Vector;") \
+   do_name(vector_broadcast_int_name, "broadcastInt")                                                                                          \
+                                                                                                                                               \
+  do_intrinsic(_VectorConvert, jdk_internal_vm_vector_VectorSupport, vector_convert_name, vector_convert_sig, F_S)                             \
+   do_signature(vector_convert_sig, "(ILjava/lang/Class;Ljava/lang/Class;I"                                                                    \
+                                     "Ljava/lang/Class;Ljava/lang/Class;I"                                                                     \
+                                     "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                                    \
+                                     "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                                    \
+                                     "Ljdk/internal/vm/vector/VectorSupport$VectorConvertOp;)Ljdk/internal/vm/vector/VectorSupport$VectorPayload;") \
+   do_name(vector_convert_name, "convert")                                                                                                     \
+                                                                                                                                               \
+   do_intrinsic(_VectorGatherOp, jdk_internal_vm_vector_VectorSupport, vector_gather_name, vector_gather_sig, F_S)                             \
+    do_signature(vector_gather_sig, "(Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Class;"                                                    \
+                                     "Ljava/lang/Object;J"                                                                                     \
+                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
+                                     "Ljava/lang/Object;I[II"                                                                                  \
+                                     "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                                    \
+                                     "Ljdk/internal/vm/vector/VectorSupport$LoadVectorOperationWithMap;)"                                      \
+                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                          \
+    do_name(vector_gather_name, "loadWithMap")                                                                                                 \
+                                                                                                                                               \
+   do_intrinsic(_VectorScatterOp, jdk_internal_vm_vector_VectorSupport, vector_scatter_name, vector_scatter_sig, F_S)                          \
+    do_signature(vector_scatter_sig, "(Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Class;"                                                   \
+                                      "Ljava/lang/Object;J"                                                                                    \
+                                      "Ljdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$Vector;"             \
+                                      "Ljava/lang/Object;I[II"                                                                                 \
+                                      "Ljdk/internal/vm/vector/VectorSupport$StoreVectorOperationWithMap;)V")                                  \
+    do_name(vector_scatter_name, "storeWithMap")                                                                                               \
+                                                                                                                                               \
+  do_intrinsic(_VectorRebox, jdk_internal_vm_vector_VectorSupport, vector_rebox_name, vector_rebox_sig, F_S)                                   \
+   do_alias(vector_rebox_sig, object_object_signature)                                                                                         \
+   do_name(vector_rebox_name, "maybeRebox")                                                                                                    \
+                                                                                                                                               \
                                                                                                                                \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \
@@ -823,6 +968,7 @@
   do_intrinsic(_linkToStatic,             java_lang_invoke_MethodHandle, linkToStatic_name,     star_name, F_SN)        \
   do_intrinsic(_linkToSpecial,            java_lang_invoke_MethodHandle, linkToSpecial_name,    star_name, F_SN)        \
   do_intrinsic(_linkToInterface,          java_lang_invoke_MethodHandle, linkToInterface_name,  star_name, F_SN)        \
+  do_intrinsic(_linkToNative,             java_lang_invoke_MethodHandle, linkToNative_name,     star_name, F_SN)        \
   /* special marker for bytecode generated for the JVM from a LambdaForm: */                                            \
   do_intrinsic(_compiledLambdaForm,       java_lang_invoke_MethodHandle, compiledLambdaForm_name, star_name, F_RN)      \
                                                                                                                         \
@@ -869,5 +1015,176 @@
    do_name(     forEachRemaining_signature,                      "(Ljava/util/function/IntConsumer;)V")                 \
 
     /*end*/
+
+#define VM_INTRINSIC_ID_ENUM(id, klass, name, sig, flags)  id,
+#define VM_INTRINSICS_CONST(id, klass, name, sig, flags)   static const vmIntrinsicID id = vmIntrinsicID::id;
+#define __IGNORE_CLASS(id, name)                      /*ignored*/
+#define __IGNORE_NAME(id, name)                       /*ignored*/
+#define __IGNORE_SIGNATURE(id, name)                  /*ignored*/
+#define __IGNORE_ALIAS(id, name)                      /*ignored*/
+
+// VM Intrinsic ID's uniquely identify some very special methods
+enum class vmIntrinsicID : int {
+  _none = 0,                      // not an intrinsic (default answer)
+
+  VM_INTRINSICS_DO(VM_INTRINSIC_ID_ENUM,
+                   __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
+
+  ID_LIMIT,
+  LAST_COMPILER_INLINE = _VectorScatterOp,
+  FIRST_MH_SIG_POLY    = _invokeGeneric,
+  FIRST_MH_STATIC      = _linkToVirtual,
+  LAST_MH_SIG_POLY     = _linkToNative,
+
+  FIRST_ID = _none + 1,
+  LAST_ID = ID_LIMIT - 1,
+};
+
+ENUMERATOR_RANGE(vmIntrinsicID, vmIntrinsicID::FIRST_ID, vmIntrinsicID::LAST_ID)
+
+class vmIntrinsics : AllStatic {
+  friend class vmSymbols;
+  friend class ciObjectFactory;
+
+ public:
+  typedef vmIntrinsicID ID;
+
+  // Convenient access of vmIntrinsicID::FOO as vmIntrinsics::FOO
+  static const ID _none                = vmIntrinsicID::_none;
+  static const ID ID_LIMIT             = vmIntrinsicID::ID_LIMIT;
+  static const ID LAST_COMPILER_INLINE = vmIntrinsicID::LAST_COMPILER_INLINE;
+  static const ID FIRST_MH_SIG_POLY    = vmIntrinsicID::FIRST_MH_SIG_POLY;
+  static const ID FIRST_MH_STATIC      = vmIntrinsicID::FIRST_MH_STATIC;
+  static const ID LAST_MH_SIG_POLY     = vmIntrinsicID::LAST_MH_SIG_POLY;
+  static const ID FIRST_ID             = vmIntrinsicID::FIRST_ID;
+
+  VM_INTRINSICS_DO(VM_INTRINSICS_CONST,
+                   __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
+
+  enum Flags {
+    // AccessFlags syndromes relevant to intrinsics.
+    F_none = 0,
+    F_R,                        // !static ?native !synchronized (R="regular")
+    F_S,                        //  static ?native !synchronized
+    F_Y,                        // !static ?native  synchronized
+    F_RN,                       // !static  native !synchronized
+    F_SN,                       //  static  native !synchronized
+
+    FLAG_LIMIT
+  };
+  enum {
+    log2_FLAG_LIMIT = 3         // checked by an assert at start-up
+  };
+
+
+  // Convert an arbitrary vmIntrinsicID to int (checks validity):
+  //    vmIntrinsicID x = ...; int n = vmIntrinsics::as_int(x);
+  // Convert a known vmIntrinsicID to int (no need for validity check):
+  //    int n = static_cast<int>(vmIntrinsicID::_invokeGeneric);
+  static constexpr int as_int(vmIntrinsicID id) {
+    assert(is_valid_id(id), "must be");
+    return static_cast<int>(id);
+  }
+
+  static constexpr int number_of_intrinsics() {
+    return static_cast<int>(ID_LIMIT);
+  }
+
+public:
+  static constexpr bool is_valid_id(int raw_id) {
+    return (raw_id >= static_cast<int>(_none) && raw_id < static_cast<int>(ID_LIMIT));
+  }
+
+  static constexpr bool is_valid_id(ID id) {
+    return is_valid_id(static_cast<int>(id));
+  }
+
+  static constexpr ID ID_from(int raw_id) {
+    assert(is_valid_id(raw_id), "must be a valid intrinsic ID");
+    return static_cast<ID>(raw_id);
+  }
+
+  static const char* name_at(ID id);
+
+private:
+  static ID find_id_impl(vmSymbolID holder,
+                         vmSymbolID name,
+                         vmSymbolID sig,
+                         jshort flags);
+
+  // check if the intrinsic is disabled by course-grained flags.
+  static bool disabled_by_jvm_flags(vmIntrinsics::ID id);
+  static void init_vm_intrinsic_name_table();
+public:
+  static ID find_id(const char* name);
+  // Given a method's class, name, signature, and access flags, report its ID.
+  static ID find_id(vmSymbolID holder,
+                    vmSymbolID name,
+                    vmSymbolID sig,
+                    jshort flags) {
+    ID id = find_id_impl(holder, name, sig, flags);
+#ifdef ASSERT
+    // ID _none does not hold the following asserts.
+    if (id == _none)  return id;
+#endif
+    assert(    class_for(id) == holder, "correct id");
+    assert(     name_for(id) == name,   "correct id");
+    assert(signature_for(id) == sig,    "correct id");
+    return id;
+  }
+
+#ifndef PRODUCT
+  // Find out the symbols behind an intrinsic:
+  static vmSymbolID     class_for(ID id);
+  static vmSymbolID      name_for(ID id);
+  static vmSymbolID signature_for(ID id);
+  static Flags              flags_for(ID id);
+#endif
+
+  static const char* short_name_as_C_string(ID id, char* buf, int size);
+
+  // The methods below provide information related to compiling intrinsics.
+
+  // (1) Information needed by the C1 compiler.
+
+  static bool preserves_state(vmIntrinsics::ID id);
+  static bool can_trap(vmIntrinsics::ID id);
+  static bool should_be_pinned(vmIntrinsics::ID id);
+
+  // (2) Information needed by the C2 compiler.
+
+  // Returns true if the intrinsic for method 'method' will perform a virtual dispatch.
+  static bool does_virtual_dispatch(vmIntrinsics::ID id);
+  // A return value larger than 0 indicates that the intrinsic for method
+  // 'method' requires predicated logic.
+  static int predicates_needed(vmIntrinsics::ID id);
+
+  // There are 2 kinds of JVM options to control intrinsics.
+  // 1. Disable/Control Intrinsic accepts a list of intrinsic IDs.
+  //    ControlIntrinsic is recommended. DisableIntrinic will be deprecated.
+  //    Currently, the DisableIntrinsic list prevails if an intrinsic appears on
+  //    both lists.
+  //
+  // 2. Explicit UseXXXIntrinsics options. eg. UseAESIntrinsics, UseCRC32Intrinsics etc.
+  //    Each option can control a group of intrinsics. The user can specify them but
+  //    their final values are subject to hardware inspection (VM_Version::initialize).
+  //    Stub generators are controlled by them.
+  //
+  // An intrinsic is enabled if and only if neither the fine-grained control(1) nor
+  // the corresponding coarse-grained control(2) disables it.
+  static bool is_disabled_by_flags(vmIntrinsics::ID id);
+
+  static bool is_disabled_by_flags(const methodHandle& method);
+  static bool is_intrinsic_available(vmIntrinsics::ID id) {
+    return !is_disabled_by_flags(id);
+  }
+};
+
+#undef VM_INTRINSIC_ENUM
+#undef VM_INTRINSICS_CONST
+#undef __IGNORE_CLASS
+#undef __IGNORE_NAME
+#undef __IGNORE_SIGNATURE
+#undef __IGNORE_ALIAS
 
 #endif // SHARE_CLASSFILE_VMINTRINSICS_HPP

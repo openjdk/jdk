@@ -39,6 +39,7 @@ import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -580,7 +581,7 @@ public final class SSLLogger {
                     Utilities.toHexString((byte[])value) + "\"";
             } else if (value instanceof Byte) {
                 formatted = "\"" + key + "\": \"" +
-                    Utilities.toHexString((byte)value) + "\"";
+                        HexFormat.of().toHexDigits((byte)value) + "\"";
             } else {
                 formatted = "\"" + key + "\": " +
                     "\"" + value.toString() + "\"";

@@ -49,6 +49,7 @@
 <li><a href="#thread_local">thread_local</a></li>
 <li><a href="#nullptr">nullptr</a></li>
 <li><a href="#atomic">&lt;atomic&gt;</a></li>
+<li><a href="#uniform-initialization">Uniform Initialization</a></li>
 <li><a href="#additional-permitted-features">Additional Permitted Features</a></li>
 <li><a href="#excluded-features">Excluded Features</a></li>
 <li><a href="#undecided-features">Undecided Features</a></li>
@@ -275,6 +276,17 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <p>Do not use facilities provided by the <code>&lt;atomic&gt;</code> header (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2427.html">n2427</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2752.htm">n2752</a>); instead, use the HotSpot <code>Atomic</code> class and related facilities.</p>
 <p>Atomic operations in HotSpot code must have semantics which are consistent with those provided by the JDK's compilers for Java. There are platform-specific implementation choices that a C++ compiler might make or change that are outside the scope of the C++ Standard, and might differ from what the Java compilers implement.</p>
 <p>In addition, HotSpot <code>Atomic</code> has a concept of &quot;conservative&quot; memory ordering, which may differ from (may be stronger than) sequentially consistent. There are algorithms in HotSpot that are believed to rely on that ordering.</p>
+<h3 id="uniform-initialization">Uniform Initialization</h3>
+<p>The use of <em>uniform initialization</em> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2672.htm">n2672</a>), also known as <em>brace initialization</em>, is permitted.</p>
+<p>Some relevant sections from cppreference.com:</p>
+<ul>
+<li><a href="https://en.cppreference.com/w/cpp/language/initialization">initialization</a></li>
+<li><a href="https://en.cppreference.com/w/cpp/language/value_initialization">value initialization</a></li>
+<li><a href="https://en.cppreference.com/w/cpp/language/direct_initialization">direct initialization</a></li>
+<li><a href="https://en.cppreference.com/w/cpp/language/list_initialization">list initialization</a></li>
+<li><a href="https://en.cppreference.com/w/cpp/language/aggregate_initialization">aggregate initialization</a></li>
+</ul>
+<p>Although related, the use of <code>std::initializer_list</code> remains forbidden, as part of the avoidance of the C++ Standard Library in HotSpot code.</p>
 <h3 id="additional-permitted-features">Additional Permitted Features</h3>
 <ul>
 <li><p><code>constexpr</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>) (<a href="https://isocpp.org/files/papers/N3652.html">n3652</a>)</p></li>
@@ -292,6 +304,7 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><p>Dynamic initialization and destruction with concurrency (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2660.htm">n2660</a>)</p></li>
 <li><p><code>final</code> virtual specifiers for classes and virtual functions (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">n2928</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">n3206</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">n3272</a>)</p></li>
 <li><p>Local and unnamed types as template parameters (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm">n2657</a>)</p></li>
+<li><p>Range-based <code>for</code> loops (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html">n2930</a>) (<a href="https://en.cppreference.com/w/cpp/language/range-for">range-for</a>)</p></li>
 </ul>
 <h3 id="excluded-features">Excluded Features</h3>
 <ul>

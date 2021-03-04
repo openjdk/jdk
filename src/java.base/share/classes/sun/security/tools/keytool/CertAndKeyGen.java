@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateEncodingException;
 import java.security.*;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.Date;
 
 import sun.security.pkcs10.PKCS10;
+import sun.security.util.SignatureUtil;
 import sun.security.x509.*;
 
 /**
@@ -187,7 +187,7 @@ public final class CertAndKeyGen {
         }
 
         if (sigAlg == null) {
-            sigAlg = AlgorithmId.getDefaultSigAlgForKey(privateKey);
+            sigAlg = SignatureUtil.getDefaultSigAlgForKey(privateKey);
             if (sigAlg == null) {
                 throw new IllegalArgumentException(
                         "Cannot derive signature algorithm from "
@@ -282,8 +282,6 @@ public final class CertAndKeyGen {
                                    new CertificateValidity(firstDate,lastDate);
 
             X509CertInfo info = new X509CertInfo();
-            AlgorithmParameterSpec params = AlgorithmId
-                    .getDefaultAlgorithmParameterSpec(sigAlg, privateKey);
             // Add all mandatory attributes
             info.set(X509CertInfo.VERSION,
                      new CertificateVersion(CertificateVersion.V3));
@@ -292,9 +290,6 @@ public final class CertAndKeyGen {
             }
             info.set(X509CertInfo.SERIAL_NUMBER,
                     CertificateSerialNumber.newRandom64bit(prng));
-            AlgorithmId algID = AlgorithmId.getWithParameterSpec(sigAlg, params);
-            info.set(X509CertInfo.ALGORITHM_ID,
-                     new CertificateAlgorithmId(algID));
             info.set(X509CertInfo.SUBJECT, myname);
             info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
             info.set(X509CertInfo.VALIDITY, interval);
@@ -302,19 +297,13 @@ public final class CertAndKeyGen {
             if (ext != null) info.set(X509CertInfo.EXTENSIONS, ext);
 
             cert = new X509CertImpl(info);
-            cert.sign(privateKey,
-                    params,
-                    sigAlg,
-                    null);
+            cert.sign(privateKey, sigAlg);
 
-            return (X509Certificate)cert;
+            return cert;
 
         } catch (IOException e) {
              throw new CertificateEncodingException("getSelfCert: " +
                                                     e.getMessage());
-        } catch (InvalidAlgorithmParameterException e2) {
-            throw new SignatureException(
-                    "Unsupported PSSParameterSpec: " + e2.getMessage());
         }
     }
 
@@ -324,44 +313,6 @@ public final class CertAndKeyGen {
         NoSuchAlgorithmException, NoSuchProviderException
     {
         return getSelfCertificate(myname, new Date(), validity);
-    }
-
-    /**
-     * Returns a PKCS #10 certificate request.  The caller uses either
-     * <code>PKCS10.print</code> or <code>PKCS10.toByteArray</code>
-     * operations on the result, to get the request in an appropriate
-     * transmission format.
-     *
-     * <P>PKCS #10 certificate requests are sent, along with some proof
-     * of identity, to Certificate Authorities (CAs) which then issue
-     * X.509 public key certificates.
-     *
-     * @param myname X.500 name of the subject
-     * @exception InvalidKeyException on key handling errors.
-     * @exception SignatureException on signature handling errors.
-     */
-    // This method is not used inside JDK. Will not update it.
-    public PKCS10 getCertRequest (X500Name myname)
-    throws InvalidKeyException, SignatureException
-    {
-        PKCS10  req = new PKCS10 (publicKey);
-
-        try {
-            Signature signature = Signature.getInstance(sigAlg);
-            signature.initSign (privateKey);
-            req.encodeAndSign(myname, signature);
-
-        } catch (CertificateException e) {
-            throw new SignatureException (sigAlg + " CertificateException");
-
-        } catch (IOException e) {
-            throw new SignatureException (sigAlg + " IOException");
-
-        } catch (NoSuchAlgorithmException e) {
-            // "can't happen"
-            throw new SignatureException (sigAlg + " unavailable?");
-        }
-        return req;
     }
 
     private SecureRandom        prng;

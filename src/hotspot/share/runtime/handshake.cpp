@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -30,11 +31,14 @@
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/filterQueue.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 
 class HandshakeOperation : public CHeapObj<mtThread> {
@@ -45,19 +49,23 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   // Once it reaches zero all handshake operations have been performed.
   int32_t             _pending_threads;
   JavaThread*         _target;
+  Thread*             _requester;
 
   // Must use AsyncHandshakeOperation when using AsyncHandshakeClosure.
-  HandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target) :
+  HandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target, Thread* requester) :
     _handshake_cl(cl),
     _pending_threads(1),
-    _target(target) {}
+    _target(target),
+    _requester(requester) {}
 
  public:
-  HandshakeOperation(HandshakeClosure* cl, JavaThread* target) :
+  HandshakeOperation(HandshakeClosure* cl, JavaThread* target, Thread* requester) :
     _handshake_cl(cl),
     _pending_threads(1),
-    _target(target) {}
+    _target(target),
+    _requester(requester) {}
   virtual ~HandshakeOperation() {}
+  void prepare(JavaThread* current_target, Thread* executing_thread);
   void do_handshake(JavaThread* thread);
   bool is_completed() {
     int32_t val = Atomic::load(&_pending_threads);
@@ -74,7 +82,7 @@ class AsyncHandshakeOperation : public HandshakeOperation {
   jlong _start_time_ns;
  public:
   AsyncHandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target, jlong start_ns)
-    : HandshakeOperation(cl, target), _start_time_ns(start_ns) {}
+    : HandshakeOperation(cl, target, NULL), _start_time_ns(start_ns) {}
   virtual ~AsyncHandshakeOperation() { delete _handshake_cl; }
   jlong start_time() const           { return _start_time_ns; }
 };
@@ -175,7 +183,7 @@ class VM_Handshake: public VM_Operation {
   HandshakeOperation* const _op;
 
   VM_Handshake(HandshakeOperation* op) :
-      _handshake_timeout(TimeHelper::millis_to_counter(HandshakeTimeout)), _op(op) {}
+      _handshake_timeout(millis_to_nanos(HandshakeTimeout)), _op(op) {}
 
   bool handshake_has_timed_out(jlong start_time);
   static void handle_timeout();
@@ -273,6 +281,22 @@ class VM_HandshakeAllThreads: public VM_Handshake {
   VMOp_Type type() const { return VMOp_HandshakeAllThreads; }
 };
 
+void HandshakeOperation::prepare(JavaThread* current_target, Thread* executing_thread) {
+  if (current_target->is_terminated()) {
+    // Will never execute any handshakes on this thread.
+    return;
+  }
+  if (current_target != executing_thread) {
+    // Only when the target is not executing the handshake itself.
+    StackWatermarkSet::start_processing(current_target, StackWatermarkKind::gc);
+  }
+  if (_requester != NULL && _requester != executing_thread && _requester->is_Java_thread()) {
+    // The handshake closure may contain oop Handles from the _requester.
+    // We must make sure we can use them.
+    StackWatermarkSet::start_processing(_requester->as_Java_thread(), StackWatermarkKind::gc);
+  }
+}
+
 void HandshakeOperation::do_handshake(JavaThread* thread) {
   jlong start_time_ns = 0;
   if (log_is_enabled(Debug, handshake, task)) {
@@ -302,14 +326,14 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl) {
-  HandshakeOperation cto(hs_cl, NULL);
+  HandshakeOperation cto(hs_cl, NULL, Thread::current());
   VM_HandshakeAllThreads handshake(&cto);
   VMThread::execute(&handshake);
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
   JavaThread* self = JavaThread::current();
-  HandshakeOperation op(hs_cl, target);
+  HandshakeOperation op(hs_cl, target, Thread::current());
 
   jlong start_time_ns = os::javaTimeNanos();
 
@@ -405,6 +429,10 @@ HandshakeOperation* HandshakeState::pop() {
 };
 
 void HandshakeState::process_by_self() {
+  assert(Thread::current() == _handshakee, "should call from _handshakee");
+  assert(!_handshakee->is_terminated(), "should not be a terminated thread");
+  assert(_handshakee->thread_state() != _thread_blocked, "should not be in a blocked state");
+  assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
   ThreadInVMForHandshake tivm(_handshakee);
   {
     NoSafepointVerifier nsv;
@@ -413,14 +441,9 @@ void HandshakeState::process_by_self() {
 }
 
 void HandshakeState::process_self_inner() {
-  assert(Thread::current() == _handshakee, "should call from _handshakee");
-  assert(!_handshakee->is_terminated(), "should not be a terminated thread");
-  assert(_handshakee->thread_state() != _thread_blocked, "should not be in a blocked state");
-  assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
-
   while (should_process()) {
     HandleMark hm(_handshakee);
-    CautiouslyPreserveExceptionMark pem(_handshakee);
+    PreserveExceptionMark pem(_handshakee);
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     HandshakeOperation* op = pop_for_self();
     if (op != NULL) {
@@ -428,6 +451,7 @@ void HandshakeState::process_self_inner() {
       bool async = op->is_async();
       log_trace(handshake)("Proc handshake %s " INTPTR_FORMAT " on " INTPTR_FORMAT " by self",
                            async ? "asynchronous" : "synchronous", p2i(op), p2i(_handshakee));
+      op->prepare(_handshakee, _handshakee);
       op->do_handshake(_handshakee);
       if (async) {
         log_handshake_info(((AsyncHandshakeOperation*)op)->start_time(), op->name(), 1, 0, "asynchronous");
@@ -519,6 +543,8 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
       if (op == match_op) {
         pr_ret = HandshakeState::_succeeded;
       }
+
+      op->prepare(_handshakee, current_thread);
 
       _active_handshaker = current_thread;
       op->do_handshake(_handshakee);

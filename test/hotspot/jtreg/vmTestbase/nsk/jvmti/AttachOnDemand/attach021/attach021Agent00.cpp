@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,16 @@ Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_setTagFor(JNIEnv * jni,
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_shutdownAgent(JNIEnv * jni,
         jclass klass) {
-    nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_OBJECT_FREE, success, jvmti, jni);
+
+    /* Flush any pending ObjectFree events, which will set global success variable to 1
+       for any pending ObjectFree events. */
+    if (jvmti->SetEventNotificationMode(JVMTI_DISABLE,
+                                        JVMTI_EVENT_OBJECT_FREE,
+                                        NULL) != JVMTI_ERROR_NONE) {
+        success = 0;
+    }
+
+    nsk_aod_agentFinished(jni, agentName, success);
 }
 
 void JNICALL objectFreeHandler(jvmtiEnv *jvmti, jlong tag) {

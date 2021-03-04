@@ -37,7 +37,7 @@ import java.security.Provider;
 public class Providers {
 
     private static final ThreadLocal<ProviderList> threadLists =
-        new InheritableThreadLocal<>();
+        new ThreadLocal<>();
 
     // number of threads currently using thread-local provider lists
     // tracked to allow an optimization if == 0
@@ -205,7 +205,7 @@ public class Providers {
 
     /**
      * Methods to manipulate the thread local provider list. It is for use by
-     * JAR verification (see above) and the SunJSSE FIPS mode only.
+     * JAR verification (see above).
      *
      * It should be used as follows:
      *

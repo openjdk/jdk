@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8153029
  * @library /test/lib
- * @build jdk.test.lib.Convert
  * @run main ChaCha20NoReuse
  * @summary ChaCha20 Cipher Implementation (key/nonce reuse protection)
  */
@@ -39,7 +38,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.AEADBadTagException;
 import javax.crypto.SecretKey;
 import java.security.InvalidKeyException;
-import jdk.test.lib.Convert;
 
 public class ChaCha20NoReuse {
 
@@ -76,9 +74,9 @@ public class ChaCha20NoReuse {
         public TestData(String name, String keyStr, String nonceStr, int ctr,
                 int dir, String inputStr, String aadStr, String outStr) {
             testName = Objects.requireNonNull(name);
-            key = Convert.hexStringToByteArray(Objects.requireNonNull(keyStr));
-            nonce = Convert.hexStringToByteArray(
-                    Objects.requireNonNull(nonceStr));
+            HexFormat hex = HexFormat.of();
+            key = hex.parseHex(keyStr);
+            nonce = hex.parseHex(nonceStr);
             if ((counter = ctr) < 0) {
                 throw new IllegalArgumentException(
                         "counter must be 0 or greater");
@@ -89,12 +87,9 @@ public class ChaCha20NoReuse {
                 throw new IllegalArgumentException(
                         "Direction must be ENCRYPT_MODE or DECRYPT_MODE");
             }
-            input = Convert.hexStringToByteArray(
-                    Objects.requireNonNull(inputStr));
-            aad = (aadStr != null) ?
-                Convert.hexStringToByteArray(aadStr) : null;
-            expOutput = Convert.hexStringToByteArray(
-                    Objects.requireNonNull(outStr));
+            input = hex.parseHex(inputStr);
+            aad = (aadStr != null) ? hex.parseHex(aadStr) : null;
+            expOutput = hex.parseHex(outStr);
         }
 
         public final String testName;

@@ -13,7 +13,7 @@ class T8074381a {
         boolean m(String s);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     void testRaw() {
         Sub s1 = c -> true;
         Sub s2 = Boolean::new;
@@ -23,7 +23,7 @@ class T8074381a {
         };
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     void testNonRaw() {
         Sub<Integer> s1 = c -> true;
         Sub<Integer> s2 = Boolean::new;

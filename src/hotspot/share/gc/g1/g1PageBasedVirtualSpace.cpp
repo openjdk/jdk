@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1PageBasedVirtualSpace.hpp"
+#include "gc/shared/pretouchTask.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
@@ -98,12 +99,6 @@ size_t G1PageBasedVirtualSpace::reserved_size() const {
 
 size_t G1PageBasedVirtualSpace::uncommitted_size()  const {
   return reserved_size() - committed_size();
-}
-
-void G1PageBasedVirtualSpace::commit_and_set_special() {
-  commit_internal(addr_to_page_index(_low_boundary), addr_to_page_index(_high_boundary));
-  _special = true;
-  _dirty.initialize(reserved_size()/_page_size);
 }
 
 size_t G1PageBasedVirtualSpace::addr_to_page_index(char* addr) const {
@@ -192,7 +187,9 @@ void G1PageBasedVirtualSpace::pretouch_internal(size_t start_page, size_t end_pa
 
 bool G1PageBasedVirtualSpace::commit(size_t start_page, size_t size_in_pages) {
   // We need to make sure to commit all pages covered by the given area.
-  guarantee(is_area_uncommitted(start_page, size_in_pages), "Specified area is not uncommitted");
+  guarantee(is_area_uncommitted(start_page, size_in_pages),
+            "Specified area is not uncommitted, start page: " SIZE_FORMAT ", page count: " SIZE_FORMAT,
+            start_page, size_in_pages);
 
   bool zero_filled = true;
   size_t end_page = start_page + size_in_pages;
@@ -201,12 +198,12 @@ bool G1PageBasedVirtualSpace::commit(size_t start_page, size_t size_in_pages) {
     // Check for dirty pages and update zero_filled if any found.
     if (_dirty.get_next_one_offset(start_page, end_page) < end_page) {
       zero_filled = false;
-      _dirty.clear_range(start_page, end_page);
+      _dirty.par_clear_range(start_page, end_page, BitMap::unknown_range);
     }
   } else {
     commit_internal(start_page, end_page);
   }
-  _committed.set_range(start_page, end_page);
+  _committed.par_set_range(start_page, end_page, BitMap::unknown_range);
 
   return zero_filled;
 }
@@ -220,70 +217,26 @@ void G1PageBasedVirtualSpace::uncommit_internal(size_t start_page, size_t end_pa
 }
 
 void G1PageBasedVirtualSpace::uncommit(size_t start_page, size_t size_in_pages) {
-  guarantee(is_area_committed(start_page, size_in_pages), "checking");
+  guarantee(is_area_committed(start_page, size_in_pages),
+            "Specified area is not committed, start page: " SIZE_FORMAT ", page count: " SIZE_FORMAT,
+            start_page, size_in_pages);
 
   size_t end_page = start_page + size_in_pages;
   if (_special) {
     // Mark that memory is dirty. If committed again the memory might
     // need to be cleared explicitly.
-    _dirty.set_range(start_page, end_page);
+    _dirty.par_set_range(start_page, end_page, BitMap::unknown_range);
   } else {
     uncommit_internal(start_page, end_page);
   }
 
-  _committed.clear_range(start_page, end_page);
+  _committed.par_clear_range(start_page, end_page, BitMap::unknown_range);
 }
 
-class G1PretouchTask : public AbstractGangTask {
-private:
-  char* volatile _cur_addr;
-  char* const _start_addr;
-  char* const _end_addr;
-  size_t _page_size;
-public:
-  G1PretouchTask(char* start_address, char* end_address, size_t page_size) :
-    AbstractGangTask("G1 PreTouch"),
-    _cur_addr(start_address),
-    _start_addr(start_address),
-    _end_addr(end_address),
-    _page_size(0) {
-#ifdef LINUX
-    _page_size = UseTransparentHugePages ? (size_t)os::vm_page_size(): page_size;
-#else
-    _page_size = page_size;
-#endif
-  }
-
-  virtual void work(uint worker_id) {
-    size_t const actual_chunk_size = MAX2(chunk_size(), _page_size);
-    while (true) {
-      char* touch_addr = Atomic::fetch_and_add(&_cur_addr, actual_chunk_size);
-      if (touch_addr < _start_addr || touch_addr >= _end_addr) {
-        break;
-      }
-      char* end_addr = touch_addr + MIN2(actual_chunk_size, pointer_delta(_end_addr, touch_addr, sizeof(char)));
-      os::pretouch_memory(touch_addr, end_addr, _page_size);
-    }
-  }
-
-  static size_t chunk_size() { return PreTouchParallelChunkSize; }
-};
-
 void G1PageBasedVirtualSpace::pretouch(size_t start_page, size_t size_in_pages, WorkGang* pretouch_gang) {
-  G1PretouchTask cl(page_start(start_page), bounded_end_addr(start_page + size_in_pages), _page_size);
 
-  if (pretouch_gang != NULL) {
-    size_t num_chunks = MAX2((size_t)1, size_in_pages * _page_size / MAX2(G1PretouchTask::chunk_size(), _page_size));
-
-    uint num_workers = MIN2((uint)num_chunks, pretouch_gang->total_workers());
-    log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
-                        cl.name(), num_workers, num_chunks, size_in_pages * _page_size);
-    pretouch_gang->run_task(&cl, num_workers);
-  } else {
-    log_debug(gc, heap)("Running %s pre-touching " SIZE_FORMAT "B.",
-                        cl.name(), size_in_pages * _page_size);
-    cl.work(0);
-  }
+  PretouchTask::pretouch("G1 PreTouch", page_start(start_page), bounded_end_addr(start_page + size_in_pages),
+                         _page_size, pretouch_gang);
 }
 
 bool G1PageBasedVirtualSpace::contains(const void* p) const {

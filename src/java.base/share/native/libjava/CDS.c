@@ -45,11 +45,21 @@ Java_jdk_internal_misc_CDS_getRandomSeedForDumping(JNIEnv *env, jclass ignore) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isDynamicDumpingEnabled(JNIEnv *env, jclass jcls) {
-    return JVM_IsDynamicDumpingEnabled(env);
+Java_jdk_internal_misc_CDS_isDumpingArchive0(JNIEnv *env, jclass jcls) {
+    return JVM_IsCDSDumpingEnabled(env);
 }
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isSharingEnabled(JNIEnv *env, jclass jcls) {
+Java_jdk_internal_misc_CDS_isSharingEnabled0(JNIEnv *env, jclass jcls) {
     return JVM_IsSharingEnabled(env);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_misc_CDS_isDumpingClassList0(JNIEnv *env, jclass jcls) {
+    return JVM_IsDumpingClassList(env);
+}
+
+JNIEXPORT void JNICALL
+Java_jdk_internal_misc_CDS_logLambdaFormInvoker(JNIEnv *env, jclass jcls, jstring line) {
+    JVM_LogLambdaFormInvoker(env, line);
 }

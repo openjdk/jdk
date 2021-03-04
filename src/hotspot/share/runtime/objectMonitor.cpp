@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,10 @@
 #include "memory/resourceArea.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
+#include "oops/weakHandle.inline.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -42,9 +46,10 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
@@ -264,6 +269,29 @@ static void check_object_context() {
 #endif // ASSERT
 }
 
+ObjectMonitor::ObjectMonitor(oop object) :
+  _header(markWord::zero()),
+  _object(_oop_storage, object),
+  _owner(NULL),
+  _previous_owner_tid(0),
+  _next_om(NULL),
+  _recursions(0),
+  _EntryList(NULL),
+  _cxq(NULL),
+  _succ(NULL),
+  _Responsible(NULL),
+  _Spinner(0),
+  _SpinDuration(ObjectMonitor::Knob_SpinLimit),
+  _contentions(0),
+  _WaitSet(NULL),
+  _waiters(0),
+  _WaitSetLock(0)
+{ }
+
+ObjectMonitor::~ObjectMonitor() {
+  _object.release(_oop_storage);
+}
+
 oop ObjectMonitor::object() const {
   check_object_context();
   if (_object.is_null()) {
@@ -277,15 +305,6 @@ oop ObjectMonitor::object_peek() const {
     return NULL;
   }
   return _object.peek();
-}
-
-void ObjectMonitor::set_object(oop obj) {
-  check_object_context();
-  if (_object.is_null()) {
-    _object = WeakHandle(_oop_storage, obj);
-  } else {
-    _object.replace(obj);
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -325,7 +344,7 @@ bool ObjectMonitor::enter(TRAPS) {
   // Note that if we acquire the monitor from an initial spin
   // we forgo posting JVMTI events and firing DTRACE probes.
   if (TrySpin(Self) > 0) {
-    assert(_owner == Self, "must be Self: owner=" INTPTR_FORMAT, p2i(_owner));
+    assert(owner_raw() == Self, "must be Self: owner=" INTPTR_FORMAT, p2i(owner_raw()));
     assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
     assert(object()->mark() == markWord::encode(this),
            "object mark must match encoded this: mark=" INTPTR_FORMAT
@@ -335,7 +354,7 @@ bool ObjectMonitor::enter(TRAPS) {
     return true;
   }
 
-  assert(_owner != Self, "invariant");
+  assert(owner_raw() != Self, "invariant");
   assert(_succ != Self, "invariant");
   JavaThread * jt = Self->as_Java_thread();
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
@@ -360,9 +379,12 @@ bool ObjectMonitor::enter(TRAPS) {
 
   JFR_ONLY(JfrConditionalFlushWithStacktrace<EventJavaMonitorEnter> flush(jt);)
   EventJavaMonitorEnter event;
-  if (event.should_commit()) {
+  if (event.is_started()) {
     event.set_monitorClass(object()->klass());
-    event.set_address((uintptr_t)object_addr());
+    // Set an address that is 'unique enough', such that events close in
+    // time and with the same address are likely (but not guaranteed) to
+    // belong to the same object.
+    event.set_address((uintptr_t)this);
   }
 
   { // Change java thread status to indicate blocked on monitor enter.
@@ -423,7 +445,7 @@ bool ObjectMonitor::enter(TRAPS) {
 
   // Must either set _recursions = 0 or ASSERT _recursions == 0.
   assert(_recursions == 0, "invariant");
-  assert(_owner == Self, "invariant");
+  assert(owner_raw() == Self, "invariant");
   assert(_succ != Self, "invariant");
   assert(object()->mark() == markWord::encode(this), "invariant");
 
@@ -461,7 +483,7 @@ bool ObjectMonitor::enter(TRAPS) {
 // Callers must compensate as needed.
 
 int ObjectMonitor::TryLock(Thread * Self) {
-  void * own = _owner;
+  void* own = owner_raw();
   if (own != NULL) return 0;
   if (try_set_owner_from(NULL, Self) == NULL) {
     assert(_recursions == 0, "invariant");
@@ -472,6 +494,110 @@ int ObjectMonitor::TryLock(Thread * Self) {
   // We can either return -1 or retry.
   // Retry doesn't make as much sense because the lock was just acquired.
   return -1;
+}
+
+// Deflate the specified ObjectMonitor if not in-use. Returns true if it
+// was deflated and false otherwise.
+//
+// The async deflation protocol sets owner to DEFLATER_MARKER and
+// makes contentions negative as signals to contending threads that
+// an async deflation is in progress. There are a number of checks
+// as part of the protocol to make sure that the calling thread has
+// not lost the race to a contending thread.
+//
+// The ObjectMonitor has been successfully async deflated when:
+//   (contentions < 0)
+// Contending threads that see that condition know to retry their operation.
+//
+bool ObjectMonitor::deflate_monitor() {
+  if (is_busy() != 0) {
+    // Easy checks are first - the ObjectMonitor is busy so no deflation.
+    return false;
+  }
+
+  if (ObjectSynchronizer::is_final_audit() && owner_is_DEFLATER_MARKER()) {
+    // The final audit can see an already deflated ObjectMonitor on the
+    // in-use list because MonitorList::unlink_deflated() might have
+    // blocked for the final safepoint before unlinking all the deflated
+    // monitors.
+    assert(contentions() < 0, "must be negative: contentions=%d", contentions());
+    // Already returned 'true' when it was originally deflated.
+    return false;
+  }
+
+  const oop obj = object_peek();
+
+  if (obj == NULL) {
+    // If the object died, we can recycle the monitor without racing with
+    // Java threads. The GC already broke the association with the object.
+    set_owner_from(NULL, DEFLATER_MARKER);
+    assert(contentions() >= 0, "must be non-negative: contentions=%d", contentions());
+    _contentions = -max_jint;
+  } else {
+    // Attempt async deflation protocol.
+
+    // Set a NULL owner to DEFLATER_MARKER to force any contending thread
+    // through the slow path. This is just the first part of the async
+    // deflation dance.
+    if (try_set_owner_from(NULL, DEFLATER_MARKER) != NULL) {
+      // The owner field is no longer NULL so we lost the race since the
+      // ObjectMonitor is now busy.
+      return false;
+    }
+
+    if (contentions() > 0 || _waiters != 0) {
+      // Another thread has raced to enter the ObjectMonitor after
+      // is_busy() above or has already entered and waited on
+      // it which makes it busy so no deflation. Restore owner to
+      // NULL if it is still DEFLATER_MARKER.
+      if (try_set_owner_from(DEFLATER_MARKER, NULL) != DEFLATER_MARKER) {
+        // Deferred decrement for the JT EnterI() that cancelled the async deflation.
+        add_to_contentions(-1);
+      }
+      return false;
+    }
+
+    // Make a zero contentions field negative to force any contending threads
+    // to retry. This is the second part of the async deflation dance.
+    if (Atomic::cmpxchg(&_contentions, (jint)0, -max_jint) != 0) {
+      // Contentions was no longer 0 so we lost the race since the
+      // ObjectMonitor is now busy. Restore owner to NULL if it is
+      // still DEFLATER_MARKER:
+      if (try_set_owner_from(DEFLATER_MARKER, NULL) != DEFLATER_MARKER) {
+        // Deferred decrement for the JT EnterI() that cancelled the async deflation.
+        add_to_contentions(-1);
+      }
+      return false;
+    }
+  }
+
+  // Sanity checks for the races:
+  guarantee(owner_is_DEFLATER_MARKER(), "must be deflater marker");
+  guarantee(contentions() < 0, "must be negative: contentions=%d",
+            contentions());
+  guarantee(_waiters == 0, "must be 0: waiters=%d", _waiters);
+  guarantee(_cxq == NULL, "must be no contending threads: cxq="
+            INTPTR_FORMAT, p2i(_cxq));
+  guarantee(_EntryList == NULL,
+            "must be no entering threads: EntryList=" INTPTR_FORMAT,
+            p2i(_EntryList));
+
+  if (obj != NULL) {
+    if (log_is_enabled(Trace, monitorinflation)) {
+      ResourceMark rm;
+      log_trace(monitorinflation)("deflate_monitor: object=" INTPTR_FORMAT
+                                  ", mark=" INTPTR_FORMAT ", type='%s'",
+                                  p2i(obj), obj->mark().value(),
+                                  obj->klass()->external_name());
+    }
+
+    // Install the old mark word if nobody else has already done it.
+    install_displaced_markword_in_object(obj);
+  }
+
+  // We leave owner == DEFLATER_MARKER and contentions < 0
+  // to force any racing threads to retry.
+  return true;  // Success, ObjectMonitor has been deflated.
 }
 
 // Install the displaced mark word (dmw) of a deflating ObjectMonitor
@@ -537,8 +663,8 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   } else {
     ss->print("contentions=0");
   }
-  if (_owner != DEFLATER_MARKER) {
-    ss->print("owner=" INTPTR_FORMAT, p2i(_owner));
+  if (!owner_is_DEFLATER_MARKER()) {
+    ss->print("owner=" INTPTR_FORMAT, p2i(owner_raw()));
   } else {
     // We report NULL instead of DEFLATER_MARKER here because is_busy()
     // ignores DEFLATER_MARKER values.
@@ -558,7 +684,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   // Try the lock - TATAS
   if (TryLock (Self) > 0) {
     assert(_succ != Self, "invariant");
-    assert(_owner == Self, "invariant");
+    assert(owner_raw() == Self, "invariant");
     assert(_Responsible != Self, "invariant");
     return;
   }
@@ -591,7 +717,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   // effects.
 
   if (TrySpin(Self) > 0) {
-    assert(_owner == Self, "invariant");
+    assert(owner_raw() == Self, "invariant");
     assert(_succ != Self, "invariant");
     assert(_Responsible != Self, "invariant");
     return;
@@ -599,7 +725,7 @@ void ObjectMonitor::EnterI(TRAPS) {
 
   // The Spin failed -- Enqueue and park the thread ...
   assert(_succ != Self, "invariant");
-  assert(_owner != Self, "invariant");
+  assert(owner_raw() != Self, "invariant");
   assert(_Responsible != Self, "invariant");
 
   // Enqueue "Self" on ObjectMonitor's _cxq.
@@ -629,7 +755,7 @@ void ObjectMonitor::EnterI(TRAPS) {
     // As an optional optimization we retry the lock.
     if (TryLock (Self) > 0) {
       assert(_succ != Self, "invariant");
-      assert(_owner == Self, "invariant");
+      assert(owner_raw() == Self, "invariant");
       assert(_Responsible != Self, "invariant");
       return;
     }
@@ -681,7 +807,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   for (;;) {
 
     if (TryLock(Self) > 0) break;
-    assert(_owner != Self, "invariant");
+    assert(owner_raw() != Self, "invariant");
 
     // park self
     if (_Responsible == Self) {
@@ -750,7 +876,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   // The head of cxq is volatile but the interior is stable.
   // In addition, Self.TState is stable.
 
-  assert(_owner == Self, "invariant");
+  assert(owner_raw() == Self, "invariant");
 
   UnlinkAfterAcquire(Self, &node);
   if (_succ == Self) _succ = NULL;
@@ -826,7 +952,7 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   for (;;) {
     ObjectWaiter::TStates v = SelfNode->TState;
     guarantee(v == ObjectWaiter::TS_ENTER || v == ObjectWaiter::TS_CXQ, "invariant");
-    assert(_owner != Self, "invariant");
+    assert(owner_raw() != Self, "invariant");
 
     if (TryLock(Self) > 0) break;
     if (TrySpin(Self) > 0) break;
@@ -885,7 +1011,7 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   // The head of cxq is volatile but the interior is stable.
   // In addition, Self.TState is stable.
 
-  assert(_owner == Self, "invariant");
+  assert(owner_raw() == Self, "invariant");
   assert(object()->mark() == markWord::encode(this), "invariant");
   UnlinkAfterAcquire(Self, SelfNode);
   if (_succ == Self) _succ = NULL;
@@ -899,7 +1025,7 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
 // unlinking the thread until ::exit()-time.
 
 void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
-  assert(_owner == Self, "invariant");
+  assert(owner_raw() == Self, "invariant");
   assert(SelfNode->_thread == Self, "invariant");
 
   if (SelfNode->TState == ObjectWaiter::TS_ENTER) {
@@ -1019,7 +1145,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 
 void ObjectMonitor::exit(bool not_suspended, TRAPS) {
   Thread* const Self = THREAD;
-  void* cur = Atomic::load(&_owner);
+  void* cur = owner_raw();
   if (THREAD != cur) {
     if (THREAD->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "invariant");
@@ -1065,7 +1191,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
 #endif
 
   for (;;) {
-    assert(THREAD == _owner, "invariant");
+    assert(THREAD == owner_raw(), "invariant");
 
     // Drop the lock.
     // release semantics: prior loads and stores from within the critical section
@@ -1121,7 +1247,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
       return;
     }
 
-    guarantee(_owner == THREAD, "invariant");
+    guarantee(owner_raw() == THREAD, "invariant");
 
     ObjectWaiter * w = NULL;
 
@@ -1233,7 +1359,7 @@ bool ObjectMonitor::ExitSuspendEquivalent(JavaThread * jSelf) {
 
 
 void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
-  assert(_owner == Self, "invariant");
+  assert(owner_raw() == Self, "invariant");
 
   // Exit protocol:
   // 1. ST _succ = wakee
@@ -1277,7 +1403,7 @@ intx ObjectMonitor::complete_exit(TRAPS) {
 
   assert(InitDone, "Unexpectedly not initialized");
 
-  void* cur = Atomic::load(&_owner);
+  void* cur = owner_raw();
   if (THREAD != cur) {
     if (THREAD->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "internal state error");
@@ -1286,11 +1412,11 @@ intx ObjectMonitor::complete_exit(TRAPS) {
     }
   }
 
-  guarantee(Self == _owner, "complete_exit not owner");
+  guarantee(Self == owner_raw(), "complete_exit not owner");
   intx save = _recursions; // record the old recursion count
   _recursions = 0;        // set the recursion level to be 0
   exit(true, Self);           // exit the monitor
-  guarantee(_owner != Self, "invariant");
+  guarantee(owner_raw() != Self, "invariant");
   return save;
 }
 
@@ -1300,7 +1426,7 @@ bool ObjectMonitor::reenter(intx recursions, TRAPS) {
   Thread * const Self = THREAD;
   JavaThread * jt = Self->as_Java_thread();
 
-  guarantee(_owner != Self, "reenter already owner");
+  guarantee(owner_raw() != Self, "reenter already owner");
   if (!enter(THREAD)) {
     return false;
   }
@@ -1328,7 +1454,7 @@ bool ObjectMonitor::reenter(intx recursions, TRAPS) {
 // (IMSE). If there is a pending exception and the specified thread
 // is not the owner, that exception will be replaced by the IMSE.
 bool ObjectMonitor::check_owner(Thread* THREAD) {
-  void* cur = Atomic::load(&_owner);
+  void* cur = owner_raw();
   if (cur == THREAD) {
     return true;
   }
@@ -1350,7 +1476,10 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
   assert(monitor != NULL, "invariant");
   event->set_monitorClass(monitor->object()->klass());
   event->set_timeout(timeout);
-  event->set_address((uintptr_t)monitor->object_addr());
+  // Set an address that is 'unique enough', such that events close in
+  // time and with the same address are likely (but not guaranteed) to
+  // belong to the same object.
+  event->set_address((uintptr_t)monitor);
   event->set_notifier(notifier_tid);
   event->set_timedOut(timedout);
   event->commit();
@@ -1423,7 +1552,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   _waiters++;                  // increment the number of waiters
   _recursions = 0;             // set the recursion level to be 1
   exit(true, Self);                    // exit the monitor
-  guarantee(_owner != Self, "invariant");
+  guarantee(owner_raw() != Self, "invariant");
 
   // The thread is on the WaitSet list - now park() it.
   // On MP systems it's conceivable that a brief spin before we park
@@ -1538,7 +1667,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     assert(Self->_Stalled != 0, "invariant");
     Self->_Stalled = 0;
 
-    assert(_owner != Self, "invariant");
+    assert(owner_raw() != Self, "invariant");
     ObjectWaiter::TStates v = node.TState;
     if (v == ObjectWaiter::TS_RUN) {
       enter(Self);
@@ -1553,18 +1682,19 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // Node is about to go out-of-scope, but even if it were immortal we wouldn't
     // want residual elements associated with this thread left on any lists.
     guarantee(node.TState == ObjectWaiter::TS_RUN, "invariant");
-    assert(_owner == Self, "invariant");
+    assert(owner_raw() == Self, "invariant");
     assert(_succ != Self, "invariant");
   } // OSThreadWaitState()
 
   jt->set_current_waiting_monitor(NULL);
 
   guarantee(_recursions == 0, "invariant");
-  _recursions = save;     // restore the old recursion count
+  _recursions = save      // restore the old recursion count
+                + JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(jt); //  increased by the deferred relock count
   _waiters--;             // decrement the number of waiters
 
   // Verify a few postconditions
-  assert(_owner == Self, "invariant");
+  assert(owner_raw() == Self, "invariant");
   assert(_succ != Self, "invariant");
   assert(object()->mark() == markWord::encode(this), "invariant");
 
@@ -1793,7 +1923,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
   ctr = _SpinDuration;
   if (ctr <= 0) return 0;
 
-  if (NotRunnable(Self, (Thread *) _owner)) {
+  if (NotRunnable(Self, (Thread *) owner_raw())) {
     return 0;
   }
 
@@ -1839,7 +1969,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
     // the spin without prejudice or apply a "penalty" to the
     // spin count-down variable "ctr", reducing it by 100, say.
 
-    Thread * ox = (Thread *) _owner;
+    Thread * ox = (Thread *) owner_raw();
     if (ox == NULL) {
       ox = (Thread*)try_set_owner_from(NULL, Self);
       if (ox == NULL) {
@@ -1965,7 +2095,7 @@ int ObjectMonitor::NotRunnable(Thread * Self, Thread * ox) {
 
   if (BlockedOn == 1) return 1;
   if (BlockedOn != 0) {
-    return BlockedOn != intptr_t(this) && _owner == ox;
+    return BlockedOn != intptr_t(this) && owner_raw() == ox;
   }
 
   assert(sizeof(((JavaThread *)ox)->_thread_state == sizeof(int)), "invariant");
@@ -2122,7 +2252,6 @@ void ObjectMonitor::print() const { print_on(tty); }
 // (ObjectMonitor) 0x00007fdfb6012e40 = {
 //   _header = 0x0000000000000001
 //   _object = 0x000000070ff45fd0
-//   _allocation_state = Old
 //   _pad_buf0 = {
 //     [0] = '\0'
 //     ...
@@ -2153,23 +2282,12 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
   st->print_cr("  _header = " INTPTR_FORMAT, header().value());
   st->print_cr("  _object = " INTPTR_FORMAT, p2i(object_peek()));
-  st->print("  _allocation_state = ");
-  if (is_free()) {
-    st->print("Free");
-  } else if (is_old()) {
-    st->print("Old");
-  } else if (is_new()) {
-    st->print("New");
-  } else {
-    st->print("unknown=%d", _allocation_state);
-  }
-  st->cr();
   st->print_cr("  _pad_buf0 = {");
   st->print_cr("    [0] = '\\0'");
   st->print_cr("    ...");
   st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf0) - 1);
   st->print_cr("  }");
-  st->print_cr("  _owner = " INTPTR_FORMAT, p2i(_owner));
+  st->print_cr("  _owner = " INTPTR_FORMAT, p2i(owner_raw()));
   st->print_cr("  _previous_owner_tid = " JLONG_FORMAT, _previous_owner_tid);
   st->print_cr("  _pad_buf1 = {");
   st->print_cr("    [0] = '\\0'");

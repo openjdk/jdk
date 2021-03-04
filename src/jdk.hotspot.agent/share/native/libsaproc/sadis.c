@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,82 +70,36 @@
 #define JVM_MAXPATHLEN MAXPATHLEN
 #endif
 
+#include "jni_util.h"
 
-#ifdef _WINDOWS
-static int getLastErrorString(char *buf, size_t len)
-{
-    long errval;
-
-    if ((errval = GetLastError()) != 0)
-    {
-      /* DOS error */
-      size_t n = (size_t)FormatMessage(
-            FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-            NULL,
-            errval,
-            0,
-            buf,
-            (DWORD)len,
-            NULL);
-      if (n > 3) {
-        /* Drop final '.', CR, LF */
-        if (buf[n - 1] == '\n') n--;
-        if (buf[n - 1] == '\r') n--;
-        if (buf[n - 1] == '.') n--;
-        buf[n] = '\0';
-      }
-      return (int)n;
-    }
-
-    if (errno != 0)
-    {
-      /* C runtime error that has no corresponding DOS error code */
-      strerror_s(buf, len, errno);
-      return strlen(buf);
-    }
-    return 0;
-}
-#endif /* _WINDOWS */
 
 /*
  * Class:     sun_jvm_hotspot_asm_Disassembler
  * Method:    load_library
- * Signature: (Ljava/lang/String;)L
+ * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIEnv * env,
                                                                            jclass disclass,
-                                                                           jstring jrepath_s,
                                                                            jstring libname_s) {
   uintptr_t func = 0;
   const char *error_message = NULL;
-  const char *jrepath = NULL;
   const char *libname = NULL;
-  char buffer[JVM_MAXPATHLEN];
 
 #ifdef _WINDOWS
+  char buffer[JVM_MAXPATHLEN];
   HINSTANCE hsdis_handle = (HINSTANCE) NULL;
 #else
   void* hsdis_handle = NULL;
 #endif
 
-  jrepath = (*env)->GetStringUTFChars(env, jrepath_s, NULL); // like $JAVA_HOME/jre/lib/sparc/
-  if (jrepath == NULL || (*env)->ExceptionOccurred(env)) {
-    return 0;
-  }
-
   libname = (*env)->GetStringUTFChars(env, libname_s, NULL);
   if (libname == NULL || (*env)->ExceptionOccurred(env)) {
-    (*env)->ReleaseStringUTFChars(env, jrepath_s, jrepath);
     return 0;
   }
 
   /* Load the hsdis library */
 #ifdef _WINDOWS
   hsdis_handle = LoadLibrary(libname);
-  if (hsdis_handle == NULL) {
-    snprintf(buffer, sizeof(buffer), "%s%s", jrepath, libname);
-    hsdis_handle = LoadLibrary(buffer);
-  }
   if (hsdis_handle != NULL) {
     func = (uintptr_t)GetProcAddress(hsdis_handle, "decode_instructions_virtual");
   }
@@ -155,10 +109,6 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
   }
 #else
   hsdis_handle = dlopen(libname, RTLD_LAZY | RTLD_GLOBAL);
-  if (hsdis_handle == NULL) {
-    snprintf(buffer, sizeof(buffer), "%s%s", jrepath, libname);
-    hsdis_handle = dlopen(buffer, RTLD_LAZY | RTLD_GLOBAL);
-  }
   if (hsdis_handle != NULL) {
     func = (uintptr_t)dlsym(hsdis_handle, "decode_instructions_virtual");
   }
@@ -168,19 +118,18 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
 #endif
 
   (*env)->ReleaseStringUTFChars(env, libname_s, libname);
-  (*env)->ReleaseStringUTFChars(env, jrepath_s, jrepath);
 
   if (func == 0) {
     /* Couldn't find entry point.  error_message should contain some
      * platform dependent error message.
      */
-    jclass eclass = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");
-    if ((*env)->ExceptionOccurred(env)) {
-      /* Can't throw exception, probably OOM, so silently return 0 */
-      return (jlong) 0;
+    jstring s = JNU_NewStringPlatform(env, error_message);
+    if (s != NULL) {
+      jobject x = JNU_NewObjectByName(env, "sun/jvm/hotspot/debugger/DebuggerException", "(Ljava/lang/String;)V", s);
+      if (x != NULL) {
+        (*env)->Throw(env, x);
+      }
     }
-
-    (*env)->ThrowNew(env, eclass, error_message);
   }
   return (jlong)func;
 }

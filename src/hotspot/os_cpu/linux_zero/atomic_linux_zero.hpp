@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,7 +49,9 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
 
-  return __sync_add_and_fetch(dest, add_value);
+  D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
+  FULL_MEM_BARRIER;
+  return res;
 }
 
 template<>
@@ -58,7 +60,10 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
-  return __sync_add_and_fetch(dest, add_value);
+
+  D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
+  FULL_MEM_BARRIER;
+  return res;
 }
 
 template<>
@@ -103,7 +108,13 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-  return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
+
+  T value = compare_value;
+  FULL_MEM_BARRIER;
+  __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
+                            __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+  FULL_MEM_BARRIER;
+  return value;
 }
 
 template<>
@@ -113,7 +124,13 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-  return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
+
+  FULL_MEM_BARRIER;
+  T value = compare_value;
+  __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
+                            __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+  FULL_MEM_BARRIER;
+  return value;
 }
 
 template<>
