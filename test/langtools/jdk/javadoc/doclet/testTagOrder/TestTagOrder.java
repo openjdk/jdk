@@ -75,8 +75,8 @@ public class TestTagOrder extends JavadocTester {
                          * @since 1.0
                          * @see <a href="http://example.com">example</a>
                          */
-                        public int m(int p1, int p2) throws IllegalArgumentException { 
-                            return 0; 
+                        public int m(int p1, int p2) throws IllegalArgumentException {
+                            return 0;
                         }
                     }
                     """);
