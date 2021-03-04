@@ -536,8 +536,8 @@ public class TestTypeAnnotations extends JavadocTester {
 
         checkOutput("typeannos/RepeatingOnConstructor.Inner.html", true,
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E(java.lang.String,java.\
-                    lang.String...)">Inner</a></span>&#8203;(java.lang.String&nbsp;parameter,
+                    <code><a href="#%3Cinit%3E(java.lang.String,java.lang.String...)" class="member-\
+                    name-link">Inner</a>&#8203;(java.lang.String&nbsp;parameter,
                      java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
                     TypeUseA</a> <a href="RepTypeUseA.html" title="annotation in typeannos">@RepType\
                     UseA</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB\
@@ -568,7 +568,8 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/RepeatingOnField.html", true,
                 """
                     <div class="col-first even-row-color"><code>(package private) java.lang.Integer</code></div>
-                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="#i1">i1</a></span></code></div>""",
+                    <div class="col-second even-row-color"><code><a href="#i1" class="member-name-li\
+                    nk">i1</a></code></div>""",
 
                 """
                     <div class="col-first odd-row-color"><code>(package private) <a href="RepTypeUseA.ht\
@@ -576,8 +577,8 @@ public class TestTypeAnnotations extends JavadocTester {
                      title="annotation in typeannos">@RepTypeUseA</a> <a href="RepTypeUseB.html" tit\
                     le="annotation in typeannos">@RepTypeUseB</a> <a href="RepTypeUseB.html" title="\
                     annotation in typeannos">@RepTypeUseB</a> java.lang.Integer</code></div>
-                    <div class="col-second odd-row-color"><code><span class="member-name-link"><a href="\
-                    #i2">i2</a></span></code></div>
+                    <div class="col-second odd-row-color"><code><a href="\
+                    #i2" class="member-name-link">i2</a></code></div>
                     <div class="col-last odd-row-color">&nbsp;</div>""",
 
                 """
@@ -586,7 +587,8 @@ public class TestTypeAnnotations extends JavadocTester {
                      title="annotation in typeannos">@RepTypeUseA</a> <a href="RepTypeUseB.html" tit\
                     le="annotation in typeannos">@RepTypeUseB</a> <a href="RepTypeUseB.html" title="\
                     annotation in typeannos">@RepTypeUseB</a> java.lang.Integer</code></div>
-                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="#i3">i3</a></span></code></div>""",
+                    <div class="col-second even-row-color"><code><a href="#i3" class="member-name-li\
+                    nk">i3</a></code></div>""",
 
                 """
                     <div class="col-first odd-row-color"><code>(package private) <a href="RepAllContexts\
@@ -595,7 +597,8 @@ public class TestTypeAnnotations extends JavadocTester {
                     ContextsB.html" title="annotation in typeannos">@RepAllContextsB</a> <a href="Re\
                     pAllContextsB.html" title="annotation in typeannos">@RepAllContextsB</a> java.la\
                     ng.Integer</code></div>
-                    <div class="col-second odd-row-color"><code><span class="member-name-link"><a href="#i4">i4</a></span></code></div>""",
+                    <div class="col-second odd-row-color"><code><a href="#i4" class="member-name-lin\
+                    k">i4</a></code></div>""",
 
                 """
                     <div class="col-first even-row-color"><code>(package private) java.lang.String <a hre\
@@ -607,7 +610,8 @@ public class TestTypeAnnotations extends JavadocTester {
                     ml" title="annotation in typeannos">@RepTypeUseA</a> <a href="RepTypeUseB.html"\
                      title="annotation in typeannos">@RepTypeUseB</a> <a href="RepTypeUseB.html" tit\
                     le="annotation in typeannos">@RepTypeUseB</a> []</code></div>
-                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="#sa">sa</a></span></code></div>""",
+                    <div class="col-second even-row-color"><code><a href="#sa" class="member-name-li\
+                    nk">sa</a></code></div>""",
 
                 """
                     <div class="member-signature"><span class="annotations"><a href="RepFieldA.html"\
@@ -669,8 +673,8 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <code>(package private) java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
-                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#t\
-                    est1()">test1</a></span>()</code>""",
+                    tab2 method-summary-table-tab4"><code><a href="#t\
+                    est1()" class="member-name-link">test1</a>()</code>""",
 
                 """
                     <code>(package private) <a href="RepTypeUseA.html" title="annotation in typeanno\
@@ -679,8 +683,8 @@ public class TestTypeAnnotations extends JavadocTester {
                     ypeUseB</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeU\
                     seB</a> java.lang.String</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#te\
-                    st2()">test2</a></span>()</code>""",
+                    ab2 method-summary-table-tab4"><code><a href="#te\
+                    st2()" class="member-name-link">test2</a>()</code>""",
 
                 """
                     <code>(package private) <a href="RepTypeUseA.html" title="annotation in typeanno\
@@ -689,8 +693,8 @@ public class TestTypeAnnotations extends JavadocTester {
                     ypeUseB</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeU\
                     seB</a> java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
-                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#t\
-                    est3()">test3</a></span>()</code>""",
+                    tab2 method-summary-table-tab4"><code><a href="#t\
+                    est3()" class="member-name-link">test3</a>()</code>""",
 
                 """
                     <code>(package private) <a href="RepAllContextsA.html" title="annotation in type\
@@ -699,12 +703,12 @@ public class TestTypeAnnotations extends JavadocTester {
                     n in typeannos">@RepAllContextsB</a> <a href="RepAllContextsB.html" title="annot\
                     ation in typeannos">@RepAllContextsB</a> java.lang.String</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#te\
-                    st4()">test4</a></span>()</code>""",
+                    ab2 method-summary-table-tab4"><code><a href="#te\
+                    st4()" class="member-name-link">test4</a>()</code>""",
 
                 """
-                    <code><span class="member-name-link"><a href="#test5(java.lang.String,java.lang.\
-                    String...)">test5</a></span>&#8203;(java.lang.String&nbsp;parameter,
+                    <code><a href="#test5(java.lang.String,java.lang.\
+                    String...)" class="member-name-link">test5</a>&#8203;(java.lang.String&nbsp;parameter,
                      java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Re\
                     pTypeUseA</a> <a href="RepTypeUseA.html" title="annotation in typeannos">@RepTyp\
                     eUseA</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUse\
@@ -777,15 +781,15 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <code>(package private) &lt;T&gt;&nbsp;java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
-                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#g\
-                    enericMethod(T)">genericMethod</a></span>&#8203;(T&nbsp;t)</code>""",
+                    tab2 method-summary-table-tab4"><code><a href="#genericMethod(T)" class="member-\
+                    name-link">genericMethod</a>&#8203;(T&nbsp;t)</code>""",
 
                 """
                     <code>(package private) &lt;T&gt;&nbsp;java.lang.String</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#generi\
-                    cMethod2(T)">genericMethod2</a></span>&#8203;(<a href="RepTypeUseA.html" title="\
-                    annotation in typeannos">@RepTypeUseA</a> <a href="RepTypeUseA.html" title="anno\
+                    ab2 method-summary-table-tab4"><code><a href="#genericMethod2(T)" class="member-\
+                    name-link">genericMethod2</a>&#8203;(<a href="RepTypeUseA.html" title="annotatio\
+                    n in typeannos">@RepTypeUseA</a> <a href="RepTypeUseA.html" title="anno\
                     tation in typeannos">@RepTypeUseA</a> <a href="RepTypeUseB.html" title="annotati\
                     on in typeannos">@RepTypeUseB</a> <a href="RepTypeUseB.html" title="annotation i\
                     n typeannos">@RepTypeUseB</a> T&nbsp;t)</code>""",
@@ -793,8 +797,8 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <code>(package private) java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
-                    tab2 method-summary-table-tab4"><code><span class="member-name-link"><a href="#t\
-                    est()">test</a></span>()</code>""",
+                    tab2 method-summary-table-tab4"><code><a href="#test()" class="member-name-link"\
+                    >test</a>()</code>""",
 
                 """
                     <span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">test</\

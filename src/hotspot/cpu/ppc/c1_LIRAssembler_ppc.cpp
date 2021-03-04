@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2926,12 +2926,20 @@ void LIR_Assembler::on_spin_wait() {
 }
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info) {
-  assert(patch_code == lir_patch_none, "Patch code not supported");
   LIR_Address* addr = addr_opr->as_address_ptr();
   assert(addr->scale() == LIR_Address::times_1, "no scaling on this platform");
+
   if (addr->index()->is_illegal()) {
-    __ add_const_optimized(dest->as_pointer_register(), addr->base()->as_pointer_register(), addr->disp());
+    if (patch_code != lir_patch_none) {
+      PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
+      __ load_const32(R0, 0); // patchable int
+      __ add(dest->as_pointer_register(), addr->base()->as_pointer_register(), R0);
+      patching_epilog(patch, patch_code, addr->base()->as_register(), info);
+    } else {
+      __ add_const_optimized(dest->as_pointer_register(), addr->base()->as_pointer_register(), addr->disp());
+    }
   } else {
+    assert(patch_code == lir_patch_none, "Patch code not supported");
     assert(addr->disp() == 0, "can't have both: index and disp");
     __ add(dest->as_pointer_register(), addr->index()->as_pointer_register(), addr->base()->as_pointer_register());
   }

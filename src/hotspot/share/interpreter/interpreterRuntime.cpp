@@ -26,7 +26,7 @@
 #include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -318,7 +318,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* thread, int reason,
       Method::build_interpreter_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Only metaspace OOM is expected. No Java code executed.
-        assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())),
+        assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())),
                "we expect only an OOM error here");
         CLEAR_PENDING_EXCEPTION;
       }
@@ -365,7 +365,7 @@ static Handle get_preinitialized_exception(Klass* k, TRAPS) {
 // constructor for the same reason (it is empty, anyway).
 JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* thread))
   Handle exception = get_preinitialized_exception(
-                                 SystemDictionary::StackOverflowError_klass(),
+                                 vmClasses::StackOverflowError_klass(),
                                  CHECK);
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
@@ -374,7 +374,7 @@ JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread* thread))
   Handle exception = get_preinitialized_exception(
-                                 SystemDictionary::StackOverflowError_klass(),
+                                 vmClasses::StackOverflowError_klass(),
                                  CHECK);
   java_lang_Throwable::set_message(exception(),
           Universe::delayed_stack_overflow_error_message());
@@ -493,7 +493,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     // assertions
     assert(h_exception.not_null(), "NULL exceptions should be handled by athrow");
     // Check that exception is a subclass of Throwable.
-    assert(h_exception->is_a(SystemDictionary::Throwable_klass()),
+    assert(h_exception->is_a(vmClasses::Throwable_klass()),
            "Exception not subclass of Throwable");
 
     // tracing
@@ -774,9 +774,9 @@ JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   Handle exception(thread, thread->vm_result());
   assert(exception() != NULL, "vm result should be set");
   thread->set_vm_result(NULL); // clear vm result before continuing (may cause memory leaks and assert failures)
-  if (!exception->is_a(SystemDictionary::ThreadDeath_klass())) {
+  if (!exception->is_a(vmClasses::ThreadDeath_klass())) {
     exception = get_preinitialized_exception(
-                       SystemDictionary::IllegalMonitorStateException_klass(),
+                       vmClasses::IllegalMonitorStateException_klass(),
                        CATCH);
   }
   thread->set_vm_result(exception());
@@ -842,7 +842,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
 
 #ifdef ASSERT
   if (bytecode == Bytecodes::_invokeinterface) {
-    if (resolved_method->method_holder() == SystemDictionary::Object_klass()) {
+    if (resolved_method->method_holder() == vmClasses::Object_klass()) {
       // NOTE: THIS IS A FIX FOR A CORNER CASE in the JVM spec
       // (see also CallInfo::set_interface for details)
       assert(info.call_kind() == CallInfo::vtable_call ||
@@ -1116,7 +1116,7 @@ JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread*
   MethodCounters* mcs = Method::build_method_counters(m, thread);
   if (HAS_PENDING_EXCEPTION) {
     // Only metaspace OOM is expected. No Java code executed.
-    assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+    assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
     CLEAR_PENDING_EXCEPTION;
   }
   return mcs;

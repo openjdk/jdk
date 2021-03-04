@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 
-#include "classfile/vmClasses.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
@@ -86,10 +85,7 @@ class EventClassLoad;
 class Symbol;
 class TableStatistics;
 
-// TMP: subclass from vmClasses so that we can still access the VM classes like
-// SystemDictionary::Object_klass(). This will be fixed when we replace all SystemDictionary::*_klass()
-// calls with vmClasses::*_klass().
-class SystemDictionary : public vmClasses {
+class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
   friend class vmClasses;
   friend class VMStructs;
@@ -143,15 +139,14 @@ class SystemDictionary : public vmClasses {
                                             TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
-  static Klass* find(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static InstanceKlass* find_instance_klass(Symbol* class_name, Handle class_loader, Handle protection_domain);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
   // If not found NULL is returned.
   static Klass* find_instance_or_array_klass(Symbol* class_name,
                                              Handle class_loader,
-                                             Handle protection_domain,
-                                             TRAPS);
+                                             Handle protection_domain);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
@@ -176,7 +171,7 @@ class SystemDictionary : public vmClasses {
   // to local linkage and access checks.
   static Klass* find_constrained_instance_or_array_klass(Symbol* class_name,
                                                            Handle class_loader,
-                                                           TRAPS);
+                                                           Thread* THREAD);
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
@@ -356,9 +351,6 @@ private:
                                               Handle class_loader,
                                               InstanceKlass* k, TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
-  static bool is_parallelDefine(Handle class_loader);
-  static Handle compute_loader_lock_object(Thread* thread, Handle class_loader);
-  static void check_loader_lock_contention(Thread* thread, Handle loader_lock);
 
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
                                       PackageEntry* pkg_entry,
@@ -394,7 +386,7 @@ protected:
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                PackageEntry* pkg_entry,
                                                TRAPS);
-  static bool is_parallelCapable(Handle class_loader);
+  static Handle get_loader_lock_or_null(Handle class_loader);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @build jdk.java.lang.instrument.PremainClass.NoPremainAgent
  * @run driver jdk.test.lib.util.JavaAgentBuilder
  *             NoPremainAgent NoPremainAgent.jar
- * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner NoPremainAgent NoSuchMethodException
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner NoPremainAgent NoSuchMethodException
  */
 
 public class NoPremainAgent {

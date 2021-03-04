@@ -27,9 +27,7 @@
 
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
-#include "gc/shenandoah/shenandoahMetrics.hpp"
 
 /**
  * This implements Full GC (e.g. when invoking System.gc()) using a mark-compact algorithm.

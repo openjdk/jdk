@@ -26,7 +26,6 @@
 #import "sun_lwawt_macosx_CDragSourceContextPeer.h"
 
 #import "JNIUtilities.h"
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "CDragSource.h"
 #import "ThreadUtilities.h"

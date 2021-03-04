@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ class isfinal003aClassToCheck extends isfinal003aSuperClass {
     static long[] cl = new long[10];
 
     static { ci = 1; }
-    static { cL = new Long(1l); }
+    static { cL = Long.valueOf(1l); }
     static {
         for (int i = 0; i < 10; i++) {
             cl[i] = (long)i;

@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -363,7 +364,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
 #ifdef ASSERT
       oop m = k->java_mirror();
       assert(m != NULL, "NULL mirror");
-      assert(m->is_a(SystemDictionary::Class_klass()), "invalid mirror");
+      assert(m->is_a(vmClasses::Class_klass()), "invalid mirror");
 #endif
       klass_closure->do_klass(k);
     }
@@ -585,7 +586,7 @@ Dictionary* ClassLoaderData::create_dictionary() {
   if (_the_null_class_loader_data == NULL) {
     size = _boot_loader_dictionary_size;
     resizable = true;
-  } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
+  } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
     size = 1;  // there's only one class in relection class loader and no initiated classes
   } else if (is_system_class_loader_data()) {
     size = _boot_loader_dictionary_size;
@@ -768,7 +769,7 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::BootMetaspaceType);
       } else if (has_class_mirror_holder()) {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ClassMirrorHolderMetaspaceType);
-      } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
+      } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType);
       } else {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::StandardMetaspaceType);

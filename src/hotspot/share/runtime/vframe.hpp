@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,9 @@ class vframe: public ResourceObj {
   vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread);
   vframe(const frame* fr, JavaThread* thread);
  public:
-  // Factory method for creating vframes
+  // Factory methods for creating vframes
   static vframe* new_vframe(const frame* f, const RegisterMap *reg_map, JavaThread* thread);
+  static vframe* new_vframe(StackFrameStream& fst, JavaThread* thread);
 
   // Accessors
   frame              fr()           const { return _fr;       }
@@ -328,10 +329,6 @@ class vframeStreamCommon : StackObj {
   // Implements security traversal. Skips depth no. of frame including
   // special security frames and prefixed native methods
   void security_get_caller_frame(int depth);
-
-  // Helper routine for JVM_LatestUserDefinedLoader -- needed for 1.4
-  // reflection implementation
-  void skip_reflection_related_frames();
 };
 
 class vframeStream : public vframeStreamCommon {

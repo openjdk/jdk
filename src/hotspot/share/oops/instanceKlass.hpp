@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_INSTANCEKLASS_HPP
 #define SHARE_OOPS_INSTANCEKLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
@@ -524,7 +523,7 @@ public:
   // packages returned by get_system_packages().
   // For packages whose classes are loaded from the boot loader class path, the
   // classpath_index indicates which entry on the boot loader class path.
-  void set_classpath_index(s2 path_index, TRAPS);
+  void set_classpath_index(s2 path_index);
   bool is_same_class_package(const Klass* class2) const;
   bool is_same_class_package(oop other_class_loader, const Symbol* other_class_name) const;
 
@@ -1428,6 +1427,43 @@ class InnerClassesIterator : public StackObj {
   u2 inner_access_flags() const {
     return _inner_classes->at(
                _idx + InstanceKlass::inner_class_access_flags_offset);
+  }
+};
+
+// Iterator over class hierarchy under a particular class. Implements depth-first pre-order traversal.
+// Usage:
+//  for (ClassHierarchyIterator iter(root_klass); !iter.done(); iter.next()) {
+//    Klass* k = iter.klass();
+//    ...
+//  }
+class ClassHierarchyIterator : public StackObj {
+ private:
+  InstanceKlass* _root;
+  Klass*         _current;
+  bool           _visit_subclasses;
+
+ public:
+  ClassHierarchyIterator(InstanceKlass* root) : _root(root), _current(root), _visit_subclasses(true) {
+    assert(!root->is_interface(), "no subclasses");
+    assert(_root == _current, "required"); // initial state
+  }
+
+  bool done() {
+    return (_current == NULL);
+  }
+
+  // Make a step iterating over the class hierarchy under the root class.
+  // Skips subclasses if requested.
+  void next();
+
+  Klass* klass() {
+    assert(!done(), "sanity");
+    return _current;
+  }
+
+  // Skip subclasses of the current class.
+  void skip_subclasses() {
+    _visit_subclasses = false;
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -189,7 +189,7 @@ void StatSampler::assert_system_property(const char* name, const char* value, TR
 
   // public static String getProperty(String key, String def);
   JavaCalls::call_static(&result,
-                         SystemDictionary::System_klass(),
+                         vmClasses::System_klass(),
                          vmSymbols::getProperty_name(),
                          vmSymbols::string_string_signature(),
                          key_str,
