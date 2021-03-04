@@ -2165,10 +2165,6 @@ public class HtmlDocletWriter {
         return localStylesheets;
     }
 
-    Content getVerticalSeparator() {
-        return HtmlTree.SPAN(HtmlStyle.verticalSeparator, Text.of("|"));
-    }
-
     public void addPreviewSummary(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
             Content div = HtmlTree.DIV(HtmlStyle.block);
