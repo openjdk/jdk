@@ -1128,6 +1128,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> unmodifiableSet(Set<? extends T> s) {
+        // Not checking for subclasses because of heap pollution and information leakage.
         if (s.getClass() == UnmodifiableSet.class) {
             return (Set<T>) s;
         }
@@ -1165,6 +1166,7 @@ public class Collections {
      * @return an unmodifiable view of the specified sorted set.
      */
     public static <T> SortedSet<T> unmodifiableSortedSet(SortedSet<T> s) {
+        // Not checking for subclasses because of heap pollution and information leakage.
         if (s.getClass() == UnmodifiableSortedSet.class) {
             return s;
         }
@@ -1470,6 +1472,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <K,V> Map<K,V> unmodifiableMap(Map<? extends K, ? extends V> m) {
+        // Not checking for subclasses because of heap pollution and information leakage.
         if (m.getClass() == UnmodifiableMap.class) {
             return (Map<K,V>) m;
         }
@@ -1833,6 +1836,7 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <K,V> SortedMap<K,V> unmodifiableSortedMap(SortedMap<K, ? extends V> m) {
+        // Not checking for subclasses because of heap pollution and information leakage.
         if (m.getClass() == UnmodifiableSortedMap.class) {
             return (SortedMap<K,V>) m;
         }
