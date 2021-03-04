@@ -1797,38 +1797,33 @@ run:
       CASE(_new): {
         u2 index = Bytes::get_Java_u2(pc+1);
         ConstantPool* constants = istate->method()->constants();
-        if (!constants->tag_at(index).is_unresolved_klass()) {
+        if (UseTLAB && !constants->tag_at(index).is_unresolved_klass()) {
           // Make sure klass is initialized and doesn't have a finalizer
           Klass* entry = constants->resolved_klass_at(index);
           InstanceKlass* ik = InstanceKlass::cast(entry);
-          if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
+          if (ik->is_initialized() && ik->can_be_fastpath_allocated()) {
             size_t obj_size = ik->size_helper();
-            oop result = NULL;
-            if (UseTLAB) {
-              result = (oop) THREAD->tlab().allocate(obj_size);
-            }
-            if (result != NULL) {
-              // Note that TLAB is not initialized regardless of ZeroTLAB setting,
-              // see if we need to initialize the object body.
+            oop result = (oop) THREAD->tlab().allocate(obj_size);
+
+            // Initialize object (if nonzero size and need) and then the header.
+            // If the TLAB isn't pre-zeroed then we'll have to do it.
+            // In debug builds, ThreadLocalAllocBuffer::allocate also mangles
+            // the object fields, and we need to initialize it back to zeroes.
+            if (DEBUG_ONLY(true ||) !ZeroTLAB) {
               size_t hdr_size = oopDesc::header_size();
-              size_t body_size = obj_size - hdr_size;
-              if (body_size > 0) {
-                HeapWord* body_start = cast_from_oop<HeapWord*>(result) + hdr_size;
-                memset(body_start, 0, body_size * HeapWordSize);
-              }
-
-              // Initialize the object header.
-              assert(!UseBiasedLocking, "Not implemented");
-              result->set_mark(markWord::prototype());
-              result->set_klass_gap(0);
-              result->set_klass(ik);
-
-              // Must prevent reordering of stores for object initialization
-              // with stores that publish the new object.
-              OrderAccess::storestore();
-              SET_STACK_OBJECT(result, 0);
-              UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
+              Copy::fill_to_words(cast_from_oop<HeapWord*>(result) + hdr_size, obj_size - hdr_size, 0);
             }
+
+            assert(!UseBiasedLocking, "Not implemented");
+            result->set_mark(markWord::prototype());
+            result->set_klass_gap(0);
+            result->set_klass(ik);
+
+            // Must prevent reordering of stores for object initialization
+            // with stores that publish the new object.
+            OrderAccess::storestore();
+            SET_STACK_OBJECT(result, 0);
+            UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
           }
         }
         // Slow case allocation
