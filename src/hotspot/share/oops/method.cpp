@@ -350,9 +350,9 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_method_counters);
 
   Method* this_ptr = this;
-  it->push_method_entry(&this_ptr, (intptr_t*)&_i2i_entry);
-  it->push_method_entry(&this_ptr, (intptr_t*)&_from_compiled_entry);
-  it->push_method_entry(&this_ptr, (intptr_t*)&_from_interpreted_entry);
+  //it->push_method_entry(&this_ptr, (intptr_t*)&_i2i_entry);
+  //it->push_method_entry(&this_ptr, (intptr_t*)&_from_compiled_entry);
+  //it->push_method_entry(&this_ptr, (intptr_t*)&_from_interpreted_entry);
 }
 
 // Attempt to return method to original state.  Clear any pointers
@@ -1113,17 +1113,12 @@ void Method::unlink_code() {
 #if INCLUDE_CDS
 // Called by class data sharing to remove any entry points (which are not shared)
 void Method::unlink_method() {
-  _code = NULL;
-
   Arguments::assert_is_dumping_archive();
-  // Set the values to what they should be at run time. Note that
-  // this Method can no longer be executed during dump time.
-  _i2i_entry = Interpreter::entry_for_cds_method(methodHandle(Thread::current(), this));
-  _from_interpreted_entry = _i2i_entry;
-
-  assert(_from_compiled_entry != NULL, "sanity");
-  assert(*((int*)_from_compiled_entry) == 0,
-         "must be NULL during dump time, to be initialized at run time");
+  _code = NULL;
+  _adapter = NULL;
+  _i2i_entry = NULL;
+  _from_compiled_entry = NULL;
+  _from_interpreted_entry = NULL;
 
   if (is_native()) {
     *native_function_addr() = NULL;
@@ -1212,14 +1207,7 @@ void Method::unlink_method() {
 void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
-  if (is_shared()) {
-    // Can't assert that the adapters are sane, because methods get linked before
-    // the interpreter is generated, and hence before its adapters are generated.
-    // If you messed them up you will notice soon enough though, don't you worry.
-    if (adapter() != NULL) {
-      return;
-    }
-  } else if (_i2i_entry != NULL) {
+  if (_i2i_entry != NULL) {
     return;
   }
   assert( _code == NULL, "nothing compiled yet" );
@@ -1227,13 +1215,11 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // Setup interpreter entrypoint
   assert(this == h_method(), "wrong h_method()" );
 
-  if (!is_shared()) {
-    assert(adapter() == NULL, "init'd to NULL");
-    address entry = Interpreter::entry_for_method(h_method);
-    assert(entry != NULL, "interpreter entry must be non-null");
-    // Sets both _i2i_entry and _from_interpreted_entry
-    set_interpreter_entry(entry);
-  }
+  assert(adapter() == NULL, "init'd to NULL");
+  address entry = Interpreter::entry_for_method(h_method);
+  assert(entry != NULL, "interpreter entry must be non-null");
+  // Sets both _i2i_entry and _from_interpreted_entry
+  set_interpreter_entry(entry);
 
   // Don't overwrite already registered native entries.
   if (is_native() && !has_native_function()) {
@@ -1272,25 +1258,13 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
     }
   }
 
-  if (mh->is_shared()) {
-    assert(mh->adapter() == adapter, "must be");
-    assert(mh->_from_compiled_entry != NULL, "must be");
-  } else {
-    mh->set_adapter_entry(adapter);
-    mh->_from_compiled_entry = adapter->get_c2i_entry();
-  }
+  mh->set_adapter_entry(adapter);
+  mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
 }
 
 void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
-
-  // Since restore_unshareable_info can be called more than once for a method, don't
-  // redo any work.
-  if (adapter() == NULL) {
-    methodHandle mh(THREAD, this);
-    link_method(mh, CHECK);
-  }
 }
 
 address Method::from_compiled_entry_no_trampoline() const {

@@ -49,26 +49,6 @@
 #include "utilities/hashtable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_current = NULL;
-class AdapterHandlerEntry;
-
-class MethodTrampolineInfo {
-  address _c2i_entry_trampoline;
-  AdapterHandlerEntry** _adapter_trampoline;
-public:
-  address c2i_entry_trampoline() { return _c2i_entry_trampoline; }
-  AdapterHandlerEntry** adapter_trampoline() { return _adapter_trampoline; }
-  void set_c2i_entry_trampoline(address addr) { _c2i_entry_trampoline = addr; }
-  void set_adapter_trampoline(AdapterHandlerEntry** entry) { _adapter_trampoline = entry; }
-};
-
-class AdapterToTrampoline : public ResourceHashtable<
-  AdapterHandlerEntry*, MethodTrampolineInfo,
-  primitive_hash<AdapterHandlerEntry*>,
-  primitive_equals<AdapterHandlerEntry*>,
-  941, // prime number
-  ResourceObj::C_HEAP> {};
-
-static AdapterToTrampoline* _adapter_to_trampoline = NULL;
 
 ArchiveBuilder::OtherROAllocMark::~OtherROAllocMark() {
   char* newtop = ArchiveBuilder::current()->_ro_region.top();
@@ -848,9 +828,13 @@ class RelocateBufferToRequested : public BitMapClosure {
       ArchivePtrMarker::ptrmap()->clear_bit(offset);
     } else {
       if (STATIC_DUMP) {
-        assert(_builder->is_in_buffer_space(*p), "old pointer must point inside buffer space");
-        *p += _buffer_to_requested_delta;
-        assert(_builder->is_in_requested_static_archive(*p), "new pointer must point inside requested archive");
+        if (!_builder->is_in_buffer_space(*p)) {
+          tty->print_cr("ohashii %p %p", p, *p);
+        } else {
+          assert(_builder->is_in_buffer_space(*p), "old pointer must point inside buffer space");
+          *p += _buffer_to_requested_delta;
+          assert(_builder->is_in_requested_static_archive(*p), "new pointer must point inside requested archive");
+        }
       } else {
         if (_builder->is_in_buffer_space(*p)) {
           *p += _buffer_to_requested_delta;
@@ -1099,89 +1083,23 @@ void ArchiveBuilder::init_mc_region() {
 }
 
 void ArchiveBuilder::allocate_method_trampolines_for(InstanceKlass* ik) {
-  if (ik->methods() != NULL) {
-    for (int j = 0; j < ik->methods()->length(); j++) {
-      // Walk the methods in a deterministic order so that the trampolines are
-      // created in a deterministic order.
-      Method* m = ik->methods()->at(j);
-      AdapterHandlerEntry* ent = m->adapter(); // different methods can share the same AdapterHandlerEntry
-      MethodTrampolineInfo* info = _adapter_to_trampoline->get(ent);
-      if (info->c2i_entry_trampoline() == NULL) {
-        info->set_c2i_entry_trampoline(
-          (address)mc_region()->allocate(SharedRuntime::trampoline_size()));
-        info->set_adapter_trampoline(
-          (AdapterHandlerEntry**)mc_region()->allocate(sizeof(AdapterHandlerEntry*)));
-      }
-    }
-  }
+
 }
 
 void ArchiveBuilder::allocate_method_trampolines() {
-  for (int i = 0; i < _klasses->length(); i++) {
-    Klass* k = _klasses->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      allocate_method_trampolines_for(ik);
-    }
-  }
+  mc_region()->allocate(SharedRuntime::trampoline_size());
 }
 
 // Allocate MethodTrampolineInfo for all Methods that will be archived. Also
 // return the total number of bytes needed by the method trampolines in the MC
 // region.
 size_t ArchiveBuilder::collect_method_trampolines() {
-  size_t total = 0;
-  size_t each_method_bytes =
-    align_up(SharedRuntime::trampoline_size(), BytesPerWord) +
-    align_up(sizeof(AdapterHandlerEntry*), BytesPerWord);
-
-  if (_adapter_to_trampoline == NULL) {
-    _adapter_to_trampoline = new (ResourceObj::C_HEAP, mtClass)AdapterToTrampoline();
-  }
-  int count = 0;
-  for (int i = 0; i < _klasses->length(); i++) {
-    Klass* k = _klasses->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      if (ik->methods() != NULL) {
-        for (int j = 0; j < ik->methods()->length(); j++) {
-          Method* m = ik->methods()->at(j);
-          AdapterHandlerEntry* ent = m->adapter(); // different methods can share the same AdapterHandlerEntry
-          bool is_created = false;
-          MethodTrampolineInfo* info = _adapter_to_trampoline->put_if_absent(ent, &is_created);
-          if (is_created) {
-            count++;
-          }
-        }
-      }
-    }
-  }
-  if (count == 0) {
-    // We have nothing to archive, but let's avoid having an empty region.
-    total = SharedRuntime::trampoline_size();
-  } else {
-    total = count * each_method_bytes;
-  }
+  size_t total = SharedRuntime::trampoline_size();
   return align_up(total, SharedSpaceObjectAlignment);
 }
 
 void ArchiveBuilder::update_method_trampolines() {
-  for (int i = 0; i < klasses()->length(); i++) {
-    Klass* k = klasses()->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      Array<Method*>* methods = ik->methods();
-      for (int j = 0; j < methods->length(); j++) {
-        Method* m = methods->at(j);
-        AdapterHandlerEntry* ent = m->adapter();
-        MethodTrampolineInfo* info = _adapter_to_trampoline->get(ent);
-        // m is the "copy" of the original Method, but its adapter() field is still valid because
-        // we haven't called make_klasses_shareable() yet.
-        m->set_from_compiled_entry(info->c2i_entry_trampoline());
-        m->set_adapter_trampoline(info->adapter_trampoline());
-      }
-    }
-  }
+
 }
 
 void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
@@ -1195,7 +1113,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
 
   // mc contains the trampoline code for method entries, which are patched at run time,
   // so it needs to be read/write.
-  write_region(mapinfo, MetaspaceShared::mc, &_mc_region, /*read_only=*/false,/*allow_exec=*/true);
+  write_region(mapinfo, MetaspaceShared::mc, &_mc_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 

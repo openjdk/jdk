@@ -181,7 +181,6 @@ void TemplateInterpreterGenerator::generate_all() {
 #define method_entry(kind)                                              \
   { CodeletMark cm(_masm, "method entry point (kind = " #kind ")"); \
     Interpreter::_entry_table[Interpreter::kind] = generate_method_entry(Interpreter::kind); \
-    Interpreter::generate_entry_for_cds_method(Interpreter::kind); \
   }
 
   // all non-native method kinds
