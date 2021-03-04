@@ -75,8 +75,8 @@ public final class SecurityUtils {
      * jdk.xml.dsig.secureValidationPolicy security property. Matches any
      * part of the algorithm URI.
      */
-    public static void removeAlgsFromDSigPolicy(List<String> algs) {
-        removeFromDSigPolicy("disallowAlg", algs);
+    public static void removeAlgsFromDSigPolicy(String... algs) {
+        removeFromDSigPolicy("disallowAlg", List.<String>of(algs));
     }
 
     private static void removeFromDSigPolicy(String rule, List<String> algs) {

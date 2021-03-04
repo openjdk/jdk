@@ -37,7 +37,6 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.security.*;
-import java.util.List;
 import javax.xml.crypto.Data;
 import javax.xml.crypto.KeySelector;
 import javax.xml.crypto.MarshalException;
@@ -143,7 +142,7 @@ public class ValidationTests {
 
     public static void main(String args[]) throws Exception {
         // Re-enable sha1 algs
-        SecurityUtils.removeAlgsFromDSigPolicy(List.of("sha1"));
+        SecurityUtils.removeAlgsFromDSigPolicy("sha1");
 
         httpUd = new HttpURIDereferencer();
 

@@ -288,7 +288,7 @@ public class GenerationTests {
 
     public static void main(String args[]) throws Exception {
         // Re-enable sha1 algs
-        SecurityUtils.removeAlgsFromDSigPolicy(List.of("sha1"));
+        SecurityUtils.removeAlgsFromDSigPolicy("sha1");
 
         setup();
         test_create_signature_enveloped_dsa(1024);
