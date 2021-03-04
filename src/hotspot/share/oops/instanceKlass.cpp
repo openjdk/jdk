@@ -2857,9 +2857,10 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
     check_prohibited_package(name(), loader_data, CHECK);
   }
 
-  if (is_shared() && _package_entry == pkg_entry) {
-    if (MetaspaceShared::use_full_module_graph()) {
+  if (is_shared() && _package_entry != NULL) {
+    if (MetaspaceShared::use_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
+      assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
       return;
     } else {
       _package_entry = NULL;
