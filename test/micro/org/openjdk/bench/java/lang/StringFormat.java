@@ -61,5 +61,10 @@ public class StringFormat {
     public String widthStringIntFormat() {
         return "%3s %d".formatted(s, i);
     }
+
+    @Benchmark
+    public String complexFormat() {
+        return "%3s %10d %4S %04X %4S %04X %4S %04X".formatted(s, i, s, i, s, i, s, i);
+    }
 }
 
