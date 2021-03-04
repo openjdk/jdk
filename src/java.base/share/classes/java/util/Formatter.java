@@ -2862,7 +2862,7 @@ public final class Formatter implements Closeable, Flushable {
         FormatSpecifier(char conv) {
             c = conv;
             if (Character.isUpperCase(conv)) {
-                f.add(Flags.UPPERCASE);
+                f = Flags.UPPERCASE;
                 c = Character.toLowerCase(conv);
             }
             if (Conversion.isText(conv)) {
@@ -2919,7 +2919,6 @@ public final class Formatter implements Closeable, Flushable {
                 printFloat(arg, l);
                 break;
             case Conversion.CHARACTER:
-            case Conversion.CHARACTER_UPPER:
                 printCharacter(arg, l);
                 break;
             case Conversion.BOOLEAN:
