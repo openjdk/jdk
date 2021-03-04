@@ -97,7 +97,12 @@ public class TagletManager {
     public static final char SIMPLE_TAGLET_OPT_SEPARATOR = ':';
 
     /**
-     * All taglets, keyed by their {@link Taglet#getName() name}.
+     * All taglets, keyed either by their {@link Taglet#getName() name},
+     * or by an alias.
+     *
+     * In general, taglets do <i>not</i> provide aliases;
+     * the one instance that does is {@code ThrowsTaglet}, which handles
+     * both {@code @throws} tags and {@code @exception} tags.
      */
     private final LinkedHashMap<String, Taglet> allTaglets;
 
