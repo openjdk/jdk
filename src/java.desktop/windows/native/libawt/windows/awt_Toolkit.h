@@ -442,6 +442,7 @@ public:
     HANDLE m_waitEvent;
     volatile DWORD eventNumber;
     volatile BOOL isInDoDragDropLoop;
+    volatile BOOL isDnDActive;
 private:
     HWND CreateToolkitWnd(LPCTSTR name);
 
