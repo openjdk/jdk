@@ -96,46 +96,52 @@ public abstract class HttpsServer extends HttpServer {
     }
 
     /**
-     * Creates an {@code HttpsServer} instance with an {@code HttpContext}
-     * mapping of the supplied URI path {@code root} and {@code handler}, with
-     * any supplied {@code Filters} added to it.
-     * <p>
-     * The server instance will bind to the specified
-     * {@link java.net.InetSocketAddress}. The returned server is not started
-     * and can be configured further.
-     * <p>
-     * A maximum backlog can also be specified. This is the maximum number of
-     * queued incoming connections to allow on the listening socket.
+     * Creates an {@code HttpsServer} instance with an initial context.
+     *
+     * <p> The server is created with an <i>initial context</i>. The initial
+     * context maps the URI {@code path} to the exchange {@code handler}. The
+     * {@code filters}, if any, are added to the initial context, in the order
+     * they are given. The returned server is not started so can be configured
+     * further if required.
+     *
+     * <p> The server instance will bind to the given
+     * {@link java.net.InetSocketAddress}.
+     *
+     * <p> A maximum backlog can also be specified. This is the maximum number
+     * of queued incoming connections to allow on the listening socket.
      * Queued TCP connections exceeding this limit may be rejected by
      * the TCP implementation. The HttpsServer is acquired from the currently
      * installed {@link HttpServerProvider}.
-     * <p>
-     * The server must have a HttpsConfigurator established with
+     *
+     * <p> The server must have an HttpsConfigurator established with
      * {@link #setHttpsConfigurator(HttpsConfigurator)}.
      *
      * @param addr    the address to listen on, if {@code null} then
      *                {@link #bind bind} must be called to set the address
      * @param backlog the socket backlog. If this value is less than or
      *                equal to zero, then a system default value is used
-     * @param root    the root URI path of the context, must be absolute
+     * @param path    the root URI path of the context, must be absolute
      * @param handler the HttpHandler for the context
      * @param filters the Filters for the context, optional
      * @return the HttpServer
      * @throws BindException            if the server cannot bind to the address
      * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if path is invalid
-     * @throws NullPointerException     if root, handler or filters is {@code null}
+     * @throws NullPointerException     if any of: {@code path}, {@code handler},
+     *        {@code filters}, or any element of {@code filters}, are {@code null}
      */
     public static HttpsServer create(InetSocketAddress addr,
                                     int backlog,
-                                    String root,
+                                    String path,
                                     HttpHandler handler,
                                     Filter... filters) throws IOException {
-        Objects.requireNonNull(root);
+        Objects.requireNonNull(path);
         Objects.requireNonNull(handler);
         Objects.requireNonNull(filters);
+        Arrays.stream(filters).forEach(Objects::requireNonNull);
+
         HttpsServer server = HttpsServer.create(addr, backlog);
-        HttpContext context = server.createContext(root);
+        HttpContext context = server.createContext(path);
         context.setHandler(handler);
         Arrays.stream(filters).forEach(f -> context.getFilters().add(f));
         return server;
