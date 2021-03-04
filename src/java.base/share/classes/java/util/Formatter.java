@@ -2713,12 +2713,14 @@ public final class Formatter implements Closeable, Flushable {
     private List<FormatString> parse(String s) {
         ArrayList<FormatString> al = new ArrayList<>();
         int i = 0;
-        int n = s.indexOf('%');
+        int n = 0;
         int max = s.length();
+        Matcher m = null; // create if needed
         while (n < max) {
+            n = s.indexOf('%', i);
             if (n < 0) {
-                // Last format specifier was already found,
-                // any remaining is fixed text
+                // The last format specifier was already found, any remaining
+                // is fixed text
                 al.add(new FixedString(s, i, s.length()));
                 return al;
             }
@@ -2730,50 +2732,20 @@ public final class Formatter implements Closeable, Flushable {
             if (Conversion.isValid(c)) {
                 al.add(new FormatSpecifier(c));
                 i = n + 2;
-                n = s.indexOf('%', i);
             } else {
-                return parse(s, i, al); // slow path
-            }
-        }
-        return al;
-    }
-
-    private List<FormatString> parse(String s, int i, ArrayList<FormatString> al) {
-        Matcher m = fsPattern.matcher(s);
-        for (int len = s.length(); i < len; ) {
-            if (m.find(i)) {
-                // Anything between the start of the string and the beginning
-                // of the format specifier is either fixed text or contains
-                // an invalid format string.
-                if (m.start() != i) {
-                    // Make sure we didn't miss any invalid format specifiers
-                    checkText(s, i, m.start());
-                    // Assume previous characters were fixed text
-                    al.add(new FixedString(s, i, m.start()));
+                if (m == null) {
+                    m = fsPattern.matcher(s);
                 }
-
+                if (!m.find(n) || m.start() != n) {
+                    // We have already parsed '%' and c, so not finding a match
+                    // at n means the specifier is invalid
+                    throw new UnknownFormatConversionException(String.valueOf(c));
+                }
                 al.add(new FormatSpecifier(s, m));
                 i = m.end();
-            } else {
-                // No more valid format specifiers.  Check for possible invalid
-                // format specifiers.
-                checkText(s, i, len);
-                // The rest of the string is fixed text
-                al.add(new FixedString(s, i, s.length()));
-                break;
             }
         }
         return al;
-    }
-
-    private static void checkText(String s, int start, int end) {
-        for (int i = start; i < end; i++) {
-            // Any '%' found in the region starts an invalid format specifier.
-            if (s.charAt(i) == '%') {
-                char c = (i == end - 1) ? '%' : s.charAt(i + 1);
-                throw new UnknownFormatConversionException(String.valueOf(c));
-            }
-        }
     }
 
     private interface FormatString {
