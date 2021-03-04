@@ -576,20 +576,15 @@ public class TagletManager {
 
         inlineTags = new LinkedHashMap<>();
 
-        for (Taglet t : allTaglets.values()) {
+        allTaglets.forEach((name, t) -> {
             if (t.isInlineTag()) {
                 inlineTags.put(t.getName(), t);
             }
 
-            if (t.isBlockTag()) {
-                for (Location l : t.getAllowedLocations()) {
-                    List<Taglet> list = blockTagletsByLocation.get(l);
-                    if (!list.contains(t)) {
-                        list.add(t);
-                    }
-                }
+            if (t.isBlockTag() && t.getName().equals(name)) {
+                t.getAllowedLocations().forEach(l -> blockTagletsByLocation.get(l).add(t));
             }
-        }
+        });
 
         // init the serialized form tags for the serialized form page
         serializedFormTags = new ArrayList<>();
