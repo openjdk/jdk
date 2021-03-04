@@ -41,10 +41,10 @@ import java.time.format.DateTimeFormatter;
  * <a href='https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format'>Common Logfile Format</a>.
  * In this case the output includes the following information about an exchange:
  * <p>
- * remotehost rfc931 authuser [date] "request" status bytes
+ * remotehost rfc931 authuser [date] "request line" status bytes
  * <p>
  * Example:
- * 127.0.0.1 - - [22/Jun/2000:13:55:36 -0700] "GET /example.txt HTTP/1.0" 200 -
+ * 127.0.0.1 - - [22/Jun/2000:13:55:36 -0700] "GET /example.txt HTTP/1.1" 200 -
  * <p>
  * The fields rfc931, authuser and bytes are not captured in the implementation
  * and are always represented as '-'.
@@ -70,18 +70,18 @@ public final class OutputFilter extends Filter {
     /**
      * The filter's implementation, which is invoked by the server
      */
-    public void doFilter(HttpExchange t, Chain chain) throws IOException {
-        chain.doFilter(t);
-        String s = t.getRemoteAddress().getHostString() + " "
+    public void doFilter(HttpExchange e, Chain chain) throws IOException {
+        chain.doFilter(e);
+        String s = e.getRemoteAddress().getHostString() + " "
 				+ "- - "    // rfc931 and authuser
                 + "[" + OffsetDateTime.now().format(formatter) + "]\" "
-				+ t.getRequestMethod() + " " + t.getRequestURI() + "\" "
-				+ t.getResponseCode() + " -";    // bytes
+				+ e.getRequestMethod() + " " + e.getRequestURI() + " " + e.getProtocol() + "\" "
+				+ e.getResponseCode() + " -";    // bytes
         printStream.println(s);
         if (outputLevel.equals(OutputLevel.VERBOSE)) {
-            printStream.println("Resource requested: " + t.getAttribute("path"));
-            logHeaders(">", t.getRequestHeaders());
-            logHeaders("<", t.getResponseHeaders());
+            printStream.println("Resource requested: " + e.getAttribute("path"));
+            logHeaders(">", e.getRequestHeaders());
+            logHeaders("<", e.getResponseHeaders());
         }
     }
 
