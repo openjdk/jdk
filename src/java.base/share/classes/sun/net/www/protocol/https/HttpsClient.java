@@ -452,7 +452,7 @@ final class HttpsClient extends HttpClient
                     s = (SSLSocket)factory.createSocket(serverSocket,
                                                         host, port, true);
                 } else {
-	            s = (SSLSocket)serverSocket;
+                    s = (SSLSocket)serverSocket;
                     if (s instanceof SSLSocketImpl) {
                         ((SSLSocketImpl)s).setHost(host);
                     }
@@ -566,6 +566,7 @@ final class HttpsClient extends HttpClient
                     // will do the spoof checks in SSLSocket.
                     SSLParameters paramaters = s.getSSLParameters();
                     paramaters.setEndpointIdentificationAlgorithm("HTTPS");
+                    // host has been set previously for SSLSocketImpl
                     if (!(s instanceof SSLSocketImpl)) {
                         paramaters.setServerNames(List.of(new SNIHostName(host)));
                     }
