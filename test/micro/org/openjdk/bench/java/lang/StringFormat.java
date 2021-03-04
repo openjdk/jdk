@@ -54,12 +54,12 @@ public class StringFormat {
 
     @Benchmark
     public String widthStringFormat() {
-        return "%10s".formatted(s);
+        return "%3s".formatted(s);
     }
 
     @Benchmark
     public String widthStringIntFormat() {
-        return "%10s %10d".formatted(s, i);
+        return "%3s %d".formatted(s, i);
     }
 }
 
