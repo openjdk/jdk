@@ -63,7 +63,7 @@ inline frame::frame(ZeroFrame* zf, intptr_t* sp) {
     break;
 
   default:
-    ShouldNotReachHere();
+    fatal("Illegal frame type: %d", zeroframe()->type());
   }
 }
 

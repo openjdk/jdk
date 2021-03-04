@@ -200,6 +200,10 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
     }
     fixup_after_potential_safepoint();
 
+    // Notify the stack watermarks machinery that we are unwinding.
+    // Should do this before resetting the frame anchor.
+    stack_watermark_unwind_check(thread);
+
     // Clear the frame anchor
     thread->reset_last_Java_frame();
 
@@ -435,6 +439,10 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Finally we can change the thread state to _thread_in_Java.
   thread->set_thread_state(_thread_in_Java);
   fixup_after_potential_safepoint();
+
+  // Notify the stack watermarks machinery that we are unwinding.
+  // Should do this before resetting the frame anchor.
+  stack_watermark_unwind_check(thread);
 
   // Clear the frame anchor
   thread->reset_last_Java_frame();
@@ -868,4 +876,14 @@ address ZeroInterpreter::remove_activation_early_entry(TosState state) {
 
 bool ZeroInterpreter::contains(address pc) {
   return false; // make frame::print_value_on work
+}
+
+void ZeroInterpreter::stack_watermark_unwind_check(JavaThread* thread) {
+  // If frame pointer is in the danger zone, notify the runtime that
+  // it needs to act before continuing the unwinding.
+  uintptr_t fp = (uintptr_t)thread->last_Java_fp();
+  uintptr_t watermark = thread->poll_data()->get_polling_word();
+  if (fp > watermark) {
+    InterpreterRuntime::at_unwind(thread);
+  }
 }
