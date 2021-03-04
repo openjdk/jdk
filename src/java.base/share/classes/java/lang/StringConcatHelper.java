@@ -227,7 +227,7 @@ final class StringConcatHelper {
      */
     private static long prepend(long indexCoder, byte[] buf, char value) {
         if (indexCoder < UTF16) {
-            buf[(int)(--indexCoder)] = (byte) (value & 0xFF);
+            buf[(int)(--indexCoder)] = (byte) value;
         } else {
             StringUTF16.putChar(buf, (int)(--indexCoder), value);
         }

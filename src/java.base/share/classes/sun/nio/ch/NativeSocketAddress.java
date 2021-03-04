@@ -243,8 +243,8 @@ class NativeSocketAddress {
      * port is stored in network order.
      */
     private void putPort(int family, int port) {
-        byte b1 = (byte) ((port >> 8) & 0xff);
-        byte b2 = (byte) ((port >> 0) & 0xff);
+        byte b1 = (byte) (port >> 8);
+        byte b2 = (byte) (port >> 0);
         if (family == AF_INET) {
             UNSAFE.putByte(address + OFFSET_SIN4_PORT, b1);
             UNSAFE.putByte(address + OFFSET_SIN4_PORT + 1, b2);
@@ -316,10 +316,10 @@ class NativeSocketAddress {
     private static void putAddress(long address, Inet4Address ia) {
         int ipAddress = JNINA.addressValue(ia);
         // network order
-        UNSAFE.putByte(address + 0, (byte) ((ipAddress >>> 24) & 0xFF));
-        UNSAFE.putByte(address + 1, (byte) ((ipAddress >>> 16) & 0xFF));
-        UNSAFE.putByte(address + 2, (byte) ((ipAddress >>> 8) & 0xFF));
-        UNSAFE.putByte(address + 3, (byte) (ipAddress & 0xFF));
+        UNSAFE.putByte(address + 0, (byte) (ipAddress >>> 24));
+        UNSAFE.putByte(address + 1, (byte) (ipAddress >>> 16));
+        UNSAFE.putByte(address + 2, (byte) (ipAddress >>> 8));
+        UNSAFE.putByte(address + 3, (byte) ipAddress);
     }
 
     private static void putAddress(long address, Inet6Address ia) {

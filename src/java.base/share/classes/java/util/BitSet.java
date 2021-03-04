@@ -308,7 +308,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
         for (int i = 0; i < n - 1; i++)
             bb.putLong(words[i]);
         for (long x = words[n - 1]; x != 0; x >>>= 8)
-            bb.put((byte) (x & 0xff));
+            bb.put((byte) x);
         return bytes;
     }
 

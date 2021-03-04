@@ -206,7 +206,7 @@ public class PipedInputStream extends InputStream {
             in = 0;
             out = 0;
         }
-        buffer[in++] = (byte)(b & 0xFF);
+        buffer[in++] = (byte) b;
         if (in >= buffer.length) {
             in = 0;
         }

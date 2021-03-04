@@ -54,20 +54,20 @@ class ClassFileAssembler implements ClassFileConstants {
 
     public void emitInt(int val) {
         emitByte((byte) (val >> 24));
-        emitByte((byte) ((val >> 16) & 0xFF));
-        emitByte((byte) ((val >> 8) & 0xFF));
-        emitByte((byte) (val & 0xFF));
+        emitByte((byte) (val >> 16));
+        emitByte((byte) (val >> 8));
+        emitByte((byte) val);
     }
 
     public void emitShort(short val) {
-        emitByte((byte) ((val >> 8) & 0xFF));
-        emitByte((byte) (val & 0xFF));
+        emitByte((byte) (val >> 8));
+        emitByte((byte) val);
     }
 
     // Support for labels; package-private
     void emitShort(short bci, short val) {
-        vec.put(bci,     (byte) ((val >> 8) & 0xFF));
-        vec.put(bci + 1, (byte) (val & 0xFF));
+        vec.put(bci,     (byte) (val >> 8));
+        vec.put(bci + 1, (byte) val);
     }
 
     public void emitByte(byte val) {

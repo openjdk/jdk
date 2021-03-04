@@ -183,7 +183,7 @@ public class DeflaterOutputStream extends FilterOutputStream {
      */
     public void write(int b) throws IOException {
         byte[] buf = new byte[1];
-        buf[0] = (byte)(b & 0xff);
+        buf[0] = (byte) b;
         write(buf, 0, 1);
     }
 

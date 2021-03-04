@@ -104,9 +104,9 @@ final class RuleBasedCollationKey extends CollationKey {
         char[] src = key.toCharArray();
         byte[] dest = new byte[ 2*src.length ];
         int j = 0;
-        for( int i=0; i<src.length; i++ ) {
-            dest[j++] = (byte)(src[i] >>> 8);
-            dest[j++] = (byte)(src[i] & 0x00ff);
+        for (char c : src) {
+            dest[j++] = (byte) (c >>> 8);
+            dest[j++] = (byte) c;
         }
         return dest;
     }

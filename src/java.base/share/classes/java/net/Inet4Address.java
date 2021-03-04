@@ -303,10 +303,10 @@ class Inet4Address extends InetAddress {
         int address = holder().getAddress();
         byte[] addr = new byte[INADDRSZ];
 
-        addr[0] = (byte) ((address >>> 24) & 0xFF);
-        addr[1] = (byte) ((address >>> 16) & 0xFF);
-        addr[2] = (byte) ((address >>> 8) & 0xFF);
-        addr[3] = (byte) (address & 0xFF);
+        addr[0] = (byte) (address >>> 24);
+        addr[1] = (byte) (address >>> 16);
+        addr[2] = (byte) (address >>> 8);
+        addr[3] = (byte) address;
         return addr;
     }
 

@@ -219,7 +219,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * at a given offset
      */
     private void writeShort(int s, byte[] buf, int offset) throws IOException {
-        buf[offset] = (byte)(s & 0xff);
-        buf[offset + 1] = (byte)((s >> 8) & 0xff);
+        buf[offset] = (byte) s;
+        buf[offset + 1] = (byte) (s >> 8);
     }
 }

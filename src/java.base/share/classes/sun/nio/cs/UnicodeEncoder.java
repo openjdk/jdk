@@ -58,9 +58,9 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     private void put(char c, ByteBuffer dst) {
         if (byteOrder == BIG) {
             dst.put((byte)(c >> 8));
-            dst.put((byte)(c & 0xff));
+            dst.put((byte)(c));
         } else {
-            dst.put((byte)(c & 0xff));
+            dst.put((byte)(c));
             dst.put((byte)(c >> 8));
         }
     }

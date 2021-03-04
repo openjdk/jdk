@@ -115,13 +115,13 @@ public class IPAddressUtil {
         }
         switch (currByte) {
             case 0:
-                res[0] = (byte) ((tmpValue >> 24) & 0xff);
+                res[0] = (byte) ((tmpValue >> 24));
             case 1:
-                res[1] = (byte) ((tmpValue >> 16) & 0xff);
+                res[1] = (byte) ((tmpValue >> 16));
             case 2:
-                res[2] = (byte) ((tmpValue >>  8) & 0xff);
+                res[2] = (byte) ((tmpValue >>  8));
             case 3:
-                res[3] = (byte) ((tmpValue >>  0) & 0xff);
+                res[3] = (byte) tmpValue;
         }
         return res;
     }
@@ -192,8 +192,8 @@ public class IPAddressUtil {
                 }
                 if (j + INT16SZ > INADDR16SZ)
                     return null;
-                dst[j++] = (byte) ((val >> 8) & 0xff);
-                dst[j++] = (byte) (val & 0xff);
+                dst[j++] = (byte) (val >> 8);
+                dst[j++] = (byte) val;
                 saw_xdigit = false;
                 val = 0;
                 continue;
@@ -224,8 +224,8 @@ public class IPAddressUtil {
         if (saw_xdigit) {
             if (j + INT16SZ > INADDR16SZ)
                 return null;
-            dst[j++] = (byte) ((val >> 8) & 0xff);
-            dst[j++] = (byte) (val & 0xff);
+            dst[j++] = (byte) (val >> 8);
+            dst[j++] = (byte) val;
         }
 
         if (colonp != -1) {
