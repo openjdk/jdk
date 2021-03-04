@@ -31,6 +31,7 @@
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1FullGCPrepareTask.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -60,12 +61,14 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       assert(hr->is_closed_archive(), "Only closed archive regions can also be pinned.");
     }
   } else {
-    size_t live_bytes = hr->live_bytes_after_full_gc_mark();
+    size_t live_bytes = _collector->live_bytes_after_full_gc_mark(hr->hrm_index());
     if(live_bytes <= _hr_live_bytes_threshold) {
       // low survivor ratio prepare compaction
       assert(!hr->is_humongous(), "moving humongous objects not supported.");
       prepare_for_compaction(hr);
     } else {
+      assert(MarkSweepDeadRatio > 0,
+             "it should not trigger skipping compaction, when MarkSweepDeadRatio == 0");
       // deal with skipping compaction regions
       prepare_for_skipping_compaction(hr);
       log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live bytes: " SIZE_FORMAT, hr->hrm_index(), live_bytes);
@@ -121,7 +124,7 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
     _cp(cp),
     _skipping_compaction_set(skipping_compaction_set),
     _regions_freed(false),
-    _hr_live_bytes_threshold((size_t)HeapRegion::GrainBytes * G1SkipCompactionLiveBytesLowerThreshold / 100) { }
+    _hr_live_bytes_threshold((size_t)HeapRegion::GrainBytes * (100 - MarkSweepDeadRatio) / 100) { }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(HeapRegion* hr) {
   assert(hr->is_humongous(), "must be but region %u is %s", hr->hrm_index(), hr->get_short_type_str());
@@ -155,7 +158,6 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_open_archive_region(H
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
   hr->rem_set()->clear();
   hr->clear_cardtable();
-  hr->set_live_words_after_full_gc_mark((size_t)0);
   G1HotCardCache* hcc = _g1h->hot_card_cache();
   if (hcc->use_cache()) {
     hcc->reset_card_counts(hr);

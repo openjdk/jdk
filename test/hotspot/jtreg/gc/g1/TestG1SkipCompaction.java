@@ -21,7 +21,8 @@
 
 /*
  * @test TestG1SkipCompaction
- * @summary Test that a full gc with -XX:G1SkipCompactionLiveBytesLowerThreshold=
+ * @summary Test for JDK-8262068 Improve G1 Full GC by skipping compaction
+ *          for regions with high survival ratio.
  * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -42,7 +43,7 @@ public class TestG1SkipCompaction {
     public static void runTest() throws Exception {
         final String[] arguments = {
             "-XX:+UseG1GC",
-            "-XX:G1SkipCompactionLiveBytesLowerThreshold=97",
+            "-XX:MarkSweepDeadRatio=3",
             "-Xmx8m",
             "-Xms8M",
             "-Xlog:gc+phases=debug",

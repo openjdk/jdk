@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/g1/heapRegionType.hpp"
@@ -235,7 +236,6 @@ private:
   // in each heap region.
   size_t _prev_marked_bytes;    // Bytes known to be live via last completed marking.
   size_t _next_marked_bytes;    // Bytes known to be live via in-progress marking.
-  size_t _live_words;
 
   void init_top_at_mark_start() {
     assert(_prev_marked_bytes == 0 &&
@@ -330,9 +330,6 @@ public:
   size_t live_bytes() {
     return (top() - prev_top_at_mark_start()) * HeapWordSize + marked_bytes();
   }
-  size_t* live_words_after_full_gc_mark_addr() { return &_live_words; }
-  size_t live_bytes_after_full_gc_mark() { return _live_words * HeapWordSize; }
-  void set_live_words_after_full_gc_mark(size_t live_words) { _live_words = live_words; }
   // The number of bytes counted in the next marking.
   size_t next_marked_bytes() { return _next_marked_bytes; }
   // The number of bytes live wrt the next marking.

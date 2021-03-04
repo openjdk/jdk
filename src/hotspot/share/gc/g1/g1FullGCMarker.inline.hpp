@@ -64,6 +64,13 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
       java_lang_String::is_instance_inlined(obj)) {
     G1StringDedup::enqueue_from_mark(obj, _worker_id);
   }
+
+  // Collect live bytes, which is used to tell
+  // whether to skip high live bytes heap regions.
+  uint hr_index = G1CollectedHeap::heap()->addr_to_region(cast_from_oop<HeapWord*>(obj));
+  if (MarkSweepDeadRatio > 0) {
+    _mark_region_cache.add_live_words(hr_index, (size_t)obj->size());
+  }
   return true;
 }
 
@@ -72,10 +79,6 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     if (mark_object(obj)) {
-      uint hr_index = G1CollectedHeap::heap()->addr_to_region(cast_from_oop<HeapWord*>(obj));
-      if (G1SkipCompactionLiveBytesLowerThreshold < 100) {
-        _mark_region_cache->inc_live(hr_index, (size_t)obj->size());
-      }
       _oop_stack.push(obj);
       assert(_bitmap->is_marked(obj), "Must be marked now - map self");
     } else {

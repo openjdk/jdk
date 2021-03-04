@@ -96,7 +96,7 @@ void G1FullGCCompactTask::work(uint worker_id) {
     compact_region(*it);
   }
 
-  if (G1SkipCompactionLiveBytesLowerThreshold < 100) {
+  if (MarkSweepDeadRatio > 0) {
     GrowableArray<HeapRegion*>* skipping_compaction_queue = collector()->skipping_compaction_set(worker_id);
     for (GrowableArrayIterator<HeapRegion*> it = skipping_compaction_queue->begin();
          it != skipping_compaction_queue->end();

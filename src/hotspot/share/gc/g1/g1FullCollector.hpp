@@ -69,6 +69,7 @@ class G1FullCollector : StackObj {
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
 
   GrowableArray<HeapRegion*>**   _skipping_compaction_sets;
+  G1RegionMarkStats*             _live_stats;
 
   static uint calc_active_workers();
 
@@ -90,6 +91,9 @@ public:
   G1FullGCMarker*          marker(uint id) { return _markers[id]; }
   G1FullGCCompactionPoint* compaction_point(uint id) { return _compaction_points[id]; }
   GrowableArray<HeapRegion*>* skipping_compaction_set(uint id) { return _skipping_compaction_sets[id]; }
+  size_t live_bytes_after_full_gc_mark(uint region_idx) {
+    return MarkSweepDeadRatio > 0 ? _live_stats[region_idx]._live_words * HeapWordSize : 0;
+  }
   OopQueueSet*             oop_queue_set() { return &_oop_queue_set; }
   ObjArrayTaskQueueSet*    array_queue_set() { return &_array_queue_set; }
   PreservedMarksSet*       preserved_mark_set() { return &_preserved_marks_set; }
