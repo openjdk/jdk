@@ -109,7 +109,7 @@ public final class NoMPathRuntimeTest {
                 TKit.deleteIfExists(junkJar);
             }
         }
-            
+
     }
 
     @Parameters
