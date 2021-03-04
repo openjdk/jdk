@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -737,8 +736,7 @@ public class TagletManager {
      * a need for a corresponding update to the spec.
      */
     private void showTaglets(PrintStream out) {
-        Map<String, Taglet> taglets = new TreeMap<String, Taglet>();
-        taglets.putAll(allTaglets);
+        Map<String, Taglet> taglets = new TreeMap<>(allTaglets);
 
         taglets.forEach((n, t) -> {
             // give preference to simpler block form if a tag can be either
