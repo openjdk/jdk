@@ -2715,23 +2715,24 @@ public final class Formatter implements Closeable, Flushable {
         while (i < max) {
             int n = s.indexOf('%', i);
             if (n < 0) {
-                // The last format specifier was already found, any remaining
-                // is fixed text
-                al.add(new FixedString(s, i, s.length()));
-                return al;
+                // No more format specifiers, but since
+                // i < max there's some trailing text
+                al.add(new FixedString(s, i, max));
+                break;
             }
             if (i != n) {
                 // Previous characters were fixed text
                 al.add(new FixedString(s, i, n));
             }
-            if (n + 1 > max) {
+            i = n + 1;
+            if (i >= max) {
                 // Trailing %
                 throw new UnknownFormatConversionException("%");
             }
-            char c = s.charAt(n + 1);
+            char c = s.charAt(i);
             if (Conversion.isValid(c)) {
                 al.add(new FormatSpecifier(c));
-                i = n + 2;
+                i++;
             } else {
                 if (m == null) {
                     m = fsPattern.matcher(s);
