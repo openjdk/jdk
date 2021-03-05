@@ -166,6 +166,13 @@ public abstract class Expr {
         }
     }
 
+    public static class BMIUnaryIntToLongExpr extends BMIUnaryExpr {
+        public boolean isIntToLongExprSupported() {
+            return true;
+        }
+    }
+
+
     public static class BitCountingExpr extends Expr {
         public boolean isUnaryArgumentSupported() {
             return true;

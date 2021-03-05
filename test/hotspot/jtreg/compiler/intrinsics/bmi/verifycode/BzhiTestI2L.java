@@ -30,7 +30,7 @@
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/bootclasspath/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/bootclasspath/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+AbortVMOnCompilationFailure
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI2Instructions
  *      compiler.intrinsics.bmi.verifycode.BzhiTestI2L
  */
@@ -46,9 +46,9 @@ public class BzhiTestI2L extends BmiIntrinsicBase.BmiTestCase_x64 {
     protected BzhiTestI2L(Method method) {
         super(method);
 
-        this.setCpuFlag("bmi2");
-        this.setVMFlag("UseBMI2Instructions");
-        this.isLongOperation = true;
+        cpuFlag = "bmi2";
+        vmFlag = "UseBMI2Instructions";
+        isLongOperation = true;
 
         // from intel manual VEX.LZ.0F38.W1 F5 /r
         instrMask = new byte[]{

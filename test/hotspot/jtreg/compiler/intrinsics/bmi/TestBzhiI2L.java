@@ -43,7 +43,8 @@ public class TestBzhiI2L {
 
     public static void main(String args[]) throws Throwable {
         if (!CPUInfo.hasFeature("bmi2")) {
-            System.out.println("INFO: CPU does not support bmi2 feature.");
+            System.out.println("INFO: CPU does not support bmi2 feature, test SKIPPED" );
+            return;
         }
 
         BMITestRunner.runTests(BzhiI2LExpr.class, args,
@@ -54,7 +55,7 @@ public class TestBzhiI2L {
                                "-XX:+UseBMI2Instructions");
     }
 
-    public static class BzhiI2LExpr extends Expr.BMIUnaryLongExpr {
+    public static class BzhiI2LExpr extends Expr.BMIUnaryIntToLongExpr {
 
         public long intToLongExpr(int src1) {
             int value = src1;
@@ -71,7 +72,7 @@ public class TestBzhiI2L {
         }
     }
 
-    public static class BzhiI2LCommutativeExpr extends Expr.BMIUnaryLongExpr {
+    public static class BzhiI2LCommutativeExpr extends Expr.BMIUnaryIntToLongExpr {
 
         public long intToLongExpr(int src1) {
             int value = src1;

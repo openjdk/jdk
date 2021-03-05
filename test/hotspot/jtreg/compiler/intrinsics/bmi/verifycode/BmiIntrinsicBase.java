@@ -51,7 +51,12 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 
     @Override
     protected void test() throws Exception {
-        BmiTestCase bmiTestCase = (BmiTestCase) testCase;
+        BmiTestCase bmiTestCase;
+        if (((BmiTestCase) testCase).getTestCaseX64()) {
+            bmiTestCase = (BmiTestCase_x64) testCase;
+        } else {
+            bmiTestCase = (BmiTestCase) testCase;
+        }
 
         if (!(Platform.isX86() || Platform.isX64())) {
             System.out.println("Unsupported platform, test SKIPPED");
@@ -189,16 +194,8 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
             return cpuFlag;
         }
 
-        protected void setCpuFlag(String cpuFlag) {
-            this.cpuFlag = cpuFlag;
-        }
-
         protected String getVMFlag() {
             return vmFlag;
-        }
-
-        protected void setVMFlag(String vmFlag) {
-            this.vmFlag = vmFlag;
         }
 
         protected boolean getTestCaseX64() {

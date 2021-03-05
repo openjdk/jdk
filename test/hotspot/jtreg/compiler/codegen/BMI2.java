@@ -25,7 +25,7 @@
  * @test
  * @summary Support BMI2 instructions on x86/x64
  *
- * @run main/othervm -Xbatch -XX:-TieredCompilation
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=compileonly,compiler.codegen.BMI2$BMITests::*
  *      compiler.codegen.BMI2
  */
@@ -33,19 +33,19 @@
 package compiler.codegen;
 
 public class BMI2 {
-    private final static int ITERATIONS = 1000000;
+    private final static int ITERATIONS = 30000;
 
-    public static void main(String[] args) {
+    // match(Set dst (ConvI2L (AndI src1 mask))) // Using 0
+    public static void testZeroBzhiI2L() {
         int ix = 0;
         int i = 0;
 
-        { // match(Set dst (ConvI2L (AndI src1 mask)))
             long z = BMITests.bzhiI2L(ix, i);
 
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -56,7 +56,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -67,7 +67,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -78,7 +78,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -89,7 +89,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -100,7 +100,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -111,7 +111,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -122,7 +122,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -133,7 +133,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -144,7 +144,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -155,7 +155,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -166,7 +166,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -177,7 +177,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -188,7 +188,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -199,7 +199,7 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
 
@@ -210,191 +210,193 @@ public class BMI2 {
             for (int i2 = 0; i2 < ITERATIONS; i2++) {
                 long ii = BMITests.bzhiI2L(ix, i);
                 if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
+                    throw new Error(returnBzhiI2LErrMessage (z, ii));
                 }
             }
+    }
 
-            ix = 1;
-            i = 0;
+    // match(Set dst (ConvI2L (AndI src1 mask))) // Using 1
+    public static void testOneBzhiI2L() {
+        int ix = 1;
+        int i = 0;
 
-            z = BMITests.bzhiI2L(ix, i);
+        long z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 1;
+        i = 1;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 2;
+        i = 2;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 3;
+        i = 3;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 4;
+        i = 4;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 5;
+        i = 5;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 6;
+        i = 6;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 7;
+        i = 7;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 8;
+        i = 8;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 9;
+        i = 9;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 10;
+        i = 10;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 11;
+        i = 11;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 12;
+        i = 12;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 13;
+        i = 13;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 14;
+        i = 14;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
+        }
 
-            i = 15;
+        i = 15;
 
-            z = BMITests.bzhiI2L(ix, i);
+        z = BMITests.bzhiI2L(ix, i);
 
-            for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                long ii = BMITests.bzhiI2L(ix, i);
-                if (ii != z) {
-                    throw new Error("bzhi I2L with register failed");
-                }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+            long ii = BMITests.bzhiI2L(ix, i);
+            if (ii != z) {
+                throw new Error(returnBzhiI2LErrMessage (z, ii));
             }
         }
     }
 
-    static class MemI {
-        public int x;
+    private static String returnBzhiI2LErrMessage (long value, long value2) {
+        return "bzhi I2L with register failed, uncompiled result: " + value + " does not match compiled result: " + value2;
     }
 
     static class BMITests {
@@ -438,5 +440,10 @@ public class BMI2 {
                     return (long)(src1 & 0xFFFF);
             }
         }
+    }
+
+    public static void main(String[] args) {
+        testZeroBzhiI2L();
+        testOneBzhiI2L();
     }
 }
