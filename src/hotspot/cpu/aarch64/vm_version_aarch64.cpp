@@ -95,6 +95,9 @@ void VM_Version::initialize() {
     SoftwarePrefetchHintDistance &= ~7;
   }
 
+  if (FLAG_IS_DEFAULT(ContendedPaddingWidth) && (dcache_line > ContendedPaddingWidth)) {
+      ContendedPaddingWidth = dcache_line;
+  }
 
   if (os::supports_map_sync()) {
     // if dcpop is available publish data cache line flush size via

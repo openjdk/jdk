@@ -98,7 +98,7 @@ class Method : public Metadata {
   JFR_ONLY(DEFINE_TRACE_FLAG;)
 
 #ifndef PRODUCT
-  int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
+  int64_t _compiled_invocation_count;
 #endif
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
@@ -436,11 +436,11 @@ class Method : public Metadata {
   int interpreter_invocation_count()            { return invocation_count();          }
 
 #ifndef PRODUCT
-  int  compiled_invocation_count() const        { return _compiled_invocation_count;  }
-  void set_compiled_invocation_count(int count) { _compiled_invocation_count = count; }
+  int64_t  compiled_invocation_count() const    { return _compiled_invocation_count;}
+  void set_compiled_invocation_count(int count) { _compiled_invocation_count = (int64_t)count; }
 #else
   // for PrintMethodData in a product build
-  int  compiled_invocation_count() const        { return 0;  }
+  int64_t  compiled_invocation_count() const    { return 0; }
 #endif // not PRODUCT
 
   // Clear (non-shared space) pointers which could not be relevant
