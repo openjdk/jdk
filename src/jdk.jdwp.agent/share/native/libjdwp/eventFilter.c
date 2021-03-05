@@ -942,7 +942,6 @@ eventFilter_setStepFilter(HandlerNode *node, jint index,
     return JVMTI_ERROR_NONE;
 }
 
-
 jvmtiError
 eventFilter_setSourceNameMatchFilter(HandlerNode *node,
                                     jint index,

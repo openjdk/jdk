@@ -534,7 +534,8 @@ synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
 /* Garbage Collection Happened */
 static unsigned int garbageCollected = 0;
 
-/* The JVMTI generic event callback. Each event is passed to a sequence of
+/*
+ * The JVMTI generic event callback. Each event is passed to a sequence of
  * handlers in a chain until the chain ends or one handler
  * consumes the event.
  */
