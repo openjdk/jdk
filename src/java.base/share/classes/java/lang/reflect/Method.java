@@ -578,17 +578,17 @@ public final class Method extends Executable {
      * than the method in the superclass. A common case where
      * covariant overrides are used is for a {@link
      * java.lang.Cloneable Cloneable} class where the {@code clone}
-     * method is declared to return the type of the class rather than
-     * {@code Object}, for example {@link java.util.EnumSet#clone()
-     * EnumSet.clone()} returns {@code EnumSet<E>} rather than {@link
-     * java.lang.Object#clone() Object}. The class file for {@code
-     * EnumSet} would have two {@code clone} methods, one returning
-     * {@code EnumSet<E>} and a bridge method returning {@code
-     * Object}; the body of the {@code clone} bridge method calls its
-     * non-bridge sibling and returns its result. (While the Java
-     * language specification forbids a class declaring two methods
-     * with the same parameter types but a different return type, the
-     * virtual machine does not.)
+     * method inherited from {@code java.lang.Object} is overridden
+     * and declared to return the type of the class; for example
+     * {@link java.util.EnumSet#clone() EnumSet.clone()} returns
+     * {@code EnumSet<E>} rather than {@link java.lang.Object#clone()
+     * Object}. The class file for {@code EnumSet} would have two
+     * {@code clone} methods, one returning {@code EnumSet<E>} and a
+     * bridge method returning {@code Object}; the body of the {@code
+     * clone} bridge method calls its non-bridge sibling and returns
+     * its result. (While the Java language specification forbids a
+     * class declaring two methods with the same parameter types but a
+     * different return type, the virtual machine does not.)
      *
      * @since 1.5
      *
