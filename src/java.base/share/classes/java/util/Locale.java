@@ -956,7 +956,7 @@ public final class Locale implements Cloneable, Serializable {
         }
     }
 
-    private static Locale getDisplayLocale() {
+    private static synchronized Locale getDisplayLocale() {
         Locale loc = defaultDisplayLocale;
         if (loc == null) {
             loc = defaultDisplayLocale = initDefault(Category.DISPLAY);
