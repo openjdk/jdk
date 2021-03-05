@@ -3057,11 +3057,35 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // flag == NE indicates failure
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  ld(temp_reg, in_bytes(Thread::polling_word_offset()), R16_thread);
+void MacroAssembler::safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod) {
+  ld(temp, in_bytes(Thread::polling_word_offset()), R16_thread);
   // Armed page has poll_bit set.
-  andi_(temp_reg, temp_reg, SafepointMechanism::poll_bit());
-  bne(CCR0, slow_path);
+  if (at_return) {
+    Register fp = R1_SP;
+    if (!in_nmethod) {
+      // frame still on stack, need to get fp
+      fp = R0;
+      ld(fp, _abi0(callers_sp), R1_SP);
+    }
+
+    if (UseSIGTRAP && in_nmethod) {
+      // Use Signal Handler.
+      relocate(relocInfo::poll_return_type);
+      td(traptoGreaterThanUnsigned, fp, temp);
+    } else {
+      cmpld(CCR0, fp, temp);
+      if (in_nmethod) {
+        // Stub may be out of range for short conditional branch.
+        bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::greater), slow_path);
+      } else {
+        bgt(CCR0, slow_path);
+      }
+    }
+  } else {
+    assert(!in_nmethod, "unexpected");
+    andi_(temp, temp, SafepointMechanism::poll_bit());
+    bne(CCR0, slow_path);
+  }
 }
 
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2,
