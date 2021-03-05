@@ -295,6 +295,8 @@ Thread::Thread() {
   // and ::Release()
   _ParkEvent   = ParkEvent::Allocate(this);
 
+  _in_signal_handler = false;
+
 #ifdef CHECK_UNHANDLED_OOPS
   if (CheckUnhandledOops) {
     _unhandled_oops = new UnhandledOops(this);

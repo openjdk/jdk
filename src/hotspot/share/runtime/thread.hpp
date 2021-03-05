@@ -822,6 +822,15 @@ protected:
   // Not for general synchronization use.
   static void SpinAcquire(volatile int * Lock, const char * Name);
   static void SpinRelease(volatile int * Lock);
+
+#ifdef POSIX
+ private:
+  bool _in_signal_handler;
+ public:
+  bool is_in_signal_handler() const   { return _in_signal_handler; }
+  void set_in_signal_handler(bool b)  { _in_signal_handler = b; }
+#endif // POSIX
+
 };
 
 // Inline implementation of Thread::current()

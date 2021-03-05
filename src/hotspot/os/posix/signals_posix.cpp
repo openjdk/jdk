@@ -565,6 +565,22 @@ public:
 // handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
 //
 
+class InSignalHandlerMark: public StackObj {
+  Thread* const _thread;
+public:
+  InSignalHandlerMark() :
+    _thread(Thread::current_or_null_safe()) {
+    if (_thread) {
+      _thread->set_in_signal_handler(true);
+    }
+  }
+  ~InSignalHandlerMark() {
+    if (_thread) {
+      _thread->set_in_signal_handler(false);
+    }
+  }
+};
+
 #if defined(BSD)
 #define JVM_HANDLE_XXX_SIGNAL JVM_handle_bsd_signal
 #elif defined(AIX)
@@ -580,6 +596,8 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
                           void* ucVoid, int abort_if_unrecognized)
 {
   assert(info != NULL && ucVoid != NULL, "sanity");
+
+  InSignalHandlerMark ishm;
 
   // Note: it's not uncommon that JNI code uses signal/sigset to install,
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
