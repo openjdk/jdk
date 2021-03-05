@@ -1794,12 +1794,15 @@ int os::fork_and_exec(const char* cmd) {
 
   char** env = os::get_environ();
 
-  // We use vfork() if possible since we it helps with spawning child processes from
-  // parents with high footprints. Since vfork is not async safe, we avoid calling
-  // it if this function is called from within signal handling.
+  // We use vfork() where possible to avoid native ooms when forking off from parents
+  //  with high memory footprints. While a bit unsafe, in this case using vfork is
+  //  perfectly fine (when called in a simple vfork->exec->_exit sequence with no
+  //  intermediate steps).
+  // But since vfork is not async-safe we only use it where we are sure to be outside
+  //  of signal handling.
   const Thread* const t = Thread::current_or_null_safe();
   const bool use_vfork = t != NULL && t->is_in_signal_handler() == false;
- printf(">>%d\n", use_vfork);
+
   pid = use_vfork ? ::vfork() : ::fork();
 
   if (pid < 0) {
