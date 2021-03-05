@@ -31,8 +31,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jdk.jfr.Category;
+import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.FlightRecorder;
+import jdk.jfr.Name;
+import jdk.jfr.Registered;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -48,22 +52,23 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestMetadata {
 
     public static void main(String[] args) throws Throwable {
-        testBasic();
-        testEventTypeNum();
-        testDeterministic();
-        testWildcardAndAcronym();
+        testUnfiltered();
+        testIllegalOption();
+        testNumberOfEventTypes();
+
+        FlightRecorder.register(MyEvent1.class);
+        FlightRecorder.register(MyEvent2.class);
+        FlightRecorder.register(MyEvent3.class);
+        String file = ExecuteHelper.createProfilingRecording().toAbsolutePath().toAbsolutePath().toString();
+        testEventFilter(file);
+        testWildcardAndAcronym(file);
     }
 
-    static void testBasic() throws Throwable {
+    static void testUnfiltered() throws Throwable {
         Path f = ExecuteHelper.createProfilingRecording().toAbsolutePath();
         String file = f.toAbsolutePath().toString();
-
         OutputAnalyzer output = ExecuteHelper.jfr("metadata");
-        output.shouldContain("@Name");
-        output.shouldContain("jdk.jfr.Event");
-
-        output = ExecuteHelper.jfr("metadata", "--wrongOption", file);
-        output.shouldContain("unknown option --wrongOption");
+        output.shouldContain("extends jdk.jfr.Event");
 
         output = ExecuteHelper.jfr("metadata", file);
         try (RecordingFile rf = new RecordingFile(f)) {
@@ -88,64 +93,87 @@ public class TestMetadata {
         }
     }
 
-    static void testEventTypeNum() throws Throwable {
+    static void testIllegalOption() throws Throwable {
+        Path f = ExecuteHelper.createProfilingRecording().toAbsolutePath();
+        String file = f.toAbsolutePath().toString();
+        OutputAnalyzer output = ExecuteHelper.jfr("metadata", "--wrongOption", file);
+        output.shouldContain("unknown option --wrongOption");
+
+        output = ExecuteHelper.jfr("metadata", "--wrongOption2");
+        output.shouldContain("unknown option --wrongOption2");
+    }
+
+    static void testNumberOfEventTypes() throws Throwable {
         OutputAnalyzer output = ExecuteHelper.jfr("metadata");
-        List<String> eventNames = new ArrayList<>();
-        List<String> lines = output.asLines();
-
-        for (String line : lines) {
-            if (line.startsWith("@Name(\"")) {
-                eventNames.add(line.substring(7, line.indexOf("\"", 7)));
+        int count  = 0;
+        for (String line : output.asLines()) {
+            if (line.contains("extends jdk.jfr.Event")) {
+                count++;
             }
         }
-        List<EventType> eventTypes = FlightRecorder.getFlightRecorder().getEventTypes();
-        List<String> expectedNames = new ArrayList<>();
-        for (EventType eventType : eventTypes) {
-            expectedNames.add(eventType.getName());
-        }
-        Asserts.assertGTE(eventNames.size(), expectedNames.size());
+        Asserts.assertEquals(count, FlightRecorder.getFlightRecorder().getEventTypes().size());
     }
 
-    static void testDeterministic() throws Throwable {
-        OutputAnalyzer output = ExecuteHelper.jfr("metadata", "--events", "CPULoad,GarbageCollection");
-        List<String> eventNames = new ArrayList<>();
-        List<String> lines = output.asLines();
-
-        for (String line : lines) {
-            if (line.startsWith("@Name(\"")) {
-                eventNames.add(line.substring(7, line.indexOf("\"", 7)));
+    static void testEventFilter(String file) throws Throwable {
+        OutputAnalyzer output = ExecuteHelper.jfr("metadata", "--events", "MyEvent1,MyEvent2", file);
+        int count = 0;
+        for (String line : output.asLines()) {
+            if (line.contains("extends jdk.jfr.Event")) {
+                Asserts.assertTrue(line.contains("MyEvent1") || line.contains("MyEvent2"));
+                count++;
             }
         }
-        Asserts.assertGTE(eventNames.size(), 2);
+        Asserts.assertEQ(count, 2);
+
+        output = ExecuteHelper.jfr("metadata", "--categories", "Customized", file);
+        count = 0;
+        for (String line : output.asLines()) {
+            if (line.contains("extends jdk.jfr.Event")) {
+                Asserts.assertTrue(line.contains("MyEvent1") || line.contains("MyEvent2") || line.contains("MyEvent3"));
+                count++;
+            }
+        }
+        Asserts.assertEQ(count, 3);
     }
 
-    static void testWildcardAndAcronym() throws Throwable {
-        OutputAnalyzer output = ExecuteHelper.jfr("metadata", "--events", "Thread*");
-        List<String> eventNames = new ArrayList<>();
-        List<String> lines = output.asLines();
-        for (String line : lines) {
-            if (line.startsWith("@Name(\"")) {
-                eventNames.add(line.substring(7, line.indexOf("\"", 7)));
+    static void testWildcardAndAcronym(String file) throws Throwable {
+        OutputAnalyzer output = ExecuteHelper.jfr("metadata", "--events", "MyEv*", file);
+        int count = 0;
+        for (String line : output.asLines()) {
+            if (line.contains("extends jdk.jfr.Event")) {
+                count++;
+                Asserts.assertTrue(line.contains("MyEvent"));
             }
         }
-        boolean foundThreadEvent = false;
-        for (String eventName : eventNames) {
-            foundThreadEvent= eventName.contains("Thread");
-        }
-        Asserts.assertTrue(foundThreadEvent);
+        Asserts.assertEQ(count, 3);
 
-        output = ExecuteHelper.jfr("metadata", "--categories", "J*");
-        lines = output.asLines();
-        eventNames.clear();
-        for (String line : lines) {
-            if (line.startsWith("@Category(\"")) {
-                eventNames.add(line.substring(11, line.indexOf("\"", 11)));
+        output = ExecuteHelper.jfr("metadata", "--categories", "Custo*", file);
+        count = 0;
+        for (String line : output.asLines()) {
+            if (line.startsWith("@Category")) {
+                Asserts.assertTrue(line.contains("Customized"));
+            }
+            if (line.contains("extends jdk.jfr.Event")) {
+                count++;
+                Asserts.assertTrue(line.contains("MyEvent"));
             }
         }
-        boolean foundJEvent = false;
-        for (String eventName : eventNames) {
-            foundJEvent = eventName.startsWith("J");
-        }
-        Asserts.assertTrue(foundJEvent);
+        Asserts.assertEQ(count, 3);
+    }
+
+    @Registered(false)
+    @Category("Customized")
+    @Name("MyEvent1")
+    private static class MyEvent1 extends Event {
+    }
+    @Registered(false)
+    @Category("Customized")
+    @Name("MyEvent2")
+    private static class MyEvent2 extends Event {
+    }
+    @Registered(false)
+    @Category("Customized")
+    @Name("MyEvent3")
+    private static class MyEvent3 extends Event {
     }
 }

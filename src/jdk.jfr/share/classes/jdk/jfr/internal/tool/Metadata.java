@@ -201,7 +201,7 @@ final class Metadata extends Command {
             PrettyWriter prettyWriter = new PrettyWriter(pw);
             prettyWriter.setShowIds(showIds);
             if (filter != null) {
-                filter = addCache(filter, type -> type.getId());
+                filter = addCache(filter, type::getId);
             }
 
             List<Type> types = findTypes(file);
