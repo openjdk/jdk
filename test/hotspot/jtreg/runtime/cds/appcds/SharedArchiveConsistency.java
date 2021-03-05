@@ -289,7 +289,6 @@ public class SharedArchiveConsistency {
                 throw new IOException("Could not delete file " + newJsaFile);
             }
         }
-        newJsaFile.createNewFile();
         Files.copy(orgJsaFile.toPath(), newJsaFile.toPath(), REPLACE_EXISTING);
 
         // orgJsaFile is read only, and Files.copy passes on this attribute to newJsaFile.
