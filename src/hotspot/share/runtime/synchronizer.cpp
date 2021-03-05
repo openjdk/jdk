@@ -431,11 +431,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
   }
 
   if (UseBiasedLocking) {
-    if (!SafepointSynchronize::is_at_safepoint()) {
       BiasedLocking::revoke(obj, current);
-    } else {
-      guarantee(false, "VMThread should not be involved with ObjectMonitor");
-    }
   }
 
   markWord mark = obj->mark();
