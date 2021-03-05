@@ -4808,7 +4808,7 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
     result = new AndINode(value,phase->intcon(0xFFFF));
   } else {
     assert(bt == T_SHORT, "unexpected narrow type");
-    result = phase->transform( new LShiftINode(value, phase->intcon(16)) );
+    result = phase->transform(new LShiftINode(value, phase->intcon(16)));
     result = new RShiftINode(result, phase->intcon(16));
   }
   if (transform_res) {
