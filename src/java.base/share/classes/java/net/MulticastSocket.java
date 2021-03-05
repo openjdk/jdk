@@ -31,9 +31,7 @@ import java.nio.channels.MulticastChannel;
 
 /**
  * The multicast datagram socket class is useful for sending
- * and receiving IP multicast packets. A MulticastSocket is
- * a (UDP) DatagramSocket, with additional capabilities for
- * joining "groups" of other multicast hosts on the internet.
+ * and receiving IP multicast packets.
  * <P>
  * A multicast group is specified by a class D IP address
  * and by a standard UDP port number. Class D IP addresses
