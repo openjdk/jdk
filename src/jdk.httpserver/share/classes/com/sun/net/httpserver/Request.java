@@ -27,6 +27,7 @@ package com.sun.net.httpserver;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 import sun.net.httpserver.UnmodifiableHeaders;
 
 /**
@@ -79,6 +80,8 @@ public interface Request {
      * @throws NullPointerException if any argument is null
      */
     default Request with(String headerName, List<String> headerValues) {
+        Objects.requireNonNull(headerName);
+        Objects.requireNonNull(headerValues);
         final Request r = this;
         ((UnmodifiableHeaders) r.getRequestHeaders()).map
                 .putIfAbsent(headerName, headerValues);
