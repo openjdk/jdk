@@ -28,6 +28,9 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
+ * @requires vm.opt.DeoptimizeALot != true
+ *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

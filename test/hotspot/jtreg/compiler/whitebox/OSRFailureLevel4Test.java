@@ -28,6 +28,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
+ * @requires vm.opt.DeoptimizeALot != true
  * @comment the test can't be run w/ TieredStopAtLevel < 4
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  *
