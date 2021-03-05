@@ -1064,7 +1064,7 @@ void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
 
       // monitors_iterate() is only called at a safepoint or when the
       // target thread is suspended or when the target thread is
-      // operating on itcurrent. The current closures in use today are
+      // operating on itself. The current closures in use today are
       // only interested in an owned ObjectMonitor and ownership
       // cannot be dropped under the calling contexts so the
       // ObjectMonitor cannot be async deflated.
