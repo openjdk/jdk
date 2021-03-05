@@ -93,6 +93,12 @@ public class ClhsdbAttachToDebugServer {
             out.shouldMatch("^java/lang/Object @0x[0-9a-f]+$"); // for "class java.lang.Object"
             out.shouldMatch("^java/lang/String @0x[0-9a-f]+$"); // for "class java.lang.String"
             out.shouldHaveExitValue(0);
+
+            // This will detect most SA failures, including during the attach.
+            out.shouldNotMatch("^sun.jvm.hotspot.debugger.DebuggerException:.*$");
+            // This will detect unexpected exceptions, like NPEs and asserts, that are caught
+            // by sun.jvm.hotspot.CommandProcessor.
+            out.shouldNotMatch("^Error: .*$");
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {
