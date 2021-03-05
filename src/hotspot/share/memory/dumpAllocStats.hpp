@@ -91,7 +91,7 @@ public:
     int which = (read_only) ? RO : RW;
     _bytes [which][OtherType] += byte_size;
   }
-  void print_stats(int ro_all, int rw_all, int mc_all);
+  void print_stats(int ro_all, int rw_all);
 };
 
 #endif // SHARE_MEMORY_DUMPALLOCSTATS_HPP

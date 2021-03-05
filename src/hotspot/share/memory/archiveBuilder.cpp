@@ -154,7 +154,6 @@ ArchiveBuilder::ArchiveBuilder() :
   _mapped_static_archive_bottom(NULL),
   _mapped_static_archive_top(NULL),
   _buffer_to_requested_delta(0),
-  _mc_region("mc", MAX_SHARED_DELTA),
   _rw_region("rw", MAX_SHARED_DELTA),
   _ro_region("ro", MAX_SHARED_DELTA),
   _rw_src_objs(),
@@ -166,8 +165,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _total_closed_heap_region_size(0),
   _total_open_heap_region_size(0),
   _estimated_metaspaceobj_bytes(0),
-  _estimated_hashtable_bytes(0),
-  _estimated_trampoline_bytes(0)
+  _estimated_hashtable_bytes(0)
 {
   _klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
@@ -323,13 +321,10 @@ size_t ArchiveBuilder::estimate_archive_size() {
   size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
   _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
 
-  _estimated_trampoline_bytes = collect_method_trampolines();
-
   size_t total = 0;
 
   total += _estimated_metaspaceobj_bytes;
   total += _estimated_hashtable_bytes;
-  total += _estimated_trampoline_bytes;
 
   // allow fragmentation at the end of each dump region
   total += _total_dump_regions * reserve_alignment();
@@ -337,7 +332,6 @@ size_t ArchiveBuilder::estimate_archive_size() {
   log_info(cds)("_estimated_hashtable_bytes = " SIZE_FORMAT " + " SIZE_FORMAT " = " SIZE_FORMAT,
                 symbol_table_est, dictionary_est, _estimated_hashtable_bytes);
   log_info(cds)("_estimated_metaspaceobj_bytes = " SIZE_FORMAT, _estimated_metaspaceobj_bytes);
-  log_info(cds)("_estimated_trampoline_bytes = " SIZE_FORMAT, _estimated_trampoline_bytes);
   log_info(cds)("total estimate bytes = " SIZE_FORMAT, total);
 
   return align_up(total, reserve_alignment());
@@ -360,7 +354,7 @@ address ArchiveBuilder::reserve_buffer() {
 
   _buffer_bottom = buffer_bottom;
   _last_verified_top = buffer_bottom;
-  _current_dump_space = &_mc_region;
+  _current_dump_space = &_rw_region;
   _num_dump_regions_used = 1;
   _other_region_used_bytes = 0;
   _current_dump_space->init(&_shared_rs, &_shared_vs);
@@ -399,6 +393,12 @@ address ArchiveBuilder::reserve_buffer() {
     log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
     vm_direct_exit(0);
+  }
+
+  if (DumpSharedSpaces) {
+    // We don't want any valid object to be at the very bottom of the archive.
+    // See ArchivePtrMarker::mark_pointer().
+    rw_region()->allocate(16);
   }
 
   return buffer_bottom;
@@ -579,10 +579,9 @@ void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
   _other_region_used_bytes = 0;
 }
 
-void ArchiveBuilder::dump_rw_region() {
+void ArchiveBuilder::dump_rw_metadata() {
   ResourceMark rm;
   log_info(cds)("Allocating RW objects ... ");
-  start_dump_space(&_rw_region);
   make_shallow_copies(&_rw_region, &_rw_src_objs);
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -595,7 +594,7 @@ void ArchiveBuilder::dump_rw_region() {
 #endif
 }
 
-void ArchiveBuilder::dump_ro_region() {
+void ArchiveBuilder::dump_ro_metadata() {
   ResourceMark rm;
   log_info(cds)("Allocating RO objects ... ");
 
@@ -1029,14 +1028,8 @@ public:
     write_header(mapinfo);
     write_data(header, header_end, 0);
 
-    DumpRegion* mc_region = &builder->_mc_region;
     DumpRegion* rw_region = &builder->_rw_region;
     DumpRegion* ro_region = &builder->_ro_region;
-
-    address mc = address(mc_region->base());
-    address mc_end = address(mc_region->end());
-    write_dump_region("mc region", mc_region);
-    write_data(mc, mc_end, mc + buffer_to_runtime_delta());
 
     write_dump_region("rw region", rw_region);
     write_objects(rw_region, &builder->_rw_src_objs);
@@ -1060,46 +1053,12 @@ public:
 };
 
 void ArchiveBuilder::print_stats() {
-  _alloc_stats.print_stats(int(_ro_region.used()), int(_rw_region.used()), int(_mc_region.used()));
+  _alloc_stats.print_stats(int(_ro_region.used()), int(_rw_region.used()));
 }
 
 void ArchiveBuilder::clean_up_src_obj_table() {
   SrcObjTableCleaner cleaner;
   _src_obj_table.iterate(&cleaner);
-}
-
-void ArchiveBuilder::init_mc_region() {
-  if (DumpSharedSpaces) { // these are needed only for static archive
-    // We don't want any valid object to be at the very bottom of the archive.
-    // See ArchivePtrMarker::mark_pointer().
-    mc_region()->allocate(16);
-
-    size_t trampoline_size = SharedRuntime::trampoline_size();
-    size_t buf_size = (size_t)AbstractInterpreter::number_of_method_entries * trampoline_size;
-    MetaspaceShared::set_i2i_entry_code_buffers((address)mc_region()->allocate(buf_size));
-  }
-
-  allocate_method_trampolines();
-}
-
-void ArchiveBuilder::allocate_method_trampolines_for(InstanceKlass* ik) {
-
-}
-
-void ArchiveBuilder::allocate_method_trampolines() {
-  mc_region()->allocate(SharedRuntime::trampoline_size());
-}
-
-// Allocate MethodTrampolineInfo for all Methods that will be archived. Also
-// return the total number of bytes needed by the method trampolines in the MC
-// region.
-size_t ArchiveBuilder::collect_method_trampolines() {
-  size_t total = SharedRuntime::trampoline_size();
-  return align_up(total, SharedSpaceObjectAlignment);
-}
-
-void ArchiveBuilder::update_method_trampolines() {
-
 }
 
 void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
@@ -1111,9 +1070,6 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
   // MetaspaceShared::n_regions (internal to hotspot).
   assert(NUM_CDS_REGIONS == MetaspaceShared::n_regions, "sanity");
 
-  // mc contains the trampoline code for method entries, which are patched at run time,
-  // so it needs to be read/write.
-  write_region(mapinfo, MetaspaceShared::mc, &_mc_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 
@@ -1163,18 +1119,15 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo,
   const size_t bitmap_used = mapinfo->space_at(MetaspaceShared::bm)->used();
   const size_t bitmap_reserved = mapinfo->space_at(MetaspaceShared::bm)->used_aligned();
   const size_t total_reserved = _ro_region.reserved()  + _rw_region.reserved() +
-                                _mc_region.reserved()  +
                                 bitmap_reserved +
                                 _total_closed_heap_region_size +
                                 _total_open_heap_region_size;
   const size_t total_bytes = _ro_region.used()  + _rw_region.used() +
-                             _mc_region.used()  +
                              bitmap_used +
                              _total_closed_heap_region_size +
                              _total_open_heap_region_size;
   const double total_u_perc = percent_of(total_bytes, total_reserved);
 
-  _mc_region.print(total_reserved);
   _rw_region.print(total_reserved);
   _ro_region.print(total_reserved);
 
@@ -1210,7 +1163,6 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   // This is highly unlikely to happen on 64-bits because we have reserved a 4GB space.
   // On 32-bit we reserve only 256MB so you could run out of space with 100,000 classes
   // or so.
-  _mc_region.print_out_of_space_msg(name, needed_bytes);
   _rw_region.print_out_of_space_msg(name, needed_bytes);
   _ro_region.print_out_of_space_msg(name, needed_bytes);
 

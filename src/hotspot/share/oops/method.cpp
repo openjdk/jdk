@@ -350,9 +350,6 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_method_counters);
 
   Method* this_ptr = this;
-  //it->push_method_entry(&this_ptr, (intptr_t*)&_i2i_entry);
-  //it->push_method_entry(&this_ptr, (intptr_t*)&_from_compiled_entry);
-  //it->push_method_entry(&this_ptr, (intptr_t*)&_from_interpreted_entry);
 }
 
 // Attempt to return method to original state.  Clear any pointers
@@ -1131,77 +1128,6 @@ void Method::unlink_method() {
 }
 #endif
 
-/****************************************************************************
-// The following illustrates how the entries work for CDS shared Methods:
-//
-// Our goal is to delay writing into a shared Method until it's compiled.
-// Hence, we want to determine the initial values for _i2i_entry,
-// _from_interpreted_entry and _from_compiled_entry during CDS dump time.
-//
-// In this example, both Methods A and B have the _i2i_entry of "zero_locals".
-// They also have similar signatures so that they will share the same
-// AdapterHandlerEntry.
-//
-// _adapter_trampoline points to a fixed location in the RW section of
-// the CDS archive. This location initially contains a NULL pointer. When the
-// first of method A or B is linked, an AdapterHandlerEntry is allocated
-// dynamically, and its c2i/i2c entries are generated.
-//
-// _i2i_entry and _from_interpreted_entry initially points to the same
-// (fixed) location in the CODE section of the CDS archive. This contains
-// an unconditional branch to the actual entry for "zero_locals", which is
-// generated at run time and may be on an arbitrary address. Thus, the
-// unconditional branch is also generated at run time to jump to the correct
-// address.
-//
-// Similarly, _from_compiled_entry points to a fixed address in the CODE
-// section. This address has enough space for an unconditional branch
-// instruction, and is initially zero-filled. After the AdapterHandlerEntry is
-// initialized, and the address for the actual c2i_entry is known, we emit a
-// branch instruction here to branch to the actual c2i_entry.
-//
-// The effect of the extra branch on the i2i and c2i entries is negligible.
-//
-// The reason for putting _adapter_trampoline in RO is many shared Methods
-// share the same AdapterHandlerEntry, so we can save space in the RW section
-// by having the extra indirection.
-
-
-[Method A: RW]
-  _constMethod ----> [ConstMethod: RO]
-                       _adapter_trampoline -----------+
-                                                      |
-  _i2i_entry              (same value as method B)    |
-  _from_interpreted_entry (same value as method B)    |
-  _from_compiled_entry    (same value as method B)    |
-                                                      |
-                                                      |
-[Method B: RW]                               +--------+
-  _constMethod ----> [ConstMethod: RO]       |
-                       _adapter_trampoline --+--->(AdapterHandlerEntry* ptr: RW)-+
-                                                                                 |
-                                                 +-------------------------------+
-                                                 |
-                                                 +----> [AdapterHandlerEntry] (allocated at run time)
-                                                              _fingerprint
-                                                              _c2i_entry ---------------------------------+->[c2i entry..]
- _i2i_entry  -------------+                                   _i2c_entry ---------------+-> [i2c entry..] |
- _from_interpreted_entry  |                                   _c2i_unverified_entry     |                 |
-         |                |                                   _c2i_no_clinit_check_entry|                 |
-         |                |  (_cds_entry_table: CODE)                                   |                 |
-         |                +->[0]: jmp _entry_table[0] --> (i2i_entry_for "zero_locals") |                 |
-         |                |                               (allocated at run time)       |                 |
-         |                |  ...                           [asm code ...]               |                 |
-         +-[not compiled]-+  [n]: jmp _entry_table[n]                                   |                 |
-         |                                                                              |                 |
-         |                                                                              |                 |
-         +-[compiled]-------------------------------------------------------------------+                 |
-                                                                                                          |
- _from_compiled_entry------------>  (_c2i_entry_trampoline: CODE)                                         |
-                                    [jmp c2i_entry] ------------------------------------------------------+
-
-***/
-
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void Method::link_method(const methodHandle& h_method, TRAPS) {
@@ -1239,7 +1165,6 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   (void) make_adapters(h_method, CHECK);
 
   // ONLY USE the h_method now as make_adapter may have blocked
-
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {

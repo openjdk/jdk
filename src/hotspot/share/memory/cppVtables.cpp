@@ -101,7 +101,7 @@ template <class T>
 CppVtableInfo* CppVtableCloner<T>::allocate_and_initialize(const char* name) {
   int n = get_vtable_length(name);
   CppVtableInfo* info =
-      (CppVtableInfo*)ArchiveBuilder::current()->mc_region()->allocate(CppVtableInfo::byte_size(n));
+      (CppVtableInfo*)ArchiveBuilder::current()->rw_region()->allocate(CppVtableInfo::byte_size(n));
   info->set_vtable_size(n);
   initialize(name, info);
   return info;
@@ -215,7 +215,7 @@ CppVtableInfo** CppVtables::_index = NULL;
 char* CppVtables::dumptime_init() {
   assert(DumpSharedSpaces, "must");
   size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(CppVtableInfo*);
-  _index = (CppVtableInfo**)ArchiveBuilder::current()->mc_region()->allocate(vtptrs_bytes);
+  _index = (CppVtableInfo**)ArchiveBuilder::current()->rw_region()->allocate(vtptrs_bytes);
 
   CPP_VTABLE_TYPES_DO(ALLOCATE_AND_INITIALIZE_VTABLE);
 
