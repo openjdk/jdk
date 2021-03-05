@@ -562,13 +562,11 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
                                   (jbyte)JVM_CONSTANT_UnresolvedClass,
                                   (jbyte)JVM_CONSTANT_Class);
 
-  if (old_tag != JVM_CONSTANT_UnresolvedClass) {
-    // We need to recheck exceptions from racing thread and return the same.
-    if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
-      // Remove klass.
-      Atomic::release_store(adr, (Klass*)NULL);
-      throw_resolution_error(this_cp, which, CHECK_NULL);
-    }
+  // We need to recheck exceptions from racing thread and return the same.
+  if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
+    // Remove klass.
+    Atomic::release_store(adr, (Klass*)NULL);
+    throw_resolution_error(this_cp, which, CHECK_NULL);
   }
 
   return k;
