@@ -178,10 +178,6 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
             LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include],
                 [$FREETYPE_BASE_DIR/lib64], [well-known location])
           fi
-          if test "x$FOUND_FREETYPE" != "xyes" ; then
-            LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include],
-                [$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU-linux-gnuabi64], [well-known location])
-          fi
         else
           LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include],
               [$FREETYPE_BASE_DIR/lib/i386-linux-gnu], [well-known location])
@@ -198,17 +194,12 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
 
         if test "x$FOUND_FREETYPE" != "xyes" ; then
           LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include],
-              [$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU-linux-gnueabihf], [well-known location])
+              [$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU-linux-$OPENJDK_TARGET_ABI], [well-known location])
         fi
 
         if test "x$FOUND_FREETYPE" != "xyes" ; then
           LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include],
-              [$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU-linux-gnueabi], [well-known location])
-        fi
-
-        if test "x$FOUND_FREETYPE" != "xyes" ; then
-          LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include],
-              [$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU_AUTOCONF-linux-gnu], [well-known location])
+              [$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU_AUTOCONF-linux-$OPENJDK_TARGET_ABI], [well-known location])
         fi
 
         if test "x$FOUND_FREETYPE" != "xyes" ; then

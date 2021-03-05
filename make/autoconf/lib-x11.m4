@@ -68,14 +68,10 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
             x_libraries="$SYSROOT/usr/lib64"
           elif test -f "$SYSROOT/usr/lib/libX11.so"; then
             x_libraries="$SYSROOT/usr/lib"
-          elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnu/libX11.so"; then
-            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnu/libX11.so"
-          elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnueabi/libX11.so"; then
-            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnueabi/libX11.so"
-          elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnueabihf/libX11.so"; then
-            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnueabihf/libX11.so"
-          elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-linux-gnu/libX11.so"; then
-            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-linux-gnu/libX11.so"
+          elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-$OPENJDK_TARGET_ABI/libX11.so"; then
+            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-$OPENJDK_TARGET_ABI/libX11.so"
+          elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-linux-$OPENJDK_TARGET_ABI/libX11.so"; then
+            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-linux-$OPENJDK_TARGET_ABI/libX11.so"
           fi
         fi
       fi
