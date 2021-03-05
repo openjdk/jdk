@@ -68,15 +68,13 @@ public:
 
 class VM_G1CollectForAllocation : public VM_CollectForAllocation {
   bool _gc_succeeded;
-  bool _force_gc;
   double _target_pause_time_ms;
 
 public:
   VM_G1CollectForAllocation(size_t         word_size,
                             uint           gc_count_before,
                             GCCause::Cause gc_cause,
-                            double         target_pause_time_ms,
-                            bool           force_gc = false);
+                            double         target_pause_time_ms);
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
   virtual void doit();
   bool gc_succeeded() const { return _gc_succeeded; }

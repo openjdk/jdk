@@ -98,8 +98,10 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _predicted_survival_bytes_from_survivor;
-  size_t _predicted_survival_bytes_from_old;
+  // These values are predictions of how much we think will survive in each
+  // section of the heap. They are used to determine XXXX
+  size_t _predicted_surviving_bytes_from_survivor;
+  size_t _predicted_surviving_bytes_from_old;
 
   size_t _rs_length;
 
@@ -348,9 +350,17 @@ public:
                                                  double time_remaining_ms,
                                                  uint& num_optional_regions);
 
-  bool can_mutator_consume_free_regions(uint region_count);
-  void calculate_required_regions_for_next_collect();
+  // Returns whether a collection should be done proactively, taking into
+  // account the current number of free regions and the expected survival
+  // rates in each section of the heap.
+  bool proactive_collection_required(uint region_count);
+
 private:
+
+  // Predict the number of bytes of surviving objects from survivor and old
+  // regions and update the associated members.
+  void update_survival_estimates_for_next_collection();
+
   // Set the state to start a concurrent marking cycle and clear
   // _initiate_conc_mark_if_possible because it has now been
   // acted on.
