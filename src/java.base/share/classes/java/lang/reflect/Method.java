@@ -567,12 +567,34 @@ public final class Method extends Executable {
     }
 
     /**
-     * Returns {@code true} if this method is a bridge
-     * method; returns {@code false} otherwise.
+     * {@return {@code true} if this method is a bridge
+     * method; returns {@code false} otherwise}
      *
-     * @return true if and only if this method is a bridge
-     * method as defined by the Java Language Specification.
+     * <p>A bridge method is a method synthesized by a Java compiler
+     * alongside a method originating from the source code. One
+     * example of a bridge method is a way for a Java compiler to
+     * support <i>covariant overrides</i>, where a subclass overrides
+     * a method and gives the new method a more specific return type
+     * than the method in the superclass. A common case where
+     * covariant overrides are used is for a {@link
+     * java.lang.Cloneable Cloneable} class where the {@code clone}
+     * method is declared to return the type of the class rather than
+     * {@code Object}, for example {@link java.util.EnumSet#clone()
+     * EnumSet.clone()} returns {@code EnumSet<E>} rather than {@link
+     * java.lang.Object#clone() Object}. The class file for {@code
+     * EnumSet} would have two {@code clone} methods, one returning
+     * {@code EnumSet<E>} and a bridge method returning {@code
+     * Object}; the body of the {@code clone} bridge method calls its
+     * non-bridge sibling and returns its result. (While the Java
+     * language specification forbids a class declaring two methods
+     * with the same parameter types but a different return type, the
+     * virtual machine does not.)
+     *
      * @since 1.5
+     *
+     * @jls 8.4.8.3 Requirements in Overriding and Hiding 
+     * @jls 15.12.4.5 Create Frame, Synchronize, Transfer Control
+     * @jvms 4.6 Methods
      */
     public boolean isBridge() {
         return (getModifiers() & Modifier.BRIDGE) != 0;
