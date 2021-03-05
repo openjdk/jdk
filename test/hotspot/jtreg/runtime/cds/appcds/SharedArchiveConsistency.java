@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,6 @@ public class SharedArchiveConsistency {
     public static int size_t_size;     // size of size_t
     public static int int_size;        // size of int
 
-    public static File jsa;        // will be updated during test
-    public static File orgJsaFile; // kept the original file not touched.
     // The following should be consistent with the enum in the C++ MetaspaceShared class
     public static String[] shared_region_name = {
         "mc",          // MiscCode
@@ -252,8 +250,8 @@ public class SharedArchiveConsistency {
         }
     }
 
-    public static void modifyJvmIdent() throws Exception {
-        FileChannel fc = getFileChannel(jsa);
+    public static void modifyJvmIdent(File jsaFile) throws Exception {
+        FileChannel fc = getFileChannel(jsaFile);
         int headerSize = getFileHeaderSize(fc);
         System.out.println("    offset_jvm_ident " + offset_jvm_ident);
         byte[] buf = new byte[256];
@@ -264,8 +262,8 @@ public class SharedArchiveConsistency {
         }
     }
 
-    public static void modifyHeaderIntField(long offset, int value) throws Exception {
-        FileChannel fc = getFileChannel(jsa);
+    public static void modifyHeaderIntField(File jsaFile, long offset, int value) throws Exception {
+        FileChannel fc = getFileChannel(jsaFile);
         int headerSize = getFileHeaderSize(fc);
         System.out.println("    offset " + offset);
         byte[] buf = ByteBuffer.allocate(4).putInt(value).array();
@@ -276,23 +274,38 @@ public class SharedArchiveConsistency {
         }
     }
 
-    public static void copyFile(File from, File to) throws Exception {
-        if (to.exists()) {
-            if(!to.delete()) {
-                throw new IOException("Could not delete file " + to);
+    static int testCount = 0;
+    public static String startNewTestArchive(String testName) {
+        ++ testCount;
+        String newArchiveName = TestCommon.getNewArchiveName(String.format("%02d", testCount) + "-" + testName);
+        TestCommon.setCurrentArchiveName(newArchiveName);
+        return newArchiveName;
+    }
+
+    public static File copyFile(File orgJsaFile, String testName) throws Exception {
+        File newJsaFile = new File(startNewTestArchive(testName));
+        if (newJsaFile.exists()) {
+            if (!newJsaFile.delete()) {
+                throw new IOException("Could not delete file " + newJsaFile);
             }
         }
-        to.createNewFile();
-        setReadWritePermission(to);
-        Files.copy(from.toPath(), to.toPath(), REPLACE_EXISTING);
+        newJsaFile.createNewFile();
+        Files.copy(orgJsaFile.toPath(), newJsaFile.toPath(), REPLACE_EXISTING);
+
+        // orgJsaFile is read only, and Files.copy passes on this attribute to newJsaFile.
+        // Since we need to modify newJsaFile later, let's set it to r/w
+        setReadWritePermission(newJsaFile);
+
+        return newJsaFile;
     }
 
     // Copy file with bytes deleted or inserted
     // del -- true, deleted, false, inserted
-    public static void copyFile(File from, File to, boolean del) throws Exception {
+    public static File insertOrDeleteBytes(File orgJsaFile, boolean del) throws Exception {
+        File newJsaFile = new File(startNewTestArchive(del ? "delete-bytes" : "insert-bytes"));
         try (
-            FileChannel inputChannel = new FileInputStream(from).getChannel();
-            FileChannel outputChannel = new FileOutputStream(to).getChannel()
+            FileChannel inputChannel = new FileInputStream(orgJsaFile).getChannel();
+            FileChannel outputChannel = new FileOutputStream(newJsaFile).getChannel()
         ) {
             long size = inputChannel.size();
             int init_size = getFileHeaderSize(inputChannel);
@@ -309,10 +322,8 @@ public class SharedArchiveConsistency {
                 outputChannel.transferFrom(inputChannel, init_size + n , size - init_size);
             }
         }
-    }
 
-    public static void restoreJsaFile() throws Exception {
-        Files.copy(orgJsaFile.toPath(), jsa.toPath(), REPLACE_EXISTING);
+        return newJsaFile;
     }
 
     public static void setReadWritePermission(File file) throws Exception {
@@ -365,7 +376,7 @@ public class SharedArchiveConsistency {
         // test, should pass
         System.out.println("1. Normal, should pass but may fail\n");
 
-        String[] execArgs = {"-Xlog:cds", "-cp", jarFile, "Hello"};
+        String[] execArgs = {"-Xlog:cds=debug", "-cp", jarFile, "Hello"};
         // tests that corrupt contents of the archive need to run with
         // VerifySharedSpaces enabled to detect inconsistencies
         String[] verifyExecArgs = {"-Xlog:cds", "-XX:+VerifySharedSpaces", "-cp", jarFile, "Hello"};
@@ -378,64 +389,50 @@ public class SharedArchiveConsistency {
             TestCommon.checkExecReturn(output, 1, true, matchMessages[0]);
         }
 
-        // get current archive name
-        jsa = new File(TestCommon.getCurrentArchiveName());
-        if (!jsa.exists()) {
-            throw new IOException(jsa + " does not exist!");
+        // get the archive that has just been created.
+        File orgJsaFile = new File(TestCommon.getCurrentArchiveName());
+        if (!orgJsaFile.exists()) {
+            throw new IOException(orgJsaFile + " does not exist!");
         }
-
-        setReadWritePermission(jsa);
-
-        // save as original untouched
-        orgJsaFile = new File(new File(currentDir), "appcds.jsa.bak");
-        copyFile(jsa, orgJsaFile);
 
         // modify jsa header, test should fail
         System.out.println("\n2. Corrupt header, should fail\n");
-        modifyJsaHeader(jsa);
+        modifyJsaHeader(copyFile(orgJsaFile, "corrupt-header"));
         output = TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has a bad magic number");
         output.shouldNotContain("Checksum verification failed");
 
-        copyFile(orgJsaFile, jsa);
         // modify _jvm_ident, test should fail
         System.out.println("\n2a. Corrupt _jvm_ident, should fail\n");
-        modifyJvmIdent();
+        modifyJvmIdent(copyFile(orgJsaFile, "modify-jvm-ident"));
         output = TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file was created by a different version or build of HotSpot");
         output.shouldNotContain("Checksum verification failed");
 
-        copyFile(orgJsaFile, jsa);
-        // modify _jvm_ident and run with -Xshare:auto
+        // use the same archive as above, but run with -Xshare:auto
         System.out.println("\n2b. Corrupt _jvm_ident run with -Xshare:auto\n");
-        modifyJvmIdent();
         output = TestCommon.execAuto(execArgs);
         output.shouldContain("The shared archive file was created by a different version or build of HotSpot");
         output.shouldContain("Hello World");
 
-        copyFile(orgJsaFile, jsa);
         // modify _magic, test should fail
         System.out.println("\n2c. Corrupt _magic, should fail\n");
-        modifyHeaderIntField(offset_magic, 0x00000000);
+        modifyHeaderIntField(copyFile(orgJsaFile, "modify-magic"), offset_magic, 0x00000000);
         output = TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has a bad magic number");
         output.shouldNotContain("Checksum verification failed");
 
-        copyFile(orgJsaFile, jsa);
         // modify _version, test should fail
         System.out.println("\n2d. Corrupt _version, should fail\n");
-        modifyHeaderIntField(offset_version, 0x00000000);
+        modifyHeaderIntField(copyFile(orgJsaFile, "modify-version"), offset_version, 0x00000000);
         output = TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has the wrong version");
         output.shouldNotContain("Checksum verification failed");
 
-        File newJsaFile = null;
-        // modify content
+        // modify content inside regions
         System.out.println("\n3. Corrupt Content, should fail\n");
         for (int i=0; i<num_regions; i++) {
-            newJsaFile = new File(TestCommon.getNewArchiveName(shared_region_name[i]));
-            copyFile(orgJsaFile, newJsaFile);
-            TestCommon.setCurrentArchiveName(newJsaFile.toString());
+            File newJsaFile = copyFile(orgJsaFile, (shared_region_name[i]));
             if (modifyJsaContent(i, newJsaFile)) {
                 testAndCheck(verifyExecArgs);
             }
@@ -443,9 +440,7 @@ public class SharedArchiveConsistency {
 
         // modify both header and content, test should fail
         System.out.println("\n4. Corrupt Header and Content, should fail\n");
-        newJsaFile = new File(TestCommon.getNewArchiveName("header-and-content"));
-        copyFile(orgJsaFile, newJsaFile);
-        TestCommon.setCurrentArchiveName(newJsaFile.toString());
+        File newJsaFile = copyFile(orgJsaFile, "header-and-content");
         modifyJsaHeader(newJsaFile);
         modifyJsaContent(0, newJsaFile);  // this will not be reached since failed on header change first
         output = TestCommon.execCommon(execArgs);
@@ -454,20 +449,16 @@ public class SharedArchiveConsistency {
 
         // delete bytes in data section
         System.out.println("\n5. Delete bytes at beginning of data section, should fail\n");
-        copyFile(orgJsaFile, jsa, true);
-        TestCommon.setCurrentArchiveName(jsa.toString());
+        insertOrDeleteBytes(orgJsaFile, true);
         testAndCheck(verifyExecArgs);
 
         // insert bytes in data section forward
         System.out.println("\n6. Insert bytes at beginning of data section, should fail\n");
-        copyFile(orgJsaFile, jsa, false);
+        insertOrDeleteBytes(orgJsaFile, false);
         testAndCheck(verifyExecArgs);
 
         System.out.println("\n7. modify Content in random areas, should fail\n");
-        newJsaFile = new File(TestCommon.getNewArchiveName("random-areas"));
-        copyFile(orgJsaFile, newJsaFile);
-        TestCommon.setCurrentArchiveName(newJsaFile.toString());
-        modifyJsaContentRandomly(newJsaFile);
+        modifyJsaContentRandomly(copyFile(orgJsaFile, "random-areas"));
         testAndCheck(verifyExecArgs);
     }
 }
