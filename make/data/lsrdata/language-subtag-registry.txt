@@ -1,4 +1,4 @@
-File-Date: 2021-02-23
+File-Date: 2021-03-05
 %%
 Type: language
 Subtag: aa
@@ -45395,6 +45395,11 @@ Description: Tirhuta
 Added: 2011-08-16
 %%
 Type: script
+Subtag: Tnsa
+Description: Tangsa
+Added: 2021-03-05
+%%
+Type: script
 Subtag: Toto
 Description: Toto
 Added: 2020-05-12
@@ -45413,6 +45418,11 @@ Type: script
 Subtag: Visp
 Description: Visible Speech
 Added: 2005-10-16
+%%
+Type: script
+Subtag: Vith
+Description: Vithkuqi
+Added: 2021-03-05
 %%
 Type: script
 Subtag: Wara
