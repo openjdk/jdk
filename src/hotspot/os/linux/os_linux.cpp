@@ -97,7 +97,6 @@
 # include <sys/times.h>
 # include <sys/utsname.h>
 # include <sys/socket.h>
-# include <sys/wait.h>
 # include <pwd.h>
 # include <poll.h>
 # include <fcntl.h>

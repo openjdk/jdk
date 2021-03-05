@@ -108,7 +108,6 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/vminfo.h>
-#include <sys/wait.h>
 
 // Missing prototypes for various system APIs.
 extern "C"
