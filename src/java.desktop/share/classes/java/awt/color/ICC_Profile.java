@@ -907,10 +907,7 @@ public class ICC_Profile implements Serializable {
             header[38] != 0x73 || header[39] != 0x70) {
             return null;   /* not a valid profile */
         }
-        int profileSize = ((header[0] & 0xff) << 24) |
-                          ((header[1] & 0xff) << 16) |
-                          ((header[2] & 0xff) << 8) |
-                          (header[3] & 0xff);
+        int profileSize = intFromBigEndian(header, 0);
         bis.reset();
         try {
             return bis.readNBytes(profileSize);
