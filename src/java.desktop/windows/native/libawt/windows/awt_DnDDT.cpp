@@ -225,7 +225,6 @@ HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWOR
 
 HRESULT __stdcall AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
-    AwtToolkit::GetInstance().isInDoDragDropLoop = TRUE;
     if (NULL != m_pIDropTargetHelper) {
         m_pIDropTargetHelper->DragOver(
             (LPPOINT)&pt,
