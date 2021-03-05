@@ -345,7 +345,6 @@ AwtToolkit::AwtToolkit() {
     m_waitEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
     m_inputMethodWaitEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
     isInDoDragDropLoop = FALSE;
-    isDnDActive = FALSE;
     eventNumber = 0;
 }
 
@@ -3217,7 +3216,7 @@ LRESULT AwtToolkit::InvokeInputMethodFunction(UINT msg, WPARAM wParam, LPARAM lP
      * the IME completion.
      */
     CriticalSection::Lock lock(m_inputMethodLock);
-    if (isInDoDragDropLoop || isDnDActive) {
+    if (isInDoDragDropLoop) {
         SendMessage(msg, wParam, lParam);
         ::ResetEvent(m_inputMethodWaitEvent);
         return m_inputMethodData;
