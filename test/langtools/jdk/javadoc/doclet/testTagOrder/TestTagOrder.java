@@ -38,16 +38,17 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
 /**
  * Tests the order of the output of block tags in the generated output.
- * There is a default order, embodies in the order of declaration of tags in
- * {@code Tagl;etManager}, but this can be overridden on the command line by
+ * There is a default order, embodied in the order of declaration of tags in
+ * {@code TagletManager}, but this can be overridden on the command line by
  * specifying {@code -tag} options in the desired order.
  */
 public class TestTagOrder extends JavadocTester {
@@ -58,14 +59,15 @@ public class TestTagOrder extends JavadocTester {
 
     ToolBox tb = new ToolBox();
     Path src = Path.of("src");
-    Map<String, String> expect = new LinkedHashMap<>();
+    Map<String, String> expectMethod = new LinkedHashMap<>();
+    Map<String, String> expectClass = new LinkedHashMap<>();
 
     TestTagOrder() throws IOException {
         tb.writeJavaFiles(src,
                 """
                     package p;
-                    /** Class C. */
-                    public class C {
+                    /** Class C1. */
+                    public class C1 {
                         /**
                          * This is method m.
                          * @param p1 first parameter
@@ -79,33 +81,63 @@ public class TestTagOrder extends JavadocTester {
                             return 0;
                         }
                     }
+                    """, """
+                    package p;
+                    /** 
+                     * Class C2.
+                     * @since 1.0
+                     * @author J. Duke.
+                     * @version 2.0 
+                     * @see <a href="http://example.com">example</a>
+                     */
+                    public class C2 { } 
                     """);
 
-        // The following adds map entries in the default order of appearance in the output.
+        // The following add map entries in the default order of appearance in the output.
         // Note that the list is not otherwise ordered, such as alphabetically.
 
-        expect.put("@param", """
+        expectMethod.put("@param", """
                 <dt>Parameters:</dt>
                 <dd><code>p1</code> - first parameter</dd>
                 <dd><code>p2</code> - second parameter</dd>
                 """);
 
-        expect.put("@return", """
+        expectMethod.put("@return", """
                 <dt>Returns:</dt>
                 <dd>zero</dd>
                 """);
 
-        expect.put("@throws", """
+        expectMethod.put("@throws", """
                 <dt>Throws:</dt>
                 <dd><code>java.lang.IllegalArgumentException</code> - well, never</dd>
                 """);
 
-        expect.put("@since", """
+        expectMethod.put("@since", """
                 <dt>Since:</dt>
                 <dd>1.0</dd>
                 """);
 
-        expect.put("@see", """
+        expectMethod.put("@see", """
+                <dt>See Also:</dt>
+                <dd><a href="http://example.com">example</a></dd>
+                """);
+
+        expectClass.put("@since", """
+                <dt>Since:</dt>
+                <dd>1.0</dd>
+                """);
+
+        expectClass.put("@version", """
+                <dt>Version:</dt>
+                <dd>2.0</dd>
+                """);
+
+        expectClass.put("@author", """
+                <dt>Author:</dt>
+                <dd>J. Duke.</dd>
+                """);
+
+        expectClass.put("@see", """
                 <dt>See Also:</dt>
                 <dd><a href="http://example.com">example</a></dd>
                 """);
@@ -113,59 +145,85 @@ public class TestTagOrder extends JavadocTester {
 
     @Test
     public void testDefault(Path base) {
-        javadoc("-d", base.resolve("out").toString(),
-                "--source-path", src.toString(),
-                "--no-platform-links",
-                "p");
-        checkExit(Exit.OK);
-
-        checkOutput("p/C.html", true,
-                "<dl class=\"notes\">\n"
-                + String.join("", expect.values())
-                + "</dl>");
+        test(base, null);
     }
 
     @Test
     public void testAlpha(Path base) {
-        List<String> args = new ArrayList<>();
-        args.addAll(List.of(
-                "-d", base.resolve("out").toString(),
-                "--source-path", src.toString(),
-                "--no-platform-links"));
-
-        SortedMap<String, String> e = new TreeMap<>(Comparator.naturalOrder());
-        e.putAll(expect);
-        e.keySet().forEach(t -> { args.add("-tag"); args.add(t.substring(1)); });
-        args.add("p");
-
-        javadoc(args.toArray(new String[args.size()]));
-        checkExit(Exit.OK);
-
-        checkOutput("p/C.html", true,
-                "<dl class=\"notes\">\n"
-                        + String.join("", e.values())
-                        + "</dl>");
+        test(base, Comparator.naturalOrder());
     }
 
     @Test
     public void testReverse(Path base) {
+        test(base, Comparator.reverseOrder());
+    }
+
+    private void test(Path base, Comparator<String> c) {
         List<String> args = new ArrayList<>();
         args.addAll(List.of(
                 "-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
-                "--no-platform-links"));
-
-        SortedMap<String, String> e = new TreeMap<>(Comparator.reverseOrder());
-        e.putAll(expect);
-        e.keySet().forEach(t -> { args.add("-tag"); args.add(t.substring(1)); });
+                "--no-platform-links",
+                "-author",
+                "-version"));
+        args.addAll(getTagArgs(c, expectMethod, expectClass));
         args.add("p");
 
-        javadoc(args.toArray(new String[args.size()]));
+        javadoc(args.toArray(new String[0]));
         checkExit(Exit.OK);
 
-        checkOutput("p/C.html", true,
+        checkOutput("p/C1.html", true,
                 "<dl class=\"notes\">\n"
-                        + String.join("", e.values())
+                        + getExpectString(c, expectMethod)
                         + "</dl>");
+
+        checkOutput("p/C2.html", true,
+                "<dl class=\"notes\">\n"
+                        + getExpectString(c, expectClass)
+                        + "</dl>");
+    }
+
+    /**
+     * Returns a series of {@code -tag} options derived from the keys of a series of maps,
+     * sorted according to the given comparator, or an empty list if the comparator is {@code null}.
+     *
+     * @param c      the comparator, or {@code null}
+     * @param expect the maps from which to infer the options
+     *
+     * @return the list of options
+     */
+    @SafeVarargs
+    private List<String> getTagArgs(Comparator<String> c, Map<String, String>... expect) {
+        if (c == null) {
+            return List.of();
+        }
+
+        SortedSet<String> allTags = new TreeSet<>(c);
+        for (Map<String, String> e : expect) {
+            allTags.addAll(e.keySet());
+        }
+        List<String> args = new ArrayList<>();
+        allTags.forEach(t -> { args.add("-tag"); args.add(t.substring(1)); });
+        return args;
+    }
+
+    /**
+     * Returns the "expected string" derived from the values of a map, sorted according
+     * to the keys of the map with a given comparator if the comparator is not {@code null}.
+     *
+     * @param c      the comparator, or {@code null}
+     * @param expect the map
+     *
+     * @return the "expected string"
+     */
+    private String getExpectString(Comparator<String> c, Map<String, String> expect) {
+        Map<String, String> e;
+        if (c == null) {
+            e = expect;
+        } else {
+            e = new TreeMap<>(c);
+            e.putAll(expect);
+        }
+        return String.join("", e.values());
     }
 }
