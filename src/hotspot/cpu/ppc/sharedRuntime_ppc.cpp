@@ -2273,6 +2273,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   if (is_critical_native) {
     Label needs_safepoint;
     Register sync_state      = r_temp_5;
+    // Note: We should not reach here with active stack watermark. There's no safepoint between
+    //       start of the native wrapper and this check where it could have been added.
+    //       We don't check the watermark in the fast path.
     __ safepoint_poll(needs_safepoint, sync_state, false /* at_return */, false /* in_nmethod */);
 
     Register suspend_flags   = r_temp_6;

@@ -47,6 +47,7 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
     address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
     __ bind(_entry);
+    // Using pc relative address computation.
     {
       Label next_pc;
       __ bl(next_pc);
@@ -54,7 +55,7 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
     }
     int current_offset = __ offset();
     __ mflr(R12);
-    __ addi(R12, R12, safepoint_offset() - current_offset);
+    __ add_const_optimized(R12, R12, safepoint_offset() - current_offset);
     __ std(R12, in_bytes(JavaThread::saved_exception_pc_offset()), R16_thread);
 
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));

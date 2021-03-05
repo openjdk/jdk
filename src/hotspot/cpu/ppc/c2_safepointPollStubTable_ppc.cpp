@@ -37,14 +37,17 @@ void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointP
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
   __ bind(entry->_stub_label);
+  // Using pc relative address computation.
   {
     Label next_pc;
     __ bl(next_pc);
     __ bind(next_pc);
   }
   int current_offset = __ offset();
-  __ mflr(R12);
-  __ addi(R12, R12, entry->_safepoint_offset - current_offset);
+  // Code size should not depend on offset: see _stub_size computation in output.cpp
+  __ load_const32(R12, entry->_safepoint_offset - current_offset);
+  __ mflr(R0);
+  __ add(R12, R12, R0);
   __ std(R12, in_bytes(JavaThread::saved_exception_pc_offset()), R16_thread);
 
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
