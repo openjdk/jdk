@@ -20,75 +20,64 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.sun.org.apache.xml.internal.security.keys;
+package com.sun.org.apache.xml.internal.security.parser;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 
-public class ContentHandlerAlreadyRegisteredException extends XMLSecurityException {
-
+public class XMLParserException extends XMLSecurityException {
     /**
      *
      */
     private static final long serialVersionUID = 1L;
 
     /**
-     * Constructor ContentHandlerAlreadyRegisteredException
+     * Constructor XMLParserException
      *
      */
-    public ContentHandlerAlreadyRegisteredException() {
+    public XMLParserException() {
         super();
     }
 
     /**
-     * Constructor ContentHandlerAlreadyRegisteredException
+     * Constructor XMLParserException
      *
      * @param msgID
      */
-    public ContentHandlerAlreadyRegisteredException(String msgID) {
+    public XMLParserException(String msgID) {
         super(msgID);
     }
 
     /**
-     * Constructor ContentHandlerAlreadyRegisteredException
+     * Constructor XMLParserException
      *
      * @param msgID
      * @param exArgs
      */
-    public ContentHandlerAlreadyRegisteredException(String msgID, Object exArgs[]) {
+    public XMLParserException(String msgID, Object[] exArgs) {
         super(msgID, exArgs);
     }
 
     /**
-     * Constructor ContentHandlerAlreadyRegisteredException
+     * Constructor XMLParserException
      *
      * @param originalException
      * @param msgID
      */
-    public ContentHandlerAlreadyRegisteredException(Exception originalException, String msgID) {
+    public XMLParserException(Exception originalException, String msgID) {
         super(originalException, msgID);
     }
 
-    @Deprecated
-    public ContentHandlerAlreadyRegisteredException(String msgID, Exception originalException) {
-        this(originalException, msgID);
-    }
-
     /**
-     * Constructor ContentHandlerAlreadyRegisteredException
+     * Constructor XMLParserException
      *
      * @param originalException
      * @param msgID
      * @param exArgs
      */
-    public ContentHandlerAlreadyRegisteredException(
-        Exception originalException, String msgID, Object exArgs[]
+    public XMLParserException(
+        Exception originalException, String msgID, Object[] exArgs
     ) {
         super(originalException, msgID, exArgs);
-    }
-
-    @Deprecated
-    public ContentHandlerAlreadyRegisteredException(String msgID, Object[] exArgs, Exception originalException) {
-        this(originalException, msgID, exArgs);
     }
 
 }

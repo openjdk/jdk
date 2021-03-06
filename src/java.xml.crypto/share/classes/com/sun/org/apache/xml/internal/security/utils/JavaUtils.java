@@ -57,11 +57,11 @@ public final class JavaUtils {
     public static byte[] getBytesFromFile(String fileName)
         throws FileNotFoundException, IOException {
 
-        byte refBytes[] = null;
+        byte[] refBytes = null;
 
         try (InputStream inputStream = Files.newInputStream(Paths.get(fileName));
             UnsyncByteArrayOutputStream baos = new UnsyncByteArrayOutputStream()) {
-            byte buf[] = new byte[1024];
+            byte[] buf = new byte[1024];
             int len;
 
             while ((len = inputStream.read(buf)) > 0) {
@@ -104,7 +104,7 @@ public final class JavaUtils {
      */
     public static byte[] getBytesFromStream(InputStream inputStream) throws IOException {
         try (UnsyncByteArrayOutputStream baos = new UnsyncByteArrayOutputStream()) {
-            byte buf[] = new byte[4 * 1024];
+            byte[] buf = new byte[4 * 1024];
             int len;
             while ((len = inputStream.read(buf)) > 0) {
                 baos.write(buf, 0, len);

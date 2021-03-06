@@ -22,11 +22,10 @@
  */
 package com.sun.org.apache.xml.internal.security;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +35,7 @@ import com.sun.org.apache.xml.internal.security.c14n.Canonicalizer;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResolver;
 import com.sun.org.apache.xml.internal.security.transforms.Transform;
+import com.sun.org.apache.xml.internal.security.utils.ClassLoaderUtils;
 import com.sun.org.apache.xml.internal.security.utils.ElementProxy;
 import com.sun.org.apache.xml.internal.security.utils.I18n;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
@@ -89,13 +89,18 @@ public class Init {
                         if (cfile == null) {
                             return null;
                         }
-                        return Init.class.getResourceAsStream(cfile);
+                        return ClassLoaderUtils.getResourceAsStream(cfile, Init.class);
                     }
                 );
         if (is == null) {
             dynamicInit();
         } else {
             fileInit(is);
+            try {
+                is.close();
+            } catch (IOException ex) {
+                LOG.warn(ex.getMessage());
+            }
         }
 
         alreadyInitialized = true;
@@ -113,53 +118,44 @@ public class Init {
         I18n.init("en", "US");
 
         LOG.debug("Registering default algorithms");
-
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>(){
-                @Override public Void run() throws XMLSecurityException {
-                    //
-                    // Bind the default prefixes
-                    //
-                    ElementProxy.registerDefaultPrefixes();
-
-                    //
-                    // Set the default Transforms
-                    //
-                    Transform.registerDefaultAlgorithms();
-
-                    //
-                    // Set the default signature algorithms
-                    //
-                    SignatureAlgorithm.registerDefaultAlgorithms();
-
-                    //
-                    // Set the default JCE algorithms
-                    //
-                    JCEMapper.registerDefaultAlgorithms();
-
-                    //
-                    // Set the default c14n algorithms
-                    //
-                    Canonicalizer.registerDefaultAlgorithms();
-
-                    //
-                    // Register the default resolvers
-                    //
-                    ResourceResolver.registerDefaultResolvers();
-
-                    //
-                    // Register the default key resolvers
-                    //
-                    KeyResolver.registerDefaultResolvers();
-
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException ex) {
-            XMLSecurityException xse = (XMLSecurityException)ex.getException();
-            LOG.error(xse.getMessage(), xse);
-            xse.printStackTrace();
+            //
+            // Bind the default prefixes
+            //
+            ElementProxy.registerDefaultPrefixes();
+        } catch (XMLSecurityException ex) {
+            LOG.error(ex.getMessage(), ex);
         }
+
+        //
+        // Set the default Transforms
+        //
+        Transform.registerDefaultAlgorithms();
+
+        //
+        // Set the default signature algorithms
+        //
+        SignatureAlgorithm.registerDefaultAlgorithms();
+
+        //
+        // Set the default JCE algorithms
+        //
+        JCEMapper.registerDefaultAlgorithms();
+
+        //
+        // Set the default c14n algorithms
+        //
+        Canonicalizer.registerDefaultAlgorithms();
+
+        //
+        // Register the default resolvers
+        //
+        ResourceResolver.registerDefaultResolvers();
+
+        //
+        // Register the default key resolvers
+        //
+        KeyResolver.registerDefaultResolvers();
     }
 
     /**
@@ -168,7 +164,7 @@ public class Init {
     private static void fileInit(InputStream is) {
         try {
             /* read library configuration file */
-            Document doc = XMLUtils.read(is, false);
+            Document doc = XMLUtils.read(is, true);
             Node config = doc.getFirstChild();
             for (; config != null; config = config.getNextSibling()) {
                 if ("Configuration".equals(config.getLocalName())) {
@@ -208,7 +204,7 @@ public class Init {
                             Canonicalizer.register(uri, javaClass);
                             LOG.debug("Canonicalizer.register({}, {})", uri, javaClass);
                         } catch (ClassNotFoundException e) {
-                            Object exArgs[] = { uri, javaClass };
+                            Object[] exArgs = { uri, javaClass };
                             LOG.error(I18n.translate("algorithm.classDoesNotExist", exArgs));
                         }
                     }
@@ -226,7 +222,7 @@ public class Init {
                             Transform.register(uri, javaClass);
                             LOG.debug("Transform.register({}, {})", uri, javaClass);
                         } catch (ClassNotFoundException e) {
-                            Object exArgs[] = { uri, javaClass };
+                            Object[] exArgs = { uri, javaClass };
 
                             LOG.error(I18n.translate("algorithm.classDoesNotExist", exArgs));
                         } catch (NoClassDefFoundError ex) {
@@ -262,7 +258,7 @@ public class Init {
                             SignatureAlgorithm.register(uri, javaClass);
                             LOG.debug("SignatureAlgorithm.register({}, {})", uri, javaClass);
                         } catch (ClassNotFoundException e) {
-                            Object exArgs[] = { uri, javaClass };
+                            Object[] exArgs = { uri, javaClass };
 
                             LOG.error(I18n.translate("algorithm.classDoesNotExist", exArgs));
                         }
@@ -272,7 +268,7 @@ public class Init {
                 if ("ResourceResolvers".equals(tag)) {
                     Element[] resolverElem =
                         XMLUtils.selectNodes(el.getFirstChild(), CONF_NS, "Resolver");
-
+                    List<String> classNames = new ArrayList<>(resolverElem.length);
                     for (Element element : resolverElem) {
                         String javaClass =
                             element.getAttributeNS(null, "JAVACLASS");
@@ -284,16 +280,9 @@ public class Init {
                         } else {
                             LOG.debug("Register Resolver: {}: For unknown purposes", javaClass);
                         }
-                        try {
-                            ResourceResolver.register(javaClass);
-                        } catch (Throwable e) {
-                            LOG.warn(
-                                 "Cannot register:" + javaClass
-                                 + " perhaps some needed jars are not installed",
-                                 e
-                             );
-                        }
+                        classNames.add(javaClass);
                     }
+                    ResourceResolver.registerClassNames(classNames);
                 }
 
                 if ("KeyResolver".equals(tag)){

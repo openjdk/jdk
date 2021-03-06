@@ -21,10 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id$
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -44,7 +41,7 @@ import org.w3c.dom.Node;
  * directly on the subdocument and there is no need to convert it
  * first to an XPath node-set.
  */
-public class DOMSubTreeData implements NodeSetData<Node> {
+public class DOMSubTreeData implements NodeSetData {
 
     private boolean excludeComments;
     private Node root;
@@ -128,7 +125,7 @@ public class DOMSubTreeData implements NodeSetData<Node> {
          *
          * @param node the node to traverse
          * @param nodeSet the set of nodes traversed so far
-         * @param the previous sibling node
+         * @param prevSibling the previous sibling node
          */
         @SuppressWarnings("fallthrough")
         private void nodeSetMinusCommentNodes(Node node, List<Node> nodeSet,

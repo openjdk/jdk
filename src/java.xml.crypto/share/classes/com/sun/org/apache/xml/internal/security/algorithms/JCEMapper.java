@@ -25,6 +25,7 @@ package com.sun.org.apache.xml.internal.security.algorithms;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.sun.org.apache.xml.internal.security.encryption.XMLCipher;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.w3c.dom.Element;
@@ -38,8 +39,7 @@ public class JCEMapper {
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(JCEMapper.class);
 
-    private static Map<String, Algorithm> algorithmsMap =
-        new ConcurrentHashMap<String, Algorithm>();
+    private static Map<String, Algorithm> algorithmsMap = new ConcurrentHashMap<>();
 
     private static String providerName;
 
@@ -183,6 +183,10 @@ public class JCEMapper {
              new Algorithm("RSA", "SHA3-512withRSAandMGF1", "Signature")
         );
         algorithmsMap.put(
+             XMLSignature.ALGO_ID_SIGNATURE_RSA_PSS,
+             new Algorithm("RSA", "RSASSA-PSS", "Signature")
+        );
+        algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA1,
             new Algorithm("EC", "SHA1withECDSA", "Signature")
         );
@@ -233,6 +237,99 @@ public class JCEMapper {
         algorithmsMap.put(
             XMLSignature.ALGO_ID_MAC_HMAC_SHA512,
             new Algorithm("", "HmacSHA512", "Mac", 0, 0)
+        );
+        // Encryption algorithms
+        algorithmsMap.put(
+            XMLCipher.TRIPLEDES,
+            new Algorithm("DESede", "DESede/CBC/ISO10126Padding", "BlockEncryption", 192, 64)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_128,
+            new Algorithm("AES", "AES/CBC/ISO10126Padding", "BlockEncryption", 128, 128)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_192,
+            new Algorithm("AES", "AES/CBC/ISO10126Padding", "BlockEncryption", 192, 128)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_256,
+            new Algorithm("AES", "AES/CBC/ISO10126Padding", "BlockEncryption", 256, 128)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_128_GCM,
+            new Algorithm("AES", "AES/GCM/NoPadding", "BlockEncryption", 128, 96)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_192_GCM,
+            new Algorithm("AES", "AES/GCM/NoPadding", "BlockEncryption", 192, 96)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_256_GCM,
+            new Algorithm("AES", "AES/GCM/NoPadding", "BlockEncryption", 256, 96)
+        );
+        algorithmsMap.put(
+            XMLCipher.SEED_128,
+            new Algorithm("SEED", "SEED/CBC/ISO10126Padding", "BlockEncryption", 128, 128)
+        );
+        algorithmsMap.put(
+            XMLCipher.CAMELLIA_128,
+            new Algorithm("Camellia", "Camellia/CBC/ISO10126Padding", "BlockEncryption", 128, 128)
+        );
+        algorithmsMap.put(
+            XMLCipher.CAMELLIA_192,
+            new Algorithm("Camellia", "Camellia/CBC/ISO10126Padding", "BlockEncryption", 192, 128)
+        );
+        algorithmsMap.put(
+            XMLCipher.CAMELLIA_256,
+            new Algorithm("Camellia", "Camellia/CBC/ISO10126Padding", "BlockEncryption", 256, 128)
+        );
+        algorithmsMap.put(
+            XMLCipher.RSA_v1dot5,
+            new Algorithm("RSA", "RSA/ECB/PKCS1Padding", "KeyTransport")
+        );
+        algorithmsMap.put(
+            XMLCipher.RSA_OAEP,
+            new Algorithm("RSA", "RSA/ECB/OAEPPadding", "KeyTransport")
+        );
+        algorithmsMap.put(
+            XMLCipher.RSA_OAEP_11,
+            new Algorithm("RSA", "RSA/ECB/OAEPPadding", "KeyTransport")
+        );
+        algorithmsMap.put(
+            XMLCipher.DIFFIE_HELLMAN,
+            new Algorithm("", "", "KeyAgreement")
+        );
+        algorithmsMap.put(
+            XMLCipher.TRIPLEDES_KeyWrap,
+            new Algorithm("DESede", "DESedeWrap", "SymmetricKeyWrap", 192, 0)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_128_KeyWrap,
+            new Algorithm("AES", "AESWrap", "SymmetricKeyWrap", 128, 0)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_192_KeyWrap,
+            new Algorithm("AES", "AESWrap", "SymmetricKeyWrap", 192, 0)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_256_KeyWrap,
+            new Algorithm("AES", "AESWrap", "SymmetricKeyWrap", 256, 0)
+        );
+        algorithmsMap.put(
+            XMLCipher.CAMELLIA_128_KeyWrap,
+            new Algorithm("Camellia", "CamelliaWrap", "SymmetricKeyWrap", 128, 0)
+        );
+        algorithmsMap.put(
+            XMLCipher.CAMELLIA_192_KeyWrap,
+            new Algorithm("Camellia", "CamelliaWrap", "SymmetricKeyWrap", 192, 0)
+        );
+        algorithmsMap.put(
+            XMLCipher.CAMELLIA_256_KeyWrap,
+            new Algorithm("Camellia", "CamelliaWrap", "SymmetricKeyWrap", 256, 0)
+        );
+        algorithmsMap.put(
+            XMLCipher.SEED_128_KeyWrap,
+            new Algorithm("SEED", "SEEDWrap", "SymmetricKeyWrap", 128, 0)
         );
     }
 

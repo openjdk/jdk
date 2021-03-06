@@ -21,10 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMSignatureMethod.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -35,23 +32,20 @@ import javax.xml.crypto.dsig.spec.SignatureMethodParameterSpec;
 import java.io.IOException;
 import java.security.*;
 import java.security.interfaces.DSAKey;
-import java.security.interfaces.ECPrivateKey;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.MGF1ParameterSpec;
-import java.security.spec.PSSParameterSpec;
-
 import org.w3c.dom.Element;
 
 import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.jcp.xml.dsig.internal.SignerOutputStream;
-import sun.security.util.KeyUtil;
 
 /**
  * DOM-based abstract implementation of SignatureMethod.
  *
  */
 public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
+
+    private static final String DOM_SIGNATURE_PROVIDER = "org.jcp.xml.dsig.internal.dom.SignatureProvider";
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(DOMSignatureMethod.class);
@@ -137,34 +131,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    /**
-     * Returns the signature bytes with any additional formatting
-     * necessary for the signature algorithm used. For RSA signatures,
-     * no changes are required, and this method should simply return
-     * back {@code sig}. For DSA and ECDSA, this method should return the
-     * signature in the IEEE P1363 format, the concatenation of r and s.
-     *
-     * @param key the key used to sign
-     * @param sig the signature returned by {@code Signature.sign()}
-     * @return the formatted signature
-     * @throws IOException
-     */
-    abstract byte[] postSignFormat(Key key, byte[] sig) throws IOException;
-
-    /**
-     * Returns the signature bytes with any conversions that are necessary
-     * before the signature can be verified. For RSA signatures,
-     * no changes are required, and this method should simply
-     * return back {@code sig}. For DSA and ECDSA, this method should
-     * return the signature in the DER-encoded ASN.1 format.
-     *
-     * @param key the key used to sign
-     * @param sig the signature
-     * @return the formatted signature
-     * @throws IOException
-     */
-    abstract byte[] preVerifyFormat(Key key, byte[] sig) throws IOException;
-
     static SignatureMethod unmarshal(Element smElem) throws MarshalException {
         String alg = DOMUtils.getAttributeValue(smElem, "Algorithm");
         if (alg.equals(SignatureMethod.RSA_SHA1)) {
@@ -189,6 +155,8 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return new SHA384withRSAandMGF1(smElem);
         } else if (alg.equals(RSA_SHA512_MGF1)) {
             return new SHA512withRSAandMGF1(smElem);
+        } else if (alg.equals(DOMRSAPSSSignatureMethod.RSA_PSS)) {
+            return new DOMRSAPSSSignatureMethod.RSAPSS(smElem);
         } else if (alg.equals(RSA_RIPEMD160_MGF1)) {
             return new RIPEMD160withRSAandMGF1(smElem);
         } else if (alg.equals(SignatureMethod.DSA_SHA1)) {
@@ -229,23 +197,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         return params;
     }
 
-    /**
-     * Returns an instance of Signature from the specified Provider.
-     * The algorithm is specified by the {@code getJCAAlgorithm()} method.
-     *
-     * @param p the Provider to use
-     * @return an instance of Signature implementing the algorithm
-     *    specified by {@code getJCAAlgorithm()}
-     * @throws NoSuchAlgorithmException if the Provider does not support the
-     *    signature algorithm
-     */
-    Signature getSignature(Provider p)
-            throws NoSuchAlgorithmException {
-        return (p == null)
-            ? Signature.getInstance(getJCAAlgorithm())
-            : Signature.getInstance(getJCAAlgorithm(), p);
-    }
-
     boolean verify(Key key, SignedInfo si, byte[] sig,
                    XMLValidateContext context)
         throws InvalidKeyException, SignatureException, XMLSignatureException
@@ -257,12 +208,12 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         if (!(key instanceof PublicKey)) {
             throw new InvalidKeyException("key must be PublicKey");
         }
-        checkKeySize(context, key);
         if (signature == null) {
-            Provider p = (Provider) context.getProperty
-                    ("org.jcp.xml.dsig.internal.dom.SignatureProvider");
             try {
-                signature = getSignature(p);
+                Provider p = (Provider)context.getProperty(DOM_SIGNATURE_PROVIDER);
+                signature = (p == null)
+                    ? Signature.getInstance(getJCAAlgorithm())
+                    : Signature.getInstance(getJCAAlgorithm(), p);
             } catch (NoSuchAlgorithmException nsae) {
                 throw new XMLSignatureException(nsae);
             }
@@ -273,43 +224,21 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         LOG.debug("JCA Algorithm: {}", getJCAAlgorithm());
         LOG.debug("Signature Bytes length: {}", sig.length);
 
-        byte[] s;
         try (SignerOutputStream outputStream = new SignerOutputStream(signature)) {
             ((DOMSignedInfo)si).canonicalize(context, outputStream);
-            // Do any necessary format conversions
-            s = preVerifyFormat(key, sig);
+
+            Type type = getAlgorithmType();
+            if (type == Type.DSA) {
+                int size = ((DSAKey)key).getParams().getQ().bitLength();
+                return signature.verify(JavaUtils.convertDsaXMLDSIGtoASN1(sig,
+                                                                       size/8));
+            } else if (type == Type.ECDSA) {
+                return signature.verify(SignatureECDSA.convertXMLDSIGtoASN1(sig));
+            } else {
+                return signature.verify(sig);
+            }
         } catch (IOException ioe) {
             throw new XMLSignatureException(ioe);
-        }
-        return signature.verify(s);
-    }
-
-    /**
-     * If secure validation mode is enabled, checks that the key size is
-     * restricted.
-     *
-     * @param context the context
-     * @param key the key to check
-     * @throws XMLSignatureException if the key size is restricted
-     */
-    private static void checkKeySize(XMLCryptoContext context, Key key)
-        throws XMLSignatureException {
-        if (Utils.secureValidation(context)) {
-            int size = KeyUtil.getKeySize(key);
-            if (size == -1) {
-                // key size cannot be determined, so we cannot check against
-                // restrictions. Note that a DSA key w/o params will be
-                // rejected later if the certificate chain is validated.
-                LOG.debug("Size for " +
-                            key.getAlgorithm() + " key cannot be determined");
-                return;
-            }
-            if (Policy.restrictKey(key.getAlgorithm(), size)) {
-                throw new XMLSignatureException(key.getAlgorithm() +
-                    " keys less than " +
-                    Policy.minKeySize(key.getAlgorithm()) + " bits are" +
-                    " forbidden when secure validation is enabled");
-            }
         }
     }
 
@@ -323,12 +252,12 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         if (!(key instanceof PrivateKey)) {
             throw new InvalidKeyException("key must be PrivateKey");
         }
-        checkKeySize(context, key);
         if (signature == null) {
-            Provider p = (Provider)context.getProperty
-                    ("org.jcp.xml.dsig.internal.dom.SignatureProvider");
             try {
-                signature = getSignature(p);
+                Provider p = (Provider)context.getProperty(DOM_SIGNATURE_PROVIDER);
+                signature = (p == null)
+                    ? Signature.getInstance(getJCAAlgorithm())
+                    : Signature.getInstance(getJCAAlgorithm(), p);
             } catch (NoSuchAlgorithmException nsae) {
                 throw new XMLSignatureException(nsae);
             }
@@ -340,210 +269,25 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
 
         try (SignerOutputStream outputStream = new SignerOutputStream(signature)) {
             ((DOMSignedInfo)si).canonicalize(context, outputStream);
-            // Return signature with any necessary format conversions
-            return postSignFormat(key, signature.sign());
-        } catch (SignatureException | IOException ex){
-            throw new XMLSignatureException(ex);
-        }
-    }
 
-    abstract static class AbstractRSASignatureMethod
-            extends DOMSignatureMethod {
-
-        AbstractRSASignatureMethod(AlgorithmParameterSpec params)
-                throws InvalidAlgorithmParameterException {
-            super(params);
-        }
-
-        AbstractRSASignatureMethod(Element dmElem) throws MarshalException {
-            super(dmElem);
-        }
-
-        /**
-         * Returns {@code sig}. No extra formatting is necessary for RSA.
-         */
-        @Override
-        byte[] postSignFormat(Key key, byte[] sig) {
-            return sig;
-        }
-
-        /**
-         * Returns {@code sig}. No extra formatting is necessary for RSA.
-         */
-        @Override
-        byte[] preVerifyFormat(Key key, byte[] sig) {
-            return sig;
-        }
-    }
-
-    abstract static class AbstractRSAPSSSignatureMethod
-            extends AbstractRSASignatureMethod {
-
-        AbstractRSAPSSSignatureMethod(AlgorithmParameterSpec params)
-                throws InvalidAlgorithmParameterException {
-            super(params);
-        }
-
-        AbstractRSAPSSSignatureMethod(Element dmElem) throws MarshalException {
-            super(dmElem);
-        }
-
-        abstract public PSSParameterSpec getPSSParameterSpec();
-
-        @Override
-        Signature getSignature(Provider p)
-                throws NoSuchAlgorithmException {
-            try {
-                Signature s = (p == null)
-                        ? Signature.getInstance("RSASSA-PSS")
-                        : Signature.getInstance("RSASSA-PSS", p);
-                try {
-                    s.setParameter(getPSSParameterSpec());
-                } catch (InvalidAlgorithmParameterException e) {
-                    throw new NoSuchAlgorithmException("Should not happen", e);
-                }
-                return s;
-            } catch (NoSuchAlgorithmException nsae) {
-                return (p == null)
-                        ? Signature.getInstance(getJCAAlgorithm())
-                        : Signature.getInstance(getJCAAlgorithm(), p);
-            }
-        }
-    }
-    /**
-     * Abstract class to support signature algorithms that sign and verify
-     * signatures in the IEEE P1363 format. The P1363 format is the
-     * concatenation of r and s in DSA and ECDSA signatures, and thus, only
-     * DSA and ECDSA signature methods should extend this class. Subclasses
-     * must supply a fallback algorithm to be used when the provider does
-     * not offer signature algorithms that use the P1363 format.
-     */
-    abstract static class AbstractP1363FormatSignatureMethod
-            extends DOMSignatureMethod {
-
-        /* Set to true when the fallback algorithm is used */
-        boolean asn1;
-
-        AbstractP1363FormatSignatureMethod(AlgorithmParameterSpec params)
-                throws InvalidAlgorithmParameterException {
-            super(params);
-        }
-
-        AbstractP1363FormatSignatureMethod(Element dmElem)
-                throws MarshalException {
-            super(dmElem);
-        }
-
-        /**
-         * Return the fallback algorithm to be used when the provider does not
-         * support signatures in the IEEE P1363 format. This algorithm should
-         * return signatures in the DER-encoded ASN.1 format.
-         */
-        abstract String getJCAFallbackAlgorithm();
-
-        /*
-         * Try to return an instance of Signature implementing signatures
-         * in the IEEE P1363 format. If the provider doesn't support the
-         * P1363 format, return an instance of Signature implementing
-         * signatures in the DER-encoded ASN.1 format.
-         */
-        @Override
-        Signature getSignature(Provider p)
-                throws NoSuchAlgorithmException {
-            try {
-                return (p == null)
-                    ? Signature.getInstance(getJCAAlgorithm())
-                    : Signature.getInstance(getJCAAlgorithm(), p);
-            } catch (NoSuchAlgorithmException nsae) {
-                Signature s = (p == null)
-                    ? Signature.getInstance(getJCAFallbackAlgorithm())
-                    : Signature.getInstance(getJCAFallbackAlgorithm(), p);
-                asn1 = true;
-                return s;
-            }
-        }
-    }
-
-    abstract static class AbstractDSASignatureMethod
-        extends AbstractP1363FormatSignatureMethod {
-
-        AbstractDSASignatureMethod(AlgorithmParameterSpec params)
-                throws InvalidAlgorithmParameterException {
-            super(params);
-        }
-
-        AbstractDSASignatureMethod(Element dmElem) throws MarshalException {
-            super(dmElem);
-        }
-
-        @Override
-        byte[] postSignFormat(Key key, byte[] sig) throws IOException {
-            // If signature is in ASN.1 (i.e., if the fallback algorithm
-            // was used), convert the signature to the P1363 format
-            if (asn1) {
-                int size = ((DSAKey) key).getParams().getQ().bitLength();
-                return JavaUtils.convertDsaASN1toXMLDSIG(sig, size / 8);
+            Type type = getAlgorithmType();
+            if (type == Type.DSA) {
+                int size = ((DSAKey)key).getParams().getQ().bitLength();
+                return JavaUtils.convertDsaASN1toXMLDSIG(signature.sign(),
+                                                         size/8);
+            } else if (type == Type.ECDSA) {
+                return SignatureECDSA.convertASN1toXMLDSIG(signature.sign());
             } else {
-                return sig;
+                return signature.sign();
             }
-        }
-
-        @Override
-        byte[] preVerifyFormat(Key key, byte[] sig) throws IOException {
-            // If signature needs to be in ASN.1 (i.e., if the fallback
-            // algorithm will be used to verify the sig), convert the signature
-            // to the ASN.1 format
-            if (asn1) {
-                int size = ((DSAKey) key).getParams().getQ().bitLength();
-                return JavaUtils.convertDsaXMLDSIGtoASN1(sig, size / 8);
-            } else {
-                return sig;
-            }
+        } catch (SignatureException se) {
+            throw new XMLSignatureException(se);
+        } catch (IOException ioe) {
+            throw new XMLSignatureException(ioe);
         }
     }
 
-    abstract static class AbstractECDSASignatureMethod
-        extends AbstractP1363FormatSignatureMethod {
-
-        AbstractECDSASignatureMethod(AlgorithmParameterSpec params)
-                throws InvalidAlgorithmParameterException {
-            super(params);
-        }
-
-        AbstractECDSASignatureMethod(Element dmElem) throws MarshalException {
-            super(dmElem);
-        }
-
-        @Override
-        byte[] postSignFormat(Key key, byte[] sig) throws IOException {
-            // If signature is in ASN.1 (i.e., if the fallback algorithm
-            // was used), convert the signature to the P1363 format
-            if (asn1) {
-                int rawLen = -1;
-                if (key instanceof ECPrivateKey) {
-                    ECPrivateKey ecKey = (ECPrivateKey)key;
-                    rawLen = (ecKey.getParams().getCurve().getField().getFieldSize() + 7) / 8;
-                }
-                return SignatureECDSA.convertASN1toXMLDSIG(sig, rawLen);
-            } else {
-                return sig;
-            }
-        }
-
-        @Override
-        byte[] preVerifyFormat(Key key, byte[] sig) throws IOException {
-            // If signature needs to be in ASN.1 (i.e., if the fallback
-            // algorithm will be used to verify the sig), convert the signature
-            // to the ASN.1 format
-            if (asn1) {
-                return SignatureECDSA.convertXMLDSIGtoASN1(sig);
-            } else {
-                return sig;
-            }
-        }
-    }
-
-    static final class SHA1withRSA extends AbstractRSASignatureMethod {
+    static final class SHA1withRSA extends DOMSignatureMethod {
         SHA1withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -565,7 +309,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA224withRSA extends AbstractRSASignatureMethod {
+    static final class SHA224withRSA extends DOMSignatureMethod {
         SHA224withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -584,7 +328,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA256withRSA extends AbstractRSASignatureMethod {
+    static final class SHA256withRSA extends DOMSignatureMethod {
         SHA256withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -603,7 +347,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA384withRSA extends AbstractRSASignatureMethod {
+    static final class SHA384withRSA extends DOMSignatureMethod {
         SHA384withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -622,7 +366,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA512withRSA extends AbstractRSASignatureMethod {
+    static final class SHA512withRSA extends DOMSignatureMethod {
         SHA512withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -641,7 +385,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class RIPEMD160withRSA extends AbstractRSASignatureMethod {
+    static final class RIPEMD160withRSA extends DOMSignatureMethod {
         RIPEMD160withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -663,12 +407,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA1withRSAandMGF1 extends AbstractRSAPSSSignatureMethod {
-
-        private static PSSParameterSpec spec
-                = new PSSParameterSpec("SHA-1", "MGF1", MGF1ParameterSpec.SHA1,
-                20, PSSParameterSpec.TRAILER_FIELD_BC);
-
+    static final class SHA1withRSAandMGF1 extends DOMSignatureMethod {
         SHA1withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -681,10 +420,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return RSA_SHA1_MGF1;
         }
         @Override
-        public PSSParameterSpec getPSSParameterSpec() {
-            return spec;
-        }
-        @Override
         String getJCAAlgorithm() {
             return "SHA1withRSAandMGF1";
         }
@@ -694,12 +429,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA224withRSAandMGF1 extends AbstractRSAPSSSignatureMethod {
-
-        private static PSSParameterSpec spec
-                = new PSSParameterSpec("SHA-224", "MGF1", MGF1ParameterSpec.SHA224,
-                28, PSSParameterSpec.TRAILER_FIELD_BC);
-
+    static final class SHA224withRSAandMGF1 extends DOMSignatureMethod {
         SHA224withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -712,10 +442,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return RSA_SHA224_MGF1;
         }
         @Override
-        public PSSParameterSpec getPSSParameterSpec() {
-            return spec;
-        }
-        @Override
         String getJCAAlgorithm() {
             return "SHA224withRSAandMGF1";
         }
@@ -725,12 +451,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA256withRSAandMGF1 extends AbstractRSAPSSSignatureMethod {
-
-        private static PSSParameterSpec spec
-                = new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256,
-                32, PSSParameterSpec.TRAILER_FIELD_BC);
-
+    static final class SHA256withRSAandMGF1 extends DOMSignatureMethod {
         SHA256withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -743,10 +464,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return RSA_SHA256_MGF1;
         }
         @Override
-        public PSSParameterSpec getPSSParameterSpec() {
-            return spec;
-        }
-        @Override
         String getJCAAlgorithm() {
             return "SHA256withRSAandMGF1";
         }
@@ -756,12 +473,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA384withRSAandMGF1 extends AbstractRSAPSSSignatureMethod {
-
-        private static PSSParameterSpec spec
-                = new PSSParameterSpec("SHA-384", "MGF1", MGF1ParameterSpec.SHA384,
-                48, PSSParameterSpec.TRAILER_FIELD_BC);
-
+    static final class SHA384withRSAandMGF1 extends DOMSignatureMethod {
         SHA384withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -774,10 +486,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return RSA_SHA384_MGF1;
         }
         @Override
-        public PSSParameterSpec getPSSParameterSpec() {
-            return spec;
-        }
-        @Override
         String getJCAAlgorithm() {
             return "SHA384withRSAandMGF1";
         }
@@ -787,12 +495,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA512withRSAandMGF1 extends AbstractRSAPSSSignatureMethod {
-
-        private static PSSParameterSpec spec
-                = new PSSParameterSpec("SHA-512", "MGF1", MGF1ParameterSpec.SHA512,
-                64, PSSParameterSpec.TRAILER_FIELD_BC);
-
+    static final class SHA512withRSAandMGF1 extends DOMSignatureMethod {
         SHA512withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -805,10 +508,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return RSA_SHA512_MGF1;
         }
         @Override
-        public PSSParameterSpec getPSSParameterSpec() {
-            return spec;
-        }
-        @Override
         String getJCAAlgorithm() {
             return "SHA512withRSAandMGF1";
         }
@@ -818,7 +517,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class RIPEMD160withRSAandMGF1 extends AbstractRSASignatureMethod {
+    static final class RIPEMD160withRSAandMGF1 extends DOMSignatureMethod {
         RIPEMD160withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -840,7 +539,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA1withDSA extends AbstractDSASignatureMethod {
+    static final class SHA1withDSA extends DOMSignatureMethod {
         SHA1withDSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -852,9 +551,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return SignatureMethod.DSA_SHA1;
         }
         String getJCAAlgorithm() {
-            return "SHA1withDSAinP1363Format";
-        }
-        String getJCAFallbackAlgorithm() {
             return "SHA1withDSA";
         }
         Type getAlgorithmType() {
@@ -862,7 +558,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA256withDSA extends AbstractDSASignatureMethod {
+    static final class SHA256withDSA extends DOMSignatureMethod {
         SHA256withDSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -874,9 +570,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return DSA_SHA256;
         }
         String getJCAAlgorithm() {
-            return "SHA256withDSAinP1363Format";
-        }
-        String getJCAFallbackAlgorithm() {
             return "SHA256withDSA";
         }
         Type getAlgorithmType() {
@@ -884,7 +577,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA1withECDSA extends AbstractECDSASignatureMethod {
+    static final class SHA1withECDSA extends DOMSignatureMethod {
         SHA1withECDSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -896,9 +589,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return ECDSA_SHA1;
         }
         String getJCAAlgorithm() {
-            return "SHA1withECDSAinP1363Format";
-        }
-        String getJCAFallbackAlgorithm() {
             return "SHA1withECDSA";
         }
         Type getAlgorithmType() {
@@ -906,7 +596,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA224withECDSA extends AbstractECDSASignatureMethod {
+    static final class SHA224withECDSA extends DOMSignatureMethod {
         SHA224withECDSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -920,9 +610,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
         @Override
         String getJCAAlgorithm() {
-            return "SHA224withECDSAinP1363Format";
-        }
-        String getJCAFallbackAlgorithm() {
             return "SHA224withECDSA";
         }
         @Override
@@ -931,7 +618,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA256withECDSA extends AbstractECDSASignatureMethod {
+    static final class SHA256withECDSA extends DOMSignatureMethod {
         SHA256withECDSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -943,9 +630,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return ECDSA_SHA256;
         }
         String getJCAAlgorithm() {
-            return "SHA256withECDSAinP1363Format";
-        }
-        String getJCAFallbackAlgorithm() {
             return "SHA256withECDSA";
         }
         Type getAlgorithmType() {
@@ -953,7 +637,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA384withECDSA extends AbstractECDSASignatureMethod {
+    static final class SHA384withECDSA extends DOMSignatureMethod {
         SHA384withECDSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -965,9 +649,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return ECDSA_SHA384;
         }
         String getJCAAlgorithm() {
-            return "SHA384withECDSAinP1363Format";
-        }
-        String getJCAFallbackAlgorithm() {
             return "SHA384withECDSA";
         }
         Type getAlgorithmType() {
@@ -975,7 +656,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA512withECDSA extends AbstractECDSASignatureMethod {
+    static final class SHA512withECDSA extends DOMSignatureMethod {
         SHA512withECDSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -987,9 +668,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return ECDSA_SHA512;
         }
         String getJCAAlgorithm() {
-            return "SHA512withECDSAinP1363Format";
-        }
-        String getJCAFallbackAlgorithm() {
             return "SHA512withECDSA";
         }
         Type getAlgorithmType() {
@@ -997,7 +675,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class RIPEMD160withECDSA extends AbstractECDSASignatureMethod {
+    static final class RIPEMD160withECDSA extends DOMSignatureMethod {
         RIPEMD160withECDSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -1011,9 +689,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
         @Override
         String getJCAAlgorithm() {
-            return "RIPEMD160withECDSAinP1363Format"; // Is this real?
-        }
-        String getJCAFallbackAlgorithm() {
             return "RIPEMD160withECDSA";
         }
         @Override
