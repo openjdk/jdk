@@ -570,25 +570,31 @@ public final class Method extends Executable {
      * {@return {@code true} if this method is a bridge
      * method; returns {@code false} otherwise}
      *
-     * <p>A bridge method is a method synthesized by a Java compiler
-     * alongside a method originating from the source code. One
-     * example of a bridge method is a way for a Java compiler to
-     * support <i>covariant overrides</i>, where a subclass overrides
-     * a method and gives the new method a more specific return type
-     * than the method in the superclass. A common case where
-     * covariant overrides are used is for a {@link
+     * @apiNote
+     * A bridge method is a synthetic method created by a Java
+     * compiler alongside a method originating from the source
+     * code. One example use of a bridge method is as technique for a
+     * Java compiler to support <i>covariant overrides</i>, where a
+     * subclass overrides a method and gives the new method a more
+     * specific return type than the method in the superclass. A
+     * common case where covariant overrides are used is for a {@link
      * java.lang.Cloneable Cloneable} class where the {@code clone}
      * method inherited from {@code java.lang.Object} is overridden
      * and declared to return the type of the class; for example
      * {@link java.util.EnumSet#clone() EnumSet.clone()} returns
      * {@code EnumSet<E>} rather than {@link java.lang.Object#clone()
-     * Object}. The class file for {@code EnumSet} would have two
-     * {@code clone} methods, one returning {@code EnumSet<E>} and a
-     * bridge method returning {@code Object}; the body of the {@code
-     * clone} bridge method calls its non-bridge sibling and returns
-     * its result. (While the Java language specification forbids a
-     * class declaring two methods with the same parameter types but a
+     * Object}. If this technique was being used, the resulting class
+     * file for {@code EnumSet} would have two {@code clone} methods,
+     * one returning {@code EnumSet<E>} and the second a bridge method
+     * returning {@code Object}; the body of the {@code clone} bridge
+     * method calls its non-bridge counterpart and returns its
+     * result. (While the Java language specification forbids a class
+     * declaring two methods with the same parameter types but a
      * different return type, the virtual machine does not.)
+     *
+     * <p>Bridge methods may also be used by Java compiler in other
+     * circumstances to span across difference in Java Language
+     * semantics and JVM semantics.
      *
      * @since 1.5
      *
