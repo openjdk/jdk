@@ -83,14 +83,14 @@ public class TestTagOrder extends JavadocTester {
                     }
                     """, """
                     package p;
-                    /** 
+                    /**
                      * Class C2.
                      * @since 1.0
                      * @author J. Duke.
-                     * @version 2.0 
+                     * @version 2.0
                      * @see <a href="http://example.com">example</a>
                      */
-                    public class C2 { } 
+                    public class C2 { }
                     """);
 
         // The following add map entries in the default order of appearance in the output.
