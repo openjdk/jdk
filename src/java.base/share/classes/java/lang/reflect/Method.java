@@ -598,7 +598,7 @@ public final class Method extends Executable {
      *
      * @since 1.5
      *
-     * @jls 8.4.8.3 Requirements in Overriding and Hiding 
+     * @jls 8.4.8.3 Requirements in Overriding and Hiding
      * @jls 15.12.4.5 Create Frame, Synchronize, Transfer Control
      * @jvms 4.6 Methods
      */
