@@ -1910,9 +1910,10 @@ int InstanceKlass::find_method_index(const Array<Method*>* methods,
       return hit;
     }
 
-    // search downwards through overloaded methods
     int i;
-    for (i = hit - 1; i >= 0; --i) {
+    if (!_disable_method_binary_search) {
+      // search downwards through overloaded methods
+      for (i = hit - 1; i >= 0; --i) {
         const Method* const m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) {
@@ -1921,6 +1922,7 @@ int InstanceKlass::find_method_index(const Array<Method*>* methods,
         if (method_matches(m, signature, skipping_overpass, skipping_static, skipping_private)) {
           return i;
         }
+      }
     }
     // search upwards
     for (i = hit + 1; i < methods->length(); ++i) {
@@ -1954,7 +1956,9 @@ int InstanceKlass::find_method_by_name(const Array<Method*>* methods,
   int start = quick_search(methods, name);
   int end = start + 1;
   if (start != -1) {
-    while (start - 1 >= 0 && (methods->at(start - 1))->name() == name) --start;
+    if (!_disable_method_binary_search) {
+      while (start - 1 >= 0 && (methods->at(start - 1))->name() == name) --start;
+    }
     while (end < methods->length() && (methods->at(end))->name() == name) ++end;
     *end_ptr = end;
     return start;
