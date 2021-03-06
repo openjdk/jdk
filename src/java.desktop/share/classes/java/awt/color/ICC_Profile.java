@@ -1170,8 +1170,8 @@ public class ICC_Profile implements Serializable {
      * Returns a float array of length 3 containing the X, Y, and Z components
      * encoded in an XYZType tag.
      */
-    float[] getXYZTag(int theTagSignature) {
-        byte[] theData = getData(theTagSignature);
+    float[] getXYZTag(int tagSignature) {
+        byte[] theData = getData(tagSignature);
         float[] theXYZNumber = new float[3]; /* array to return */
 
         /* convert s15Fixed16Number to float */
@@ -1186,7 +1186,7 @@ public class ICC_Profile implements Serializable {
      * Returns a gamma value representing a tone reproduction curve (TRC). If
      * the profile represents the TRC as a table rather than a single gamma
      * value, then an exception is thrown. In this case the actual table can be
-     * obtained via {@link #getTRC}. {@code theTagSignature} should be one of
+     * obtained via {@link #getTRC}. {@code tagSignature} should be one of
      * {@code icSigGrayTRCTag}, {@code icSigRedTRCTag},
      * {@code icSigGreenTRCTag}, or {@code icSigBlueTRCTag}.
      *
@@ -1194,8 +1194,8 @@ public class ICC_Profile implements Serializable {
      * @throws ProfileDataException if the profile does not specify the TRC as a
      *         single gamma value
      */
-    float getGamma(int theTagSignature) {
-        byte[] theTRCData = getData(theTagSignature);
+    float getGamma(int tagSignature) {
+        byte[] theTRCData = getData(tagSignature);
         if (intFromBigEndian(theTRCData, icCurveCount) != 1) {
             throw new ProfileDataException("TRC is not a gamma");
         }
@@ -1217,7 +1217,7 @@ public class ICC_Profile implements Serializable {
      * values also map linearly to the range [0.0, 1.0]. Value 0.0 is
      * represented by an array value of 0x0000 and value 1.0 by 0xFFFF, i.e. the
      * values are really unsigned short values, although they are returned in a
-     * short array. {@code theTagSignature} should be one of
+     * short array. {@code tagSignature} should be one of
      * {@code icSigGrayTRCTag}, {@code icSigRedTRCTag},
      * {@code icSigGreenTRCTag}, or {@code icSigBlueTRCTag}.
      *
@@ -1225,8 +1225,8 @@ public class ICC_Profile implements Serializable {
      * @throws ProfileDataException if the profile does not specify the TRC as a
      *         table
      */
-    short[] getTRC(int theTagSignature) {
-        byte[] theTRCData = getData(theTagSignature);
+    short[] getTRC(int tagSignature) {
+        byte[] theTRCData = getData(tagSignature);
         int nElements = intFromBigEndian(theTRCData, icCurveCount);
         if (nElements == 1) {
             throw new ProfileDataException("TRC is not a table");
