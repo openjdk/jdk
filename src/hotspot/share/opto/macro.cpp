@@ -968,7 +968,8 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       // insert a nested sobj for it. the result looks like this:
       // sobj{hash, hashIsZero, coder, sobj{src, srcPos, len}}
       if (field_val->is_CheckCastPP() &&
-          klass != nullptr && klass->name() == ciSymbols::java_lang_String()) {
+          klass != nullptr && klass->name() == ciSymbols::java_lang_String() &&
+          field_val->in(1)->is_Proj() && field_val->in(1)->in(0)->is_AllocateArray()) {
         assert(j == 3, "must be the field value:byte[]");
 
         AllocateArrayNode* aa = field_val->in(1)->in(0)->as_AllocateArray();
