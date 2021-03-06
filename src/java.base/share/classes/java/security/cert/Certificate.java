@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public abstract class Certificate implements java.io.Serializable {
     @java.io.Serial
     private static final long serialVersionUID = -3585440601605666277L;
 
-    // the certificate type
+    /** the certificate type */
     private final String type;
 
     /** Cache the hash code for the certiticate */
@@ -244,7 +244,10 @@ public abstract class Certificate implements java.io.Serializable {
         @java.io.Serial
         private static final long serialVersionUID = -8563758940495660020L;
 
+        /** the standard name of the certificate type */
         private String type;
+
+        /** the certificate data */
         private byte[] data;
 
         /**

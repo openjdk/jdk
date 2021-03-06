@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,6 +260,10 @@ public abstract class BasicPermission extends Permission
     /**
      * readObject is called to restore the state of the BasicPermission from
      * a stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream s)
@@ -491,10 +495,14 @@ final class BasicPermissionCollection
     /**
      * @serialData Default fields.
      */
-    /*
+
+    /**
      * Writes the contents of the perms field out as a Hashtable for
      * serialization compatibility with earlier releases. all_allowed
      * and permClass unchanged.
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -517,6 +525,10 @@ final class BasicPermissionCollection
     /**
      * readObject is called to restore the state of the
      * BasicPermissionCollection from a stream.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream in)

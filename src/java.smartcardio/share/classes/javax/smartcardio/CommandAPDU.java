@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.smartcardio;
 import java.util.Arrays;
 
 import java.nio.ByteBuffer;
+import java.io.IOException;
 
 /**
  * A command APDU following the structure defined in ISO/IEC 7816-4.
@@ -596,8 +597,16 @@ public final class CommandAPDU implements java.io.Serializable {
         return Arrays.hashCode(apdu);
     }
 
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
     private void readObject(java.io.ObjectInputStream in)
-            throws java.io.IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException {
         apdu = (byte[])in.readUnshared();
         // initialize transient fields
         parse();

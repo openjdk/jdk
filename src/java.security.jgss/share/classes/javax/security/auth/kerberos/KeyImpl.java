@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,27 +176,39 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
     }
 
     /**
+     * Writes the state of this object to the stream.
+
      * @serialData this {@code KeyImpl} is serialized by
      * writing out the ASN1 Encoded bytes of the encryption key.
      * The ASN1 encoding is defined in RFC4120 and as  follows:
      * EncryptionKey   ::= SEQUENCE {
      *          keytype    [0] Int32 -- actually encryption type --,
      *          keyvalue   [1] OCTET STRING
+     *
+     * @param  oos the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      * }
      */
-    private void writeObject(ObjectOutputStream ois)
+    private void writeObject(ObjectOutputStream oos)
                 throws IOException {
         if (destroyed) {
            throw new IOException("This key is no longer valid");
         }
 
         try {
-           ois.writeObject((new EncryptionKey(keyType, keyBytes)).asn1Encode());
+           oos.writeObject((new EncryptionKey(keyType, keyBytes)).asn1Encode());
         } catch (Asn1Exception ae) {
            throw new IOException(ae.getMessage());
         }
     }
 
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  ois the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
     private void readObject(ObjectInputStream ois)
                 throws IOException, ClassNotFoundException {
         try {

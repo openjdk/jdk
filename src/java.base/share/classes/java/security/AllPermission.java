@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,10 @@ final class AllPermissionCollection
     @java.io.Serial
     private static final long serialVersionUID = -4023755556366636806L;
 
-    private boolean all_allowed; // true if any all permissions have been added
+    /**
+     * true if any AllPermissions have been added
+     */
+    private boolean all_allowed; 
 
     /**
      * Create an empty AllPermissions object.
