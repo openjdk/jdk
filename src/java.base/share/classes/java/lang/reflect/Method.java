@@ -571,7 +571,7 @@ public final class Method extends Executable {
      * method; returns {@code false} otherwise}
      *
      * @apiNote
-     * A bridge method is a synthetic method created by a Java
+     * A bridge method is a {@linkplain isSynthetic synthetic} method created by a Java
      * compiler alongside a method originating from the source
      * code. One example use of a bridge method is as technique for a
      * Java compiler to support <i>covariant overrides</i>, where a
@@ -618,6 +618,7 @@ public final class Method extends Executable {
     /**
      * {@inheritDoc}
      * @jls 13.1 The Form of a Binary
+     * @jvms 4.6 Methods
      * @since 1.5
      */
     @Override

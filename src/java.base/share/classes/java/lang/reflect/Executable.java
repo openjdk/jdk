@@ -518,6 +518,7 @@ public abstract class Executable extends AccessibleObject
      * construct as defined by
      * <cite>The Java Language Specification</cite>.
      * @jls 13.1 The Form of a Binary
+     * @jvms 4.6 Methods
      */
     public boolean isSynthetic() {
         return Modifier.isSynthetic(getModifiers());
