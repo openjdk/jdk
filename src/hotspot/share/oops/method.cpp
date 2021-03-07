@@ -1971,7 +1971,7 @@ void Method::clear_all_breakpoints() {
 
 #endif // INCLUDE_JVMTI
 
-int Method::invocation_count() {
+int Method::invocation_count() const {
   MethodCounters* mcs = method_counters();
   MethodData* mdo = method_data();
   if (((mcs != NULL) ? mcs->invocation_counter()->carry() : false) ||
@@ -1983,7 +1983,7 @@ int Method::invocation_count() {
   }
 }
 
-int Method::backedge_count() {
+int Method::backedge_count() const {
   MethodCounters* mcs = method_counters();
   MethodData* mdo = method_data();
   if (((mcs != NULL) ? mcs->backedge_counter()->carry() : false) ||
