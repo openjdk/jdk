@@ -58,7 +58,7 @@ public class DebuggerConsolePanel extends JPanel {
 
     editor = new JTextArea();
     editor.setDocument(new EditableAtEndDocument());
-    editor.setFont(new Font(Font.MONOSPACED, Font.PLAIN, GraphicsUtilities.FONT_SIZE));
+    editor.setFont(GraphicsUtilities.getMonospacedFont());
     JScrollPane scroller = new JScrollPane();
     scroller.getViewport().add(editor);
     add(scroller, BorderLayout.CENTER);

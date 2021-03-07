@@ -34,7 +34,7 @@ import javax.swing.border.*;
 /** Useful utilities for drawing graphics */
 
 public class GraphicsUtilities {
-  public static final int FONT_SIZE = 12;
+  private static final int FONT_SIZE = 12;
 
   /** Returns a plain-styled 12-point version of the given font, or
       null if the font could not be found */
@@ -51,6 +51,10 @@ public class GraphicsUtilities {
       return null;
     }
     return font.deriveFont(Font.PLAIN, FONT_SIZE);
+  }
+
+  public static Font getMonospacedFont() {
+    return new Font(Font.MONOSPACED, Font.PLAIN, FONT_SIZE);
   }
 
   /** Compute the width and height of given string given the current
