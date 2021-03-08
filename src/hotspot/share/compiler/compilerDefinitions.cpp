@@ -305,12 +305,19 @@ void CompilerConfig::set_compilation_policy_flags() {
         8 * CodeCache::page_size() <= ReservedCodeCacheSize) {
       FLAG_SET_ERGO(SegmentedCodeCache, true);
     }
+    if (Arguments::is_compiler_only()) { // -Xcomp
+      // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
+      // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
+      // compile a level 4 (C2) and then continue executing it.
+      if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
+        FLAG_SET_CMDLINE(Tier3InvokeNotifyFreqLog, 0);
+      }
+      if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
+        FLAG_SET_CMDLINE(Tier4InvocationThreshold, 0);
+      }
+    }
   }
 
-  if (!UseInterpreter) { // -Xcomp
-    Tier3InvokeNotifyFreqLog = 0;
-    Tier4InvocationThreshold = 0;
-  }
 
   if (CompileThresholdScaling < 0) {
     vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
