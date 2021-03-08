@@ -33,7 +33,6 @@
 #include "MTLUtils.h"
 #include "GraphicsPrimitiveMgr.h"
 
-#include <stdlib.h> // malloc
 #include <string.h> // memcpy
 #include "IntArgbPre.h"
 

@@ -192,7 +192,9 @@ public abstract class MTLSurfaceData extends SurfaceData
      * Creates a SurfaceData object representing an off-screen buffer
      */
     public static MTLOffScreenSurfaceData createData(MTLGraphicsConfig gc,
-                                                     int width, int height, ColorModel cm, Image image, int type) {
+                                                     int width, int height,
+                                                     ColorModel cm, Image image,
+                                                     int type) {
         return new MTLOffScreenSurfaceData(gc, width, height, image, cm,
                 type);
     }

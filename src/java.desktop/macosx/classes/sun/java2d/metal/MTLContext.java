@@ -55,7 +55,7 @@ final class MTLContext extends BufferedContext {
     /**
      * Makes the given GraphicsConfig's context current to its associated
      * "scratch surface".  Each GraphicsConfig maintains a native context
-     * (MTLDevice) as well as a native pbuffer
+     * (MTLDevice) as well as a native MTLTexture
      * known as the "scratch surface".  By making the context current to the
      * scratch surface, we are assured that we have a current context for
      * the relevant GraphicsConfig, and can therefore perform operations

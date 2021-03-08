@@ -51,7 +51,6 @@ jint mtlPreviousOp = MTL_OP_INIT;
  * and WGL) source files.
  */
 extern void MTLGC_DestroyMTLGraphicsConfig(jlong pConfigInfo);
-extern void MTLSD_SwapBuffers(JNIEnv *env, jlong window);
 
 void MTLRenderQueue_CheckPreviousOp(jint op) {
 
@@ -692,15 +691,6 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                 case sun_java2d_pipe_BufferedOpCodes_SYNC:
                 {
                     CHECK_PREVIOUS_OP(MTL_OP_SYNC);
-                    break;
-                }
-
-                // multibuffering ops
-                case sun_java2d_pipe_BufferedOpCodes_SWAP_BUFFERS:
-                {
-                    CHECK_PREVIOUS_OP(MTL_OP_OTHER);
-                    jlong window = NEXT_LONG(b);
-                    MTLSD_SwapBuffers(env, window);
                     break;
                 }
 

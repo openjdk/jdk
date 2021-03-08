@@ -312,12 +312,6 @@ MTLSD_InitMTLWindow(JNIEnv *env, BMTLSDOps *bmtlsdo)
     return JNI_TRUE;
 }
 
-void
-MTLSD_SwapBuffers(JNIEnv *env, jlong pPeerData)
-{
-    J2dTraceLn(J2D_TRACE_ERROR, "MTLSD_SwapBuffers -- :TODO");
-}
-
 #pragma mark -
 #pragma mark "--- MTLSurfaceData methods ---"
 
