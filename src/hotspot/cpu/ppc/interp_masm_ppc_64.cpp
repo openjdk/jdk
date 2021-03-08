@@ -853,7 +853,9 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   b(fast_path);
   bind(slow_path);
   push(state);
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind));
+  set_last_Java_frame(R1_SP, noreg);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), R16_thread);
+  reset_last_Java_frame();
   pop(state);
   align(32);
   bind(fast_path);
