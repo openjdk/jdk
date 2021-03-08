@@ -426,10 +426,8 @@ void CompressionBackend::flush_external_buffer(char* buffer, size_t used, size_t
 void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max, bool force_reset) {
   if (_active) {
     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-
     if (*used > 0 || force_reset) {
       _current->_in_used += *used;
-
       // Check if we do not waste more than _max_waste. If yes, write the buffer.
       // Otherwise return the rest of the buffer as the new buffer.
       if (_current->_in_max - _current->_in_used <= _max_waste || force_reset) {
