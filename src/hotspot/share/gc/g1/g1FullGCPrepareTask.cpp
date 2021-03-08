@@ -61,10 +61,10 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       assert(hr->is_closed_archive(), "Only closed archive regions can also be pinned.");
     }
   } else {
+    assert(!hr->is_humongous(), "humongous objects not supported.");
     size_t live_bytes = _collector->live_bytes_after_full_gc_mark(hr->hrm_index());
     if(live_bytes <= _hr_live_bytes_threshold) {
       // low survivor ratio prepare compaction
-      assert(!hr->is_humongous(), "moving humongous objects not supported.");
       prepare_for_compaction(hr);
     } else {
       assert(MarkSweepDeadRatio > 0,
@@ -207,16 +207,16 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(Hea
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_skipping_compaction(HeapRegion* hr) {
   HeapRegion* current = hr;
-  assert(!current->is_humongous(), "Should be no humongous regions");
   HeapWord* limit = current->top();
   HeapWord* next_addr = current->bottom();
+  HeapWord* live_end = current->bottom();
   _skipping_compaction_set->append(current);
 
   while (next_addr < limit) {
     Prefetch::write(next_addr, PrefetchScanIntervalInBytes);
-    oop obj = oop(next_addr);
-    size_t obj_size = obj->size();
     if (_bitmap->is_marked(next_addr)) {
+      oop obj = oop(next_addr);
+      size_t obj_size = obj->size();
       // Object should not move but mark-word is used so it looks like the
       // object is forwarded. Need to clear the mark and it's no problem
       // since it will be restored by preserved marks. There is an exception
@@ -226,12 +226,19 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_skipping_compa
       if (obj->forwardee() != NULL) {
         obj->init_mark();
       }
+
+      next_addr += obj_size;
+      // update live byte range end
+      live_end = next_addr;
     } else {
-      // Fill dummy object to replace dead object
-      Universe::heap()->fill_with_dummy_object(next_addr, next_addr + obj_size, true);
+      next_addr = _bitmap->get_next_marked_addr(next_addr, limit);
+      assert(next_addr > live_end, "next_addr must be bigger than live_end");
+      assert(_bitmap->is_marked(next_addr) || next_addr == limit, "next_addr is the limit or is marked");
+      // fill dummy object to replace dead range
+      Universe::heap()->fill_with_dummy_object(live_end, next_addr, true);
     }
-    next_addr += obj_size;
   }
+  assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
 void G1FullGCPrepareTask::prepare_serial_compaction() {

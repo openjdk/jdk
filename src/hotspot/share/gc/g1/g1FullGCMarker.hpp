@@ -63,10 +63,7 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   G1FollowStackClosure _stack_closure;
   CLDToOopClosure      _cld_closure;
 
-  G1RegionMarkStatsCache    _mark_region_cache;
-  // Number of entries in the per-task stats entry. This seems enough to have a very
-  // low cache miss rate.
-  static const uint RegionMarkStatsCacheSize = 1024;
+  G1RegionMarkStatsCache _mark_region_cache;
 
   inline bool is_empty();
   inline bool pop_object(oop& obj);
@@ -104,7 +101,9 @@ public:
   G1FollowStackClosure* stack_closure() { return &_stack_closure; }
 
   void flush_mark_region_cache() {
-    _mark_region_cache.evict_all();
+    if (MarkSweepDeadRatio > 0) {
+      _mark_region_cache.evict_all();
+    }
   }
 };
 

@@ -102,6 +102,8 @@ public:
 
   ~G1RegionMarkStatsCache();
 
+  void initialize();
+
   void add_live_words(uint region_idx, size_t live_words) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
     cur->_stats._live_words += live_words;

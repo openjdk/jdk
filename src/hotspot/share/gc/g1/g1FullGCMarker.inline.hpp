@@ -67,8 +67,8 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
 
   // Collect live bytes, which is used to tell
   // whether to skip high live bytes heap regions.
-  uint hr_index = G1CollectedHeap::heap()->addr_to_region(cast_from_oop<HeapWord*>(obj));
   if (MarkSweepDeadRatio > 0) {
+    uint hr_index = G1CollectedHeap::heap()->addr_to_region(cast_from_oop<HeapWord*>(obj));
     _mark_region_cache.add_live_words(hr_index, (size_t)obj->size());
   }
   return true;

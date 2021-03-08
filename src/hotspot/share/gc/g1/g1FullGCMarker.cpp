@@ -45,8 +45,12 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _verify_closure(VerifyOption_G1UseFullMarking),
     _stack_closure(this),
     _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
-    _mark_region_cache(mark_stats, RegionMarkStatsCacheSize) {
-  _mark_region_cache.reset();
+    // cache size is big enough that not increase pause during marking
+    // by avoiding hit misses as so as possible
+    _mark_region_cache(mark_stats, round_up_power_of_2(G1CollectedHeap::heap()->max_regions())) {
+  if (MarkSweepDeadRatio > 0) {
+    _mark_region_cache.initialize();
+  }
   _oop_stack.initialize();
   _objarray_stack.initialize();
 }

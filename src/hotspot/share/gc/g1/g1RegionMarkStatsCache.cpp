@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -42,6 +43,17 @@ G1RegionMarkStatsCache::G1RegionMarkStatsCache(G1RegionMarkStats* target, uint n
 
 G1RegionMarkStatsCache::~G1RegionMarkStatsCache() {
   FREE_C_HEAP_ARRAY(G1RegionMarkStatsCacheEntry, _cache);
+}
+
+ // cache size is equal to or bigger than region size to intialize region_index
+void G1RegionMarkStatsCache::initialize() {
+  _cache_hits = 0;
+  _cache_misses = 0;
+  uint size = G1CollectedHeap::heap()->max_regions();
+
+  for (uint i = 0; i < size; i++) {
+    _cache[i]._region_idx = i;
+  }
 }
 
 // Evict all remaining statistics, returning cache hits and misses.
