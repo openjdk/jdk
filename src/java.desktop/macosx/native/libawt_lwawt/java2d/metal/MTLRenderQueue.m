@@ -584,11 +584,17 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                     jlong pSrc = NEXT_LONG(b);
                     jlong pDst = NEXT_LONG(b);
 
-                    dstOps = (BMTLSDOps *)jlong_to_ptr(pDst);
                     if (mtlc != NULL) {
                         [mtlc.encoderManager endEncoder];
+                        MTLCommandBufferWrapper * cbwrapper = [mtlc pullCommandBufferWrapper];
+                        id<MTLCommandBuffer> commandbuf = [cbwrapper getCommandBuffer];
+                        [commandbuf addCompletedHandler:^(id <MTLCommandBuffer> commandbuf) {
+                            [cbwrapper release];
+                        }];
+                        [commandbuf commit];
                     }
                     mtlc = [MTLContext setSurfacesEnv:env src:pSrc dst:pDst];
+                    dstOps = (BMTLSDOps *)jlong_to_ptr(pDst);
                     break;
                 }
                 case sun_java2d_pipe_BufferedOpCodes_SET_SCRATCH_SURFACE:
