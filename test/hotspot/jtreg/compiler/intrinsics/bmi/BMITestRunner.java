@@ -315,13 +315,13 @@ public class BMITestRunner {
             }
 
             for (int value : getIntBitShifts()) {
-                log("UnaryLongReg(0X%x) -> 0X%x",
+                log("UnaryIntToLongReg(0X%x) -> 0X%x",
                     value, expr.intToLongExpr(value));
             }
 
             for (int i = 0; i < iterations; i++) {
                 int value = rng.nextInt();
-                log("UnaryLongReg(0X%x) -> 0X%x",
+                log("UnaryIntToLongReg(0X%x) -> 0X%x",
                     value, expr.intToLongExpr(value));
             }
         }
