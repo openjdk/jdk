@@ -925,8 +925,7 @@ bool CompilationPolicy::is_mature(Method* method) {
     int i = mdo->invocation_count();
     int b = mdo->backedge_count();
     double k = ProfileMaturityPercentage / 100.0;
-    bool r = CallPredicate::apply_scaled(mh, CompLevel_full_profile, i, b, k) || LoopPredicate::apply_scaled(mh, CompLevel_full_profile, i, b, k);
-    return r;
+    return CallPredicate::apply_scaled(mh, CompLevel_full_profile, i, b, k) || LoopPredicate::apply_scaled(mh, CompLevel_full_profile, i, b, k);
   }
   return false;
 }
