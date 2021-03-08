@@ -289,6 +289,7 @@ public class CtwRunner {
                     "-XX:+StressLCM",
                     "-XX:+StressGCM",
                     "-XX:+StressIGVN",
+                    "-XX:+StressCCP",
                     // StressSeed is uint
                     "-XX:StressSeed=" + Math.abs(rng.nextLong()),
                     // CTW entry point
