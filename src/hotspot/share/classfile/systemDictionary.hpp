@@ -171,7 +171,7 @@ class SystemDictionary : AllStatic {
   // to local linkage and access checks.
   static Klass* find_constrained_instance_or_array_klass(Symbol* class_name,
                                                            Handle class_loader,
-                                                           TRAPS);
+                                                           Thread* THREAD);
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses

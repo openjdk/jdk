@@ -1700,9 +1700,9 @@ void os::print_os_info(outputStream* st) {
   char buffer[1024];
   st->print("HostName: ");
   if (get_host_name(buffer, sizeof(buffer))) {
-    st->print("%s ", buffer);
+    st->print_cr(buffer);
   } else {
-    st->print("N/A ");
+    st->print_cr("N/A");
   }
 #endif
   st->print_cr("OS:");

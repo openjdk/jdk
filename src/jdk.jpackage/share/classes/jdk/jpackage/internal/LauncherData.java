@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,10 +306,11 @@ final class LauncherData {
     private static List<Path> getPathListParameter(String paramName,
             Map<String, ? super Object> params) throws ConfigException {
         return getPathParam(params, paramName, () -> {
-            String value = params.getOrDefault(paramName, "").toString();
-        return List.of(value.split(File.pathSeparator)).stream()
-                .map(Path::of)
-                .collect(Collectors.toUnmodifiableList());
+            String value = (String) params.get(paramName);
+            return (value == null) ? List.of() :
+                    List.of(value.split(File.pathSeparator)).stream()
+                    .map(Path::of)
+                    .collect(Collectors.toUnmodifiableList());
         });
     }
 

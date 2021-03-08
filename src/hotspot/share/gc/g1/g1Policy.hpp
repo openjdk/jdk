@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ public:
 
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
-  uint calc_min_old_cset_length() const;
+  uint calc_min_old_cset_length(G1CollectionSetCandidates* candidates) const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
@@ -347,6 +347,8 @@ public:
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
 
+  // Amount of allowed waste in bytes in the collection set.
+  size_t allowed_waste_in_collection_set() const;
   // Calculate and return the number of initial and optional old gen regions from
   // the given collection set candidates and the remaining time.
   void calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
