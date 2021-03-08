@@ -3548,7 +3548,12 @@ public final class Formatter implements Closeable, Flushable {
                 sb.append(upper ? "0X" : "0x");
 
                 if (f.contains(Flags.ZERO_PAD)) {
-                    trailingZeros(sb, width - s.length() - 2);
+                    int leadingCharacters = 2;
+                    if(f.contains(Flags.LEADING_SPACE) ||
+                            f.contains(Flags.PLUS) || neg) {
+                        leadingCharacters = 3;
+                    }
+                    trailingZeros(sb, width - s.length() - leadingCharacters);
                 }
 
                 int idx = s.indexOf('p');
