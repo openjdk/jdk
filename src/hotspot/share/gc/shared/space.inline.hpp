@@ -213,7 +213,6 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
 
   assert(cur_obj == scan_limit, "just checking");
   space->_end_of_live = end_of_live;
-  space->_dead_space = dead_spacer.get_dead_space();
   if (first_dead != NULL) {
     space->_first_dead = first_dead;
   } else {
@@ -222,6 +221,9 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
 
   // save the compaction_top of the compaction space.
   cp->space->set_compaction_top(compact_top);
+
+  // Update the live size estimate using the known dead space size.
+  space->update_live_estimate(dead_spacer.get_dead_space());
 }
 
 template <class SpaceType>
@@ -355,6 +357,9 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
   }
 
   clear_empty_region(space);
+
+  // Update the live size estimate - this happens after compaction so there is no dead space to subtract.
+  space->update_live_estimate(0);
 }
 
 #endif // INCLUDE_SERIALGC
@@ -381,6 +386,10 @@ void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
   } while (t < top());
 
   set_saved_mark_word(p);
+}
+
+inline void CompactibleSpace::update_live_estimate(size_t dead_space) {
+  _live_estimate = used() - dead_space;
 }
 
 #endif // SHARE_GC_SHARED_SPACE_INLINE_HPP

@@ -445,7 +445,10 @@ protected:
   // Used during compaction.
   HeapWord* _first_dead;
   HeapWord* _end_of_live;
-  size_t    _dead_space;
+  size_t    _live_estimate;
+
+  // Update the cached '_live_estimate' value to current usage decreased by the given dead space.
+  inline void update_live_estimate(size_t dead_space);
 
   // This the function is invoked when an allocation of an object covering
   // "start" to "end occurs crosses the threshold; returns the next
@@ -550,7 +553,7 @@ class ContiguousSpace: public CompactibleSpace {
   // Size computations: sizes in bytes.
   size_t capacity() const        { return byte_size(bottom(), end()); }
   size_t used() const            { return byte_size(bottom(), top()); }
-  size_t live() const            { return used() - _dead_space;       }
+  size_t live() const            { return _live_estimate;             }
   size_t free() const            { return byte_size(top(),    end()); }
 
 
