@@ -155,7 +155,6 @@ static void soft_reference_update_clock() {
 
 ShenandoahRefProcThreadLocal::ShenandoahRefProcThreadLocal() :
   _discovered_list(NULL),
-  _mark_closure(NULL),
   _encountered_count(),
   _discovered_count(),
   _enqueued_count() {

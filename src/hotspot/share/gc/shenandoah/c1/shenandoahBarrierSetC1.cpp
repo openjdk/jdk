@@ -220,8 +220,8 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
     BarrierSetC1::load_at_resolved(access, result);
   }
 
-  // 3: apply keep-alive barrier if ShenandoahSATBBarrier is set
-  if (ShenandoahSATBBarrier && ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
+  // 3: apply keep-alive barrier for java.lang.ref.Reference if needed
+  if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     bool is_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
 
     // Register the value in the referent field with the pre-barrier
