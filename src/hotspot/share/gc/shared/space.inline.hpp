@@ -84,13 +84,13 @@ size_t CompactibleSpace::obj_size(const HeapWord* addr) const {
 class DeadSpacer : StackObj {
   friend class CompactibleSpace;
 
+  size_t _max_deadspace_words;
   size_t _allowed_deadspace_words;
   bool _active;
   CompactibleSpace* _space;
-  size_t _dead_space;
 
 public:
-  DeadSpacer(CompactibleSpace* space) : _allowed_deadspace_words(0), _space(space), _dead_space(0) {
+  DeadSpacer(CompactibleSpace* space) : _max_deadspace_words(0), _allowed_deadspace_words(0), _space(space) {
     size_t ratio = _space->allowed_dead_ratio();
     _active = ratio > 0;
 
@@ -102,7 +102,8 @@ public:
       // Occasionally, we want to ensure a full compaction, which is determined
       // by the MarkSweepAlwaysCompactCount parameter.
       if ((MarkSweep::total_invocations() % MarkSweepAlwaysCompactCount) != 0) {
-        _allowed_deadspace_words = (space->capacity() * ratio / 100) / HeapWordSize;
+        _max_deadspace_words = (space->capacity() * ratio / 100) / HeapWordSize;
+        _allowed_deadspace_words = _max_deadspace_words;
       } else {
         _active = false;
       }
@@ -126,12 +127,16 @@ public:
       log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", " SIZE_FORMAT "b",
           p2i(dead_start), p2i(dead_end), dead_length * HeapWordSize);
 
-      _dead_space += dead_length;
       return true;
     } else {
       _active = false;
       return false;
     }
+  }
+
+private:
+  size_t get_dead_space() {
+    return (_max_deadspace_words - _allowed_deadspace_words) * HeapWordSize;
   }
 
 };
@@ -208,7 +213,7 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
 
   assert(cur_obj == scan_limit, "just checking");
   space->_end_of_live = end_of_live;
-  space->_dead_space = dead_spacer._dead_space;
+  space->_dead_space = dead_spacer.get_dead_space();
   if (first_dead != NULL) {
     space->_first_dead = first_dead;
   } else {
