@@ -247,7 +247,7 @@ import java.util.Objects;
  * representable values. Most operations accept as input one or more
  * values of a given format and produce a result in the same format.
  * A {@code BigDecimal}'s {@linkplain scale() scale} is equivalent to
- * negating an IEEE 754 value's exponent. {@code BigDecimal} values to
+ * negating an IEEE 754 value's exponent. {@code BigDecimal} values do
  * not have a format in the same sense; all values have the same
  * possible range of scale/exponent and the {@linkplain
  * unscaledValue() unscaled value} has arbitrary precision. Instead,
@@ -257,7 +257,7 @@ import java.util.Objects;
  * by the precision of the {@code MathContext} argument. For example
  * in {@code BigDecimal}, if a nonzero three-digit number and a
  * nonzero four-digit number are multiplied together in the context of
- * a {@code MathContext} object has a precision of three, the result
+ * a {@code MathContext} object having a precision of three, the result
  * will have three digits (assuming no overflow or underflow, etc.).
  *
  * <p>The rounding policies implemented by {@code BigDecimal}
@@ -272,9 +272,9 @@ import java.util.Objects;
  * used to round all starting values and intermediate operations. The
  * numerical values computed can differ if the exponent range of the
  * IEEE 754 format being approximated is exceeded since a {@code
- * MathContext} does not curtail the scale {@code BigDecimal}
+ * MathContext} does not constrain the scale of {@code BigDecimal}
  * results. Operations that would generate a NaN or exact infinity,
- * such as dividing by zero, throw an {@code Arithmetic-Exception} in
+ * such as dividing by zero, throw an {@code ArithmeticException} in
  * {@code BigDecimal} arithmetic.
  *
  * @see     BigInteger
