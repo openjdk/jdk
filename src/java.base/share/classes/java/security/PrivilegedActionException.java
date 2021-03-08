@@ -110,7 +110,7 @@ public class PrivilegedActionException extends Exception {
      * and initialize the cause properly when deserializing from an older
      * version.
      *
-     * The getException and getCause method returns the private "exception"
+     * <p>The getException and getCause method returns the private "exception"
      * field in the older implementation and PrivilegedActionException::cause
      * was set to null.
      *

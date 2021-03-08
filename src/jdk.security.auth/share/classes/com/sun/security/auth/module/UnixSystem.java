@@ -35,16 +35,16 @@ public class UnixSystem {
 
     // Warning: the following 4 fields are used by Unix.c
 
-    /** The current username */
+    /** The current username. */
     protected String username;
 
-    /** The current user ID */
+    /** The current user ID. */
     protected long uid;
 
-    /** The current group ID */
+    /** The current group ID. */
     protected long gid;
 
-    /** The current list of groups */
+    /** The current list of groups. */
     protected long[] groups;
 
     /**

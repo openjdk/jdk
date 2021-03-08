@@ -179,7 +179,7 @@ public class SecureRandom extends java.util.Random {
     private final boolean threadSafe;
 
     /**
-     * The algorithm name of null if unknown.
+     * The algorithm name or {@code null} if unknown.
      *
      * @serial
      * @since 1.5

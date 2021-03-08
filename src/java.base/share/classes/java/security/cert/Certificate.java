@@ -65,10 +65,10 @@ public abstract class Certificate implements java.io.Serializable {
     @java.io.Serial
     private static final long serialVersionUID = -3585440601605666277L;
 
-    /** the certificate type */
+    /** The certificate type. */
     private final String type;
 
-    /** Cache the hash code for the certiticate */
+    /** Cache the hash code for the certiticate. */
     private int hash = -1; // Default to -1
 
     /**
@@ -244,10 +244,10 @@ public abstract class Certificate implements java.io.Serializable {
         @java.io.Serial
         private static final long serialVersionUID = -8563758940495660020L;
 
-        /** the standard name of the certificate type */
+        /** The standard name of the certificate type. */
         private String type;
 
-        /** the certificate data */
+        /** The certificate data. */
         private byte[] data;
 
         /**
