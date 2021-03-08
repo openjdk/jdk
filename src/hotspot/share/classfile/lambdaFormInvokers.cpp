@@ -143,7 +143,7 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
     SystemDictionary::add_to_hierarchy(result);
   }
   // new class not linked yet.
-  MetaspaceShared::try_link_class(result, THREAD);
+  MetaspaceShared::try_link_class(THREAD, result);
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
   // exclude the existing class from dump

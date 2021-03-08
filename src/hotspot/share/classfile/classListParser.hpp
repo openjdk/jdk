@@ -116,8 +116,10 @@ class ClassListParser : public StackObj {
   void print_actual_interfaces(InstanceKlass *ik);
   bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
 
-  void resolve_indy(Symbol* class_name_symbol, TRAPS);
+  void resolve_indy(Thread* current, Symbol* class_name_symbol);
   void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
+  Klass* load_current_class_impl(Symbol* class_name_symbol, TRAPS);
+
 public:
   ClassListParser(const char* file);
   ~ClassListParser();

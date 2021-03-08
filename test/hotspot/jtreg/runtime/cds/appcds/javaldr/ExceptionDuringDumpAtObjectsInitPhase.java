@@ -67,7 +67,7 @@ public class ExceptionDuringDumpAtObjectsInitPhase {
                         "-Xmx32m",
                         "-Dtest.with.exception=true",
                         gcLog).shouldNotHaveExitValue(0)
-                              .shouldContain("Preload Error: Failed to load jdk/internal/math/FDBigInteger")
+                              .shouldContain("Preload Warning: Cannot find jdk/internal/math/FDBigInteger")
                               .shouldContain("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
 
         // 2. Test with OOM

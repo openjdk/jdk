@@ -260,7 +260,6 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   ResourceMark rm(THREAD);
   const char* class_name = name->as_C_string();
-
   const char* file_name = file_name_for_class_name(class_name,
                                                    name->utf8_length());
   assert(file_name != NULL, "invariant");
@@ -269,38 +268,24 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
   ClassFileStream* stream = NULL;
   ClassPathEntry* e = find_classpath_entry_from_cache(path, CHECK_NULL);
   if (e == NULL) {
-    return NULL;
-  }
-  {
-    PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
-                               THREAD->as_Java_thread()->get_thread_stat()->perf_timers_addr(),
-                               PerfClassTraceTime::CLASS_LOAD);
-    stream = e->open_stream(file_name, CHECK_NULL);
+    THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
-  if (NULL == stream) {
-    log_warning(cds)("Preload Warning: Cannot find %s", class_name);
+  stream = e->open_stream(file_name, CHECK_NULL);
+  if (stream == NULL) {
+    THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
     return NULL;
   }
-
-  assert(stream != NULL, "invariant");
   stream->set_verify(true);
 
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;
   ClassLoadInfo cl_info(protection_domain);
-
-  InstanceKlass* result = KlassFactory::create_from_stream(stream,
-                                                           name,
-                                                           loader_data,
-                                                           cl_info,
-                                                           THREAD);
-
-  if (HAS_PENDING_EXCEPTION) {
-    log_error(cds)("Preload Error: Failed to load %s", class_name);
-    return NULL;
-  }
-  return result;
+  return KlassFactory::create_from_stream(stream,
+                                          name,
+                                          loader_data,
+                                          cl_info,
+                                          THREAD);
 }
 
 struct CachedClassPathEntry {
