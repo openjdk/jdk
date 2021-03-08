@@ -3164,9 +3164,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     @Override
     public boolean equals(Object x) {
-        if (!(x instanceof BigDecimal))
+        if (!(x instanceof BigDecimal xDec))
             return false;
-        BigDecimal xDec = (BigDecimal) x;
         if (x == this)
             return true;
         if (scale != xDec.scale)
