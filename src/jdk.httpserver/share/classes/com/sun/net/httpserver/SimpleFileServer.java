@@ -251,6 +251,8 @@ public final class SimpleFileServer {
      *                                  is given
      * @throws NullPointerException     if any argument is null
      */
+    // TODO: since we're using an output stream, we should clarity the charset
+    //       used or accept a PrintStream
     public static Filter createOutputFilter(OutputStream out,
                                             OutputLevel outputLevel) {
         Objects.requireNonNull(out);

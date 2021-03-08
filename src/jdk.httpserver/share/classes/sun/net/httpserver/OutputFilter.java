@@ -32,6 +32,7 @@ import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A Filter that outputs log messages about an HttpExchange.
@@ -60,7 +61,7 @@ public final class OutputFilter extends Filter {
     private final OutputLevel outputLevel;
 
     private OutputFilter(OutputStream os, OutputLevel outputLevel) {
-        printStream = new PrintStream(os);
+        printStream = new PrintStream(os, false, UTF_8);
         this.outputLevel = outputLevel;
     }
 
