@@ -1360,7 +1360,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
         for (uint i = 0; i < dead->req(); i++) {
           Node *in = dead->in(i);
           if (in != NULL && in != C->top()) {  // Points to something?
-            int nrep = dead->replace_edge(in, NULL);  // Kill edges
+            int nrep = dead->replace_edge(in, NULL, this);  // Kill edges
             assert((nrep > 0), "sanity");
             if (in->outcnt() == 0) { // Made input go dead?
               _stack.push(in, PROCESS_INPUTS); // Recursively remove
@@ -2113,7 +2113,15 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
 
     BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, old);
   }
+}
 
+void Node::set_req_X(uint i, Node *n, PhaseGVN *gvn) {
+  PhaseIterGVN* igvn = gvn->is_IterGVN();
+  if (igvn == NULL) {
+    set_req(i, n);
+    return;
+  }
+  set_req_X(i, n, igvn);
 }
 
 //-------------------------------replace_by-----------------------------------
