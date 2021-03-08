@@ -80,6 +80,8 @@
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/init.hpp"
@@ -2703,6 +2705,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Note: this internally calls os::init_container_support()
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
+
+#if INCLUDE_NMT
+  // Initialize NMT right after argument parsing.
+  if (!MemTracker::is_initialized()) {
+    MemTracker::initialize(MemTracker::parse_level_string(NativeMemoryTracking));
+  }
+#endif // INCLUDE_NMT
 
   os::init_before_ergo();
 

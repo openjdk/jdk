@@ -65,6 +65,7 @@
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "services/nmtCommon.hpp"
+#include "services/nmtPreInitBuffer.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
@@ -679,16 +680,20 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
 
+  // Handle malloc(0) the same on all platforms
+  size = MAX2(size, (size_t)1);
+
+#if INCLUDE_NMT
+  // Before NMT initialization we allocate exclusively from the NMT pre-init buffer.
+  if (!MemTracker::is_initialized()) {
+    return NMTPreInitBuffer::allocate_block(size, memflags);
+  }
+#endif
+
   // Since os::malloc can be called when the libjvm.{dll,so} is
   // first loaded and we don't have a thread yet we must accept NULL also here.
   assert(!os::ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
          "malloc() not allowed when crash protection is set");
-
-  if (size == 0) {
-    // return a valid pointer if size is zero
-    // if NULL is returned the calling functions assume out of memory.
-    size = 1;
-  }
 
   // NMT support
   NMT_TrackingLevel level = MemTracker::tracking_level();
@@ -738,6 +743,25 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
+  // realloc(NULL, size) is equivalent to malloc(size)
+  if (memblock == NULL) {
+    return os::malloc(size, memflags, stack);
+  }
+
+#if INCLUDE_NMT
+  if (!MemTracker::is_initialized()) {
+    // Before NMT initialization, realloc inside the NMT preinit buffers.
+    return NMTPreInitBuffer::reallocate_block((uint8_t*)memblock, size, memflags);
+  } else {
+    // After NMT initialization, if the block originates from NMT preinit buffers,
+    //  evacuate it to C-Heap (note: this is thread safe since it does not modify the
+    //  content of the preinit buffer).
+    if (NMTPreInitBuffer::contains_block((const uint8_t*)memblock)) {
+      return NMTPreInitBuffer::evacuate_block_to_c_heap((uint8_t*)memblock, size, memflags);
+    }
+  }
+#endif
+
   // For the test flag -XX:MallocMaxTestWords
   if (has_reached_max_malloc_test_peak(size)) {
     return NULL;
@@ -759,9 +783,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   void* ptr = ::realloc(membase, size + nmt_header_size);
   return MemTracker::record_malloc(ptr, size, memflags, stack, level);
 #else
-  if (memblock == NULL) {
-    return os::malloc(size, memflags, stack);
-  }
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
     log_warning(malloc, free)("os::realloc caught " PTR_FORMAT, p2i(memblock));
     breakpoint();
@@ -788,9 +809,25 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
 // handles NULL pointers
 void  os::free(void *memblock) {
+
+  // free(NULL) is a noop
+  if (memblock == NULL) {
+    return;
+  }
+
+#if INCLUDE_NMT
+  if (NMTPreInitBuffer::contains_block((uint8_t*)memblock)) {
+    // Before NMT initialization, free inside the NMT preinit buffers. After NMT initialization,
+    //  don't bother - pre-init buffer won't be used anymore for new allocations.
+    if (!MemTracker::is_initialized()) {
+      NMTPreInitBuffer::free_block((uint8_t*)memblock);
+    }
+    return;
+  }
+#endif
+
   NOT_PRODUCT(inc_stat_counter(&num_frees, 1));
 #ifdef ASSERT
-  if (memblock == NULL) return;
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
     log_warning(malloc, free)("os::free caught " PTR_FORMAT, p2i(memblock));
     breakpoint();

@@ -208,12 +208,15 @@ public:
 };
 
 TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
-  VirtualMemoryTracker::initialize(NMT_detail);
-  VirtualMemoryTracker::late_initialize(NMT_detail);
 
-  CommittedVirtualMemoryTest::test();
-  CommittedVirtualMemoryTest::test_committed_region();
-  CommittedVirtualMemoryTest::test_partial_region();
+  if (MemTracker::tracking_level() >= NMT_detail) {
+    CommittedVirtualMemoryTest::test();
+    CommittedVirtualMemoryTest::test_committed_region();
+    CommittedVirtualMemoryTest::test_partial_region();
+  } else {
+    tty->print_cr("skipped.");
+  }
+
 }
 
 #endif // INCLUDE_NMT

@@ -1056,13 +1056,15 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
     return;
   }
 
-  int new_count = *count + 1;
+  int old_count = *count;
+  int new_count = old_count + 1;
 
   // expand the array and add arg to the last element
-  if (*bldarray == NULL) {
-    *bldarray = NEW_C_HEAP_ARRAY(char*, new_count, mtArguments);
-  } else {
-    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, new_count, mtArguments);
+  //  (expand in pow 2 steps to save on realloc calls)
+  size_t arraySizeNow = next_power_of_2(old_count);
+  size_t arraySizeNeeded = MAX2(next_power_of_2(new_count), 32);
+  if (arraySizeNow < arraySizeNeeded) {
+    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, arraySizeNeeded, mtArguments);
   }
   (*bldarray)[*count] = os::strdup_check_oom(arg);
   *count = new_count;
@@ -1981,17 +1983,6 @@ bool Arguments::check_vm_args_consistency() {
                 "not " SIZE_FORMAT "\n",
                 TLABRefillWasteFraction);
     status = false;
-  }
-
-  if (PrintNMTStatistics) {
-#if INCLUDE_NMT
-    if (MemTracker::tracking_level() == NMT_off) {
-#endif // INCLUDE_NMT
-      warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
-      PrintNMTStatistics = false;
-#if INCLUDE_NMT
-    }
-#endif
   }
 
   status = CompilerConfig::check_args_consistency(status);
@@ -3345,7 +3336,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
 
 jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args) {
   // Construct option array
-  GrowableArrayCHeap<JavaVMOption, mtArguments> options(2);
+  GrowableArrayCHeap<JavaVMOption, mtArguments> options(32);
 
   // some pointers to help with parsing
   char *buffer_end = buffer + buf_len;
@@ -3700,29 +3691,6 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
       JVMFlag::printFlags(tty, false);
       vm_exit(0);
     }
-    if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
-#if INCLUDE_NMT
-      // The launcher did not setup nmt environment variable properly.
-      if (!MemTracker::check_launcher_nmt_support(tail)) {
-        warning("Native Memory Tracking did not setup properly, using wrong launcher?");
-      }
-
-      // Verify if nmt option is valid.
-      if (MemTracker::verify_nmt_option()) {
-        // Late initialization, still in single-threaded mode.
-        if (MemTracker::tracking_level() >= NMT_summary) {
-          MemTracker::init();
-        }
-      } else {
-        vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
-      }
-      continue;
-#else
-      jio_fprintf(defaultStream::error_stream(),
-        "Native Memory Tracking is not supported in this VM\n");
-      return JNI_ERR;
-#endif
-    }
 
 #ifndef PRODUCT
     if (match_option(option, "-XX:+PrintFlagsWithComments")) {
@@ -3974,6 +3942,35 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
+#if INCLUDE_NMT
+  // Initialize NMT
+  const NMT_TrackingLevel lvl = MemTracker::parse_level_string(NativeMemoryTracking);
+  if (lvl == NMT_unknown) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
+    return JNI_ERR;
+  }
+  if (PrintNMTStatistics && lvl == NMT_off) {
+    warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
+    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
+  }
+  if (MemTracker::is_initialized()) {
+    // If NMT had already been initialized at this point - prematurely - this means that
+    //  the NMT preinit buffers ran out of space and NMT had been switched off.
+    assert(MemTracker::tracking_level() == NMT_off, "sanity");
+    if (!FLAG_IS_DEFAULT(NativeMemoryTracking)) {
+      warning("-XX:NativeMemoryTracking ignored due to NMT buffer exhaustion."
+              " Native Memory Tracking disabled.");
+    }
+  }
+#else
+  if (!FLAG_IS_DEFAULT(NativeMemoryTracking) || PrintNMTStatistics) {
+    warning("Native Memory Tracking is not supported in this VM");
+    FLAG_SET_DEFAULT(NativeMemoryTracking, "off");
+    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
+  }
+#endif // INCLUDE_NMT
+
   if (TraceDependencies && VerifyDependencies) {
     if (!FLAG_IS_DEFAULT(TraceDependencies)) {
       warning("TraceDependencies results may be inflated by VerifyDependencies");
@@ -4079,6 +4076,7 @@ jint Arguments::apply_ergo() {
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(valuebasedclasses));
     }
   }
+
   return JNI_OK;
 }
 

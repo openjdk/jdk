@@ -253,7 +253,7 @@ class MallocSiteTable : AllStatic {
 
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
-  static MallocSiteHashtableEntry*        _table[table_size];
+  static MallocSiteHashtableEntry**       _table;
   static const NativeCallStack*           _hash_entry_allocation_stack;
   static const MallocSiteHashtableEntry*  _hash_entry_allocation_site;
 

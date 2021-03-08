@@ -115,41 +115,36 @@ class Tracker : public StackObj {
 class MemTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
 
+  static void assert_post_init() {
+    assert(is_initialized(), "NMT not yet initialized.");
+  }
+
  public:
+
+  // Initialize NMT to a given tracking level. Only call once.
+  // Allowed transitions here are:
+  //  unknown -> off
+  //  unknown -> summary
+  //  unknown -> detail
+  static void initialize(NMT_TrackingLevel level);
+
+  // Returns true if NMT had been initialized.
+  static bool is_initialized()  {
+    return _tracking_level != NMT_unknown;
+  }
+
+  // Returns the parsed level; NMT_unknown if string is invalid
+  static NMT_TrackingLevel parse_level_string(const char* s);
+
   static inline NMT_TrackingLevel tracking_level() {
-    if (_tracking_level == NMT_unknown) {
-      // No fencing is needed here, since JVM is in single-threaded
-      // mode.
-      _tracking_level = init_tracking_level();
-      _cmdline_tracking_level = _tracking_level;
-    }
     return _tracking_level;
   }
 
-  // A late initialization, for the stuff(s) can not be
-  // done in init_tracking_level(), which can NOT malloc
-  // any memory.
-  static void init();
-
-  // Shutdown native memory tracking
+  // Shutdown native memory tracking.
+  // This transitions the tracking level:
+  //  summary -> minimal
+  //  detail  -> minimal
   static void shutdown();
-
-  // Verify native memory tracking command line option.
-  // This check allows JVM to detect if compatible launcher
-  // is used.
-  // If an incompatible launcher is used, NMT may not be
-  // able to start, even it is enabled by command line option.
-  // A warning message should be given if it is encountered.
-  static bool check_launcher_nmt_support(const char* value);
-
-  // This method checks native memory tracking environment
-  // variable value passed by launcher.
-  // Launcher only obligated to pass native memory tracking
-  // option value, but not obligated to validate the value,
-  // and launcher has option to discard native memory tracking
-  // option from the command line once it sets up the environment
-  // variable, so NMT has to catch the bad value here.
-  static bool verify_nmt_option();
 
   // Transition the tracking level to specified level
   static bool transition_to(NMT_TrackingLevel level);
@@ -207,8 +202,11 @@ class MemTracker : AllStatic {
     MallocTracker::record_arena_size_change(diff, flag);
   }
 
+  // Note: we expect no virtual memory operations to happen before NMT initialization.
+
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
     MEMFLAGS flag = mtNone) {
+    assert_post_init();
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
@@ -220,6 +218,7 @@ class MemTracker : AllStatic {
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
     const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
+    assert_post_init();
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
@@ -231,6 +230,7 @@ class MemTracker : AllStatic {
 
   static inline void record_virtual_memory_commit(void* addr, size_t size,
     const NativeCallStack& stack) {
+    assert_post_init();
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
@@ -246,6 +246,7 @@ class MemTracker : AllStatic {
   // The two new memory regions will be both registered under stack and
   //  memory flags of the original region.
   static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split) {
+    assert_post_init();
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
@@ -256,6 +257,7 @@ class MemTracker : AllStatic {
   }
 
   static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) {
+    assert_post_init();
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
@@ -265,6 +267,7 @@ class MemTracker : AllStatic {
   }
 
   static void record_thread_stack(void* addr, size_t size) {
+    assert_post_init();
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadStackTracker::new_thread_stack((address)addr, size, CALLER_PC);
@@ -272,6 +275,7 @@ class MemTracker : AllStatic {
   }
 
   static inline void release_thread_stack(void* addr, size_t size) {
+    assert_post_init();
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadStackTracker::delete_thread_stack((address)addr, size);
