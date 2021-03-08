@@ -59,7 +59,9 @@ setTxtUniforms(MTLContext *mtlc, int color, id <MTLRenderCommandEncoder> encoder
                jfloat extraAlpha, const SurfaceRasterFlags *srcFlags, const SurfaceRasterFlags *dstFlags, int mode);
 
 static void initTemplatePipelineDescriptors() {
-    if (templateRenderPipelineDesc != nil && templateTexturePipelineDesc != nil)
+    if (templateRenderPipelineDesc != nil && templateTexturePipelineDesc != nil &&
+        templateAATexturePipelineDesc != nil && templateLCDPipelineDesc != nil &&
+        templateAAPipelineDesc != nil)
         return;
 
     MTLVertexDescriptor *vertDesc = [[MTLVertexDescriptor new] autorelease];
@@ -402,6 +404,7 @@ jint _color;
 {
     // This block is not reached in current implementation.
     // Gradient paint XOR mode rendering uses a tile based rendering using a SW pipe (similar to OGL)
+    initTemplatePipelineDescriptors();
     NSString* vertShader = @"vert_grad_xorMode";
     NSString* fragShader = @"frag_grad_xorMode";
     MTLRenderPipelineDescriptor *rpDesc = [[templateRenderPipelineDesc copy] autorelease];
@@ -499,6 +502,7 @@ jint _color;
     pipelineStateStorage:(MTLPipelineStatesStorage *)pipelineStateStorage
 
 {
+    initTemplatePipelineDescriptors();
     MTLRenderPipelineDescriptor *rpDesc = nil;
 
     NSString *vertShader = @"vert_grad";
@@ -662,6 +666,7 @@ jint _color;
            renderOptions:(const RenderOptions *)renderOptions
     pipelineStateStorage:(MTLPipelineStatesStorage *)pipelineStateStorage
 {
+    initTemplatePipelineDescriptors();
     MTLRenderPipelineDescriptor *rpDesc = nil;
 
     NSString *vertShader = @"vert_grad";
@@ -803,6 +808,7 @@ jint _color;
                   renderOptions:(const RenderOptions *)renderOptions
            pipelineStateStorage:(MTLPipelineStatesStorage *)pipelineStateStorage
 {
+    initTemplatePipelineDescriptors();
     // This block is not reached in current implementation.
     // Texture paint XOR mode rendering uses a tile based rendering using a SW pipe (similar to OGL)
     NSString* vertShader = @"vert_tp_xorMode";
@@ -953,8 +959,8 @@ setTxtUniforms(MTLContext *mtlc, int color, id <MTLRenderCommandEncoder> encoder
            renderOptions:(const RenderOptions *)renderOptions
     pipelineStateStorage:(MTLPipelineStatesStorage *)pipelineStateStorage
 {
+    initTemplatePipelineDescriptors();
     if (renderOptions->isTexture) {
-        initTemplatePipelineDescriptors();
         jint xorColor = (jint) [mtlc.composite getXorColor];
         NSString * vertShader = @"vert_txt_xorMode";
         NSString * fragShader = @"frag_txt_xorMode";
