@@ -35,14 +35,15 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * Immutable, arbitrary-precision signed decimal numbers.  A
- * {@code BigDecimal} consists of an arbitrary precision integer
- * <i>unscaled value</i> and a 32-bit integer <i>scale</i>.  If zero
- * or positive, the scale is the number of digits to the right of the
- * decimal point.  If negative, the unscaled value of the number is
- * multiplied by ten to the power of the negation of the scale.  The
- * value of the number represented by the {@code BigDecimal} is
- * therefore <code>(unscaledValue &times; 10<sup>-scale</sup>)</code>.
+ * Immutable, arbitrary-precision signed decimal numbers.  A {@code
+ * BigDecimal} consists of an arbitrary precision integer
+ * <i>{@linkplain unscaledValue() unscaled value}</i> and a 32-bit
+ * integer <i>{@linkplain scale() scale}</i>.  If zero or positive,
+ * the scale is the number of digits to the right of the decimal
+ * point.  If negative, the unscaled value of the number is multiplied
+ * by ten to the power of the negation of the scale.  The value of the
+ * number represented by the {@code BigDecimal} is therefore
+ * <code>(unscaledValue &times; 10<sup>-scale</sup>)</code>.
  *
  * <p>The {@code BigDecimal} class provides operations for
  * arithmetic, scale manipulation, rounding, comparison, hashing, and
@@ -219,6 +220,64 @@ import java.util.Objects;
  * ordering}</i> is <em>inconsistent with equals</em>.  See {@link
  * Comparable}, {@link java.util.SortedMap} or {@link
  * java.util.SortedSet} for more information.
+ *
+ * <h2>Relation to IEEE 754 Decimal Arithmetic</h2>
+ *
+ * Starting with its 2008 revision, the <cite>IEEE 754 Standard for
+ * Floating-point Arithmetic</cite> has covered decimal formats and
+ * operations. While there are broad similarities in the decimal
+ * arithmetic defined by IEEE 754 and by this class, there are notable
+ * differences as well. The fundamental similarity shared by {@code
+ * BigDecimal} and IEEE 754 decimal arithmetic is the conceptual
+ * operation of computing the mathematical infinitely precise real
+ * number value of an operation and then mapping that real number to a
+ * representable decimal floating-point value under a <em>rounding
+ * policy</em>. The rounding policy is called a {@linkplain
+ * RoundingMode rounding mode} for {@code BigDecimal} and called a
+ * rounding-direction attribute in IEEE 754-2019. When the exact value
+ * is not representable, the rounding policy determines which of the
+ * two representable decimal values bracketing the exact value is
+ * selected as the computed result. The notion of a <em>preferred
+ * scale/preferred exponent</em> is also shared by both systems.
+ *
+ * <p>For differences, IEEE 754 includes several kinds of values not
+ * modeled by {@code BigDecimal} including negative zero, signed
+ * infinities, and NaN (not-a-number). IEEE 754 defines formats, which
+ * are parameterized by base (binary or decimal), number of digits of
+ * precision, and exponent range. A format determines the set of
+ * representable values. Most operations accept as input one or more
+ * values of a given format and produce a result in the same format.
+ * A {@code BigDecimal}'s {@linkplain scale() scale} is equivalent to
+ * negating an IEEE 754 value's exponent. {@code BigDecimal} values do
+ * not have a format in the same sense; all values have the same
+ * possible range of scale/exponent and the {@linkplain
+ * unscaledValue() unscaled value} has arbitrary precision. Instead,
+ * for the {@code BigDecimal} operations taking a {@code MathContext}
+ * parameter, if the {@code MathContext} has a nonzero precision, the
+ * set of possible representable values for the result is determined
+ * by the precision of the {@code MathContext} argument. For example
+ * in {@code BigDecimal}, if a nonzero three-digit number and a
+ * nonzero four-digit number are multiplied together in the context of
+ * a {@code MathContext} object having a precision of three, the
+ * result will have three digits (assuming no overflow or underflow,
+ * etc.).
+ *
+ * <p>The rounding policies implemented by {@code BigDecimal}
+ * operations indicated by {@linkplain RoundingMode rounding modes}
+ * are a proper superset of the IEEE 754 rounding-direction
+ * attributes.
+
+ * <p>{@code BigDecimal} arithmetic will most resemble IEEE 754
+ * decimal arithmetic if a {@code MathContext} corresponding to an
+ * IEEE 754 decimal format, such as {@linkplain MathContext#DECIMAL64
+ * decimal64} or {@linkplain MathContext#DECIMAL128 decimal128} is
+ * used to round all starting values and intermediate operations. The
+ * numerical values computed can differ if the exponent range of the
+ * IEEE 754 format being approximated is exceeded since a {@code
+ * MathContext} does not constrain the scale of {@code BigDecimal}
+ * results. Operations that would generate a NaN or exact infinity,
+ * such as dividing by zero, throw an {@code ArithmeticException} in
+ * {@code BigDecimal} arithmetic.
  *
  * @see     BigInteger
  * @see     MathContext
@@ -1681,7 +1740,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * @param  divisor value by which this {@code BigDecimal} is to be divided.
      * @throws ArithmeticException if the exact quotient does not have a
-     *         terminating decimal expansion
+     *         terminating decimal expansion, including dividing by zero
      * @return {@code this / divisor}
      * @since 1.5
      * @author Joseph D. Darcy
@@ -1745,7 +1804,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if the result is inexact but the
      *         rounding mode is {@code UNNECESSARY} or
      *         {@code mc.precision == 0} and the quotient has a
-     *         non-terminating decimal expansion.
+     *         non-terminating decimal expansion,including dividing by zero
      * @since  1.5
      */
     public BigDecimal divide(BigDecimal divisor, MathContext mc) {
