@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile test-classes/Hello.java
  * @run build TestCommon JarBuilder
- * @run driver OldClassTest
+ * @run main/othervm OldClassTest
  */
 
 import java.io.File;
