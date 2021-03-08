@@ -80,11 +80,16 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     void handleHEAD(HttpExchange exchange, Path path) throws IOException {
-        exchange.sendResponseHeaders(200, -1);
-        exchange.getResponseHeaders().set("Content-Length", Long.toString(Files.size(path)));
+        handleSupportedMethod(exchange, path, false);
     }
 
     void handleGET(HttpExchange exchange, Path path) throws IOException {
+        handleSupportedMethod(exchange, path, true);
+    }
+
+    void handleSupportedMethod(HttpExchange exchange, Path path, boolean writeBody)
+        throws IOException
+    {
         if (Files.isSymbolicLink(path)) {
             handleNotFound(exchange);
         }
@@ -94,12 +99,12 @@ public final class FileServerHandler implements HttpHandler {
                 return;
             }
             if (indexFile(path) != null) {
-                serveFile(exchange, indexFile(path));
+                serveFile(exchange, indexFile(path), writeBody);
             } else {
-                listFiles(exchange, path);
+                listFiles(exchange, path, writeBody);
             }
         } else {
-            serveFile(exchange, path);
+            serveFile(exchange, path, writeBody);
         }
     }
 
@@ -161,28 +166,36 @@ public final class FileServerHandler implements HttpHandler {
         return Files.exists(html) ? html : Files.exists(htm) ? htm : null;
     }
 
-    void serveFile(HttpExchange exchange, Path path) throws IOException {
+    void serveFile(HttpExchange exchange, Path path, boolean writeBody)
+        throws IOException
+    {
         var respHdrs = exchange.getResponseHeaders();
         respHdrs.set("Content-Type", mediaType(exchange.getRequestURI().getPath()));
         exchange.sendResponseHeaders(200, 0);
-        try (InputStream fis = Files.newInputStream(path);
-             OutputStream os = exchange.getResponseBody()) {
-            fis.transferTo(os);
+        if (writeBody) {
+            try (InputStream fis = Files.newInputStream(path);
+                 OutputStream os = exchange.getResponseBody()) {
+                fis.transferTo(os);
+            }
         }
     }
 
-    void listFiles(HttpExchange exchange, Path path) throws IOException {
+    void listFiles(HttpExchange exchange, Path path, boolean writeBody)
+        throws IOException
+    {
         exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
         exchange.sendResponseHeaders(200, 0);
-        try (OutputStream os = exchange.getResponseBody();
-             PrintStream ps = new PrintStream(os, false, UTF_8)) {
-            ps.println(openHTML
-                    + "<h2>Directory listing for "
-                    + sanitize.apply(exchange.getRequestURI().getPath(), chars)
-                    + "</h2>\n" + "<ul>");
-            printDirContent(ps, path);
-            ps.println(closeHTML);
-            ps.flush();
+        if (writeBody) {
+            try (OutputStream os = exchange.getResponseBody();
+                 PrintStream ps = new PrintStream(os, false, UTF_8)) {
+                ps.println(openHTML
+                        + "<h2>Directory listing for "
+                        + sanitize.apply(exchange.getRequestURI().getPath(), chars)
+                        + "</h2>\n" + "<ul>");
+                printDirContent(ps, path);
+                ps.println(closeHTML);
+                ps.flush();
+            }
         }
     }
 

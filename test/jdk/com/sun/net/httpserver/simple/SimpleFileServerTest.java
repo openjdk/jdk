@@ -32,6 +32,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,8 +70,8 @@ public class SimpleFileServerTest {
     }
 
     @Test
-    public void testFileGet() throws Exception {
-        var root = Files.createDirectory(CWD.resolve("xDir"));
+    public void testFileGET() throws Exception {
+        var root = Files.createDirectory(CWD.resolve("testFileGET"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
 
         var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
@@ -88,7 +89,7 @@ public class SimpleFileServerTest {
     }
 
     @Test
-    public void testDirectoryGet() throws Exception {
+    public void testDirectoryGET() throws Exception {
         // TODO: why listing for >>>>&#x2F<<<<;
         var expectedBody = """
                 <!DOCTYPE html>
@@ -100,7 +101,7 @@ public class SimpleFileServerTest {
                 </body>
                 </html>
                 """;
-        var root = Files.createDirectory(CWD.resolve("yDir"));
+        var root = Files.createDirectory(CWD.resolve("testDirectoryGET"));
         var file = Files.writeString(root.resolve("yFile.txt"), "some text", CREATE);
 
         var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
@@ -112,6 +113,63 @@ public class SimpleFileServerTest {
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
             assertEquals(response.body(), expectedBody);
+        } finally {
+            ss.stop(0);
+        }
+    }
+
+    @Test
+    public void testFileHEAD() throws Exception {
+        var root = Files.createDirectory(CWD.resolve("testFileHEAD"));
+        var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
+
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(ss, "aFile.txt"))
+                    .method("HEAD", BodyPublishers.noBody()).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
+            assertEquals(response.body(), "");
+        } finally {
+            ss.stop(0);
+        }
+    }
+
+    @Test
+    public void testDirectoryHEAD() throws Exception {
+        var root = Files.createDirectory(CWD.resolve("testDirectoryHEAD"));
+        var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
+
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(ss, ""))
+                    .method("HEAD", BodyPublishers.noBody()).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
+            assertEquals(response.body(), "");
+        } finally {
+            ss.stop(0);
+        }
+    }
+
+    @Test
+    public void testNotFound() throws Exception {
+        var root = Files.createDirectory(CWD.resolve("testNotFound"));
+
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertTrue(response.body().contains("not found"));  // TODO: why partial html reply?
         } finally {
             ss.stop(0);
         }
