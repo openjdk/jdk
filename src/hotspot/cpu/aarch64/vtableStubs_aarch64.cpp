@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -70,7 +70,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
     __ lea(r16, ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
-    __ incrementw(Address(r16));
+    __ increment(Address(r16));
   }
 #endif
 
@@ -145,6 +145,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (s == NULL) {
     return NULL;
   }
+
   // Count unused bytes in instruction sequences of variable size.
   // We add them to the computed buffer size in order to avoid
   // overflow in subsequently generated stubs.
@@ -159,7 +160,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
     __ lea(r10, ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
-    __ incrementw(Address(r10));
+    __ increment(Address(r10));
   }
 #endif
 

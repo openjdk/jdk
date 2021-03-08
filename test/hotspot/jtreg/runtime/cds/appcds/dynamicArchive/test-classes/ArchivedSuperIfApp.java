@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,6 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
+package pkg;
 
-public @A(b=@B()) class C {}
+public class ArchivedSuperIfApp {
+
+    public static void main(String ... args) throws Exception {
+        Class.forName("pkg.Bar");
+        System.out.println(Bar.class.getName());
+        if (args.length > 0 && args[0].equals("Baz")) {
+            Class.forName("pkg.Baz");
+
+            Baz baz = new Baz();
+            baz.foo();
+            System.out.println(Baz.class.getName());
+        }
+    }
+}

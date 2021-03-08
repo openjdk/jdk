@@ -99,7 +99,7 @@ JAVADOC_TAGS := \
 REFERENCE_TAGS := $(JAVADOC_TAGS)
 
 # Which doclint checks to ignore
-JAVADOC_DISABLED_DOCLINT := accessibility html missing syntax reference
+JAVADOC_DISABLED_DOCLINT := missing
 
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \

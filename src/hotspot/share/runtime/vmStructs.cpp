@@ -307,7 +307,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonstatic_field(Method,                      _flags,                                        u2)                                    \
-  nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
   volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \

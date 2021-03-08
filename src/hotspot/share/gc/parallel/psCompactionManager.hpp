@@ -67,7 +67,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet*    _region_task_queues;
   static PSOldGen*              _old_gen;
 
-private:
   OverflowTaskQueue<oop, mtGC>        _marking_stack;
   ObjArrayTaskQueue             _objarray_stack;
   size_t                        _next_shadow_region;
@@ -141,7 +140,7 @@ private:
 
   RegionTaskQueue* region_stack()                { return &_region_stack; }
 
-  inline static ParCompactionManager* manager_array(uint index);
+  static ParCompactionManager* get_vmthread_cm() { return _manager_array[ParallelGCThreads]; }
 
   ParCompactionManager();
 
@@ -197,13 +196,13 @@ private:
       : _compaction_manager(cm), _maybe_terminator(maybe_terminator), _worker_id(worker_id) { }
     virtual void do_void();
   };
-};
 
-inline ParCompactionManager* ParCompactionManager::manager_array(uint index) {
-  assert(_manager_array != NULL, "access of NULL manager_array");
-  assert(index <= ParallelGCThreads, "out of range manager_array access");
-  return _manager_array[index];
-}
+  // Called after marking.
+  static void verify_all_marking_stack_empty() NOT_DEBUG_RETURN;
+
+  // Region staks hold regions in from-space; called after compaction.
+  static void verify_all_region_stack_empty() NOT_DEBUG_RETURN;
+};
 
 bool ParCompactionManager::marking_stacks_empty() const {
   return _marking_stack.is_empty() && _objarray_stack.is_empty();

@@ -327,7 +327,7 @@ class InstanceKlass: public Klass {
   // embedded nonstatic oop-map blocks follows here
   // embedded implementor of this interface follows here
   //   The embedded implementor only exists if the current klass is an
-  //   iterface. The possible values of the implementor fall into following
+  //   interface. The possible values of the implementor fall into following
   //   three cases:
   //     NULL: no implementor.
   //     A Klass* that's not itself: one implementor.
@@ -1016,10 +1016,10 @@ public:
 #endif
 
   // Access to the implementor of an interface.
-  Klass* implementor() const;
-  void set_implementor(Klass* k);
+  InstanceKlass* implementor() const;
+  void set_implementor(InstanceKlass* ik);
   int  nof_implementors() const;
-  void add_implementor(Klass* k);  // k is a new class that implements this interface
+  void add_implementor(InstanceKlass* ik);  // ik is a new class that implements this interface
   void init_implementor();           // initialize
 
   // link this class into the implementors list of every interface it implements
@@ -1087,7 +1087,7 @@ public:
   inline OopMapBlock* start_of_nonstatic_oop_maps() const;
   inline Klass** end_of_nonstatic_oop_maps() const;
 
-  inline Klass* volatile* adr_implementor() const;
+  inline InstanceKlass* volatile* adr_implementor() const;
   inline InstanceKlass** adr_unsafe_anonymous_host() const;
   inline address adr_fingerprint() const;
 

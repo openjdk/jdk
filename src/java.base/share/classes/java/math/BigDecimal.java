@@ -212,13 +212,13 @@ import java.util.Objects;
  * {@code NullPointerException} when passed a {@code null} object
  * reference for any input parameter.
  *
- * @apiNote Care should be exercised if {@code BigDecimal} objects
- * are used as keys in a {@link java.util.SortedMap SortedMap} or
- * elements in a {@link java.util.SortedSet SortedSet} since
- * {@code BigDecimal}'s <i>natural ordering</i> is <em>inconsistent
- * with equals</em>.  See {@link Comparable}, {@link
- * java.util.SortedMap} or {@link java.util.SortedSet} for more
- * information.
+ * @apiNote Care should be exercised if {@code BigDecimal} objects are
+ * used as keys in a {@link java.util.SortedMap SortedMap} or elements
+ * in a {@link java.util.SortedSet SortedSet} since {@code
+ * BigDecimal}'s <i>{@linkplain compareTo(BigDecimal) natural
+ * ordering}</i> is <em>inconsistent with equals</em>.  See {@link
+ * Comparable}, {@link java.util.SortedMap} or {@link
+ * java.util.SortedSet} for more information.
  *
  * @see     BigInteger
  * @see     MathContext
@@ -3141,7 +3141,18 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * compareTo}, this method considers two {@code BigDecimal}
      * objects equal only if they are equal in value and
      * scale. Therefore 2.0 is not equal to 2.00 when compared by this
-     * method.
+     * method since the former has [{@code BigInteger}, {@code scale}]
+     * components equal to [20, 1] while the latter has components
+     * equal to [200, 2].
+     *
+     * @apiNote
+     * One example that shows how 2.0 and 2.00 are <em>not</em>
+     * substitutable for each other under some arithmetic operations
+     * are the two expressions:<br>
+     * {@code new BigDecimal("2.0" ).divide(BigDecimal.valueOf(3),
+     * HALF_UP)} which evaluates to 0.7 and <br>
+     * {@code new BigDecimal("2.00").divide(BigDecimal.valueOf(3),
+     * HALF_UP)} which evaluates to 0.67.
      *
      * @param  x {@code Object} to which this {@code BigDecimal} is
      *         to be compared.
@@ -3204,8 +3215,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     // Hash Function
 
     /**
-     * Returns the hash code for this {@code BigDecimal}.  Note that
-     * two {@code BigDecimal} objects that are numerically equal but
+     * Returns the hash code for this {@code BigDecimal}.
+     * The hash code is computed as a function of the {@linkplain
+     * unscaledValue() unscaled value} and the {@linkplain scale()
+     * scale} of this {@code BigDecimal}.
+     *
+     * @apiNote
+     * Two {@code BigDecimal} objects that are numerically equal but
      * differ in scale (like 2.0 and 2.00) will generally <em>not</em>
      * have the same hash code.
      *
