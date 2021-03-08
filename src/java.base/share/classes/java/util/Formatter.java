@@ -1933,7 +1933,7 @@ public final class Formatter implements Closeable, Flushable {
 
     private IOException lastException;
 
-    private final char zero;
+    private char zero = 0;
     private static double scaleUp;
 
     /**
@@ -1964,7 +1964,6 @@ public final class Formatter implements Closeable, Flushable {
     private Formatter(Locale l, Appendable a) {
         this.a = a;
         this.l = l;
-        this.zero = getZero(l);
     }
 
     private Formatter(Charset charset, Locale l, File file)
@@ -2443,13 +2442,17 @@ public final class Formatter implements Closeable, Flushable {
         this(l, new BufferedWriter(new OutputStreamWriter(os, charset)));
     }
 
-    private static char getZero(Locale l) {
-        if ((l != null) && !l.equals(Locale.US)) {
-            DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
-            return dfs.getZeroDigit();
-        } else {
-            return '0';
+    private char zero() {
+        char zero = this.zero;
+        if (zero == 0) {
+            if ((l != null) && !l.equals(Locale.US)) {
+                DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
+                zero = this.zero = dfs.getZeroDigit();
+            } else {
+                zero = this.zero = '0';
+            }
         }
+        return zero;
     }
 
     /**
@@ -4451,7 +4454,7 @@ public final class Formatter implements Closeable, Flushable {
                 DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
                 return dfs.getZeroDigit();
             }
-            return zero;
+            return zero();
         }
 
         private StringBuilder localizedMagnitude(StringBuilder sb,
