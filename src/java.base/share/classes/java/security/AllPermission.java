@@ -164,7 +164,7 @@ final class AllPermissionCollection
     /**
      * true if any AllPermissions have been added
      */
-    private boolean all_allowed; 
+    private boolean all_allowed;
 
     /**
      * Create an empty AllPermissions object.

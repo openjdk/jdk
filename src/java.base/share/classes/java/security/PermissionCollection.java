@@ -102,7 +102,7 @@ public abstract class PermissionCollection implements java.io.Serializable {
     /**
      * Whether this permission collection is read-only.
      * <p>
-     * If set, add() will throw an exception.
+     * If set, the {@code add} method will throw an exception.
      */
     private volatile boolean readOnly;
 

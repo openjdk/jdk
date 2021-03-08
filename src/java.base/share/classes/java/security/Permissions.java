@@ -576,9 +576,10 @@ implements Serializable
         new ObjectStreamField("perms", Hashtable.class),
     };
 
-    /**
+    /*
      * @serialData Default fields.
      */
+
     /**
      * Writes the contents of the permsMap field out as a Hashtable for
      * serialization compatibility with earlier releases.

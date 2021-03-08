@@ -492,7 +492,7 @@ final class BasicPermissionCollection
         new ObjectStreamField("permClass", Class.class),
     };
 
-    /**
+    /*
      * @serialData Default fields.
      */
 
