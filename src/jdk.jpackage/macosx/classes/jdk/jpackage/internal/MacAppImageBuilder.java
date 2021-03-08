@@ -808,6 +808,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 "--options", "runtime",
                 "--force",
                 "-s", signingIdentity,
+                "--prefix", identifierPrefix,
                 "-vvvv"));
 
         if (keyChain != null && !keyChain.isEmpty()) {
