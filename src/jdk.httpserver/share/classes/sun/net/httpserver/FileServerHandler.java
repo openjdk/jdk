@@ -23,9 +23,6 @@
 
 package sun.net.httpserver;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -66,10 +65,11 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     public static HttpHandler create(Path root, Function<String, String> mimeTable)
-            throws IOException {
+        throws IOException
+    {
         return new FileServerHandler(root, mimeTable)
                 .handleOrElse(r -> !SUPPORTED_METHODS.contains(r.getRequestMethod()),
-                        FileServerHandler::handleNotAllowed);
+                              FileServerHandler::handleNotAllowed);
     }
 
     static void handleNotAllowed(HttpExchange exchange) throws IOException {
