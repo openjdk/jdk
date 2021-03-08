@@ -69,39 +69,39 @@ public final class MathContext implements Serializable {
 
     /* ----- Public Properties ----- */
     /**
-     *  A {@code MathContext} object whose settings have the values
-     *  required for unlimited precision arithmetic.
-     *  The values of the settings are:
-     *  <code>
-     *  precision=0 roundingMode=HALF_UP
-     *  </code>
+     * A {@code MathContext} object whose settings have the values
+     * required for unlimited precision arithmetic.
+     * The values of the settings are: {@code precision=0 roundingMode=HALF_UP}
      */
     public static final MathContext UNLIMITED =
         new MathContext(0, RoundingMode.HALF_UP);
 
     /**
-     *  A {@code MathContext} object with a precision setting
-     *  matching the IEEE 754R Decimal32 format, 7 digits, and a
-     *  rounding mode of {@link RoundingMode#HALF_EVEN HALF_EVEN}, the
-     *  IEEE 754R default.
+     * A {@code MathContext} object with a precision setting
+     * matching the precision of the IEEE 754-2019 decimal32 format, 7 digits, and a
+     * rounding mode of {@link RoundingMode#HALF_EVEN HALF_EVEN}.
+     * Note the exponent range of decimal32 is <em>not</em> used for
+     * rounding.
      */
     public static final MathContext DECIMAL32 =
         new MathContext(7, RoundingMode.HALF_EVEN);
 
     /**
-     *  A {@code MathContext} object with a precision setting
-     *  matching the IEEE 754R Decimal64 format, 16 digits, and a
-     *  rounding mode of {@link RoundingMode#HALF_EVEN HALF_EVEN}, the
-     *  IEEE 754R default.
+     * A {@code MathContext} object with a precision setting
+     * matching the precision of the IEEE 754-2019 decimal64 format, 16 digits, and a
+     * rounding mode of {@link RoundingMode#HALF_EVEN HALF_EVEN}.
+     * Note the exponent range of decimal64 is <em>not</em> used for
+     * rounding.
      */
     public static final MathContext DECIMAL64 =
         new MathContext(16, RoundingMode.HALF_EVEN);
 
     /**
-     *  A {@code MathContext} object with a precision setting
-     *  matching the IEEE 754R Decimal128 format, 34 digits, and a
-     *  rounding mode of {@link RoundingMode#HALF_EVEN HALF_EVEN}, the
-     *  IEEE 754R default.
+     * A {@code MathContext} object with a precision setting
+     * matching the precision of the IEEE 754-2019 decimal128 format, 34 digits, and a
+     * rounding mode of {@link RoundingMode#HALF_EVEN HALF_EVEN}.
+     * Note the exponent range of decimal64 is <em>not</em> used for
+     * rounding.
      */
     public static final MathContext DECIMAL128 =
         new MathContext(34, RoundingMode.HALF_EVEN);
