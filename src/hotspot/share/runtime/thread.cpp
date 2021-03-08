@@ -972,12 +972,15 @@ static const char* get_java_version_info(InstanceKlass* ik,
 // General purpose hook into Java code, run once when the VM is initialized.
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
-  Klass* klass = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_vm_PostVMInitHook(), THREAD);
-  if (klass != NULL) {
-    JavaValue result(T_VOID);
-    JavaCalls::call_static(&result, klass, vmSymbols::run_method_name(),
-                           vmSymbols::void_method_signature(),
-                           CHECK);
+  // Java code can interfere with running gtests.
+  if (!ExecutingUnitTests) {
+    Klass* klass = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_vm_PostVMInitHook(), THREAD);
+    if (klass != NULL) {
+      JavaValue result(T_VOID);
+      JavaCalls::call_static(&result, klass, vmSymbols::run_method_name(),
+                             vmSymbols::void_method_signature(),
+                             CHECK);
+    }
   }
 }
 
