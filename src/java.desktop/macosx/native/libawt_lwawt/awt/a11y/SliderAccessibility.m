@@ -49,16 +49,14 @@
 - (BOOL)accessibilityPerformIncrement
 {
     NSLog(@"Slider INCREMENT called");
-    //return [self performAccessibleAction:INCREMENT];
-    return true;
+    return [self performAccessibleAction:INCREMENT];
 }
 
 
 - (BOOL)accessibilityPerformDecrement
 {
     NSLog(@"Slider DECREMENT called");
-    return true;
-    //return [self performAccessibleAction:DECREMENT];
+    return [self performAccessibleAction:DECREMENT];
 }
 
 @end

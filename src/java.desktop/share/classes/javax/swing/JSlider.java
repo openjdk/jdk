@@ -53,7 +53,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import javax.swing.plaf.SliderUI;
 import javax.swing.plaf.UIResource;
-import javax.swing.plaf.basic.BasicSliderUI;
 
 /**
  * A component that lets the user graphically select a value by sliding
@@ -1576,9 +1575,9 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          */
         public String getAccessibleActionDescription(int i) {
             if (i == 0) {
-                return AccessibleAction.DECREMENT;
-            } else if (i == 1) {
                 return AccessibleAction.INCREMENT;
+            } else if (i == 1) {
+                return AccessibleAction.DECREMENT;
             }
             return null;
         }
@@ -1589,16 +1588,16 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          * @param i zero-based index of actions. The first action
          * (index 0) is AccessibleAction.INCREMENT and the second
          * action (index 1) is AccessibleAction.DECREMENT.
-         * @return true if the action was performed; otherwise false.
+         * @return true.
          * @see #getAccessibleActionCount
          */
         public boolean doAccessibleAction(int direction) {
             if (direction < 0 || direction > 1) {
                 return false;
             }
-            int delta = ((direction > 0) ? 1 : -1);
-            BasicSliderUI ui = (BasicSliderUI)JSlider.this.getUI();
-            ui.scrollByUnit(delta);
+            //0 is increment, 1 is decrrement
+            int delta = ((direction > 0) ? -1 : 1);
+            JSlider.this.setValue(oldModelValue + delta);
             return true;
         }
 
