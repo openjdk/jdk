@@ -5514,7 +5514,7 @@ int os::PlatformMonitor::wait(jlong millis) {
 
 // Run the specified command in a separate process. Return its exit value,
 // or -1 on failure (e.g. can't create a new process).
-int os::fork_and_exec(const char* cmd) {
+int os::fork_and_exec(const char* cmd, bool dummy /* ignored */) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   DWORD exit_code;

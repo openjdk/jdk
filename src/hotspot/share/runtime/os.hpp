@@ -505,7 +505,10 @@ class os: AllStatic {
 
   // run cmd in a separate process and return its exit code; or -1 on failures.
   // Note: only safe to use in fatal error situations.
-  static int fork_and_exec(const char *cmd);
+  // The "prefer_vfork" argument is only used on POSIX platforms to
+  // indicate whether vfork should be used instead of fork to spawn the
+  // child process (ignored on AIX, which always uses vfork).
+  static int fork_and_exec(const char *cmd, bool prefer_vfork = false);
 
   // Call ::exit() on all platforms but Windows
   static void exit(int num);

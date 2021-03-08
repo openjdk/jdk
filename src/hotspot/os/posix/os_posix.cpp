@@ -1787,19 +1787,17 @@ char** os::get_environ() { return environ; }
 //         doesn't block SIGINT et al.
 //        -this function is unsafe to use in non-error situations, mainly
 //         because the child process will inherit all parent descriptors.
-int os::fork_and_exec(const char* cmd) {
+int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
   const char * argv[4] = {"sh", "-c", cmd, NULL};
 
   pid_t pid ;
 
   char** env = os::get_environ();
 
-  // We use vfork() here since this is called, among other things, on OOMs to
-  // trigger analysis scripts. So it benefits from vfork(). Even though vfork()
-  // is not safe if used incorrectly, here it is, since we proceed straight
-  // through vfork->exec->_exit with no intermediate steps. Also note that the
-  // parent process is in the process of getting shutdown anyway.
-  pid = ::vfork();
+  // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
+  // Otherwise leave it up to the caller.
+  AIX_ONLY(prefer_vfork = true;)
+  pid = prefer_vfork ? ::vfork() : ::fork();
 
   if (pid < 0) {
     // fork failed
