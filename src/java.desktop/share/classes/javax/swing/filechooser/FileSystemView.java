@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.swing.filechooser;
 
 import java.awt.Image;
+import java.awt.image.AbstractMultiResolutionImage;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -225,7 +226,7 @@ public abstract class FileSystemView {
      * Icon for a file, directory, or folder as it would be displayed in
      * a system file browser. Example from Windows: the "M:\" directory
      * displays a CD-ROM icon.
-     *
+     * <p>
      * The default implementation gets information from the ShellFolder class.
      *
      * @param f a <code>File</code> object
@@ -252,6 +253,54 @@ public abstract class FileSystemView {
             return new ImageIcon(img, sf.getFolderType());
         } else {
             return UIManager.getIcon(f.isDirectory() ? "FileView.directoryIcon" : "FileView.fileIcon");
+        }
+    }
+
+   /**
+    * Icon for a file, directory, or folder as it would be displayed in
+    * a system file browser for the requested size.
+    * <p>
+    * The default implementation gets information from the
+    * <code>ShellFolder</code> class. Whenever possible, the icon
+    * returned will be a multi-resolution icon image,
+    * which will allow better scaling with different
+    * magnification factors.
+    * <p>
+    * Example: <pre>
+    * FileSystemView fsv = FileSystemView.getFileSystemView();
+    * Icon icon = fsv.getSystemIcon("application.exe", 64);
+    * JLabel label = new JLabel(icon);
+    * </pre>
+    *
+    * @param f a <code>File</code> object
+    * @param size width and height of the icon in pixels
+    * @return an icon as it would be displayed by a native file chooser
+    * or null if invalid parameters are passed such as pointer to a
+    * non-existing file.
+    * @see JFileChooser#getIcon
+    * @see AbstractMultiResolutionImage
+    * @since 17
+    */
+    public Icon getSystemIcon(File f, int size) {
+        if (f == null) {
+            return null;
+        }
+
+        ShellFolder sf;
+
+        try {
+            sf = ShellFolder.getShellFolder(f);
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+
+        Image img = sf.getIcon(size);
+
+        if (img != null) {
+            return new ImageIcon(img, sf.getFolderType());
+        } else {
+            return UIManager.getIcon(f.isDirectory() ? "FileView.directoryIcon"
+                    : "FileView.fileIcon");
         }
     }
 

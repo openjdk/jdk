@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,12 @@ import sun.util.logging.PlatformLogger;
 import static sun.awt.shell.Win32ShellFolder2.DESKTOP;
 import static sun.awt.shell.Win32ShellFolder2.DRIVES;
 import static sun.awt.shell.Win32ShellFolder2.Invoker;
+import static sun.awt.shell.Win32ShellFolder2.LARGE_ICON_SIZE;
 import static sun.awt.shell.Win32ShellFolder2.MultiResolutionIconImage;
 import static sun.awt.shell.Win32ShellFolder2.NETWORK;
 import static sun.awt.shell.Win32ShellFolder2.PERSONAL;
 import static sun.awt.shell.Win32ShellFolder2.RECENT;
+import static sun.awt.shell.Win32ShellFolder2.SMALL_ICON_SIZE;
 // NOTE: This class supersedes Win32ShellFolderManager, which was removed
 //       from distribution after version 1.4.2.
 
@@ -144,9 +146,9 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                     new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
             img.setRGB(0, 0, size, size, iconBits, 0, size);
 
-            STANDARD_VIEW_BUTTONS[iconIndex] = (size == 16)
+            STANDARD_VIEW_BUTTONS[iconIndex] = (size == SMALL_ICON_SIZE)
                     ? img
-                    : new MultiResolutionIconImage(16, img);
+                    : new MultiResolutionIconImage(SMALL_ICON_SIZE, img);
         }
 
         return STANDARD_VIEW_BUTTONS[iconIndex];
@@ -408,7 +410,8 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             try {
                 int i = Integer.parseInt(name);
                 if (i >= 0) {
-                    return Win32ShellFolder2.getShell32Icon(i, key.startsWith("shell32LargeIcon "));
+                    return Win32ShellFolder2.getShell32Icon(i,
+                         key.startsWith("shell32LargeIcon ") ? LARGE_ICON_SIZE : SMALL_ICON_SIZE);
                 }
             } catch (NumberFormatException ex) {
             }
