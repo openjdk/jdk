@@ -1933,8 +1933,9 @@ public final class Formatter implements Closeable, Flushable {
 
     private IOException lastException;
 
-    private char zero = 0;
-    private static double scaleUp;
+    // Non-unicode code point value used to mark zero as uninitialized
+    private static final char ZERO_SENTINEL = '\uFFFE';
+    private char zero = ZERO_SENTINEL;
 
     /**
      * Returns a charset object for the given charset name.
@@ -2444,13 +2445,14 @@ public final class Formatter implements Closeable, Flushable {
 
     private char zero() {
         char zero = this.zero;
-        if (zero == 0) {
+        if (zero == ZERO_SENTINEL) {
             if ((l != null) && !l.equals(Locale.US)) {
                 DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
-                zero = this.zero = dfs.getZeroDigit();
+                zero = dfs.getZeroDigit();
             } else {
-                zero = this.zero = '0';
+                zero = '0';
             }
+            this.zero = zero;
         }
         return zero;
     }
@@ -3621,7 +3623,7 @@ public final class Formatter implements Closeable, Flushable {
                 // If this is subnormal input so normalize (could be faster to
                 // do as integer operation).
                 if (subnormal) {
-                    scaleUp = Math.scalb(1.0, 54);
+                    double scaleUp = Math.scalb(1.0, 54);
                     d *= scaleUp;
                     // Calculate the exponent.  This is not just exponent + 54
                     // since the former is not the normalized exponent.
