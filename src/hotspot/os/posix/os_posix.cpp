@@ -1794,16 +1794,12 @@ int os::fork_and_exec(const char* cmd) {
 
   char** env = os::get_environ();
 
-  // We use vfork() where possible to avoid native ooms when forking off from parents
-  //  with high memory footprints. While a bit unsafe, in this case using vfork is
-  //  perfectly fine (when called in a simple vfork->exec->_exit sequence with no
-  //  intermediate steps).
-  // But since vfork is not async-safe we only use it where we are sure to be outside
-  //  of signal handling.
-  const Thread* const t = Thread::current_or_null_safe();
-  const bool use_vfork = t != NULL && t->is_in_signal_handler() == false;
-
-  pid = use_vfork ? ::vfork() : ::fork();
+  // We use vfork() here since this is called, among other things, on OOMs to
+  // trigger analysis scripts. So it benefits from vfork(). Even though vfork()
+  // is not safe if used incorrectly, here it is, since we proceed straight
+  // through vfork->exec->_exit with no intermediate steps. Also note that the
+  // parent process is in the process of getting shutdown anyway.
+  pid = ::vfork();
 
   if (pid < 0) {
     // fork failed
