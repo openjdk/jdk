@@ -35,14 +35,15 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * Immutable, arbitrary-precision signed decimal numbers.  A
- * {@code BigDecimal} consists of an arbitrary precision integer
- * <i>{@linkplain unscaledValue() unscaled value}</i> and a 32-bit integer <i>{@linkplain scale() scale}</i>.  If zero
- * or positive, the scale is the number of digits to the right of the
- * decimal point.  If negative, the unscaled value of the number is
- * multiplied by ten to the power of the negation of the scale.  The
- * value of the number represented by the {@code BigDecimal} is
- * therefore <code>(unscaledValue &times; 10<sup>-scale</sup>)</code>.
+ * Immutable, arbitrary-precision signed decimal numbers.  A {@code
+ * BigDecimal} consists of an arbitrary precision integer
+ * <i>{@linkplain unscaledValue() unscaled value}</i> and a 32-bit
+ * integer <i>{@linkplain scale() scale}</i>.  If zero or positive,
+ * the scale is the number of digits to the right of the decimal
+ * point.  If negative, the unscaled value of the number is multiplied
+ * by ten to the power of the negation of the scale.  The value of the
+ * number represented by the {@code BigDecimal} is therefore
+ * <code>(unscaledValue &times; 10<sup>-scale</sup>)</code>.
  *
  * <p>The {@code BigDecimal} class provides operations for
  * arithmetic, scale manipulation, rounding, comparison, hashing, and
@@ -257,8 +258,9 @@ import java.util.Objects;
  * by the precision of the {@code MathContext} argument. For example
  * in {@code BigDecimal}, if a nonzero three-digit number and a
  * nonzero four-digit number are multiplied together in the context of
- * a {@code MathContext} object having a precision of three, the result
- * will have three digits (assuming no overflow or underflow, etc.).
+ * a {@code MathContext} object having a precision of three, the
+ * result will have three digits (assuming no overflow or underflow,
+ * etc.).
  *
  * <p>The rounding policies implemented by {@code BigDecimal}
  * operations indicated by {@linkplain RoundingMode rounding modes}

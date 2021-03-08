@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
 package java.math;
 
 /**
- * Specifies a <i>rounding policy</i> for numerical operations
- * capable of discarding precision. Each rounding mode indicates how
- * the least significant returned digit of a rounded result is to be
- * calculated.  If fewer digits are returned than the digits needed to
- * represent the exact numerical result, the discarded digits will be
- * referred to as the <i>discarded fraction</i> regardless the digits'
+ * Specifies a <i>rounding policy</i> for numerical operations capable
+ * of discarding precision. Each rounding mode indicates how the least
+ * significant returned digit of a rounded result is to be calculated.
+ * If fewer digits are returned than the digits needed to represent
+ * the exact numerical result, the discarded digits will be referred
+ * to as the <i>discarded fraction</i> regardless the digits'
  * contribution to the value of the number.  In other words,
  * considered as a numerical value, the discarded fraction could have
  * an absolute value greater than one.
