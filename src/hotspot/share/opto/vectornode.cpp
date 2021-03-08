@@ -1282,4 +1282,15 @@ const TypeFunc* VectorBoxNode::vec_box_type(const TypeInstPtr* box_type) {
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);
 }
+
+Node* ShiftVNode::Identity(PhaseGVN* phase) {
+  Node* in2 = in(2);
+  // Shift by ZERO does nothing
+  if (is_vshift_cnt(in2)) {
+    if (phase->find_int_type(in2->in(1)) == TypeInt::ZERO) {
+      return in(1);
+    }
+  }
+  return this;
+}
 #endif // !PRODUCT

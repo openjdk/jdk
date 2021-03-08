@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,99 +514,109 @@ class SqrtVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------ShiftVNode-----------------------------------
+// Class ShiftV functionality.  This covers the common behaviors for all kinds
+// of vector shifts.
+class ShiftVNode : public VectorNode {
+ public:
+  ShiftVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual int Opcode() const = 0;
+};
+
 //------------------------------LShiftVBNode-----------------------------------
 // Vector left shift bytes
-class LShiftVBNode : public VectorNode {
+class LShiftVBNode : public ShiftVNode {
  public:
-  LShiftVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  LShiftVBNode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------LShiftVSNode-----------------------------------
 // Vector left shift shorts
-class LShiftVSNode : public VectorNode {
+class LShiftVSNode : public ShiftVNode {
  public:
-  LShiftVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  LShiftVSNode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------LShiftVINode-----------------------------------
 // Vector left shift ints
-class LShiftVINode : public VectorNode {
+class LShiftVINode : public ShiftVNode {
  public:
-  LShiftVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  LShiftVINode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------LShiftVLNode-----------------------------------
 // Vector left shift longs
-class LShiftVLNode : public VectorNode {
+class LShiftVLNode : public ShiftVNode {
  public:
-  LShiftVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  LShiftVLNode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------RShiftVBNode-----------------------------------
 // Vector right arithmetic (signed) shift bytes
-class RShiftVBNode : public VectorNode {
+class RShiftVBNode : public ShiftVNode {
  public:
-  RShiftVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  RShiftVBNode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------RShiftVSNode-----------------------------------
 // Vector right arithmetic (signed) shift shorts
-class RShiftVSNode : public VectorNode {
+class RShiftVSNode : public ShiftVNode {
  public:
-  RShiftVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  RShiftVSNode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------RShiftVINode-----------------------------------
 // Vector right arithmetic (signed) shift ints
-class RShiftVINode : public VectorNode {
+class RShiftVINode : public ShiftVNode {
  public:
-  RShiftVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  RShiftVINode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------RShiftVLNode-----------------------------------
 // Vector right arithmetic (signed) shift longs
-class RShiftVLNode : public VectorNode {
+class RShiftVLNode : public ShiftVNode {
  public:
-  RShiftVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  RShiftVLNode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------URShiftVBNode----------------------------------
 // Vector right logical (unsigned) shift bytes
-class URShiftVBNode : public VectorNode {
+class URShiftVBNode : public ShiftVNode {
  public:
-  URShiftVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  URShiftVBNode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------URShiftVSNode----------------------------------
 // Vector right logical (unsigned) shift shorts
-class URShiftVSNode : public VectorNode {
+class URShiftVSNode : public ShiftVNode {
  public:
-  URShiftVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  URShiftVSNode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------URShiftVINode----------------------------------
 // Vector right logical (unsigned) shift ints
-class URShiftVINode : public VectorNode {
+class URShiftVINode : public ShiftVNode {
  public:
-  URShiftVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  URShiftVINode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------URShiftVLNode----------------------------------
 // Vector right logical (unsigned) shift longs
-class URShiftVLNode : public VectorNode {
+class URShiftVLNode : public ShiftVNode {
  public:
-  URShiftVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  URShiftVLNode(Node* in1, Node* in2, const TypeVect* vt) : ShiftVNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
