@@ -817,8 +817,6 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 javax/script/Test7.java                                         8239361 generic-all
 
-jdk/dynalink/TypeConverterFactoryMemoryLeakTest.java            8261483 generic-all
-
 ############################################################################
 
 # jdk_jfr
@@ -854,7 +852,6 @@ java/awt/dnd/DnDFileGroupDescriptor/DnDFileGroupDescriptor.html 8080185 macosx-a
 javax/swing/JTabbedPane/4666224/bug4666224.html 8144124  macosx-all
 java/awt/event/MouseEvent/AltGraphModifierTest/AltGraphModifierTest.java 8162380 generic-all
 java/awt/Window/TranslucentJAppletTest/TranslucentJAppletTest.java 8163086 macosx-all
-java/awt/image/multiresolution/MultiResolutionIcon/IconTest.java 8250804 macosx-all,linux-all
 java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-all,linux-all
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java 8185429 macosx-all
