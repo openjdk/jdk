@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,60 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1YCTYPES_HPP
-#define SHARE_GC_G1_G1YCTYPES_HPP
+#ifndef SHARE_GC_G1_G1GCTYPES_HPP
+#define SHARE_GC_G1_G1GCTYPES_HPP
 
 #include "utilities/debug.hpp"
 
-enum G1YCType {
+enum G1YCPhase {
   Normal,
   ConcurrentStart,
   DuringMarkOrRebuild,
   Mixed,
-  G1YCTypeEndSentinel
+  G1YCPhaseEndSentinel
 };
 
-class G1YCTypeHelper {
+enum G1GCType {
+  YoungGC,
+  LastYoungGC,
+  ConcurrentStartMarkGC,
+  ConcurrentStartUndoGC,
+  Cleanup,
+  Remark,
+  MixedGC,
+  FullGC,
+  G1GCTypeEndSentinel
+};
+
+class G1GCTypeHelper {
  public:
-  static const char* to_string(G1YCType type) {
+
+  static bool is_young_only_pause(G1GCType type) {
+    assert(type != FullGC, "must be");
+    assert(type != Remark, "must be");
+    assert(type != Cleanup, "must be");
+    return type == ConcurrentStartUndoGC ||
+           type == ConcurrentStartMarkGC ||
+           type == LastYoungGC ||
+           type == YoungGC;
+  }
+
+  static bool is_mixed_pause(G1GCType type) {
+    assert(type != FullGC, "must be");
+    assert(type != Remark, "must be");
+    assert(type != Cleanup, "must be");
+    return type == MixedGC;
+  }
+
+  static bool is_last_young_pause(G1GCType type) {
+    return type == LastYoungGC;
+  }
+
+  static bool is_concurrent_start_pause(G1GCType type) {
+    return type == ConcurrentStartMarkGC || type == ConcurrentStartUndoGC;
+  }
+
+  static const char* to_string(G1YCPhase type) {
     switch(type) {
       case Normal: return "Normal";
       case ConcurrentStart: return "Concurrent Start";
@@ -46,6 +84,7 @@ class G1YCTypeHelper {
       default: ShouldNotReachHere(); return NULL;
     }
   }
+
 };
 
-#endif // SHARE_GC_G1_G1YCTYPES_HPP
+#endif // SHARE_GC_G1_G1GCTYPES_HPP

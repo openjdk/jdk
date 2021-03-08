@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1COLLECTORSTATE_HPP
 #define SHARE_GC_G1_G1COLLECTORSTATE_HPP
 
-#include "gc/g1/g1YCTypes.hpp"
+#include "gc/g1/g1GCTypes.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // State of the G1 collection.
@@ -110,17 +110,10 @@ public:
   bool mark_or_rebuild_in_progress() const { return _mark_or_rebuild_in_progress; }
   bool clearing_next_bitmap() const { return _clearing_next_bitmap; }
 
-  G1YCType yc_type() const {
-    if (in_concurrent_start_gc()) {
-      return ConcurrentStart;
-    } else if (mark_or_rebuild_in_progress()) {
-      return DuringMarkOrRebuild;
-    } else if (in_young_only_phase()) {
-      return Normal;
-    } else {
-      return Mixed;
-    }
-  }
+  // Calculate GC Pause Type from internal state.
+  G1GCType young_gc_pause_type(bool concurrent_operation_is_full_mark) const;
+  G1YCPhase young_gc_phase() const;
+
 };
 
 #endif // SHARE_GC_G1_G1COLLECTORSTATE_HPP

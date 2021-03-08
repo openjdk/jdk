@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1TRACE_HPP
 #define SHARE_GC_G1_G1TRACE_HPP
 
-#include "gc/g1/g1YCTypes.hpp"
+#include "gc/g1/g1GCTypes.hpp"
 #include "gc/shared/gcTrace.hpp"
 
 class G1EvacuationInfo;
@@ -33,13 +33,13 @@ class G1HeapSummary;
 class G1EvacSummary;
 
 class G1YoungGCInfo {
-  G1YCType _type;
+  G1YCPhase _phase;
 public:
-  G1YoungGCInfo() : _type(G1YCTypeEndSentinel) {}
-  void set_type(G1YCType type) {
-    _type = type;
+  G1YoungGCInfo() : _phase(G1YCPhaseEndSentinel) {}
+  void set_phase(G1YCPhase phase) {
+    _phase = phase;
   }
-  G1YCType type() const { return _type; }
+  G1YCPhase phase() const { return _phase; }
 };
 
 class G1NewTracer : public YoungGCTracer {
@@ -49,7 +49,7 @@ public:
   G1NewTracer() : YoungGCTracer(G1New) {}
 
   void initialize();
-  void report_yc_type(G1YCType type);
+  void report_yc_phase(G1YCPhase phase);
   void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
   void report_evacuation_info(G1EvacuationInfo* info);
   void report_evacuation_failed(EvacuationFailedInfo& ef_info);
