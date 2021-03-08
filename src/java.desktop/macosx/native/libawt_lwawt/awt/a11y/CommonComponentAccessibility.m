@@ -56,6 +56,7 @@ static NSMutableDictionary * _Nullable rolesMap;
     [rolesMap setObject:@"StaticTextAccessibility" forKey:@"label"];
     [rolesMap setObject:@"RadiobuttonAccessibility" forKey:@"radiobutton"];
     [rolesMap setObject:@"CheckboxAccessibility" forKey:@"checkbox"];
+    [rolesMap setObject:@"SliderAccessibility" forKey:@"slider"];
 }
 
 /*

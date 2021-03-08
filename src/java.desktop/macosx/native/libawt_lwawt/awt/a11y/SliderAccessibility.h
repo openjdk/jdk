@@ -23,40 +23,17 @@
  * questions.
  */
 
-#import "SpinboxAccessibility.h"
+#import "JavaComponentAccessibility.h"
+#import "CommonComponentAccessibility.h"
 
-#define INCREMENT 0
-#define DECREMENT 1
+#import <AppKit/AppKit.h>
 
-/*
- * Implementation of the accessibility peer for the spinner role
- */
-@implementation SpinboxAccessibility
-- (nullable NSString *)accessibilityLabel
-{
-    //return [self accessibilityTitleAttribute];
-    NSLog(@"Spinner accessibilityLabel");
-    return @"Dummy Spinner Label Text";
-}
+@interface SliderAccessibility : CommonComponentAccessibility <NSAccessibilitySlider> {
 
-- (nullable id)accessibilityValue
-{
-    NSLog(@"Spinner accessibilityValue");
-    return [self accessibilityValueAttribute];
-    //return @"Dummy Spinner Value Text";
-}
+};
 
-- (BOOL)accessibilityPerformIncrement
-{
-    NSLog(@"Spinner INCREMENT called");
-    return [self performAccessibleAction:INCREMENT];
-}
-
-
-- (BOOL)accessibilityPerformDecrement
-{
-    NSLog(@"Spinner DECREMENT called");
-    return [self performAccessibleAction:DECREMENT];
-}
-
+- (nullable NSString *)accessibilityLabel;
+- (nullable id)accessibilityValue;
+- (BOOL)accessibilityPerformDecrement;
+- (BOOL)accessibilityPerformIncrement;
 @end

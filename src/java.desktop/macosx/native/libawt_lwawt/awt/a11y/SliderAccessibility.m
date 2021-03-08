@@ -23,40 +23,42 @@
  * questions.
  */
 
-#import "SpinboxAccessibility.h"
+#import "SliderAccessibility.h"
 
 #define INCREMENT 0
 #define DECREMENT 1
 
 /*
- * Implementation of the accessibility peer for the spinner role
+ * Implementation of the accessibility peer for the slider role
  */
-@implementation SpinboxAccessibility
+@implementation SliderAccessibility
 - (nullable NSString *)accessibilityLabel
 {
+    NSLog(@"Slider accessibilityLabel");
     //return [self accessibilityTitleAttribute];
-    NSLog(@"Spinner accessibilityLabel");
-    return @"Dummy Spinner Label Text";
+    return @"Dummy Slider Label Text";
 }
 
 - (nullable id)accessibilityValue
 {
-    NSLog(@"Spinner accessibilityValue");
+    NSLog(@"Slider accessibilityValue");
     return [self accessibilityValueAttribute];
-    //return @"Dummy Spinner Value Text";
+    //return @"Dummy Slider Value Text";
 }
 
 - (BOOL)accessibilityPerformIncrement
 {
-    NSLog(@"Spinner INCREMENT called");
-    return [self performAccessibleAction:INCREMENT];
+    NSLog(@"Slider INCREMENT called");
+    //return [self performAccessibleAction:INCREMENT];
+    return true;
 }
 
 
 - (BOOL)accessibilityPerformDecrement
 {
-    NSLog(@"Spinner DECREMENT called");
-    return [self performAccessibleAction:DECREMENT];
+    NSLog(@"Slider DECREMENT called");
+    return true;
+    //return [self performAccessibleAction:DECREMENT];
 }
 
 @end
