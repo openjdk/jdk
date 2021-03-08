@@ -32,7 +32,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -40,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A basic HTTP file server handler for static content.
@@ -51,14 +51,16 @@ import java.util.function.Function;
 public final class FileServerHandler implements HttpHandler {
     private final Path root;
     private final Function<String, String> mimeTable;
-    private static final Charset CHARSET = Charset.defaultCharset();
     private static final List<String> SUPPORTED_METHODS = List.of("HEAD", "GET");
 
     private FileServerHandler(Path root, Function<String, String> mimeTable) {
+        root = root.normalize();
         if (!Files.exists(root))
             throw new IllegalArgumentException("Path does not exist: " + root);
         if (!Files.isDirectory(root))
             throw new IllegalArgumentException("Path not a directory: " + root);
+        if (!root.isAbsolute())
+            throw new IllegalArgumentException("Path is not absolute: " + root);
         this.root = root;
         this.mimeTable = mimeTable;
     }
@@ -103,7 +105,7 @@ public final class FileServerHandler implements HttpHandler {
 
     void handleNotFound(HttpExchange exchange) throws IOException {
         exchange.sendResponseHeaders(404, 0);
-        exchange.getResponseHeaders().set("Content-Type", "text/html; charset="+CHARSET);
+        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(("<h2>File not found</h2>"
                     + sanitize.apply(exchange.getRequestURI().getPath(), chars)
@@ -144,7 +146,8 @@ public final class FileServerHandler implements HttpHandler {
     Path mapToPath(HttpExchange exchange, Path root) {
         URI uri = exchange.getRequestURI();
         String contextPath = exchange.getHttpContext().getPath();
-        if (!contextPath.endsWith("/")) contextPath += "/";
+        if (!contextPath.endsWith("/"))
+            contextPath += "/";
         String requestPath = URI.create(contextPath).relativize(uri).getPath();
         Path validatedPath = root.resolve(requestPath).normalize();
         if (!validatedPath.startsWith(root) || isHiddenOrSymLink(validatedPath))
@@ -159,9 +162,9 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     void serveFile(HttpExchange exchange, Path path) throws IOException {
+        var respHdrs = exchange.getResponseHeaders();
+        respHdrs.set("Content-Type", mediaType(exchange.getRequestURI().getPath()));
         exchange.sendResponseHeaders(200, 0);
-        exchange.getResponseHeaders().set("Content-Type",
-                mediaType(exchange.getRequestURI().getPath()));
         try (InputStream fis = Files.newInputStream(path);
              OutputStream os = exchange.getResponseBody()) {
             fis.transferTo(os);
@@ -169,10 +172,10 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     void listFiles(HttpExchange exchange, Path path) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
         exchange.sendResponseHeaders(200, 0);
-        exchange.getResponseHeaders().set("Content-Type", "text/html; charset="+CHARSET);
         try (OutputStream os = exchange.getResponseBody();
-             PrintStream ps = new PrintStream(os)) {
+             PrintStream ps = new PrintStream(os, false, UTF_8)) {
             ps.println(openHTML
                     + "<h2>Directory listing for "
                     + sanitize.apply(exchange.getRequestURI().getPath(), chars)
