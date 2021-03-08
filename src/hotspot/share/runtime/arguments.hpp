@@ -354,8 +354,6 @@ class Arguments : AllStatic {
   static bool _UseOnStackReplacement;
   static bool _BackgroundCompilation;
   static bool _ClipInlining;
-  static intx _Tier3InvokeNotifyFreqLog;
-  static intx _Tier4InvocationThreshold;
 
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
@@ -617,8 +615,10 @@ class Arguments : AllStatic {
   static bool  init_shared_archive_paths() NOT_CDS_RETURN_(false);
 
   // Operation modi
-  static Mode mode()                        { return _mode; }
-  static bool is_interpreter_only() { return mode() == _int; }
+  static Mode mode()                { return _mode;           }
+  static bool is_interpreter_only() { return mode() == _int;  }
+  static bool is_compiler_only()    { return mode() == _comp; }
+
 
   // preview features
   static void set_enable_preview() { _enable_preview = true; }

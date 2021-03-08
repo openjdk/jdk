@@ -86,15 +86,15 @@ bool CompilationPolicy::must_be_compiled(const methodHandle& m, int comp_level) 
          (UseCompiler && AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
-void CompilationPolicy::compile_if_required(const methodHandle& selected_method, TRAPS) {
-  if (must_be_compiled(selected_method)) {
+void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
+  if (must_be_compiled(m)) {
     // This path is unusual, mostly used by the '-Xcomp' stress test mode.
 
     if (!THREAD->can_call_java() || THREAD->is_Compiler_thread()) {
       // don't force compilation, resolve was on behalf of compiler
       return;
     }
-    if (selected_method->method_holder()->is_not_initialized()) {
+    if (m->method_holder()->is_not_initialized()) {
       // 'is_not_initialized' means not only '!is_initialized', but also that
       // initialization has not been started yet ('!being_initialized')
       // Do not force compilation of methods in uninitialized classes.
@@ -104,9 +104,11 @@ void CompilationPolicy::compile_if_required(const methodHandle& selected_method,
       // even before classes are initialized.
       return;
     }
-    CompileBroker::compile_method(selected_method, InvocationEntryBci,
-        CompilationPolicy::initial_compile_level(selected_method),
-        methodHandle(), 0, CompileTask::Reason_MustBeCompiled, THREAD);
+    CompLevel level = initial_compile_level(m);
+    if (PrintTieredEvents) {
+      print_event(COMPILE, m(), m(), InvocationEntryBci, level);
+    }
+    CompileBroker::compile_method(m, InvocationEntryBci, level, methodHandle(), 0, CompileTask::Reason_MustBeCompiled, THREAD);
   }
 }
 
@@ -337,7 +339,7 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
   return 1;
 }
 
-void CompilationPolicy::print_counters(const char* prefix, Method* m) {
+void CompilationPolicy::print_counters(const char* prefix, const Method* m) {
   int invocation_count = m->invocation_count();
   int backedge_count = m->backedge_count();
   MethodData* mdh = m->method_data();
@@ -358,8 +360,7 @@ void CompilationPolicy::print_counters(const char* prefix, Method* m) {
 }
 
 // Print an event.
-void CompilationPolicy::print_event(EventType type, Method* m, Method* im,
-                                        int bci, CompLevel level) {
+void CompilationPolicy::print_event(EventType type, const Method* m, const Method* im, int bci, CompLevel level) {
   bool inlinee_event = m != im;
 
   ttyLocker tty_lock;
@@ -674,9 +675,8 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
 
   methodHandle max_method_h(Thread::current(), max_method);
 
-  if (max_task != NULL && max_task->comp_level() == CompLevel_full_profile &&
-      TieredStopAtLevel > CompLevel_full_profile &&
-      max_method != NULL && is_method_profiled(max_method_h)) {
+  if (max_task != NULL && max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile &&
+      max_method != NULL && is_method_profiled(max_method_h) && !Arguments::is_compiler_only()) {
     max_task->set_comp_level(CompLevel_limited_profile);
 
     if (CompileBroker::compilation_is_complete(max_method_h, max_task->osr_bci(), CompLevel_limited_profile)) {
