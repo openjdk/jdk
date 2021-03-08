@@ -62,9 +62,16 @@ class FileWriter : public AbstractWriter {
 private:
   char const* _path;
   int _fd;
+  bool _overwrite;
+  bool _stream;
 
 public:
-  FileWriter(char const* path) : _path(path), _fd(-1) { }
+  FileWriter(char const* path, bool overwrite, bool stream) :
+    _path(path),
+    _fd(-1),
+    _overwrite(overwrite),
+    _stream(stream) {
+  }
 
   ~FileWriter();
 

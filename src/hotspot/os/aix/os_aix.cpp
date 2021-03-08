@@ -2699,10 +2699,12 @@ int os::open(const char *path, int oflag, int mode) {
 }
 
 // create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  if (!rewrite_existing) {
-    oflags |= O_EXCL;
+int os::create_binary_file(const char* path, bool rewrite_existing, bool streaming) {
+  int oflags = O_WRONLY | O_NOCTTY;
+  if (rewrite_existing) {
+    oflags |= O_CREAT | O_TRUNC;
+  } else if (!streaming) {
+    oflags |= O_CREAT | O_EXCL;
   }
   return ::open64(path, oflags, S_IREAD | S_IWRITE);
 }

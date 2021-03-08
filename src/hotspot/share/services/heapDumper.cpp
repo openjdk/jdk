@@ -1905,7 +1905,7 @@ void VM_HeapDumper::dump_stack_traces() {
 }
 
 // dump the heap to given path.
-int HeapDumper::dump(const char* path, outputStream* out, int compression) {
+int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite, bool stream) {
   assert(path != NULL && strlen(path) > 0, "path missing");
 
   // print message in interactive case
@@ -1928,12 +1928,12 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression) {
     }
   }
 
-  DumpWriter writer(new (std::nothrow) FileWriter(path), compressor);
+  DumpWriter writer(new (std::nothrow) FileWriter(path, overwrite, stream), compressor);
 
   if (writer.error() != NULL) {
     set_error(writer.error());
     if (out != NULL) {
-      out->print_cr("Unable to create %s: %s", path,
+      out->print_cr("Unable to %s %s: %s", stream ? "stream to " : "create", path,
         (error() != NULL) ? error() : "reason unknown");
     }
     return -1;

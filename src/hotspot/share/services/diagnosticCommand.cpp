@@ -513,16 +513,28 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
 
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
-                           DCmdWithParser(output, heap),
-  _filename("filename","Name of the dump file", "STRING",true),
+  DCmdWithParser(output, heap),
+  _filename("filename", "Name of the dump file", "STRING", true),
   _all("-all", "Dump all objects, including unreachable objects",
-       "BOOLEAN", false, "false"),
+    "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
-               "using the given compression level. 1 (recommended) is the fastest, "
-               "9 the strongest compression.", "INT", false, "1") {
+    "using the given compression level. 1 (recommended) is the fastest, "
+    "9 the strongest compression.", "INT", false, "1"),
+  _overwrite("-overwrite", "Overwrite the file if it already exists",
+    "BOOLEAN", false, "false"),
+#ifdef _WINDOWS
+  _stream("-stream", "Allows to stream the dump to a named pipe.",
+          "BOOLEAN", false, "false")
+#else
+  _stream("-stream", "Allows to stream the dump to domain socket, tty "
+          "or something similar", "BOOLEAN", false, "false")
+#endif
+{
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_gzip);
+  _dcmdparser.add_dcmd_option(&_overwrite);
+  _dcmdparser.add_dcmd_option(&_stream);
 }
 
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
@@ -537,11 +549,16 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
+  if (_overwrite.value() && _stream.value()) {
+    output()->print_cr("Cannot specify -overwrite and -stream simultaneously.");
+    return;
+  }
+
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level);
+  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), _stream.value());
 }
 
 int HeapDumpDCmd::num_arguments() {

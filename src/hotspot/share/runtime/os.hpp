@@ -742,7 +742,7 @@ class os: AllStatic {
   static bool dir_is_empty(const char* path);
 
   // IO operations on binary files
-  static int create_binary_file(const char* path, bool rewrite_existing);
+  static int create_binary_file(const char* path, bool rewrite_existing, bool streaming);
   static jlong current_file_offset(int fd);
   static jlong seek_to_file_offset(int fd, jlong offset);
 
