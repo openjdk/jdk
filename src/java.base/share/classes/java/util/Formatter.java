@@ -1933,7 +1933,7 @@ public final class Formatter implements Closeable, Flushable {
 
     private IOException lastException;
 
-    // Non-unicode code point value used to mark zero as uninitialized
+    // Non-character value used to mark zero as uninitialized
     private static final char ZERO_SENTINEL = '\uFFFE';
     private char zero = ZERO_SENTINEL;
 
