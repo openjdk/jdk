@@ -607,6 +607,12 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                         } else {
                             if (mtlc != NULL) {
                                 [mtlc.encoderManager endEncoder];
+                                MTLCommandBufferWrapper * cbwrapper = [mtlc pullCommandBufferWrapper];
+                                id<MTLCommandBuffer> commandbuf = [cbwrapper getCommandBuffer];
+                                [commandbuf addCompletedHandler:^(id <MTLCommandBuffer> commandbuf) {
+                                    [cbwrapper release];
+                                }];
+                                [commandbuf commit];
                             }
                             mtlc = newMtlc;
                             dstOps = NULL;
