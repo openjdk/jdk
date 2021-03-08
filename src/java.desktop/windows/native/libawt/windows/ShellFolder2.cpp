@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -964,7 +964,6 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
         return 0;
     }
 
-    HICON hIconLow = NULL;
     HICON hIcon = NULL;
 
     HRESULT hres;
@@ -978,13 +977,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
         UINT uFlags = getDefaultIcon ? GIL_DEFAULTICON : GIL_FORSHELL | GIL_ASYNC;
         hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
         if (SUCCEEDED(hres)) {
-            hres = pIcon->Extract(szBuf, index, &hIcon, &hIconLow, (16 << 16) + size);
             if (size < 24) {
-                fn_DestroyIcon((HICON)hIcon);
-                hIcon = hIconLow;
-            } else {
-                fn_DestroyIcon((HICON)hIconLow);
+                size = 16;
             }
+            hres = pIcon->Extract(szBuf, index, &hIcon, NULL, (16 << 16) + size);
         } else if (hres == E_PENDING) {
             pIcon->Release();
             return E_PENDING;

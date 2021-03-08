@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -411,7 +411,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 int i = Integer.parseInt(name);
                 if (i >= 0) {
                     return Win32ShellFolder2.getShell32Icon(i,
-                         key.startsWith("shell32LargeIcon ")?LARGE_ICON_SIZE : SMALL_ICON_SIZE);
+                         key.startsWith("shell32LargeIcon ") ? LARGE_ICON_SIZE : SMALL_ICON_SIZE);
                 }
             } catch (NumberFormatException ex) {
             }

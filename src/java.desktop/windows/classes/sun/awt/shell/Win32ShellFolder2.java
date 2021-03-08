@@ -1169,7 +1169,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                     disposeIcon(hIcon);
 
                     multiResolutionIcon.put(s, newIcon);
-                    if (size < 8 || size > 256) {
+                    if (size < MIN_QUALITY_ICON || size > MAX_QUALITY_ICON) {
                         break;
                     }
                 }
