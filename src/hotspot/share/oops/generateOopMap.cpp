@@ -912,8 +912,11 @@ void GenerateOopMap::do_interpretation(Thread* thread)
   int i = 0;
   do {
     if (i != 0 && thread->is_Java_thread()) {
-      if (thread->as_Java_thread()->thread_state() == _thread_in_vm) {
-        ThreadBlockInVM tbivm(thread->as_Java_thread());
+      JavaThread* jt = thread->as_Java_thread();
+      if (jt->thread_state() == _thread_in_vm) {
+        // Since this JavaThread has looped at least once and is _thread_in_vm,
+        // we honor any pending blocking request.
+        ThreadBlockInVM tbivm(jt);
       }
     }
 #ifndef PRODUCT
