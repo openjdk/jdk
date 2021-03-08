@@ -437,7 +437,7 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
   // cause SoftRefs to be cleared.
   bool maximum_compaction = clear_all_soft_refs;
   PSParallelCompact::invoke(maximum_compaction);
-  capture_live();
+  update_live_estimate();
 }
 
 // Failed allocation policy. Must be called from the VM thread, and

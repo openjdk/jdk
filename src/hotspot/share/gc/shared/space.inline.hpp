@@ -82,13 +82,14 @@ size_t CompactibleSpace::obj_size(const HeapWord* addr) const {
 #if INCLUDE_SERIALGC
 
 class DeadSpacer : StackObj {
+  friend class CompactibleSpace;
+
   size_t _allowed_deadspace_words;
   bool _active;
   CompactibleSpace* _space;
-
-public:
   size_t _dead_space;
 
+public:
   DeadSpacer(CompactibleSpace* space) : _allowed_deadspace_words(0), _space(space), _dead_space(0) {
     size_t ratio = _space->allowed_dead_ratio();
     _active = ratio > 0;
@@ -186,8 +187,7 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
       // we don't have to compact quite as often.
       if (cur_obj == compact_top && dead_spacer.insert_deadspace(cur_obj, end)) {
         oop obj = oop(cur_obj);
-        size_t obj_size = obj->size();
-        compact_top = cp->space->forward(obj, obj_size, cp, compact_top);
+        compact_top = cp->space->forward(obj, obj->size(), cp, compact_top);
         end_of_live = end;
       } else {
         // otherwise, it really is a free region.

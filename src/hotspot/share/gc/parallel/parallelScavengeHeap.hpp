@@ -83,8 +83,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Allocate in oldgen and record the allocation with the size_policy.
   HeapWord* allocate_old_gen_and_record(size_t word_size);
 
-  // in order to provide accurate estimate this method must be called only when the heap has just been collected and compacted
-  inline void capture_live();
+  // In order to provide accurate estimate this method must be called only when the heap has just been collected and compacted.
+  inline void update_live_estimate();
 
  protected:
   static inline size_t total_invocations();

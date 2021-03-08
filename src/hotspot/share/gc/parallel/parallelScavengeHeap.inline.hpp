@@ -40,10 +40,10 @@ inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const 
 
 inline void ParallelScavengeHeap::invoke_scavenge() {
   PSScavenge::invoke();
-  capture_live();
+  update_live_estimate();
 }
 
-inline void ParallelScavengeHeap::capture_live() {
+inline void ParallelScavengeHeap::update_live_estimate() {
   _live = young_gen()->used_in_bytes() + old_gen()->used_in_bytes();
 }
 
