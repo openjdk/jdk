@@ -106,8 +106,6 @@ import org.xml.sax.SAXException;
  * variable is set to the value of --win-upgrade-uuid command line option
  * <li>JpAllowDowngrades. Set to "yes" if --win-upgrade-uuid command line option
  * was specified. Undefined otherwise
- * <li>JpLicenseRtf. Set to the value of --license-file command line option.
- * Undefined is --license-file command line option was not specified
  * <li>JpConfigDir. Absolute path to the directory with generated WiX source
  * files.
  * <li>JpIsSystemWide. Set to "yes" if --win-per-user-install command line
@@ -119,7 +117,7 @@ import org.xml.sax.SAXException;
  * --win-dir-chooser command line options. It is parametrized with the following
  * WiX variables:
  * <ul>
- * <li>WixUILicenseRtf. Set to the value of --license-file command line option.
+ * <li>JpLicenseRtf. Set to the value of --license-file command line option.
  * Undefined if --license-file command line option was not specified
  * </ul>
  */
