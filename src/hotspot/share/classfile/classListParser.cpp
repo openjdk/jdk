@@ -92,6 +92,60 @@ ClassListParser::~ClassListParser() {
   _instance = NULL;
 }
 
+int ClassListParser::parse(TRAPS) {
+  int class_count = 0;
+
+  while (parse_one_line()) {
+    if (lambda_form_line()) {
+      // The current line is "@lambda-form-invoker ...". It has been recorded in LambdaFormInvokers.
+      continue;
+    }
+
+    TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
+    if (_indy_items->length() > 0) {
+      // The current line is "@lambda-proxy class_name". Load the proxy class.
+      resolve_indy(THREAD, class_name_symbol);
+      class_count++;
+      continue;
+    }
+
+    Klass* klass = load_current_class(class_name_symbol, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
+        // If we have run out of memory, don't try to load the rest of the classes in
+        // the classlist. Throw an exception, which will terminate the dumping process.
+        return 0; // THROW
+      }
+
+      // We might have an invalid class name or an bad class. Warn about it
+      // and keep going to the next line.
+      CLEAR_PENDING_EXCEPTION;
+      log_warning(cds)("Preload Warning: Cannot find %s", _class_name);
+      continue;
+    }
+
+    assert(klass != NULL, "sanity");
+    if (log_is_enabled(Trace, cds)) {
+      ResourceMark rm(THREAD);
+      log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
+    }
+
+    if (klass->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(klass);
+
+      // Link the class to cause the bytecodes to be rewritten and the
+      // cpcache to be created. The linking is done as soon as classes
+      // are loaded in order that the related data structures (klass and
+      // cpCache) are located together.
+      MetaspaceShared::try_link_class(THREAD, ik);
+    }
+
+    class_count++;
+  }
+
+  return class_count;
+}
+
 bool ClassListParser::parse_one_line() {
   for (;;) {
     if (fgets(_line, sizeof(_line), _file) == NULL) {
@@ -493,7 +547,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
   Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, CHECK);
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    MetaspaceShared::try_link_class(THREAD, ik); // FIXME -- can this be an old class??
+    MetaspaceShared::try_link_class(THREAD, ik); // FIXME -- can ik be an old class??
     if (!ik->is_linked()) {
       // Verification of ik has failed
       return;
@@ -537,22 +591,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
   }
 }
 
-Klass* ClassListParser::load_current_class(TRAPS) {
-  TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
-
-  if (_indy_items->length() > 0) {
-    resolve_indy(THREAD, class_name_symbol);
-    return NULL;
-  }
-
-  Klass* k = load_current_class_impl(class_name_symbol, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    log_warning(cds)("Preload Warning: Cannot find %s", current_class_name());
-  }
-  return k;
-}
-
-Klass* ClassListParser::load_current_class_impl(Symbol* class_name_symbol, TRAPS) {
+Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
   Klass* klass;
   if (!is_loading_from_source()) {
     // Load classes for the boot/platform/app loaders only.

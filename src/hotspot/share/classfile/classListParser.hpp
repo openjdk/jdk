@@ -118,7 +118,8 @@ class ClassListParser : public StackObj {
 
   void resolve_indy(Thread* current, Symbol* class_name_symbol);
   void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
-  Klass* load_current_class_impl(Symbol* class_name_symbol, TRAPS);
+  bool parse_one_line();
+  Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
 
 public:
   ClassListParser(const char* file);
@@ -131,7 +132,7 @@ public:
     return _instance;
   }
 
-  bool parse_one_line();
+  int parse(TRAPS);
   void split_tokens_by_whitespace(int offset);
   int split_at_tag_from_line();
   bool parse_at_tags();
@@ -170,8 +171,6 @@ public:
   const char* current_class_name() {
     return _class_name;
   }
-
-  Klass* load_current_class(TRAPS);
 
   bool is_loading_from_source();
 

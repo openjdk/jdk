@@ -222,7 +222,6 @@ void MetaspaceShared::post_initialize(TRAPS) {
 static GrowableArrayCHeap<OopHandle, mtClassShared>* _extra_interned_strings = NULL;
 static GrowableArrayCHeap<Symbol*, mtClassShared>* _extra_symbols = NULL;
 
-// This function never throws
 void MetaspaceShared::read_extra_data(Thread* current, const char* filename) {
   _extra_interned_strings = new GrowableArrayCHeap<OopHandle, mtClassShared>(10000);
   _extra_symbols = new GrowableArrayCHeap<Symbol*, mtClassShared>(1000);
@@ -603,10 +602,14 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   ResourceMark rm(THREAD);
   preload_and_dump_impl(THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
-    log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
-                   java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
-    vm_direct_exit(-1, "VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
+    if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
+      vm_direct_exit(-1,  err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+                                  SIZE_FORMAT "M", MaxHeapSize/M));
+    } else {
+      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+      vm_direct_exit(-1, "VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
+    }
   } else {
     // On success, the VM_PopulateDumpSharedSpace op should have
     // exited the VM.
@@ -704,40 +707,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 
 int MetaspaceShared::parse_classlist(const char* classlist_path, TRAPS) {
   ClassListParser parser(classlist_path);
-  int class_count = 0;
-
-  while (parser.parse_one_line()) {
-    if (parser.lambda_form_line()) {
-      continue;
-    }
-    Klass* klass = parser.load_current_class(THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      // If we have run out of memory, don't try to load the rest of the classes in
-      // the classlist. Exit the VM now.
-      ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
-      CLEAR_PENDING_EXCEPTION;
-    }
-    if (klass != NULL) {
-      if (log_is_enabled(Trace, cds)) {
-        ResourceMark rm(THREAD);
-        log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
-      }
-
-      if (klass->is_instance_klass()) {
-        InstanceKlass* ik = InstanceKlass::cast(klass);
-
-        // Link the class to cause the bytecodes to be rewritten and the
-        // cpcache to be created. The linking is done as soon as classes
-        // are loaded in order that the related data structures (klass and
-        // cpCache) are located together.
-        try_link_class(THREAD, ik);
-      }
-
-      class_count++;
-    }
-  }
-
-  return class_count;
+  return parser.parse(THREAD); // returns the number of classes loaded.
 }
 
 // Returns true if the class's status has changed.
