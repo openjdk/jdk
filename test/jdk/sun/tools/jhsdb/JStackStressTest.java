@@ -81,14 +81,11 @@ public class JStackStressTest {
                 out.write("/exit\n".getBytes());
                 out.flush();
             }
-            System.out.println("jshell Output: " + jshellOutput.getOutput());
-            if (jShellProcess.isAlive()) {
-                System.out.println("Destroying jshell");
-                jShellProcess.destroy();
-                System.out.println("Jshell destroyed");
-            } else {
-                System.out.println("Jshell not alive");
+            try {
+                jShellProcess.waitFor(); // jshell should exit quickly
+            } catch (InterruptedException e) {
             }
+            System.out.println("jshell Output: " + jshellOutput.getOutput());
         }
     }
 
