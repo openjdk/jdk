@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,14 +64,7 @@ public abstract class DynamicConstantDesc<T>
     private final String constantName;
     private final ClassDesc constantType;
 
-    private static final Map<MethodHandleDesc, Function<DynamicConstantDesc<?>, ConstantDesc>> canonicalMap
-            = Map.ofEntries(Map.entry(ConstantDescs.BSM_PRIMITIVE_CLASS, DynamicConstantDesc::canonicalizePrimitiveClass),
-                            Map.entry(ConstantDescs.BSM_ENUM_CONSTANT, DynamicConstantDesc::canonicalizeEnum),
-                            Map.entry(ConstantDescs.BSM_NULL_CONSTANT, DynamicConstantDesc::canonicalizeNull),
-                            Map.entry(ConstantDescs.BSM_VARHANDLE_STATIC_FIELD, DynamicConstantDesc::canonicalizeStaticFieldVarHandle),
-                            Map.entry(ConstantDescs.BSM_VARHANDLE_FIELD, DynamicConstantDesc::canonicalizeFieldVarHandle),
-                            Map.entry(ConstantDescs.BSM_VARHANDLE_ARRAY, DynamicConstantDesc::canonicalizeArrayVarHandle)
-    );
+    private static volatile Map<MethodHandleDesc, Function<DynamicConstantDesc<?>, ConstantDesc>> canonicalMap;
 
     /**
      * Creates a nominal descriptor for a dynamic constant.
@@ -281,7 +274,24 @@ public abstract class DynamicConstantDesc<T>
     }
 
     private ConstantDesc tryCanonicalize() {
-        Function<DynamicConstantDesc<?>, ConstantDesc> f = canonicalMap.get(bootstrapMethod);
+        Map<MethodHandleDesc, Function<DynamicConstantDesc<?>, ConstantDesc>> canonDescs = canonicalMap;
+        if (canonDescs == null) {
+            canonDescs = Map.ofEntries(
+                    Map.entry(ConstantDescs.BSM_PRIMITIVE_CLASS, DynamicConstantDesc::canonicalizePrimitiveClass),
+                    Map.entry(ConstantDescs.BSM_ENUM_CONSTANT, DynamicConstantDesc::canonicalizeEnum),
+                    Map.entry(ConstantDescs.BSM_NULL_CONSTANT, DynamicConstantDesc::canonicalizeNull),
+                    Map.entry(ConstantDescs.BSM_VARHANDLE_STATIC_FIELD, DynamicConstantDesc::canonicalizeStaticFieldVarHandle),
+                    Map.entry(ConstantDescs.BSM_VARHANDLE_FIELD, DynamicConstantDesc::canonicalizeFieldVarHandle),
+                    Map.entry(ConstantDescs.BSM_VARHANDLE_ARRAY, DynamicConstantDesc::canonicalizeArrayVarHandle));
+            synchronized (DynamicConstantDesc.class) {
+                if (canonicalMap == null) {
+                    canonicalMap = canonDescs;
+                }
+            }
+            canonDescs = canonicalMap;
+        }
+
+        Function<DynamicConstantDesc<?>, ConstantDesc> f = canonDescs.get(bootstrapMethod);
         if (f != null) {
             try {
                 return f.apply(this);
