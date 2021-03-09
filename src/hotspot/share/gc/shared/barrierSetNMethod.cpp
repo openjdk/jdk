@@ -49,7 +49,7 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 }
 
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
-  // Enable WXWrite: the function is called direclty from nmethod_entry_barrier
+  // Enable WXWrite: the function is called directly from nmethod_entry_barrier
   // stub.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
 
