@@ -51,56 +51,50 @@ public class ClhsdbSymbol {
             theApp = LingeredApp.startApp();
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
-            //Use command "class java.lang.Thread" to get the address of the InstanceKlass for java.lang.Thread
+            // Use command "class java.lang.Thread" to get the address of the InstanceKlass for java.lang.Thread
             cmdStr = "class java.lang.Thread";
             cmds = List.of(cmdStr);
             expStrMap = new HashMap<>();
             expStrMap.put(cmdStr, List.of("java/lang/Thread"));
             String classOutput = test.run(theApp.getPid(), cmds, expStrMap, null);
-            String threadAddress = null;
-            String[] parts = classOutput.split("\n");
 
-            //extract thread address from the output line similar to "java/lang/Thread @0x000000080001d940"
-            for (String part : parts) {
-                if (part.startsWith("java/lang/Thread")) {
-                    String[] addresses = part.split(" @");
-                    threadAddress = addresses[1];
-                    break;
-                }
-            }
+            // Extract the thread InstanceKlass address from the output, which looks similar to the following:
+            //   java/lang/Thread @0x000000080001d940
+            String threadAddress = classOutput.lines().filter(part -> part.startsWith("java/lang/Thread"))
+                                                      .map(part -> part.split(" @"))
+                                                      .findFirst()
+                                                      .map(addresses -> addresses[1])
+                                                      .orElse(null);
+
             if (threadAddress == null) {
                 throw new RuntimeException("Cannot find address of the InstanceKlass for java.lang.Thread in output");
             }
 
-            //Use "inspect" on the thread address we extracted in previous step
+            // Use "inspect" on the thread address we extracted in previous step
             cmdStr = "inspect " + threadAddress;
             cmds = List.of(cmdStr);
             expStrMap = new HashMap<>();
             expStrMap.put(cmdStr, List.of("Symbol"));
             String inspectOutput = test.run(theApp.getPid(), cmds, expStrMap, null);
-            String symbolAddress = null;
-            parts = inspectOutput.split("\n");
 
-            //extract address comes along with Symbol instance, following is corresponding sample output line
-            //Symbol* Klass::_name: Symbol @ 0x0000000800471120
-            for (String part : parts) {
-                if (part.startsWith("Symbol")) {
-                    String[] symbolParts = part.split("@ ");
-                    symbolAddress = symbolParts[1];
-                    break;
-                }
-            }
+            // The inspect command output will have one line of output that looks like the following.
+            // Symbol* Klass::_name: Symbol @ 0x0000000800471120
+            // Extract the Symbol address from it.
+            String symbolAddress = inspectOutput.lines().filter(part -> part.startsWith("Symbol"))
+                                                        .map(part -> part.split("@ "))
+                                                        .findFirst().map(symbolParts -> symbolParts[1])
+                                                        .orElse(null);
             if (symbolAddress == null) {
                 throw new RuntimeException("Cannot find address with Symbol instance");
             }
 
-            //Running "symbol" command on the Symbol instance address extracted in previous step
+            // Run "symbol" command on the Symbol instance address extracted in previous step.
+            // It should produce the symbol for java/lang/Thread.
             cmdStr = "symbol " + symbolAddress;
             cmds = List.of(cmdStr);
             expStrMap = new HashMap<>();
             expStrMap.put(cmdStr, List.of("#java/lang/Thread"));
             test.run(theApp.getPid(), cmds, expStrMap, null);
-
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {
