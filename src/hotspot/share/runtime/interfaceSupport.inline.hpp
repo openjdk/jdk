@@ -152,7 +152,7 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
 class ThreadInVMfromJava : public ThreadStateTransition {
   bool _check_asyncs;
  public:
-  ThreadInVMfromJava(JavaThread* thread, bool check_async = true) : ThreadStateTransition(thread), _check_asyncs(check_async) {
+  ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true) : ThreadStateTransition(thread), _check_asyncs(check_asyncs) {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
@@ -236,12 +236,14 @@ class ThreadBlockInVM : public ThreadStateTransition {
  public:
   ThreadBlockInVM(JavaThread* thread, Mutex** in_flight_mutex_addr = NULL)
   : ThreadStateTransition(thread), _in_flight_mutex_addr(in_flight_mutex_addr) {
+    assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     thread->check_possible_safepoint();
     // Once we are blocked vm expects stack to be walkable
     thread->frame_anchor()->make_walkable(thread);
     thread->set_thread_state(_thread_blocked);
   }
   ~ThreadBlockInVM() {
+    assert(_thread->thread_state() == _thread_blocked, "coming from wrong thread state");
     // Change to transition state and ensure it is seen by the VM thread.
     _thread->set_thread_state_fence(_thread_blocked_trans);
 
