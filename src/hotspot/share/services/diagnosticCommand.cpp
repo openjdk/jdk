@@ -33,7 +33,6 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -121,7 +120,6 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TouchedMethodsDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
@@ -143,6 +141,9 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, true));
 #endif // INCLUDE_JVMTI
 
+#if INCLUDE_CDS
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
+#endif // INCLUDE_CDS
 }
 
 #ifndef HAVE_EXTRA_DCMD
@@ -1080,6 +1081,7 @@ int TouchedMethodsDCmd::num_arguments() {
   return 0;
 }
 
+#if INCLUDE_CDS
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
@@ -1090,11 +1092,53 @@ DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
 }
 
 void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
-  if (strcmp(_suboption.value(), "static_dump") != 0 && strcmp(_suboption.value(), "dynamic_dump") != 0) {
-    output()->print_cr("Invalid command for VM.cds, please use static_dump or dynamic_dump");
+  jboolean is_static;
+  const char* scmd = _suboption.value();
+  const char* file = _filename.value();
+
+  if (strcmp(scmd, "static_dump") == 0) {
+    is_static = JNI_TRUE;
+    output()->print_cr("Static dump:");
+  } else if (strcmp(scmd, "dynamic_dump") == 0) {
+    is_static = JNI_FALSE;
+    output()->print_cr("Dynamic dump:");
+    if (!UseSharedSpaces) {
+      output()->print_cr("CDS is not available for the JDK");
+      return;
+    }
+    if (!RecordDynamicDumpInfo) {
+      output()->print_cr("Dump dynamic should run with -XX:+RecordDynamicDumpInfo");
+      return;
+    }
+  } else {
+    output()->print_cr("Invalid command for VM.cds, valid input is static_dump or dynamic_dump");
     return;
   }
-  MetaspaceShared::cmd_dump_shared_archive(output(), _suboption.value(), _filename.value(), THREAD);
+
+  // call CDS.dumpSharedArchive
+  Handle fileh;
+  if (file != NULL) {
+    fileh =  java_lang_String::create_from_str(_filename.value(), CHECK);
+  }
+  Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
+  Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  args.push_int(is_static);
+  args.push_oop(fileh);
+  output()->print_cr("Call CDS.dumpSharedArchive(%s, %s)", scmd, (file == NULL ? "null" : file));
+  JavaCalls::call_static(&result,
+                         cds_klass,
+                         vmSymbols::dumpSharedArchive(),
+                         vmSymbols::dumpSharedArchive_signature(),
+                         &args, THREAD);
+  // Upon exception, show stack trace.
+  if (HAS_PENDING_EXCEPTION) {
+    Handle throwable(THREAD, PENDING_EXCEPTION);
+    CLEAR_PENDING_EXCEPTION;
+    java_lang_Throwable::print_stack_trace(throwable, output());
+    output()->cr();
+  }
 }
 
 int DumpSharedArchiveDCmd::num_arguments() {
@@ -1107,6 +1151,7 @@ int DumpSharedArchiveDCmd::num_arguments() {
     return 0;
   }
 }
+#endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI
 extern "C" typedef char const* (JNICALL *debugInit_startDebuggingViaCommandPtr)(JNIEnv* env, jthread thread, char const** transport_name,

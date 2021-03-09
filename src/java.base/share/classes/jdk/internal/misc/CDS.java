@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,15 @@
 
 package jdk.internal.misc;
 
+import java.io.File;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
@@ -63,6 +68,7 @@ public class CDS {
     public static boolean isSharingEnabled() {
         return isSharingEnabled;
     }
+    private static native String[] getVMArguments(); // return commandline args except for executable itself.
     private static native boolean isDumpingClassList0();
     private static native boolean isDumpingArchive0();
     private static native boolean isSharingEnabled0();
@@ -194,5 +200,80 @@ public class CDS {
             retArray[index++] = entry.getValue();
         };
         return retArray;
+    }
+
+    private static native void dumpClassList(String listFileName);
+    private static native void dumpDynamicArchive(String archiveFileName);
+
+    private static boolean containsExcludedFlags(String testStr) {
+       return testStr.contains("-XX:DumpLoadedClassList=")     ||
+              testStr.contains("-XX:+DumpSharedSpaces")        ||
+              testStr.contains("-XX:+DynamicDumpSharedSpaces") ||
+              testStr.contains("-XX:+RecordDynamicDumpInfo");
+    }
+   
+    /**
+    * called from jcmd VM.cds to dump static or dynamic shared archive
+    * @param isStatic indicates dump static archive of dynnamic archive.
+    * @param fileName user input archive name, can be null.
+    */
+    private static void dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
+        boolean DEBUG =  System.getProperty("CDS.Debug") == "true";
+        String archiveFile =  fileName != null ? fileName :
+            "java_pid" + ProcessHandle.current().pid() + (isStatic ? "_static.jsa" : "_dynamic.jsa");
+        if (DEBUG) {
+            System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFile);
+        }
+        if (isStatic) {
+            String listFile = archiveFile + ".classlist";
+            dumpClassList(listFile);
+            String jdkHome = System.getProperty("java.home");
+            ArrayList<String> cmds = new ArrayList<String>();
+            cmds.add(jdkHome + File.separator + "bin" + File.separator + "java"); // java
+            cmds.add("-Xlog:cds");
+            cmds.add("-Xshare:dump");
+            cmds.add("-XX:SharedClassListFile=" + listFile);
+            cmds.add("-XX:SharedArchiveFile=" + archiveFile);
+            // All args in command line
+            String[] vmArgs = getVMArguments();
+            if (vmArgs != null) {
+                for (String arg : vmArgs) {
+                    if (arg != null && !containsExcludedFlags(arg)) { 
+                        cmds.add(arg);
+                    }
+                }
+            }
+
+            if (DEBUG) {
+                System.out.println("Static dump cmd: ");
+                for (String s : cmds) {
+                    System.out.print(s + " ");
+                }
+                System.out.println("");
+            }
+
+            // Do not take parent env which will cause dumping fail.
+            Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[0]),
+                               new String[] {"EnvP=null"});
+            if (DEBUG) {
+                System.out.println("Dumping process " + proc.pid() + " Stdout: ");
+                String line;
+                InputStreamReader isr = new InputStreamReader(proc.getInputStream());
+                BufferedReader rdr = new BufferedReader(isr);
+                while((line = rdr.readLine()) != null) {
+                    System.out.println(line);
+                }
+
+                System.out.println("Dumping process " + proc.pid() + " Stderr: ");
+                isr = new InputStreamReader(proc.getErrorStream());
+                rdr = new BufferedReader(isr);
+                while((line = rdr.readLine()) != null) {
+                    System.out.println(line);
+                }
+            }
+            proc.waitFor();
+        } else {
+            dumpDynamicArchive(archiveFile);
+        }
     }
 }

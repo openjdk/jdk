@@ -420,6 +420,7 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+#if INCLUDE_CDS
 class DumpSharedArchiveDCmd: public DCmdWithParser {
 protected:
   DCmdArgument<char*> _suboption;   // option of VM.cds
@@ -443,6 +444,7 @@ public:
   static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
+#endif // INCLUDE_CDS
 
 // See also: thread_dump in attachListener.cpp
 class ThreadDumpDCmd : public DCmdWithParser {

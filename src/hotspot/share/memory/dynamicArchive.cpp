@@ -343,12 +343,7 @@ bool DynamicArchive::_has_been_dumped_once = false;
 
 void DynamicArchive::dump() {
   if (Arguments::GetSharedDynamicArchivePath() == NULL) {
-    if (!RecordDynamicDumpInfo) {
-      // If run with -XX:+RecordDynamicDumpInfo, DynamicDumpSharedSpaces will be turned on,
-      // but ArchiveClassesAtExit, ie, the shared archive file is not specified. To differ the
-      // two cases, silence when RecordDynamicDumpInfo is on.
-      log_warning(cds, dynamic)("SharedDynamicArchivePath is not specified");
-    }
+    log_warning(cds, dynamic)("SharedDynamicArchivePath is not specified");
     return;
   }
 

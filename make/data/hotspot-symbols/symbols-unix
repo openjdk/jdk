@@ -52,6 +52,8 @@ JVM_DefineClass
 JVM_DefineClassWithSource
 JVM_DesiredAssertionStatus
 JVM_DumpAllStacks
+JVM_DumpClassListToFile
+JVM_DumpDynamicArchive
 JVM_DumpThreads
 JVM_FillInStackTrace
 JVM_FindClassFromCaller
@@ -84,6 +86,7 @@ JVM_GetClassNameUTF
 JVM_GetClassSignature
 JVM_GetClassSigners
 JVM_GetClassTypeAnnotations
+JVM_GetVMArguments
 JVM_GetCPClassNameUTF
 JVM_GetCPFieldClassNameUTF
 JVM_GetCPFieldModifiers

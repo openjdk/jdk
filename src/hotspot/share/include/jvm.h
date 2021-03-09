@@ -185,6 +185,9 @@ JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
                                       jobject implMethodMember,
                                       jobject instantiatedMethodType);
 
+JNIEXPORT jobjectArray JNICALL
+JVM_GetVMArguments(JNIEnv* env);
+
 JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);
 
@@ -199,6 +202,12 @@ JVM_GetRandomSeedForDumping();
 
 JNIEXPORT void JNICALL
 JVM_LogLambdaFormInvoker(JNIEnv* env, jstring line);
+
+JNIEXPORT void JNICALL
+JVM_DumpClassListToFile(JNIEnv* env, jstring fileName);
+
+JNIEXPORT void JNICALL
+JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
 
 /*
  * java.lang.Throwable

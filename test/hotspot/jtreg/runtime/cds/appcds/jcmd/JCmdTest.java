@@ -47,7 +47,11 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
+import jtreg.SkippedException;
 import sun.hotspot.WhiteBox;
+
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 
 public class JCmdTest {
     static final String TEST_CLASS[] = {"LingeredTestApp", "jdk/test/lib/apps/LingeredApp"};
@@ -60,6 +64,7 @@ public class JCmdTest {
 
     static boolean EXPECT_PASS = true;
     static boolean EXPECT_FAIL = !EXPECT_PASS;
+
     static String jarFile = null;
 
     private static void buildJar() throws Exception {
@@ -105,39 +110,33 @@ public class JCmdTest {
 
     }
 
-    private static void test(String jcmdSub, String archiveFile, long pid, boolean expectSuccess) throws Exception {
-
-        boolean isStatic = jcmdSub.equals("static_dump") ? true : false;
-
-        String cdsFileName = archiveFile;
-        if (cdsFileName == null) {
-            cdsFileName = "java_pid" + pid + "_" + (isStatic  ? "static" : "dynamic") + ".jsa";
-        } else {
-            if (!cdsFileName.endsWith(".jsa")) {
-                cdsFileName = cdsFileName + ".jsa";
-            }
-        }
-
-        File file = new File(cdsFileName);
-        if (file.exists() && file.isFile()) {
+    private static void test(String jcmdSub, String archiveFile, long pid, boolean expectOK) throws Exception {
+        boolean isStatic = jcmdSub.equals(SUBCMD_STATIC_DUMP);
+        String fileName = archiveFile != null ? archiveFile :
+            ("java_pid" + pid + (isStatic ? "_static" : "_dynamic") + ".jsa");
+        File file = new File(fileName);
+        if (file.exists()) {
             file.delete();
         }
 
-        String jcmd = "VM.cds " + jcmdSub + " " + cdsFileName;;
+        String jcmd = "VM.cds " + jcmdSub;
+        if (archiveFile  != null) {
+          jcmd +=  " " + archiveFile;
+        }
 
-        PidJcmdExecutor cmdExecutor = new PidJcmdExecutor("" + pid);
-        System.out.println("JCMD: " + jcmd);
-        OutputAnalyzer output = cmdExecutor.execute(jcmd, false/*silent*/);
-        output.shouldHaveExitValue(0);
+        PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
+        OutputAnalyzer output = cmdExecutor.execute(jcmd, true/*silent*/);
 
-        Path path = FileSystems.getDefault().getPath(cdsFileName);
-        if (expectSuccess) {
-            if (Files.notExists(path)) {
-                throw new RuntimeException("Could not create shared archive " + cdsFileName);
+        if (expectOK) {
+            output.shouldHaveExitValue(0);
+            if (!file.exists()) {
+                throw new RuntimeException("Could not create shared archive: " + fileName);
+            } else {
+                file.delete();
             }
         } else {
-            if (Files.exists(path)) {
-                throw new RuntimeException("Should not create shared archive " + cdsFileName);
+            if (file.exists()) {
+                throw new RuntimeException("Should not create shared archive " + fileName);
             }
         }
     }
@@ -146,25 +145,14 @@ public class JCmdTest {
         System.out.println("\n" + arg + "\n");
     }
 
-    private static void test_static() throws Exception {
-        ArrayList<String> vmArgs = new ArrayList<String>();
-        vmArgs.add("-cp");
-        vmArgs.add(jarFile);
-        vmArgs.add("-Xlog:class+path");
-        vmArgs.add("-XX:+RecordDynamicDumpInfo");
+    private static void testStatic() throws Exception {
         LingeredApp app  = null;
-        app = createLingeredApp(vmArgs.toArray(new String[0]));
-        long pid = app.getPid();
+        long pid;
 
-        // 1. Test static dump with -XX:+RecordDynamicDumpInfo to create archive multiple times
-        print2ln("1. Test static dump with -XX:+RecordDynamicDumpInfo to create archive multiple times.");
-        for (int i = 0; i < 3; i++) {
-            test(SUBCMD_STATIC_DUMP, STATIC_DUMP_FILE + "0" + i, pid, EXPECT_PASS);
-        }
-        app.stopApp();
-        vmArgs.clear();
-        // 2. Static dump with default name multiple times.
-        print2ln("2: Static dump with default name multiple times.");
+        ArrayList<String> vmArgs = new ArrayList<String>();
+
+        // 1. Static dump with default name multiple times.
+        print2ln("1: Static dump with default name multiple times.");
         vmArgs.add("-cp");
         vmArgs.add(jarFile);
         app  = createLingeredApp(vmArgs.toArray(new String[0]));
@@ -173,9 +161,24 @@ public class JCmdTest {
             test(SUBCMD_STATIC_DUMP, null, pid, EXPECT_PASS);
         }
         app.stopApp();
+        vmArgs.clear();
+
+        // 2. Test static dump with -XX:+RecordDynamicDumpInfo to create archive multiple times
+        print2ln("2. Test static dump with -XX:+RecordDynamicDumpInfo to create archive multiple times.");
+        vmArgs.add("-cp");
+        vmArgs.add(jarFile);
+        vmArgs.add("-Xlog:class+path");
+        vmArgs.add("-XX:+RecordDynamicDumpInfo");
+        app = createLingeredApp(vmArgs.toArray(new String[0]));
+        pid = app.getPid();
+
+        for (int i = 0; i < 3; i++) {
+            test(SUBCMD_STATIC_DUMP, STATIC_DUMP_FILE + "0" + i, pid, EXPECT_PASS);
+        }
+        app.stopApp();
     }
 
-    private static void test_dynamic() throws Exception {
+    private static void testDynamic() throws Exception {
         ArrayList<String> vmArgs = new ArrayList<String>();
         // 3. Test dynamic dump with -XX:+RecordDynamicDumpInfo.
         print2ln("3. Test dynamic dump with -XX:+RecordDynamicDumpInfo.");
@@ -209,11 +212,10 @@ public class JCmdTest {
     public static void main(String... args) throws Exception {
         boolean cdsEnabled = WhiteBox.getWhiteBox().getBooleanVMFlag("UseSharedSpaces");
         if (!cdsEnabled) {
-            System.out.println("CDS is not available for this JDK, skip the test.");
-            return;
+            throw new SkippedException("CDS is not available for this JDK.");
         }
         buildJar();
-        test_static();
-        test_dynamic();
+        testStatic();
+        testDynamic();
     }
 }

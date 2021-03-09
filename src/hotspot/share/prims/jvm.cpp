@@ -30,6 +30,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -3652,12 +3653,27 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 #endif // INCLUDE_CDS
 JVM_END
 
+JVM_ENTRY(jobjectArray, JVM_GetVMArguments(JNIEnv* env))
+  int num_vm_args = Arguments::num_jvm_args();
+  if (num_vm_args == 0) {
+    return NULL;
+  }
+
+  char** vm_args  = Arguments::jvm_args_array();
+  objArrayHandle h_args = oopFactory::new_objArray_handle(vmClasses::String_klass(), num_vm_args, CHECK_NULL);
+  for(int i = 0; i < num_vm_args; i++) {
+    Handle h = java_lang_String::create_from_str(vm_args[i], THREAD);
+    h_args->obj_at_put(i, h());
+  }
+  return (jobjectArray) JNIHandles::make_local(THREAD, h_args());
+JVM_END
+
 JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
-    return Arguments::is_dumping_archive();
+  return Arguments::is_dumping_archive();
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
-    return UseSharedSpaces;
+  return UseSharedSpaces;
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
@@ -3699,6 +3715,69 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     char* c_line = java_lang_String::as_utf8_string(h_line());
     ClassListWriter w;
     w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
+  }
+#endif // INCLUDE_CDS
+JVM_END
+
+#if INCLUDE_CDS
+class DumpClassListCLDClosure : public CLDClosure {
+  fileStream *_stream;
+public:
+  DumpClassListCLDClosure(fileStream* f) : CLDClosure() { _stream = f; }
+  void do_cld(ClassLoaderData* cld) {
+    for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
+      if (klass->is_instance_klass()) {
+        InstanceKlass* ik = InstanceKlass::cast(klass);
+        if (ik->is_shareable()) {
+          _stream->print_cr("%s", ik->name()->as_C_string());
+        }
+      }
+    }
+  }
+};
+#endif
+
+JVM_ENTRY(void, JVM_DumpClassListToFile(JNIEnv *env, jstring listFileName))
+#if INCLUDE_CDS
+  ResourceMark rm(THREAD);
+  Handle file_handle(THREAD, JNIHandles::resolve_non_null(listFileName));
+  char* file_name  = java_lang_String::as_utf8_string(file_handle());
+  fileStream stream(file_name, "w");
+  if (stream.is_open()) {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    DumpClassListCLDClosure collect_classes(&stream);
+    ClassLoaderDataGraph::loaded_cld_do(&collect_classes);
+  } else {
+    THROW_MSG(vmSymbols::java_io_IOException(), "Failed to open file");
+  }
+#endif // INCLUDE_CDS
+JVM_END
+
+JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
+#if INCLUDE_CDS
+  assert(UseSharedSpaces && RecordDynamicDumpInfo, "Sanity check");
+  if (DynamicArchive::has_been_dumped_once()) {
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+        "Dynamic dump has been done, and should only be done once");
+  } else {
+    // prevent multiple dumps.
+    DynamicArchive::set_has_been_dumped_once();
+  }
+  assert(ArchiveClassesAtExit == nullptr, "Sanity check");
+  Handle file_handle(THREAD, JNIHandles::resolve_non_null(archiveName));
+  char* archive_name  = java_lang_String::as_utf8_string(file_handle());
+  ArchiveClassesAtExit = archive_name;
+  if (Arguments::init_shared_archive_paths()) {
+    DynamicArchive::dump();
+  } else {
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+          "Could not setup SharedDynamicArchivePath");
+  }
+  // prevent do dynamic dump at exit.
+  ArchiveClassesAtExit = nullptr;
+  if (!Arguments::init_shared_archive_paths()) {
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+          "Could not restore SharedDynamicArchivePath");
   }
 #endif // INCLUDE_CDS
 JVM_END

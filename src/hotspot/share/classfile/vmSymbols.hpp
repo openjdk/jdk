@@ -300,6 +300,8 @@
   template(jdk_internal_misc_CDS, "jdk/internal/misc/CDS")                                        \
   template(generateLambdaFormHolderClasses, "generateLambdaFormHolderClasses")                    \
   template(generateLambdaFormHolderClasses_signature, "([Ljava/lang/String;)[Ljava/lang/Object;") \
+  template(dumpSharedArchive, "dumpSharedArchive")                                                \
+  template(dumpSharedArchive_signature, "(ZLjava/lang/String;)V")                                 \
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
   template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
