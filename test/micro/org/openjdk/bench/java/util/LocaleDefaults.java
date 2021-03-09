@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +20,39 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.bench.java.util;
 
-import java.util.List;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /*
- * @test
- * @summary Uses GCMBufferTest to run a long test with incrementing through
- * each byte in each direct bytebuffer
- * @run main/manual GCMIncrementDirect4
+ * This benchmark tests Locale.getDefault variants
  */
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(Scope.Benchmark)
+public class LocaleDefaults {
 
-public class GCMIncrementDirect4 {
+    @Benchmark
+    public Locale getDefault() {
+        return Locale.getDefault();
+    }
 
-    public static void main(String args[]) throws Exception {
-        GCMBufferTest.initTest();
-        new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(GCMBufferTest.dtype.DIRECT, GCMBufferTest.dtype.DIRECT,
-                GCMBufferTest.dtype.DIRECT)).incrementalSegments().dataSet(4).
-            test();
+    @Benchmark
+    public Locale getDefaultDisplay() {
+        return Locale.getDefault(Locale.Category.DISPLAY);
+    }
+
+    @Benchmark
+    public Locale getDefaultFormat() {
+        return Locale.getDefault(Locale.Category.FORMAT);
     }
 }
+
