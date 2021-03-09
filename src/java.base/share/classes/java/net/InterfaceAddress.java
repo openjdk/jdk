@@ -101,12 +101,10 @@ public class InterfaceAddress {
      * @see     java.net.InterfaceAddress#hashCode()
      */
     public boolean equals(Object obj) {
-        if (obj instanceof InterfaceAddress cmp) {
-            return Objects.equals(address, cmp.address) &&
-                    Objects.equals(broadcast, cmp.broadcast) &&
-                    maskLength == cmp.maskLength;
-        }
-        return false;
+        return obj instanceof InterfaceAddress cmp &&
+                Objects.equals(address, cmp.address) &&
+                Objects.equals(broadcast, cmp.broadcast) &&
+                maskLength == cmp.maskLength;
     }
 
     /**
