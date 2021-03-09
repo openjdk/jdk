@@ -41,6 +41,7 @@ public:
   f(StringHashentry) \
   f(StringBucket) \
   f(ModulesNatives) \
+  f(CppVTables) \
   f(Other)
 
   enum Type {
@@ -91,6 +92,11 @@ public:
     int which = (read_only) ? RO : RW;
     _bytes [which][OtherType] += byte_size;
   }
+
+  void record_cpp_vtables(int byte_size) {
+    _bytes[RW][CppVTablesType] += byte_size;
+  }
+
   void print_stats(int ro_all, int rw_all);
 };
 

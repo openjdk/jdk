@@ -103,8 +103,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
                        all_count, all_bytes, all_perc);
 
   assert(all_ro_bytes == ro_all, "everything should have been counted");
-//assert(all_rw_bytes == rw_all, "everything should have been counted"); FIXME!
+  assert(all_rw_bytes == rw_all, "everything should have been counted");
 
 #undef fmt_stats
 }
-

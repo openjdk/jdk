@@ -458,7 +458,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.gather_source_objs();
   builder.reserve_buffer();
 
-  char* cloned_vtables = CppVtables::dumptime_init();
+  char* cloned_vtables = CppVtables::dumptime_init(&builder);
 
   builder.dump_rw_metadata();
   builder.dump_ro_metadata();
