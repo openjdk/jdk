@@ -520,16 +520,14 @@ public class LingeredApp {
         steadyStateThread.setName("SteadyStateThread");
         steadyStateThread.start();
 
-        try {
-            // Sleep until the thread has started running.
-            while (!steadyStateReached) {
-                Thread.sleep(100);
-            }
-            // Do another short sleep so we can get into the synchronized block,
-            // although this probably is not necessary to guarantee that the
-            // stack trace is readable.
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
+        // Wait until the thread has started running.
+        while (!steadyStateReached) {
+            Thread.onSpinWait();
+        }
+
+        // Now wait until we get into the synchronized block.
+        while (steadyStateThread.getState() != Thread.State.BLOCKED) {
+            Thread.onSpinWait();
         }
     }
 
