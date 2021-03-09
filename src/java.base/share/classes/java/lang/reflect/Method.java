@@ -575,7 +575,7 @@ public final class Method extends Executable {
      * compiler alongside a method originating from the source
      * code.
      * Bridge methods are used by Java compilers in various
-     * circumstances to span across differences in Java programming
+     * circumstances to span differences in Java programming
      * language semantics and JVM semantics.
      *
      * One example use of bridge methods is as technique for a
@@ -587,15 +587,18 @@ public final class Method extends Executable {
      * different return type, the virtual machine does not.
      * A
      * common case where covariant overrides are used is for a {@link
-     * java.lang.Cloneable Cloneable} class where the {@code clone}
-     * method inherited from {@code java.lang.Object} and returning {@code Object} is overridden
-     * and declared to return the type of the class; for example
-     * {@link java.util.EnumSet#clone() EnumSet.clone()} returns
-     * {@code EnumSet<E>} rather than {@link java.lang.Object#clone()
-     * Object}. If this technique was being used, the resulting class
+     * java.lang.Cloneable Cloneable} class where the {@link Object#clone() clone}
+     * method inherited from {@code java.lang.Object} is overridden
+     * and declared to return the type of the class. For example, {@code Object}
+     * declares<br>
+     * {@code protected Object clone() throws CloneNotSupportedException {...}}<br>
+     * and {@code EnumSet<E>} declares its language-level {@linkplain java.util.EnumSet#clone() covariant override}<br>
+     * {@code public EnumSet<E> clone() {...}}<br>
+     * If this technique was being used, the resulting class
      * file for {@code EnumSet} would have two {@code clone} methods,
      * one returning {@code EnumSet<E>} and the second a bridge method
-     * returning {@code Object}; the body of the {@code clone} bridge
+     * returning {@code Object}. The bridge method is a JVM-level override of {@code Object.clone()}.
+     * The body of the {@code clone} bridge
      * method calls its non-bridge counterpart and returns its
      * result.
      * @since 1.5
