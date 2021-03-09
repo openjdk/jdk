@@ -1,5 +1,7 @@
 # Welcome to the JDK!
 
+New line.
+
 For build instructions please see the
 [online documentation](https://openjdk.java.net/groups/build/doc/building.html),
 or either of these files:
