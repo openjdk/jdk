@@ -578,7 +578,7 @@ public final class Method extends Executable {
      * circumstances to span differences in Java programming
      * language semantics and JVM semantics.
      *
-     * One example use of bridge methods is as technique for a
+     * One example use of bridge methods is as a technique for a
      * Java compiler to support <i>covariant overrides</i>, where a
      * subclass overrides a method and gives the new method a more
      * specific return type than the method in the superclass.
