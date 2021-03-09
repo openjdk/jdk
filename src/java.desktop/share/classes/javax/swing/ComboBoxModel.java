@@ -25,7 +25,7 @@
 package javax.swing;
 
 /**
- * A data model for a combo box. This interface extends <code>ListDataModel</code>
+ * A data model for a combo box. This interface extends <code>ListModel</code>
  * and adds the concept of a <i>selected item</i>. The selected item is generally
  * the item which is visible in the combo box display area.
  * <p>
