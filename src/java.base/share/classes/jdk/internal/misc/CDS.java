@@ -211,7 +211,7 @@ public class CDS {
               testStr.contains("-XX:+DynamicDumpSharedSpaces") ||
               testStr.contains("-XX:+RecordDynamicDumpInfo");
     }
-   
+
     /**
     * called from jcmd VM.cds to dump static or dynamic shared archive
     * @param isStatic indicates dump static archive of dynnamic archive.
@@ -238,7 +238,7 @@ public class CDS {
             String[] vmArgs = getVMArguments();
             if (vmArgs != null) {
                 for (String arg : vmArgs) {
-                    if (arg != null && !containsExcludedFlags(arg)) { 
+                    if (arg != null && !containsExcludedFlags(arg)) {
                         cmds.add(arg);
                     }
                 }
