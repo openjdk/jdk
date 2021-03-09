@@ -44,15 +44,10 @@ public final class KeyPair implements java.io.Serializable {
     @java.io.Serial
     private static final long serialVersionUID = -7565189502268009837L;
 
-    /**
-     * The private key
-     */
+    /** The private key. */
     private PrivateKey privateKey;
 
-    /**
-     *
-     * The public key
-     */
+    /** The public key. */
     private PublicKey publicKey;
 
     /**
