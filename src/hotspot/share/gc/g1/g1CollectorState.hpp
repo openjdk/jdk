@@ -111,8 +111,8 @@ public:
   bool clearing_next_bitmap() const { return _clearing_next_bitmap; }
 
   // Calculate GC Pause Type from internal state.
-  G1GCType young_gc_pause_type(bool concurrent_operation_is_full_mark) const;
-  G1YCPhase young_gc_phase() const;
+  G1GCPauseType young_gc_pause_type(bool concurrent_operation_is_full_mark) const;
+  G1GCYoungPhase young_gc_phase() const;
 
 };
 

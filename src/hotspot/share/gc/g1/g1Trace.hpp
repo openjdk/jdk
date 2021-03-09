@@ -33,13 +33,13 @@ class G1HeapSummary;
 class G1EvacSummary;
 
 class G1YoungGCInfo {
-  G1YCPhase _phase;
+  G1GCYoungPhase _phase;
 public:
-  G1YoungGCInfo() : _phase(G1YCPhaseEndSentinel) {}
-  void set_phase(G1YCPhase phase) {
+  G1YoungGCInfo() : _phase(G1GCYoungPhaseEndSentinel) {}
+  void set_phase(G1GCYoungPhase phase) {
     _phase = phase;
   }
-  G1YCPhase phase() const { return _phase; }
+  G1GCYoungPhase phase() const { return _phase; }
 };
 
 class G1NewTracer : public YoungGCTracer {
@@ -49,7 +49,7 @@ public:
   G1NewTracer() : YoungGCTracer(G1New) {}
 
   void initialize();
-  void report_yc_phase(G1YCPhase phase);
+  void report_yc_phase(G1GCYoungPhase phase);
   void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
   void report_evacuation_info(G1EvacuationInfo* info);
   void report_evacuation_failed(EvacuationFailedInfo& ef_info);

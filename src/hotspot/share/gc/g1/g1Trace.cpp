@@ -49,11 +49,11 @@ public:
 class G1YCTypeConstant : public JfrSerializer {
 public:
   void serialize(JfrCheckpointWriter& writer) {
-    static const u4 nof_entries = G1YCPhaseEndSentinel;
+    static const u4 nof_entries = G1GCYoungPhaseEndSentinel;
     writer.write_count(nof_entries);
     for (u4 i = 0; i < nof_entries; ++i) {
       writer.write_key(i);
-      writer.write(G1GCTypeHelper::to_string((G1YCPhase)i));
+      writer.write(G1GCTypeHelper::to_string((G1GCYoungPhase)i));
     }
   }
 };
@@ -72,7 +72,7 @@ void G1NewTracer::initialize() {
   JFR_ONLY(register_jfr_type_constants());
 }
 
-void G1NewTracer::report_yc_phase(G1YCPhase phase) {
+void G1NewTracer::report_yc_phase(G1GCYoungPhase phase) {
   _g1_young_gc_info.set_phase(phase);
 }
 

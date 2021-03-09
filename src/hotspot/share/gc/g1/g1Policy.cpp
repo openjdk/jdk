@@ -631,7 +631,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, bool concurrent
   double end_time_sec = os::elapsedTime();
   double start_time_sec = phase_times()->cur_collection_start_sec();
 
-  G1GCType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
+  G1GCPauseType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
 
   bool update_stats = should_update_gc_stats();
 
@@ -1157,7 +1157,7 @@ bool G1Policy::should_update_gc_stats() {
   return !_g1h->evacuation_failed();
 }
 
-void G1Policy::update_gc_pause_time_ratios(G1GCType gc_type, double start_time_sec, double end_time_sec) {
+void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_time_sec, double end_time_sec) {
 
   double pause_time_sec = end_time_sec - start_time_sec;
   double pause_time_ms = pause_time_sec * 1000.0;
@@ -1172,7 +1172,7 @@ void G1Policy::update_gc_pause_time_ratios(G1GCType gc_type, double start_time_s
   }
 }
 
-void G1Policy::record_pause(G1GCType gc_type,
+void G1Policy::record_pause(G1GCPauseType gc_type,
                             double start,
                             double end) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
@@ -1187,7 +1187,7 @@ void G1Policy::record_pause(G1GCType gc_type,
   update_time_to_mixed_tracking(gc_type, start, end);
 }
 
-void G1Policy::update_time_to_mixed_tracking(G1GCType gc_type,
+void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
                                              double start,
                                              double end) {
   // Manage the mutator time tracking from concurrent start to first mixed gc.

@@ -27,15 +27,15 @@
 
 #include "utilities/debug.hpp"
 
-enum G1YCPhase {
+enum G1GCYoungPhase {
   Normal,
   ConcurrentStart,
   DuringMarkOrRebuild,
   Mixed,
-  G1YCPhaseEndSentinel
+  G1GCYoungPhaseEndSentinel
 };
 
-enum G1GCType {
+enum G1GCPauseType {
   YoungGC,
   LastYoungGC,
   ConcurrentStartMarkGC,
@@ -44,38 +44,42 @@ enum G1GCType {
   Remark,
   MixedGC,
   FullGC,
-  G1GCTypeEndSentinel
+  G1GCPauseTypeEndSentinel
 };
 
 class G1GCTypeHelper {
  public:
 
-  static bool is_young_only_pause(G1GCType type) {
+  static void assert_is_young_pause(G1GCPauseType type) {
     assert(type != FullGC, "must be");
     assert(type != Remark, "must be");
     assert(type != Cleanup, "must be");
+  }
+
+  static bool is_young_only_pause(G1GCPauseType type) {
+    assert_is_young_pause(type);
     return type == ConcurrentStartUndoGC ||
            type == ConcurrentStartMarkGC ||
            type == LastYoungGC ||
            type == YoungGC;
   }
 
-  static bool is_mixed_pause(G1GCType type) {
-    assert(type != FullGC, "must be");
-    assert(type != Remark, "must be");
-    assert(type != Cleanup, "must be");
+  static bool is_mixed_pause(G1GCPauseType type) {
+    assert_is_young_pause(type);
     return type == MixedGC;
   }
 
-  static bool is_last_young_pause(G1GCType type) {
+  static bool is_last_young_pause(G1GCPauseType type) {
+    assert_is_young_pause(type);
     return type == LastYoungGC;
   }
 
-  static bool is_concurrent_start_pause(G1GCType type) {
+  static bool is_concurrent_start_pause(G1GCPauseType type) {
+    assert_is_young_pause(type);
     return type == ConcurrentStartMarkGC || type == ConcurrentStartUndoGC;
   }
 
-  static const char* to_string(G1YCPhase type) {
+  static const char* to_string(G1GCYoungPhase type) {
     switch(type) {
       case Normal: return "Normal";
       case ConcurrentStart: return "Concurrent Start";
@@ -84,7 +88,6 @@ class G1GCTypeHelper {
       default: ShouldNotReachHere(); return NULL;
     }
   }
-
 };
 
 #endif // SHARE_GC_G1_G1GCTYPES_HPP

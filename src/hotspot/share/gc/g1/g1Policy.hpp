@@ -262,13 +262,13 @@ private:
   // Sets up marking if proper conditions are met.
   void maybe_start_marking();
   // Manage time-to-mixed tracking.
-  void update_time_to_mixed_tracking(G1GCType gc_type, double start, double end);
+  void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(G1GCType gc_type, double start, double end);
+  void record_pause(G1GCPauseType gc_type, double start, double end);
 
   bool should_update_gc_stats();
 
-  void update_gc_pause_time_ratios(G1GCType gc_type, double start_sec, double end_sec);
+  void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
