@@ -27,6 +27,7 @@
 
 #include "utilities/debug.hpp"
 
+// Enumarate the phases in which the collection cycle can be.
 enum G1GCYoungPhase {
   Normal,
   ConcurrentStart,
