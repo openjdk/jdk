@@ -36,23 +36,6 @@ import javax.swing.border.*;
 public class GraphicsUtilities {
   private static final int FONT_SIZE = 12;
 
-  /** Returns a plain-styled 12-point version of the given font, or
-      null if the font could not be found */
-  public static Font lookupFont(String fontName) {
-    Font[] allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
-    Font font = null;
-    for (int i = 0; i < allFonts.length; i++) {
-      if (allFonts[i].getFontName().indexOf(fontName) != -1) {
-        font = allFonts[i];
-        break;
-      }
-    }
-    if (font == null) {
-      return null;
-    }
-    return font.deriveFont(Font.PLAIN, FONT_SIZE);
-  }
-
   public static Font getMonospacedFont() {
     return new Font(Font.MONOSPACED, Font.PLAIN, FONT_SIZE);
   }
