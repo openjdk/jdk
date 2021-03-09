@@ -2220,14 +2220,26 @@ bool FileMapHeader::validate() {
     _has_platform_or_app_classes = false;
   }
 
-  // For backwards compatibility, we don't check the verification setting
-  // if the archive only contains system classes.
-  if (_has_platform_or_app_classes &&
-      ((!_verify_local && BytecodeVerificationLocal) ||
-       (!_verify_remote && BytecodeVerificationRemote))) {
-    FileMapInfo::fail_continue("The shared archive file was created with less restrictive "
-                  "verification setting than the current setting.");
+
+  if (!_verify_local && BytecodeVerificationLocal) {
+    //  we cannot load boot classes, so there's no point of using the CDS archive
+    FileMapInfo::fail_continue("The shared archive file's BytecodeVerificationLocal setting (%s)"
+                               " does not equal the current BytecodeVerificationLocal setting (%s).",
+                               _verify_local ? "enabled" : "disabled",
+                               BytecodeVerificationLocal ? "enabled" : "disabled");
     return false;
+  }
+
+  // For backwards compatibility, we don't check the BytecodeVerificationRemote setting
+  // if the archive only contains system classes.
+  if (_has_platform_or_app_classes
+      && !_verify_remote // we didn't verify the archived platform/app classes
+      && BytecodeVerificationRemote) { // but we want to verify all loaded platform/app classes
+    FileMapInfo::fail_continue("The shared archive file was created with less restrictive "
+                               "verification setting than the current setting.");
+    // Pretend that we didn't have any archived platform/app classes, so they won't be loaded
+    // by SystemDictionaryShared.
+    _has_platform_or_app_classes = false;
   }
 
   // Java agents are allowed during run time. Therefore, the following condition is not
