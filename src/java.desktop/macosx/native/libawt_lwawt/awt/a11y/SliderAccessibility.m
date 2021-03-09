@@ -34,28 +34,22 @@
 @implementation SliderAccessibility
 - (nullable NSString *)accessibilityLabel
 {
-    NSLog(@"Slider accessibilityLabel");
-    //return [self accessibilityTitleAttribute];
-    return @"Dummy Slider Label Text";
+    return [self accessibilityTitleAttribute];
 }
 
 - (nullable id)accessibilityValue
 {
-    NSLog(@"Slider accessibilityValue");
     return [self accessibilityValueAttribute];
-    //return @"Dummy Slider Value Text";
 }
 
 - (BOOL)accessibilityPerformIncrement
 {
-    NSLog(@"Slider INCREMENT called");
     return [self performAccessibleAction:INCREMENT];
 }
 
 
 - (BOOL)accessibilityPerformDecrement
 {
-    NSLog(@"Slider DECREMENT called");
     return [self performAccessibleAction:DECREMENT];
 }
 

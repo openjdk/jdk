@@ -34,28 +34,22 @@
 @implementation SpinboxAccessibility
 - (nullable NSString *)accessibilityLabel
 {
-    //return [self accessibilityTitleAttribute];
-    NSLog(@"Spinner accessibilityLabel");
-    return @"Dummy Spinner Label Text";
+    return [self accessibilityTitleAttribute];
 }
 
 - (nullable id)accessibilityValue
 {
-    NSLog(@"Spinner accessibilityValue");
     return [self accessibilityValueAttribute];
-    //return @"Dummy Spinner Value Text";
 }
 
 - (BOOL)accessibilityPerformIncrement
 {
-    NSLog(@"Spinner INCREMENT called");
     return [self performAccessibleAction:INCREMENT];
 }
 
 
 - (BOOL)accessibilityPerformDecrement
 {
-    NSLog(@"Spinner DECREMENT called");
     return [self performAccessibleAction:DECREMENT];
 }
 
