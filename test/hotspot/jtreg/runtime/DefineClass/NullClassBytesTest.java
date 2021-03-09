@@ -96,7 +96,7 @@ public class NullClassBytesTest {
         try {
             Class<?> b = Class.forName("B", true, ldr);
         } catch (ClassFormatError cfe) {
-            if (!cfe.getMessage().equals("Truncated class file")) {
+            if (!cfe.getMessage().contains("Truncated class file")) {
                 cfe.printStackTrace();
                 throw new RuntimeException("Wrong message");
             }
@@ -112,7 +112,7 @@ public class NullClassBytesTest {
         try {
             Class<?> c = Class.forName("D", true, ldr);
         } catch (ClassFormatError cfe) {
-            if (!cfe.getMessage().equals("Truncated class file")) {
+            if (!cfe.getMessage().contains("Truncated class file")) {
                 cfe.printStackTrace();
                 throw new RuntimeException("Wrong message");
             }
