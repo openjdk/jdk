@@ -869,8 +869,9 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   // while the control path is not removed. This can happen if the type of key_val
   // is later known to be out of bounds of [0, num_cases] and therefore a narrow cast
   // would be replaced by TOP while C2 is not able to fold the corresponding range checks.
+  // Set _carry_dependency for the cast to avoid being removed by IGVN.
 #ifdef _LP64
-  key_val = C->constrained_convI2L(&_gvn, key_val, TypeInt::INT, control());
+  key_val = C->constrained_convI2L(&_gvn, key_val, TypeInt::INT, control(), true /* carry_dependency */);
 #endif
 
   // Shift the value by wordsize so we have an index into the table, rather
