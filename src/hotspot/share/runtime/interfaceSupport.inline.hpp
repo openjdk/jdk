@@ -33,7 +33,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/thread.hpp"
-#include "runtime/threadWXSetters.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

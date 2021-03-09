@@ -64,7 +64,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/threadWXSetters.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"

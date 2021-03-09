@@ -29,7 +29,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "logging/log.hpp"
 #include "runtime/thread.hpp"
-#include "runtime/threadWXSetters.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/debug.hpp"
 
 int BarrierSetNMethod::disarmed_value() const {
