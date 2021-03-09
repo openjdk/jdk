@@ -102,13 +102,9 @@ public class InterfaceAddress {
      */
     public boolean equals(Object obj) {
         if (obj instanceof InterfaceAddress cmp) {
-
-            if (Objects.equals(address, cmp.address) &&
-                Objects.equals(broadcast, cmp.broadcast) &&
-                maskLength == cmp.maskLength)
-            {
-                return true;
-            }
+            return Objects.equals(address, cmp.address) &&
+                    Objects.equals(broadcast, cmp.broadcast) &&
+                    maskLength == cmp.maskLength;
         }
         return false;
     }

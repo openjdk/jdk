@@ -262,7 +262,7 @@ class Inet6Address extends InetAddress {
         }
 
         public boolean equals(Object o) {
-            if (! (o instanceof Inet6AddressHolder that)) {
+            if (!(o instanceof Inet6AddressHolder that)) {
                 return false;
             }
 
