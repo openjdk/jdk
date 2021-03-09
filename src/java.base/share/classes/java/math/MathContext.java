@@ -248,10 +248,8 @@ public final class MathContext implements Serializable {
      *         settings as this object
      */
     public boolean equals(Object x){
-        MathContext mc;
-        if (!(x instanceof MathContext))
+        if (!(x instanceof MathContext mc))
             return false;
-        mc = (MathContext) x;
         return mc.precision == this.precision
             && mc.roundingMode == this.roundingMode; // no need for .equals()
     }
