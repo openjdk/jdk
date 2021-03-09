@@ -573,13 +573,22 @@ public final class Method extends Executable {
      * @apiNote
      * A bridge method is a {@linkplain isSynthetic synthetic} method created by a Java
      * compiler alongside a method originating from the source
-     * code. One example use of a bridge method is as technique for a
+     * code.
+     * Bridge methods are used by Java compilers in various
+     * circumstances to span across differences in Java programming
+     * language semantics and JVM semantics.
+     *
+     * One example use of bridge methods is as technique for a
      * Java compiler to support <i>covariant overrides</i>, where a
      * subclass overrides a method and gives the new method a more
-     * specific return type than the method in the superclass. A
+     * specific return type than the method in the superclass.
+     * While the Java language specification forbids a class
+     * declaring two methods with the same parameter types but a
+     * different return type, the virtual machine does not.
+     * A
      * common case where covariant overrides are used is for a {@link
      * java.lang.Cloneable Cloneable} class where the {@code clone}
-     * method inherited from {@code java.lang.Object} is overridden
+     * method inherited from {@code java.lang.Object} and returning {@code Object} is overridden
      * and declared to return the type of the class; for example
      * {@link java.util.EnumSet#clone() EnumSet.clone()} returns
      * {@code EnumSet<E>} rather than {@link java.lang.Object#clone()
@@ -588,14 +597,7 @@ public final class Method extends Executable {
      * one returning {@code EnumSet<E>} and the second a bridge method
      * returning {@code Object}; the body of the {@code clone} bridge
      * method calls its non-bridge counterpart and returns its
-     * result. (While the Java language specification forbids a class
-     * declaring two methods with the same parameter types but a
-     * different return type, the virtual machine does not.)
-     *
-     * <p>Bridge methods may also be used by Java compiler in other
-     * circumstances to span across difference in Java Language
-     * semantics and JVM semantics.
-     *
+     * result.
      * @since 1.5
      *
      * @jls 8.4.8.3 Requirements in Overriding and Hiding
