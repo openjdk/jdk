@@ -47,7 +47,6 @@
     return [self performAccessibleAction:INCREMENT];
 }
 
-
 - (BOOL)accessibilityPerformDecrement
 {
     return [self performAccessibleAction:DECREMENT];
