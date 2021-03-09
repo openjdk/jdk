@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,10 +262,9 @@ class Inet6Address extends InetAddress {
         }
 
         public boolean equals(Object o) {
-            if (! (o instanceof Inet6AddressHolder)) {
+            if (! (o instanceof Inet6AddressHolder that)) {
                 return false;
             }
-            Inet6AddressHolder that = (Inet6AddressHolder)o;
 
             return Arrays.equals(this.ipaddress, that.ipaddress);
         }
@@ -525,10 +524,9 @@ class Inet6Address extends InetAddress {
         Enumeration<InetAddress> addresses = ifc.getInetAddresses();
         while (addresses.hasMoreElements()) {
             InetAddress addr = addresses.nextElement();
-            if (!(addr instanceof Inet6Address)) {
+            if (!(addr instanceof Inet6Address ia6_addr)) {
                 continue;
             }
-            Inet6Address ia6_addr = (Inet6Address)addr;
             /* check if site or link local prefixes match */
             if (!isDifferentLocalAddressType(thisAddr, ia6_addr.getAddress())){
                 /* type not the same, so carry on searching */
