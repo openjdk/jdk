@@ -606,19 +606,17 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
     if (iff->in(1) && iff->in(1)->is_Bool()) {
       BoolNode* bol = iff->in(1)->as_Bool();
       if (bol->in(1) && bol->in(1)->is_Cmp()) {
-        const CmpNode* cmp = bol->in(1)->as_Cmp();
+        const CmpNode* cmp  = bol->in(1)->as_Cmp();
         if (cmp->in(1) == val) {
           const TypeInt* cmp2_t = gvn->type(cmp->in(2))->isa_int();
           if (cmp2_t != NULL) {
             jint lo = cmp2_t->_lo;
             jint hi = cmp2_t->_hi;
-            const TypeInt* val_t = gvn->type(val)->isa_int();
-            bool is_unsigned = (cmp->Opcode() == Op_CmpU);
             BoolTest::mask msk = if_proj->Opcode() == Op_IfTrue ? bol->_test._test : bol->_test.negate();
             switch (msk) {
             case BoolTest::ne: {
-              assert(!is_unsigned, "unsigned comparison is not supported");
               // If val is compared to its lower or upper bound, we can narrow the type
+              const TypeInt* val_t = gvn->type(val)->isa_int();
               if (val_t != NULL && !val_t->singleton() && cmp2_t->is_con()) {
                 if (val_t->_lo == lo) {
                   return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen);
@@ -630,51 +628,31 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               return NULL;
             }
             case BoolTest::eq:
-              assert(!is_unsigned, "unsigned comparison is not supported");
               return cmp2_t;
             case BoolTest::lt:
-              if (is_unsigned && lo >= 0) {
-                // cmp2 >= 0: val u<= cmp2 can only pass if val >= 0. Set val->_lo to 0.
-                lo = 0;
-              } else {
-                // The lower bound of val cannot be improved.
-                lo = TypeInt::INT->_lo;
-              }
+              lo = TypeInt::INT->_lo;
               if (hi != min_jint) {
                 hi = hi - 1;
               }
               break;
             case BoolTest::le:
-              if (is_unsigned && lo >= 0) {
-                // cmp2 >= 0: val u<= cmp2 can only pass if val >= 0. Set val->_lo to 0.
-                lo = 0;
-              } else {
-                // The lower bound of val cannot be improved.
-                lo = TypeInt::INT->_lo;
-              }
+              lo = TypeInt::INT->_lo;
               break;
             case BoolTest::gt:
-              if (is_unsigned && (val_t == NULL || val_t->_lo < 0)) {
-                // val u> cmp2 passes for val < 0
-                lo = TypeInt::INT->_lo;
-              } else if (lo != max_jint) {
+              if (lo != max_jint) {
                 lo = lo + 1;
               }
               hi = TypeInt::INT->_hi;
               break;
             case BoolTest::ge:
-              if (is_unsigned && (val_t == NULL || val_t->_lo < 0)) {
-                // val u>= cmp2 passes for val < 0
-                lo = TypeInt::INT->_lo;
-              }
-              // else lo unchanged
+              // lo unchanged
               hi = TypeInt::INT->_hi;
               break;
             default:
-              ShouldNotReachHere();
               break;
             }
-            return TypeInt::make(lo, hi, cmp2_t->_widen);
+            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);
+            return rtn_t;
           }
         }
       }
@@ -722,17 +700,16 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
 //
 
 // Is the comparison for this If suitable for folding?
-bool IfNode::cmp_folds(PhaseIterGVN* igvn) {
+bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
   return in(1) != NULL &&
     in(1)->is_Bool() &&
     in(1)->in(1) != NULL &&
-    (in(1)->in(1)->Opcode() == Op_CmpI ||
-     in(1)->in(1)->Opcode() == Op_CmpU) &&
+    in(1)->in(1)->Opcode() == Op_CmpI &&
     in(1)->in(1)->in(2) != NULL &&
     in(1)->in(1)->in(2) != igvn->C->top() &&
     (in(1)->as_Bool()->_test.is_less() ||
      in(1)->as_Bool()->_test.is_greater() ||
-     in(1)->as_Bool()->_test._test == BoolTest::ne);
+     (fold_ne && in(1)->as_Bool()->_test._test == BoolTest::ne));
 }
 
 // Is a dominating control suitable for folding with this if?
@@ -742,9 +719,10 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
     ctrl->in(0) != NULL &&
     ctrl->in(0)->Opcode() == Op_If &&
     ctrl->in(0)->outcnt() == 2 &&
-    ctrl->in(0)->as_If()->cmp_folds(igvn) &&
+    ctrl->in(0)->as_If()->cmpi_folds(igvn, true) &&
+    // Must compare same value
     ctrl->in(0)->in(1)->in(1)->in(1) != NULL &&
-    in(1)->in(1)->in(1) != NULL;
+    ctrl->in(0)->in(1)->in(1)->in(1) == in(1)->in(1)->in(1);
 }
 
 // Do this If and the dominating If share a region?
@@ -859,94 +837,8 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
   return false;
 }
 
-// There might be an AddINode (marked with *) with a constant increment
-// in-between the CmpNodes and the common value we compare.
-// Check for the following cases and return true if a common value is
-// compared. Also save the constant value that is added to infer
-// the type of the common value we compare.
-//
-//   Variant 1         Variant 2         Variant 3           Variant 4
-//
-//    res_val           res_val             res_val          res_val
-//    /   \             /    \              /    \           /     \
-// dom_cmp \           /   this_val*   dom_val*   \     dom_val*  this_val*
-//        this_cmp    /       \            /       \        |        \
-//                  dom_cmp    \        dom_cmp     \     dom_cmp     \
-//                          this_cmp            this_cmp           this_cmp
-bool IfNode::get_base_comparing_value (Node* dom_if, PhaseIterGVN* igvn, jint& this_adj_val, jint& dom_adj_val) {
-  assert(dom_if->in(1)->in(1)->is_Cmp() && in(1)->in(1)->is_Cmp(), "compare expected");
-  Node* dom_val = dom_if->in(1)->in(1)->in(1);
-  Node* this_val = in(1)->in(1)->in(1);
-  assert(dom_val != NULL && this_val != NULL, "sanity");
-  if (this_val == dom_val) {
-    // Variant 1
-    return true;
-  } else if (this_val->is_Add() && this_val->in(1) == dom_val) {
-    const TypeInt* val_t = igvn->type(this_val->in(2))->isa_int();
-    if (val_t != NULL && val_t->is_con()) {
-      // Variant 2
-      this_adj_val = val_t->get_con();
-      return true;
-    }
-  } else if (dom_val->is_Add() && this_val == dom_val->in(1)) {
-    const TypeInt* val_t = igvn->type(dom_val->in(2))->isa_int();
-    if (val_t != NULL && val_t->is_con()) {
-      // Variant 3
-      dom_adj_val = val_t->get_con();
-      return true;
-    }
-  } else if (this_val->is_Add() && dom_val->is_Add() && this_val->in(1) != NULL && this_val->in(1) == dom_val->in(1)) {
-    const TypeInt* domval_t = igvn->type(dom_val->in(2))->isa_int();
-    const TypeInt* thisval_t = igvn->type(this_val->in(2))->isa_int();
-    if (thisval_t != NULL && domval_t != NULL && thisval_t->is_con() && domval_t->is_con()) {
-      // Variant 4
-      this_adj_val = thisval_t->get_con();
-      dom_adj_val = domval_t->get_con();
-      return true;
-    }
-  }
-  return false;
-}
-
-// Check if dominating if determines the result of this if
-bool IfNode::fold_dominated_if(ProjNode* proj, PhaseIterGVN* igvn) {
-  Node* this_val = in(1)->in(1)->in(1);
-  Node* dom_if = proj->in(0)->as_If();
-  Node* dom_val = dom_if->in(1)->in(1)->in(1);
-  jint this_adj_val = 0;
-  jint dom_adj_val = 0;
-
-  // Must compare same value
-  if (get_base_comparing_value(dom_if, igvn, this_adj_val, dom_adj_val)) {
-    const TypeInt* failtype = filtered_int_type(igvn, dom_val, proj);
-    if (failtype != NULL) {
-      if (dom_adj_val != 0) {
-        // To account for the AddINode, subtract the constant increment from the type
-        failtype = dom_val->as_Add()->add_ring(failtype, TypeInt::make(-dom_adj_val))->is_int();
-      }
-      for (int i = 0; i < 2; ++i) {
-        const TypeInt* type = filtered_int_type(igvn, this_val, proj_out(i));
-        if (type != NULL) {
-          if (this_adj_val != 0) {
-            // To account for the AddINode, subtract the constant increment from the type
-            type = this_val->as_Add()->add_ring(type, TypeInt::make(-this_adj_val))->is_int();
-          }
-          type = failtype->join(type)->is_int();
-          if (type->empty()) {
-            // Replace Bool with constant
-            igvn->_worklist.push(in(1));
-            igvn->replace_input_of(this, 1, igvn->intcon(proj_out(1-i)->_con));
-            return true;
-          }
-        }
-      }
-    }
-  }
-  return false;
-}
-
 // Check that the 2 CmpI can be folded into as single CmpU and proceed with the folding
-bool IfNode::fold_to_unsigned(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn) {
+bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn) {
   Node* this_cmp = in(1)->in(1);
   BoolNode* this_bool = in(1)->as_Bool();
   IfNode* dom_iff = proj->in(0)->as_If();
@@ -955,17 +847,13 @@ bool IfNode::fold_to_unsigned(ProjNode* proj, ProjNode* success, ProjNode* fail,
   Node* hi = this_cmp->in(2);
   Node* n = this_cmp->in(1);
   ProjNode* otherproj = proj->other_if_proj();
-  assert(this_cmp->Opcode() == Op_CmpI && dom_iff->in(1)->in(1)->Opcode() == Op_CmpI, "Unexpected CmpNode");
+
+  const TypeInt* lo_type = IfNode::filtered_int_type(igvn, n, otherproj);
+  const TypeInt* hi_type = IfNode::filtered_int_type(igvn, n, success);
 
   BoolTest::mask lo_test = dom_bool->_test._test;
   BoolTest::mask hi_test = this_bool->_test._test;
   BoolTest::mask cond = hi_test;
-  if (lo_test == BoolTest::ne || hi_test == BoolTest::ne) {
-    return false;
-  }
-
-  const TypeInt* lo_type = IfNode::filtered_int_type(igvn, n, otherproj);
-  const TypeInt* hi_type = IfNode::filtered_int_type(igvn, n, success);
 
   // convert:
   //
@@ -993,7 +881,7 @@ bool IfNode::fold_to_unsigned(ProjNode* proj, ProjNode* success, ProjNode* fail,
   // sets the lower bound if any.
   Node* adjusted_lim = NULL;
   if (lo_type != NULL && hi_type != NULL && hi_type->_lo > lo_type->_hi &&
-      hi_type->_hi == max_jint && lo_type->_lo == min_jint) {
+      hi_type->_hi == max_jint && lo_type->_lo == min_jint && lo_test != BoolTest::ne) {
     assert((dom_bool->_test.is_less() && !proj->_con) ||
            (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
     // this test was canonicalized
@@ -1038,7 +926,7 @@ bool IfNode::fold_to_unsigned(ProjNode* proj, ProjNode* success, ProjNode* fail,
       return false;
     }
   } else if (lo_type != NULL && hi_type != NULL && lo_type->_lo > hi_type->_hi &&
-             lo_type->_hi == max_jint && hi_type->_lo == min_jint) {
+             lo_type->_hi == max_jint && hi_type->_lo == min_jint && lo_test != BoolTest::ne) {
 
     // this_bool = <
     //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
@@ -1096,6 +984,20 @@ bool IfNode::fold_to_unsigned(ProjNode* proj, ProjNode* success, ProjNode* fail,
       return false;
     }
   } else {
+    const TypeInt* failtype = filtered_int_type(igvn, n, proj);
+    if (failtype != NULL) {
+      const TypeInt* type2 = filtered_int_type(igvn, n, fail);
+      if (type2 != NULL) {
+        failtype = failtype->join(type2)->is_int();
+        if (failtype->_lo > failtype->_hi) {
+          // previous if determines the result of this if so
+          // replace Bool with constant
+          igvn->_worklist.push(in(1));
+          igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
+          return true;
+        }
+      }
+    }
     lo = NULL;
     hi = NULL;
   }
@@ -1359,57 +1261,42 @@ void IfNode::reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, Ph
 Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
   if (Opcode() != Op_If) return NULL;
 
-  if (cmp_folds(igvn)) {
+  if (cmpi_folds(igvn)) {
     Node* ctrl = in(0);
-    Node* cmp = in(1)->in(1);
-    Node* val = cmp->in(1);
-    // An integer comparison immediately dominated by another integer comparison
-    if (is_ctrl_folds(ctrl, igvn)) {
-      ProjNode* proj = ctrl->as_Proj();
-      if (fold_dominated_if(proj, igvn)) {
+    if (is_ctrl_folds(ctrl, igvn) && ctrl->outcnt() == 1) {
+      // A integer comparison immediately dominated by another integer
+      // comparison
+      ProjNode* success = NULL;
+      ProjNode* fail = NULL;
+      ProjNode* dom_cmp = ctrl->as_Proj();
+      if (has_shared_region(dom_cmp, success, fail) &&
+          // Next call modifies graph so must be last
+          fold_compares_helper(dom_cmp, success, fail, igvn)) {
         return this;
       }
-      Node* dom_cmp = ctrl->in(0)->in(1)->in(1);
-      Node* dom_val = dom_cmp->in(1);
-      if (cmp->Opcode() == Op_CmpI && dom_cmp->Opcode() == Op_CmpI && val == dom_val && ctrl->outcnt() == 1) {
-        ProjNode* success = NULL;
-        ProjNode* fail = NULL;
-        if (has_shared_region(proj, success, fail) &&
-            // Next call modifies graph so must be last
-            fold_to_unsigned(proj, success, fail, igvn)) {
-          return this;
-        }
-        if (has_only_uncommon_traps(proj, success, fail, igvn) &&
-            // Next call modifies graph so must be last
-            fold_to_unsigned(proj, success, fail, igvn)) {
-          return merge_uncommon_traps(proj, success, fail, igvn);
-        }
+      if (has_only_uncommon_traps(dom_cmp, success, fail, igvn) &&
+          // Next call modifies graph so must be last
+          fold_compares_helper(dom_cmp, success, fail, igvn)) {
+        return merge_uncommon_traps(dom_cmp, success, fail, igvn);
       }
-    }
-    if (ctrl->in(0) != NULL &&
-        ctrl->in(0)->in(0) != NULL) {
+      return NULL;
+    } else if (ctrl->in(0) != NULL &&
+               ctrl->in(0)->in(0) != NULL) {
       ProjNode* success = NULL;
       ProjNode* fail = NULL;
       Node* dom = ctrl->in(0)->in(0);
-      ProjNode* dom_proj = dom->isa_Proj();
-      ProjNode* other_proj = ctrl->isa_Proj();
+      ProjNode* dom_cmp = dom->isa_Proj();
+      ProjNode* other_cmp = ctrl->isa_Proj();
 
       // Check if it's an integer comparison dominated by another
       // integer comparison with another test in between
-      if (is_ctrl_folds(dom, igvn)) {
-        if (fold_dominated_if(dom_proj, igvn)) {
-            return this;
-        }
-        Node* dom_cmp = dom->in(0)->in(1)->in(1);
-        Node* dom_val = dom_cmp->in(1);
-        if (cmp->Opcode() == Op_CmpI && dom_cmp->Opcode() == Op_CmpI && val == dom_val &&
-            has_only_uncommon_traps(dom_proj, success, fail, igvn) &&
-            is_side_effect_free_test(other_proj, igvn) &&
-            // Next call modifies graph so must be last
-            fold_to_unsigned(dom_proj, success, fail, igvn)) {
-          reroute_side_effect_free_unc(other_proj, dom_proj, igvn);
-          return merge_uncommon_traps(dom_proj, success, fail, igvn);
-        }
+      if (is_ctrl_folds(dom, igvn) &&
+          has_only_uncommon_traps(dom_cmp, success, fail, igvn) &&
+          is_side_effect_free_test(other_cmp, igvn) &&
+          // Next call modifies graph so must be last
+          fold_compares_helper(dom_cmp, success, fail, igvn)) {
+        reroute_side_effect_free_unc(other_cmp, dom_cmp, igvn);
+        return merge_uncommon_traps(dom_cmp, success, fail, igvn);
       }
     }
   }

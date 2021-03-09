@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ class IfNode : public MultiBranchNode {
 
 private:
   // Helper methods for fold_compares
-  bool cmp_folds(PhaseIterGVN* igvn);
+  bool cmpi_folds(PhaseIterGVN* igvn, bool fold_ne = false);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
   bool has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail);
   bool has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNode*& fail, PhaseIterGVN* igvn);
@@ -299,9 +299,7 @@ private:
   bool is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn);
   void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
   ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call) const;
-  bool get_base_comparing_value(Node* dom_if, PhaseIterGVN* igvn, jint& this_adj_val, jint& dom_adj_val);
-  bool fold_dominated_if(ProjNode* proj, PhaseIterGVN* igvn);
-  bool fold_to_unsigned(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+  bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
   static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
 
 protected:
