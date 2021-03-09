@@ -1735,13 +1735,13 @@ public class CommandProcessor {
                     if (metadata instanceof InstanceKlass) {
                         ik = (InstanceKlass) metadata;
                     } else {
-                        System.out.println("Specified address is not an InstanceKlass");
+                        out.println("Specified address is not an InstanceKlass");
                         return;
                     }
                 } else {
                     ik = SystemDictionaryHelper.findInstanceKlass(classname);
                     if (ik == null) {
-                        System.out.println("class not found: " + classname);
+                        out.println("class not found: " + classname);
                         return;
                     }
                 }
@@ -1853,9 +1853,9 @@ public class CommandProcessor {
                 String classname = t.nextToken();
                 InstanceKlass ik = SystemDictionaryHelper.findInstanceKlass(classname);
                 if (ik == null) {
-                    System.out.println("class not found: " + classname);
+                    out.println("class not found: " + classname);
                 } else {
-                    System.out.println(ik.getName().asString() + " @" + ik.getAddress());
+                    out.println(ik.getName().asString() + " @" + ik.getAddress());
                 }
             }
         },
@@ -1868,7 +1868,7 @@ public class CommandProcessor {
                 ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
                 cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                         public void visit(Klass k) {
-                            System.out.println(k.getName().asString() + " @" + k.getAddress());
+                            out.println(k.getName().asString() + " @" + k.getAddress());
                         }
                     }
                 );
