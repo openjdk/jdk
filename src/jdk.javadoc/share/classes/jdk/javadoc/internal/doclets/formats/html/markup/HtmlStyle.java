@@ -348,6 +348,17 @@ public enum HtmlStyle {
      */
     serializedClassDetails,
 
+    /**
+     * The class for the list containing the {@code @see} tags of an element.
+     */
+    seeList,
+
+    /**
+     * The class for the list containing the {@code @see} tags of an element
+     * when some of the tags have longer labels.
+     */
+    seeListLong,
+
     //</editor-fold>
 
     //<editor-fold desc="tables">

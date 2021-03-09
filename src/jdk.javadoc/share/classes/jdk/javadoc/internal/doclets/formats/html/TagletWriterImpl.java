@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -53,6 +54,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -140,6 +142,9 @@ public class TagletWriterImpl extends TagletWriter {
     private final Resources resources;
     private final Contents contents;
     private final Context context;
+
+    // Threshold for length of @see tag label for switching from inline to block layout.
+    private static final int SEE_TAG_MAX_INLINE_LENGTH = 30;
 
     /**
      * Creates a taglet writer.
@@ -310,48 +315,47 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     public Content seeTagOutput(Element holder, List<? extends SeeTree> seeTags) {
-        ContentBuilder body = new ContentBuilder();
+        List<Content> links = new ArrayList<>();
         for (DocTree dt : seeTags) {
-            appendSeparatorIfNotEmpty(body);
-            body.add(htmlWriter.seeTagToContent(holder, dt, context.within(dt)));
+            links.add(htmlWriter.seeTagToContent(holder, dt, context.within(dt)));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
                 htmlWriter instanceof ClassWriterImpl) {
             //Automatically add link to constant values page for constant fields.
-            appendSeparatorIfNotEmpty(body);
             DocPath constantsPath =
                     htmlWriter.pathToRoot.resolve(DocPaths.CONSTANT_VALUES);
             String whichConstant =
                     ((ClassWriterImpl) htmlWriter).getTypeElement().getQualifiedName() + "." +
                     utils.getSimpleName(holder);
             DocLink link = constantsPath.fragment(whichConstant);
-            body.add(htmlWriter.links.createLink(link,
+            links.add(htmlWriter.links.createLink(link,
                     Text.of(resources.getText("doclet.Constants_Summary"))));
         }
         if (utils.isClass(holder) && utils.isSerializable((TypeElement)holder)) {
             //Automatically add link to serialized form page for serializable classes.
             if (SerializedFormBuilder.serialInclude(utils, holder) &&
                       SerializedFormBuilder.serialInclude(utils, utils.containingPackage(holder))) {
-                appendSeparatorIfNotEmpty(body);
                 DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
                 DocLink link = serialPath.fragment(utils.getFullyQualifiedName(holder));
-                body.add(htmlWriter.links.createLink(link,
+                links.add(htmlWriter.links.createLink(link,
                         Text.of(resources.getText("doclet.Serialized_Form"))));
             }
         }
-        if (body.isEmpty())
-            return body;
+        if (links.isEmpty()) {
+            return Text.EMPTY;
+        }
+        // Use a different style if any link label is longer than 30 chars or contains commas.
+        boolean hasLongLabels = links.stream()
+                .anyMatch(c -> c.charCount() > SEE_TAG_MAX_INLINE_LENGTH || c.toString().contains(","));
+        HtmlTree seeList = new HtmlTree(TagName.UL)
+                .setStyle(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
+        links.stream().filter(Content::isValid).forEach(item -> {
+            seeList.add(HtmlTree.LI(item));
+        });
 
         return new ContentBuilder(
                 HtmlTree.DT(contents.seeAlso),
-                HtmlTree.DD(body));
-    }
-
-    private void appendSeparatorIfNotEmpty(ContentBuilder body) {
-        if (!body.isEmpty()) {
-            body.add(", ");
-            body.add(DocletConstants.NL);
-        }
+                HtmlTree.DD(seeList));
     }
 
     @Override

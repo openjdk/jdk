@@ -59,8 +59,12 @@ public class TestProperty extends JavadocTester {
                     <div class="block">This is an Object property where the Object is a single Object.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
-                    <dd><a href="#getGood()"><code>getGood()</code></a>,\s
-                    <a href="#setGood(pkg.MyObj)"><code>setGood(MyObj)</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#getGood()"><code>getGood()</code></a></li>
+                    <li><a href="#setGood(pkg.MyObj)"><code>setGood(MyObj)</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>""",
 
                 """
@@ -71,8 +75,12 @@ public class TestProperty extends JavadocTester {
                     <div class="block">This is an Object property where the Object is an array.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
-                    <dd><a href="#getBad()"><code>getBad()</code></a>,\s
-                    <a href="#setBad(pkg.MyObj%5B%5D)"><code>setBad(MyObj[])</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#getBad()"><code>getBad()</code></a></li>
+                    <li><a href="#setBad(pkg.MyObj%5B%5D)"><code>setBad(MyObj[])</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>""",
 
                 // no tab classes should be used in the property table
@@ -105,8 +113,12 @@ public class TestProperty extends JavadocTester {
                     <div class="block">This is an Object property where the Object is a single <code>List&lt;T&gt;</code>.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
-                    <dd><a href="#getList()"><code>getList()</code></a>,\s
-                    <a href="#setList(java.util.List)"><code>setList(List)</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#getList()"><code>getList()</code></a></li>
+                    <li><a href="#setList(java.util.List)"><code>setList(List)</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>"""
         );
     }

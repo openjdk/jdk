@@ -627,9 +627,13 @@ public class TestModules extends JavadocTester {
                     <dd>JDK 9</dd>""",
                 """
                     <dt>See Also:</dt>
-                    <dd>"Test see tag",\s
-                    <a href="testpkgmdltags/TestClassInModuleTags.html" title="class in testpkgmdlta\
-                    gs"><code>TestClassInModuleTags</code></a></dd>""",
+                    <dd>
+                    <ul class="see-list">
+                    <li>"Test see tag"</li>
+                    <li><a href="testpkgmdltags/TestClassInModuleTags.html" title="class in testpkgmdlta\
+                    gs"><code>TestClassInModuleTags</code></a></li>
+                    </ul>
+                    </dd>""",
                 """
                     <dt>Regular Tag:</dt>
                     <dd>Just a regular simple tag.</dd>""",

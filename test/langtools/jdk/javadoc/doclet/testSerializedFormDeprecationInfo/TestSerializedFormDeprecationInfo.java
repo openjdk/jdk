@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,11 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                     <dt>Throws:</dt>
                     <dd><code>java.io.IOException</code> - on error</dd>
                     <dt>See Also:</dt>
-                    <dd><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>""",
                 """
                     <span class="deprecated-label">Deprecated.</span>
@@ -111,7 +115,11 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                     <dt>Since:</dt>
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
-                    <dd><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>""",
                 """
                     <span class="deprecated-label">Deprecated.</span>

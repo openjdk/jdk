@@ -332,6 +332,18 @@ ul.summary-list > li {
     margin-top:0;
     margin-bottom:1px;
 }
+ul.see-list, ul.see-list-long {
+    padding-left: 0;
+    list-style: none;
+}
+ul.see-list li {
+    display: inline;
+}
+ul.see-list li:not(:last-child):after,
+ul.see-list-long li:not(:last-child):after {
+    content: ", ";
+    white-space: pre-wrap;
+}
 /*
  * Styles for tables.
  */
