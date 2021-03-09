@@ -157,7 +157,7 @@ public final class Timestamp implements Serializable {
 
     /**
      * Restores the state of this object from the stream, and explicitly
-     * reset hash code value to -1
+     * resets hash code value to -1.
      *
      * @param  ois the {@code ObjectInputStream} from which data is read
      * @throws IOException if an I/O error occurs

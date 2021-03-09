@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,24 +280,11 @@ public class CardPermission extends Permission {
         return getName().hashCode() + 31 * mask;
     }
 
-    /**
-     * Writes the state of this object to the stream.
-     *
-     * @param  s the {@code ObjectOutputStream} to which data is written
-     * @throws IOException if an I/O error occurs
-     */
     private void writeObject(ObjectOutputStream s) throws IOException {
         // Write out the actions. The superclass takes care of the name.
         s.defaultWriteObject();
     }
 
-    /**
-     * Restores the state of this object from the stream.
-     *
-     * @param  s the {@code ObjectInputStream} from which data is read
-     * @throws IOException if an I/O error occurs
-     * @throws ClassNotFoundException if a serialized class cannot be loaded
-     */
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         // Read in the actions, then restore the mask.

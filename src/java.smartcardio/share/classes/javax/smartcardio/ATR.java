@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package javax.smartcardio;
 
 import java.util.*;
-import java.io.IOException;
 
 /**
  * A Smart Card's answer-to-reset bytes. A Card's ATR object can be obtained
@@ -47,9 +46,6 @@ public final class ATR implements java.io.Serializable {
 
     private static final long serialVersionUID = 6695383790847736493L;
 
-    /**
-     * The internal answer-to-reset byte array.
-     */
     private byte[] atr;
 
     private transient int startHistorical, nHistorical;
@@ -160,15 +156,8 @@ public final class ATR implements java.io.Serializable {
         return Arrays.hashCode(atr);
     }
 
-    /**
-     * Restores the state of this object from the stream.
-     *
-     * @param  in the {@code ObjectInputStream} from which data is read
-     * @throws IOException if an I/O error occurs
-     * @throws ClassNotFoundException if a serialized class cannot be loaded
-     */
     private void readObject(java.io.ObjectInputStream in)
-            throws IOException, ClassNotFoundException {
+            throws java.io.IOException, ClassNotFoundException {
         atr = (byte[])in.readUnshared();
         parse();
     }

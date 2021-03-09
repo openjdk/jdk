@@ -425,7 +425,6 @@ public class SealedObject implements Serializable {
      * @param s the object input stream.
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
-     * @throws NullPointerException if s is null.
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)

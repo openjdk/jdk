@@ -68,7 +68,7 @@ public abstract class Certificate implements java.io.Serializable {
     /** The certificate type. */
     private final String type;
 
-    /** Cache the hash code for the certiticate. */
+    /** The hash code for the certificate. */
     private int hash = -1; // Default to -1
 
     /**
