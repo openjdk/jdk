@@ -62,5 +62,5 @@ module jdk.httpserver {
     uses com.sun.net.httpserver.spi.HttpServerProvider;
 
     provides java.util.spi.ToolProvider
-            with sun.net.httpserver.SimpleServerToolProvider;
+            with sun.net.httpserver.simpleserver.SimpleServerToolProvider;
 }

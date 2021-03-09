@@ -1,4 +1,4 @@
-package sun.net.httpserver;
+package sun.net.httpserver.simpleserver;
 
 import java.io.PrintWriter;
 import java.util.spi.ToolProvider;
@@ -13,7 +13,6 @@ public class SimpleServerToolProvider implements ToolProvider {
     }
 
     public int run(PrintWriter out, PrintWriter err, String... args) {
-        SimpleFileServerImpl.mainForProvider(out, args);
-        return 0;
+        return Main.execute(out, args);
     }
 }
