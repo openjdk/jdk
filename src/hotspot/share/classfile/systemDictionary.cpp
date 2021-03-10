@@ -546,12 +546,12 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
 //
 // The notify allows applications that did an untimed wait() on
 // the classloader object lock to not hang.
-void SystemDictionary::double_lock_wait(Thread* thread, Handle lockObject) {
+void SystemDictionary::double_lock_wait(JavaThread* thread, Handle lockObject) {
   assert_lock_strong(SystemDictionary_lock);
 
   assert(lockObject() != NULL, "lockObject must be non-NULL");
   bool calledholdinglock
-      = ObjectSynchronizer::current_thread_holds_lock(thread->as_Java_thread(), lockObject);
+      = ObjectSynchronizer::current_thread_holds_lock(thread, lockObject);
   assert(calledholdinglock, "must hold lock for notify");
   assert(!is_parallelCapable(lockObject), "lockObject must not be parallelCapable");
   // These don't throw exceptions.
@@ -626,7 +626,7 @@ InstanceKlass* SystemDictionary::handle_parallel_super_load(
         if (class_loader.is_null()) {
           SystemDictionary_lock->wait();
         } else {
-          double_lock_wait(THREAD, lockObject);
+          double_lock_wait(THREAD->as_Java_thread(), lockObject);
         }
       } else {
         // If not in SD and not in PH, the other thread is done loading the super class
@@ -693,7 +693,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // ParallelCapable Classloaders and the bootstrap classloader
   // do not acquire lock here.
   Handle lockObject = get_loader_lock_or_null(class_loader);
-  ObjectLocker ol(lockObject, THREAD);
+  ObjectLocker ol(lockObject, THREAD->as_Java_thread());
 
   // Check again (after locking) if the class already exists in SystemDictionary
   bool class_has_been_loaded   = false;
@@ -777,7 +777,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
             } else {
               // case 4: traditional with broken classloader lock. wait on first
               // requestor.
-              double_lock_wait(THREAD, lockObject);
+              double_lock_wait(THREAD->as_Java_thread(), lockObject);
             }
             // Check if classloading completed while we were waiting
             InstanceKlass* check = dictionary->find_class(name_hash, name);
@@ -1051,7 +1051,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   // Classloaders that support parallelism, e.g. bootstrap classloader,
   // do not acquire lock here
   Handle lockObject = get_loader_lock_or_null(class_loader);
-  ObjectLocker ol(lockObject, THREAD);
+  ObjectLocker ol(lockObject, THREAD->as_Java_thread());
 
   // Parse the stream and create a klass.
   // Note that we do this even though this klass might
@@ -1339,7 +1339,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   {
     HandleMark hm(THREAD);
     Handle lockObject = get_loader_lock_or_null(class_loader);
-    ObjectLocker ol(lockObject, THREAD);
+    ObjectLocker ol(lockObject, THREAD->as_Java_thread());
     // prohibited package check assumes all classes loaded from archive call
     // restore_unshareable_info which calls ik->set_package()
     ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);

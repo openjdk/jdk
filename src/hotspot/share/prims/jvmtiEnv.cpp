@@ -693,7 +693,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     // The phase is checked by the wrapper that called this function,
     // but this thread could be racing with the thread that is
     // terminating the VM so we check one more time.
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current();
     HandleMark hm(THREAD);
 
     // create the zip entry (which will open the zip file and hence
