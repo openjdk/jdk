@@ -315,6 +315,7 @@ class Compile : public Phase {
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<Node*>  _predicate_opaqs;       // List of Opaque1 nodes for the loop predicates.
+  GrowableArray<Node*>  _skeleton_predicate_opaqs; // List of Opaque4 nodes for the loop skeleton predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   ConnectionGraph*      _congraph;
@@ -387,7 +388,7 @@ class Compile : public Phase {
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
-  GrowableArray<BufferBlob*>    _native_invokers;
+  GrowableArray<RuntimeStub*>   _native_invokers;
 
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
@@ -656,11 +657,13 @@ class Compile : public Phase {
   void end_method(int level = 1);
 
   int           macro_count()             const { return _macro_nodes.length(); }
-  int           predicate_count()         const { return _predicate_opaqs.length();}
+  int           predicate_count()         const { return _predicate_opaqs.length(); }
+  int           skeleton_predicate_count() const { return _skeleton_predicate_opaqs.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
 
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
-  Node*         predicate_opaque1_node(int idx) const { return _predicate_opaqs.at(idx);}
+  Node*         predicate_opaque1_node(int idx) const { return _predicate_opaqs.at(idx); }
+  Node*         skeleton_predicate_opaque4_node(int idx) const { return _skeleton_predicate_opaqs.at(idx); }
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
@@ -688,7 +691,15 @@ class Compile : public Phase {
     assert(_macro_nodes.contains(n), "should have already been in macro list");
     _predicate_opaqs.append(n);
   }
-
+  void add_skeleton_predicate_opaq(Node* n) {
+    assert(!_skeleton_predicate_opaqs.contains(n), "duplicate entry in skeleton predicate opaque4 list");
+    _skeleton_predicate_opaqs.append(n);
+  }
+  void remove_skeleton_predicate_opaq(Node* n) {
+    if (skeleton_predicate_count() > 0) {
+      _skeleton_predicate_opaqs.remove_if_existing(n);
+    }
+  }
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
@@ -726,8 +737,7 @@ class Compile : public Phase {
 
   void record_failure(const char* reason);
   void record_method_not_compilable(const char* reason) {
-    // Bailouts cover "all_tiers" when TieredCompilation is off.
-    env()->record_method_not_compilable(reason, !TieredCompilation);
+    env()->record_method_not_compilable(reason);
     // Record failure reason.
     record_failure(reason);
   }
@@ -941,9 +951,9 @@ class Compile : public Phase {
     _vector_reboxing_late_inlines.push(cg);
   }
 
-  void add_native_invoker(BufferBlob* stub);
+  void add_native_invoker(RuntimeStub* stub);
 
-  const GrowableArray<BufferBlob*>& native_invokers() const { return _native_invokers; }
+  const GrowableArray<RuntimeStub*> native_invokers() const { return _native_invokers; }
 
   void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
 
@@ -1182,9 +1192,10 @@ class Compile : public Phase {
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif
 
-  static bool
-  push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
-                BasicType bt);
+  static bool push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
+                            BasicType bt);
+
+  static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

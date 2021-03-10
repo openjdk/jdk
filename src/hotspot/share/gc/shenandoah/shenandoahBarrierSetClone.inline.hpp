@@ -29,7 +29,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "memory/iterator.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/access.hpp"
 #include "oops/compressedOops.hpp"
 

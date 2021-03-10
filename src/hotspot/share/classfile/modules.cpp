@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -47,6 +48,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/stringUtils.hpp"
 #include "utilities/utf8.hpp"
 
@@ -98,13 +100,12 @@ static PackageEntryTable* get_package_entry_table(Handle h_loader) {
   return loader_cld->packages();
 }
 
-static ModuleEntry* get_module_entry(jobject module, TRAPS) {
-  oop m = JNIHandles::resolve_non_null(module);
-  if (!java_lang_Module::is_instance(m)) {
+static ModuleEntry* get_module_entry(Handle module, TRAPS) {
+  if (!java_lang_Module::is_instance(module())) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
                    "module is not an instance of type java.lang.Module");
   }
-  return java_lang_Module::module_entry(m);
+  return java_lang_Module::module_entry(module());
 }
 
 
@@ -168,7 +169,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
   for (int x = 0; x < num_packages; x++) {
     oop pkg_str = pkgs->obj_at(x);
 
-    if (pkg_str == NULL || pkg_str->klass() != SystemDictionary::String_klass()) {
+    if (pkg_str == NULL || pkg_str->klass() != vmClasses::String_klass()) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("Bad package name"));
     }
@@ -270,23 +271,22 @@ void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRA
   }
 }
 
-void Modules::define_module(jobject module, jboolean is_open, jstring version,
+void Modules::define_module(Handle module, jboolean is_open, jstring version,
                             jstring location, jobjectArray packages, TRAPS) {
   check_cds_restrictions(CHECK);
   ResourceMark rm(THREAD);
 
-  if (module == NULL) {
+  if (module.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null module object");
   }
 
-  Handle module_handle(THREAD, JNIHandles::resolve_non_null(module));
-  if (!java_lang_Module::is_instance(module_handle())) {
+  if (!java_lang_Module::is_instance(module())) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "module is not an instance of type java.lang.Module");
   }
 
   int module_name_len;
-  char* module_name = get_module_name(module_handle(), module_name_len, CHECK);
+  char* module_name = get_module_name(module(), module_name_len, CHECK);
   if (module_name == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Module name cannot be null");
@@ -299,11 +299,11 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
   // Special handling of java.base definition
   if (strcmp(module_name, JAVA_BASE_NAME) == 0) {
     assert(is_open == JNI_FALSE, "java.base module cannot be open");
-    define_javabase_module(module_handle, version, location, packages_h, num_packages, CHECK);
+    define_javabase_module(module, version, location, packages_h, num_packages, CHECK);
     return;
   }
 
-  oop loader = java_lang_Module::loader(module_handle());
+  oop loader = java_lang_Module::loader(module());
   // Make sure loader is not the jdk.internal.reflect.DelegatingClassLoader.
   if (loader != java_lang_ClassLoader::non_reflection_class_loader(loader)) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
@@ -325,7 +325,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
   GrowableArray<Symbol*>* pkg_list = new GrowableArray<Symbol*>(num_packages);
   for (int x = 0; x < num_packages; x++) {
     oop pkg_str = packages_h->obj_at(x);
-    if (pkg_str == NULL || pkg_str->klass() != SystemDictionary::String_klass()) {
+    if (pkg_str == NULL || pkg_str->klass() != vmClasses::String_klass()) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("Bad package name"));
     }
@@ -400,7 +400,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
     if (!dupl_modules && existing_pkg == NULL) {
       if (module_table->lookup_only(module_symbol) == NULL) {
         // Create the entry for this module in the class loader's module entry table.
-        ModuleEntry* module_entry = module_table->locked_create_entry(module_handle,
+        ModuleEntry* module_entry = module_table->locked_create_entry(module,
                                     (is_open == JNI_TRUE), module_symbol,
                                     version_symbol, location_symbol, loader_data);
         assert(module_entry != NULL, "module_entry creation failed");
@@ -417,7 +417,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
         }
 
         // Store pointer to ModuleEntry record in java.lang.Module object.
-        java_lang_Module::set_module_entry(module_handle(), module_entry);
+        java_lang_Module::set_module_entry(module(), module_entry);
       } else {
          dupl_modules = true;
       }
@@ -474,7 +474,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-void Modules::define_archived_modules(jobject platform_loader, jobject system_loader, TRAPS) {
+void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
   assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
@@ -488,19 +488,17 @@ void Modules::define_archived_modules(jobject platform_loader, jobject system_lo
   // Patch any previously loaded class's module field with java.base's java.lang.Module.
   ModuleEntryTable::patch_javabase_entries(java_base_module);
 
-  if (platform_loader == NULL) {
+  if (h_platform_loader.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
   }
 
-  if (system_loader == NULL) {
+  if (h_system_loader.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null system loader object");
   }
 
-  Handle h_platform_loader(THREAD, JNIHandles::resolve_non_null(platform_loader));
   ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
   ClassLoaderDataShared::restore_java_platform_loader_from_archive(platform_loader_data);
 
-  Handle h_system_loader(THREAD, JNIHandles::resolve_non_null(system_loader));
   ClassLoaderData* system_loader_data = SystemDictionary::register_loader(h_system_loader);
   ClassLoaderDataShared::restore_java_system_loader_from_archive(system_loader_data);
 }
@@ -513,27 +511,26 @@ void Modules::check_cds_restrictions(TRAPS) {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
+void Modules::set_bootloader_unnamed_module(Handle module, TRAPS) {
   ResourceMark rm(THREAD);
 
-  if (module == NULL) {
+  if (module.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null module object");
   }
-  Handle module_handle(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_Module::is_instance(module_handle())) {
+  if (!java_lang_Module::is_instance(module())) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "module is not an instance of type java.lang.Module");
   }
 
   // Ensure that this is an unnamed module
-  oop name = java_lang_Module::name(module_handle());
+  oop name = java_lang_Module::name(module());
   if (name != NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "boot loader's unnamed module's java.lang.Module has a name");
   }
 
   // Validate java_base's loader is the boot loader.
-  oop loader = java_lang_Module::loader(module_handle());
+  oop loader = java_lang_Module::loader(module());
   if (loader != NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Class loader must be the boot class loader");
@@ -545,19 +542,19 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
   ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
   ModuleEntry* unnamed_module = boot_loader_data->unnamed_module();
   assert(unnamed_module != NULL, "boot loader's unnamed ModuleEntry not defined");
-  unnamed_module->set_module(boot_loader_data->add_handle(module_handle));
+  unnamed_module->set_module(boot_loader_data->add_handle(module));
   // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module object.
-  java_lang_Module::set_module_entry(module_handle(), unnamed_module);
+  java_lang_Module::set_module_entry(module(), unnamed_module);
 }
 
-void Modules::add_module_exports(jobject from_module, jstring package_name, jobject to_module, TRAPS) {
+void Modules::add_module_exports(Handle from_module, jstring package_name, Handle to_module, TRAPS) {
   check_cds_restrictions(CHECK);
 
   if (package_name == NULL) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(),
               "package is null");
   }
-  if (from_module == NULL) {
+  if (from_module.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(),
               "from_module is null");
   }
@@ -571,7 +568,7 @@ void Modules::add_module_exports(jobject from_module, jstring package_name, jobj
   if (!from_module_entry->is_named() || from_module_entry->is_open()) return;
 
   ModuleEntry* to_module_entry;
-  if (to_module == NULL) {
+  if (to_module.is_null()) {
     to_module_entry = NULL;  // It's an unqualified export.
   } else {
     to_module_entry = get_module_entry(to_module, CHECK);
@@ -617,19 +614,19 @@ void Modules::add_module_exports(jobject from_module, jstring package_name, jobj
 }
 
 
-void Modules::add_module_exports_qualified(jobject from_module, jstring package,
-                                           jobject to_module, TRAPS) {
+void Modules::add_module_exports_qualified(Handle from_module, jstring package,
+                                           Handle to_module, TRAPS) {
   check_cds_restrictions(CHECK);
-  if (to_module == NULL) {
+  if (to_module.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(),
               "to_module is null");
   }
   add_module_exports(from_module, package, to_module, CHECK);
 }
 
-void Modules::add_reads_module(jobject from_module, jobject to_module, TRAPS) {
+void Modules::add_reads_module(Handle from_module, Handle to_module, TRAPS) {
   check_cds_restrictions(CHECK);
-  if (from_module == NULL) {
+  if (from_module.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(),
               "from_module is null");
   }
@@ -641,7 +638,7 @@ void Modules::add_reads_module(jobject from_module, jobject to_module, TRAPS) {
   }
 
   ModuleEntry* to_module_entry;
-  if (to_module != NULL) {
+  if (!to_module.is_null()) {
     to_module_entry = get_module_entry(to_module, CHECK);
     if (to_module_entry == NULL) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
@@ -733,9 +730,9 @@ jobject Modules::get_named_module(Handle h_loader, const char* package_name, TRA
 }
 
 // Export package in module to all unnamed modules.
-void Modules::add_module_exports_to_all_unnamed(jobject module, jstring package_name, TRAPS) {
+void Modules::add_module_exports_to_all_unnamed(Handle module, jstring package_name, TRAPS) {
   check_cds_restrictions(CHECK);
-  if (module == NULL) {
+  if (module.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(),
               "module is null");
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,32 +28,13 @@
 #include "memory/archiveUtils.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-template <bool COMPACTING>
-inline bool SharedDataRelocator<COMPACTING>::do_bit(size_t offset) {
+inline bool SharedDataRelocator::do_bit(size_t offset) {
   address* p = _patch_base + offset;
   assert(_patch_base <= p && p < _patch_end, "must be");
 
   address old_ptr = *p;
-  if (old_ptr == NULL) {
-    assert(COMPACTING, "NULL pointers should not be marked when relocating at run-time");
-  } else {
-    assert(_valid_old_base <= old_ptr && old_ptr < _valid_old_end, "must be");
-  }
-
-  if (COMPACTING) {
-    // Start-up performance: use a template parameter to elide this block for run-time archive
-    // relocation.
-    assert(Arguments::is_dumping_archive(), "Don't do this during run-time archive loading!");
-    if (old_ptr == NULL) {
-      _ptrmap->clear_bit(offset);
-      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> NULL @ " SIZE_FORMAT_W(9), p2i(p), offset));
-      return true;
-    } else {
-      _max_non_null_offset = offset;
-    }
-  } else {
-    assert(old_ptr != NULL, "bits for NULL pointers should have been cleaned at dump time");
-  }
+  assert(_valid_old_base <= old_ptr && old_ptr < _valid_old_end, "must be");
+  assert(old_ptr != NULL, "bits for NULL pointers should have been cleaned at dump time");
 
   address new_ptr = old_ptr + _delta;
   assert(new_ptr != NULL, "don't point to the bottom of the archive"); // See ArchivePtrMarker::mark_pointer().

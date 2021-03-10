@@ -37,9 +37,11 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
@@ -302,10 +304,10 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
   VM_ENTRY_MARK;
   if (handle == NULL) {
     // Cf. universe.cpp, creation of Universe::_null_ptr_exception_instance.
-    Klass* k = SystemDictionary::find(name, Handle(), Handle(), THREAD);
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(name, Handle(), Handle());
     jobject objh = NULL;
-    if (!HAS_PENDING_EXCEPTION && k != NULL) {
-      oop obj = InstanceKlass::cast(k)->allocate_instance(THREAD);
+    if (ik != NULL) {
+      oop obj = ik->allocate_instance(THREAD);
       if (!HAS_PENDING_EXCEPTION)
         objh = JNIHandles::make_global(Handle(THREAD, obj));
     }
@@ -443,11 +445,9 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     MutexLocker ml(Compile_lock);
     Klass* kls;
     if (!require_local) {
-      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader,
-                                                                       CHECK_AND_CLEAR_(fail_type));
+      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader, THREAD);
     } else {
-      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain,
-                                                           CHECK_AND_CLEAR_(fail_type));
+      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
     found_klass = kls;
   }
@@ -798,7 +798,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     }
 
     // Fake a method that is equivalent to a declared method.
-    ciInstanceKlass* holder    = get_instance_klass(SystemDictionary::MethodHandle_klass());
+    ciInstanceKlass* holder    = get_instance_klass(vmClasses::MethodHandle_klass());
     ciSymbol*        name      = ciSymbols::invokeBasic_name();
     ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
     return get_unloaded_method(holder, name, signature, accessor);
@@ -955,7 +955,7 @@ void ciEnv::register_method(ciMethod* target,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
                             RTMState  rtm_state,
-                            const GrowableArrayView<BufferBlob*>& native_invokers) {
+                            const GrowableArrayView<RuntimeStub*>& native_invokers) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
@@ -1117,7 +1117,7 @@ void ciEnv::register_method(ciMethod* target,
 // ------------------------------------------------------------------
 // ciEnv::comp_level
 int ciEnv::comp_level() {
-  if (task() == NULL)  return CompLevel_highest_tier;
+  if (task() == NULL)  return CompilationPolicy::highest_compile_level();
   return task()->comp_level();
 }
 

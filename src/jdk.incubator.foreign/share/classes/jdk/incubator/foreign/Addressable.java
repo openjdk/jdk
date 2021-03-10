@@ -36,7 +36,7 @@ package jdk.incubator.foreign;
  * and {@link CLinker.VaList}.
  *
  * @implSpec
- * Implementations of this interface <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ * Implementations of this interface are <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
 public interface Addressable {
     /**

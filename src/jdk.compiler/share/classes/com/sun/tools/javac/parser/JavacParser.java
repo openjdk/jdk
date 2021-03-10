@@ -2821,6 +2821,7 @@ public class JavacParser implements Parser {
             accept(LBRACE);
             List<JCCase> cases = switchBlockStatementGroups();
             JCSwitch t = to(F.at(pos).Switch(selector, cases));
+            t.endpos = token.endPos;
             accept(RBRACE);
             return t;
         }
@@ -3338,13 +3339,15 @@ public class JavacParser implements Parser {
         if (elemType.hasTag(IDENT)) {
             Name typeName = ((JCIdent)elemType).name;
             if (restrictedTypeNameStartingAtSource(typeName, pos, !compound && localDecl) != null) {
-                if (type.hasTag(TYPEARRAY) && !compound) {
+                if (typeName != names.var) {
+                    reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedHere(typeName));
+                } else if (type.hasTag(TYPEARRAY) && !compound) {
                     //error - 'var' and arrays
-                    reportSyntaxError(pos, Errors.RestrictedTypeNotAllowedArray(typeName));
+                    reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
                 } else {
                     if(compound)
                         //error - 'var' in compound local var decl
-                        reportSyntaxError(pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
+                        reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
                     startPos = TreeInfo.getStartPos(mods);
                     if (startPos == Position.NOPOS)
                         startPos = TreeInfo.getStartPos(type);

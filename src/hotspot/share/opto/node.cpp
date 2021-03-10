@@ -644,6 +644,9 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
+  if (Opcode() == Op_Opaque4) {
+    compile->remove_skeleton_predicate_opaq(this);
+  }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
   }

@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -109,7 +108,9 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 #endif
   ciMethod* callee = kit.callee();
   const int bci    = kit.bci();
-
+#ifdef ASSERT
+  Node* ctrl = kit.control();
+#endif
   // Try to inline the intrinsic.
   if ((CheckIntrinsics ? callee->intrinsic_candidate() : true) &&
       kit.try_to_inline(_last_predicate)) {
@@ -133,6 +134,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   }
 
   // The intrinsic bailed out
+  assert(ctrl == kit.control(), "Control flow was added although the intrinsic bailed out");
   if (jvms->has_method()) {
     // Not a root compile.
     const char* msg;
@@ -2199,15 +2201,12 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   Node* receiver = argument(0);  // type: oop
 
   // Build address expression.
-  Node* adr;
   Node* heap_base_oop = top();
-  Node* offset = top();
-  Node* val;
 
   // The base is either a Java object or a value produced by Unsafe.staticFieldBase
   Node* base = argument(1);  // type: oop
   // The offset is a value produced by Unsafe.staticFieldOffset or Unsafe.objectFieldOffset
-  offset = argument(2);  // type: long
+  Node* offset = argument(2);  // type: long
   // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
   // to be plain byte offsets, which are also the same as those accepted
   // by oopDesc::field_addr.
@@ -2215,12 +2214,19 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
          "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
-  adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
+
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
+
+  Node* adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
 
   if (_gvn.type(base)->isa_ptr() == TypePtr::NULL_PTR) {
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
     } else {
+      set_map(old_map);
+      set_sp(old_sp);
       return false; // off-heap oop accesses are not supported
     }
   } else {
@@ -2234,10 +2240,12 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     decorators |= IN_HEAP;
   }
 
-  val = is_store ? argument(4) : NULL;
+  Node* val = is_store ? argument(4) : NULL;
 
   const TypePtr* adr_type = _gvn.type(adr)->isa_ptr();
   if (adr_type == TypePtr::NULL_PTR) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false; // off-heap access with zero address
   }
 
@@ -2247,6 +2255,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
       alias_type->adr_type() == TypeAryPtr::RANGE) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false; // not supported
   }
 
@@ -2265,6 +2275,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     }
     if ((bt == T_OBJECT) != (type == T_OBJECT)) {
       // Don't intrinsify mismatched object accesses
+      set_map(old_map);
+      set_sp(old_sp);
       return false;
     }
     mismatched = (bt != type);
@@ -2272,6 +2284,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
+  old_map->destruct(&_gvn);
   assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   if (mismatched) {
@@ -2506,6 +2519,9 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   assert(Unsafe_field_offset_to_byte_offset(11) == 11, "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
   Node* adr = make_unsafe_address(base, offset, ACCESS_WRITE | ACCESS_READ, type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
@@ -2514,8 +2530,12 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   if (bt != T_ILLEGAL &&
       (is_reference_type(bt) != (type == T_OBJECT))) {
     // Don't intrinsify mismatched object accesses.
+    set_map(old_map);
+    set_sp(old_sp);
     return false;
   }
+
+  old_map->destruct(&_gvn);
 
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.

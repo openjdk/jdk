@@ -29,17 +29,18 @@
 
 class ShenandoahConcurrentGC;
 class ShenandoahDegenGC;
-class ShenandoahMarkCompact;
+class ShenandoahFullGC;
 
 // VM_operations for the Shenandoah Collector.
 //
 // VM_ShenandoahOperation
 //   - VM_ShenandoahInitMark: initiate concurrent marking
+//   - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
+//   - VM_ShenandoahInitUpdateRefs: initiate update references
+//   - VM_ShenandoahFinalUpdateRefs: finish up update references
 //   - VM_ShenandoahReferenceOperation:
-//       - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
-//       - VM_ShenandoahInitUpdateRefs: initiate update references
-//       - VM_ShenandoahFinalUpdateRefs: finish up update references
 //       - VM_ShenandoahFullGC: do full GC
+//       - VM_ShenandoahDegeneratedGC: do STW degenerated GC
 
 class VM_ShenandoahOperation : public VM_Operation {
 protected:
@@ -95,10 +96,10 @@ public:
 
 class VM_ShenandoahFullGC : public VM_ShenandoahReferenceOperation {
 private:
-  GCCause::Cause                _gc_cause;
-  ShenandoahMarkCompact* const  _full_gc;
+  GCCause::Cause           _gc_cause;
+  ShenandoahFullGC* const  _full_gc;
 public:
-  VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahMarkCompact* full_gc) :
+  VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahFullGC* full_gc) :
     VM_ShenandoahReferenceOperation(),
     _gc_cause(gc_cause),
     _full_gc(full_gc) {};

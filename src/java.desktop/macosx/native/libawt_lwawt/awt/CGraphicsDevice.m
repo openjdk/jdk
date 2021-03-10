@@ -28,8 +28,6 @@
 #include "GeomUtilities.h"
 #include "JNIUtilities.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 /**
  * Some default values for invalid CoreGraphics display ID.
  */

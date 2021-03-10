@@ -279,8 +279,6 @@
   declare_constant(CardTable::card_size)                                    \
   declare_constant(CardTable::card_size_in_words)                           \
                                                                             \
-  declare_constant(CardTableRS::youngergen_card)                            \
-                                                                            \
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \
   declare_constant(CollectedHeap::G1)                                       \

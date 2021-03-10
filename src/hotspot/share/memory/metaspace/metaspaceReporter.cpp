@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "memory/metaspace/printCLDMetaspaceInfoClosure.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "runtime/os.hpp"
 
 namespace metaspace {
@@ -95,7 +96,8 @@ static void print_vs(outputStream* out, size_t scale) {
 
 static void print_settings(outputStream* out, size_t scale) {
   out->print("MaxMetaspaceSize: ");
-  if (MaxMetaspaceSize >= (max_uintx) - (2 * os::vm_page_size())) {
+  // See Metaspace::ergo_initialize() for how MaxMetaspaceSize is rounded
+  if (MaxMetaspaceSize >= align_down(max_uintx, Metaspace::commit_alignment())) {
     // aka "very big". Default is max_uintx, but due to rounding in arg parsing the real
     // value is smaller.
     out->print("unlimited");
@@ -106,8 +108,18 @@ static void print_settings(outputStream* out, size_t scale) {
   if (Metaspace::using_class_space()) {
     out->print("CompressedClassSpaceSize: ");
     print_human_readable_size(out, CompressedClassSpaceSize, scale);
+  } else {
+    out->print("No class space");
   }
   out->cr();
+  out->print("Initial GC threshold: ");
+  print_human_readable_size(out, MetaspaceSize, scale);
+  out->cr();
+  out->print("Current GC threshold: ");
+  print_human_readable_size(out, MetaspaceGC::capacity_until_GC(), scale);
+  out->cr();
+  out->print_cr("CDS: %s", (UseSharedSpaces ? "on" : (DumpSharedSpaces ? "dump" : "off")));
+  out->print_cr("MetaspaceReclaimPolicy: %s", MetaspaceReclaimPolicy);
   Settings::print_on(out);
 }
 

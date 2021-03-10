@@ -30,6 +30,7 @@
  *          java.base/sun.security.x509
  *          java.xml.crypto/org.jcp.xml.dsig.internal.dom
  *          jdk.httpserver/com.sun.net.httpserver
+ * @library /test/lib
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
  * @run main/othervm/timeout=300 -Dsun.net.httpserver.nodelay=true GenerationTests
@@ -90,6 +91,8 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.*;
+
+import jdk.test.lib.security.SecurityUtils;
 
 /**
  * Test that recreates merlin-xmldsig-twenty-three test vectors (and more)
@@ -284,6 +287,9 @@ public class GenerationTests {
     private static boolean result = true;
 
     public static void main(String args[]) throws Exception {
+        // Re-enable sha1 algs
+        SecurityUtils.removeAlgsFromDSigPolicy("sha1");
+
         setup();
         test_create_signature_enveloped_dsa(1024);
         test_create_signature_enveloped_dsa(2048);

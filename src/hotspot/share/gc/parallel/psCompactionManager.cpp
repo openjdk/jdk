@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
@@ -180,3 +179,19 @@ void ParCompactionManager::push_shadow_region(size_t shadow_region) {
 void ParCompactionManager::remove_all_shadow_regions() {
   _shadow_region_array->clear();
 }
+
+#ifdef ASSERT
+void ParCompactionManager::verify_all_marking_stack_empty() {
+  uint parallel_gc_threads = ParallelGCThreads;
+  for (uint i = 0; i <= parallel_gc_threads; i++) {
+    assert(_manager_array[i]->marking_stacks_empty(), "Marking stack should be empty");
+  }
+}
+
+void ParCompactionManager::verify_all_region_stack_empty() {
+  uint parallel_gc_threads = ParallelGCThreads;
+  for (uint i = 0; i <= parallel_gc_threads; i++) {
+    assert(_manager_array[i]->region_stack()->is_empty(), "Region stack should be empty");
+  }
+}
+#endif

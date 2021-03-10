@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 #ifndef SHARE_OOPS_COMPRESSEDOOPS_INLINE_HPP
 #define SHARE_OOPS_COMPRESSEDOOPS_INLINE_HPP
 
-#include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Functions for encoding and decoding compressed oops.
 // If the oops are compressed, the type passed to these overloaded functions
@@ -54,7 +54,7 @@ inline oop CompressedOops::decode_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
   oop result = decode_raw(v);
   assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  assert(Universe::heap()->is_in(result), "object not in heap " PTR_FORMAT, p2i((void*) result));
+  assert(Universe::is_in_heap(result), "object not in heap " PTR_FORMAT, p2i((void*) result));
   return result;
 }
 
@@ -78,12 +78,12 @@ inline narrowOop CompressedOops::encode(oop v) {
 }
 
 inline oop CompressedOops::decode_not_null(oop v) {
-  assert(Universe::heap()->is_in(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
+  assert(Universe::is_in_heap(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
   return v;
 }
 
 inline oop CompressedOops::decode(oop v) {
-  assert(Universe::heap()->is_in_or_null(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
+  assert(Universe::is_in_heap_or_null(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
   return v;
 }
 
@@ -117,12 +117,20 @@ static inline bool check_alignment(Klass* v) {
 }
 
 inline Klass* CompressedKlassPointers::decode_raw(narrowKlass v) {
-    return (Klass*)(void*)((uintptr_t)base() +((uintptr_t)v << shift()));
-  }
+  return decode_raw(v, base());
+}
+
+inline Klass* CompressedKlassPointers::decode_raw(narrowKlass v, address narrow_base) {
+  return (Klass*)(void*)((uintptr_t)narrow_base +((uintptr_t)v << shift()));
+}
 
 inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v) {
+  return decode_not_null(v, base());
+}
+
+inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v, address narrow_base) {
   assert(!is_null(v), "narrow klass value can never be zero");
-  Klass* result = decode_raw(v);
+  Klass* result = decode_raw(v, narrow_base);
   assert(check_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
   return result;
 }
@@ -132,13 +140,17 @@ inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
 }
 
 inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {
+  return encode_not_null(v, base());
+}
+
+inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v, address narrow_base) {
   assert(!is_null(v), "klass value can never be zero");
   assert(check_alignment(v), "Address not aligned");
-  uint64_t pd = (uint64_t)(pointer_delta((void*)v, base(), 1));
+  uint64_t pd = (uint64_t)(pointer_delta((void*)v, narrow_base, 1));
   assert(KlassEncodingMetaspaceMax > pd, "change encoding max if new encoding");
   uint64_t result = pd >> shift();
   assert((result & CONST64(0xffffffff00000000)) == 0, "narrow klass pointer overflow");
-  assert(decode(result) == v, "reversibility");
+  assert(decode_not_null(result, narrow_base) == v, "reversibility");
   return (narrowKlass)result;
 }
 

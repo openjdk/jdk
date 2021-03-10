@@ -25,9 +25,12 @@
  * @test
  * @bug 8150646 8153013
  * @summary Add support for blocking compiles through whitebox API
- * @requires vm.compiler1.enabled | !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
+ *
+ * @requires vm.compiler1.enabled | !vm.graal.enabled
+ * @requires vm.opt.DeoptimizeALot != true
+ *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm
