@@ -242,7 +242,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
   Node* marking;
   Node* gc_state = __ AddP(no_base, tls, __ ConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset())));
   Node* ld = __ load(__ ctrl(), gc_state, TypeInt::BYTE, T_BYTE, Compile::AliasIdxRaw);
-  marking = __ AndI(ld, __ ConI(ShenandoahHeap::MARKING));
+  marking = __ AndI(ld, __ ConI(ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING));
   assert(ShenandoahBarrierC2Support::is_gc_state_load(ld), "Should match the shape");
 
   // if (!marking)
@@ -323,7 +323,7 @@ bool ShenandoahBarrierSetC2::is_shenandoah_marking_if(PhaseTransform *phase, Nod
       cmpx->is_Cmp() && cmpx->in(2) == phase->intcon(0) &&
       is_shenandoah_state_load(cmpx->in(1)->in(1)) &&
       cmpx->in(1)->in(2)->is_Con() &&
-      cmpx->in(1)->in(2) == phase->intcon(ShenandoahHeap::MARKING)) {
+      cmpx->in(1)->in(2) == phase->intcon(ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING)) {
     return true;
   }
 
@@ -950,7 +950,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
     Node* gc_state    = phase->transform_later(new LoadBNode(ctrl, mem, gc_state_addr, gc_state_adr_type, TypeInt::BYTE, MemNode::unordered));
     int flags = ShenandoahHeap::HAS_FORWARDED;
     if (ShenandoahIUBarrier) {
-      flags |= ShenandoahHeap::MARKING;
+      flags |= ShenandoahHeap::YOUNG_MARKING;
     }
     Node* stable_and  = phase->transform_later(new AndINode(gc_state, phase->igvn().intcon(flags)));
     Node* stable_cmp  = phase->transform_later(new CmpINode(stable_and, phase->igvn().zerocon(T_INT)));

@@ -53,13 +53,15 @@ public:
   bool collect(GCCause::Cause cause);
   ShenandoahDegenPoint degen_point() const;
 
-  // Cancel ongoing concurrent GC
-  static void cancel();
 private:
   // Entry points to STW GC operations, these cause a related safepoint, that then
   // call the entry method below
   void vmop_entry_init_mark();
+
+protected:
   void vmop_entry_final_mark();
+
+private:
   void vmop_entry_init_updaterefs();
   void vmop_entry_final_updaterefs();
 
@@ -74,6 +76,8 @@ private:
   // for concurrent operation.
   void entry_reset();
   void entry_mark_roots();
+
+protected:
   void entry_mark();
   void entry_thread_roots();
   void entry_weak_refs();
@@ -82,6 +86,8 @@ private:
   void entry_strong_roots();
   void entry_cleanup_early();
   void entry_rendezvous_roots();
+
+private:
   void entry_evacuate();
   void entry_update_thread_roots();
   void entry_updaterefs();
@@ -109,10 +115,11 @@ private:
 
   // Messages for GC trace events, they have to be immortal for
   // passing around the logging/tracing systems
-  const char* init_mark_event_message() const;
-  const char* final_mark_event_message() const;
-  const char* conc_mark_event_message() const;
+  void init_mark_event_message(char* buf, size_t len) const;
+  void final_mark_event_message(char* buf, size_t len) const;
+  void conc_mark_event_message(char* buf, size_t len) const;
 
+protected:
   // Check GC cancellation and abort concurrent GC
   bool check_cancellation_and_abort(ShenandoahDegenPoint point);
 };

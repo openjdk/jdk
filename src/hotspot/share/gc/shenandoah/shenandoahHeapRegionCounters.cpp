@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
@@ -82,9 +84,17 @@ void ShenandoahHeapRegionCounters::update() {
 
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       jlong status = 0;
-      if (heap->is_concurrent_mark_in_progress())      status |= 1 << 0;
-      if (heap->is_evacuation_in_progress())           status |= 1 << 1;
-      if (heap->is_update_refs_in_progress())          status |= 1 << 2;
+
+      if (heap->is_concurrent_young_mark_in_progress()) status |= 1 << 0;
+      if (heap->is_concurrent_old_mark_in_progress())   status |= 1 << 1;
+      if (heap->is_evacuation_in_progress())            status |= 1 << 2;
+      if (heap->is_update_refs_in_progress())           status |= 1 << 3;
+      if (heap->is_degenerated_gc_in_progress())        status |= 1 << 4;
+      if (heap->is_full_gc_in_progress())               status |= 1 << 5;
+      if (heap->active_generation() != NULL) {
+        status |= (heap->active_generation()->generation_mode() << 6);
+      }
+
       _status->set_value(status);
 
       _timestamp->set_value(os::elapsed_counter());
@@ -102,11 +112,13 @@ void ShenandoahHeapRegionCounters::update() {
           data |= ((100 * r->get_tlab_allocs() / rs)     & PERCENT_MASK) << TLAB_SHIFT;
           data |= ((100 * r->get_gclab_allocs() / rs)    & PERCENT_MASK) << GCLAB_SHIFT;
           data |= ((100 * r->get_shared_allocs() / rs)   & PERCENT_MASK) << SHARED_SHIFT;
+
+          data |= (r->age() & AGE_MASK) << AGE_SHIFT;
+          data |= (r->affiliation() & AFFILIATION_MASK) << AFFILIATION_SHIFT;
           data |= (r->state_ordinal() & STATUS_MASK) << STATUS_SHIFT;
           _regions_data[i]->set_value(data);
         }
       }
-
     }
   }
 }

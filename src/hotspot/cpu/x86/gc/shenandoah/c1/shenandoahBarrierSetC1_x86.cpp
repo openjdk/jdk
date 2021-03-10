@@ -87,6 +87,8 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
       LIR_Opr result = gen->new_register(T_INT);
 
       __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, result));
+
+      post_barrier(access, access.resolved_addr(), new_value.result());
       return result;
     }
   }

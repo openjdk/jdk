@@ -40,16 +40,18 @@
 #include "services/memoryService.hpp"
 
 class GCTimer;
+class ShenandoahGeneration;
 
 class ShenandoahGCSession : public StackObj {
 private:
   ShenandoahHeap* const _heap;
+  ShenandoahGeneration* const _generation;
   GCTimer*  const _timer;
   GCTracer* const _tracer;
 
   TraceMemoryManagerStats _trace_cycle;
 public:
-  ShenandoahGCSession(GCCause::Cause cause);
+  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation);
   ~ShenandoahGCSession();
 };
 

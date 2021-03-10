@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahMark.hpp"
 
 class ShenandoahSTWMarkTask;
+class ShenandoahGeneration;
 
 class ShenandoahSTWMark : public ShenandoahMark {
   friend class ShenandoahSTWMarkTask;
@@ -37,7 +38,7 @@ private:
   TaskTerminator                _terminator;
   bool                          _full_gc;
 public:
- ShenandoahSTWMark(bool full_gc);
+ ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc);
  void mark();
 
 private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Amazon.com, Inc. and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,24 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahCardTable.hpp"
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARKCLOSURES_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHMARKCLOSURES_HPP
 
-void ShenandoahCardTable::initialize() {
-  CardTable::initialize();
-  resize_covered_region(_whole_heap);
-}
+#include "gc/shenandoah/shenandoahHeap.hpp"
 
-bool ShenandoahCardTable::is_in_young(oop obj) const {
-  return ShenandoahHeap::heap()->is_in_young(obj);
-}
+class ShenandoahMarkingContext;
+class ShenandoahHeapRegion;
 
-bool ShenandoahCardTable::is_dirty(MemRegion mr) {
-  for (size_t i = index_for(mr.start()); i <= index_for(mr.end() - 1); i++) {
-    CardValue* byte = byte_for_index(i);
-    if (*byte == CardTable::dirty_card_val()) {
-      return true;
-    }
-  }
-  return false;
-}
+class ShenandoahFinalMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahMarkingContext* const _ctx;
+  ShenandoahHeapLock* const _lock;
+public:
+  ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext* ctx);
 
-void ShenandoahCardTable::clear() {
-  CardTable::clear(_whole_heap);
-}
+  void heap_region_do(ShenandoahHeapRegion* r);
+
+  bool is_thread_safe() { return true; }
+};
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKCLOSURES_HPP

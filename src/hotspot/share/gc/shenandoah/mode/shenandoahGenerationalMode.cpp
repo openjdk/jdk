@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,23 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/java.hpp"
 
 void ShenandoahGenerationalMode::initialize_flags() const {
+  // When we fill in dead objects during update refs, we use oop::size,
+  // which depends on the klass being loaded. However, if these dead objects
+  // were the last referrers to the klass, it will be unloaded and we'll
+  // crash. Class unloading is disabled until we're able to sort this out.
+  FLAG_SET_ERGO(ClassUnloading, false);
+  FLAG_SET_ERGO(ClassUnloadingWithConcurrentMark, false);
+  FLAG_SET_ERGO(ShenandoahUnloadClassesFrequency, 0);
+
   if (ClassUnloading) {
+    // Leaving this here for the day we re-enable class unloading
     FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
   }
@@ -48,22 +53,18 @@ void ShenandoahGenerationalMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
+  SHENANDOAH_CHECK_FLAG_UNSET(ClassUnloading);
 }
 
-ShenandoahHeuristics* ShenandoahGenerationalMode::initialize_heuristics() const {
-  if (ShenandoahGCHeuristics != NULL) {
-    if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
-      return new ShenandoahAggressiveHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
-      return new ShenandoahStaticHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-      return new ShenandoahAdaptiveHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
-      return new ShenandoahCompactHeuristics();
-    } else {
-      vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
-    }
+const char *affiliation_name(ShenandoahRegionAffiliation type) {
+  switch (type) {
+    case ShenandoahRegionAffiliation::FREE:
+      return "FREE";
+    case ShenandoahRegionAffiliation::YOUNG_GENERATION:
+      return "YOUNG";
+    case ShenandoahRegionAffiliation::OLD_GENERATION:
+      return "OLD";
+    default:
+      return "UnrecognizedAffiliation";
   }
-  ShouldNotReachHere();
-  return NULL;
 }

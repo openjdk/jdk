@@ -29,8 +29,6 @@
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
-class ShenandoahCMDrainMarkingStackClosure;
-
 template<GenerationMode GENERATION>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
 private:
@@ -51,23 +49,27 @@ public:
 // Mark class does not maintain states. Instead, mark states are
 // maintained by task queues, mark bitmap and SATB buffers (concurrent mark)
 class ShenandoahMark: public StackObj {
-  friend class ShenandoahCMDrainMarkingStackClosure;
 
 protected:
+  ShenandoahGeneration* const _generation;
   ShenandoahObjToScanQueueSet* const _task_queues;
+  ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
 
 protected:
-  ShenandoahMark();
+  ShenandoahMark(ShenandoahGeneration* generation);
 
 public:
   template<class T, GenerationMode GENERATION, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
-
-  static void clear();
+  static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old, ShenandoahMarkingContext* const mark_context, bool weak);
 
   // Helpers
   inline ShenandoahObjToScanQueueSet* task_queues() const;
+  ShenandoahObjToScanQueueSet* old_task_queues() {
+    return _old_gen_task_queues;
+  }
+
   inline ShenandoahObjToScanQueue* get_queue(uint index) const;
+  inline ShenandoahObjToScanQueue* get_old_queue(uint index) const;
 
 // ---------- Marking loop and tasks
 private:
@@ -86,11 +88,21 @@ private:
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
 
   template <GenerationMode GENERATION, bool CANCELLABLE>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, bool strdedup);
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator,
+                         ShenandoahReferenceProcessor *rp, bool strdedup, bool update_refs);
+
+  template <GenerationMode GENERATION>
+  static bool in_generation(oop obj);
+
+  template<StringDedupMode STRING_DEDUP>
+  static void mark_ref(ShenandoahObjToScanQueue* q,
+                       ShenandoahMarkingContext* const mark_context, bool weak,
+                       oop obj);
 
 protected:
   void mark_loop(GenerationMode generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
                  bool cancellable, bool strdedup);
+
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP

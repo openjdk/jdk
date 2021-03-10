@@ -25,10 +25,14 @@
 #include "precompiled.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
@@ -42,6 +46,7 @@
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/powerOfTwo.hpp"
+
 
 size_t ShenandoahHeapRegion::RegionCount = 0;
 size_t ShenandoahHeapRegion::RegionSizeBytes = 0;
@@ -68,7 +73,8 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _live_data(0),
   _critical_pins(0),
   _update_watermark(start),
-  _affiliation(ShenandoahRegionAffiliation::FREE) {
+  _affiliation(ShenandoahRegionAffiliation::FREE),
+  _age(0) {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
@@ -87,7 +93,7 @@ void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
 
 void ShenandoahHeapRegion::make_regular_allocation() {
   shenandoah_assert_heaplocked();
-
+  reset_age();
   switch (_state) {
     case _empty_uncommitted:
       do_commit();
@@ -105,7 +111,7 @@ void ShenandoahHeapRegion::make_regular_bypass() {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress() || ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
           "only for full or degen GC");
-
+  reset_age();
   switch (_state) {
     case _empty_uncommitted:
       do_commit();
@@ -128,6 +134,7 @@ void ShenandoahHeapRegion::make_regular_bypass() {
 
 void ShenandoahHeapRegion::make_humongous_start() {
   shenandoah_assert_heaplocked();
+  reset_age();
   switch (_state) {
     case _empty_uncommitted:
       do_commit();
@@ -142,7 +149,7 @@ void ShenandoahHeapRegion::make_humongous_start() {
 void ShenandoahHeapRegion::make_humongous_start_bypass() {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
-
+  reset_age();
   switch (_state) {
     case _empty_committed:
     case _regular:
@@ -157,6 +164,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass() {
 
 void ShenandoahHeapRegion::make_humongous_cont() {
   shenandoah_assert_heaplocked();
+  reset_age();
   switch (_state) {
     case _empty_uncommitted:
       do_commit();
@@ -171,7 +179,7 @@ void ShenandoahHeapRegion::make_humongous_cont() {
 void ShenandoahHeapRegion::make_humongous_cont_bypass() {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
-
+  reset_age();
   switch (_state) {
     case _empty_committed:
     case _regular:
@@ -230,6 +238,7 @@ void ShenandoahHeapRegion::make_unpinned() {
 
 void ShenandoahHeapRegion::make_cset() {
   shenandoah_assert_heaplocked();
+  reset_age();
   switch (_state) {
     case _regular:
       set_state(_cset);
@@ -242,6 +251,7 @@ void ShenandoahHeapRegion::make_cset() {
 
 void ShenandoahHeapRegion::make_trash() {
   shenandoah_assert_heaplocked();
+  reset_age();
   switch (_state) {
     case _cset:
       // Reclaiming cset regions
@@ -262,11 +272,13 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 
   // On this path, we know there are no marked objects in the region,
   // tell marking context about it to bypass bitmap resets.
-  ShenandoahHeap::heap()->complete_marking_context()->reset_top_bitmap(this);
+  assert(ShenandoahHeap::heap()->active_generation()->is_mark_complete(), "Marking should be complete here.");
+  ShenandoahHeap::heap()->marking_context()->reset_top_bitmap(this);
 }
 
 void ShenandoahHeapRegion::make_empty() {
   shenandoah_assert_heaplocked();
+  reset_age();
   switch (_state) {
     case _trash:
       set_state(_empty_committed);
@@ -364,13 +376,13 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
       ShouldNotReachHere();
   }
   switch (_affiliation) {
-    case FREE:
+    case ShenandoahRegionAffiliation::FREE:
       st->print("|F");
       break;
-    case YOUNG_GENERATION:
+    case ShenandoahRegionAffiliation::YOUNG_GENERATION:
       st->print("|Y");
       break;
-    case OLD_GENERATION:
+    case ShenandoahRegionAffiliation::OLD_GENERATION:
       st->print("|O");
       break;
     default:
@@ -391,23 +403,71 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->cr();
 }
 
-void ShenandoahHeapRegion::oop_iterate(OopIterateClosure* blk) {
+void ShenandoahHeapRegion::oop_iterate(OopIterateClosure* blk, bool fill_dead_objects, bool reregister_coalesced_objects) {
   if (!is_active()) return;
   if (is_humongous()) {
+    if (fill_dead_objects && !reregister_coalesced_objects) {
+      ShenandoahHeap::heap()->card_scan()->register_object(bottom());
+    }
     oop_iterate_humongous(blk);
   } else {
-    oop_iterate_objects(blk);
+    oop_iterate_objects(blk, fill_dead_objects, reregister_coalesced_objects);
   }
 }
 
-void ShenandoahHeapRegion::oop_iterate_objects(OopIterateClosure* blk) {
-  assert(! is_humongous(), "no humongous region here");
+void ShenandoahHeapRegion::oop_iterate_objects(OopIterateClosure* blk, bool fill_dead_objects, bool reregister_coalesced_objects) {
+  assert(!is_humongous(), "no humongous region here");
   HeapWord* obj_addr = bottom();
   HeapWord* t = top();
-  // Could call objects iterate, but this is easier.
-  while (obj_addr < t) {
-    oop obj = oop(obj_addr);
-    obj_addr += obj->oop_iterate_size(blk);
+
+  if (!fill_dead_objects) {
+    while (obj_addr < t) {
+      oop obj = oop(obj_addr);
+      assert(obj->klass() != NULL, "klass should not be NULL");
+      obj_addr += obj->oop_iterate_size(blk);
+    }
+  } else {
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahMarkingContext* marking_context = heap->marking_context();
+    assert(heap->active_generation()->is_mark_complete(), "sanity");
+
+    HeapWord* fill_addr = NULL;
+    size_t fill_size = 0;
+    while (obj_addr < t) {
+      oop obj = oop(obj_addr);
+      if (marking_context->is_marked(obj)) {
+        if (fill_addr != NULL) {
+           if (reregister_coalesced_objects) { // change existing crossing map information
+            heap->card_scan()->coalesce_objects(fill_addr, fill_size);
+          } else {              // establish new crossing map information
+             heap->card_scan()->register_object(fill_addr);
+          }
+          ShenandoahHeap::fill_with_object(fill_addr, fill_size);
+          fill_addr = NULL;
+        }
+        assert(obj->klass() != NULL, "klass should not be NULL");
+        if (!reregister_coalesced_objects)
+          heap->card_scan()->register_object(obj_addr);
+        obj_addr += obj->oop_iterate_size(blk);
+      } else {
+        int size = obj->size();
+        if (fill_addr == NULL) {
+          fill_addr = obj_addr;
+          fill_size = size;
+        } else {
+          fill_size += size;
+        }
+        obj_addr += size;
+      }
+    }
+    if (fill_addr != NULL) {
+      ShenandoahHeap::fill_with_object(fill_addr, fill_size);
+      if (reregister_coalesced_objects) { // change existing crossing map information
+        heap->card_scan()->coalesce_objects(fill_addr, fill_size);
+      } else {              // establish new crossing map information
+        heap->card_scan()->register_object(fill_addr);
+      }
+    }
   }
 }
 
@@ -436,16 +496,25 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 }
 
 void ShenandoahHeapRegion::recycle() {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (affiliation() == YOUNG_GENERATION) {
+    heap->young_generation()->decrease_used(used());
+  } else if (affiliation() == OLD_GENERATION) {
+    heap->old_generation()->decrease_used(used());
+  }
+
   set_top(bottom());
   clear_live_data();
 
   reset_alloc_metadata();
 
-  ShenandoahHeap::heap()->marking_context()->reset_top_at_mark_start(this);
+  heap->marking_context()->reset_top_at_mark_start(this);
   set_update_watermark(bottom());
 
   make_empty();
-  _affiliation = ShenandoahRegionAffiliation::FREE;
+
+  set_affiliation(FREE);
 
   if (ZapUnusedHeapArea) {
     SpaceMangler::mangle_region(MemRegion(bottom(), end()));
@@ -680,65 +749,121 @@ size_t ShenandoahHeapRegion::pin_count() const {
   return Atomic::load(&_critical_pins);
 }
 
-class UpdateOopCardValueClosure : public BasicOopIterateClosure {
-  CardTable* _card_table;
-
-public:
-  UpdateOopCardValueClosure(CardTable *card_table) : _card_table(card_table) { }
-
-  void do_oop(oop* p) {
-    if (ShenandoahHeap::heap()->is_in_young(*p)) {
-      volatile CardTable::CardValue* card_value = _card_table->byte_for(*p);
-      *card_value = CardTable::dirty_card_val();
-    }
-  }
-
-  void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-class UpdateObjectCardValuesClosure : public BasicOopIterateClosure {
-  UpdateOopCardValueClosure* _oop_closure;
-
-public:
-  UpdateObjectCardValuesClosure(UpdateOopCardValueClosure *oop_closure) :
-    _oop_closure(oop_closure) {
-  }
-
-  void do_oop(oop* p) {
-    (*p)->oop_iterate(_oop_closure);
-  }
-
-  void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
 void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affiliation) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (_affiliation == new_affiliation) {
     return;
   }
+
+  if (!heap->mode()->is_generational()) {
+    _affiliation = new_affiliation;
+    return;
+  }
+
+  log_trace(gc)("Changing affiliation of region %zu from %s to %s",
+    index(), affiliation_name(_affiliation), affiliation_name(new_affiliation));
+
+  if (_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION) {
+    heap->young_generation()->decrement_affiliated_region_count();
+  } else if (_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION) {
+    heap->old_generation()->decrement_affiliated_region_count();
+  }
+
   CardTable* card_table = ShenandoahBarrierSet::barrier_set()->card_table();
   switch (new_affiliation) {
     case FREE:
+      assert(!has_live(), "Free region should not have live data");
       card_table->clear_MemRegion(MemRegion(_bottom, _end));
       break;
     case YOUNG_GENERATION:
+      reset_age();
+      heap->young_generation()->increment_affiliated_region_count();
       break;
     case OLD_GENERATION:
-      if (_affiliation == YOUNG_GENERATION) {
-        assert(SafepointSynchronize::is_at_safepoint(), "old gen card values must be updated in a safepoint");
-        card_table->clear_MemRegion(MemRegion(_bottom, _end));
-
-        UpdateOopCardValueClosure oop_closure(card_table);
-        UpdateObjectCardValuesClosure object_closure(&oop_closure);
-        oop_iterate(&object_closure);
-      }
+      heap->old_generation()->increment_affiliated_region_count();
       break;
     default:
       ShouldNotReachHere();
       return;
   }
   _affiliation = new_affiliation;
+}
+
+class UpdateCardValuesClosure : public BasicOopIterateClosure {
+private:
+  void update_card_value(void* address, oop obj) {
+    if (ShenandoahHeap::heap()->is_in_young(obj)) {
+      volatile CardTable::CardValue* card_value = ShenandoahBarrierSet::barrier_set()->card_table()->byte_for(address);
+      *card_value = CardTable::dirty_card_val();
+    }
+  }
+
+public:
+  void do_oop(oop* p) {
+    oop obj = *p;
+    if (obj != NULL) {
+      update_card_value(p, obj);
+    }
+  }
+
+  void do_oop(narrowOop* p) {
+    narrowOop o = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(o)) {
+      oop obj = CompressedOops::decode_not_null(o);
+      assert(oopDesc::is_oop(obj), "must be a valid oop");
+      update_card_value(p, obj);
+    }
+  }
+};
+
+void ShenandoahHeapRegion::promote() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahMarkingContext* marking_context = heap->marking_context();
+  assert(heap->active_generation()->is_mark_complete(), "sanity");
+  assert(affiliation() == YOUNG_GENERATION, "Only young regions can be promoted");
+
+  heap->young_generation()->decrease_used(used());
+  heap->old_generation()->increase_used(used());
+
+  UpdateCardValuesClosure update_card_values;
+  if (is_humongous_start()) {
+    oop obj = oop(bottom());
+    assert(marking_context->is_marked(obj), "promoted humongous object should be alive");
+
+    size_t index_limit = index() + ShenandoahHeapRegion::required_regions(obj->size() * HeapWordSize);
+    heap->card_scan()->register_object(bottom());
+    for (size_t i = index(); i < index_limit; i++) {
+      ShenandoahHeapRegion* r = heap->get_region(i);
+      log_debug(gc)("promoting region " SIZE_FORMAT ", clear cards from " SIZE_FORMAT " to " SIZE_FORMAT,
+        r->index(), (size_t) r->bottom(), (size_t) r->top());
+
+      ShenandoahBarrierSet::barrier_set()->card_table()->clear_MemRegion(MemRegion(r->bottom(), r->end()));
+      r->set_affiliation(OLD_GENERATION);
+    }
+    // HEY!  Better to call ShenandoahHeap::heap()->card_scan()->mark_range_as_clean(r->bottom(), obj->size())
+    //  and skip the calls to clear_MemRegion() above.
+
+    // Iterate over all humongous regions that are spanned by the humongous object obj.  The remnant
+    // of memory in the last humongous region that is not spanned by obj is currently not used.
+    obj->oop_iterate(&update_card_values);
+  } else {
+    log_debug(gc)("promoting region " SIZE_FORMAT ", clear cards from " SIZE_FORMAT " to " SIZE_FORMAT,
+      index(), (size_t) bottom(), (size_t) top());
+    assert(!is_humongous_continuation(), "should not promote humongous object continuation in isolation");
+
+    // Rather than scanning entire contents of the promoted region right now to determine which
+    // cards to mark dirty, we just mark them all as dirty.  Later, when we scan the remembered
+    // set, we will clear cards that are found to not contain live references to young memory.
+    // Ultimately, this approach is more efficient as it only scans the "dirty" cards once and
+    // the clean cards once.  The alternative approach of scanning all cards now and then scanning
+    // dirty cards again at next concurrent mark pass scans the clean cards once and the dirty
+    // cards twice.
+
+    // HEY!  Better to call ShenandoahHeap::heap()->card_scan()->mark_range_as_dirty(r->bottom(), obj->size());
+    ShenandoahBarrierSet::barrier_set()->card_table()->dirty_MemRegion(MemRegion(bottom(), end()));
+    set_affiliation(OLD_GENERATION);
+    oop_iterate_objects(&update_card_values, /*fill_dead_objects*/ true, /* reregister_coalesced_objects */ false);
+  }
 }

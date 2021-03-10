@@ -38,20 +38,19 @@ class ShenandoahConcurrentMark: public ShenandoahMark {
   template <GenerationMode GENERATION> friend class ShenandoahFinalMarkingTask;
 
 public:
-  ShenandoahConcurrentMark();
+  ShenandoahConcurrentMark(ShenandoahGeneration* generation);
 
   // Concurrent mark roots
-  void mark_concurrent_roots(ShenandoahGeneration* generation);
+  void mark_concurrent_roots();
 
   // Concurrent mark
-  void concurrent_mark(ShenandoahGeneration* generation);
-  // Finish mark at a safepoint
-  void finish_mark(ShenandoahGeneration* generation);
+  void concurrent_mark();
 
-  static void cancel();
+  // Finish mark at a safepoint
+  void finish_mark();
 
 private:
-  void finish_mark_work(ShenandoahGeneration* generation);
+  void finish_mark_work();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP

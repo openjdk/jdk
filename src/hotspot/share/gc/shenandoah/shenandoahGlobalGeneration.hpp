@@ -30,7 +30,26 @@
 // A "generation" that represents the whole heap.
 class ShenandoahGlobalGeneration : public ShenandoahGeneration {
 public:
-  ShenandoahGlobalGeneration() : ShenandoahGeneration(GLOBAL) { }
+  ShenandoahGlobalGeneration(uint max_queues)
+  : ShenandoahGeneration(GLOBAL, max_queues, 0, 0) { }
+
+public:
+  virtual const char* name() const;
+
+  virtual size_t max_capacity() const;
+  virtual size_t soft_max_capacity() const;
+  virtual size_t used_regions_size() const;
+  virtual size_t used() const;
+  virtual size_t available() const;
+
+  virtual void set_concurrent_mark_in_progress(bool in_progress);
+
+  bool contains(ShenandoahHeapRegion* region) const;
+
+  void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl);
+
+ protected:
+  bool is_concurrent_mark_in_progress();
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP

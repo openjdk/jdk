@@ -99,8 +99,8 @@ class outputStream;
   f(conc_rendezvous_roots,                          "Rendezvous")                      \
   f(conc_evac,                                      "Concurrent Evacuation")           \
                                                                                        \
-  f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
-  f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
+  f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")      \
+  f(init_update_refs,                               "Pause Init  Update Refs (N)")      \
   f(init_update_refs_manage_gclabs,                 "  Manage GCLABs")                 \
                                                                                        \
   f(conc_update_refs,                               "Concurrent Update Refs")          \
@@ -112,6 +112,7 @@ class outputStream;
   f(final_update_refs_update_region_states,         "  Update Region States")          \
   f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
   f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
+  f(final_update_refs_promote_tenured_regions,      "  Promote Tenured Regions")       \
                                                                                        \
   f(conc_cleanup_complete,                          "Concurrent Cleanup")              \
                                                                                        \

@@ -240,7 +240,8 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
-  shenandoah_assert_marked_if(NULL, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress());
+  shenandoah_assert_marked_if(NULL, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress() &&
+                              !(ShenandoahHeap::heap()->is_gc_generation_young() && ShenandoahHeap::heap()->heap_region_containing(value)->is_old()));
   shenandoah_assert_not_in_cset_if(addr, value, value != NULL && !ShenandoahHeap::heap()->cancelled_gc());
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
   bs->iu_barrier(value);
@@ -352,7 +353,9 @@ bool ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy
 
 template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
 void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
-  assert(HAS_FWD == _heap->has_forwarded_objects(), "Forwarded object status is sane");
+  // We allow forwarding in young generation and marking in old generation
+  // to happen simultaneously.
+  assert(_heap->mode()->is_generational() || HAS_FWD == _heap->has_forwarded_objects(), "Forwarded object status is sane");
 
   Thread* thread = Thread::current();
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
@@ -372,7 +375,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         oop witness = ShenandoahHeap::cas_oop(fwd, elem_ptr, o);
         obj = fwd;
       }
-      if (ENQUEUE && !ctx->is_marked_strong(obj)) {
+      if (ENQUEUE && !ctx->is_marked_strong_or_old(obj)) {
         _satb_mark_queue_set.enqueue_known_active(queue, obj);
       }
     }
@@ -385,12 +388,26 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
     return;
   }
   int gc_state = _heap->gc_state();
-  if ((gc_state & ShenandoahHeap::MARKING) != 0) {
+  if ((gc_state & ShenandoahHeap::YOUNG_MARKING) != 0) {
     arraycopy_marking(src, dst, count);
-  } else if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
+    return;
+  }
+
+  if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
     arraycopy_evacuation(src, count);
   } else if ((gc_state & ShenandoahHeap::UPDATEREFS) != 0) {
     arraycopy_update(src, count);
+  }
+
+  if (_heap->mode()->is_generational()) {
+    assert(ShenandoahSATBBarrier, "Generational mode assumes SATB mode");
+    // HEY! Could we optimize here by checking that dst is in an old region?
+    if ((gc_state & ShenandoahHeap::OLD_MARKING) != 0) {
+      // Note that we can't do the arraycopy marking using the 'src' array when
+      // SATB mode is enabled (so we can't do this as part of the iteration for
+      // evacuation or update references).
+      arraycopy_marking(src, dst, count);
+    }
   }
 }
 

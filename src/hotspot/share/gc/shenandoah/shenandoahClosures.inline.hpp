@@ -45,7 +45,7 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   }
   obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
   shenandoah_assert_not_forwarded_if(NULL, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
-  return _mark_context->is_marked(obj);
+  return _mark_context->is_marked_or_old(obj);
 }
 
 ShenandoahIsAliveClosure::ShenandoahIsAliveClosure() :
@@ -57,7 +57,7 @@ bool ShenandoahIsAliveClosure::do_object_b(oop obj) {
     return false;
   }
   shenandoah_assert_not_forwarded(NULL, obj);
-  return _mark_context->is_marked(obj);
+  return _mark_context->is_marked_or_old(obj);
 }
 
 BoolObjectClosure* ShenandoahIsAliveSelector::is_alive_closure() {
@@ -81,7 +81,7 @@ void ShenandoahKeepAliveClosure::do_oop(narrowOop* p) {
 template <typename T>
 void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
   assert(ShenandoahHeap::heap()->is_concurrent_mark_in_progress(), "Only for concurrent marking phase");
-  assert(!ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
+  assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress() || !ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
 
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {

@@ -48,7 +48,7 @@ public:
     return barrier_set_cast<ShenandoahBarrierSet>(BarrierSet::barrier_set());
   }
 
-  inline CardTable* card_table()  { return _card_table; }
+  inline ShenandoahCardTable* card_table()  { return _card_table; }
 
   static ShenandoahSATBMarkQueueSet& satb_mark_queue_set() {
     return barrier_set()->_satb_mark_queue_set;

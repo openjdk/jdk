@@ -31,6 +31,7 @@
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -38,19 +39,21 @@
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 
-ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
+ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation) :
   _heap(ShenandoahHeap::heap()),
+  _generation(generation),
   _timer(_heap->gc_timer()),
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
 
   _heap->set_gc_cause(cause);
+  _heap->set_gc_generation(generation);
   _timer->register_gc_start();
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);
 
   _heap->shenandoah_policy()->record_cycle_start();
-  _heap->heuristics()->record_cycle_start();
+  generation->heuristics()->record_cycle_start();
   _trace_cycle.initialize(_heap->cycle_memory_manager(), cause,
           /* allMemoryPoolsAffected */    true,
           /* recordGCBeginTime = */       true,
@@ -64,7 +67,7 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
 }
 
 ShenandoahGCSession::~ShenandoahGCSession() {
-  _heap->heuristics()->record_cycle_end();
+  _generation->heuristics()->record_cycle_end();
   _timer->register_gc_end();
   _heap->trace_heap_after_gc(_tracer);
   _tracer->report_gc_reference_stats(_heap->ref_processor()->reference_process_stats());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Amazon.com, Inc. and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Amazon.com, Inc. or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,34 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 
 class ShenandoahYoungGeneration : public ShenandoahGeneration {
+private:
+  ShenandoahObjToScanQueueSet* _old_gen_task_queues;
+
 public:
-  ShenandoahYoungGeneration() : ShenandoahGeneration(YOUNG) { }
+  ShenandoahYoungGeneration(uint max_queues, size_t max_capacity, size_t max_soft_capacity);
+
+  virtual const char* name() const;
+
+  virtual void set_concurrent_mark_in_progress(bool in_progress);
+  virtual void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl);
+
+  bool contains(ShenandoahHeapRegion* region) const;
+
+  void promote_tenured_regions();
+  void promote_all_regions();
+
+  void set_old_gen_task_queues(ShenandoahObjToScanQueueSet* old_gen_queues) {
+    _old_gen_task_queues = old_gen_queues;
+  }
+
+  ShenandoahObjToScanQueueSet* old_gen_task_queues() const {
+    return _old_gen_task_queues;
+  }
+
+  virtual void reserve_task_queues(uint workers);
+
+ protected:
+  bool is_concurrent_mark_in_progress();
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP

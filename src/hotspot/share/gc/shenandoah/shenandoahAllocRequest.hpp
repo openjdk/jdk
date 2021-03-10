@@ -26,12 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCREQUEST_HPP
 
 #include "memory/allocation.hpp"
-
-enum ShenandoahRegionAffiliation {
-  FREE,
-  YOUNG_GENERATION,
-  OLD_GENERATION
-};
+#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 
 class ShenandoahAllocRequest : StackObj {
 public:
@@ -79,11 +74,11 @@ private:
 
 public:
   static inline ShenandoahAllocRequest for_tlab(size_t min_size, size_t requested_size) {
-    return ShenandoahAllocRequest(min_size, requested_size, _alloc_tlab, YOUNG_GENERATION);
+    return ShenandoahAllocRequest(min_size, requested_size, _alloc_tlab, ShenandoahRegionAffiliation::YOUNG_GENERATION);
   }
 
   static inline ShenandoahAllocRequest for_gclab(size_t min_size, size_t requested_size) {
-    return ShenandoahAllocRequest(min_size, requested_size, _alloc_gclab, YOUNG_GENERATION);
+    return ShenandoahAllocRequest(min_size, requested_size, _alloc_gclab, ShenandoahRegionAffiliation::YOUNG_GENERATION);
   }
 
   static inline ShenandoahAllocRequest for_shared_gc(size_t requested_size, ShenandoahRegionAffiliation affiliation) {
@@ -91,7 +86,7 @@ public:
   }
 
   static inline ShenandoahAllocRequest for_shared(size_t requested_size) {
-    return ShenandoahAllocRequest(0, requested_size, _alloc_shared, YOUNG_GENERATION);
+    return ShenandoahAllocRequest(0, requested_size, _alloc_shared, ShenandoahRegionAffiliation::YOUNG_GENERATION);
   }
 
   inline size_t size() {
@@ -164,6 +159,14 @@ public:
         ShouldNotReachHere();
         return false;
     }
+  }
+
+  bool is_old() {
+    return _affiliation == OLD_GENERATION;
+  }
+
+  bool is_young() {
+    return _affiliation == YOUNG_GENERATION;
   }
 
   ShenandoahRegionAffiliation affiliation() const {

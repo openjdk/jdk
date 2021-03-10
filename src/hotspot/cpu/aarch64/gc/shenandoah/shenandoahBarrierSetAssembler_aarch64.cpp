@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -60,7 +61,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       if (ShenandoahSATBBarrier && dest_uninitialized) {
         __ tbz(rscratch1, ShenandoahHeap::HAS_FORWARDED_BITPOS, done);
       } else {
-        __ mov(rscratch2, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING);
+        __ mov(rscratch2, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING);
         __ tst(rscratch1, rscratch2);
         __ br(Assembler::EQ, done);
       }
@@ -74,6 +75,13 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ pop(saved_regs, sp);
       __ bind(done);
     }
+  }
+}
+
+void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                       Register start, Register count, Register tmp, RegSet saved_regs) {
+  if (is_oop) {
+    gen_write_ref_array_post_barrier(masm, decorators, start, count, tmp, saved_regs);
   }
 }
 
@@ -366,6 +374,35 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
   }
 }
 
+void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj) {
+  if (!ShenandoahHeap::heap()->mode()->is_generational()) {
+      return;
+  }
+
+  ShenandoahBarrierSet* ctbs = ShenandoahBarrierSet::barrier_set();
+  CardTable* ct = ctbs->card_table();
+
+  __ lsr(obj, obj, CardTable::card_shift);
+
+  assert(CardTable::dirty_card_val() == 0, "must be");
+
+  __ load_byte_map_base(rscratch1);
+
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    __ membar(Assembler::StoreLoad);
+    __ ldrb(rscratch2,  Address(obj, rscratch1));
+    __ cbz(rscratch2, L_already_dirty);
+    __ strb(zr, Address(obj, rscratch1));
+    __ bind(L_already_dirty);
+  } else {
+    // if (ct->scanned_concurrently()) {
+    //  __ membar(Assembler::StoreStore);
+    // }
+    __ strb(zr, Address(obj, rscratch1));
+  }
+}
+
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                              Address dst, Register val, Register tmp1, Register tmp2) {
   bool on_oop = is_reference_type(type);
@@ -402,6 +439,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
       __ mov(new_val, val);
     }
     BarrierSetAssembler::store_at(masm, decorators, type, Address(r3, 0), val, noreg, noreg);
+    store_check(masm, r3);
   }
 
 }
@@ -586,6 +624,39 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   }
 }
 
+void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                                                     Register start, Register count, Register scratch, RegSet saved_regs) {
+  if (!ShenandoahHeap::heap()->mode()->is_generational()) {
+    return;
+  }
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+
+  Label L_loop, L_done;
+  const Register end = count;
+
+  __ cbz(count, L_done); // zero count - nothing to do
+
+  __ lea(end, Address(start, count, Address::lsl(LogBytesPerHeapOop))); // end = start + count << LogBytesPerHeapOop
+  __ sub(end, end, BytesPerHeapOop); // last element address to make inclusive
+  __ lsr(start, start, CardTable::card_shift);
+  __ lsr(end, end, CardTable::card_shift);
+  __ sub(count, end, start); // number of bytes to copy
+
+  __ load_byte_map_base(scratch);
+  __ add(start, start, scratch);
+  // if (ct->scanned_concurrently()) {
+  //   __ membar(__ StoreStore);
+  // }
+  __ bind(L_loop);
+  __ strb(zr, Address(start, count));
+  __ subs(count, count, 1);
+  __ br(Assembler::GE, L_loop);
+  __ bind(L_done);
+}
+
 #undef __
 
 #ifdef COMPILER1
@@ -686,7 +757,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   // Is marking still active?
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ ldrb(tmp, gc_state);
-  __ mov(rscratch2, ShenandoahHeap::MARKING);
+  __ mov(rscratch2, ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING);
   __ tst(tmp, rscratch2);
   __ br(Assembler::EQ, done);
 

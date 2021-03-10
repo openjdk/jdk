@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Amazon.com, Inc. and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Amazon.com, Inc. or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,21 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahCardTable.hpp"
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOLDGC_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHOLDGC_HPP
 
-void ShenandoahCardTable::initialize() {
-  CardTable::initialize();
-  resize_covered_region(_whole_heap);
-}
+#include "gc/shared/gcCause.hpp"
+#include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 
-bool ShenandoahCardTable::is_in_young(oop obj) const {
-  return ShenandoahHeap::heap()->is_in_young(obj);
-}
+class ShenandoahGeneration;
 
-bool ShenandoahCardTable::is_dirty(MemRegion mr) {
-  for (size_t i = index_for(mr.start()); i <= index_for(mr.end() - 1); i++) {
-    CardValue* byte = byte_for_index(i);
-    if (*byte == CardTable::dirty_card_val()) {
-      return true;
-    }
-  }
-  return false;
-}
+class ShenandoahOldGC : public ShenandoahConcurrentGC {
+ public:
+  ShenandoahOldGC(ShenandoahGeneration* generation, ShenandoahSharedFlag& allow_preemption);
+  bool collect(GCCause::Cause cause);
+ private:
+  ShenandoahSharedFlag& _allow_preemption;
+};
 
-void ShenandoahCardTable::clear() {
-  CardTable::clear(_whole_heap);
-}
+
+#endif //SHARE_GC_SHENANDOAH_SHENANDOAHOLDGC_HPP

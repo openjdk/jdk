@@ -102,8 +102,12 @@ void ShenandoahBarrierSet::clone_barrier(oop obj) {
   assert(ShenandoahCloneBarrier, "only get here with clone barriers enabled");
   shenandoah_assert_correct(NULL, obj);
 
+  // We only need to handle YOUNG_MARKING here because the clone barrier
+  // is only invoked during marking if Shenandoah is in incremental update
+  // mode. OLD_MARKING should only happen when Shenandoah is in generational
+  // mode, which uses the SATB write barrier.
   int gc_state = _heap->gc_state();
-  if ((gc_state & ShenandoahHeap::MARKING) != 0) {
+  if ((gc_state & ShenandoahHeap::YOUNG_MARKING) != 0) {
     clone_marking(obj);
   } else if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
     clone_evacuation(obj);

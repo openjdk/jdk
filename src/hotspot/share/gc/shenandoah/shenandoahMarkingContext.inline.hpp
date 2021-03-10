@@ -48,6 +48,14 @@ inline bool ShenandoahMarkingContext::is_marked_weak(oop obj) const {
   return allocated_after_mark_start(obj) || _mark_bit_map.is_marked_weak(cast_from_oop<HeapWord *>(obj));
 }
 
+inline bool ShenandoahMarkingContext::is_marked_or_old(oop obj) const {
+  return is_marked(obj) || ShenandoahHeap::heap()->is_old(obj);
+}
+
+inline bool ShenandoahMarkingContext::is_marked_strong_or_old(oop obj) const {
+  return is_marked_strong(obj) || ShenandoahHeap::heap()->is_old(obj);
+}
+
 inline HeapWord* ShenandoahMarkingContext::get_next_marked_addr(HeapWord* start, HeapWord* limit) const {
   return _mark_bit_map.get_next_marked_addr(start, limit);
 }

@@ -50,7 +50,7 @@ private:
 
 public:
   ShenandoahIsUnloadingOopClosure() :
-    _marking_context(ShenandoahHeap::heap()->complete_marking_context()),
+    _marking_context(ShenandoahHeap::heap()->marking_context()),
     _is_unloading(false) {
   }
 

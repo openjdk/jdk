@@ -48,12 +48,17 @@ ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(Shena
 template <GenerationMode GENERATION>
 template <class T>
 void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION, NO_DEDUP>(p, _queue, _mark_context, false);
+  // Only called from STW mark, should not be used to bootstrap old generation marking.
+  ShenandoahMark::mark_through_ref<T, GENERATION, NO_DEDUP>(p, _queue, nullptr, _mark_context, false);
 }
 
 template <class T>
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task) {
   oop obj = task->obj();
+
+  // HEY! This will push array chunks into the mark queue with no regard for
+  // generations. I don't think it will break anything, but the young generation
+  // scan might end up processing some old generation array chunks.
 
   shenandoah_assert_not_forwarded(NULL, obj);
   shenandoah_assert_marked(NULL, obj);
@@ -221,18 +226,20 @@ template <GenerationMode GENERATION>
 class ShenandoahSATBBufferClosure : public SATBBufferClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
+  ShenandoahObjToScanQueue* _old;
   ShenandoahHeap* _heap;
   ShenandoahMarkingContext* const _mark_context;
 public:
-  ShenandoahSATBBufferClosure(ShenandoahObjToScanQueue* q) :
+  ShenandoahSATBBufferClosure(ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old) :
     _queue(q),
+    _old(old),
     _heap(ShenandoahHeap::heap()),
     _mark_context(_heap->marking_context())
   {
   }
 
   void do_buffer(void **buffer, size_t size) {
-    assert(size == 0 || !_heap->has_forwarded_objects(), "Forwarded objects are not expected here");
+    assert(size == 0 || !_heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(), "Forwarded objects are not expected here");
     if (ShenandoahStringDedup::is_enabled()) {
       do_buffer_impl<ENQUEUE_DEDUP>(buffer, size);
     } else {
@@ -244,13 +251,13 @@ public:
   void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop, GENERATION, STRING_DEDUP>(p, _queue, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, GENERATION, STRING_DEDUP>(p, _queue, _old, _mark_context, false);
     }
   }
 };
 
 template<class T, GenerationMode GENERATION, StringDedupMode STRING_DEDUP>
-inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
+inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old, ShenandoahMarkingContext* const mark_context, bool weak) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
@@ -258,26 +265,35 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
     shenandoah_assert_not_forwarded(p, obj);
     shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc());
 
-    if (GENERATION != YOUNG || ShenandoahHeap::heap()->is_in_young(obj)) {
-      bool skip_live = false;
-      bool marked;
-      if (weak) {
-        marked = mark_context->mark_weak(obj);
-      } else {
-        marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
-      }
-      if (marked) {
-        bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
-        assert(pushed, "overflow queue should always succeed pushing");
-
-        if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
-          assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
-          ShenandoahStringDedup::enqueue_candidate(obj);
-        }
-      }
+    if (in_generation<GENERATION>(obj)) {
+      mark_ref<STRING_DEDUP>(q, mark_context, weak, obj);
+      shenandoah_assert_marked(p, obj);
+    } else if (old != nullptr) {
+      mark_ref<STRING_DEDUP>(old, mark_context, weak, obj);
+      shenandoah_assert_marked(p, obj);
     }
+  }
+}
 
-    shenandoah_assert_marked(p, obj);
+template<StringDedupMode STRING_DEDUP>
+void ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
+                              ShenandoahMarkingContext* const mark_context,
+                              bool weak, oop obj) {
+  bool skip_live = false;
+  bool marked;
+  if (weak) {
+    marked = mark_context->mark_weak(obj);
+  } else {
+    marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
+  }
+  if (marked) {
+    bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
+    assert(pushed, "overflow queue should always succeed pushing");
+
+    if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
+      assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
+      ShenandoahStringDedup::enqueue_candidate(obj);
+    }
   }
 }
 
@@ -288,4 +304,12 @@ ShenandoahObjToScanQueueSet* ShenandoahMark::task_queues() const {
 ShenandoahObjToScanQueue* ShenandoahMark::get_queue(uint index) const {
   return _task_queues->queue(index);
 }
+
+ShenandoahObjToScanQueue* ShenandoahMark::get_old_queue(uint index) const {
+  if (_old_gen_task_queues != nullptr) {
+    return _old_gen_task_queues->queue(index);
+  }
+  return nullptr;
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP

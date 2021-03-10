@@ -24,12 +24,15 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
@@ -42,7 +45,7 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
   else return 0;
 }
 
-ShenandoahHeuristics::ShenandoahHeuristics() :
+ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahGeneration* generation) :
   _region_data(NULL),
   _degenerated_cycles_in_a_row(0),
   _successful_cycles_in_a_row(0),
@@ -51,7 +54,8 @@ ShenandoahHeuristics::ShenandoahHeuristics() :
   _gc_times_learned(0),
   _gc_time_penalties(0),
   _gc_time_history(new TruncatedSeq(10, ShenandoahAdaptiveDecayFactor)),
-  _metaspace_oom()
+  _metaspace_oom(),
+  _generation(generation)
 {
   // No unloading during concurrent mark? Communicate that to heuristics
   if (!ClassUnloadingWithConcurrentMark) {
@@ -92,11 +96,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t free = 0;
   size_t free_regions = 0;
 
-  ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
+  ShenandoahMarkingContext* const ctx = _generation->complete_marking_context();
 
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
-    if (heap->mode()->is_generational() && region->affiliation() != ShenandoahRegionAffiliation::YOUNG_GENERATION) {
+    if (!in_generation(region)) {
       continue;
     }
 
@@ -107,18 +111,24 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       free_regions++;
       free += ShenandoahHeapRegion::region_size_bytes();
     } else if (region->is_regular()) {
-      if (!region->has_live()) {
+      if (!region->has_live() && !heap->mode()->is_generational()) {
         // We can recycle it right away and put it in the free set.
         immediate_regions++;
         immediate_garbage += garbage;
         region->make_trash_immediate();
-      } else {
+      } else if (_generation->generation_mode() != OLD) {
+        // HEY! At this stage in development our concurrent old
+        // marking does NOT complete the subsequent phases of the collection
+        // and we don't want regions stuck in the 'in_cset' state because
+        // various asserts will trip.
+
         // This is our candidate for later consideration.
         candidates[cand_idx]._region = region;
         candidates[cand_idx]._garbage = garbage;
         cand_idx++;
       }
     } else if (region->is_humongous_start()) {
+
       // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
       bool reg_live = region->has_live();
@@ -196,8 +206,8 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (ShenandoahGuaranteedGCInterval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > ShenandoahGuaranteedGCInterval) {
-      log_info(gc)("Trigger: Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
-                   last_time_ms, ShenandoahGuaranteedGCInterval);
+      log_info(gc)("Trigger (%s): Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
+                   _generation->name(), last_time_ms, ShenandoahGuaranteedGCInterval);
       return true;
     }
   }
@@ -290,4 +300,10 @@ void ShenandoahHeuristics::initialize() {
 
 double ShenandoahHeuristics::time_since_last_gc() const {
   return os::elapsedTime() - _cycle_start;
+}
+
+bool ShenandoahHeuristics::in_generation(ShenandoahHeapRegion* region) {
+  return (_generation->generation_mode() == GLOBAL)
+      || (_generation->generation_mode() == YOUNG && region->affiliation() == YOUNG_GENERATION)
+      || (_generation->generation_mode() == OLD && region->affiliation() == OLD_GENERATION);
 }

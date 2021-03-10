@@ -49,6 +49,7 @@
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -95,6 +96,10 @@ void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
 }
 
 void ShenandoahFullGC::op_full(GCCause::Cause cause) {
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    fatal("Full GC not yet supported for generational mode.");
+  }
+
   ShenandoahMetricsSnapshot metrics;
   metrics.snap_before();
 
@@ -159,10 +164,9 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     }
     assert(!heap->is_update_refs_in_progress(), "sanity");
 
-    // b. Cancel concurrent mark, if in progress
+    // b. Cancel all concurrent marks, if in progress
     if (heap->is_concurrent_mark_in_progress()) {
-      ShenandoahConcurrentGC::cancel();
-      heap->set_concurrent_mark_in_progress(false);
+      heap->cancel_concurrent_mark();
     }
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
@@ -172,9 +176,9 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     }
 
     // d. Reset the bitmaps for new marking
-    heap->reset_mark_bitmap();
+    heap->global_generation()->reset_mark_bitmap();
     assert(heap->marking_context()->is_bitmap_clear(), "sanity");
-    assert(!heap->marking_context()->is_complete(), "sanity");
+    assert(!heap->global_generation()->is_mark_complete(), "sanity");
 
     // e. Abandon reference discovery and clear all discovered references.
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
@@ -274,6 +278,8 @@ public:
     _ctx->capture_top_at_mark_start(r);
     r->clear_live_data();
   }
+
+  bool is_thread_safe() { return true; }
 };
 
 void ShenandoahFullGC::phase1_mark_heap() {
@@ -283,15 +289,15 @@ void ShenandoahFullGC::phase1_mark_heap() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   ShenandoahPrepareForMarkClosure cl;
-  heap->heap_region_iterate(&cl);
+  heap->parallel_heap_region_iterate(&cl);
 
-  heap->set_unload_classes(heap->heuristics()->can_unload_classes());
+  heap->set_unload_classes(heap->global_generation()->heuristics()->can_unload_classes());
 
   ShenandoahReferenceProcessor* rp = heap->ref_processor();
   // enable ("weak") refs discovery
   rp->set_soft_reference_policy(true); // forcefully purge all soft references
 
-  ShenandoahSTWMark mark(true /*full_gc*/);
+  ShenandoahSTWMark mark(heap->global_generation(), true /*full_gc*/);
   mark.mark();
   heap->parallel_cleaning(true /* full_gc */);
 }
@@ -324,6 +330,14 @@ public:
 
   void finish_region() {
     assert(_to_region != NULL, "should not happen");
+    if (_heap->mode()->is_generational() && _to_region->affiliation() == FREE) {
+      // HEY! Changing this region to young during compaction may not be
+      // technically correct here because it completely disregards the ages
+      // and origins of the objects being moved. It is, however, certainly
+      // more correct than putting live objects into a region without a
+      // generational affiliation.
+      _to_region->set_affiliation(YOUNG_GENERATION);
+    }
     _to_region->set_new_top(_compact_point);
   }
 
@@ -1061,7 +1075,11 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
 
     heap->collection_set()->clear();
     heap->free_set()->rebuild();
+
+    if (heap->mode()->is_generational()) {
+      heap->young_generation()->promote_all_regions();
+    }
   }
 
-  heap->clear_cancelled_gc();
+  heap->clear_cancelled_gc(true /* clear oom handler */);
 }

@@ -1500,7 +1500,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* phi2 = PhiNode::make(region2, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     // Stable path.
-    test_gc_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::MARKING);
+    test_gc_state(ctrl, raw_mem, heap_stable_ctrl, phase, (ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING));
     region->init_req(_heap_stable, heap_stable_ctrl);
     phi->init_req(_heap_stable, raw_mem);
 

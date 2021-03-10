@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
@@ -45,6 +46,7 @@
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
+#include "shenandoahOldGC.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
@@ -52,8 +54,11 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _gc_waiters_lock(Mutex::leaf, "ShenandoahRequestedGC_lock", true, Monitor::_safepoint_check_always),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
+  _requested_generation(GenerationMode::GLOBAL),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
-  _allocs_seen(0) {
+  _degen_generation(NULL),
+  _allocs_seen(0),
+  _mode(none) {
 
   reset_gc_id();
   create_and_start();
@@ -81,11 +86,10 @@ void ShenandoahControlThread::run_service() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   GCMode default_mode = concurrent_normal;
+  GenerationMode generation = GLOBAL;
   GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
-  int sleep = ShenandoahControlIntervalMin;
 
   double last_shrink_time = os::elapsedTime();
-  double last_sleep_adjust_time = os::elapsedTime();
 
   // Shrink period avoids constantly polling regions for shrinking.
   // Having a period 10x lower than the delay would mean we hit the
@@ -94,12 +98,18 @@ void ShenandoahControlThread::run_service() {
   double shrink_period = (double)ShenandoahUncommitDelay / 1000 / 10;
 
   ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
-  ShenandoahHeuristics* heuristics = heap->heuristics();
+
+  // HEY! heuristics are notified of allocation failures here and other outcomes
+  // of the cycle. They're also used here to control whether the Nth consecutive
+  // degenerated cycle should be 'promoted' to a full cycle. This changes the
+  // threading model for them somewhat, as they are now evaluated on a separate
+  // thread.
+  ShenandoahHeuristics* global_heuristics = heap->global_generation()->heuristics();
   while (!in_graceful_shutdown() && !should_terminate()) {
     // Figure out if we have pending requests.
     bool alloc_failure_pending = _alloc_failure_gc.is_set();
-    bool explicit_gc_requested = _gc_requested.is_set() &&  is_explicit_gc(_requested_gc_cause);
-    bool implicit_gc_requested = _gc_requested.is_set() && !is_explicit_gc(_requested_gc_cause);
+    bool explicit_gc_requested = _gc_requested.is_set() && is_explicit_gc(_requested_gc_cause);
+    bool implicit_gc_requested = _gc_requested.is_set() && is_implicit_gc(_requested_gc_cause);
 
     // This control loop iteration have seen this much allocations.
     size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
@@ -108,7 +118,7 @@ void ShenandoahControlThread::run_service() {
     bool soft_max_changed = check_soft_max_changed();
 
     // Choose which GC mode to run in. The block below should select a single mode.
-    GCMode mode = none;
+    set_gc_mode(none);
     GCCause::Cause cause = GCCause::_last_gc_cause;
     ShenandoahGC::ShenandoahDegenPoint degen_point = ShenandoahGC::_degenerated_unset;
 
@@ -122,70 +132,101 @@ void ShenandoahControlThread::run_service() {
       degen_point = _degen_point;
       _degen_point = ShenandoahGC::_degenerated_outside_cycle;
 
+      if (degen_point == ShenandoahGC::_degenerated_outside_cycle) {
+        _degen_generation = heap->global_generation();
+      } else {
+        assert(_degen_generation != NULL, "Need to know which generation to resume.");
+      }
+
+      ShenandoahHeuristics* heuristics = _degen_generation->heuristics();
+      generation = _degen_generation->generation_mode();
+
       if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle()) {
         heuristics->record_allocation_failure_gc();
         policy->record_alloc_failure_to_degenerated(degen_point);
-        mode = stw_degenerated;
+        set_gc_mode(stw_degenerated);
       } else {
         heuristics->record_allocation_failure_gc();
         policy->record_alloc_failure_to_full();
-        mode = stw_full;
+        set_gc_mode(stw_full);
       }
-
     } else if (explicit_gc_requested) {
+      generation = GLOBAL;
       cause = _requested_gc_cause;
       log_info(gc)("Trigger: Explicit GC request (%s)", GCCause::to_string(cause));
 
-      heuristics->record_requested_gc();
+      global_heuristics->record_requested_gc();
 
       if (ExplicitGCInvokesConcurrent) {
         policy->record_explicit_to_concurrent();
-        mode = default_mode;
+        set_gc_mode(default_mode);
         // Unload and clean up everything
-        heap->set_unload_classes(heuristics->can_unload_classes());
+        heap->set_unload_classes(global_heuristics->can_unload_classes());
       } else {
         policy->record_explicit_to_full();
-        mode = stw_full;
+        set_gc_mode(stw_full);
       }
     } else if (implicit_gc_requested) {
+      generation = GLOBAL;
       cause = _requested_gc_cause;
       log_info(gc)("Trigger: Implicit GC request (%s)", GCCause::to_string(cause));
 
-      heuristics->record_requested_gc();
+      global_heuristics->record_requested_gc();
 
       if (ShenandoahImplicitGCInvokesConcurrent) {
         policy->record_implicit_to_concurrent();
-        mode = default_mode;
+        set_gc_mode(default_mode);
 
         // Unload and clean up everything
-        heap->set_unload_classes(heuristics->can_unload_classes());
+        heap->set_unload_classes(global_heuristics->can_unload_classes());
       } else {
         policy->record_implicit_to_full();
-        mode = stw_full;
+        set_gc_mode(stw_full);
       }
     } else {
-      // Potential normal cycle: ask heuristics if it wants to act
-      if (heuristics->should_start_gc()) {
-        mode = default_mode;
-        cause = default_cause;
+      // We should only be here if the regulator requested a cycle or if
+      // there is an old generation mark in progress.
+      if (_requested_gc_cause == GCCause::_shenandoah_concurrent_gc) {
+        // preemption was requested or this is a regular cycle
+        cause = GCCause::_shenandoah_concurrent_gc;
+        generation = _requested_generation;
+        set_gc_mode(default_mode);
+
+        // Don't start a new old marking if there is one already in progress.
+        if (generation == OLD && heap->is_concurrent_old_mark_in_progress()) {
+          set_gc_mode(marking_old);
+        }
+
+        if (generation == GLOBAL) {
+          heap->set_unload_classes(global_heuristics->should_unload_classes());
+        } else {
+          heap->set_unload_classes(false);
+        }
+      } else if (heap->is_concurrent_old_mark_in_progress()) {
+        // Nobody asked us to do anything, but we have an old generation mark
+        // in progress, so resume working on that.
+        cause = GCCause::_shenandoah_concurrent_gc;
+        generation = OLD;
+        set_gc_mode(marking_old);
       }
 
-      // Ask policy if this cycle wants to process references or unload classes
-      heap->set_unload_classes(heuristics->should_unload_classes());
+      // Don't want to spin in this loop and start a cycle every time, so
+      // clear requested gc cause. This creates a race with callers of the
+      // blocking 'request_gc' method, but there it loops and resets the
+      // '_requested_gc_cause' until a full cycle is completed.
+      _requested_gc_cause = GCCause::_no_gc;
     }
 
     // Blow all soft references on this cycle, if handling allocation failure,
-    // either implicit or explicit GC request,  or we are requested to do so unconditionally.
-    if (alloc_failure_pending || implicit_gc_requested || explicit_gc_requested || ShenandoahAlwaysClearSoftRefs) {
+    // either implicit or explicit GC request, or we are requested to do so unconditionally.
+    if (generation == GLOBAL && (alloc_failure_pending || implicit_gc_requested || explicit_gc_requested || ShenandoahAlwaysClearSoftRefs)) {
       heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
     }
 
-    bool gc_requested = (mode != none);
+    bool gc_requested = (_mode != none);
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
-      // GC is starting, bump the internal ID
-      update_gc_id();
 
       heap->reset_bytes_allocated_since_gc_start();
 
@@ -202,25 +243,33 @@ void ShenandoahControlThread::run_service() {
         heap->free_set()->log_status();
       }
 
-      switch (mode) {
-        case concurrent_normal:
-          if (heap->mode()->is_generational()) {
-            // TODO: Only young collections for now.
-            // We'll add old collections later.
-            service_concurrent_normal_cycle(cause, heap->young_generation());
-          } else {
-            service_concurrent_normal_cycle(cause, heap->global_generation());
+      {
+        switch (_mode) {
+          case concurrent_normal: {
+            service_concurrent_normal_cycle(heap, generation, cause);
+            break;
           }
-          break;
-        case stw_degenerated:
-          service_stw_degenerated_cycle(cause, degen_point);
-          break;
-        case stw_full:
-          service_stw_full_cycle(cause);
-          break;
-        default:
-          ShouldNotReachHere();
+          case stw_degenerated: {
+            service_stw_degenerated_cycle(cause, degen_point);
+            break;
+          }
+          case stw_full: {
+            service_stw_full_cycle(cause);
+            break;
+          }
+          case marking_old: {
+            assert(generation == OLD, "Expected old generation here");
+            resume_concurrent_old_cycle(heap->old_generation(), cause);
+            break;
+          }
+          default: {
+            ShouldNotReachHere();
+          }
+        }
       }
+
+      // GC is finished, bump the internal ID before notifying waiters.
+      update_gc_id();
 
       // If this was the requested GC cycle, notify waiters about it
       if (explicit_gc_requested || implicit_gc_requested) {
@@ -257,7 +306,9 @@ void ShenandoahControlThread::run_service() {
 
       // Clear metaspace oom flag, if current cycle unloaded classes
       if (heap->unload_classes()) {
-        heuristics->clear_metaspace_oom();
+        // HEY! Should we do this if the cycle was cancelled/degenerated?
+        assert(generation != YOUNG, "should not unload classes in young cycle");
+        global_heuristics->clear_metaspace_oom();
       }
 
       // Commit worker statistics to cycle data
@@ -316,21 +367,117 @@ void ShenandoahControlThread::run_service() {
       last_shrink_time = current;
     }
 
-    // Wait before performing the next action. If allocation happened during this wait,
-    // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
-    // back off exponentially.
-    if (_heap_changed.try_unset()) {
-      sleep = ShenandoahControlIntervalMin;
-    } else if ((current - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
-      sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
-      last_sleep_adjust_time = current;
-    }
-    os::naked_short_sleep(sleep);
+    // HEY! kemperw would like to have this thread sleep on a timed wait so it
+    // could be explicitly woken when there is something to do. The timed wait
+    // is necessary because this thread has a responsibility to send
+    // 'alloc_words' to the pacer when it does not perform a GC.
+    os::naked_short_sleep(ShenandoahControlIntervalMin);
   }
 
   // Wait for the actual stop(), can't leave run_service() earlier.
   while (!should_terminate()) {
     os::naked_short_sleep(ShenandoahControlIntervalMin);
+  }
+}
+
+// Young and old concurrent cycles are initiated by the regulator. Implicit
+// and explicit GC requests are handled by the controller thread and always
+// run a global cycle (which is concurrent by default, but may be overridden
+// by command line options). Old cycles always degenerate to a global cycle.
+// Young cycles are degenerated to complete the young cycle.
+//
+//
+//      +-------------+----------+  Idle  +--------------+
+//      |             |              +                   |
+//      |             |              |                   |
+//      |             |              |                   |
+//      |             |              |                   |
+//      |             v              v                   v
+//      |
+//      |           Young  <---+ Resume Old  <----+ Bootstrap Old
+//      |             +            +     +               +
+//      |             |            |     |               |
+//      |             v            |     |               v
+//      v        Young Degen       |     |           Young Degen
+//                                 |     |
+//   Global  <--------------------+      |
+//      +                                |
+//      |                                v
+//      |
+//      +--------------------->  Global Degen
+//
+void ShenandoahControlThread::service_concurrent_normal_cycle(
+  const ShenandoahHeap* heap, const GenerationMode generation, GCCause::Cause cause) {
+
+  switch (generation) {
+    case YOUNG: {
+      // Run a young cycle. This might or might not, have interrupted an ongoing
+      // concurrent mark in the old generation. We need to think about promotions
+      // in this case. Promoted objects should be above the TAMS in the old regions
+      // they end up in, but we have to be sure we don't promote into any regions
+      // that are in the cset (more of an issue for Milestone-8 to worry about).
+      log_info(gc, ergo)("Start GC cycle (YOUNG)");
+      service_concurrent_cycle(heap->young_generation(), cause);
+      heap->young_generation()->log_status();
+      break;
+    }
+    case GLOBAL: {
+      log_info(gc, ergo)("Start GC cycle (GLOBAL)");
+      service_concurrent_cycle(heap->global_generation(), cause);
+      heap->global_generation()->log_status();
+      break;
+    }
+    case OLD: {
+      log_info(gc, ergo)("Start GC cycle (OLD)");
+      service_concurrent_old_cycle(heap, cause);
+      heap->old_generation()->log_status();
+      break;
+    }
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void ShenandoahControlThread::service_concurrent_old_cycle(const ShenandoahHeap* heap, GCCause::Cause &cause) {
+  // Configure the young generation's concurrent mark to put objects in
+  // old regions into the concurrent mark queues associated with the old
+  // generation. The young cycle will run as normal except that rather than
+  // ignore old references it will mark and enqueue them in the old concurrent
+  // mark but it will not traverse them.
+  ShenandoahGeneration* old_generation = heap->old_generation();
+  ShenandoahYoungGeneration* young_generation = heap->young_generation();
+
+  assert(!heap->is_concurrent_old_mark_in_progress(), "Old already in progress.");
+  assert(old_generation->task_queues()->is_empty(), "Old mark queues should be empty.");
+
+  young_generation->set_old_gen_task_queues(old_generation->task_queues());
+
+  old_generation->set_mark_incomplete();
+
+  service_concurrent_cycle(young_generation, cause);
+
+  // Young generation no longer needs this reference to the old concurrent
+  // mark so clean it up.
+  young_generation->set_old_gen_task_queues(NULL);
+
+  if (!heap->cancelled_gc()) {
+    // Reset the degenerated point. Normally this would happen at the top
+    // of the control loop, but here we have just completed a young cycle
+    // which has bootstrapped the old concurrent marking.
+    _degen_point = ShenandoahGC::_degenerated_outside_cycle;
+
+    // TODO: Bit of a hack here to keep the phase timings happy as we transition
+    // to concurrent old marking. We need to revisit this.
+    heap->phase_timings()->flush_par_workers_to_cycle();
+    heap->phase_timings()->flush_cycle_to_global();
+
+    // From here we will 'resume' the old concurrent mark. This will skip reset
+    // and init mark for the concurrent mark. All of that work will have been
+    // done by the bootstrapping young cycle. In order to simplify the debugging
+    // effort, the old cycle will ONLY complete the mark phase. No actual
+    // collection of the old generation is happening here.
+    set_gc_mode(marking_old);
+    resume_concurrent_old_cycle(old_generation, cause);
   }
 }
 
@@ -353,7 +500,42 @@ bool ShenandoahControlThread::check_soft_max_changed() const {
   return false;
 }
 
-void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause, ShenandoahGeneration* generation) {
+void ShenandoahControlThread::resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause) {
+  assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress(), "Old mark should be in progress");
+  log_debug(gc)("Resuming old generation with " UINT32_FORMAT " marking tasks queued.", generation->task_queues()->tasks());
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  GCIdMark gc_id_mark;
+  ShenandoahGCSession session(cause, generation);
+
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+
+  // We can only really tolerate being cancelled during concurrent
+  // marking. This flag here (passed by reference) is used to control
+  // precisely where the regulator is allowed to cancel a GC.
+  ShenandoahOldGC gc(generation, _allow_old_preemption);
+  if (gc.collect(cause)) {
+    // Cycle is complete
+    generation->heuristics()->record_success_concurrent();
+    heap->shenandoah_policy()->record_success_concurrent();
+  }
+
+  if (heap->cancelled_gc()) {
+    // It's possible the gc cycle was cancelled after the last time
+    // the collection checked for cancellation. In which case, the
+    // old gc cycle is still completed and we have to deal with this
+    // cancellation. We set the degeneration point to be outside
+    // the cycle because if this is an allocation failure, that is
+    // what must be done (there is no degenerated old cycle). If the
+    // cancellation was due to a heuristic wanting to start a young
+    // cycle, then we are not actually going to a degenerated cycle,
+    // so the degenerated point doesn't matter here.
+    check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle);
+  }
+}
+
+void ShenandoahControlThread::service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause) {
   // Normal cycle goes via all concurrent phases. If allocation failure (af) happens during
   // any of the concurrent phases, it first degrades to Degenerated GC and completes GC there.
   // If second allocation failure happens during Degenerated GC cycle (for example, when GC
@@ -393,32 +575,55 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) return;
 
   GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
+  ShenandoahGCSession session(cause, generation);
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
   ShenandoahConcurrentGC gc(generation);
   if (gc.collect(cause)) {
     // Cycle is complete
-    heap->heuristics()->record_success_concurrent();
+    generation->heuristics()->record_success_concurrent();
     heap->shenandoah_policy()->record_success_concurrent();
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
+    _degen_generation = generation;
   }
 }
 
 bool ShenandoahControlThread::check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->cancelled_gc()) {
-    assert (is_alloc_failure_gc() || in_graceful_shutdown(), "Cancel GC either for alloc failure GC, or gracefully exiting");
-    if (!in_graceful_shutdown()) {
-      assert (_degen_point == ShenandoahGC::_degenerated_outside_cycle,
-              "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
-      _degen_point = point;
-    }
+  if (!heap->cancelled_gc()) {
+    return false;
+  }
+
+  if (in_graceful_shutdown()) {
     return true;
   }
+
+  assert(_degen_point == ShenandoahGC::_degenerated_outside_cycle,
+         "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
+
+  if (is_alloc_failure_gc()) {
+    _degen_point = point;
+    return true;
+  }
+
+  if (_preemption_requested.is_set()) {
+    assert(_requested_generation == YOUNG, "Only young GCs may preempt old.");
+    _preemption_requested.unset();
+
+    // Old generation marking is only cancellable during concurrent marking.
+    // Once final mark is complete, the code does not check again for cancellation.
+    // If old generation was cancelled for an allocation failure, we wouldn't
+    // make it to this case. The calling code is responsible for forcing a
+    // cancellation due to allocation failure into a degenerated cycle.
+    _degen_point = point;
+    heap->clear_cancelled_gc(false /* clear oom handler */);
+    return true;
+  }
+
+  fatal("Cancel GC either for alloc failure GC, or gracefully exiting, or to pause old generation marking.");
   return false;
 }
 
@@ -427,28 +632,33 @@ void ShenandoahControlThread::stop_service() {
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
   GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
+  ShenandoahGCSession session(cause, heap->global_generation());
 
   ShenandoahFullGC gc;
   gc.collect(cause);
 
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->heuristics()->record_success_full();
+  heap->global_generation()->heuristics()->record_success_full();
   heap->shenandoah_policy()->record_success_full();
 }
 
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
   GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
+  ShenandoahGCSession session(cause, _degen_generation);
 
-  ShenandoahDegenGC gc(point);
+  ShenandoahDegenGC gc(point, _degen_generation);
   gc.collect(cause);
 
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->heuristics()->record_success_degenerated();
+  assert(heap->young_generation()->task_queues()->is_empty(), "Unexpected young generation marking tasks");
+  assert(heap->old_generation()->task_queues()->is_empty(), "Unexpected old generation marking tasks");
+  assert(heap->global_generation()->task_queues()->is_empty(), "Unexpected global generation marking tasks");
+
+  _degen_generation->heuristics()->record_success_degenerated();
   heap->shenandoah_policy()->record_success_degenerated();
 }
 
@@ -480,6 +690,10 @@ bool ShenandoahControlThread::is_explicit_gc(GCCause::Cause cause) const {
          GCCause::is_serviceability_requested_gc(cause);
 }
 
+bool ShenandoahControlThread::is_implicit_gc(GCCause::Cause cause) const {
+  return !is_explicit_gc(cause) && cause != GCCause::_shenandoah_concurrent_gc;
+}
+
 void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   assert(GCCause::is_user_requested_gc(cause) ||
          GCCause::is_serviceability_requested_gc(cause) ||
@@ -496,6 +710,34 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   } else {
     handle_requested_gc(cause);
   }
+}
+
+bool ShenandoahControlThread::request_concurrent_gc(GenerationMode generation) {
+  if (_preemption_requested.is_set() || _gc_requested.is_set() || ShenandoahHeap::heap()->cancelled_gc()) {
+    // ignore subsequent requests from the heuristics
+    return false;
+  }
+
+  if (_mode == none) {
+    _requested_gc_cause = GCCause::_shenandoah_concurrent_gc;
+    _requested_generation = generation;
+    return true;
+  }
+
+  if (preempt_old_marking(generation)) {
+    log_info(gc)("Preempting old generation mark to allow young GC.");
+    _requested_gc_cause = GCCause::_shenandoah_concurrent_gc;
+    _requested_generation = generation;
+    _preemption_requested.set();
+    ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_concurrent_gc);
+    return true;
+  }
+
+  return false;
+}
+
+bool ShenandoahControlThread::preempt_old_marking(GenerationMode generation) {
+  return generation == YOUNG && _allow_old_preemption.is_set();
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
@@ -595,10 +837,6 @@ void ShenandoahControlThread::notify_heap_changed() {
   if (_do_counters_update.is_unset()) {
     _do_counters_update.set();
   }
-  // Notify that something had changed.
-  if (_heap_changed.is_unset()) {
-    _heap_changed.set();
-  }
 }
 
 void ShenandoahControlThread::pacing_notify_alloc(size_t words) {
@@ -642,4 +880,22 @@ void ShenandoahControlThread::prepare_for_graceful_shutdown() {
 
 bool ShenandoahControlThread::in_graceful_shutdown() {
   return _graceful_shutdown.is_set();
+}
+
+const char* ShenandoahControlThread::gc_mode_name(ShenandoahControlThread::GCMode mode) {
+  switch (mode) {
+    case none:              return "idle";
+    case concurrent_normal: return "normal";
+    case stw_degenerated:   return "degenerated";
+    case stw_full:          return "full";
+    case marking_old:       return "old mark";
+    default:                return "unknown";
+  }
+}
+
+void ShenandoahControlThread::set_gc_mode(ShenandoahControlThread::GCMode new_mode) {
+  if (_mode != new_mode) {
+    log_info(gc)("Transition from: %s to: %s", gc_mode_name(_mode), gc_mode_name(new_mode));
+    _mode = new_mode;
+  }
 }

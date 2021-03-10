@@ -361,8 +361,23 @@
                                                                             \
   product(bool, ShenandoahSelfFixing, true, DIAGNOSTIC,                     \
           "Fix references with load reference barrier. Disabling this "     \
-          "might degrade performance.")
-
+          "might degrade performance.")                                     \
+                                                                            \
+  product(bool, ShenandoahUseSimpleCardScanning, false, DIAGNOSTIC,         \
+          "Testing: use simplified, very inefficient but much less complex" \
+          " card table scanning.")                                          \
+                                                                            \
+  product(bool, ShenandoahPromoteTenuredObjects, true, DIAGNOSTIC,          \
+          "Turn on/off evacuating individual tenured young objects "        \
+          " to the old generation.")                                        \
+                                                                            \
+  product(bool, ShenandoahPromoteTenuredRegions, true, DIAGNOSTIC,          \
+          "Turn on/off transitioning tenured young regions "                \
+          " to the old generation.")                                        \
+                                                                            \
+  product(bool, ShenandoahAllowOldMarkingPreemption, true, DIAGNOSTIC,      \
+          "Allow young generation collections to suspend concurrent"        \
+          " marking in the old generation.")
 // end of GC_SHENANDOAH_FLAGS
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

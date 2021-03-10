@@ -27,12 +27,13 @@
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
-ShenandoahStaticHeuristics::ShenandoahStaticHeuristics() : ShenandoahHeuristics() {
+ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahGeneration* generation) :
+  ShenandoahHeuristics(generation) {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 }
@@ -40,11 +41,9 @@ ShenandoahStaticHeuristics::ShenandoahStaticHeuristics() : ShenandoahHeuristics(
 ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 
 bool ShenandoahStaticHeuristics::should_start_gc() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  size_t max_capacity = heap->max_capacity();
-  size_t capacity = heap->soft_max_capacity();
-  size_t available = heap->free_set()->available();
+  size_t max_capacity = _generation->max_capacity();
+  size_t capacity = _generation->soft_max_capacity();
+  size_t available = _generation->available();
 
   // Make sure the code below treats available without the soft tail.
   size_t soft_tail = max_capacity - capacity;

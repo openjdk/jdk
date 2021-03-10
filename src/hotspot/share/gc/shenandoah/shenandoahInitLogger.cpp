@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
@@ -41,7 +42,7 @@ void ShenandoahInitLogger::print_heap() {
                      heap->mode()->name());
 
   log_info(gc, init)("Heuristics: %s",
-                     heap->heuristics()->name());
+                     heap->global_generation()->heuristics()->name());
 
   log_info(gc, init)("Heap Region Count: " SIZE_FORMAT,
                      ShenandoahHeapRegion::region_count());

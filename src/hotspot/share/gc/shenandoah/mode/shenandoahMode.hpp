@@ -26,7 +26,10 @@
 #define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHMODE_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/java.hpp"
+#include "utilities/formatBuffer.hpp"
 
+class ShenandoahGeneration;
 class ShenandoahHeuristics;
 
 #define SHENANDOAH_CHECK_FLAG_SET(name)                                     \
@@ -48,7 +51,7 @@ class ShenandoahHeuristics;
 class ShenandoahMode : public CHeapObj<mtGC> {
 public:
   virtual void initialize_flags() const = 0;
-  virtual ShenandoahHeuristics* initialize_heuristics() const = 0;
+  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahGeneration* generation) const;
   virtual const char* name() = 0;
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;

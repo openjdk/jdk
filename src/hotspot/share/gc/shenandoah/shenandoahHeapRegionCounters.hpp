@@ -53,22 +53,26 @@
  * - bits 28-34  shared allocated memory in percent
  * - bits 35-41  <reserved>
  * - bits 42-50  <reserved>
- * - bits 51-57  <reserved>
+ * - bits 51-55  age
+ * - bits 56-57  affiliation: 0 = free, young = 1, old = 2
  * - bits 58-63  status
  *      - bits describe the state as recorded in ShenandoahHeapRegion
  */
 class ShenandoahHeapRegionCounters : public CHeapObj<mtGC>  {
 private:
-  static const jlong PERCENT_MASK = 0x7f;
-  static const jlong STATUS_MASK  = 0x3f;
+  static const jlong PERCENT_MASK      = 0x7f;
+  static const jlong AGE_MASK          = 0x1f;
+  static const jlong AFFILIATION_MASK  = 0x03;
+  static const jlong STATUS_MASK       = 0x3f;
 
-  static const jlong USED_SHIFT   = 0;
-  static const jlong LIVE_SHIFT   = 7;
-  static const jlong TLAB_SHIFT   = 14;
-  static const jlong GCLAB_SHIFT  = 21;
-  static const jlong SHARED_SHIFT = 28;
-
-  static const jlong STATUS_SHIFT = 58;
+  static const jlong USED_SHIFT        = 0;
+  static const jlong LIVE_SHIFT        = 7;
+  static const jlong TLAB_SHIFT        = 14;
+  static const jlong GCLAB_SHIFT       = 21;
+  static const jlong SHARED_SHIFT      = 28;
+  static const jlong AGE_SHIFT         = 51;
+  static const jlong AFFILIATION_SHIFT = 56;
+  static const jlong STATUS_SHIFT      = 58;
 
   char* _name_space;
   PerfLongVariable** _regions_data;

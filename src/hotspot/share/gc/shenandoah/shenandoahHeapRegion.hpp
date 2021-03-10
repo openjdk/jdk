@@ -198,6 +198,8 @@ public:
   bool is_committed()              const { return !is_empty_uncommitted(); }
   bool is_cset()                   const { return _state == _cset   || _state == _pinned_cset; }
   bool is_pinned()                 const { return _state == _pinned || _state == _pinned_cset || _state == _pinned_humongous_start; }
+  bool is_young()                  const { return _affiliation == YOUNG_GENERATION; }
+  bool is_old()                    const { return _affiliation == OLD_GENERATION; }
 
   // Macro-properties:
   bool is_alloc_allowed()          const { return is_empty() || is_regular() || _state == _pinned; }
@@ -247,6 +249,7 @@ private:
   HeapWord* volatile _update_watermark;
 
   ShenandoahRegionAffiliation _affiliation;
+  uint _age;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -357,7 +360,8 @@ public:
 
   void recycle();
 
-  void oop_iterate(OopIterateClosure* cl);
+  void oop_iterate(OopIterateClosure* cl, bool fill_dead_objects = false, bool reregister_coalesced_objects = false);
+  void oop_iterate_humongous(OopIterateClosure* cl);
 
   HeapWord* block_start(const void* p) const;
   size_t block_size(const HeapWord* p) const;
@@ -395,12 +399,17 @@ public:
 
   void set_affiliation(ShenandoahRegionAffiliation new_affiliation);
 
+  uint age()           { return _age; }
+  void increment_age() { if (_age < markWord::max_age) { _age++; } }
+  void reset_age()     { _age = 0; }
+
+  void promote();
+
 private:
   void do_commit();
   void do_uncommit();
 
-  void oop_iterate_objects(OopIterateClosure* cl);
-  void oop_iterate_humongous(OopIterateClosure* cl);
+  void oop_iterate_objects(OopIterateClosure* cl, bool fill_dead_objects, bool reregister_coalesced_objects);
 
   inline void internal_increase_live_data(size_t s);
 

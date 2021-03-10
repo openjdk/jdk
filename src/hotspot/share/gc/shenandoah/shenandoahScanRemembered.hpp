@@ -23,14 +23,12 @@
  *
  */
 
-
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_HPP
 
-#include <stdint.h>
-#include "memory/iterator.hpp"
-#include "gc/shenandoah/shenandoahCardTable.hpp"
-
+// During development of this new feature, we want the option to test
+// with and without, and to compare performance before and after.
+#define FAST_REMEMBERED_SET_SCANNING
 
 // Terminology used within this source file:
 //
@@ -119,7 +117,7 @@
 //      clusters.  Initialization cost is essentially identical for
 //      each cluster.)
 //
-//  Next, we repeat the process for invocations of process_Clusters.
+//  Next, we repeat the process for invocations of process_clusters.
 //  for each ShenandoahHeapRegion old_region in the whole heap
 //    determine the cluster number of the first cluster belonging
 //      to that region
@@ -211,9 +209,17 @@
 // These limitations will be addressed in future enhancements to the
 // existing implementation.
 
+#include <stdint.h>
+#include "memory/iterator.hpp"
+#include "gc/shared/workgroup.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.hpp"
+
 class ShenandoahReferenceProcessor;
 class ShenandoahConcurrentMark;
 class ShenandoahHeap;
+class ShenandoahRegionIterator;
+
 class CardTable;
 
 class ShenandoahDirectCardMarkRememberedSet: public CHeapObj<mtGC> {
@@ -230,9 +236,9 @@ private:
 
   ShenandoahHeap *_heap;
   CardTable *_card_table;
-  uint32_t _card_shift;
+  size_t _card_shift;
   size_t _total_card_count;
-  uint32_t _cluster_count;
+  size_t _cluster_count;
   HeapWord *_whole_heap_base;   // Points to first HeapWord of data contained within heap memory
   HeapWord *_whole_heap_end;
   uint8_t *_byte_map;           // Points to first entry within the card table
@@ -246,25 +252,30 @@ public:
   ~ShenandoahDirectCardMarkRememberedSet();
 
   // Card index is zero-based relative to _byte_map.
-  uint32_t card_index_for_addr(HeapWord *p);
-  HeapWord *addr_for_card_index(uint32_t card_index);
-  bool is_card_dirty(uint32_t card_index);
-  void mark_card_as_dirty(uint32_t card_index);
-  void mark_card_as_clean(uint32_t card_index);
-  void mark_overreach_card_as_dirty(uint32_t card_index);
+  size_t total_cards();
+  size_t card_index_for_addr(HeapWord *p);
+  HeapWord *addr_for_card_index(size_t card_index);
+  bool is_card_dirty(size_t card_index);
+  void mark_card_as_dirty(size_t card_index);
+  void mark_range_as_dirty(size_t card_index, size_t num_cards);
+  void mark_card_as_clean(size_t card_index);
+  void mark_range_as_clean(size_t card_index, size_t num_cards);
+  void mark_overreach_card_as_dirty(size_t card_index);
   bool is_card_dirty(HeapWord *p);
   void mark_card_as_dirty(HeapWord *p);
+  void mark_range_as_dirty(HeapWord *p, size_t num_heap_words);
   void mark_card_as_clean(HeapWord *p);
+  void mark_range_as_clean(HeapWord *p, size_t num_heap_words);
   void mark_overreach_card_as_dirty(void *p);
-  uint32_t cluster_count();
+  size_t cluster_count();
 
   // Called by multiple GC threads at start of concurrent mark and evacuation phases.  Each parallel GC thread typically
   // initializes a different subranges of all overreach entries.
-  void initialize_overreach(uint32_t first_cluster, uint32_t count);
+  void initialize_overreach(size_t first_cluster, size_t count);
 
   // Called by GC thread at end of concurrent mark or evacuation phase.  Each parallel GC thread typically merges different
   // subranges of all overreach entries.
-  void merge_overreach(uint32_t first_cluster, uint32_t count);
+  void merge_overreach(size_t first_cluster, size_t count);
 };
 
 // A ShenandoahCardCluster represents the minimal unit of work
@@ -458,13 +469,65 @@ private:
   RememberedSet *_rs;
 
 public:
-  static const uint32_t CardsPerCluster = 64;
+  static const size_t CardsPerCluster = 64;
+
+#ifdef FAST_REMEMBERED_SET_SCANNING
+private:
+  // This bit is set iff at least one object starts within a
+  // particular card region.
+  static const uint16_t ObjectStartsInCardRegion = 0x8000;
+  static const uint16_t FirstStartBits = 0x003f;
+  static const uint16_t LastStartBits = 0x0fc0;
+  static const uint16_t FirstStartShift = 0;
+  static const uint16_t LastStartShift = 6;
+
+  static const uint16_t CardOffsetMultiplier = 8;
+
+  uint16_t *object_starts;
+
+public:
+  inline void set_first_start(size_t card_index, uint8_t value) {
+    object_starts[card_index] &= ~FirstStartBits;
+    object_starts[card_index] |= (FirstStartBits & (value << FirstStartShift));
+  }
+
+  inline void set_last_start(size_t card_index, uint8_t value) {
+    object_starts[card_index] &= ~LastStartBits;
+    object_starts[card_index] |= (LastStartBits & (value << LastStartShift));
+  }
+
+  inline void set_has_object_bit(size_t card_index) {
+    object_starts[card_index] |= ObjectStartsInCardRegion;
+  }
+
+  inline void clear_has_object_bit(size_t card_index) {
+    object_starts[card_index] &= ~ObjectStartsInCardRegion;
+  }
+
+  inline void clear_objects_in_range(HeapWord *addr, size_t num_words) {
+    size_t card_index = _rs->card_index_for_addr(addr);
+    size_t last_card_index = _rs->card_index_for_addr(addr + num_words - 1);
+    while (card_index <= last_card_index)
+      object_starts[card_index++] = 0;
+  }
+#endif  // FAST_REMEMBERED_SET_SCANNING
 
   ShenandoahCardCluster(RememberedSet *rs) {
     _rs = rs;
+#ifdef FAST_REMEMBERED_SET_SCANNING
+    // HEY!  We don't really need object_starts entries for every card entry.  We only need these for the
+    // the card entries that correspond to old-gen memory.  But for now, let's be quick and dirty.
+    object_starts = (uint16_t *) malloc(rs->total_cards() * sizeof(uint16_t));
+    if (object_starts == NULL)
+      fatal("Insufficient memory for initializing heap");
+    for (size_t i = 0; i < rs->total_cards(); i++)
+      object_starts[i] = 0;
+#endif
   }
 
   ~ShenandoahCardCluster() {
+    if (object_starts != NULL)
+      free(object_starts);
   }
 
   // There is one entry within the object_starts array for each
@@ -479,6 +542,7 @@ public:
   //              within this card region begins.
   // Bits 0x8000: This bit is on if an object starts within this card
   //              region.
+  // Bits 0x7000: Reserved for future uses
   //
   // In the most recent implementation of ShenandoahScanRemembered::process_clusters(),
   // there is no need for the get_crossing_object_start() method function, so there is no
@@ -548,44 +612,22 @@ public:
   //         in registering an object.
 
 private:
-  const uint32_t CardByteOffsetMultiplier = 8;
-  const uint32_t CardWordOffsetMultiplier = 1;
-
-#ifdef IMPLEMENT_THIS_OPTIMIZATION_LATER
-
-  // This bit is set iff at least one object starts within a
-  // particular card region.
-  const uint_16 ObjectStartsInCardRegion = 0x8000;
-  const uint_16 FirstStartBits = 0x003f;
-  const uint_16 LastStartBits = 0x0fc0;
-  const uint_16 FirstStartShift = 0;
-  const uint_16 LastStartShift = 6;
-  const uint_16 CrossingObjectOverflow = 0x7fff;
-
-  uint_16 *object_starts;
+  const size_t CardByteOffsetMultiplier = 8;
+  const size_t CardWordOffsetMultiplier = 1;
 
 public:
-  inline void set_first_start(uint32_t card_index, uint8_t value) {
-    object_starts[card_index] &= ~FirstStartBits;
-    object_starts[card_index] |= (FirstStartBits & (value << FirstStartShift));
-  }
+#ifdef CROSSING_OFFSETS_NO_LONGER_NEEDED
+private:
+  const uint16_t CrossingObjectOverflow = 0x7fff;
 
-  inline void set_last_start(uint32_t card_index, uint8_t value) {
-    object_starts[card_index] &= ~LastStartBits;
-    object_starts[card_index] |= (LastStartBits & (value << LastStartShift));
-  }
-
-  inline void set_has_object_bit(uint32_t card_index) {
-    object_starts[card_index] |= ObjectStartsInCardRegion;
-  }
+public:
 
   // This has side effect of clearing ObjectStartsInCardRegion bit.
-  inline void set_crossing_object_start(uint32_t card_index, uint_16 crossing_offset) {
+  inline void set_crossing_object_start(size_t card_index, uint16_t crossing_offset) {
     object_starts[card_index] = crossing_offset;
   }
-#endif  // IMPLEMENT_THIS_OPTIMIZATION_LATER
+#endif  // CROSSING_OFFSETS_NO_LONGER_NEEDED
 
-public:
 
   // The starting locations of objects contained within old-gen memory
   // are registered as part of the remembered set implementation.  This
@@ -678,102 +720,59 @@ public:
   //     commit-write barriers to assure that access to the
   //     object_starts information is coherent.
 
-  static void register_object(void *address, uint32_t length_in_bytes) {
 
-#ifdef IMPLEMENT_THIS_OPTIMIZATION_LATER
-    uint32_t card_at_start = cardAtAddress(address);
-    // The end of this object is contained within this card
-    uint32_t card_at_end = cardAtAddress(address + length_in_bytes);
+  // Synchronization thoughts from kelvin:
+  //
+  // previously, I had contemplated a more complex implementation of
+  // object registration, which had to touch every card spanned by the
+  // registered object.  But the current implementation is much simpler,
+  // and only has to touch the card that contains the start of the
+  // object.
 
-    uint32_t cluster_at_start = clusterAtCard(card_at_start);
-    uint32_t cluster_at_end = clusterAtCard(card_at_end);
+  // if I were careful to assure that every GCLAB aligns with the start
+  // of a card region and spanned a multiple of the card region size,
+  // then the post-processing of each GCLAB with regards to
+  // register_object() invocations can proceed without synchronization.
 
-    void *card_start_address = addressAtCard(card_at_start);
-    void *cluster_start_address = addressAtCluster(cluster_at_start);
+  // But right now, we're not even using GCLABs  We are doing shared
+  // allocations.  But, we must hold a lock while we are doing these, so
+  // maybe I just piggy back on the lock that we already hold for
+  // managing the free lists and register each object newly allocated by
+  // the shared allocator.
+  void register_object(HeapWord* address);
 
-    uint8_t offset_in_card =
-      (address - card_start_address) / CardOffsetMultiplier;
+  // During the reference updates phase of GC, we walk through each old-gen memory region that was
+  // not part of the collection set and we invalidate all unmarked objects.  As part of this effort,
+  // we coalesce neighboring dead objects in order to make future remembered set scanning more
+  // efficient (since future remembered set scanning of any card region containing consecutive
+  // dead objects can skip over all of them at once by reading only a single dead object header
+  // instead of having to read the header of each of the coalesced dead objects.
+  //
+  // At some future time, we may implement a further optimization: satisfy future allocation requests
+  // by carving new objects out of the range of memory that represents the coalesced dead objects.
+  //
+  // In its current implementation, unregister_object() serves the needs of coalescing objects.
+  //
 
-    if (!getHashObjectBit(card_at_start)) {
-      set_has_object_bit(card_at_start);
-      set_first_start(card_at_start, offset_in_card);
-      set_last_start(card_at_start, offset_in_card);
-    } else {
-      if (offset_in_card < get_first_start(card_at_start))
-        set_first_start(card_at_start, offset_in_card);
-      if (offset_in_card > get_last_start(card_at_start))
-        set_last_start(card_at_last, offset_in_card);
-    }
-
-#ifdef SUPPORT_FOR_GET_CROSSING_OBJECT_START_NO_LONGER_REQUIRED
-
-    // What is the last card within the current cluster?
-    uint32_t next_cluster = cluster_at_start + 1;
-    uint32_t card_at_next_cluster = cardAtCluster(next_cluster);
-    uint32_t last_card_of_this_cluster = card_at_next_cluster - 1;
-    uint32_t last_card_in_cluster = ((card_at_end < last_card_of_this_cluster) ? card_at_end: last_card_of_this_cluster);
-
-    uint_16 crossing_map_within_cluster = address - cluster_at_start;
-
-    for (uint32_t card_to_update = card_at_start + 1; card_to_update < last_card_in_cluster; card_to_update++)
-      set_crossing_object_start(card_to_update, crossing_map_within_cluster);
-
-    // If the last card region of this cluster is completely spanned
-    // by this new object,  set its crossing object start as well.
-    if (cluster_at_end > cluster_at_start) {
-      set_crossing_object_start(card_to_update++, crossing_map_within_cluster);
-
-      // Now, we have to update all spanned cards that reside within the
-      // following clusters.
-      while (card_to_update < card_at_end)
-        set_crossing_object_start(card_to_update++, CrossingObjectOverflow);
-
-      // Cases:
-      //
-      // 1. The region for card_at_end is not spanned at all because the
-      //    end of the new object aligns with the start of the last
-      //    card region.  In this case, we do nothing with the
-      //    card_at_end entry of the object_starts array.
-      //
-      // 2. The region for card_at_end is spanned partially.  In this
-      //    case, we do nothing with the card_at_end entry of the
-      //    object_starts array.
-      //
-      // 3. Do not need to consider the case that the region for
-      //    card_at_end is spanned entirely.  If the last region
-      //    spanned by a newly registered object is spanned in its
-      //    entirety, then card_at_end will identify the card region
-      //    that follows the object rather than the last region spanned
-      //    by the object.
-
-      // Bottom line: no further work to be done in any of these cases.
-    }
-    // Otherwise, the last card region of this cluster is not
-    // completely spanned by this new object.  Leave the object_starts
-    // array entry alone.  Two cases:
-    //
-    //  a) This newly registered object represents a consolidation of
-    //     multiple smaller objects, not including the object that
-    //     follows the consolidation.
-    //  b) This newly registered object is created by splitting a
-    //     previously existing object.  In this case, the other
-    //     objects resulting from the split will be registered
-    //     separately before it is necessary to lookup any information
-    //     within the object_starts array.
-    //
-
-#endif  // SUPPORT_FOR_GET_CROSSING_OBJECT_START_NO_LONGER_REQUIRED
-
-#else   // IMPLEMENT_THIS_OPTIMIZATION_LATER
-
-    // Do nothing for now as we have a brute-force implementation
-    // of findSpanningObject().
-
-#endif  // IMPLEMENT_THIS_OPTIMIZATION_LATER
-  }
+  // Suppose we want to combine several dead objects into a single coalesced object.  How does this
+  // impact our representation of crossing map information?
+  //  1. If the newly coalesced region is contained entirely within a single region, that region's last
+  //     start entry either remains the same or it is changed to the start of the coalesced region.
+  //  2. For the region that holds the start of the coalesced object, it will not impact the first start
+  //     but it may impact the last start.
+  //  3. For following regions spanned entirely by the newly coalesced object, it will change has_object
+  //     to false (and make first-start and last-start "undefined").
+  //  4. For a following region that is spanned patially by the newly coalesced object, it may change
+  //     first-start value, but it will not change the last-start value.
+  //
+  // The range of addresses represented by the arguments to coalesce_objects() must represent a range
+  // of memory that was previously occupied exactly by one or more previously registered objects.  For
+  // convenience, it is legal to invoke coalesce_objects() with arguments that span a single previously
+  // registered object.
+  void coalesce_objects(HeapWord* address, size_t length_in_words);
 
   // The typical use case is going to look something like this:
-  //   for each heapregion that comprises olg-gen memory
+  //   for each heapregion that comprises old-gen memory
   //     for each card number that corresponds to this heap region
   //       scan the objects contained therein if the card is dirty
   // To avoid excessive lookups in a sparse array, the API queries
@@ -784,36 +783,18 @@ public:
   // associated with addr p.
   // Returns true iff an object is known to start within the card memory
   // associated with addr p.
-  bool has_object(uint32_t card_index);
+  bool has_object(size_t card_index);
 
   // If has_object(card_index), this returns the word offset within this card
-  // memory at which the first object begins.
-  uint32_t get_first_start(uint32_t card_index);
+  // memory at which the first object begins.  If !has_object(card_index), the
+  // result is a don't care value.
+  size_t get_first_start(size_t card_index);
 
   // If has_object(card_index), this returns the word offset within this card
-  // memory at which the last object begins.
-  uint32_t get_last_start(uint32_t card_index);
+  // memory at which the last object begins.  If !has_object(card_index), the
+  // result is a don't care value.
+  size_t get_last_start(size_t card_index);
 
-  // If !has_object(card_index), this returns the offset within the
-  // enclosing cluster at which the object spanning the start of this
-  // card memory begins, or returns 0x7fff if the spanning object
-  // starts before the enclosing cluster.
-  uint32_t get_crossing_object_start(uint32_t card_index);
-
-  // Card index is zero-based relative to first spanned card region.
-  uint32_t card_index_for_addr(HeapWord *p);
-  HeapWord *addr_for_card_index(uint32_t card_index);
-  bool is_card_dirty(uint32_t card_index);
-  void mark_card_as_dirty(uint32_t card_index);
-  void mark_card_as_clean(uint32_t card_index);
-  void mark_overreach_card_as_dirty(uint32_t card_index);
-  bool is_card_dirty(HeapWord *p);
-  void mark_card_as_dirty(HeapWord *p);
-  void mark_card_as_clean(HeapWord *p);
-  void mark_overreach_card_as_dirty(void *p);
-  uint32_t cluster_count();
-  void initialize_overreach(uint32_t first_cluster, uint32_t count);
-  void merge_overreach(uint32_t first_cluster, uint32_t count);
 };
 
 // ShenandoahScanRemembered is a concrete class representing the
@@ -845,7 +826,8 @@ class ShenandoahScanRemembered: public CHeapObj<mtGC> {
 
 private:
 
-  ShenandoahCardCluster<RememberedSet> *_scc;
+  RememberedSet* _rs;
+  ShenandoahCardCluster<RememberedSet>* _scc;
 
 public:
   // How to instantiate this object?
@@ -863,8 +845,55 @@ public:
   //     ShenandoahScanRememberd<ShenandoahBufferWithSATBRememberedSet>(rs);
 
 
-  ShenandoahScanRemembered(RememberedSet *rs);
-  ~ShenandoahScanRemembered();
+  ShenandoahScanRemembered(RememberedSet *rs) {
+    _rs = rs;
+    _scc = new ShenandoahCardCluster<RememberedSet>(rs);
+  }
+
+  ~ShenandoahScanRemembered() {
+    delete _scc;
+  }
+
+  // HEY!  We really don't want to share all of these APIs with arbitrary consumers of the ShenandoahScanRemembered abstraction.
+  // But in the spirit of quick and dirty for the time being, I'm going to go ahead and publish everything for right now.  Some
+  // of existing code already depends on having access to these services (because existing code has not been written to honor
+  // full abstraction of remembered set scanning.  In the not too distant future, we want to try to make most, if not all, of
+  // these services private.  Two problems with publicizing:
+  //  1. Allowing arbitrary users to reach beneath the hood allows the users to make assumptions about underlying implementation.
+  //     This will make it more difficult to change underlying implementation at a future time, such as when we eventually experiment
+  //     with SATB-based implementation of remembered set representation.
+  //  2. If we carefully control sharing of certain of these services, we can reduce the overhead of synchronization by assuring
+  //     that all users follow protocols that avoid contention that might require synchronization.  When we publish these APIs, we
+  //     lose control over who and how the data is accessed.  As a result, we are required to insert more defensive measures into
+  //     the implementation, including synchronization locks.
+
+
+  // Card index is zero-based relative to first spanned card region.
+  size_t total_cards();
+  size_t card_index_for_addr(HeapWord *p);
+  HeapWord *addr_for_card_index(size_t card_index);
+  bool is_card_dirty(size_t card_index);
+  void mark_card_as_dirty(size_t card_index);
+  void mark_range_as_dirty(size_t card_index, size_t num_cards);
+  void mark_card_as_clean(size_t card_index);
+  void mark_range_as_clean(size_t card_index, size_t num_cards);
+  void mark_overreach_card_as_dirty(size_t card_index);
+  bool is_card_dirty(HeapWord *p);
+  void mark_card_as_dirty(HeapWord *p);
+  void mark_range_as_dirty(HeapWord *p, size_t num_heap_words);
+  void mark_card_as_clean(HeapWord *p);
+  void mark_range_as_clean(HeapWord *p, size_t num_heap_words);
+  void mark_overreach_card_as_dirty(void *p);
+  size_t cluster_count();
+  void initialize_overreach(size_t first_cluster, size_t count);
+  void merge_overreach(size_t first_cluster, size_t count);
+
+  size_t cluster_for_addr(HeapWord *addr);
+  void register_object(HeapWord *addr);
+  void coalesce_objects(HeapWord *addr, size_t length_in_words);
+
+  // clear the cards to clean, and clear the object_starts info to no objects
+  void mark_range_as_empty(HeapWord *addr, size_t length_in_words);
 
   // process_clusters() scans a portion of the remembered set during a JVM
   // safepoint as part of the root scanning activities that serve to
@@ -898,10 +927,8 @@ public:
   // the template expansions were making it difficult for the link/loader to resolve references to the template-
   // parameterized implementations of this service.
   template <typename ClosureType>
-  void process_clusters(uint worker_id, ShenandoahReferenceProcessor* rp, ShenandoahConcurrentMark* cm, uint32_t first_cluster, uint32_t count,
-                        HeapWord *end_of_range, ClosureType *oops);
+  inline void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops);
 
-  uint32_t cluster_for_addr(HeapWord *addr);
 
   // To Do:
   //  Create subclasses of ShenandoahInitMarkRootsClosure and
@@ -929,4 +956,18 @@ public:
 
 typedef ShenandoahScanRemembered<ShenandoahDirectCardMarkRememberedSet> RememberedScanner;
 
+class ShenandoahScanRememberedTask : public AbstractGangTask {
+ private:
+  ShenandoahObjToScanQueueSet* _queue_set;
+  ShenandoahObjToScanQueueSet* _old_queue_set;
+  ShenandoahReferenceProcessor* _rp;
+  ShenandoahRegionIterator* _regions;
+ public:
+  ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
+                               ShenandoahObjToScanQueueSet* old_queue_set,
+                               ShenandoahReferenceProcessor* rp,
+                               ShenandoahRegionIterator* regions);
+
+  void work(uint worker_id);
+};
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_HPP

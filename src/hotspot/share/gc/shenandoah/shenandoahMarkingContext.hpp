@@ -47,12 +47,8 @@ private:
 
   ShenandoahSharedFlag _is_complete;
 
-  // Marking task queues
-  ShenandoahObjToScanQueueSet* _task_queues;
-
 public:
-  ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions, uint max_queues);
-  ~ShenandoahMarkingContext();
+  ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions);
 
   /*
    * Marks the object. Returns true if the object has not been marked before and has
@@ -66,6 +62,8 @@ public:
   inline bool is_marked(oop) const;
   inline bool is_marked_strong(oop obj) const;
   inline bool is_marked_weak(oop obj) const;
+  inline bool is_marked_or_old(oop obj) const;
+  inline bool is_marked_strong_or_old(oop obj) const;
 
   inline HeapWord* get_next_marked_addr(HeapWord* addr, HeapWord* limit) const;
 
@@ -86,9 +84,6 @@ public:
   bool is_complete();
   void mark_complete();
   void mark_incomplete();
-
-  // Task queues
-  ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP

@@ -27,7 +27,7 @@
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -54,8 +54,8 @@ const double ShenandoahAdaptiveHeuristics::HIGHEST_EXPECTED_AVAILABLE_AT_END = 0
 const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
 const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
-ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics() :
-  ShenandoahHeuristics(),
+ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahGeneration* generation) :
+  ShenandoahHeuristics(generation),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
   _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
   _last_trigger(OTHER) { }
@@ -84,7 +84,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
-  size_t capacity    = ShenandoahHeap::heap()->soft_max_capacity();
+  size_t capacity    = _generation->soft_max_capacity();
   size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
   size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
   size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
@@ -196,11 +196,10 @@ static double saturate(double value, double min, double max) {
 }
 
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  size_t max_capacity = heap->max_capacity();
-  size_t capacity = heap->soft_max_capacity();
-  size_t available = heap->free_set()->available();
-  size_t allocated = heap->bytes_allocated_since_gc_start();
+  size_t max_capacity = _generation->max_capacity();
+  size_t capacity = _generation->soft_max_capacity();
+  size_t available = _generation->available();
+  size_t allocated = _generation->bytes_allocated_since_gc_start();
 
   // Make sure the code below treats available without the soft tail.
   size_t soft_tail = max_capacity - capacity;
@@ -212,18 +211,20 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
   if (available < min_threshold) {
-    log_info(gc)("Trigger: Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
+    log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
+                 _generation->name(),
                  byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     return true;
   }
 
+  // Check if are need to learn a bit about the application
   const size_t max_learn = ShenandoahLearningSteps;
   if (_gc_times_learned < max_learn) {
     size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
     if (available < init_threshold) {
-      log_info(gc)("Trigger: Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
-                   _gc_times_learned + 1, max_learn,
+      log_info(gc)("Trigger (%s): Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
+                   _generation->name(), _gc_times_learned + 1, max_learn,
                    byte_size_in_proper_unit(available),      proper_unit_for_byte_size(available),
                    byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
       return true;
@@ -244,8 +245,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   double avg_cycle_time = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
   if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
-    log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
-                 avg_cycle_time * 1000,
+    log_info(gc)("Trigger (%s): Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
+                 _generation->name(), avg_cycle_time * 1000,
                  byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _margin_of_error_sd);
@@ -262,8 +263,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
   if (is_spiking && avg_cycle_time > allocation_headroom / rate) {
-    log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
-                 avg_cycle_time * 1000,
+    log_info(gc)("Trigger (%s): Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
+                 _generation->name(), avg_cycle_time * 1000,
                  byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _spike_threshold_sd);

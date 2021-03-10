@@ -71,6 +71,9 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
   msg.append("    %3s marked weak\n",                ctx->is_marked_weak(obj) ? "" : "not");
   msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
+  if (heap->mode()->is_generational() && !obj->is_forwarded()) {
+    msg.append("  age: %d\n", obj->age());
+  }
   msg.append("  mark:%s\n", mw_ss.as_string());
   msg.append("  region: %s", ss.as_string());
 }
@@ -363,7 +366,7 @@ void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(Mutex* lock, const
     return;
   }
 
-  ShenandoahMessageBuffer msg("Must ba at a Shenandoah safepoint or held %s lock", lock->name());
+  ShenandoahMessageBuffer msg("Must be at a Shenandoah safepoint or held %s lock", lock->name());
   report_vm_error(file, line, msg.buffer());
 }
 

@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
@@ -57,6 +56,7 @@
 
 class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;
+class ShenandoahGeneration;
 
 class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Concurrent_Adjust   = -1; // recover from penalties
@@ -84,6 +84,8 @@ protected:
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
 
+  ShenandoahGeneration* _generation;
+
   static int compare_by_garbage(RegionData a, RegionData b);
 
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
@@ -92,8 +94,10 @@ protected:
 
   void adjust_penalty(intx step);
 
+  bool in_generation(ShenandoahHeapRegion* region);
+
 public:
-  ShenandoahHeuristics();
+  ShenandoahHeuristics(ShenandoahGeneration* generation);
   virtual ~ShenandoahHeuristics();
 
   void record_metaspace_oom()     { _metaspace_oom.set(); }

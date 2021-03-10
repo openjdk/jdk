@@ -27,12 +27,23 @@
 
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 
-class ShenandoahHeuristics;
+enum GenerationMode {
+  YOUNG,
+  OLD,
+  GLOBAL
+};
+
+enum ShenandoahRegionAffiliation {
+  FREE,
+  YOUNG_GENERATION,
+  OLD_GENERATION
+};
+
+const char *affiliation_name(ShenandoahRegionAffiliation type);
 
 class ShenandoahGenerationalMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;
-  virtual ShenandoahHeuristics* initialize_heuristics() const;
   virtual const char* name()     { return "Generational"; }
   virtual bool is_diagnostic()   { return false; }
   virtual bool is_experimental() { return false; }
