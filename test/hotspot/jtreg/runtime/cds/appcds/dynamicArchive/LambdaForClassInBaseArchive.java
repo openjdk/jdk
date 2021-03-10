@@ -75,7 +75,7 @@ public class LambdaForClassInBaseArchive extends DynamicArchiveTestBase {
               appClass, "lambda")
             .assertNormalExit(out -> {
                     out.shouldHaveExitValue(0)
-                       .shouldContain("Archiving hidden SimpleApp$$Lambda$1");
+                       .shouldMatch("Archiving hidden SimpleApp[$][$]Lambda[$][\\d+]*");
                 });
 
         // Run with both base and dynamic archives. The SimpleApp class

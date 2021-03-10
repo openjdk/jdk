@@ -81,7 +81,6 @@ VirtualSpace MetaspaceShared::_symbol_vs;
 bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
 bool MetaspaceShared::_remapped_readwrite = false;
-address MetaspaceShared::_i2i_entry_code_buffers = NULL;
 void* MetaspaceShared::_shared_metaspace_static_top = NULL;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
@@ -89,7 +88,6 @@ bool MetaspaceShared::_use_optimized_module_handling = true;
 bool MetaspaceShared::_use_full_module_graph = true;
 
 // The CDS archive is divided into the following regions:
-//     mc  - misc code (the method entry trampolines, c++ vtables)
 //     rw  - read-write metadata
 //     ro  - read-only metadata and read-only tables
 //
@@ -100,21 +98,21 @@ bool MetaspaceShared::_use_full_module_graph = true;
 //
 //     bm  - bitmap for relocating the above 7 regions.
 //
-// The mc, rw, and ro regions are linearly allocated, in the order of mc->rw->ro.
-// These regions are aligned with MetaspaceShared::core_region_alignment().
+// The rw, and ro regions are linearly allocated, in the order of rw->ro.
+// These regions are aligned with MetaspaceShared::reserved_space_alignment().
 //
-// These 3 regions are populated in the following steps:
+// These 2 regions are populated in the following steps:
 // [0] All classes are loaded in MetaspaceShared::preload_classes(). All metadata are
 //     temporarily allocated outside of the shared regions.
-// [1] We enter a safepoint and allocate a buffer for the mc/rw/ro regions.
-// [2] C++ vtables and method trampolines are copied into the mc region.
+// [1] We enter a safepoint and allocate a buffer for the rw/ro regions.
+// [2] C++ vtables are copied into the rw region.
 // [3] ArchiveBuilder copies RW metadata into the rw region.
 // [4] ArchiveBuilder copies RO metadata into the ro region.
 // [5] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 //
 // The ca0/ca1 and oa0/oa1 regions are populated inside HeapShared::archive_java_heap_objects.
-// Their layout is independent of the mc/rw/ro regions.
+// Their layout is independent of the rw/ro regions.
 
 static DumpRegion _symbol_region("symbols");
 
@@ -336,18 +334,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(666);
 }
 
-void MetaspaceShared::set_i2i_entry_code_buffers(address b) {
-  assert(DumpSharedSpaces, "must be");
-  assert(_i2i_entry_code_buffers == NULL, "initialize only once");
-  _i2i_entry_code_buffers = b;
-}
-
-address MetaspaceShared::i2i_entry_code_buffers() {
-  assert(DumpSharedSpaces || UseSharedSpaces, "must be");
-  assert(_i2i_entry_code_buffers != NULL, "must already been initialized");
-  return _i2i_entry_code_buffers;
-}
-
 static void rewrite_nofast_bytecode(const methodHandle& method) {
   BytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
@@ -486,11 +472,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.gather_source_objs();
   builder.reserve_buffer();
 
-  builder.init_mc_region();
-  char* cloned_vtables = CppVtables::dumptime_init();
+  char* cloned_vtables = CppVtables::dumptime_init(&builder);
 
-  builder.dump_rw_region();
-  builder.dump_ro_region();
+  builder.dump_rw_metadata();
+  builder.dump_ro_metadata();
   builder.relocate_metaspaceobj_embedded_pointers();
 
   // Dump supported java heap objects
@@ -503,9 +488,6 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   builder.relocate_vm_classes();
 
-  log_info(cds)("Update method trampolines");
-  builder.update_method_trampolines();
-
   log_info(cds)("Make classes shareable");
   builder.make_klasses_shareable();
 
@@ -514,7 +496,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
 
   // The vtable clones contain addresses of the current process.
-  // We don't want to write these addresses into the archive. Same for i2i buffer.
+  // We don't want to write these addresses into the archive.
   CppVtables::zero_archived_vtables();
 
   // relocate the data so that it can be mapped to MetaspaceShared::requested_base_address()
@@ -526,7 +508,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
   mapinfo->set_serialized_data(serialized_data);
   mapinfo->set_cloned_vtables(cloned_vtables);
-  mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers());
   mapinfo->open_for_write();
   builder.write_archive(mapinfo,
                         _closed_archive_heap_regions,
@@ -868,13 +849,6 @@ void MetaspaceShared::set_shared_metaspace_range(void* base, void *static_top, v
 // Return true if given address is in the misc data region
 bool MetaspaceShared::is_in_shared_region(const void* p, int idx) {
   return UseSharedSpaces && FileMapInfo::current_info()->is_in_shared_region(p, idx);
-}
-
-bool MetaspaceShared::is_in_trampoline_frame(address addr) {
-  if (UseSharedSpaces && is_in_shared_region(addr, MetaspaceShared::mc)) {
-    return true;
-  }
-  return false;
 }
 
 bool MetaspaceShared::is_shared_dynamic(void* p) {
@@ -1329,10 +1303,8 @@ void MetaspaceShared::release_reserved_spaces(ReservedSpace& total_space_rs,
   }
 }
 
-static int archive_regions[]  = {MetaspaceShared::mc,
-                                 MetaspaceShared::rw,
-                                 MetaspaceShared::ro};
-static int archive_regions_count  = 3;
+static int archive_regions[]     = { MetaspaceShared::rw, MetaspaceShared::ro };
+static int archive_regions_count = 2;
 
 MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs) {
   assert(UseSharedSpaces, "must be runtime");
@@ -1378,7 +1350,6 @@ void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
 
 void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
-  _i2i_entry_code_buffers = static_mapinfo->i2i_entry_code_buffers();
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables

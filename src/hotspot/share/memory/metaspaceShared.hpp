@@ -50,7 +50,6 @@ class MetaspaceShared : AllStatic {
   static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
-  static address _i2i_entry_code_buffers;
   static void* _shared_metaspace_static_top;
   static intx _relocation_delta;
   static char* _requested_base_address;
@@ -59,12 +58,11 @@ class MetaspaceShared : AllStatic {
  public:
   enum {
     // core archive spaces
-    mc = 0,  // miscellaneous code for method trampolines
-    rw = 1,  // read-write shared space in the heap
-    ro = 2,  // read-only shared space in the heap
-    bm = 3,  // relocation bitmaps (freed after file mapping is finished)
-    num_core_region = 3,
-    num_non_heap_spaces = 4,
+    rw = 0,  // read-write shared space in the heap
+    ro = 1,  // read-only shared space in the heap
+    bm = 2,  // relocation bitmaps (freed after file mapping is finished)
+    num_core_region = 2,       // rw and ro
+    num_non_heap_spaces = 3,   // rw and ro and bm
 
     // mapped java heap regions
     first_closed_archive_heap_region = bm + 1,
@@ -115,8 +113,6 @@ class MetaspaceShared : AllStatic {
   // Return true if given address is in the shared region corresponding to the idx
   static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
 
-  static bool is_in_trampoline_frame(address addr) NOT_CDS_RETURN_(false);
-
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
 
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
@@ -145,10 +141,6 @@ class MetaspaceShared : AllStatic {
 
   // Allocate a block of memory from the temporary "symbol" region.
   static char* symbol_space_alloc(size_t num_bytes);
-
-  static void init_misc_code_space();
-  static address i2i_entry_code_buffers();
-  static void set_i2i_entry_code_buffers(address b);
 
   // This is the base address as specified by -XX:SharedBaseAddress during -Xshare:dump.
   // Both the base/top archives are written using this as their base address.

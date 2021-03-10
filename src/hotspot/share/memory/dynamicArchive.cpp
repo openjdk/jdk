@@ -110,13 +110,10 @@ public:
     gather_source_objs();
     reserve_buffer();
 
-    init_mc_region();
-    verify_estimate_size(_estimated_trampoline_bytes, "Trampolines");
-
     log_info(cds, dynamic)("Copying %d klasses and %d symbols",
                            klasses()->length(), symbols()->length());
-    dump_rw_region();
-    dump_ro_region();
+    dump_rw_metadata();
+    dump_ro_metadata();
     relocate_metaspaceobj_embedded_pointers();
     relocate_roots();
 
@@ -142,7 +139,6 @@ public:
 
     verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
 
-    update_method_trampolines();
     sort_methods();
 
     log_info(cds)("Make classes shareable");
