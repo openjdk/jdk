@@ -93,8 +93,10 @@ void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicTy
       // For targets supporting X86-AVX512 feature, opmask/predicate register is 8 byte(64 bits) wide,
       // where each bit location corresponds to a lane element in vector register. This is different
       // for non-AVX512 targets where mask vector has same shape as that of the vector register its operating on.
+#if defined(COMPILER2)
       assert(Matcher::has_predicated_vectors() , "");
-      arr->bool_at_put(index,  ((*(jlong*)addr) & (1 << index)) != 0);
+#endif
+      arr->bool_at_put(index,  ((*(jlong*)addr) & (0x1L << index)) != 0);
       return;
 #endif
     } else {
