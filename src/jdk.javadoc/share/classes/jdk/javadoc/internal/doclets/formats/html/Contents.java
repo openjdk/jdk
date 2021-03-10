@@ -159,6 +159,7 @@ public class Contents {
     public final Content record;
     public final Content recordComponents;
     public final Content referencedIn;
+    public final Content relatedPackages;
     public final Content returns;
     public final Content seeAlso;
     public final Content serializedForm;
@@ -305,6 +306,7 @@ public class Contents {
         record = getContent("doclet.RecordClass");
         recordComponents = getContent("doclet.RecordComponents");
         referencedIn = getContent("doclet.ReferencedIn");
+        relatedPackages = getContent("doclet.Related_Packages");
         returns = getContent("doclet.Returns");
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");

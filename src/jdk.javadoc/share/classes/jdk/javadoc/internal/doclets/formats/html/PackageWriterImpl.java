@@ -163,6 +163,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     @Override
+    public void addRelatedPackagesSummary(List<PackageElement> relatedPackages, Content summaryContentTree) {
+        TableHeader tableHeader= new TableHeader(contents.packageLabel, contents.descriptionLabel);
+        addPackageSummary(relatedPackages, contents.relatedPackages, tableHeader, summaryContentTree);
+    }
+
+    @Override
     public void addInterfaceSummary(SortedSet<TypeElement> interfaces, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.interfaceLabel, contents.descriptionLabel);
         addClassesSummary(interfaces, contents.interfaceSummary, tableHeader, summaryContentTree);
@@ -228,6 +234,33 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     }
                 } else {
                     addSummaryComment(klass, description);
+                }
+                table.addRow(classLink, description);
+            }
+            summaryContentTree.add(HtmlTree.LI(table));
+        }
+    }
+
+    public void addPackageSummary(List<PackageElement> packages, Content label,
+                                  TableHeader tableHeader, Content summaryContentTree) {
+        if(!packages.isEmpty()) {
+            Table table = new Table(HtmlStyle.summaryTable)
+                    .setCaption(label)
+                    .setHeader(tableHeader)
+                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+
+            for (PackageElement pkg : packages) {
+                Content classLink = getPackageLink(pkg, Text.of(pkg.getQualifiedName()));
+                ContentBuilder description = new ContentBuilder();
+                addPreviewSummary(pkg, description);
+                if (utils.isDeprecated(pkg)) {
+                    description.add(getDeprecatedPhrase(pkg));
+                    List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(pkg);
+                    if (!tags.isEmpty()) {
+                        addSummaryDeprecatedComment(pkg, tags.get(0), description);
+                    }
+                } else {
+                    addSummaryComment(pkg, description);
                 }
                 table.addRow(classLink, description);
             }
