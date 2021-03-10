@@ -104,7 +104,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public final void setStartTime(Instant startTime) {
-        Objects.nonNull(startTime);
+        Objects.requireNonNull(startTime);
         synchronized (streamConfiguration) {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");
