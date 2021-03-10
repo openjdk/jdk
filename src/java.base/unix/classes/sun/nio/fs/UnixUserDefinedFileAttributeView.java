@@ -45,6 +45,9 @@ abstract class UnixUserDefinedFileAttributeView
     // namespace for extended user attributes
     private static final String USER_NAMESPACE = "user.";
 
+    private static final int MIN_LISTXATTR_BUF_SIZE = 1024;
+    private static final int MAX_LISTXATTR_BUF_SIZE = 32 * 1024;
+
     private byte[] nameAsBytes(UnixPath file, String name) throws IOException {
         if (name == null)
             throw new NullPointerException("'name' is null");
@@ -58,7 +61,7 @@ abstract class UnixUserDefinedFileAttributeView
     }
 
     // Parses buffer as array of NULL-terminated C strings.
-    private List<String> asList(long address, int size) {
+    private static List<String> asList(long address, int size) {
         List<String> list = new ArrayList<>();
         int start = 0;
         int pos = 0;
@@ -69,15 +72,28 @@ abstract class UnixUserDefinedFileAttributeView
                 unsafe.copyMemory(null, address+start, value,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
                 String s = Util.toString(value);
-                if (s.startsWith(USER_NAMESPACE)) {
-                    s = s.substring(USER_NAMESPACE.length());
-                    list.add(s);
-                }
+                list.add(s);
                 start = pos + 1;
             }
             pos++;
         }
         return list;
+    }
+
+    // runs flistxattr, increases buffer size up to MAX_LISTXATTR_BUF_SIZE if required
+    private static List<String> list(int fd, int bufSize) throws UnixException {
+        try {
+            try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(bufSize)) {
+                int n = flistxattr(fd, buffer.address(), bufSize);
+                return asList(buffer.address(), n);
+            } // release buffer before recursion
+        } catch (UnixException x) {
+            if (x.errno() == ERANGE && bufSize < MAX_LISTXATTR_BUF_SIZE) {
+                return list(fd, bufSize * 2); // try larger buffer size:
+            } else {
+                throw x;
+            }
+        }
     }
 
     private final UnixPath file;
@@ -104,32 +120,18 @@ abstract class UnixUserDefinedFileAttributeView
         } catch (UnixException x) {
             x.rethrowAsIOException(file);
         }
-        NativeBuffer buffer = null;
         try {
-            int size = 1024;
-            buffer = NativeBuffers.getNativeBuffer(size);
-            for (;;) {
-                try {
-                    int n = flistxattr(fd, buffer.address(), size);
-                    List<String> list = asList(buffer.address(), n);
-                    return Collections.unmodifiableList(list);
-                } catch (UnixException x) {
-                    // allocate larger buffer if required
-                    if (x.errno() == ERANGE && size < 32*1024) {
-                        buffer.release();
-                        size *= 2;
-                        buffer = null;
-                        buffer = NativeBuffers.getNativeBuffer(size);
-                        continue;
-                    }
-                    throw new FileSystemException(file.getPathForExceptionMessage(),
-                        null, "Unable to get list of extended attributes: " +
-                        x.getMessage());
-                }
-            }
+            List<String> rawList = list(fd, MIN_LISTXATTR_BUF_SIZE);
+            List<String> userAttr = rawList.stream()
+                    .filter(s -> s.startsWith(USER_NAMESPACE))
+                    .map(s -> s.substring(USER_NAMESPACE.length()))
+                    .toList();
+            return Collections.unmodifiableList(userAttr);
+        } catch (UnixException x) {
+            throw new FileSystemException(file.getPathForExceptionMessage(),
+                null, "Unable to get list of extended attributes: " +
+                x.getMessage());
         } finally {
-            if (buffer != null)
-                buffer.release();
             close(fd);
         }
     }
@@ -305,57 +307,18 @@ abstract class UnixUserDefinedFileAttributeView
      *          file descriptor for target file
      */
     static void copyExtendedAttributes(int ofd, int nfd) {
-        NativeBuffer buffer = null;
         try {
-
-            // call flistxattr to get list of extended attributes.
-            int size = 1024;
-            buffer = NativeBuffers.getNativeBuffer(size);
-            for (;;) {
+            List<String> rawList = list(ofd, MIN_LISTXATTR_BUF_SIZE);
+            for (String name : rawList) {
                 try {
-                    size = flistxattr(ofd, buffer.address(), size);
-                    break;
-                } catch (UnixException x) {
-                    // allocate larger buffer if required
-                    if (x.errno() == ERANGE && size < 32*1024) {
-                        buffer.release();
-                        size *= 2;
-                        buffer = null;
-                        buffer = NativeBuffers.getNativeBuffer(size);
-                        continue;
-                    }
-
-                    // unable to get list of attributes
-                    return;
+                    copyExtendedAttribute(ofd, Util.toBytes(name), nfd);
+                } catch(UnixException ignore){
+                    // ignore
                 }
             }
-
-            // parse buffer as array of NULL-terminated C strings.
-            long address = buffer.address();
-            int start = 0;
-            int pos = 0;
-            while (pos < size) {
-                if (unsafe.getByte(address + pos) == 0) {
-                    // extract attribute name and copy attribute to target.
-                    // FIXME: We can avoid needless copying by using address+pos
-                    // as the address of the name.
-                    int len = pos - start;
-                    byte[] name = new byte[len];
-                    unsafe.copyMemory(null, address+start, name,
-                        Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
-                    try {
-                        copyExtendedAttribute(ofd, name, nfd);
-                    } catch (UnixException ignore) {
-                        // ignore
-                    }
-                    start = pos + 1;
-                }
-                pos++;
-            }
-
-        } finally {
-            if (buffer != null)
-                buffer.release();
+        } catch (UnixException e) {
+            // unable to get list of attributes
+            return;
         }
     }
 
