@@ -30,7 +30,7 @@ import sun.hotspot.WhiteBox;
 
 /*
  * @test HandshakeTimeoutTest
- * @summary Test handshake timeout for single target.
+ * @summary Test handshake timeout.
  * @requires vm.debug
  * @library /testlibrary /test/lib
  * @build HandshakeTimeoutTest
@@ -51,20 +51,23 @@ public class HandshakeTimeoutTest {
         }
         ProcessBuilder pb =
             ProcessTools.createTestJvm(
-                    "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                    "-Xbootclasspath/a:.",
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+WhiteBoxAPI",
                     "-XX:+HandshakeALot",
                     "-XX:GuaranteedSafepointInterval=10",
                     "-XX:ParallelGCThreads=1",
                     "-XX:ConcGCThreads=1",
                     "-XX:CICompilerCount=2",
                     "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:HandshakeTimeout=1",
+                    "-XX:HandshakeTimeout=50",
                     useJVMCICompilerStr,
                     "HandshakeTimeoutTest$Test");
 
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.reportDiagnosticSummary();
+        // In rare cases the target wakes up and performs the handshake at the same time as we timeout.
+        // Therefore it's not certain the timeout will find any thread.
         output.shouldMatch("has not cleared handshake op|No thread with an unfinished handshake op");
     }
 
@@ -78,9 +81,10 @@ public class HandshakeTimeoutTest {
 
         @Override
         public void run() {
-            int i = 0;
             while (true) {
-                i++;
+                // If there is a safepoint this thread might still beable to perform
+                // it's handshake in time. Therefore we loop util failure.
+                WhiteBox.getWhiteBox().waitUnsafe(100);
             }
         }
     }
