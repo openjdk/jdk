@@ -64,7 +64,7 @@ public abstract class DynamicConstantDesc<T>
     private final String constantName;
     private final ClassDesc constantType;
 
-    private static volatile Map<MethodHandleDesc, Function<DynamicConstantDesc<?>, ConstantDesc>> canonicalMap;
+    private static Map<MethodHandleDesc, Function<DynamicConstantDesc<?>, ConstantDesc>> canonicalMap;
 
     /**
      * Creates a nominal descriptor for a dynamic constant.
@@ -274,7 +274,7 @@ public abstract class DynamicConstantDesc<T>
     }
 
     private ConstantDesc tryCanonicalize() {
-        Map<MethodHandleDesc, Function<DynamicConstantDesc<?>, ConstantDesc>> canonDescs = canonicalMap;
+        var canonDescs = canonicalMap;
         if (canonDescs == null) {
             canonDescs = Map.ofEntries(
                     Map.entry(ConstantDescs.BSM_PRIMITIVE_CLASS, DynamicConstantDesc::canonicalizePrimitiveClass),
@@ -286,9 +286,10 @@ public abstract class DynamicConstantDesc<T>
             synchronized (DynamicConstantDesc.class) {
                 if (canonicalMap == null) {
                     canonicalMap = canonDescs;
+                } else {
+                    canonDescs = canonicalMap;
                 }
             }
-            canonDescs = canonicalMap;
         }
 
         Function<DynamicConstantDesc<?>, ConstantDesc> f = canonDescs.get(bootstrapMethod);
