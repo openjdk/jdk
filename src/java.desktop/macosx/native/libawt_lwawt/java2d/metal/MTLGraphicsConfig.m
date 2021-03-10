@@ -29,18 +29,9 @@
 #import "MTLSurfaceData.h"
 #import "ThreadUtilities.h"
 #import "awt.h"
-#import "MTLUtils.h"
-
-
-#import <stdlib.h>
-#import <string.h>
-#import <ApplicationServices/ApplicationServices.h>
 
 #pragma mark -
 #pragma mark "--- Mac OS X specific methods for Metal pipeline ---"
-
-// Uncomment this line to see Metal specific fprintfs
-//#define METAL_DEBUG
 
 /**
  * Disposes all memory and resources associated with the given
@@ -71,38 +62,16 @@ MTLGC_DestroyMTLGraphicsConfig(jlong pConfigInfo)
 #pragma mark "--- MTLGraphicsConfig methods ---"
 
 
-/**
- * Probe Metal framework availability using system profiler
- */
 JNIEXPORT jboolean JNICALL
 Java_sun_java2d_metal_MTLGraphicsConfig_isMetalFrameworkAvailable
     (JNIEnv *env, jclass mtlgc)
 {
-    FILE *f = popen("/usr/sbin/system_profiler SPDisplaysDataType", "r");
     jboolean metalSupported = JNI_FALSE;
-    while (getc(f) != EOF)
-    {
-        char str[60];
 
-        if (fgets(str, 60, f) != NULL) {
-            // Check for string
-            // "Metal:  Supported, feature set macOS GPUFamily1 v4"
-            if (strstr(str, "Metal") != NULL) {
-                //puts(str);
-                metalSupported = JNI_TRUE;
-                break;
-            }
-        }
+    // It is guranteed that metal supported GPU is available macOS 10.14 onwards
+    if (@available(macOS 10.14, *)) {
+        metalSupported = JNI_TRUE;
     }
-    pclose(f);
-
-#ifdef METAL_DEBUG
-    if (!metalSupported) {
-        fprintf(stderr, "Metal support not present\n");
-    } else {
-        fprintf(stderr, "Metal support is present\n");
-    }
-#endif
 
     J2dRlsTraceLn1(J2D_TRACE_INFO, "MTLGraphicsConfig_isMetalFrameworkAvailable : %d", metalSupported);
 
