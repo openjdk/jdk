@@ -174,9 +174,9 @@ void VM_Version::get_compatible_board(char *buf, int buflen) {
   *buf = '\0';
   int fd = open("/proc/device-tree/compatible", O_RDONLY);
   if (fd != -1) {
-    ssize_t read_sz = read(fd, buf, buflen);
+    ssize_t read_sz = read(fd, buf, buflen - 1);
     buf[buflen - 1] = '\0';
-    if (read_sz != -1) {
+    if (read_sz > 0) {
       // Replace '\0' to ' '
       for (char *ch = buf; ch < buf + read_sz; ch++) {
         if (*ch == '\0') {
