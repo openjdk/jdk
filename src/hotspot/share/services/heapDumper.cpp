@@ -773,11 +773,10 @@ class ParDumpWriter : public AbstractDumpWriter {
       flush();
     }
     _splited_data = false;
-  
     memcpy(buffer() + position(), s, len);
     set_position(position() + len);
   }
-  
+
   virtual void deactivate()             { flush(true); _backend_ptr->deactivate(); }
 
  private:
@@ -1689,7 +1688,7 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
     HeapDumpLargeObjectListElem* entry = new HeapDumpLargeObjectListElem(obj);
     if (entry == NULL) {
       warning("Fail to allocate element for large object list");
-      return; 
+      return;
     }
     assert (entry->_obj != NULL, "sanity check");
     Atomic::inc(&_length1);
@@ -1750,7 +1749,6 @@ class HeapObjectDumper : public ObjectClosure {
   HeapDumpLargeObjectList* _list;
 
   AbstractDumpWriter* writer()                  { return _writer; }
-  
   bool is_large(oop o);
  public:
   HeapObjectDumper(AbstractDumpWriter* writer, HeapDumpLargeObjectList* list = NULL) {
