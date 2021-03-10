@@ -822,8 +822,8 @@ static void add_resolution_error(const constantPoolHandle& this_cp, int which,
   // Also dig out the exception cause, if present.
   Symbol* cause_sym = NULL;
   Symbol* cause_msg = NULL;
-  if (cause != NULL) {
-    cause_sym = cause == NULL ? NULL : cause->klass()->name();
+  if (cause != NULL && cause != pending_exception) {
+    cause_sym = cause->klass()->name();
     cause_msg = java_lang_Throwable::detail_message(cause);
   }
 
