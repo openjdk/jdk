@@ -990,8 +990,9 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
                                                       loader_data,
                                                       cl_info,
                                                       CHECK_NULL);
+  assert(k != NULL, "no klass created");
 
-  if ((cl_info.is_hidden() || is_unsafe_anon_class) && k != NULL) {
+  if (cl_info.is_hidden() || is_unsafe_anon_class) {
     // Hidden classes that are not strong and unsafe anonymous classes must update
     // ClassLoaderData holder so that they can be unloaded when the mirror is no
     // longer referenced.
@@ -1035,7 +1036,8 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
 // JVM_DefineClass).
 // Note: class_name can be NULL. In that case we do not know the name of
 // the class until we have parsed the stream.
-
+// This function either returns an InstanceKlass or throws an exception.  It does
+// not return NULL without a pending exception.
 InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                                      Handle class_loader,
                                                      Handle protection_domain,
@@ -1068,9 +1070,6 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 #endif
 
   if (k == NULL) {
-    if (st->buffer() == NULL) {
-      return NULL;
-    }
     ClassLoadInfo cl_info(protection_domain);
     k = KlassFactory::create_from_stream(st, class_name, loader_data, cl_info, CHECK_NULL);
   }
