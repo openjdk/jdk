@@ -93,7 +93,6 @@
 # include <sys/time.h>
 # include <sys/times.h>
 # include <sys/types.h>
-# include <sys/wait.h>
 # include <time.h>
 # include <unistd.h>
 
@@ -1411,7 +1410,7 @@ void os::print_os_info_brief(outputStream* st) {
 }
 
 void os::print_os_info(outputStream* st) {
-  st->print("OS:");
+  st->print_cr("OS:");
 
   os::Posix::print_uname_info(st);
 
@@ -2610,80 +2609,6 @@ void os::pause() {
   }
 }
 
-// Darwin has no "environ" in a dynamic library.
-#ifdef __APPLE__
-  #include <crt_externs.h>
-  #define environ (*_NSGetEnviron())
-#else
-extern char** environ;
-#endif
-
-// Run the specified command in a separate process. Return its exit value,
-// or -1 on failure (e.g. can't fork a new process).
-// Unlike system(), this function can be called from signal handler. It
-// doesn't block SIGINT et al.
-int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
-  const char * argv[4] = {"sh", "-c", cmd, NULL};
-
-  // fork() in BsdThreads/NPTL is not async-safe. It needs to run
-  // pthread_atfork handlers and reset pthread library. All we need is a
-  // separate process to execve. Make a direct syscall to fork process.
-  // On IA64 there's no fork syscall, we have to use fork() and hope for
-  // the best...
-  pid_t pid = fork();
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    // execve() in BsdThreads will call pthread_kill_other_threads_np()
-    // first to kill every thread on the thread list. Because this list is
-    // not reset by fork() (see notes above), execve() will instead kill
-    // every thread in the parent process. We know this is the only thread
-    // in the new process, so make a system call directly.
-    // IA64 should use normal execve() from glibc to match the glibc fork()
-    // above.
-    execve("/bin/sh", (char* const*)argv, environ);
-
-    // execve failed
-    _exit(-1);
-
-  } else  {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
-    int status;
-
-    // Wait for the child process to exit.  This returns immediately if
-    // the child has already exited. */
-    while (waitpid(pid, &status, 0) < 0) {
-      switch (errno) {
-      case ECHILD: return 0;
-      case EINTR: break;
-      default: return -1;
-      }
-    }
-
-    if (WIFEXITED(status)) {
-      // The child exited normally; get its exit code.
-      return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
-      // The child exited because of a signal
-      // The best value to return is 0x80 + signal number,
-      // because that is what all Unix shells do, and because
-      // it allows callers to distinguish between process exit and
-      // process death by signal.
-      return 0x80 + WTERMSIG(status);
-    } else {
-      // Unknown exit code; pass it through
-      return status;
-    }
-  }
-}
-
 // Get the kern.corefile setting, or otherwise the default path to the core file
 // Returns the length of the string
 int os::get_core_path(char* buffer, size_t bufferSize) {
@@ -2717,12 +2642,6 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 bool os::supports_map_sync() {
   return false;
 }
-
-#ifndef PRODUCT
-void TestReserveMemorySpecial_test() {
-  // No tests available for this platform
-}
-#endif
 
 bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);

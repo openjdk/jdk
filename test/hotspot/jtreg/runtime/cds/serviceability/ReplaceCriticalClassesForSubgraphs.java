@@ -42,12 +42,12 @@ public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
         String tests[] = {
             // Try to replace classes that are used by the archived subgraph graphs. (CDS should be disabled)
             "-early -notshared -subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
-            "-early -notshared -subgraph java/lang/Long java.lang.Long$LongCache",
+            "-early -notshared -subgraph java/lang/Integer java.lang.Integer$IntegerCache",
 
             // CDS should not be disabled -- these critical classes cannot be replaced because
             // JvmtiExport::early_class_hook_env() is false.
             "-subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
-            "-subgraph java/lang/Long java.lang.Long$LongCache",
+            "-subgraph java/lang/Integer java.lang.Integer$IntegerCache",
 
             // Tests for archived full module graph. We cannot use whitebox, which requires appending to bootclasspath.
             // VM will disable full module graph if bootclasspath is appended.

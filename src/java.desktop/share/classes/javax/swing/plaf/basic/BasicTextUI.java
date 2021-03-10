@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1908,6 +1908,14 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             } else if ("componentOrientation" == propertyName) {
                 // Changes in ComponentOrientation require the views to be
                 // rebuilt.
+                Document document = editor.getDocument();
+                final String I18NProperty = "i18n";
+                // if a default direction of right-to-left has been specified,
+                // we want complex layout even if the text is all left to right.
+                if (ComponentOrientation.RIGHT_TO_LEFT == newValue
+                    && ! Boolean.TRUE.equals(document.getProperty(I18NProperty))) {
+                    document.putProperty(I18NProperty, Boolean.TRUE);
+                }
                 modelChanged();
             } else if ("font" == propertyName) {
                 modelChanged();
