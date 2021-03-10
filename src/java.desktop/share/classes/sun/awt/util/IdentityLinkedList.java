@@ -33,7 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import java.util.OrderedCollection;
+import java.util.ReversibleCollection;
 
 /**
  * Linked list implementation of the {@code List} interface.  Implements all
@@ -879,7 +879,7 @@ public class IdentityLinkedList<E>
         return a;
     }
 
-    public OrderedCollection<E> reversed() {
+    public ReversibleCollection<E> reversedCollection() {
         return reversedList();
     }
 }

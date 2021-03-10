@@ -139,7 +139,7 @@ import java.util.function.UnaryOperator;
  * @since 1.2
  */
 
-public interface List<E> extends OrderedCollection<E> {
+public interface List<E> extends ReversibleCollection<E> {
     // Query Operations
 
     /**
@@ -781,7 +781,7 @@ public interface List<E> extends OrderedCollection<E> {
         }
     }
 
-    // ========== OrderedCollection ==========
+    // ========== ReversibleCollection ==========
 
     /**
      * Adds an element at the front of this collection.
@@ -852,7 +852,7 @@ public interface List<E> extends OrderedCollection<E> {
      * may be visible in this reversed view.
      * @return a reversed-order view of this List
      */
-    default OrderedCollection<E> reversed() {
+    default ReversibleCollection<E> reversedCollection() {
         return this.reversedList();
     }
 

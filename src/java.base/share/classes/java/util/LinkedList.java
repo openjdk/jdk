@@ -1177,7 +1177,7 @@ public class LinkedList<E>
         return new LLSpliterator<>(this, -1, 0);
     }
 
-    public OrderedCollection<E> reversed() {
+    public ReversibleCollection<E> reversedCollection() {
         return reversedList();
     }
 

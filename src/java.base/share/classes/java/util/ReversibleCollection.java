@@ -26,15 +26,26 @@
 package java.util;
 
 /**
- * A linear collection that has a well-defined order. Provides methods for
- * convenient access to elements at both ends, as well as a reversed-order view.
+ * A linear collection that has a well-defined order and that is reversible.
+ * Provides methods for a reverse-ordered view as well as convenient access
+ * to elements at both ends.
  *
  * @param <E> the type of elements in this collection
  * @since XXX
  */
-public interface OrderedCollection<E> extends Collection<E> {
+public interface ReversibleCollection<E> extends Collection<E> {
     /**
-     * Adds an element at the front of this collection.
+     * Returns a reversed-order view of this collection. If the implementation
+     * permits modifications to this view, the modifications "write through"
+     * to the underlying collection. Depending upon the implementation's
+     * concurrent modification policy, changes to the underlying collection
+     * may be visible in this reversed view.
+     * @return a reversed-order view of this collection
+     */
+    ReversibleCollection<E> reversedCollection();
+
+    /**
+     * Adds an element at the front of this collection (optional operation).
      * @param e the element to be added
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
@@ -42,7 +53,7 @@ public interface OrderedCollection<E> extends Collection<E> {
     void addFirst(E e);
 
     /**
-     * Adds an element at the end of this collection.
+     * Adds an element at the end of this collection (optional operation).
      * Synonymous with add(E).
      * @param e the element to be added.
      * @throws NullPointerException if the specified element is null and this
@@ -65,26 +76,16 @@ public interface OrderedCollection<E> extends Collection<E> {
     E getLast();
 
     /**
-     * Removes and returns the first element of this collection.
+     * Removes and returns the first element of this collection (optional operation).
      * @return the removed element
      * @throws NoSuchElementException if this collection is empty
      */
     E removeFirst();
 
     /**
-     * Removes and returns the last element of this collection.
+     * Removes and returns the last element of this collection (optional operation).
      * @return the removed element
      * @throws NoSuchElementException if this collection is empty
      */
     E removeLast();
-
-    /**
-     * Returns a reversed-order view of this collection. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying collection. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying collection
-     * may be visible in this reversed view.
-     * @return a reversed-order view
-     */
-    OrderedCollection<E> reversed();
 }

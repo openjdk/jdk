@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,20 +529,20 @@ public class LinkedHashMap<K,V>
      * @return a set view of the keys contained in this map
      */
     public Set<K> keySet() {
-        return keySetOrdered();
-    }
-
-    /**
-     * Returns an {@link OrderedSet} view of the keys contained in this map.
-     * @return a OrderedSet view of the keys contained in this map
-     */
-    public OrderedSet<K> keySetOrdered() {
         Set<K> ks = keySet;
         if (ks == null) {
             ks = new LinkedKeySet(false);
             keySet = ks;
         }
-        return (OrderedSet<K>) ks; // TODO
+        return ks;
+    }
+
+    /**
+     * Returns a {@link ReversibleCollection} view of the keys contained in this map.
+     * @return a ReversibleCollection view of the keys contained in this map
+     */
+    public ReversibleCollection<K> keySetR() {
+        return (ReversibleCollection<K>) keySet(); // TODO
     }
 
     static <K1,V1> Node<K1,V1> nsee(Node<K1,V1> node) {
@@ -582,7 +582,7 @@ public class LinkedHashMap<K,V>
         return a;
     }
 
-    final class LinkedKeySet extends AbstractSet<K> implements OrderedSet<K> {
+    final class LinkedKeySet extends AbstractSet<K> implements ReversibleCollection<K> {
         final boolean reversed;
         LinkedKeySet(boolean reversed)          { this.reversed = reversed; }
         public final int size()                 { return size; }
@@ -622,6 +622,8 @@ public class LinkedHashMap<K,V>
             if (modCount != mc)
                 throw new ConcurrentModificationException();
         }
+        public final void addFirst(K k) { throw new UnsupportedOperationException(); }
+        public final void addLast(K k) { throw new UnsupportedOperationException(); }
         public final K getFirst() { return nsee(reversed ? tail : head).key; }
         public final K getLast() { return nsee(reversed ? head : tail).key; }
         public final K removeFirst() {
@@ -634,11 +636,11 @@ public class LinkedHashMap<K,V>
             removeNode(node.hash, node.key, null, false, false);
             return node.key;
         }
-        public OrderedSet<K> reversed() {
+        public ReversibleCollection<K> reversedCollection() {
             if (reversed) {
-                return LinkedHashMap.this.keySetOrdered();
+                return LinkedHashMap.this.keySetR();
             } else {
-                return new LinkedKeySet(true);
+                return (ReversibleCollection<K>) new LinkedKeySet(true);
             }
         }
     }
@@ -662,23 +664,23 @@ public class LinkedHashMap<K,V>
      * @return a view of the values contained in this map
      */
     public Collection<V> values() {
-        return valuesOrdered();
+        return valuesR();
     }
 
     /**
-     * Returns an {@link OrderedCollection} view of the values contained in this map.
-     * @return an OrderedCollection view of the values contained in this map
+     * Returns an {@link ReversibleCollection} view of the values contained in this map.
+     * @return an ReversibleCollection view of the values contained in this map
      */
-    public OrderedCollection<V> valuesOrdered() {
+    public ReversibleCollection<V> valuesR() {
         Collection<V> vs = values;
         if (vs == null) {
             vs = new LinkedValues(false);
             values = vs;
         }
-        return (OrderedCollection<V>) vs; // TODO
+        return (ReversibleCollection<V>) vs; // TODO
     }
 
-    final class LinkedValues extends AbstractCollection<V> implements OrderedCollection<V> {
+    final class LinkedValues extends AbstractCollection<V> implements ReversibleCollection<V> {
         final boolean reversed;
         LinkedValues(boolean reversed)          { this.reversed = reversed; }
         public final int size()                 { return size; }
@@ -728,9 +730,9 @@ public class LinkedHashMap<K,V>
             removeNode(node.hash, node.key, null, false, false);
             return node.value;
         }
-        public OrderedCollection<V> reversed() {
+        public ReversibleCollection<V> reversedCollection() {
             if (reversed) {
-                return LinkedHashMap.this.valuesOrdered();
+                return LinkedHashMap.this.valuesR();
             } else {
                 return new LinkedValues(true);
             }
@@ -762,20 +764,20 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns an {@link OrderedSet} view of the mappings contained in this map.
-     * @return an OrderedSet view of the mappings contained in this map
+     * Returns an {@link ReversibleCollection} view of the mappings contained in this map.
+     * @return an ReversibleCollection view of the mappings contained in this map
      */
-    public OrderedSet<Map.Entry<K,V>> entrySetOrdered() {
+    public ReversibleCollection<Map.Entry<K,V>> entrySetR() {
         Set<Map.Entry<K,V>> es = entrySet;
         if (es == null) {
             es = new LinkedEntrySet(false);
             entrySet = es;
         }
-        return (OrderedSet<Map.Entry<K,V>>) es;
+        return (ReversibleCollection<Map.Entry<K,V>>) es;
     }
 
     final class LinkedEntrySet extends AbstractSet<Map.Entry<K,V>>
-        implements OrderedSet<Map.Entry<K,V>> {
+        implements ReversibleCollection<Map.Entry<K,V>> {
         final boolean reversed;
         LinkedEntrySet(boolean reversed)        { this.reversed = reversed; }
         public final int size()                 { return size; }
@@ -825,6 +827,8 @@ public class LinkedHashMap<K,V>
             else
                 return e;
         }
+        public final void addFirst(Map.Entry<K,V> e) { throw new UnsupportedOperationException(); }
+        public final void addLast(Map.Entry<K,V> e) { throw new UnsupportedOperationException(); }
         public final Map.Entry<K,V> getFirst() { return nsee(reversed ? tail : head); }
         public final Map.Entry<K,V> getLast() { return nsee(reversed ? head : tail); }
         public final Map.Entry<K,V> removeFirst() {
@@ -837,9 +841,9 @@ public class LinkedHashMap<K,V>
             removeNode(node.hash, node.key, null, false, false);
             return node;
         }
-        public OrderedSet<Map.Entry<K,V>> reversed() {
+        public ReversibleCollection<Map.Entry<K,V>> reversedCollection() {
             if (reversed) {
-                return LinkedHashMap.this.entrySetOrdered();
+                return LinkedHashMap.this.entrySetR();
             } else {
                 return new LinkedEntrySet(true);
             }

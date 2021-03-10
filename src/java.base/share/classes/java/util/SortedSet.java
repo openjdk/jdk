@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ package java.util;
  * @since 1.2
  */
 
-public interface SortedSet<E> extends Set<E>, OrderedSet<E> {
+public interface SortedSet<E> extends Set<E>, ReversibleCollection<E> {
     /**
      * Returns the comparator used to order the elements in this set,
      * or {@code null} if this set uses the {@linkplain Comparable
@@ -262,7 +262,19 @@ public interface SortedSet<E> extends Set<E>, OrderedSet<E> {
         };
     }
 
-    // ========== OrderedSet ==========
+    // ========== ReversibleCollection ==========
+
+    /**
+     * Not supported.
+     * @throws UnsupportedOperationException always
+     */
+    default void addFirst(E e) { throw new UnsupportedOperationException(); }
+
+    /**
+     * Not supported.
+     * @throws UnsupportedOperationException always
+     */
+    default void addLast(E e) { throw new UnsupportedOperationException(); }
 
     /**
      * Gets the element at the front of this collection.
@@ -308,19 +320,7 @@ public interface SortedSet<E> extends Set<E>, OrderedSet<E> {
      * may be visible in this reversed view.
      * @return a reversed-order view
      */
-    default OrderedSet<E> reversed() {
-        return this.reversedSortedSet();
-    }
-
-    /**
-     * Returns a reversed-order view of this collection. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying collection. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying collection
-     * may be visible in this reversed view.
-     * @return a reversed-order view
-     */
-    default SortedSet<E> reversedSortedSet() {
+    default ReversibleCollection<E> reversedCollection() {
         return ReverseOrderSortedSetView.of(this);
     }
 }

@@ -377,5 +377,4 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
     public SortedSet<E> tailSet(E from) {
         return new Subset(from, null);
     }
-
 }

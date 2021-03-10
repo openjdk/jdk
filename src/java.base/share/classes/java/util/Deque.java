@@ -201,7 +201,7 @@ package java.util;
  * @since  1.6
  * @param <E> the type of elements held in this deque
  */
-public interface Deque<E> extends Queue<E>, OrderedCollection<E> {
+public interface Deque<E> extends Queue<E>, ReversibleCollection<E> {
     /**
      * Inserts the specified element at the front of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
@@ -619,9 +619,13 @@ public interface Deque<E> extends Queue<E>, OrderedCollection<E> {
      * to the underlying collection. Depending upon the implementation's
      * concurrent modification policy, changes to the underlying collection
      * may be visible in this reversed view.
+     *
+     * @implSpec
+     * Calls this.reversedDeque and returns its result.
+     *
      * @return a reversed-order view of this Deque
      */
-    default OrderedCollection<E> reversed() {
+    default ReversibleCollection<E> reversedCollection() {
         return this.reversedDeque();
     }
 
