@@ -694,10 +694,13 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
     }
     Klass* klass = parser.load_current_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      if (klass == NULL &&
-          (PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_ClassNotFoundException())) {
-        // print a warning only when the pending exception is class not found
-        log_warning(cds)("Preload Warning: Cannot find %s", parser.current_class_name());
+      if (klass == NULL) {
+        Symbol* exception_klass_name = PENDING_EXCEPTION->klass()->name();
+        if (exception_klass_name == vmSymbols::java_lang_ClassNotFoundException() ||
+            exception_klass_name == vmSymbols::java_lang_UnsupportedClassVersionError()) {
+          // print a warning only when the pending exception is class not found
+          log_warning(cds)("Preload Warning: Cannot find %s", parser.current_class_name());
+        }
       }
       CLEAR_PENDING_EXCEPTION;
     }
