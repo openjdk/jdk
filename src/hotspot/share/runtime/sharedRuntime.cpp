@@ -2643,31 +2643,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* finger
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
-  AdapterHandlerEntry* entry = get_adapter0(method);
-  if (entry != NULL && method->is_shared()) {
-    // See comments around Method::link_method()
-    MutexLocker mu(AdapterHandlerLibrary_lock);
-    if (method->adapter() == NULL) {
-      method->update_adapter_trampoline(entry);
-    }
-    address trampoline = method->from_compiled_entry();
-    if (*(int*)trampoline == 0) {
-      CodeBuffer buffer(trampoline, (int)SharedRuntime::trampoline_size());
-      MacroAssembler _masm(&buffer);
-      SharedRuntime::generate_trampoline(&_masm, entry->get_c2i_entry());
-      assert(*(int*)trampoline != 0, "Instruction(s) for trampoline must not be encoded as zeros.");
-      _masm.flush();
-
-      if (PrintInterpreter) {
-        Disassembler::decode(buffer.insts_begin(), buffer.insts_end());
-      }
-    }
-  }
-
-  return entry;
-}
-
-AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter0(const methodHandle& method) {
   // Use customized signature handler.  Need to lock around updates to
   // the AdapterHandlerTable (it is not safe for concurrent readers
   // and a single writer: this could be fixed if it becomes a

@@ -451,6 +451,16 @@ void CompilerConfig::set_jvmci_specific_flags() {
       if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
         FLAG_SET_DEFAULT(NewSizeThreadIncrease, MAX2(4*K, NewSizeThreadIncrease));
       }
+      if (FLAG_IS_DEFAULT(Tier3DelayOn)) {
+        // This effectively prevents the compile broker scheduling tier 2
+        // (i.e., limited C1 profiling) compilations instead of tier 3
+        // (i.e., full C1 profiling) compilations when the tier 4 queue
+        // backs up (which is quite likely when using a non-AOT compiled JVMCI
+        // compiler). The observation based on jargraal is that the downside
+        // of skipping full profiling is much worse for performance than the
+        // queue backing up.
+        FLAG_SET_DEFAULT(Tier3DelayOn, 100000);
+      }
     } // !UseJVMCINativeLibrary
   } // UseJVMCICompiler
 }
