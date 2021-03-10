@@ -827,10 +827,10 @@ HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionMan
     result += block_offset + live;
   } else {
     guarantee(trueInDebug, "Only in debug build");
-    auto bitmap = PSParallelCompact::mark_bitmap();
-    auto live = region_ptr->partial_obj_size()
-              + bitmap->live_words_in_range(cm, region_align_down(addr), oop(addr));
-    result += live;
+
+    const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
+    const size_t live = bitmap->live_words_in_range(cm, region_align_down(addr), oop(addr));
+    result += region_ptr->partial_obj_size() + live;
   }
 
   DEBUG_ONLY(PSParallelCompact::check_new_location(addr, result));
