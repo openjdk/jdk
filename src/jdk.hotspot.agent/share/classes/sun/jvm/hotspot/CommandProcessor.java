@@ -114,8 +114,9 @@ public class CommandProcessor {
     public abstract static class DebuggerInterface {
         public abstract HotSpotAgent getAgent();
         public abstract boolean isAttached();
-        public abstract void attach(String pid);
+        public abstract void attach(int pid);
         public abstract void attach(String java, String core);
+        public abstract void attach(String debugServerName);
         public abstract void detach();
         public abstract void reattach();
     }
@@ -382,12 +383,19 @@ public class CommandProcessor {
                 postAttach();
             }
         },
-        new Command("attach", "attach pid | exec core", true) {
+        new Command("attach", "attach pid | exec core | remote_server", true) {
             public void doit(Tokens t) {
                 int tokens = t.countTokens();
                 if (tokens == 1) {
                     preAttach();
-                    debugger.attach(t.nextToken());
+                    String arg = t.nextToken();
+                    try {
+                        // Attempt to attach as a PID
+                        debugger.attach(Integer.parseInt(arg));
+                    } catch (NumberFormatException e) {
+                        // Attempt to connect to remote debug server
+                        debugger.attach(arg);
+                    }
                     postAttach();
                 } else if (tokens == 2) {
                     preAttach();

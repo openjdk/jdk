@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_SAFEFETCH_HPP
-#define SHARE_RUNTIME_SAFEFETCH_HPP
+#ifndef SHARE_RUNTIME_SAFEFETCH_INLINE_HPP
+#define SHARE_RUNTIME_SAFEFETCH_INLINE_HPP
 
 #include "runtime/stubRoutines.hpp"
 
@@ -48,4 +48,4 @@ inline bool CanUseSafeFetchN() {
   return StubRoutines::SafeFetchN_stub() ? true : false;
 }
 
-#endif // SHARE_RUNTIME_SAFEFETCH_HPP
+#endif // SHARE_RUNTIME_SAFEFETCH_INLINE_HPP
