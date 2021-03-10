@@ -19,14 +19,14 @@ public class SocketPermissionIm {
         SocketPermission sp = new SocketPermission(hostname, "connect,resolve");
 
         do {
-           	 if (!sp.implies(new SocketPermission(hostname, "connect,resolve"))) {
-          	       System.out.println("Expected true, returned false");
+              if (!sp.implies(new SocketPermission(hostname, "connect,resolve"))) {
+                       System.out.println("Expected true, returned false");
                        break;
                   }
                   addIpToHostsFile(hostname, "1.2.3."+testPass, hostsFileName);
                   Thread.sleep(1000);
                   testPass++;
-           } while (testPass <= 2);
+        } while (testPass <= 2);
     }
 
     private  static void addIpToHostsFile(String host, String addr, String hostsFileName)
