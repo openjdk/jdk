@@ -1982,12 +1982,16 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
 // Add entry to resolution error table to record the error when the first
 // attempt to resolve a reference to a class has failed.
 void SystemDictionary::add_resolution_error(const constantPoolHandle& pool, int which,
-                                            Symbol* error, Symbol* message) {
+                                            Symbol* error, Symbol* message,
+                                            Symbol* cause, Symbol* cause_msg) {
   unsigned int hash = resolution_errors()->compute_hash(pool, which);
   int index = resolution_errors()->hash_to_index(hash);
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
-    resolution_errors()->add_entry(index, hash, pool, which, error, message);
+    ResolutionErrorEntry* entry = resolution_errors()->find_entry(index, hash, pool, which);
+    if (entry == NULL) {
+      resolution_errors()->add_entry(index, hash, pool, which, error, message, cause, cause_msg);
+    }
   }
 }
 
@@ -1998,7 +2002,7 @@ void SystemDictionary::delete_resolution_error(ConstantPool* pool) {
 
 // Lookup resolution error table. Returns error if found, otherwise NULL.
 Symbol* SystemDictionary::find_resolution_error(const constantPoolHandle& pool, int which,
-                                                Symbol** message) {
+                                                Symbol** message, Symbol** cause, Symbol** cause_msg) {
   unsigned int hash = resolution_errors()->compute_hash(pool, which);
   int index = resolution_errors()->hash_to_index(hash);
   {
@@ -2006,6 +2010,8 @@ Symbol* SystemDictionary::find_resolution_error(const constantPoolHandle& pool, 
     ResolutionErrorEntry* entry = resolution_errors()->find_entry(index, hash, pool, which);
     if (entry != NULL) {
       *message = entry->message();
+      *cause = entry->cause();
+      *cause_msg = entry->cause_msg();
       return entry->error();
     } else {
       return NULL;
