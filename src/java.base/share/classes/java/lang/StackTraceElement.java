@@ -406,9 +406,8 @@ public final class StackTraceElement implements java.io.Serializable {
     public boolean equals(Object obj) {
         if (obj==this)
             return true;
-        if (!(obj instanceof StackTraceElement))
+        if (!(obj instanceof StackTraceElement e))
             return false;
-        StackTraceElement e = (StackTraceElement)obj;
         return Objects.equals(classLoaderName, e.classLoaderName) &&
             Objects.equals(moduleName, e.moduleName) &&
             Objects.equals(moduleVersion, e.moduleVersion) &&

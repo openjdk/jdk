@@ -519,8 +519,7 @@ final class ProcessHandleImpl implements ProcessHandle {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ProcessHandleImpl) {
-            ProcessHandleImpl other = (ProcessHandleImpl) obj;
+        if (obj instanceof ProcessHandleImpl other) {
             return (pid == other.pid) &&
                     (startTime == other.startTime
                         || startTime == 0

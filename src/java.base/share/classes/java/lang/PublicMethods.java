@@ -113,8 +113,7 @@ final class PublicMethods {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Key)) return false;
-            Key that = (Key) o;
+            if (!(o instanceof Key that)) return false;
             //noinspection StringEquality (guaranteed interned String(s))
             return name == that.name &&
                    Arrays.equals(ptypes, that.ptypes);
