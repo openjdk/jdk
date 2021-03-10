@@ -605,7 +605,8 @@ final class VarHandles {
     }
 
     private static void noCheckedExceptions(MethodHandle handle) {
-        if (handle instanceof DirectMethodHandle directHandle) {
+        if (handle instanceof DirectMethodHandle) {
+            DirectMethodHandle directHandle = (DirectMethodHandle)handle;
             byte refKind = directHandle.member.getReferenceKind();
             MethodHandleInfo info = new InfoFromMemberName(
                     MethodHandles.Lookup.IMPL_LOOKUP,
@@ -628,15 +629,15 @@ final class VarHandles {
                     throw newIllegalArgumentException("Cannot adapt a var handle with a method handle which throws checked exceptions");
                 }
             }
-        } else if (handle instanceof DelegatingMethodHandle delegatingHandle) {
-            noCheckedExceptions(delegatingHandle.getTarget());
+        } else if (handle instanceof DelegatingMethodHandle) {
+            noCheckedExceptions(((DelegatingMethodHandle)handle).getTarget());
         } else {
             //bound
             BoundMethodHandle boundHandle = (BoundMethodHandle)handle;
             for (int i = 0 ; i < boundHandle.fieldCount() ; i++) {
                 Object arg = boundHandle.arg(i);
-                if (arg instanceof MethodHandle mh) {
-                    noCheckedExceptions(mh);
+                if (arg instanceof MethodHandle){
+                    noCheckedExceptions((MethodHandle) arg);
                 }
             }
         }

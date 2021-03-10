@@ -837,13 +837,13 @@ class MethodType
         if (this == x) {
             return true;
         }
-        if (x instanceof MethodType mt) {
-            return equals(mt);
+        if (x instanceof MethodType) {
+            return equals((MethodType)x);
         }
-        if (x instanceof ConcurrentWeakInternSet.WeakEntry e) {
-            Object o = e.get();
-            if (o instanceof MethodType mt) {
-                return equals(mt);
+        if (x instanceof ConcurrentWeakInternSet.WeakEntry) {
+            Object o = ((ConcurrentWeakInternSet.WeakEntry)x).get();
+            if (o instanceof MethodType) {
+                return equals((MethodType)o);
             }
         }
         return false;

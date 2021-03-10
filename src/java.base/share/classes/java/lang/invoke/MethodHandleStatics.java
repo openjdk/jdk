@@ -177,8 +177,8 @@ class MethodHandleStatics {
     /** Propagate unchecked exceptions and errors, but wrap anything checked and throw that instead. */
     /*non-public*/
     static Error uncaughtException(Throwable ex) {
-        if (ex instanceof Error err)  throw err;
-        if (ex instanceof RuntimeException re)  throw re;
+        if (ex instanceof Error)  throw (Error) ex;
+        if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
         throw new InternalError("uncaught exception", ex);
     }
     private static String message(String message, Object obj) {

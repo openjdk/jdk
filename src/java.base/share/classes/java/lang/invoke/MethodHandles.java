@@ -2262,9 +2262,10 @@ public class MethodHandles {
                     // workaround to read `this_class` using readConst and validate the value
                     int thisClass = reader.readUnsignedShort(reader.header + 2);
                     Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
-                    if (!(constant instanceof Type type)) {
+                    if (!(constant instanceof Type)) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
+                    Type type = ((Type) constant);
                     if (!type.getDescriptor().startsWith("L")) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
@@ -4133,14 +4134,14 @@ return mh1;
             }
             MemberName resolved = resolveOrFail(refKind, member);
             mh = getDirectMethodForConstant(refKind, defc, resolved);
-            if (mh instanceof DirectMethodHandle dmh
+            if (mh instanceof DirectMethodHandle
                     && canBeCached(refKind, defc, resolved)) {
-                MemberName key = dmh.internalMemberName();
+                MemberName key = mh.internalMemberName();
                 if (key != null) {
                     key = key.asNormalOriginal();
                 }
                 if (member.equals(key)) {  // better safe than sorry
-                    LOOKASIDE_TABLE.put(key, dmh);
+                    LOOKASIDE_TABLE.put(key, (DirectMethodHandle) mh);
                 }
             }
             return mh;

@@ -149,8 +149,8 @@ abstract class BoundMethodHandle extends MethodHandle {
     /*non-public*/
     static BoundMethodHandle.SpeciesData speciesDataFor(LambdaForm form) {
         Object c = form.names[0].constraint;
-        if (c instanceof SpeciesData s) {
-            return s;
+        if (c instanceof SpeciesData) {
+            return (SpeciesData) c;
         }
         // if there is no BMH constraint, then use the null constraint
         return SPECIALIZER.topSpecies();

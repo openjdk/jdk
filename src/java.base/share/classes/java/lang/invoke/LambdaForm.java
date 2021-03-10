@@ -568,7 +568,8 @@ class LambdaForm {
             Name n = names[i];
             assert(n.index() == i);
             for (Object arg : n.arguments) {
-                if (arg instanceof Name n2) {
+                if (arg instanceof Name) {
+                    Name n2 = (Name) arg;
                     int i2 = n2.index;
                     assert(0 <= i2 && i2 < names.length) : n.debugString() + ": 0 <= i2 && i2 < names.length: 0 <= " + i2 + " < " + names.length;
                     assert(names[i2] == n2) : Arrays.asList("-1-", i, "-2-", n.debugString(), "-3-", i2, "-4-", n2.debugString(), "-5-", names[i2].debugString(), "-6-", this);
@@ -931,8 +932,8 @@ class LambdaForm {
         Object[] arguments = Arrays.copyOf(name.arguments, name.arguments.length, Object[].class);
         for (int i = 0; i < arguments.length; i++) {
             Object a = arguments[i];
-            if (a instanceof Name n) {
-                int i2 = n.index();
+            if (a instanceof Name) {
+                int i2 = ((Name)a).index();
                 assert(names[i2] == a);
                 a = values[i2];
                 arguments[i] = a;
@@ -1037,7 +1038,7 @@ class LambdaForm {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof LambdaForm lf && equals(lf);
+        return obj instanceof LambdaForm && equals((LambdaForm)obj);
     }
     public boolean equals(LambdaForm that) {
         if (this.result != that.result)  return false;
@@ -1132,7 +1133,8 @@ class LambdaForm {
         public boolean equals(Object other) {
             if (this == other) return true;
             if (other == null) return false;
-            if (!(other instanceof NamedFunction that)) return false;
+            if (!(other instanceof NamedFunction)) return false;
+            NamedFunction that = (NamedFunction) other;
             return this.member != null && this.member.equals(that.member);
         }
 
@@ -1336,7 +1338,7 @@ class LambdaForm {
         }
         Name(MethodType functionType, Object... arguments) {
             this(new NamedFunction(functionType), arguments);
-            assert(arguments[0] instanceof Name n && n.type == L_TYPE);
+            assert(arguments[0] instanceof Name && ((Name)arguments[0]).type == L_TYPE);
         }
         Name(MemberName function, Object... arguments) {
             this(new NamedFunction(function), arguments);
@@ -1405,7 +1407,8 @@ class LambdaForm {
             boolean replaced = false;
         eachArg:
             for (int j = 0; j < arguments.length; j++) {
-                if (arguments[j] instanceof Name n) {
+                if (arguments[j] instanceof Name) {
+                    Name n = (Name) arguments[j];
                     int check = n.index;
                     // harmless check to see if the thing is already in newNames:
                     if (check >= 0 && check < newNames.length && n == newNames[check])
@@ -1432,7 +1435,8 @@ class LambdaForm {
             @SuppressWarnings("LocalVariableHidesMemberVariable")
             Object[] arguments = this.arguments;
             for (int j = 0; j < arguments.length; j++) {
-                if (arguments[j] instanceof Name n) {
+                if (arguments[j] instanceof Name) {
+                    Name n = (Name) arguments[j];
                     if (n.isParam() && n.index < INTERNED_ARGUMENT_LIMIT)
                         arguments[j] = internArgument(n);
                 }
@@ -1490,9 +1494,7 @@ class LambdaForm {
             Object c = constraint;
             if (c == null)
                 return s;
-            if (c instanceof Class clazz) {
-                c = clazz.getSimpleName();
-            }
+            if (c instanceof Class)  c = ((Class<?>)c).getSimpleName();
             return s + "/" + c;
         }
         public String exprString() {
@@ -1520,8 +1522,8 @@ class LambdaForm {
         }
 
         private static boolean typesMatch(BasicType parameterType, Object object) {
-            if (object instanceof Name n) {
-                return n.type == parameterType;
+            if (object instanceof Name) {
+                return ((Name)object).type == parameterType;
             }
             switch (parameterType) {
                 case I_TYPE:  return object instanceof Integer;
@@ -1569,7 +1571,7 @@ class LambdaForm {
         }
         @Override
         public boolean equals(Object x) {
-            return x instanceof Name n && equals(n);
+            return x instanceof Name && equals((Name)x);
         }
         @Override
         public int hashCode() {

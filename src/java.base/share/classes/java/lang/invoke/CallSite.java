@@ -314,8 +314,8 @@ public class CallSite {
         try {
             Object binding = BootstrapMethodInvoker.invoke(
                     CallSite.class, bootstrapMethod, name, type, info, callerClass);
-            if (binding instanceof CallSite cs) {
-                site = cs;
+            if (binding instanceof CallSite) {
+                site = (CallSite) binding;
             } else {
                 // See the "Linking Exceptions" section for the invokedynamic
                 // instruction in JVMS 6.5.

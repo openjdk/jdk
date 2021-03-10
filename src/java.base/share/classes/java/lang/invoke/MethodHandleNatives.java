@@ -497,8 +497,8 @@ class MethodHandleNatives {
         throw new LinkageError("no such method "+defc.getName()+"."+name+type);
     }
     private static MethodType fixMethodType(Class<?> callerClass, Object type) {
-        if (type instanceof MethodType mt)
-            return mt;
+        if (type instanceof MethodType)
+            return (MethodType) type;
         else
             return MethodType.fromDescriptor((String)type, callerClass.getClassLoader());
     }

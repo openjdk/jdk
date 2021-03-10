@@ -281,8 +281,8 @@ public final class SerializedLambda implements Serializable {
             throw ose;
         } catch (PrivilegedActionException e) {
             Exception cause = e.getException();
-            if (cause instanceof RuntimeException re)
-                throw re;
+            if (cause instanceof RuntimeException)
+                throw (RuntimeException) cause;
             else
                 throw new RuntimeException("Exception in SerializedLambda.readResolve", e);
         }
