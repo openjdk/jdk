@@ -26,6 +26,7 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.NetPermission;
 import java.net.ProtocolFamily;
 import java.net.ServerSocket;
@@ -234,7 +235,7 @@ public abstract class ServerSocketChannel
      * <p> The {@code backlog} parameter is the maximum number of pending
      * connections on the socket. Its exact semantics are implementation specific.
      * In particular, an implementation may impose a maximum length or may choose
-     * to ignore the parameter altogther. If the {@code backlog} parameter has
+     * to ignore the parameter altogether. If the {@code backlog} parameter has
      * the value {@code 0}, or a negative value, then an implementation specific
      * default is used.
      *

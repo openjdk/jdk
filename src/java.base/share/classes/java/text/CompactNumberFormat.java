@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1122,8 +1122,7 @@ public final class CompactNumberFormat extends NumberFormat {
         }
         Number divisor = matchedValue;
         if (count > 0) {
-            if (matchedValue instanceof BigInteger) {
-                BigInteger bigValue = (BigInteger) matchedValue;
+            if (matchedValue instanceof BigInteger bigValue) {
                 if (bigValue.compareTo(BigInteger.valueOf((long) Math.pow(RANGE_MULTIPLIER, count - 1))) < 0) {
                     throw new IllegalArgumentException("Invalid Pattern"
                             + " [" + compactPatterns[patternIndex]

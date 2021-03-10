@@ -972,9 +972,8 @@ public final class URL implements java.io.Serializable {
      *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof URL))
+        if (!(obj instanceof URL u2))
             return false;
-        URL u2 = (URL)obj;
 
         return handler.equals(this, u2);
     }
@@ -1481,19 +1480,20 @@ public final class URL implements java.io.Serializable {
     }
 
     /**
-     * @serialField    protocol String
+     * @serialField    protocol String the protocol to use (ftp, http, nntp, ... etc.)
      *
-     * @serialField    host String
+     * @serialField    host String the host name to connect to
      *
-     * @serialField    port int
+     * @serialField    port int the protocol port to connect to
      *
-     * @serialField    authority String
+     * @serialField    authority String the authority part of this URL
      *
-     * @serialField    file String
+     * @serialField    file String the specified file name on that host. {@code file} is
+     *                 defined as {@code path[?query]}
      *
-     * @serialField    ref String
+     * @serialField    ref String the fragment part of this URL
      *
-     * @serialField    hashCode int
+     * @serialField    hashCode int the hashCode of this URL
      *
      */
     @java.io.Serial
@@ -1515,6 +1515,9 @@ public final class URL implements java.io.Serializable {
      * the reader must ensure that calling getURLStreamHandler with
      * the protocol variable returns a valid URLStreamHandler and
      * throw an IOException if it does not.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private synchronized void writeObject(java.io.ObjectOutputStream s)
@@ -1527,6 +1530,10 @@ public final class URL implements java.io.Serializable {
      * readObject is called to restore the state of the URL from the
      * stream.  It reads the components of the URL and finds the local
      * stream handler.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private synchronized void readObject(java.io.ObjectInputStream s)

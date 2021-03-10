@@ -26,6 +26,7 @@
 #include "nativeInst_ppc.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interp_masm.hpp"

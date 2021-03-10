@@ -25,25 +25,23 @@
 #ifndef SHARE_MEMORY_FILEMAP_HPP
 #define SHARE_MEMORY_FILEMAP_HPP
 
-#include "classfile/classLoader.hpp"
 #include "include/cds.h"
 #include "memory/metaspaceShared.hpp"
-#include "memory/metaspace.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/align.hpp"
 
-// Layout of the file:
-//  header: dump of archive instance plus versioning info, datestamp, etc.
-//   [magic # = 0xF00BABA2]
-//  ... padding to align on page-boundary
-//  read-write space
-//  read-only space
-//  misc data (block offset table, string table, symbols, dictionary, etc.)
-//  tag(666)
+// To understand the layout of the CDS archive file:
+//
+// java -Xlog:cds+map=info:file=cds.map:none:filesize=0
+// java -Xlog:cds+map=debug:file=cds.map:none:filesize=0
+// java -Xlog:cds+map=trace:file=cds.map:none:filesize=0
 
 static const int JVM_IDENT_MAX = 256;
 
 class CHeapBitMap;
+class ClassFileStream;
+class ClassLoaderData;
+class ClassPathEntry;
 class outputStream;
 
 class SharedClassPathEntry {
@@ -201,7 +199,6 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   bool    _compressed_class_ptrs;   // save the flag UseCompressedClassPointers
   size_t  _cloned_vtables_offset;   // The address of the first cloned vtable
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
-  size_t  _i2i_entry_code_buffers_offset;
   address _heap_end;                // heap end at dump time.
   bool _base_archive_is_default;    // indicates if the base archive is the system default one
 
@@ -265,7 +262,6 @@ public:
   address narrow_klass_base()              const { return (address)mapped_base_address(); }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
-  address i2i_entry_code_buffers()         const { return (address)from_mapped_offset(_i2i_entry_code_buffers_offset); }
   address heap_end()                       const { return _heap_end; }
   bool base_archive_is_default()           const { return _base_archive_is_default; }
   const char* jvm_ident()                  const { return _jvm_ident; }
@@ -292,9 +288,6 @@ public:
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
-  void set_i2i_entry_code_buffers(address p) {
-    set_as_offset((char*)p, &_i2i_entry_code_buffers_offset);
-  }
 
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
@@ -408,11 +401,6 @@ public:
 
   bool  is_file_position_aligned() const;
   void  align_file_position();
-
-  address i2i_entry_code_buffers()            const { return header()->i2i_entry_code_buffers();  }
-  void set_i2i_entry_code_buffers(address addr) const {
-    header()->set_i2i_entry_code_buffers(addr);
-  }
 
   bool is_static()                            const { return _is_static; }
   bool is_mapped()                            const { return _is_mapped; }

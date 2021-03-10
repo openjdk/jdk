@@ -229,6 +229,8 @@ public class ClassWriter extends BasicWriter {
                 }
             } catch (ConstantPoolException e) {
                 print(report(e));
+            } catch (IllegalStateException e) {
+                report("Invalid value for Signature attribute: " + e.getMessage());
             }
         }
 
@@ -500,7 +502,7 @@ public class ClassWriter extends BasicWriter {
                 methodExceptions = methodType.throwsTypes;
                 if (methodExceptions != null && methodExceptions.isEmpty())
                     methodExceptions = null;
-            } catch (ConstantPoolException e) {
+            } catch (ConstantPoolException | IllegalStateException e) {
                 // report error?
                 // fall back on standard descriptor
                 methodType = null;

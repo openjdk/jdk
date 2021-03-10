@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/perfData.hpp"

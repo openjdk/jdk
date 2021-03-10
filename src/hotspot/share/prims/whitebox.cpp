@@ -23,9 +23,7 @@
  */
 
 #include "precompiled.hpp"
-
 #include <new>
-
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
@@ -47,13 +45,14 @@
 #include "logging/log.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "memory/iterator.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspace/testHelpers.hpp"
-#include "memory/iterator.hpp"
+#include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "memory/oopFactory.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -252,21 +251,6 @@ WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
                 SpaceAlignment,
                 HeapAlignment);
 }
-WB_END
-
-#ifndef PRODUCT
-// Forward declaration
-void TestReservedSpace_test();
-void TestReserveMemorySpecial_test();
-void TestVirtualSpace_test();
-#endif
-
-WB_ENTRY(void, WB_RunMemoryUnitTests(JNIEnv* env, jobject o))
-#ifndef PRODUCT
-  TestReservedSpace_test();
-  TestReserveMemorySpecial_test();
-  TestVirtualSpace_test();
-#endif
 WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
@@ -1703,23 +1687,30 @@ WB_END
 
 WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jboolean is_open,
                                 jstring version, jstring location, jobjectArray packages))
-  Modules::define_module(module, is_open, version, location, packages, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::define_module(h_module, is_open, version, location, packages, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExports(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
-  Modules::add_module_exports_qualified(from_module, package, to_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_to_module (THREAD, JNIHandles::resolve(to_module));
+  Modules::add_module_exports_qualified(h_from_module, package, h_to_module, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAllUnnamed(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports_to_all_unnamed(module, package, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports_to_all_unnamed(h_module, package, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAll(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports(module, package, NULL, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports(h_module, package, Handle(), CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jobject source_module))
-  Modules::add_reads_module(from_module, source_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_source_module (THREAD, JNIHandles::resolve(source_module));
+  Modules::add_reads_module(h_from_module, h_source_module, CHECK);
 WB_END
 
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
@@ -2349,7 +2340,6 @@ static JNINativeMethod methods[] = {
   {CC"getCompressedOopsMaxHeapSize", CC"()J",
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
-  {CC"runMemoryUnitTests", CC"()V",                   (void*)&WB_RunMemoryUnitTests},
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
 #if INCLUDE_CDS

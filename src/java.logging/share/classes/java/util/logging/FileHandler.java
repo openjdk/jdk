@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -511,6 +512,22 @@ public class FileHandler extends StreamHandler {
                         channel = FileChannel.open(lockFilePath,
                                 CREATE_NEW, WRITE);
                         fileCreated = true;
+                    } catch (AccessDeniedException ade) {
+                        // This can be either a temporary, or a more permanent issue.
+                        // The lock file might be still pending deletion from a previous run
+                        // (temporary), or the parent directory might not be accessible,
+                        // not writable, etc..
+                        // If we can write to the current directory, and this is a regular file,
+                        // let's try again.
+                        if (Files.isRegularFile(lockFilePath, LinkOption.NOFOLLOW_LINKS)
+                            && isParentWritable(lockFilePath)) {
+                            // Try again. If it doesn't work, then this will
+                            // eventually ensure that we increment "unique" and
+                            // use another file name.
+                            continue;
+                        } else {
+                            throw ade; // no need to retry
+                        }
                     } catch (FileAlreadyExistsException ix) {
                         // This may be a zombie file left over by a previous
                         // execution. Reuse it - but only if we can actually

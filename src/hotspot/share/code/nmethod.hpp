@@ -314,7 +314,7 @@ class nmethod : public CompiledMethod {
           ImplicitExceptionTable* nul_chk_table,
           AbstractCompiler* compiler,
           int comp_level,
-          const GrowableArrayView<BufferBlob*>& native_invokers
+          const GrowableArrayView<RuntimeStub*>& native_invokers
 #if INCLUDE_JVMCI
           , char* speculations,
           int speculations_len,
@@ -363,7 +363,7 @@ class nmethod : public CompiledMethod {
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
                               int comp_level,
-                              const GrowableArrayView<BufferBlob*>& native_invokers = GrowableArrayView<BufferBlob*>::EMPTY
+                              const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY
 #if INCLUDE_JVMCI
                               , char* speculations = NULL,
                               int speculations_len = 0,
@@ -413,8 +413,8 @@ class nmethod : public CompiledMethod {
   PcDesc* scopes_pcs_end        () const          { return (PcDesc*)(header_begin() + _dependencies_offset) ; }
   address dependencies_begin    () const          { return           header_begin() + _dependencies_offset  ; }
   address dependencies_end      () const          { return           header_begin() + _native_invokers_offset ; }
-  BufferBlob** native_invokers_begin() const         { return (BufferBlob**)(header_begin() + _native_invokers_offset) ; }
-  BufferBlob** native_invokers_end  () const         { return (BufferBlob**)(header_begin() + _handler_table_offset); }
+  RuntimeStub** native_invokers_begin() const     { return (RuntimeStub**)(header_begin() + _native_invokers_offset) ; }
+  RuntimeStub** native_invokers_end  () const     { return (RuntimeStub**)(header_begin() + _handler_table_offset); }
   address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
   address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
