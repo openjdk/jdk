@@ -71,19 +71,11 @@ public class NullClassBytesTest {
         }
 
         byte[] getClassData(String name) {
-            try {
-               String TempName = name;
-               String currentDir = System.getProperty("test.classes");
-               String filename = currentDir + File.separator + TempName + ".class";
-               FileInputStream fis = new FileInputStream(filename);
-               byte[] b = new byte[5000];
-               int cnt = fis.read(b, 0, 5000);
-               byte[] c = new byte[cnt];
-               for (int i=0; i<cnt; i++) c[i] = b[i];
-                 return c;
-            } catch (IOException e) {
-               return null;
-            }
+           try {
+             return SimpleLoader.class.getClassLoader().getResourceAsStream(name + ".class").readAllBytes();
+           } catch (IOException e) {
+              return null;
+           }
         }
     }
 
@@ -92,7 +84,7 @@ public class NullClassBytesTest {
         Class<?> a = Class.forName("A", true, ldr);
         Object obj = a.getConstructor().newInstance();
 
-        // If byte array points to nul, the JVM throws ClassFormatError("Truncated class file")
+        // If byte array points to null, the JVM throws ClassFormatError("Truncated class file")
         try {
             Class<?> b = Class.forName("B", true, ldr);
         } catch (ClassFormatError cfe) {
@@ -102,7 +94,7 @@ public class NullClassBytesTest {
             }
         }
 
-        // If byte array is NULL, ClassLoader native detects this and throws NPE
+        // If byte array is null, ClassLoader native detects this and throws NPE
         // before calling JVM_DefineClassWithSource
         try {
             Class<?> c = Class.forName("C", true, ldr);
