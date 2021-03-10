@@ -266,7 +266,7 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
 
   // Lookup stream for parsing .class file
   ClassFileStream* stream = NULL;
-  ClassPathEntry* e = find_classpath_entry_from_cache(path, CHECK_NULL);
+  ClassPathEntry* e = find_classpath_entry_from_cache(THREAD, path);
   if (e == NULL) {
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
@@ -295,7 +295,7 @@ struct CachedClassPathEntry {
 
 static GrowableArray<CachedClassPathEntry>* cached_path_entries = NULL;
 
-ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(const char* path, TRAPS) {
+ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(Thread* current, const char* path) {
   // This is called from dump time so it's single threaded and there's no need for a lock.
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   if (cached_path_entries == NULL) {
@@ -321,7 +321,9 @@ ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(const char* path
   }
   ClassPathEntry* new_entry = NULL;
 
-  new_entry = create_class_path_entry(path, &st, false, false, false, CHECK_NULL);
+  Thread* THREAD = current; // For exception macros.
+  new_entry = create_class_path_entry(path, &st, /*throw_exception=*/false,
+                                      false, false, CATCH); // will never throw
   if (new_entry == NULL) {
     return NULL;
   }

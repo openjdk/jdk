@@ -544,7 +544,7 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
     // The following function is used to resolve all Strings in the statically
     // dumped classes to archive all the Strings. The archive heap is not supported
     // for the dynamic archive.
-    ik->constants()->resolve_class_constants(CHECK_0);
+    ik->constants()->resolve_class_constants(CHECK_0); // may throw OOM when interning strings.
   }
   return res;
 }

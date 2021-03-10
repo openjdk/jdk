@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,9 @@ public class BootAppendTests {
             appJar, TestCommon.list(ARCHIVE_CLASSES), "-Xbootclasspath/a:" + bootAppendJar);
         TestCommon.checkDump(output1);
 
-        if (!TestCommon.isUnableToMap(output1)) {
+        if (!TestCommon.isUnableToMap(output1) &&
+            !CDSTestUtils.DYNAMIC_DUMP // these messages aren't available in dynamic dump model
+            ) {
             // Make sure all the classes were successfully archived.
             for (String archiveClass : ARCHIVE_CLASSES) {
                 String msg = "Preload Warning: Cannot find " + archiveClass;

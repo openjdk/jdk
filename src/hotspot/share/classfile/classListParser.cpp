@@ -97,7 +97,8 @@ int ClassListParser::parse(TRAPS) {
 
   while (parse_one_line()) {
     if (lambda_form_line()) {
-      // The current line is "@lambda-form-invoker ...". It has been recorded in LambdaFormInvokers.
+      // The current line is "@lambda-form-invoker ...". It has been recorded in LambdaFormInvokers,
+      // and will be processed later.
       continue;
     }
 
@@ -547,7 +548,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
   Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, CHECK);
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    MetaspaceShared::try_link_class(THREAD, ik); // FIXME -- can ik be an old class??
+    MetaspaceShared::try_link_class(THREAD, ik);
     if (!ik->is_linked()) {
       // Verification of ik has failed
       return;
