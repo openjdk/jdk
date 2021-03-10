@@ -42,8 +42,6 @@ public class VerifierTest implements Opcodes {
 
     static final String ERR =
         "ERROR: class VerifierTestC was loaded unexpectedly";
-    static final String MAP_FAIL =
-        "shared archive file was created with less restrictive verification setting";
     static final String MAP_FAIL_VFY_LOCAL =
         "shared archive file's BytecodeVerificationLocal setting";
     static final String VFY_ERR = "java.lang.VerifyError";

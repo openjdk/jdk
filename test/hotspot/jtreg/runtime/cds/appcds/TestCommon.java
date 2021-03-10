@@ -217,10 +217,9 @@ public class TestCommon extends CDSTestUtils {
             opts.archiveName = getCurrentArchiveName();
         }
 
-        captureVerifyOpts(opts.suffix, verifyOpts);
-
         if (DYNAMIC_DUMP) {
             File baseArchive = null;
+            captureVerifyOpts(opts.suffix, verifyOpts);
             int size = verifyOpts.size();
             if (tempBaseArchive == null || !(new File(tempBaseArchive)).isFile() || size > 0) {
                 tempBaseArchive = getNewArchiveName("tempBaseArchive");
