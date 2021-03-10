@@ -49,9 +49,9 @@ G1RegionMarkStatsCache::~G1RegionMarkStatsCache() {
 void G1RegionMarkStatsCache::initialize() {
   _cache_hits = 0;
   _cache_misses = 0;
-  uint size = G1CollectedHeap::heap()->max_regions();
 
-  for (uint i = 0; i < size; i++) {
+  for (uint i = 0; i < _num_cache_entries; i++) {
+    _cache[i].clear();
     _cache[i]._region_idx = i;
   }
 }

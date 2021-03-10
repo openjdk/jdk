@@ -491,6 +491,7 @@ public:
   void reset_no_compaction_region_during_compaction() {
     zero_marked_bytes();
     init_top_at_mark_start();
+    reset_after_full_gc_common();
   }
 
   // Reset the HeapRegion to default values and clear its remembered set.

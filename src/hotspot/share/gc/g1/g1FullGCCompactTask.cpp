@@ -83,7 +83,10 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
 }
 
 void G1FullGCCompactTask::process_skipping_compaction_region(HeapRegion* hr) {
-  collector()->mark_bitmap()->clear_region(hr);
+  if (G1VerifyBitmaps) {
+    collector()->mark_bitmap()->clear_region(hr);
+  }
+
   hr->reset_no_compaction_region_during_compaction();
 }
 

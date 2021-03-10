@@ -211,9 +211,13 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_skipping_compa
   HeapWord* next_addr = current->bottom();
   HeapWord* live_end = current->bottom();
   _skipping_compaction_set->append(current);
+  HeapWord* threshold = current->initialize_threshold();
+  HeapWord* pre_addr;
 
   while (next_addr < limit) {
     Prefetch::write(next_addr, PrefetchScanIntervalInBytes);
+    pre_addr = next_addr;
+
     if (_bitmap->is_marked(next_addr)) {
       oop obj = oop(next_addr);
       size_t obj_size = obj->size();
@@ -233,9 +237,13 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_skipping_compa
     } else {
       next_addr = _bitmap->get_next_marked_addr(next_addr, limit);
       assert(next_addr > live_end, "next_addr must be bigger than live_end");
-      assert(_bitmap->is_marked(next_addr) || next_addr == limit, "next_addr is the limit or is marked");
+      assert(next_addr == limit || _bitmap->is_marked(next_addr), "next_addr is the limit or is marked");
       // fill dummy object to replace dead range
       Universe::heap()->fill_with_dummy_object(live_end, next_addr, true);
+    }
+
+    if (next_addr > threshold) {
+      threshold = current->cross_threshold(pre_addr, next_addr);
     }
   }
   assert(next_addr == limit, "Should stop the scan at the limit.");
