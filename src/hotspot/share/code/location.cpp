@@ -50,6 +50,7 @@ void Location::print_on(outputStream* st) const {
   case float_in_dbl: st->print(",float");      break;
   case dbl:          st->print(",double");     break;
   case addr:         st->print(",address");    break;
+  case vector:       st->print(",vector");     break;
   default:           st->print("Wrong location type %d", type());
   }
 }
