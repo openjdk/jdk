@@ -425,7 +425,7 @@ void reg_mask_init() {
   _INT_NO_RCX_REG_mask = _INT_REG_mask;
   _INT_NO_RCX_REG_mask.Remove(OptoReg::as_OptoReg(rcx->as_VMReg()));
 
-  if(Matcher::has_predicated_vectors()) {
+  if (Matcher::has_predicated_vectors()) {
     const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k0->as_VMReg()));
   }
 }
@@ -1404,7 +1404,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
     } else if (dst_first_rc == rc_kreg) {
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
-      // 64-bit
+        // 64-bit
         if (cbuf) {
           MacroAssembler _masm(cbuf);
           __ kmovql(as_KRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
@@ -1541,7 +1541,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         }
       }
       return 0;
-    } else if(dst_first_rc == rc_int) {
+    } else if (dst_first_rc == rc_int) {
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
@@ -1558,7 +1558,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       }
       Unimplemented();
       return 0;
-    } else if(dst_first_rc == rc_kreg) {
+    } else if (dst_first_rc == rc_kreg) {
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
@@ -1574,7 +1574,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         }
       }
       return 0;
-    } else if(dst_first_rc == rc_float) {
+    } else if (dst_first_rc == rc_float) {
       assert(false, "Illegal spill");
       return 0;
     }

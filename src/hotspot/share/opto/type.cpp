@@ -661,7 +661,7 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= NULL;
 
-#if defined(AMD64) || defined(IA32)
+#if defined(X86)
   TypeVect::VMASK = (TypeVect*)(new TypeVectMask(get_const_basic_type(T_BOOLEAN), MaxVectorSize))->hashcons();
   mreg2type[Op_RegVMask] = TypeVect::VMASK;
 #endif

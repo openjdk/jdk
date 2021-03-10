@@ -919,7 +919,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           }
           break;
         case Op_RegVMask:
-          lrg.set_num_regs(RegMask::SlotsPerRegVmask);
+          lrg.set_num_regs(RegMask::SlotsPerRegVMask);
           lrg.set_reg_pressure(1);
           break;
         case Op_RegF:
