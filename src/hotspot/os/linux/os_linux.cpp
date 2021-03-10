@@ -3636,10 +3636,7 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
 
 static size_t _large_page_size = 0;
 
-size_t os::Linux::find_default_large_page_size() {
-  if (_default_large_page_size != 0) {
-    return _default_large_page_size;
-  }
+static size_t scan_default_large_page_size() {
   size_t large_page_size = 0;
 
   // large_page_size on Linux is used to round up heap size. x86 uses either
@@ -3654,17 +3651,6 @@ size_t os::Linux::find_default_large_page_size() {
   // If we can't determine the value (e.g. /proc is not mounted, or the text
   // format has been changed), we'll use the largest page size supported by
   // the processor.
-
-#ifndef ZERO
-  large_page_size =
-    AARCH64_ONLY(2 * M)
-    AMD64_ONLY(2 * M)
-    ARM32_ONLY(2 * M)
-    IA32_ONLY(4 * M)
-    IA64_ONLY(256 * M)
-    PPC_ONLY(4 * M)
-    S390_ONLY(1 * M);
-#endif // ZERO
 
   FILE *fp = fopen("/proc/meminfo", "r");
   if (fp) {
@@ -3689,17 +3675,13 @@ size_t os::Linux::find_default_large_page_size() {
   return large_page_size;
 }
 
-void os::Linux::register_large_page_sizes() {
+static os::PageSizes scan_multiple_page_support() {
   // Scan /sys/kernel/mm/hugepages
   // to discover the available page sizes
   const char* sys_hugepages = "/sys/kernel/mm/hugepages";
+  static os::PageSizes page_sizes;
 
   DIR *dir = opendir(sys_hugepages);
-  if (dir == NULL) {
-    // If we can't open /sys/kernel/mm/hugepages
-    // Add _default_large_page_size to _page_sizes
-    _page_sizes.add(_default_large_page_size);
-  }
 
   struct dirent *entry;
   size_t page_size;
@@ -3707,47 +3689,12 @@ void os::Linux::register_large_page_sizes() {
     if (entry->d_type == DT_DIR &&
         sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
       // The kernel is using kB, hotspot uses bytes
-      if (page_size * K > (size_t)Linux::page_size()) {
-          // Add each found Large Page Size to _page_sizes
-          _page_sizes.add(page_size * K);
-      }
+      // Add each found Large Page Size to page_sizes
+      page_sizes.add(page_size * K);
     }
   }
   closedir(dir);
-
-  LogTarget(Info, pagesize) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Available page sizes: ");
-    _page_sizes.print_on(&ls);
-  }
-}
-
-size_t os::Linux::setup_large_page_size() {
-  _default_large_page_size = Linux::find_default_large_page_size();
-  _large_page_size = _default_large_page_size;
-  // Scan '/sys/kernel/mm/hugepages' to setup large page sizes
-  // using Linux::register_large_page_sizes()
-  // put an entry in _page_sizes per large_page_sizes entry
-  Linux::register_large_page_sizes();
-
-  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != _default_large_page_size) {
-    // Check that LargePageSizeInBytes was found in
-    // '/sys/kernel/mm/hugepages' and is present in _page_sizes
-    // Return LargePageSizeInBytes in positive case
-    // and return _default_large_page_size in negative case
-    if (os::page_sizes().contains(LargePageSizeInBytes)) {
-      _large_page_size = LargePageSizeInBytes;
-      return _large_page_size;
-    } else {
-      warning("Setting LargePageSizeInBytes=" SIZE_FORMAT " has no effect on this OS. Using the default large page size "
-              SIZE_FORMAT "%s.",
-              LargePageSizeInBytes,
-              byte_size_in_proper_unit(_large_page_size), proper_unit_for_byte_size(_large_page_size));
-
-    }
-  }
-  return _large_page_size;
+  return page_sizes;
 }
 
 size_t os::Linux::default_large_page_size() {
@@ -3803,6 +3750,12 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
 }
 
 void os::large_page_init() {
+  size_t large_page_size = 0;
+  size_t default_large_page_size = scan_default_large_page_size();
+  os::Linux::_default_large_page_size = default_large_page_size;
+
+  // 1) Handle the case where we do not want to use huge pages and hence
+  //    there is no need to scan the OS for related info
   if (!UseLargePages &&
       !UseTransparentHugePages &&
       !UseHugeTLBFS &&
@@ -3820,8 +3773,48 @@ void os::large_page_init() {
     return;
   }
 
-  size_t large_page_size = Linux::setup_large_page_size();
-  UseLargePages          = Linux::setup_large_page_type(large_page_size);
+  // 2) Scan OS info
+  if (default_large_page_size == 0) {
+    // No large pages configured, return.
+    UseTransparentHugePages = false;
+    UseHugeTLBFS = false;
+    UseSHM = false;
+    return;
+  }
+  os::PageSizes all_pages = scan_multiple_page_support();
+
+  LogTarget(Info, pagesize) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("Available page sizes: ");
+    all_pages.print_on(&ls);
+  }
+
+  // 3) Consistency check and post-processing
+
+  // It is unclear if /sys/kernel/mm/hugepages/ and /proc/meminfo could disagree. Manually
+  // re-add the default page size to the list of page sizes to be sure.
+  all_pages.add(default_large_page_size);
+
+  // Handle LargePageSizeInBytes
+  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != default_large_page_size) {
+    if (all_pages.contains(LargePageSizeInBytes)) {
+      large_page_size = LargePageSizeInBytes;
+      log_info(os)("Overriding default large page size using LargePageSizeInBytes");
+    } else {
+      large_page_size = default_large_page_size;
+      warning("Setting LargePageSizeInBytes=" SIZE_FORMAT " has no effect on this OS. Using the default large page size "
+              SIZE_FORMAT "%s.",
+              LargePageSizeInBytes,
+              byte_size_in_proper_unit(large_page_size), proper_unit_for_byte_size(large_page_size));
+
+    }
+  } else {
+      large_page_size = default_large_page_size;
+  }
+
+  // Now determine the type of large pages to use:
+  UseLargePages = os::Linux::setup_large_page_type(large_page_size);
 
   set_coredump_filter(LARGEPAGES_BIT);
 }
