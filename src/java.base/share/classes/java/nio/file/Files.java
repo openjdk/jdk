@@ -2851,7 +2851,7 @@ public final class Files {
      * expression:
      * <blockquote>{@link
      * walkFileTree(Path, Set<FileVisitOption>, int, FileVisitor<? super Path>)
-     * walkFileTree(start, EnumSet.noneOf(FileVisitOption.class), Integer.MAX_VALUE, visitor)
+     * Files.walkFileTree(start, EnumSet.noneOf(FileVisitOption.class), Integer.MAX_VALUE, visitor)
      * }</blockquote>
      * In other words, it does not follow symbolic links, and visits all levels
      * of the file tree.
@@ -2928,7 +2928,7 @@ public final class Files {
      * expression:
      * <blockquote>{@link
      * newBufferedReader(Path, Charset)
-     * newBufferedReader(path, StandardCharsets.UTF_8)
+     * Files.newBufferedReader(path, StandardCharsets.UTF_8)
      * }</blockquote>
      *
      * @param   path
@@ -3010,7 +3010,7 @@ public final class Files {
      * expression:
      * <blockquote>{@link
      * newBufferedWriter(Path, Charset, OpenOption...)
-     * newBufferedWriter(path, StandardCharsets.UTF_8, options)
+     * Files.newBufferedWriter(path, StandardCharsets.UTF_8, options)
      * }</blockquote>
      *
      * @param   path
@@ -3416,7 +3416,7 @@ public final class Files {
      * expression:
      * <blockquote>{@link
      * readAllLines(Path, Charset)
-     * readAllLines(path, StandardCharsets.UTF_8)
+     * Files.readAllLines(path, StandardCharsets.UTF_8)
      * }</blockquote>
      *
      * @param   path
@@ -3575,7 +3575,7 @@ public final class Files {
      * expression:
      * <blockquote>{@link
      * write(Path, Iterable<? extends CharSequence>, Charset, OpenOption...)
-     * write(path, lines, StandardCharsets.UTF_8, options)
+     * Files.write(path, lines, StandardCharsets.UTF_8, options)
      * }</blockquote>
      *
      * @param   path
@@ -3918,7 +3918,7 @@ public final class Files {
      * expression:
      * <blockquote>{@link
      * walk(Path, int, FileVisitOption...)
-     * walk(start, Integer.MAX_VALUE, options)
+     * Files.walk(start, Integer.MAX_VALUE, options)
      * }</blockquote>
      * In other words, it visits all levels of the file tree.
      *
@@ -4180,7 +4180,7 @@ public final class Files {
      * expression:
      * <blockquote>{@link
      * lines(Path, Charset)
-     * lines(path, StandardCharsets.UTF_8)
+     * Files.lines(path, StandardCharsets.UTF_8)
      * }</blockquote>
      *
      * @apiNote
