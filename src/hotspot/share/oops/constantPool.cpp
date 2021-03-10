@@ -494,6 +494,8 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   int name_index = kslot.name_index();
   assert(this_cp->tag_at(name_index).is_symbol(), "sanity");
 
+  // The tag must be JVM_CONSTANT_Class in order to read the correct value from
+  // the unresolved_klasses() array.
   if (this_cp->tag_at(which).is_klass()) {
     Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
     if (klass != NULL) {
@@ -565,7 +567,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
     // Remove klass.
-    Atomic::release_store(adr, (Klass*)NULL);
+    this_cp->resolved_klasses()->at_put(resolved_klass_index, NULL);
     throw_resolution_error(this_cp, which, CHECK_NULL);
   }
 
