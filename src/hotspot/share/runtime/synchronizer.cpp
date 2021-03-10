@@ -1139,7 +1139,7 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
 }
 
 bool ObjectSynchronizer::request_deflate_idle_monitors() {
-  Thread* current = Thread::current();
+  JavaThread* current = JavaThread::current();
   bool ret_code = false;
 
   jlong last_time = last_async_deflation_time_ns();
@@ -1155,11 +1155,9 @@ bool ObjectSynchronizer::request_deflate_idle_monitors() {
       ret_code = true;
       break;
     }
-    if (current->is_Java_thread()) {
+    {
       // JavaThread has to honor the blocking protocol.
-      ThreadBlockInVM tbivm(current->as_Java_thread());
-      os::naked_short_sleep(999);  // sleep for almost 1 second
-    } else {
+      ThreadBlockInVM tbivm(current);
       os::naked_short_sleep(999);  // sleep for almost 1 second
     }
   }
