@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -907,6 +907,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         // Decrypt the all the input data and put it into dst
         doLastBlock(buffer, ct, dst);
         restoreDst(dst);
+        src.position(src.limit());
         // 'processed' from the gctr decryption operation, not ghash
         return processed;
     }

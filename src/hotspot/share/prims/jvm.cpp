@@ -1086,31 +1086,41 @@ JVM_END
 
 JVM_ENTRY(void, JVM_DefineModule(JNIEnv *env, jobject module, jboolean is_open, jstring version,
                                  jstring location, jobjectArray packages))
-  Modules::define_module(module, is_open, version, location, packages, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::define_module(h_module, is_open, version, location, packages, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_SetBootLoaderUnnamedModule(JNIEnv *env, jobject module))
-  Modules::set_bootloader_unnamed_module(module, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::set_bootloader_unnamed_module(h_module, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_AddModuleExports(JNIEnv *env, jobject from_module, jstring package, jobject to_module))
-  Modules::add_module_exports_qualified(from_module, package, to_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_to_module (THREAD, JNIHandles::resolve(to_module));
+  Modules::add_module_exports_qualified(h_from_module, package, h_to_module, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, jstring package))
-  Modules::add_module_exports_to_all_unnamed(from_module, package, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Modules::add_module_exports_to_all_unnamed(h_from_module, package, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_AddModuleExportsToAll(JNIEnv *env, jobject from_module, jstring package))
-  Modules::add_module_exports(from_module, package, NULL, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Modules::add_module_exports(h_from_module, package, Handle(), CHECK);
 JVM_END
 
 JVM_ENTRY (void, JVM_AddReadsModule(JNIEnv *env, jobject from_module, jobject source_module))
-  Modules::add_reads_module(from_module, source_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_source_module (THREAD, JNIHandles::resolve(source_module));
+  Modules::add_reads_module(h_from_module, h_source_module, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_DefineArchivedModules(JNIEnv *env, jobject platform_loader, jobject system_loader))
-  Modules::define_archived_modules(platform_loader, system_loader, CHECK);
+  Handle h_platform_loader (THREAD, JNIHandles::resolve(platform_loader));
+  Handle h_system_loader (THREAD, JNIHandles::resolve(system_loader));
+  Modules::define_archived_modules(h_platform_loader, h_system_loader, CHECK);
 JVM_END
 
 // Reflection support //////////////////////////////////////////////////////////////////////////////
