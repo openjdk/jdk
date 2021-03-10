@@ -303,7 +303,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     /**
      * Initializes component properties, such as font, foreground,
      * background, caret color, selection color, selected text color,
-     * disabled text color, border and margin. Each property is set
+     * disabled text color, border, and margin. Each property is set
      * if its current value is either null or a UIResource.
      *
      * @see #uninstallDefaults
