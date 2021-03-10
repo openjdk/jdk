@@ -68,7 +68,7 @@
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}"/>
 
-    <!-- Put everything in ${build} into the J2DBench.jar file -->
+    <!-- Put everything in ${build} into the RenderPerfTest.jar file -->
     <jar jarfile="${dist}/RenderPerfTest.jar" basedir="${build}">
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
