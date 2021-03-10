@@ -82,7 +82,7 @@ public class HandshakeTimeoutTest {
         @Override
         public void run() {
             while (true) {
-                // If there is a safepoint this thread might still beable to perform
+                // If there is a safepoint this thread might still be able to perform
                 // it's handshake in time. Therefore we loop util failure.
                 WhiteBox.getWhiteBox().waitUnsafe(100);
             }
