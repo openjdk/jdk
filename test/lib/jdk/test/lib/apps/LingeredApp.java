@@ -511,7 +511,7 @@ public class LingeredApp {
         }
     }
 
-    private static void startSteadStateThread(Object steadyStateObj) {
+    private static void startSteadyStateThread(Object steadyStateObj) {
         Thread steadyStateThread = new Thread() {
             public void run() {
                 steadyState(steadyStateObj);
@@ -562,7 +562,7 @@ public class LingeredApp {
         try {
             Object steadyStateObj = new Object();
             synchronized(steadyStateObj) {
-                startSteadStateThread(steadyStateObj);
+                startSteadyStateThread(steadyStateObj);
                 if (forceCrash) {
                     System.loadLibrary("LingeredApp"); // location of native crash() method
                     crash();
