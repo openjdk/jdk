@@ -92,8 +92,13 @@ MTLTransform* tempTransform = nil;
     [self onComplete];
 
     [_pooledTextures release];
+    _pooledTextures = nil;
+
     [_commandBuffer release];
+    _commandBuffer = nil;
+
     [_lock release];
+    _lock = nil;
     [super dealloc];
 }
 
@@ -164,19 +169,54 @@ extern void initSamplers(id<MTLDevice> device);
 - (void)dealloc {
     J2dTraceLn(J2D_TRACE_INFO, "MTLContext.dealloc");
 
-    self.texturePool = nil;
+    // TODO : Check that texturePool is completely released.
+    // texturePool content is released in MTLCommandBufferWrapper.onComplete()
+    //self.texturePool = nil;
     self.vertexBuffer = nil;
     self.commandQueue = nil;
     self.blitCommandQueue = nil;
     self.pipelineStateStorage = nil;
-    [_encoderManager release];
-    [_samplerManager release];
-    [_stencilManager release];
-    [_composite release];
-    [_paint release];
-    [_transform release];
-    [_tempTransform release];
-    [_clip release];
+
+    if (_encoderManager != nil) {
+        [_encoderManager release];
+        _encoderManager = nil;
+    }
+
+    if (_samplerManager != nil) {
+        [_samplerManager release];
+        _samplerManager = nil;
+    }
+
+    if (_stencilManager != nil) {
+        [_stencilManager release];
+        _stencilManager = nil;
+    }
+
+    if (_composite != nil) {
+        [_composite release];
+        _composite = nil;
+    }
+
+    if (_paint != nil) {
+        [_paint release];
+        _paint = nil;
+    }
+
+    if (_transform != nil) {
+        [_transform release];
+        _transform = nil;
+    }
+
+    if (_tempTransform != nil) {
+        [_tempTransform release];
+        _tempTransform = nil;
+    }
+
+    if (_clip != nil) {
+        [_clip release];
+        _clip = nil;
+    }
+
     [super dealloc];
 }
 

@@ -656,14 +656,13 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                     CHECK_PREVIOUS_OP(MTL_OP_OTHER);
                     jlong pConfigInfo = NEXT_LONG(b);
                     CONTINUE_IF_NULL(mtlc);
-                    MTLGC_DestroyMTLGraphicsConfig(pConfigInfo);
 
-                    // the previous method will call glX/wglMakeCurrent(None),
-                    // so we should nullify the current mtlc and dstOps to avoid
-                    // calling glFlush() (or similar) while no context is current
                     if (mtlc != NULL) {
                         [mtlc.encoderManager endEncoder];
                     }
+
+                    MTLGC_DestroyMTLGraphicsConfig(pConfigInfo);
+
                     mtlc = NULL;
                  //   dstOps = NULL;
                     break;

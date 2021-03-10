@@ -194,6 +194,9 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
             [computeEncoder setBuffer:swizzled offset:0 atIndex:1];
 
             NSUInteger threadGroupSize = computePipelineState.maxTotalThreadsPerThreadgroup;
+            if (threadGroupSize == 0) {
+               threadGroupSize = 1;
+            }
             NSUInteger pixelCount = buff.length / srcInfo->pixelStride;
             MTLSize threadsPerGroup = MTLSizeMake(threadGroupSize, 1, 1);
             MTLSize threadGroups = MTLSizeMake((pixelCount + threadGroupSize - 1) / threadGroupSize,
