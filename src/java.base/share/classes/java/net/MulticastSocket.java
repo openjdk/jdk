@@ -39,6 +39,9 @@ import java.nio.channels.MulticastChannel;
  * convenient setter and getter methods for socket options
  * that are commonly used by multicasting applications.
  * <P>
+ * Joining one or more multicast groups makes it possible to
+ * receive multicast datagrams sent to these groups.
+ * <P>
  * A multicast group is specified by a class D IP address
  * and by a standard UDP port number. Class D IP addresses
  * are in the range {@code 224.0.0.0} to {@code 239.255.255.255},
@@ -46,21 +49,21 @@ import java.nio.channels.MulticastChannel;
  * <P>
  * One would join a multicast group by first creating a MulticastSocket
  * with the desired port, then invoking the
- * <CODE>joinGroup(InetAddress groupAddr)</CODE>
- * method:
+ * <CODE>joinGroup</CODE> method, specifying the group address and
+ * the network interface through which multicast datagrams will be
+ * received:
  * <PRE>{@code
  * // join a Multicast group and send the group salutations
  * ...
  * String msg = "Hello";
  * InetAddress mcastaddr = InetAddress.getByName("228.5.6.7");
- * InetSocketAddress group = new InetSocketAddress(mcastaddr, port);
+ * InetSocketAddress group = new InetSocketAddress(mcastaddr, 6789);
  * NetworkInterface netIf = NetworkInterface.getByName("bge0");
  * MulticastSocket s = new MulticastSocket(6789);
  *
- * s.joinGroup(group, netIf);
+ * s.joinGroup(new InetSocketAddress(mcastaddr, 0), netIf);
  * byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
- * DatagramPacket hi = new DatagramPacket(msgBytes, msgBytes.length,
- *                                        group, 6789);
+ * DatagramPacket hi = new DatagramPacket(msgBytes, msgBytes.length, group);
  * s.send(hi);
  * // get their responses!
  * byte[] buf = new byte[1000];
