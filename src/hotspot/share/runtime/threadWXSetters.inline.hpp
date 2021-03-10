@@ -32,12 +32,14 @@ class ThreadWXEnable  {
   Thread* _thread;
   WXMode _old_mode;
 public:
-  ThreadWXEnable(WXMode new_mode, Thread* thread = NULL) :
-    _thread(thread ? thread : Thread::current()),
-    _old_mode(_thread->enable_wx(new_mode))
+  ThreadWXEnable(WXMode new_mode, Thread* thread) :
+    _thread(thread),
+    _old_mode(_thread ? _thread->enable_wx(new_mode) : WXWrite)
   { }
   ~ThreadWXEnable() {
-    _thread->enable_wx(_old_mode);
+    if (_thread) {
+      _thread->enable_wx(_old_mode);
+    }
   }
 };
 #endif // __APPLE__ && AARCH64

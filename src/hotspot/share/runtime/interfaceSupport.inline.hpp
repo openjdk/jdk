@@ -336,7 +336,8 @@ class VMNativeEntryWrapper {
 
 #define VM_LEAF_BASE(result_type, header)                            \
   debug_only(NoHandleMark __hm;)                                     \
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite));                  \
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,                    \
+                                         Thread::current()));        \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
