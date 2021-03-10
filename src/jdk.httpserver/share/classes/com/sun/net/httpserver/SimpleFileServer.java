@@ -195,7 +195,7 @@ public final class SimpleFileServer {
             if (outputLevel.equals(OutputLevel.NONE))
                 return HttpServer.create(addr, 0, "/", handler);
             else
-                return HttpServer.create(addr, 0, "/", handler, new OutputFilter(System.out, outputLevel));
+                return HttpServer.create(addr, 0, "/", handler, OutputFilter.create(System.out, outputLevel));
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
@@ -251,10 +251,12 @@ public final class SimpleFileServer {
      *                                  is given
      * @throws NullPointerException     if any argument is null
      */
+    // TODO: since we're using an output stream, we should clarity the charset
+    //       used or accept a PrintStream
     public static Filter createOutputFilter(OutputStream out,
                                             OutputLevel outputLevel) {
         Objects.requireNonNull(out);
         Objects.requireNonNull(outputLevel);
-        return new OutputFilter(out, outputLevel);
+        return OutputFilter.create(out, outputLevel);
     }
 }

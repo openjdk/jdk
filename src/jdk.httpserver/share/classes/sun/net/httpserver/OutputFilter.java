@@ -23,48 +23,53 @@
 
 package sun.net.httpserver;
 
-import com.sun.net.httpserver.Filter;
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import com.sun.net.httpserver.Filter;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * A Filter that outputs information about an HttpExchange.
- * <p>
- * If the outputLevel is DEFAULT, the format is based on the
+ * A Filter that outputs log messages about an HttpExchange.
+ *
+ * <p> If the outputLevel is DEFAULT, the format is based on the
  * <a href='https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format'>Common Logfile Format</a>.
  * In this case the output includes the following information about an exchange:
- * <p>
- * remotehost rfc931 authuser [date] "request line" status bytes
- * <p>
- * Example:
+ * 
+ * <p> remotehost rfc931 authuser [date] "request line" status bytes
+ *
+ * <p> Example:
  * 127.0.0.1 - - [22/Jun/2000:13:55:36 -0700] "GET /example.txt HTTP/1.1" 200 -
- * <p>
- * The fields rfc931, authuser and bytes are not captured in the implementation
+ *
+ * <p> The fields rfc931, authuser and bytes are not captured in the implementation
  * and are always represented as '-'.
- * <p>
- * If the outputLevel is VERBOSE, the output additionally includes the request
+ *
+ * <p> If the outputLevel is VERBOSE, the output additionally includes the request
  * and response headers of the exchange, and the absolute path of the resource
  * requested.
  */
 public final class OutputFilter extends Filter {
-    private static final DateTimeFormatter formatter =
+    private static final DateTimeFormatter FORMATTER =
 			DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z");
+
     private final PrintStream printStream;
     private final OutputLevel outputLevel;
 
-    public OutputFilter(OutputStream os, OutputLevel outputLevel) {
+    private OutputFilter(OutputStream os, OutputLevel outputLevel) {
+        printStream = new PrintStream(os, false, UTF_8);
+        this.outputLevel = outputLevel;
+    }
+
+    public static OutputFilter create(OutputStream os, OutputLevel outputLevel) {
         if (outputLevel.equals(OutputLevel.NONE)) {
             throw new IllegalArgumentException("Not a valid outputLevel: " + outputLevel);
         }
-        printStream = new PrintStream(os);
-        this.outputLevel = outputLevel;
+        return new OutputFilter(os, outputLevel);
     }
 
     /**
@@ -74,10 +79,11 @@ public final class OutputFilter extends Filter {
         chain.doFilter(e);
         String s = e.getRemoteAddress().getHostString() + " "
 				+ "- - "    // rfc931 and authuser
-                + "[" + OffsetDateTime.now().format(formatter) + "]\" "
+                + "[" + OffsetDateTime.now().format(FORMATTER) + "]\" "
 				+ e.getRequestMethod() + " " + e.getRequestURI() + " " + e.getProtocol() + "\" "
 				+ e.getResponseCode() + " -";    // bytes
         printStream.println(s);
+
         if (outputLevel.equals(OutputLevel.VERBOSE)) {
             printStream.println("Resource requested: " + e.getAttribute("path"));
             logHeaders(">", e.getRequestHeaders());
