@@ -122,11 +122,10 @@ abstract class UnixUserDefinedFileAttributeView
         }
         try {
             List<String> rawList = list(fd, MIN_LISTXATTR_BUF_SIZE);
-            List<String> userAttr = rawList.stream()
+            return rawList.stream()
                     .filter(s -> s.startsWith(USER_NAMESPACE))
                     .map(s -> s.substring(USER_NAMESPACE.length()))
                     .toList();
-            return Collections.unmodifiableList(userAttr);
         } catch (UnixException x) {
             throw new FileSystemException(file.getPathForExceptionMessage(),
                 null, "Unable to get list of extended attributes: " +
