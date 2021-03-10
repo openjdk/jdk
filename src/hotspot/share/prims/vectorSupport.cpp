@@ -96,7 +96,7 @@ void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicTy
 #if defined(COMPILER2)
       assert(Matcher::has_predicated_vectors() , "");
 #endif
-      arr->bool_at_put(index,  ((*(jlong*)addr) & (0x1L << index)) != 0);
+      arr->bool_at_put(index,  ((*(jlong*)addr) & (UCONST64(1) << index)) != UCONST64(0));
       return;
 #endif
     } else {
