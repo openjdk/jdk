@@ -84,16 +84,6 @@ class CharacterData00 extends CharacterData {
         return (props & $$maskType);
     }
 
-    boolean isOtherLowercase(int ch) {
-        int props = getPropertiesEx(ch);
-        return (props & $$maskOtherLowercase) != 0;
-    }
-
-    boolean isOtherUppercase(int ch) {
-        int props = getPropertiesEx(ch);
-        return (props & $$maskOtherUppercase) != 0;
-    }
-
     boolean isOtherAlphabetic(int ch) {
         int props = getPropertiesEx(ch);
         return (props & $$maskOtherAlphabetic) != 0;
@@ -765,13 +755,13 @@ class CharacterData00 extends CharacterData {
     }
 
     boolean isLowerCase(int ch) {
-        int props = getProperties(ch);
-        return (props & $$maskType) == Character.LOWERCASE_LETTER;
+        return (getProperties(ch) & $$maskType) == Character.LOWERCASE_LETTER
+            || (getPropertiesEx(ch) & $$maskOtherLowercase) != 0;
     }
 
     boolean isUpperCase(int ch) {
-        int props = getProperties(ch);
-        return (props & $$maskType) == Character.UPPERCASE_LETTER;
+        return (getProperties(ch) & $$maskType) == Character.UPPERCASE_LETTER
+            || (getPropertiesEx(ch) & $$maskOtherUppercase) != 0;
     }
 
     boolean isWhitespace(int ch) {
