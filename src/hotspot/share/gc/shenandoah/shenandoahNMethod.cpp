@@ -126,7 +126,7 @@ void ShenandoahNMethod::detect_reloc_oops(nmethod* nm, GrowableArray<oop*>& oops
       continue;
     }
 
-    oop value = r->oop_value();
+    oop value = r->raw_oop_value();
     if (value != NULL) {
       oop* addr = r->oop_addr();
       shenandoah_assert_correct(addr, value);

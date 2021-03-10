@@ -325,7 +325,7 @@ class nmethod : public CompiledMethod {
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
 
-  const char* reloc_string_for(u_char* begin, u_char* end);
+  const char* reloc_string_for(address begin, address end);
 
   bool try_transition(int new_state);
 
@@ -520,7 +520,7 @@ class nmethod : public CompiledMethod {
 
   // Support for meta data in scopes and relocs:
   // Note: index 0 is reserved for null.
-  Metadata*     metadata_at(int index) const      { return index == 0 ? NULL: *metadata_addr_at(index); }
+  Metadata*        metadata_at(int index) const { return index == 0 ? NULL: *metadata_addr_at(index); }
   Metadata**  metadata_addr_at(int index) const {  // for GC
     // relocation indexes are biased by 1 (because 0 is reserved)
     assert(index > 0 && index <= metadata_count(), "must be a valid non-zero index");
@@ -663,7 +663,6 @@ public:
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
   void print_relocations()                        PRODUCT_RETURN;
-  void print_pcs() { print_pcs_on(tty); }
   void print_pcs_on(outputStream* st);
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
@@ -674,12 +673,8 @@ public:
   void print_recorded_oops();
   void print_recorded_metadata();
 
-  void print_oops(outputStream* st);     // oops from the underlying CodeBlob.
-  void print_metadata(outputStream* st); // metadata in metadata pool.
-#else
-  // void print_pcs()                             PRODUCT_RETURN;
-  void print_pcs()                                { return; }
-#endif
+  virtual void print_pcs() { print_pcs_on(tty); }
+#endif // SUPPORT_DATA_STRUCTS
 
   void print_calls(outputStream* st)              PRODUCT_RETURN;
   static void print_statistics()                  PRODUCT_RETURN;

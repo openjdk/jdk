@@ -225,9 +225,10 @@ public:
   virtual bool is_osr_method() const = 0;
   virtual int osr_entry_bci() const = 0;
   Method* method() const                          { return _method; }
-  virtual void print_pcs() = 0;
   bool is_native_method() const { return _method != NULL && _method->is_native(); }
   bool is_java_method() const { return _method != NULL && !_method->is_native(); }
+
+  virtual void print_pcs() {}
 
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }

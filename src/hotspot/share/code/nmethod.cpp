@@ -957,33 +957,23 @@ void nmethod::print_nmethod(bool printmethod) {
     }
     tty->print_cr("----------------------------------- Assembly -----------------------------------");
     decode2(tty);
+    tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+  } else {
+    print(); // print the header part only.
+  }
 #if defined(SUPPORT_DATA_STRUCTS)
-    if (AbstractDisassembler::show_structs()) {
-      // Print the oops from the underlying CodeBlob as well.
-      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-      print_oops(tty);
-      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-      print_metadata(tty);
-      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+  if (AbstractDisassembler::show_structs()) {
+    methodHandle mh(Thread::current(), _method);
+    if (printmethod || PrintDebugInfo || CompilerOracle::has_option(mh, CompileCommand::PrintDebugInfo)) {
       print_pcs();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+      print_scopes();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
       if (oop_maps() != NULL) {
         tty->print("oop maps:"); // oop_maps()->print_on(tty) outputs a cr() at the beginning
         oop_maps()->print_on(tty);
         tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
       }
-    }
-#endif
-  } else {
-    print(); // print the header part only.
-  }
-
-#if defined(SUPPORT_DATA_STRUCTS)
-  if (AbstractDisassembler::show_structs()) {
-    methodHandle mh(Thread::current(), _method);
-    if (printmethod || PrintDebugInfo || CompilerOracle::has_option(mh, CompileCommand::PrintDebugInfo)) {
-      print_scopes();
-      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintRelocations || CompilerOracle::has_option(mh, CompileCommand::PrintRelocations)) {
       print_relocations();
@@ -1844,7 +1834,7 @@ void nmethod::oops_do(OopClosure* f, bool allow_dead) {
         assert(1 == (r->oop_is_immediate()) +
                (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
                "oop must be found in exactly one place");
-        if (r->oop_is_immediate() && r->oop_value() != NULL) {
+        if (r->oop_is_immediate() && r->raw_oop_value() != NULL) {
           f->do_oop(r->oop_addr());
         }
       }
@@ -2605,50 +2595,6 @@ void nmethod::print_dependencies() {
 
 #if defined(SUPPORT_DATA_STRUCTS)
 
-// Print the oops from the underlying CodeBlob.
-void nmethod::print_oops(outputStream* st) {
-  ResourceMark m;
-  st->print("Oops:");
-  if (oops_begin() < oops_end()) {
-    st->cr();
-    for (oop* p = oops_begin(); p < oops_end(); p++) {
-      Disassembler::print_location((unsigned char*)p, (unsigned char*)oops_begin(), (unsigned char*)oops_end(), st, true, false);
-      st->print(PTR_FORMAT " ", *((uintptr_t*)p));
-      if (*p == Universe::non_oop_word()) {
-        st->print_cr("NON_OOP");
-        continue;  // skip non-oops
-      }
-      if (*p == NULL) {
-        st->print_cr("NULL-oop");
-        continue;  // skip non-oops
-      }
-      (*p)->print_value_on(st);
-      st->cr();
-    }
-  } else {
-    st->print_cr(" <list empty>");
-  }
-}
-
-// Print metadata pool.
-void nmethod::print_metadata(outputStream* st) {
-  ResourceMark m;
-  st->print("Metadata:");
-  if (metadata_begin() < metadata_end()) {
-    st->cr();
-    for (Metadata** p = metadata_begin(); p < metadata_end(); p++) {
-      Disassembler::print_location((unsigned char*)p, (unsigned char*)metadata_begin(), (unsigned char*)metadata_end(), st, true, false);
-      st->print(PTR_FORMAT " ", *((uintptr_t*)p));
-      if (*p && *p != Universe::non_oop_word()) {
-        (*p)->print_value_on(st);
-      }
-      st->cr();
-    }
-  } else {
-    st->print_cr(" <list empty>");
-  }
-}
-
 #ifndef PRODUCT  // ScopeDesc::print_on() is available only then. Declared as PRODUCT_RETURN
 void nmethod::print_scopes_on(outputStream* st) {
   // Find the first pc desc for all scopes in the code and print it.
@@ -2670,9 +2616,7 @@ void nmethod::print_scopes_on(outputStream* st) {
     st->print_cr(" <list empty>");
   }
 }
-#endif
 
-#ifndef PRODUCT  // RelocIterator does support printing only then.
 void nmethod::print_relocations() {
   ResourceMark m;       // in case methods get printed via the debugger
   tty->print_cr("relocations:");
@@ -2712,13 +2656,16 @@ void nmethod::print_nul_chk_table() {
 
 void nmethod::print_recorded_oops() {
   const int n = oops_count();
-  const int log_n = (n<10) ? 1 : (n<100) ? 2 : (n<1000) ? 3 : (n<10000) ? 4 : 6;
+  const int log_n = (n <= 10) ? 1 : ( n <= 100) ? 2 : (n <= 1000) ? 3 : (n <= 10000) ? 4 : 6;
   tty->print("Recorded oops:");
   if (n > 0) {
     tty->cr();
-    for (int i = 0; i < n; i++) {
+    assert(oop_at(0) == NULL, "required");
+    for (int i = 1; i < n; i++) {
+      tty->print("#%*d: ", log_n, i);
+      Disassembler::print_location((address)oop_addr_at(i), (address)oops_begin(), (address)oops_end(), tty, true, false);
       oop o = oop_at(i);
-      tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(o));
+      tty->print(INTPTR_FORMAT " ", p2i(o));
       if (o == (oop)Universe::non_oop_word()) {
         tty->print("non-oop word");
       } else if (o == NULL) {
@@ -2735,13 +2682,16 @@ void nmethod::print_recorded_oops() {
 
 void nmethod::print_recorded_metadata() {
   const int n = metadata_count();
-  const int log_n = (n<10) ? 1 : (n<100) ? 2 : (n<1000) ? 3 : (n<10000) ? 4 : 6;
+  const int log_n = (n <= 10) ? 1 : (n <= 100) ? 2 : (n <= 1000) ? 3 : (n <= 10000) ? 4 : 6;
   tty->print("Recorded metadata:");
   if (n > 0) {
     tty->cr();
-    for (int i = 0; i < n; i++) {
+    assert(metadata_at(0) == NULL, "required");
+    for (int i = 1; i < n; i++) {
+      tty->print("#%*d: ", log_n, i);
+      Disassembler::print_location((address)metadata_addr_at(i), (address)metadata_begin(), (address)metadata_end(), tty, true, false);
       Metadata* m = metadata_at(i);
-      tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(m));
+      tty->print(INTPTR_FORMAT " ", p2i(m));
       if (m == (Metadata*)Universe::non_oop_word()) {
         tty->print("non-metadata word");
       } else if (m == NULL) {
@@ -2981,7 +2931,7 @@ void nmethod::decode2(outputStream* ost) const {
 
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
 
-const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
+const char* nmethod::reloc_string_for(address begin, address end) {
   RelocIterator iter(this, begin, end);
   bool have_one = false;
   while (iter.next()) {

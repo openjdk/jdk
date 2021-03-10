@@ -540,10 +540,21 @@ oop* oop_Relocation::oop_addr() {
 }
 
 
-oop oop_Relocation::oop_value() {
+oop oop_Relocation::raw_oop_value() {
   oop v = *oop_addr();
   // clean inline caches store a special pseudo-null
-  if (v == Universe::non_oop_word())  v = NULL;
+  if (v == Universe::non_oop_word()) {
+    v = NULL;
+  }
+  return v;
+}
+
+oop oop_Relocation::oop_value() {
+  oop v = NativeAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr());
+  // clean inline caches store a special pseudo-null
+  if (v == Universe::non_oop_word()) {
+    v = NULL;
+  }
   return v;
 }
 
