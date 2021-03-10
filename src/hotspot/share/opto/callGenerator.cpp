@@ -318,16 +318,21 @@ class LateInlineCallGenerator : public DirectCallGenerator {
  private:
   jlong _unique_id;   // unique id for log compilation
   bool _is_pure_call; // a hint that the call doesn't have important side effects to care about
+  bool _is_boxing_call;
 
  protected:
   CallGenerator* _inline_cg;
   virtual bool do_late_inline_check(Compile* C, JVMState* jvms) { return true; }
   virtual CallGenerator* inline_cg() const { return _inline_cg; }
   virtual bool is_pure_call() const { return _is_pure_call; }
+  virtual bool is_boxing_call() const { return _is_boxing_call; }
 
  public:
-  LateInlineCallGenerator(ciMethod* method, CallGenerator* inline_cg, bool is_pure_call = false) :
-    DirectCallGenerator(method, true), _unique_id(0), _is_pure_call(is_pure_call), _inline_cg(inline_cg) {}
+  LateInlineCallGenerator(ciMethod* method, CallGenerator* inline_cg, bool is_pure_call = false, bool is_boxing_call = false) :
+    DirectCallGenerator(method, true), _unique_id(0),
+    _is_pure_call(is_pure_call),
+    _is_boxing_call(is_boxing_call),
+    _inline_cg(inline_cg) {}
 
   virtual bool is_late_inline() const { return true; }
 
@@ -448,17 +453,22 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
   CallGenerator* _inline_cg;
   ciMethod*      _callee;
   bool           _is_pure_call;
+  bool           _is_boxing_call;
   float          _prof_factor;
 
  protected:
   virtual bool do_late_inline_check(Compile* C, JVMState* jvms);
   virtual CallGenerator* inline_cg() const { return _inline_cg; }
   virtual bool is_pure_call() const { return _is_pure_call; }
+  virtual bool is_boxing_call() const { return _is_boxing_call; }
 
  public:
   LateInlineVirtualCallGenerator(ciMethod* method, int vtable_index, float prof_factor)
   : VirtualCallGenerator(method, vtable_index, true /*separate_io_projs*/),
-    _unique_id(0), _inline_cg(NULL), _callee(NULL), _is_pure_call(false), _prof_factor(prof_factor) {}
+    _unique_id(0), _inline_cg(NULL), _callee(NULL),
+    _is_pure_call(false),
+    _is_boxing_call(false),
+    _prof_factor(prof_factor) {}
 
   virtual bool is_late_inline() const { return true; }
 
@@ -556,54 +566,55 @@ void LateInlineVirtualCallGenerator::do_late_inline() {
 
 // replace box node to scalar node only in case it is directly referenced by debug info
 static void replace_box_to_scalar(CallNode* call, Node* resproj) {
-  if (resproj != nullptr && call->is_CallStaticJava() &&
-      call->as_CallStaticJava()->is_boxing_method()) {
-    Unique_Node_List safepoints;
-    for (DUIterator_Fast imax, i = resproj->fast_outs(imax); i < imax; i++) {
-      Node* m = resproj->fast_out(i);
-      if (m->is_SafePoint()
-          && (!m->is_Call() || !m->as_Call()->has_non_debug_use(resproj))) {
-        safepoints.push(m);
-      } else {
-        return;
-      }
+  assert(call->as_CallStaticJava()->is_boxing_method(), "sanity");
+
+  Unique_Node_List safepoints;
+  for (DUIterator_Fast imax, i = resproj->fast_outs(imax); i < imax; i++) {
+    Node* m = resproj->fast_out(i);
+    if (m->is_SafePoint()
+        && (!m->is_Call() || !m->as_Call()->has_non_debug_use(resproj))) {
+      safepoints.push(m);
+    } else {
+      return;
     }
+  }
 
 #ifndef PRODUCT
-    if (PrintEliminateAllocations && safepoints.size() > 0) {
-      tty->print("++++ Eliminated: %d ", call->_idx);
-      call->as_CallStaticJava()->method()->print_short_name(tty);
-      tty->cr();
-    }
+  if (PrintEliminateAllocations && safepoints.size() > 0) {
+    tty->print("++++ Eliminated: %d ", call->_idx);
+    call->as_CallStaticJava()->method()->print_short_name(tty);
+    tty->cr();
+  }
 #endif
 
-    GraphKit kit(call->jvms());
-    PhaseGVN& gvn = kit.gvn();
-    // delay box in runtime, treat box as a scalarized object
-    while (safepoints.size() > 0) {
-      ProjNode* res = resproj->as_Proj();
-      Node* sfpt = safepoints.pop();
+  GraphKit kit(call->jvms());
+  PhaseGVN& gvn = kit.gvn();
+  // delay box in runtime, treat box as a scalarized object
+  while (safepoints.size() > 0) {
+    ProjNode* res = resproj->as_Proj();
+    Node* sfpt = safepoints.pop();
 
-      ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
-      int n_fields = klass->nof_nonstatic_fields();
-      assert(n_fields == 1, "the klass must be an auto-boxing klass");
+    ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
+    int n_fields = klass->nof_nonstatic_fields();
+    assert(n_fields == 1, "the klass must be an auto-boxing klass");
 
-      uint first_ind = sfpt->req() - sfpt->jvms()->scloff();
-      Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
+    uint first_ind = sfpt->req() - sfpt->jvms()->scloff();
+    Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
 #ifdef ASSERT
                                                   call->isa_Allocate(),
 #endif // ASSERT
-                                                  first_ind, n_fields, true);
-      sobj->init_req(0, kit.root());
-      sfpt->add_req(call->in(TypeFunc::Parms));
-      sobj = gvn.transform(sobj);
-      JVMState* jvms = sfpt->jvms();
-      jvms->set_endoff(sfpt->req());
-      int start = jvms->debug_start();
-      int end   = jvms->debug_end();
-      sfpt->replace_edges_in_range(res, sobj, start, end);
-    }
+                                                first_ind, n_fields, true);
+    sobj->init_req(0, kit.root());
+    sfpt->add_req(call->in(TypeFunc::Parms));
+    sobj = gvn.transform(sobj);
+    JVMState* jvms = sfpt->jvms();
+    jvms->set_endoff(sfpt->req());
+    int start = jvms->debug_start();
+    int end   = jvms->debug_end();
+    sfpt->replace_edges_in_range(res, sobj, start, end);
   }
+
+  assert(resproj->outcnt() == 0, "the box must have no use after replace");
 }
 
 void CallGenerator::do_late_inline_helper() {
@@ -655,14 +666,19 @@ void CallGenerator::do_late_inline_helper() {
     C->remove_macro_node(call);
   }
 
-  if (C->eliminate_boxing()) {
-    replace_box_to_scalar(call, callprojs.resproj);
-  }
+  bool call_can_eliminate = false;
 
-  bool result_not_used = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
-  if (is_pure_call() && result_not_used) {
+  if (is_pure_call()) {
+    if (is_boxing_call() && callprojs.resproj != nullptr) {
+        replace_box_to_scalar(call, callprojs.resproj);
+    }
+
     // The call is marked as pure (no important side effects), but result isn't used.
     // It's safe to remove the call.
+    call_can_eliminate = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
+  }
+
+  if (call_can_eliminate) {
     GraphKit kit(call->jvms());
     kit.replace_call(call, C->top(), true);
   } else {
@@ -784,7 +800,7 @@ class LateInlineBoxingCallGenerator : public LateInlineCallGenerator {
 
  public:
   LateInlineBoxingCallGenerator(ciMethod* method, CallGenerator* inline_cg) :
-    LateInlineCallGenerator(method, inline_cg, /*is_pure=*/true) {}
+    LateInlineCallGenerator(method, inline_cg, /*is_pure=*/true, /*is_boxing*/true) {}
 
   virtual JVMState* generate(JVMState* jvms) {
     Compile *C = Compile::current();

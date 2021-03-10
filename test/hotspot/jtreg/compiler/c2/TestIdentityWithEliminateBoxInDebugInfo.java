@@ -28,7 +28,7 @@
  * @summary Verify that box object identity matches after deoptimization When it is eliminated.
  * @library /test/lib
  *
- * @run main/othervm compiler.c2.TestIdentityWithEliminateBoxInDebugInfo
+ * @run main/othervm -Xbatch compiler.c2.TestIdentityWithEliminateBoxInDebugInfo
  */
 package compiler.c2;
 

@@ -46,6 +46,7 @@ public class TestEliminateBoxInDebugInfo {
         final String[] arguments = {
             "-XX:CompileCommand=compileonly,compiler/c2/TestEliminateBoxInDebugInfo$Test.foo",
             "-XX:CompileCommand=dontinline,compiler/c2/TestEliminateBoxInDebugInfo$Test.black",
+            "-Xbatch",
             "-XX:+PrintEliminateAllocations",
             Test.class.getName()
             };

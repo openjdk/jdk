@@ -45,8 +45,9 @@ class CallGenerator : public ResourceObj {
   void do_late_inline_helper();
 
   virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false; }
-  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return NULL;  }
-  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false; }
+  virtual CallGenerator* inline_cg()      const                           { ShouldNotReachHere(); return NULL;  }
+  virtual bool           is_pure_call()   const                           { ShouldNotReachHere(); return false; }
+  virtual bool           is_boxing_call() const                           { ShouldNotReachHere(); return false; }
 
  public:
   // Accessors
