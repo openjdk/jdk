@@ -702,7 +702,7 @@ public final class SocketPermission extends Permission
 
     private boolean matchArr(String[] cnames, String hname) {
         for (String cname : cnames) {
-            if (Objects.nonNull(cname) && match(cname, hname)) {
+            if (cname != null && match(cname, hname)) {
                 return true;
             }
         }
