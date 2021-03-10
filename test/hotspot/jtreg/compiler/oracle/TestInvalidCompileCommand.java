@@ -40,12 +40,19 @@ public class TestInvalidCompileCommand {
         {
             "-XX:CompileCommand=unknown",
             "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionDouble,3.14",
+            "-version"
         }
     };
 
     private static final String[][] OUTPUTS = {
         {
             "Unrecognized option 'unknown'"
+        },
+        {
+            "Option 'TestOptionDouble' is not a boolean type"
         }
     };
 
