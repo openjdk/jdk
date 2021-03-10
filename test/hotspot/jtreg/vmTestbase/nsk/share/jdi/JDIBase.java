@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventIterator;
 import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ThreadDeathEvent;
+import com.sun.jdi.event.ThreadStartEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.EventRequestManager;
@@ -162,6 +164,48 @@ public class JDIBase {
         }
 
         throw new JDITestRuntimeException("** event '" + event + "' IS NOT a breakpoint **");
+    }
+
+    // Waiting for ThreadStart and ThreadDeath event we can get events from system threads,
+    // so need to ensure we get the event from the desired thread.
+    protected void waitThreadStart(String threadName) throws JDITestRuntimeException {
+        while (true) {
+            getEventSet();
+            Event event = eventIterator.nextEvent();
+            if (event instanceof ThreadStartEvent) {
+                ThreadStartEvent evt = (ThreadStartEvent)event;
+                if (evt.thread().name().equals(threadName)) {
+                    break;
+                }
+            } else if (!(event instanceof ThreadDeathEvent)) {
+                // unexpected event. let the test handle it
+                break;
+            }
+            // log the event and wait for next one
+            log2("Waiting for ThreadStartEvent, got " + event);
+        }
+        // reset the iterator
+        eventIterator = eventSet.eventIterator();
+    }
+
+    protected void waitThreadDeath(String threadName) throws JDITestRuntimeException {
+        while (true) {
+            getEventSet();
+            Event event = eventIterator.nextEvent();
+            if (event instanceof ThreadDeathEvent) {
+                ThreadDeathEvent evt = (ThreadDeathEvent)event;
+                if (evt.thread().name().equals(threadName)) {
+                    break;
+                }
+            } else if (!(event instanceof ThreadStartEvent)) {
+                // unexpected event. let the test handle it
+                break;
+            }
+            // log the event and wait for next one
+            log2("Waiting for ThreadStartEvent, got " + event);
+        }
+        // reset the iterator
+        eventIterator = eventSet.eventIterator();
     }
 
 }
