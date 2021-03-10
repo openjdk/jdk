@@ -866,7 +866,7 @@ static jclass jvm_define_class_common(const char *name,
                                                    &st,
                                                    CHECK_NULL);
 
-  if (log_is_enabled(Debug, class, resolve) && k != NULL) {
+  if (log_is_enabled(Debug, class, resolve)) {
     trace_class_resolution(k);
   }
 
@@ -945,19 +945,17 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
   const char* source = is_nestmate ? host_class->external_name() : "__JVM_LookupDefineClass__";
   ClassFileStream st((u1*)buf, len, source, ClassFileStream::verify);
 
-  Klass* defined_k;
   InstanceKlass* ik = NULL;
   if (!is_hidden) {
-    defined_k = SystemDictionary::resolve_from_stream(class_name,
-                                                      class_loader,
-                                                      protection_domain,
-                                                      &st,
-                                                      CHECK_NULL);
+    ik = SystemDictionary::resolve_from_stream(class_name,
+                                               class_loader,
+                                               protection_domain,
+                                               &st,
+                                               CHECK_NULL);
 
-    if (log_is_enabled(Debug, class, resolve) && defined_k != NULL) {
-      trace_class_resolution(defined_k);
+    if (log_is_enabled(Debug, class, resolve)) {
+      trace_class_resolution(ik);
     }
-    ik = InstanceKlass::cast(defined_k);
   } else { // hidden
     Handle classData_h(THREAD, JNIHandles::resolve(classData));
     ClassLoadInfo cl_info(protection_domain,
@@ -968,16 +966,11 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
                           is_hidden,
                           is_strong,
                           vm_annotations);
-    defined_k = SystemDictionary::parse_stream(class_name,
-                                               class_loader,
-                                               &st,
-                                               cl_info,
-                                               CHECK_NULL);
-    if (defined_k == NULL) {
-      THROW_MSG_0(vmSymbols::java_lang_Error(), "Failure to define a hidden class");
-    }
-
-    ik = InstanceKlass::cast(defined_k);
+    ik = SystemDictionary::parse_stream(class_name,
+                                        class_loader,
+                                        &st,
+                                        cl_info,
+                                        CHECK_NULL);
 
     // The hidden class loader data has been artificially been kept alive to
     // this point. The mirror and any instances of this class have to keep
@@ -994,7 +987,7 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
                                   ik->is_hidden() ? "is hidden" : "is not hidden");
     }
   }
-  assert(Reflection::is_same_class_package(lookup_k, defined_k),
+  assert(Reflection::is_same_class_package(lookup_k, ik),
          "lookup class and defined class are in different packages");
 
   if (init) {
@@ -1003,7 +996,7 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
     ik->link_class(CHECK_NULL);
   }
 
-  return (jclass) JNIHandles::make_local(THREAD, defined_k->java_mirror());
+  return (jclass) JNIHandles::make_local(THREAD, ik->java_mirror());
 }
 
 JVM_ENTRY(jclass, JVM_DefineClass(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd))
@@ -1070,8 +1063,7 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   Handle h_loader(THREAD, JNIHandles::resolve(loader));
   Klass* k = SystemDictionary::find_instance_or_array_klass(klass_name,
                                                               h_loader,
-                                                              Handle(),
-                                                              CHECK_NULL);
+                                                              Handle());
 #if INCLUDE_CDS
   if (k == NULL) {
     // If the class is not already loaded, try to see if it's in the shared
@@ -1087,31 +1079,41 @@ JVM_END
 
 JVM_ENTRY(void, JVM_DefineModule(JNIEnv *env, jobject module, jboolean is_open, jstring version,
                                  jstring location, jobjectArray packages))
-  Modules::define_module(module, is_open, version, location, packages, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::define_module(h_module, is_open, version, location, packages, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_SetBootLoaderUnnamedModule(JNIEnv *env, jobject module))
-  Modules::set_bootloader_unnamed_module(module, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::set_bootloader_unnamed_module(h_module, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_AddModuleExports(JNIEnv *env, jobject from_module, jstring package, jobject to_module))
-  Modules::add_module_exports_qualified(from_module, package, to_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_to_module (THREAD, JNIHandles::resolve(to_module));
+  Modules::add_module_exports_qualified(h_from_module, package, h_to_module, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, jstring package))
-  Modules::add_module_exports_to_all_unnamed(from_module, package, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Modules::add_module_exports_to_all_unnamed(h_from_module, package, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_AddModuleExportsToAll(JNIEnv *env, jobject from_module, jstring package))
-  Modules::add_module_exports(from_module, package, NULL, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Modules::add_module_exports(h_from_module, package, Handle(), CHECK);
 JVM_END
 
 JVM_ENTRY (void, JVM_AddReadsModule(JNIEnv *env, jobject from_module, jobject source_module))
-  Modules::add_reads_module(from_module, source_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_source_module (THREAD, JNIHandles::resolve(source_module));
+  Modules::add_reads_module(h_from_module, h_source_module, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_DefineArchivedModules(JNIEnv *env, jobject platform_loader, jobject system_loader))
-  Modules::define_archived_modules(platform_loader, system_loader, CHECK);
+  Handle h_platform_loader (THREAD, JNIHandles::resolve(platform_loader));
+  Handle h_system_loader (THREAD, JNIHandles::resolve(system_loader));
+  Modules::define_archived_modules(h_platform_loader, h_system_loader, CHECK);
 JVM_END
 
 // Reflection support //////////////////////////////////////////////////////////////////////////////
@@ -2934,8 +2936,6 @@ JVM_END
 // but is thought to be reliable and simple. In the case, where the receiver is the
 // same thread as the sender, no VM_Operation is needed.
 JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
-  // A nested ThreadsListHandle will grab the Threads_lock so create
-  // tlh before we resolve throwable.
   ThreadsListHandle tlh(thread);
   oop java_throwable = JNIHandles::resolve(throwable);
   if (java_throwable == NULL) {
@@ -3287,10 +3287,14 @@ JVM_END
 
 JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
   for (vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
-    vfst.skip_reflection_related_frames(); // Only needed for 1.4 reflection
-    oop loader = vfst.method()->method_holder()->class_loader();
+    InstanceKlass* ik = vfst.method()->method_holder();
+    oop loader = ik->class_loader();
     if (loader != NULL && !SystemDictionary::is_platform_class_loader(loader)) {
-      return JNIHandles::make_local(THREAD, loader);
+      // Skip reflection related frames
+      if (!ik->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass()) &&
+          !ik->is_subclass_of(vmClasses::reflect_ConstructorAccessorImpl_klass())) {
+        return JNIHandles::make_local(THREAD, loader);
+      }
     }
   }
   return NULL;

@@ -42,6 +42,7 @@
 class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
+class ReservedHeapSpace;
 
 // A helper class for caching a Method* when the user of the cache
 // only cares about the latest version of the Method*.  This cache safely

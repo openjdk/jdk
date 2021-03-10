@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,6 +332,23 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
+  if (Matcher::match_rule_supported(Op_RotateRight) &&
+      ((op1 == Op_URShiftI && op2 == Op_LShiftI) || (op1 == Op_LShiftI && op2 == Op_URShiftI)) &&
+      in1->in(1) != NULL && in1->in(1) == in2->in(1)) {
+    Node* rshift = op1 == Op_URShiftI ? in1->in(2) : in2->in(2);
+    Node* lshift = op1 == Op_URShiftI ? in2->in(2) : in1->in(2);
+    if (rshift != NULL && lshift != NULL) {
+      const TypeInt* rshift_t = phase->type(rshift)->isa_int();
+      const TypeInt* lshift_t = phase->type(lshift)->isa_int();
+      if (lshift_t != NULL && lshift_t->is_con() &&
+          rshift_t != NULL && rshift_t->is_con() &&
+          ((lshift_t->get_con() & 0x1F) == (32 - (rshift_t->get_con() & 0x1F)))) {
+        return new RotateRightNode(in1->in(1), phase->intcon(rshift_t->get_con() & 0x1F), TypeInt::INT);
+      }
+    }
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 
@@ -447,6 +464,24 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *shift = phase->transform(new LShiftLNode(in1,phase->intcon(1)));
     return new AddLNode(shift,in2->in(2));
   }
+
+  // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
+  if (Matcher::match_rule_supported(Op_RotateRight) &&
+      ((op1 == Op_URShiftL && op2 == Op_LShiftL) || (op1 == Op_LShiftL && op2 == Op_URShiftL)) &&
+      in1->in(1) != NULL && in1->in(1) == in2->in(1)) {
+    Node* rshift = op1 == Op_URShiftL ? in1->in(2) : in2->in(2);
+    Node* lshift = op1 == Op_URShiftL ? in2->in(2) : in1->in(2);
+    if (rshift != NULL && lshift != NULL) {
+      const TypeInt* rshift_t = phase->type(rshift)->isa_int();
+      const TypeInt* lshift_t = phase->type(lshift)->isa_int();
+      if (lshift_t != NULL && lshift_t->is_con() &&
+          rshift_t != NULL && rshift_t->is_con() &&
+          ((lshift_t->get_con() & 0x3F) == (64 - (rshift_t->get_con() & 0x3F)))) {
+        return new RotateRightNode(in1->in(1), phase->intcon(rshift_t->get_con() & 0x3F), TypeLong::LONG);
+      }
+    }
+  }
+
 
   return AddNode::Ideal(phase, can_reshape);
 }
@@ -878,6 +913,22 @@ const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 //=============================================================================
+
+const Type* XorINode::Value(PhaseGVN* phase) const {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+  // x ^ x ==> 0
+  if (in1->eqv_uncast(in2)) {
+    return add_id();
+  }
+  return AddNode::Value(phase);
+}
+
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
 // the logical operations the ring's ADD is really a logical OR function.
@@ -913,6 +964,20 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeLong::make( r0->get_con() ^ r1->get_con() );
 }
 
+const Type* XorLNode::Value(PhaseGVN* phase) const {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+  // x ^ x ==> 0
+  if (in1->eqv_uncast(in2)) {
+    return add_id();
+  }
+  return AddNode::Value(phase);
+}
 
 Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();

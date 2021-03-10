@@ -26,7 +26,9 @@
 #define SHARE_MEMORY_ARCHIVEBUILDER_HPP
 
 #include "memory/archiveUtils.hpp"
+#include "memory/dumpAllocStats.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "oops/array.hpp"
 #include "oops/klass.hpp"
 #include "runtime/os.hpp"
 #include "utilities/bitMap.hpp"
@@ -34,33 +36,35 @@
 #include "utilities/hashtable.hpp"
 #include "utilities/resourceHash.hpp"
 
+struct ArchiveHeapOopmapInfo;
 class CHeapBitMap;
-class DumpAllocStats;
 class FileMapInfo;
 class Klass;
 class MemRegion;
 class Symbol;
 
+// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
+// We enforce the same alignment rule in blocks allocated from the shared space.
+const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
+
 // Overview of CDS archive creation (for both static and dynamic dump):
 //
 // [1] Load all classes (static dump: from the classlist, dynamic dump: as part of app execution)
 // [2] Allocate "output buffer"
-// [3] Copy contents of the 3 "core" regions (mc/rw/ro) into the output buffer.
-//       - mc region:
-//         allocate_method_trampolines();
-//         allocate the cpp vtables (static dump only)
+// [3] Copy contents of the 2 "core" regions (rw/ro) into the output buffer.
+//       - allocate the cpp vtables in rw (static dump only)
 //       - memcpy the MetaspaceObjs into rw/ro:
 //         dump_rw_region();
 //         dump_ro_region();
 //       - fix all the pointers in the MetaspaceObjs to point to the copies
 //         relocate_metaspaceobj_embedded_pointers()
 // [4] Copy symbol table, dictionary, etc, into the ro region
-// [5] Relocate all the pointers in mc/rw/ro, so that the archive can be mapped to
+// [5] Relocate all the pointers in rw/ro, so that the archive can be mapped to
 //     the "requested" location without runtime relocation. See relocate_to_requested()
 class ArchiveBuilder : public StackObj {
 protected:
   DumpRegion* _current_dump_space;
-  address _buffer_bottom;                      // for writing the contents of mc/rw/ro regions
+  address _buffer_bottom;                      // for writing the contents of rw/ro regions
   address _last_verified_top;
   int _num_dump_regions_used;
   size_t _other_region_used_bytes;
@@ -186,9 +190,11 @@ private:
   static const int INITIAL_TABLE_SIZE = 15889;
   static const int MAX_TABLE_SIZE     = 1000000;
 
-  DumpRegion* _mc_region;
-  DumpRegion* _rw_region;
-  DumpRegion* _ro_region;
+  ReservedSpace _shared_rs;
+  VirtualSpace _shared_vs;
+
+  DumpRegion _rw_region;
+  DumpRegion _ro_region;
   CHeapBitMap _ptrmap;    // bitmap used by ArchivePtrMarker
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
@@ -202,7 +208,16 @@ private:
   int _num_instance_klasses;
   int _num_obj_array_klasses;
   int _num_type_array_klasses;
-  DumpAllocStats* _alloc_stats;
+  DumpAllocStats _alloc_stats;
+  size_t _total_closed_heap_region_size;
+  size_t _total_open_heap_region_size;
+
+  void print_region_stats(FileMapInfo *map_info,
+                          GrowableArray<MemRegion>* closed_heap_regions,
+                          GrowableArray<MemRegion>* open_heap_regions);
+  void print_bitmap_region_stats(size_t size, size_t total_size);
+  void print_heap_region_stats(GrowableArray<MemRegion> *heap_mem,
+                               const char *name, size_t total_size);
 
   // For global access.
   static ArchiveBuilder* _current;
@@ -215,12 +230,13 @@ public:
     char* _oldtop;
   public:
     OtherROAllocMark() {
-      _oldtop = _current->_ro_region->top();
+      _oldtop = _current->_ro_region.top();
     }
     ~OtherROAllocMark();
   };
 
 private:
+  bool is_dumping_full_module_graph();
   FollowMode get_follow_mode(MetaspaceClosure::Ref *ref);
 
   void iterate_sorted_roots(MetaspaceClosure* it, bool is_relocating_pointers);
@@ -244,9 +260,8 @@ protected:
   // Conservative estimate for number of bytes needed for:
   size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
   size_t _estimated_hashtable_bytes;     // symbol table and dictionaries
-  size_t _estimated_trampoline_bytes;    // method entry trampolines
 
-  static const int _total_dump_regions = 3;
+  static const int _total_dump_regions = 2;
 
   size_t estimate_archive_size();
 
@@ -254,8 +269,10 @@ protected:
     return os::vm_allocation_granularity();
   }
 
+  void start_dump_space(DumpRegion* next);
+  void verify_estimate_size(size_t estimate, const char* which);
+
 public:
-  void set_current_dump_space(DumpRegion* r) { _current_dump_space = r; }
   address reserve_buffer();
 
   address buffer_bottom()                    const { return _buffer_bottom;                       }
@@ -317,7 +334,7 @@ public:
   static void assert_is_vm_thread() PRODUCT_RETURN;
 
 public:
-  ArchiveBuilder(DumpRegion* mc_region, DumpRegion* rw_region, DumpRegion* ro_region);
+  ArchiveBuilder();
   ~ArchiveBuilder();
 
   void gather_klasses_and_symbols();
@@ -327,17 +344,52 @@ public:
   void add_special_ref(MetaspaceClosure::SpecialRef type, address src_obj, size_t field_offset);
   void remember_embedded_pointer_in_copied_obj(MetaspaceClosure::Ref* enclosing_ref, MetaspaceClosure::Ref* ref);
 
-  void dump_rw_region();
-  void dump_ro_region();
+  DumpRegion* rw_region() { return &_rw_region; }
+  DumpRegion* ro_region() { return &_ro_region; }
+
+  static char* rw_region_alloc(size_t num_bytes) {
+    return current()->rw_region()->allocate(num_bytes);
+  }
+  static char* ro_region_alloc(size_t num_bytes) {
+    return current()->ro_region()->allocate(num_bytes);
+  }
+
+  template <typename T>
+  static Array<T>* new_ro_array(int length) {
+    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
+    Array<T>* array = (Array<T>*)ro_region_alloc(byte_size);
+    array->initialize(length);
+    return array;
+  }
+
+  template <typename T>
+  static Array<T>* new_rw_array(int length) {
+    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
+    Array<T>* array = (Array<T>*)rw_region_alloc(byte_size);
+    array->initialize(length);
+    return array;
+  }
+
+  template <typename T>
+  static size_t ro_array_bytesize(int length) {
+    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
+    return align_up(byte_size, SharedSpaceObjectAlignment);
+  }
+
+  void dump_rw_metadata();
+  void dump_ro_metadata();
   void relocate_metaspaceobj_embedded_pointers();
   void relocate_roots();
   void relocate_vm_classes();
   void make_klasses_shareable();
   void relocate_to_requested();
-  void write_cds_map_to_log(FileMapInfo* mapinfo,
-                            GrowableArray<MemRegion> *closed_heap_regions,
-                            GrowableArray<MemRegion> *open_heap_regions,
-                            char* bitmap, size_t bitmap_size_in_bytes);
+  void write_archive(FileMapInfo* mapinfo,
+                     GrowableArray<MemRegion>* closed_heap_regions,
+                     GrowableArray<MemRegion>* open_heap_regions,
+                     GrowableArray<ArchiveHeapOopmapInfo>* closed_heap_oopmaps,
+                     GrowableArray<ArchiveHeapOopmapInfo>* open_heap_oopmaps);
+  void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
+                    bool read_only,  bool allow_exec);
 
   address get_dumped_addr(address src_obj) const;
 
@@ -356,7 +408,15 @@ public:
   }
 
   static DumpAllocStats* alloc_stats() {
-    return current()->_alloc_stats;
+    return &(current()->_alloc_stats);
+  }
+
+  static CompactHashtableStats* symbol_stats() {
+    return alloc_stats()->symbol_stats();
+  }
+
+  static CompactHashtableStats* string_stats() {
+    return alloc_stats()->string_stats();
   }
 
   void relocate_klass_ptr(oop o);
@@ -371,13 +431,8 @@ public:
     return (Symbol*)current()->get_dumped_addr((address)orig_symbol);
   }
 
-  void print_stats(int ro_all, int rw_all, int mc_all);
-
-  // Method trampolines related functions
-  void allocate_method_trampolines();
-  void allocate_method_trampolines_for(InstanceKlass* ik);
-  size_t allocate_method_trampoline_info();
-  void update_method_trampolines();
+  void print_stats();
+  void report_out_of_space(const char* name, size_t needed_bytes);
 };
 
 #endif // SHARE_MEMORY_ARCHIVEBUILDER_HPP

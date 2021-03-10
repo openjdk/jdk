@@ -564,17 +564,6 @@ bool SharedRuntime::is_wide_vector(int size) {
   return size > 8;
 }
 
-size_t SharedRuntime::trampoline_size() {
-  return Assembler::load_const_size + 8;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  Register Rtemp = R12;
-  __ load_const(Rtemp, destination);
-  __ mtctr(Rtemp);
-  __ bctr();
-}
-
 static int reg2slot(VMReg r) {
   return r->reg2stack() + SharedRuntime::out_preserve_stack_slots();
 }
@@ -3442,10 +3431,12 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   reverse_words(m, (unsigned long *)m_ints, longwords);
 }
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
-                                               int shadow_space_bytes,
-                                               const GrowableArray<VMReg>& input_registers,
-                                               const GrowableArray<VMReg>& output_registers) {
+#ifdef COMPILER2
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
+                                                int shadow_space_bytes,
+                                                const GrowableArray<VMReg>& input_registers,
+                                                const GrowableArray<VMReg>& output_registers) {
   Unimplemented();
   return nullptr;
 }
+#endif

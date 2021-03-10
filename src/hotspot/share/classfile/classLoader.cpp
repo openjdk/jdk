@@ -287,7 +287,7 @@ ClassPathZipEntry::~ClassPathZipEntry() {
 
 u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS) {
     // enable call to C land
-  JavaThread* thread = JavaThread::current();
+  JavaThread* thread = THREAD->as_Java_thread();
   ThreadToNativeFromVM ttn(thread);
   // check whether zip archive contains name
   jint name_len;
@@ -501,7 +501,7 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
   }
 }
 
-void ClassLoader::setup_bootstrap_search_path() {
+void ClassLoader::setup_bootstrap_search_path(TRAPS) {
   const char* sys_class_path = Arguments::get_sysclasspath();
   assert(sys_class_path != NULL, "System boot class path must not be NULL");
   if (PrintSharedArchiveAndExit) {
@@ -510,11 +510,11 @@ void ClassLoader::setup_bootstrap_search_path() {
   } else {
     trace_class_path("bootstrap loader class path=", sys_class_path);
   }
-  setup_boot_search_path(sys_class_path);
+  setup_bootstrap_search_path_impl(sys_class_path, CHECK);
 }
 
 #if INCLUDE_CDS
-void ClassLoader::setup_app_search_path(const char *class_path) {
+void ClassLoader::setup_app_search_path(const char *class_path, TRAPS) {
   Arguments::assert_is_dumping_archive();
 
   ResourceMark rm;
@@ -522,7 +522,7 @@ void ClassLoader::setup_app_search_path(const char *class_path) {
 
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();
-    update_class_path_entry_list(path, false, false, false);
+    update_class_path_entry_list(path, false, false, false, CHECK);
   }
 }
 
@@ -542,7 +542,7 @@ void ClassLoader::add_to_module_path_entries(const char* path,
 }
 
 // Add a module path to the _module_path_entries list.
-void ClassLoader::update_module_path_entry_list(const char *path, TRAPS) {
+void ClassLoader::setup_module_search_path(const char* path, TRAPS) {
   Arguments::assert_is_dumping_archive();
   struct stat st;
   if (os::stat(path, &st) != 0) {
@@ -560,10 +560,6 @@ void ClassLoader::update_module_path_entry_list(const char *path, TRAPS) {
 
   add_to_module_path_entries(path, new_entry);
   return;
-}
-
-void ClassLoader::setup_module_search_path(const char* path, TRAPS) {
-  update_module_path_entry_list(path, THREAD);
 }
 
 #endif // INCLUDE_CDS
@@ -632,8 +628,7 @@ bool ClassLoader::is_in_patch_mod_entries(Symbol* module_name) {
 }
 
 // Set up the _jrt_entry if present and boot append path
-void ClassLoader::setup_boot_search_path(const char *class_path) {
-  EXCEPTION_MARK;
+void ClassLoader::setup_bootstrap_search_path_impl(const char *class_path, TRAPS) {
   ResourceMark rm(THREAD);
   ClasspathStream cp_stream(class_path);
   bool set_base_piece = true;
@@ -675,7 +670,7 @@ void ClassLoader::setup_boot_search_path(const char *class_path) {
     } else {
       // Every entry on the system boot class path after the initial base piece,
       // which is set by os::set_boot_path(), is considered an appended entry.
-      update_class_path_entry_list(path, false, true, false);
+      update_class_path_entry_list(path, false, true, false, CHECK);
     }
   }
 }
@@ -717,19 +712,27 @@ void ClassLoader::add_to_exploded_build_list(Symbol* module_sym, TRAPS) {
   }
 }
 
+jzfile* ClassLoader::open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread) {
+  // enable call to C land
+  ThreadToNativeFromVM ttn(thread);
+  HandleMark hm(thread);
+  load_zip_library_if_needed();
+  return (*ZipOpen)(canonical_path, error_msg);
+}
+
 ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const struct stat* st,
                                                      bool throw_exception,
                                                      bool is_boot_append,
                                                      bool from_class_path_attr,
                                                      TRAPS) {
-  JavaThread* thread = JavaThread::current();
+  JavaThread* thread = THREAD->as_Java_thread();
   ClassPathEntry* new_entry = NULL;
   if ((st->st_mode & S_IFMT) == S_IFREG) {
     ResourceMark rm(thread);
     // Regular file, should be a zip or jimage file
     // Canonicalized filename
-    char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
-    if (!get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
+    const char* canonical_path = get_canonical_path(path, thread);
+    if (canonical_path == NULL) {
       // This matches the classic VM
       if (throw_exception) {
         THROW_MSG_(vmSymbols::java_io_IOException(), "Bad pathname", NULL);
@@ -743,14 +746,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
       new_entry = new ClassPathImageEntry(jimage, canonical_path);
     } else {
       char* error_msg = NULL;
-      jzfile* zip;
-      {
-        // enable call to C land
-        ThreadToNativeFromVM ttn(thread);
-        HandleMark hm(thread);
-        load_zip_library_if_needed();
-        zip = (*ZipOpen)(canonical_path, &error_msg);
-      }
+      jzfile* zip = open_zip_file(canonical_path, &error_msg, thread);
       if (zip != NULL && error_msg == NULL) {
         new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
       } else {
@@ -789,18 +785,12 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bo
   struct stat st;
   if (os::stat(path, &st) == 0) {
     if ((st.st_mode & S_IFMT) == S_IFREG) {
-      char canonical_path[JVM_MAXPATHLEN];
-      if (get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
+      JavaThread* thread = JavaThread::current();
+      ResourceMark rm(thread);
+      const char* canonical_path = get_canonical_path(path, thread);
+      if (canonical_path != NULL) {
         char* error_msg = NULL;
-        jzfile* zip;
-        {
-          // enable call to C land
-          JavaThread* thread = JavaThread::current();
-          ThreadToNativeFromVM ttn(thread);
-          HandleMark hm(thread);
-          load_zip_library_if_needed();
-          zip = (*ZipOpen)(canonical_path, &error_msg);
-        }
+        jzfile* zip = open_zip_file(canonical_path, &error_msg, thread);
         if (zip != NULL && error_msg == NULL) {
           // create using canonical path
           return new ClassPathZipEntry(zip, canonical_path, is_boot_append, false);
@@ -847,7 +837,8 @@ void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
 // jdk/internal/loader/ClassLoaders$AppClassLoader instance.
 void ClassLoader::add_to_app_classpath_entries(const char* path,
                                                ClassPathEntry* entry,
-                                               bool check_for_duplicates) {
+                                               bool check_for_duplicates,
+                                               TRAPS) {
 #if INCLUDE_CDS
   assert(entry != NULL, "ClassPathEntry should not be NULL");
   ClassPathEntry* e = _app_classpath_entries;
@@ -871,7 +862,7 @@ void ClassLoader::add_to_app_classpath_entries(const char* path,
   }
 
   if (entry->is_jar_file()) {
-    ClassLoaderExt::process_jar_manifest(entry, check_for_duplicates);
+    ClassLoaderExt::process_jar_manifest(entry, check_for_duplicates, CHECK);
   }
 #endif
 }
@@ -881,13 +872,12 @@ bool ClassLoader::update_class_path_entry_list(const char *path,
                                                bool check_for_duplicates,
                                                bool is_boot_append,
                                                bool from_class_path_attr,
-                                               bool throw_exception) {
+                                               TRAPS) {
   struct stat st;
   if (os::stat(path, &st) == 0) {
     // File or directory found
     ClassPathEntry* new_entry = NULL;
-    Thread* THREAD = Thread::current();
-    new_entry = create_class_path_entry(path, &st, throw_exception, is_boot_append, from_class_path_attr, CHECK_(false));
+    new_entry = create_class_path_entry(path, &st, /*throw_exception=*/true, is_boot_append, from_class_path_attr, CHECK_false);
     if (new_entry == NULL) {
       return false;
     }
@@ -897,7 +887,7 @@ bool ClassLoader::update_class_path_entry_list(const char *path,
     if (is_boot_append) {
       add_to_boot_append_entries(new_entry);
     } else {
-      add_to_app_classpath_entries(path, new_entry, check_for_duplicates);
+      add_to_app_classpath_entries(path, new_entry, check_for_duplicates, CHECK_false);
     }
     return true;
   } else {
@@ -1286,7 +1276,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     return NULL;
   }
 
-  result->set_classpath_index(classpath_index, THREAD);
+  result->set_classpath_index(classpath_index);
   return result;
 }
 
@@ -1339,25 +1329,22 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
   PackageEntry* pkg_entry = ik->package();
 
   if (FileMapInfo::get_number_of_shared_paths() > 0) {
-    char* canonical_path_table_entry = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
-
-    // save the path from the file: protocol or the module name from the jrt: protocol
-    // if no protocol prefix is found, path is the same as stream->source()
+    // Save the path from the file: protocol or the module name from the jrt: protocol
+    // if no protocol prefix is found, path is the same as stream->source(). This path
+    // must be valid since the class has been successfully parsed.
     char* path = skip_uri_protocol(src);
-    char* canonical_class_src_path = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
-    bool success = get_canonical_path(path, canonical_class_src_path, JVM_MAXPATHLEN);
-    // The path is from the ClassFileStream. Since a ClassFileStream has been created successfully in functions
-    // such as ClassLoader::load_class(), its source path must be valid.
-    assert(success, "must be valid path");
+    assert(path != NULL, "sanity");
     for (int i = 0; i < FileMapInfo::get_number_of_shared_paths(); i++) {
       SharedClassPathEntry* ent = FileMapInfo::shared_path(i);
-      success = get_canonical_path(ent->name(), canonical_path_table_entry, JVM_MAXPATHLEN);
       // A shared path has been validated during its creation in ClassLoader::create_class_path_entry(),
       // it must be valid here.
-      assert(success, "must be valid path");
+      assert(ent->name() != NULL, "sanity");
       // If the path (from the class stream source) is the same as the shared
       // class or module path, then we have a match.
-      if (strcmp(canonical_path_table_entry, canonical_class_src_path) == 0) {
+      // src may come from the App/Platform class loaders, which would canonicalize
+      // the file name. We cannot use strcmp to check for equality against ent->name().
+      // We must use os::same_files (which is faster than canonicalizing ent->name()).
+      if (os::same_files(ent->name(), path)) {
         // NULL pkg_entry and pkg_entry in an unnamed module implies the class
         // is from the -cp or boot loader append path which consists of -Xbootclasspath/a
         // and jvmti appended entries.
@@ -1421,7 +1408,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
                                                          ik->name()->utf8_length());
   assert(file_name != NULL, "invariant");
 
-  ClassLoaderExt::record_result(classpath_index, ik, THREAD);
+  ClassLoaderExt::record_result(classpath_index, ik, CHECK);
 }
 #endif // INCLUDE_CDS
 
@@ -1430,9 +1417,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
 // this list has been created, it must not change order (see class PackageInfo)
 // it can be appended to and is by jvmti.
 
-void ClassLoader::initialize() {
-  EXCEPTION_MARK;
-
+void ClassLoader::initialize(TRAPS) {
   if (UsePerfData) {
     // jvmstat performance counters
     NEWPERFTICKCOUNTER(_perf_accumulated_time, SUN_CLS, "time");
@@ -1464,7 +1449,7 @@ void ClassLoader::initialize() {
   // lookup java library entry points
   load_java_library();
   // jimage library entry points are loaded below, in lookup_vm_options
-  setup_bootstrap_search_path();
+  setup_bootstrap_search_path(CHECK);
 }
 
 char* lookup_vm_resource(JImageFile *jimage, const char *jimage_version, const char *path) {
@@ -1501,16 +1486,16 @@ char* ClassLoader::lookup_vm_options() {
 }
 
 #if INCLUDE_CDS
-void ClassLoader::initialize_shared_path() {
+void ClassLoader::initialize_shared_path(TRAPS) {
   if (Arguments::is_dumping_archive()) {
-    ClassLoaderExt::setup_search_paths();
+    ClassLoaderExt::setup_search_paths(CHECK);
   }
 }
 
 void ClassLoader::initialize_module_path(TRAPS) {
   if (Arguments::is_dumping_archive()) {
-    ClassLoaderExt::setup_module_paths(THREAD);
-    FileMapInfo::allocate_shared_path_table();
+    ClassLoaderExt::setup_module_paths(CHECK);
+    FileMapInfo::allocate_shared_path_table(CHECK);
   }
 }
 
@@ -1566,7 +1551,11 @@ int ClassLoader::compute_Object_vtable() {
 
 
 void classLoader_init1() {
-  ClassLoader::initialize();
+  EXCEPTION_MARK;
+  ClassLoader::initialize(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    vm_exit_during_initialization("ClassLoader::initialize() failed unexpectedly");
+  }
 }
 
 // Complete the ClassPathEntry setup for the boot loader
@@ -1599,18 +1588,18 @@ void ClassLoader::classLoader_init2(TRAPS) {
   }
 }
 
-bool ClassLoader::get_canonical_path(const char* orig, char* out, int len) {
-  assert(orig != NULL && out != NULL && len > 0, "bad arguments");
-  JavaThread* THREAD = JavaThread::current();
-  ResourceMark rm(THREAD);
-
+char* ClassLoader::get_canonical_path(const char* orig, Thread* thread) {
+  assert(orig != NULL, "bad arguments");
+  // caller needs to allocate ResourceMark for the following output buffer
+  char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
+  ResourceMark rm(thread);
   // os::native_path writes into orig_copy
-  char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(orig)+1);
+  char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, strlen(orig)+1);
   strcpy(orig_copy, orig);
-  if ((CanonicalizeEntry)(os::native_path(orig_copy), out, len) < 0) {
-    return false;
+  if ((CanonicalizeEntry)(os::native_path(orig_copy), canonical_path, JVM_MAXPATHLEN) < 0) {
+    return NULL;
   }
-  return true;
+  return canonical_path;
 }
 
 void ClassLoader::create_javabase() {

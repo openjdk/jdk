@@ -48,6 +48,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"

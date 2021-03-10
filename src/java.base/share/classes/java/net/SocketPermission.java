@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -873,13 +873,11 @@ public final class SocketPermission extends Permission
     public boolean implies(Permission p) {
         int i,j;
 
-        if (!(p instanceof SocketPermission))
+        if (!(p instanceof SocketPermission that))
             return false;
 
         if (p == this)
             return true;
-
-        SocketPermission that = (SocketPermission) p;
 
         return ((this.mask & that.mask) == that.mask) &&
                                         impliesIgnoreMask(that);
@@ -1047,10 +1045,8 @@ public final class SocketPermission extends Permission
         if (obj == this)
             return true;
 
-        if (! (obj instanceof SocketPermission))
+        if (! (obj instanceof SocketPermission that))
             return false;
-
-        SocketPermission that = (SocketPermission) obj;
 
         //this is (overly?) complex!!!
 
@@ -1196,9 +1192,12 @@ public final class SocketPermission extends Permission
     }
 
     /**
-     * WriteObject is called to save the state of the SocketPermission
-     * to a stream. The actions are serialized, and the superclass
-     * takes care of the name.
+     * {@code writeObject} is called to save the state of the
+     * {@code SocketPermission} to a stream. The actions are serialized,
+     * and the superclass takes care of the name.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private synchronized void writeObject(java.io.ObjectOutputStream s)
@@ -1212,8 +1211,12 @@ public final class SocketPermission extends Permission
     }
 
     /**
-     * readObject is called to restore the state of the SocketPermission from
-     * a stream.
+     * {@code readObject} is called to restore the state of the
+     * {@code SocketPermission} from a stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private synchronized void readObject(java.io.ObjectInputStream s)
@@ -1379,14 +1382,12 @@ final class SocketPermissionCollection extends PermissionCollection
      */
     @Override
     public void add(Permission permission) {
-        if (! (permission instanceof SocketPermission))
+        if (! (permission instanceof SocketPermission sp))
             throw new IllegalArgumentException("invalid permission: "+
                                                permission);
         if (isReadOnly())
             throw new SecurityException(
                 "attempt to add a Permission to a readonly PermissionCollection");
-
-        SocketPermission sp = (SocketPermission)permission;
 
         // Add permission to map if it is absent, or replace with new
         // permission if applicable. NOTE: cannot use lambda for
@@ -1426,10 +1427,8 @@ final class SocketPermissionCollection extends PermissionCollection
     @Override
     public boolean implies(Permission permission)
     {
-        if (! (permission instanceof SocketPermission))
+        if (! (permission instanceof SocketPermission np))
                 return false;
-
-        SocketPermission np = (SocketPermission) permission;
 
         int desired = np.getMask();
         int effective = 0;
@@ -1495,7 +1494,11 @@ final class SocketPermissionCollection extends PermissionCollection
     };
 
     /**
+     * Writes the state of this object to the stream.
      * @serialData "permissions" field (a Vector containing the SocketPermissions).
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     /*
      * Writes the contents of the perms field out as a Vector for
@@ -1513,8 +1516,13 @@ final class SocketPermissionCollection extends PermissionCollection
         out.writeFields();
     }
 
-    /*
-     * Reads in a Vector of SocketPermissions and saves them in the perms field.
+    /**
+     * Reads in a {@code Vector} of {@code SocketPermission} and saves
+     * them in the perms field.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream in)

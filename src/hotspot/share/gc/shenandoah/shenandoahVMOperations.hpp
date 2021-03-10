@@ -35,11 +35,12 @@ class ShenandoahFullGC;
 //
 // VM_ShenandoahOperation
 //   - VM_ShenandoahInitMark: initiate concurrent marking
+//   - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
+//   - VM_ShenandoahInitUpdateRefs: initiate update references
+//   - VM_ShenandoahFinalUpdateRefs: finish up update references
 //   - VM_ShenandoahReferenceOperation:
-//       - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
-//       - VM_ShenandoahInitUpdateRefs: initiate update references
-//       - VM_ShenandoahFinalUpdateRefs: finish up update references
 //       - VM_ShenandoahFullGC: do full GC
+//       - VM_ShenandoahDegeneratedGC: do STW degenerated GC
 
 class VM_ShenandoahOperation : public VM_Operation {
 protected:

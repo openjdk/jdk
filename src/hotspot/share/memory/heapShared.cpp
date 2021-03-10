@@ -298,7 +298,7 @@ oop HeapShared::archive_heap_object(oop obj) {
 }
 
 void HeapShared::archive_klass_objects() {
-  GrowableArray<Klass*>* klasses = MetaspaceShared::collected_klasses();
+  GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
   assert(klasses != NULL, "sanity");
   for (int i = 0; i < klasses->length(); i++) {
     Klass* k = ArchiveBuilder::get_relocated_klass(klasses->at(i));
@@ -573,7 +573,7 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
     int num_entry_fields = entry_fields->length();
     assert(num_entry_fields % 2 == 0, "sanity");
     _entry_field_records =
-      MetaspaceShared::new_ro_array<int>(num_entry_fields);
+      ArchiveBuilder::new_ro_array<int>(num_entry_fields);
     for (int i = 0 ; i < num_entry_fields; i++) {
       _entry_field_records->at_put(i, entry_fields->at(i));
     }
@@ -584,7 +584,7 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   if (subgraph_object_klasses != NULL) {
     int num_subgraphs_klasses = subgraph_object_klasses->length();
     _subgraph_object_klasses =
-      MetaspaceShared::new_ro_array<Klass*>(num_subgraphs_klasses);
+      ArchiveBuilder::new_ro_array<Klass*>(num_subgraphs_klasses);
     for (int i = 0; i < num_subgraphs_klasses; i++) {
       Klass* subgraph_k = subgraph_object_klasses->at(i);
       if (log_is_enabled(Info, cds, heap)) {
@@ -610,7 +610,7 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
   bool do_entry(Klass* klass, KlassSubGraphInfo& info) {
     if (info.subgraph_object_klasses() != NULL || info.subgraph_entry_fields() != NULL) {
       ArchivedKlassSubGraphInfoRecord* record =
-        (ArchivedKlassSubGraphInfoRecord*)MetaspaceShared::read_only_space_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
+        (ArchivedKlassSubGraphInfoRecord*)ArchiveBuilder::ro_region_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
       record->init(&info);
 
       unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)klass);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@
  *          a file name that contains address host mappings, similar to those in
  *          /etc/hosts file. TestHosts-III file  exist, with a set of ipv4 and ipv6
  *          mappings
- * @run main/othervm -Dsun.net.inetaddr.ttl=0  InternalNameServiceWithHostsFileTest
+ * @run main/othervm -Djdk.net.hosts.file=${test.src}/TestHosts-III -Dsun.net.inetaddr.ttl=0
+ *      InternalNameServiceWithHostsFileTest
  */
 
 import java.net.InetAddress;
@@ -37,13 +38,6 @@ import java.util.Arrays;
 
 public class InternalNameServiceWithHostsFileTest {
     public static void main(String args[]) throws Exception {
-
-        // System.getProperty("test.src", ".");
-        String hostsFileName = System.getProperty("test.src", ".")
-                + "/TestHosts-III";
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
-        System.setProperty("sun.net.inetaddr.ttl", "0");
-
         // fe80::1
         byte[] expectedIpv6Address = { (byte) 0xfe, (byte) 0x80, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 1 };
