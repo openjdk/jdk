@@ -424,8 +424,8 @@ class Method : public Metadata {
     }
   }
 
-  int invocation_count();
-  int backedge_count();
+  int invocation_count() const;
+  int backedge_count() const;
 
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
