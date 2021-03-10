@@ -26,8 +26,8 @@ package sun.net.httpserver.simpleserver;
 import java.io.PrintWriter;
 
 /**
- * Provides external entry points (tool and programmatic) for the simpleserver
- * program.
+ * Provides external entry points (tool and programmatic) to start the
+ * simpleserver tool.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -42,23 +42,29 @@ public class Main {
     private Main() { throw new AssertionError(); }
 
     /**
-     * The main entry point. This will call System.exit with an appropriate
-     * status code.
+     * The main entry point. The status code from starting the simple server is
+     * ignored.
      *
      * @param args the command-line options
+     * @throws NullPointerException if the args is null
      */
     public static void main(String... args) {
-        System.exit(execute(new PrintWriter(System.out, true), args));
+        start(new PrintWriter(System.out, true), args);
     }
 
     /**
      * Programmatic interface.
      *
+     * <p>A status code of 0 means that the server has been started successfully;
+     * any other value indicates that an error occurred during option parsing or
+     * server start-up.
+     *
      * @param writer a writer to which output should be written
      * @param args the command-line options
      * @return The status code
+     * @throws NullPointerException if any of the arguments is null
      */
-    public static int execute(PrintWriter writer, String[] args) {
-        return SimpleFileServerImpl.run(writer, args);
+    public static int start(PrintWriter writer, String[] args) {
+        return SimpleFileServerImpl.start(writer, args);
     }
 }

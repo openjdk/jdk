@@ -24,9 +24,8 @@
 #
 
 include GensrcCommonJdk.gmk
-#include GensrcProperties.gmk
-#include Modules.gmk
-## are the last two required?
+include GensrcProperties.gmk
+include Modules.gmk
 
 ################################################################################
 

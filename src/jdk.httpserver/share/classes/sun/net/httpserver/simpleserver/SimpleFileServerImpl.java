@@ -38,9 +38,7 @@ import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.ResourceBundle;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A class that provides a simple HTTP file server to serve the content of
@@ -69,13 +67,13 @@ final class SimpleFileServerImpl {
     private static PrintWriter out;
 
     /**
-     * Runs a simple HTTP file server created on a directory.
+     * Starts a simple HTTP file server created on a directory.
      *
      * @param  writer the writer to which output should be written
      * @param  args the command line options
      * @throws NullPointerException if any of the arguments is null
      */
-    static int run(PrintWriter writer, String[] args) {
+    static int start(PrintWriter writer, String[] args) {
         Objects.requireNonNull(writer);
         Objects.requireNonNull(args);
         out = writer;
@@ -112,7 +110,10 @@ final class SimpleFileServerImpl {
             return Result.CMDERR.statusCode;
         } catch (Exception e) {
             reportError(getMessage("err.invalid.arg", option, e.getMessage()));
+            e.printStackTrace(out);
             return Result.CMDERR.statusCode;
+        } finally {
+            out.flush();
         }
 
         // configure and start server
@@ -123,15 +124,17 @@ final class SimpleFileServerImpl {
             server.start();
             out.printf("Serving %s and subdirectories on http://%s:%d/ ...\n",
                     root, socketAddr.getHostString(), port);
-        } catch (Throwable t) {
-            reportError(getMessage("err.server.config.failed", t.getMessage()));
+        } catch (Exception e) {
+            reportError(getMessage("err.server.config.failed", e.getMessage()));
+            e.printStackTrace(out);
             return Result.SYSERR.statusCode;
+        } finally {
+            out.flush();
         }
         return Result.OK.statusCode;
-
     }
 
-    // TODO: WHICH OUTPUT DO WE WANT TO SHOW WHEN?
+    // TODO: WHICH OUTPUT DO WE WANT TO SHOW, AND WHEN?
     private static void showUsage() {
         out.println(getMessage("usage")); }
 
@@ -164,23 +167,6 @@ final class SimpleFileServerImpl {
                 bundle = ResourceBundle.getBundle("sun.net.httpserver.simpleserver.resources.simpleserver");
             } catch (MissingResourceException e) {
                 throw new InternalError("Cannot find simpleserver resource bundle for locale " + Locale.getDefault());
-            }
-        }
-    }
-
-    // TODO: DO WE WANT TO THROW EXCEPTIONS? IF SO, THIS CAN BE A WRAPPER
-    static class CommandException extends RuntimeException {
-        private static final long serialVersionUID = 0L;
-
-        CommandException(String key, Object... args) {
-            super(getMessageOrKey(key, args));
-        }
-
-        private static String getMessageOrKey(String key, Object... args) {
-            try {
-                return MessageFormat.format(ResourceBundleHelper.bundle.getString(key), args);
-            } catch (MissingResourceException e) {
-                return key;
             }
         }
     }

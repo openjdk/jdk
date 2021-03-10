@@ -13,6 +13,6 @@ public class SimpleServerToolProvider implements ToolProvider {
     }
 
     public int run(PrintWriter out, PrintWriter err, String... args) {
-        return Main.execute(out, args);
+        return Main.start(out, args);
     }
 }
