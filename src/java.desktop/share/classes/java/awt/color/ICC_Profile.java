@@ -922,27 +922,30 @@ public class ICC_Profile implements Serializable {
      * wrapped by the ProfileDataException, and the ProfileDataException itself
      * was ignored during activation.
      */
-    private void activate() {
-        if (cmmProfile == null) {
-            synchronized (this) {
-                if (cmmProfile != null) {
-                    return;
+    private Profile cmmProfile() {
+        Profile p = cmmProfile;
+        if (p != null) {
+            return p; // one volatile read on common path
+        }
+        synchronized (this) {
+            if (cmmProfile != null) {
+                return cmmProfile;
+            }
+            var is = getStandardProfileInputStream(deferralInfo.filename);
+            if (is == null) {
+                return null;
+            }
+            try (is) {
+                byte[] data = getProfileDataFromStream(is);
+                if (data != null) {
+                    p = cmmProfile = CMSManager.getModule().loadProfile(data);
+                    // from now we cannot use the deferred value, drop it
+                    deferralInfo = null;
                 }
-                var is = getStandardProfileInputStream(deferralInfo.filename);
-                if (is == null) {
-                    return;
-                }
-                try (is) {
-                    byte[] data = getProfileDataFromStream(is);
-                    if (data != null) {
-                        cmmProfile = CMSManager.getModule().loadProfile(data);
-                        // from now we cannot use the deferred value, drop it
-                        deferralInfo = null;
-                    }
-                } catch (CMMException | IOException ignore) {
-                }
+            } catch (CMMException | IOException ignore) {
             }
         }
+        return p;
     }
 
     /**
@@ -1006,8 +1009,7 @@ public class ICC_Profile implements Serializable {
         if (info != null) {
             return info.colorSpaceType;
         }
-        activate();
-        return getColorSpaceType(cmmProfile);
+        return getColorSpaceType(cmmProfile());
     }
 
     private static int getColorSpaceType(Profile p) {
@@ -1030,8 +1032,7 @@ public class ICC_Profile implements Serializable {
      *         {@code ColorSpace} class
      */
     public int getPCSType() {
-        activate();
-        byte[] theHeader = getData(cmmProfile, icSigHead);
+        byte[] theHeader = getData(icSigHead);
         int thePCSSig = intFromBigEndian(theHeader, icHdrPcs);
         return iccCStoJCS(thePCSSig);
     }
@@ -1067,8 +1068,7 @@ public class ICC_Profile implements Serializable {
      * @see #setData(int, byte[])
      */
     public byte[] getData() {
-        activate();
-        return CMSManager.getModule().getProfileData(cmmProfile);
+        return CMSManager.getModule().getProfileData(cmmProfile());
     }
 
     /**
@@ -1085,8 +1085,8 @@ public class ICC_Profile implements Serializable {
      * @see #setData(int, byte[])
      */
     public byte[] getData(int tagSignature) {
-        activate();
-        return getData(cmmProfile, tagSignature);
+        byte[] t = getData(cmmProfile(), tagSignature);
+        return t != null ? t.clone() : null;
     }
 
     private static byte[] getData(Profile p, int tagSignature) {
@@ -1115,8 +1115,7 @@ public class ICC_Profile implements Serializable {
      * @see #getData
      */
     public void setData(int tagSignature, byte[] tagData) {
-        activate();
-        CMSManager.getModule().setTagData(cmmProfile, tagSignature, tagData);
+        CMSManager.getModule().setTagData(cmmProfile(), tagSignature, tagData);
     }
 
     /**
