@@ -60,12 +60,13 @@ public class ClhsdbSymbol {
 
             // Extract the thread InstanceKlass address from the output, which looks similar to the following:
             //   java/lang/Thread @0x000000080001d940
-            String threadAddress = classOutput.lines().filter(part -> part.startsWith("java/lang/Thread"))
-                                                      .map(part -> part.split(" @"))
-                                                      .findFirst()
-                                                      .map(addresses -> addresses[1])
-                                                      .orElseThrow(() -> new RuntimeException("Cannot find address of " +
-                                                              "the InstanceKlass for java.lang.Thread in output"));
+            String threadAddress = classOutput.lines()
+                    .filter(part -> part.startsWith("java/lang/Thread"))
+                    .map(part -> part.split(" @"))
+                    .findFirst()
+                    .map(addresses -> addresses[1])
+                    .orElseThrow(() -> new RuntimeException(
+                            "Cannot find address of the InstanceKlass for java.lang.Thread in output"));
 
 
             // Use "inspect" on the thread address we extracted in previous step
@@ -78,11 +79,11 @@ public class ClhsdbSymbol {
             // The inspect command output will have one line of output that looks like the following.
             // Symbol* Klass::_name: Symbol @ 0x0000000800471120
             // Extract the Symbol address from it.
-            String symbolAddress = inspectOutput.lines().filter(part -> part.startsWith("Symbol"))
-                                                        .map(part -> part.split("@ "))
-                                                        .findFirst().map(symbolParts -> symbolParts[1])
-                                                        .orElseThrow(() -> new RuntimeException(
-                                                                "Cannot find address with Symbol instance"));
+            String symbolAddress = inspectOutput.lines()
+                    .filter(part -> part.startsWith("Symbol"))
+                    .map(part -> part.split("@ "))
+                    .findFirst().map(symbolParts -> symbolParts[1])
+                    .orElseThrow(() -> new RuntimeException("Cannot find address with Symbol instance"));
 
             // Run "symbol" command on the Symbol instance address extracted in previous step.
             // It should produce the symbol for java/lang/Thread.
