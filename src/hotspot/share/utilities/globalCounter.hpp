@@ -65,12 +65,11 @@ class GlobalCounter : public AllStatic {
 
  public:
 
-
   // The type of the critical section context passed from
   // critical_section_begin() to critical_section_end().
-  enum class CSContext : uintx {}; // [COUNTER_ACTIVE, COUNTER_INCREMENT)
+  enum class CSContext : uintx {}; // (COUNTER_ACTIVE, COUNTER_INCREMENT)
 
-  // Give these access to the private COUNTER_* constants.
+  // Give this access to the private COUNTER_* constants.
   friend struct EnumeratorRange<CSContext>;
 
   // Must be called before accessing the data.  The result must be passed
