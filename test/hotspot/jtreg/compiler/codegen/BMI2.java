@@ -26,7 +26,7 @@
  * @summary Support BMI2 instructions on x86/x64
  *
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
- *      -XX:CompileCommand=compileonly,compiler.codegen.BMI2$BMITests::*
+ *      -XX:CompileCommand=dontinline,compiler.codegen.BMI2$BMITests::*
  *      compiler.codegen.BMI2
  */
 
@@ -35,36 +35,20 @@ package compiler.codegen;
 public class BMI2 {
     private final static int ITERATIONS = 30000;
 
-    // match(Set dst (ConvI2L (AndI src1 mask))) // Using 0
-    public static void testZeroBzhiI2L() {
-        int ix = 0;
-
+    // match(Set dst (ConvI2L (AndI src1 mask)))
+    public static void testBzhiI2L(int ix) {
+        long[] goldv = new long[16];
         for (int i = 0; i <= 15; i++) {
-            long z = BMITests.bzhiI2L(ix, i);
-
-                for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                    long ii = BMITests.bzhiI2L(ix, i);
-                    if (ii != z) {
-                        throw new Error(returnBzhiI2LErrMessage (z, ii));
-                    }
-                }
+              goldv[i] = BMITests.bzhiI2L(ix, i);
         }
-    }
-
-    // match(Set dst (ConvI2L (AndI src1 mask))) // Using 1
-    public static void testOneBzhiI2L() {
-        int ix = 1;
-
-        for (int i = 0; i <= 15; i++) {
-            long z = BMITests.bzhiI2L(ix, i);
-
-                for (int i2 = 0; i2 < ITERATIONS; i2++) {
-                    long ii = BMITests.bzhiI2L(ix, i);
-                    if (ii != z) {
-                        throw new Error(returnBzhiI2LErrMessage (z, ii));
-                    }
-                }
-        }
+        for (int i2 = 0; i2 < ITERATIONS; i2++) {
+             for (int i = 0; i <= 15; i++) {
+                  long v = BMITests.bzhiI2L(ix, i);
+                  if (v != goldv[i]) {
+                          throw new Error(returnBzhiI2LErrMessage (goldv[i], v));
+                  }
+             }
+       }
     }
 
     private static String returnBzhiI2LErrMessage (long value, long value2) {
@@ -115,7 +99,7 @@ public class BMI2 {
     }
 
     public static void main(String[] args) {
-        testZeroBzhiI2L();
-        testOneBzhiI2L();
+        testBzhiI2L(0);
+        testBzhiI2L(1);
     }
 }
