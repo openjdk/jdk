@@ -306,7 +306,8 @@ void JvmtiRawMonitor::simple_notify(Thread* self, bool all) {
   return;
 }
 
-// Any JavaThread will enter here with state _thread_blocked, but sometimes not
+// Any JavaThread will enter here with state _thread_blocked unless we
+// are in single-threaded mode during startup.
 void JvmtiRawMonitor::raw_enter(Thread* self) {
   void* contended;
   JavaThread* jt = NULL;
@@ -315,10 +316,10 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
   if (self->is_Java_thread()) {
     jt = self->as_Java_thread();
     while (true) {
-      // To pause suspends request while in native we must block handshakes.
+      // To pause suspend requests while in native we must block handshakes.
       jt->handshake_state()->lock();
-      // Suspend requsted flag can only be set in handshakes.
-      // By blocking handshakes suspend request flag cannot change it's value.
+      // Suspend request flag can only be set in handshakes.
+      // By blocking handshakes, suspend request flag cannot change its value.
       if (!jt->is_suspend_requested()) {
         contended = Atomic::cmpxchg(&_owner, (Thread*)NULL, jt);
         jt->handshake_state()->unlock();
@@ -326,12 +327,13 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
       }
       jt->handshake_state()->unlock();
 
-      // We may only be in other states than _thread_blocked when we are in single-thread mode in startup.
+      // We may only be in states other than _thread_blocked when we are
+      // in single-threaded mode during startup.
       guarantee(jt->thread_state() == _thread_blocked, "invariant");
 
       jt->set_thread_state_fence(_thread_blocked_trans);
       SafepointMechanism::process_if_requested(jt);
-      // We should go thread_in_vm, thread_in_vm_trans,
+      // We should transition to thread_in_vm and then to thread_in_vm_trans,
       // but those are always treated the same as _thread_blocked_trans.
       jt->set_thread_state(_thread_blocked);
     }
@@ -355,18 +357,18 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
   if (!self->is_Java_thread()) {
     simple_enter(self);
   } else {
-    // In a multi thread env. we must enter this method blocked.
+    // In multi-threaded mode, we must enter this method blocked.
     guarantee(jt->thread_state() == _thread_blocked, "invariant");
     for (;;) {
       simple_enter(jt);
       if (!SafepointMechanism::should_process(jt)) {
-        // No suspend
+        // Not suspended so we're done here:
         break;
       }
       simple_exit(jt);
       jt->set_thread_state_fence(_thread_blocked_trans);
       SafepointMechanism::process_if_requested(jt);
-      // We should go thread_in_vm, thread_in_vm_trans,
+      // We should transition to thread_in_vm and then to thread_in_vm_trans,
       // but those are always treated the same as _thread_blocked_trans.
       jt->set_thread_state(_thread_blocked);
     }
@@ -417,7 +419,8 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
     guarantee(jt->thread_state() == _thread_in_native, "invariant");
     for (;;) {
       if (!SafepointMechanism::should_process(jt)) {
-          break;
+        // Not suspended so we're done here:
+        break;
       }
       simple_exit(jt);
       jt->set_thread_state_fence(_thread_in_native_trans);
@@ -425,7 +428,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
       if (jt->is_interrupted(true)) {
         ret = M_INTERRUPTED;
       }
-      // We should go thread_in_vm, thread_in_vm_trans,
+      // We should transition to thread_in_vm and then to thread_in_vm_trans,
       // but those are always treated the same as _thread_in_native_trans.
       jt->set_thread_state(_thread_in_native);
       simple_enter(jt);

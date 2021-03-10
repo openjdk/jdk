@@ -103,9 +103,6 @@ public:
       MutexLocker ml(Threads_lock);
       Threads::add(this);
     }
-    {
-      MutexLocker ml(UtilLock(), Mutex::_no_safepoint_check_flag);
-    }
   }
 
   virtual void main_run() = 0;

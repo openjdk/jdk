@@ -888,7 +888,6 @@ class JavaThread: public Thread {
   // executing native code after the VM itself is terminated.
   volatile TerminatedTypes _terminated;
 
-  // suspend/resume support
   jint                  _in_deopt_handler;       // count of deoptimization
                                                  // handlers thread is in
   volatile bool         _doing_unsafe_access;    // Thread may fault due to unsafe access
@@ -1136,10 +1135,6 @@ class JavaThread: public Thread {
   bool is_suspend_requested() { return Atomic::load(&_suspend_requested); }
   void set_suspend_requested(bool to) { return Atomic::store(&_suspend_requested, to); }
 
-  Mutex* UtilLock() { return _util_lock; }
- private:
-  Mutex* _util_lock;
- public:
   static void check_safepoint_and_suspend_for_native_trans(JavaThread *thread);
   // Check for async exception in addition to safepoint and suspend request.
   static void check_special_condition_for_native_trans(JavaThread *thread);

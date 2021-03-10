@@ -418,7 +418,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
         _succ = NULL;
         exit(false, current);
         SafepointMechanism::process_if_requested(current);
-        // Since we are going to _thread_bock we skip setting _thread_in_vm here.
+        // Since we are going to _thread_blocked we skip setting _thread_in_vm here.
       } else {
         // Only exit path from for loop
         current->set_thread_state(_thread_in_vm);

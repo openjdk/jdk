@@ -1539,10 +1539,6 @@ void PosixSignals::hotspot_sigmask(Thread* thread) {
 //      - sets target osthread state to continue
 //      - sends signal to end the sigsuspend loop in the SR_handler
 //
-//  Note that the SR_lock plays no role in this suspend/resume protocol,
-//  but is checked for NULL in SR_handler as a thread termination indicator.
-//  The SR_lock is, however, used by JavaThread::java_suspend()/java_resume() APIs.
-//
 //  Note that resume_clear_context() and suspend_save_context() are needed
 //  by SR_handler(), so that fetch_frame_from_context() works,
 //  which in part is used by:
@@ -1587,14 +1583,12 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
 
   // On some systems we have seen signal delivery get "stuck" until the signal
   // mask is changed as part of thread termination. Check that the current thread
-  // has not already terminated (via SR_lock()) - else the following assertion
+  // has not already terminated - else the following assertion
   // will fail because the thread is no longer a JavaThread as the ~JavaThread
   // destructor has completed.
 
-  if (thread->is_Java_thread()) {
-    if (thread->as_Java_thread()->UtilLock() == NULL) {
-      return;
-    }
+  if (thread->is_Java_thread() && thread->as_Java_thread()->is_terminated()) {
+    return;
   }
 
   assert(thread->is_VM_thread() || thread->is_Java_thread(), "Must be VMThread or JavaThread");
