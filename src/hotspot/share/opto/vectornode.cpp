@@ -1278,11 +1278,6 @@ const TypeFunc* VectorBoxNode::vec_box_type(const TypeInstPtr* box_type) {
   return TypeFunc::make(domain, range);
 }
 
-#ifndef PRODUCT
-void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
-  CallStaticJavaNode::dump_spec(st);
-}
-
 Node* ShiftVNode::Identity(PhaseGVN* phase) {
   Node* in2 = in(2);
   // Shift by ZERO does nothing
@@ -1293,4 +1288,10 @@ Node* ShiftVNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+#ifndef PRODUCT
+void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
+  CallStaticJavaNode::dump_spec(st);
+}
+
 #endif // !PRODUCT
