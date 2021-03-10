@@ -888,7 +888,6 @@ class JavaThread: public Thread {
   // executing native code after the VM itself is terminated.
   volatile TerminatedTypes _terminated;
 
-  // suspend/resume support
   jint                  _in_deopt_handler;       // count of deoptimization
                                                  // handlers thread is in
   volatile bool         _doing_unsafe_access;    // Thread may fault due to unsafe access

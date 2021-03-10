@@ -951,8 +951,8 @@ JvmtiEnv::SuspendThread(JavaThread* java_thread) {
     return JVMTI_ERROR_THREAD_SUSPENDED;
   }
   if (!JvmtiSuspendControl::suspend(java_thread)) {
-    // Either thread already suspended or
-    // the thread was in the process of exiting
+    // Either the thread is already suspended or
+    // the thread was in the process of exiting:
     if (java_thread->is_exiting()) {
       return JVMTI_ERROR_THREAD_NOT_ALIVE;
     }
@@ -969,7 +969,8 @@ jvmtiError
 JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvmtiError* results) {
   int self_index = -1;
   int needSafepoint = 0;  // > 0 if we need a safepoint
-  ThreadsListHandle tlh;
+  JavaThread* current = JavaThread::current();
+  ThreadsListHandle tlh(current);
   for (int i = 0; i < request_count; i++) {
     JavaThread *java_thread = NULL;
     jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), request_list[i], &java_thread, NULL);
@@ -986,13 +987,13 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
       results[i] = JVMTI_ERROR_THREAD_SUSPENDED;  // indicate successful suspend
       continue;
     }
-    if (java_thread == JavaThread::current()) {
+    if (java_thread == current) {
       self_index = i;
       continue;
     }
     if (!JvmtiSuspendControl::suspend(java_thread)) {
-      // Either thread already suspended or
-      // the thread was in the process of exiting
+      // Either the thread is already suspended or
+      // the thread was in the process of exiting:
       if (java_thread->is_exiting()) {
         results[i] = JVMTI_ERROR_THREAD_NOT_ALIVE;
         continue;
@@ -1003,7 +1004,7 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
     results[i] = JVMTI_ERROR_NONE;  // indicate successful suspend
   }
   if (self_index >= 0) {
-    if (!JvmtiSuspendControl::suspend(JavaThread::current())) {
+    if (!JvmtiSuspendControl::suspend(current)) {
       results[self_index] = JVMTI_ERROR_THREAD_NOT_ALIVE;
     } else {
       results[self_index] = JVMTI_ERROR_NONE;  // indicate successful suspend

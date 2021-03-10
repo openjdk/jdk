@@ -871,9 +871,9 @@ int os::random() {
 // locking.
 
 void os::start_thread(Thread* thread) {
-  // guard suspend/resume
   if (thread->is_Java_thread()) {
     JavaThread* jt = thread->as_Java_thread();
+    // guard suspend/resume
     MutexLocker ml(jt->UtilLock(), Mutex::_no_safepoint_check_flag);
     OSThread* osthread = jt->osthread();
     osthread->set_state(RUNNABLE);

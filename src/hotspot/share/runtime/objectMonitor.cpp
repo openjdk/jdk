@@ -420,7 +420,7 @@ bool ObjectMonitor::enter(TRAPS) {
         _succ = NULL;
         exit(false, Self);
         SafepointMechanism::process_if_requested(jt);
-        // Since we are going to _thread_bock we skip setting _thread_in_vm here.
+        // Since we are going to _thread_blocked we skip setting _thread_in_vm here.
       } else {
         // Only exit path from for loop
         jt->set_thread_state(_thread_in_vm);

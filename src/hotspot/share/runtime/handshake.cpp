@@ -463,7 +463,7 @@ bool HandshakeState::process_self_inner() {
       }
     } else {
       return true;
-    } 
+    }
   }
   return true;
 }
@@ -578,6 +578,10 @@ void HandshakeState::unlock() {
   _lock.unlock();
 }
 
+// The careful dance between thread suspension and exit is handled here.
+// The caller has notified the agents that we are exiting, before we go
+// on, we must check for a pending external suspend request and honor it
+// in order to not surprise the thread that made the suspend request.
 void HandshakeState::thread_exit() {
   assert(JavaThread::current() == _handshakee, "Must be");
   while (true) {
@@ -585,10 +589,15 @@ void HandshakeState::thread_exit() {
       MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
       if (!_handshakee->is_suspend_requested()) {
         _handshakee->set_exiting();
+        // No more external suspends are allowed at this point.
         return;
       }
     }
     ThreadBlockInVM tbivm(_handshakee);
+    // We're done with this suspend request, but we have to loop around
+    // and check again. Eventually we will get the lock without a pending
+    // external suspend request and will be able to mark ourselves as
+    // exiting.
   }
 }
 
@@ -599,7 +608,7 @@ void HandshakeState::suspend_in_handshake() {
   JavaThreadState jts = _handshakee->thread_state();
   while (_handshakee->_suspended) {
     _handshakee->set_thread_state(_thread_blocked);
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspened", p2i(_handshakee));
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_handshakee));
     _lock.wait_without_safepoint_check();
   }
   _handshakee->set_thread_state(jts);
@@ -608,14 +617,14 @@ void HandshakeState::suspend_in_handshake() {
 }
 
 bool HandshakeState::resume() {
-  // Can't be suspened if there is no suspend requst.
+  // Can't be suspended if there is no suspend request.
   if (!_handshakee->is_suspend_requested()) {
     return false;
   }
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  // Can't be suspened if there is no suspend requst.
+  // Can't be suspended if there is no suspend request.
   if (!_handshakee->is_suspend_requested()) {
-    assert(!_handshakee->is_suspended(), "cannot not be suspended without a suspend request");
+    assert(!_handshakee->is_suspended(), "cannot be suspended without a suspend request");
     return false;
   }
   // Resume the thread.

@@ -1442,7 +1442,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     if (JvmtiExport::should_post_thread_life()) {
       JvmtiExport::post_thread_end(this);
     }
-    
+
+    // The careful dance between thread suspension and exit is handled here:
     _handshake.thread_exit();
     ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
 
@@ -1795,40 +1796,46 @@ public:
   SuspendThreadHandshake() : HandshakeClosure("SuspendThread"), _did_suspend(false) {}
   void do_thread(Thread* thr) {
     JavaThread* target = thr->as_Java_thread();
-    if(target->is_exiting() ||
+    if (target->is_exiting() ||
        target->threadObj() == NULL) {
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(target));
       return;
     }
     assert(java_lang_Thread::thread(target->threadObj()) != NULL, "BAD");
     if (target->is_suspend_requested()) {
-      if(target->is_suspended()) {
+      if (target->is_suspended()) {
         // Target suspended
-        log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspeneded", p2i(target));
+        log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(target));
         return;
       } else {
         // Target is going to wake up and leave suspension.
         // Let's just stop the thread from doing that.
-        log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspened", p2i(target));
+        log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(target));
         target->set_suspend(true);
         _did_suspend = true;
         return;
       }
     }
-    // no suspend requst
-    assert(!target->is_suspended(), "cannot not be suspended without a suspend request");
+    // no suspend request
+    assert(!target->is_suspended(), "cannot be suspended without a suspend request");
     // Thread is safe, so it must execute the request, thus we can count it as suspended
     // from this point.
     target->set_suspend(true);
     _did_suspend = true;
     target->set_suspend_requested(true);
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspened, arming ThreadSuspension", p2i(target));
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(target));
     ThreadSuspensionHandshake* ts = new ThreadSuspensionHandshake();
     Handshake::execute(ts, target);
   }
   bool did_suspend() { return _did_suspend; }
 };
 
+// External suspension mechanism.
+//
+// Guarantees on return (for a valid target thread):
+//   - Target thread will not execute any new bytecode.
+//   - Target thread will not enter any new monitors.
+//
 bool JavaThread::java_suspend() {
   ThreadsListHandle tlh;
   if (!tlh.includes(this)) {
