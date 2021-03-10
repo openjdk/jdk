@@ -76,6 +76,7 @@ class Method : public Metadata {
   ConstMethod*      _constMethod;                // Method read-only data.
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
+  AdapterHandlerEntry* _adapter;
   AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
                                                  // note: can have vtables with >2**16 elements (because of inheritance)
@@ -464,13 +465,7 @@ private:
 public:
   static void set_code(const methodHandle& mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
-    constMethod()->set_adapter_entry(adapter);
-  }
-  void set_adapter_trampoline(AdapterHandlerEntry** trampoline) {
-    constMethod()->set_adapter_trampoline(trampoline);
-  }
-  void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
-    constMethod()->update_adapter_trampoline(adapter);
+    _adapter = adapter;
   }
   void set_from_compiled_entry(address entry) {
     _from_compiled_entry =  entry;
@@ -481,7 +476,7 @@ public:
   address get_c2i_unverified_entry();
   address get_c2i_no_clinit_check_entry();
   AdapterHandlerEntry* adapter() const {
-    return constMethod()->adapter();
+    return _adapter;
   }
   // setup entry points
   void link_method(const methodHandle& method, TRAPS);
@@ -516,8 +511,6 @@ public:
   address interpreter_entry() const              { return _i2i_entry; }
   // Only used when first initialize so we can set _i2i_entry and _from_interpreted_entry
   void set_interpreter_entry(address entry) {
-    assert(!is_shared(),
-           "shared method's interpreter entry should not be changed at run time");
     if (_i2i_entry != entry) {
       _i2i_entry = entry;
     }
