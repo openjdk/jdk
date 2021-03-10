@@ -350,9 +350,6 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_method_counters);
 
   Method* this_ptr = this;
-  it->push_method_entry(&this_ptr, (intptr_t*)&_i2i_entry);
-  it->push_method_entry(&this_ptr, (intptr_t*)&_from_compiled_entry);
-  it->push_method_entry(&this_ptr, (intptr_t*)&_from_interpreted_entry);
 }
 
 // Attempt to return method to original state.  Clear any pointers
@@ -1113,17 +1110,12 @@ void Method::unlink_code() {
 #if INCLUDE_CDS
 // Called by class data sharing to remove any entry points (which are not shared)
 void Method::unlink_method() {
-  _code = NULL;
-
   Arguments::assert_is_dumping_archive();
-  // Set the values to what they should be at run time. Note that
-  // this Method can no longer be executed during dump time.
-  _i2i_entry = Interpreter::entry_for_cds_method(methodHandle(Thread::current(), this));
-  _from_interpreted_entry = _i2i_entry;
-
-  assert(_from_compiled_entry != NULL, "sanity");
-  assert(*((int*)_from_compiled_entry) == 0,
-         "must be NULL during dump time, to be initialized at run time");
+  _code = NULL;
+  _adapter = NULL;
+  _i2i_entry = NULL;
+  _from_compiled_entry = NULL;
+  _from_interpreted_entry = NULL;
 
   if (is_native()) {
     *native_function_addr() = NULL;
@@ -1136,90 +1128,12 @@ void Method::unlink_method() {
 }
 #endif
 
-/****************************************************************************
-// The following illustrates how the entries work for CDS shared Methods:
-//
-// Our goal is to delay writing into a shared Method until it's compiled.
-// Hence, we want to determine the initial values for _i2i_entry,
-// _from_interpreted_entry and _from_compiled_entry during CDS dump time.
-//
-// In this example, both Methods A and B have the _i2i_entry of "zero_locals".
-// They also have similar signatures so that they will share the same
-// AdapterHandlerEntry.
-//
-// _adapter_trampoline points to a fixed location in the RW section of
-// the CDS archive. This location initially contains a NULL pointer. When the
-// first of method A or B is linked, an AdapterHandlerEntry is allocated
-// dynamically, and its c2i/i2c entries are generated.
-//
-// _i2i_entry and _from_interpreted_entry initially points to the same
-// (fixed) location in the CODE section of the CDS archive. This contains
-// an unconditional branch to the actual entry for "zero_locals", which is
-// generated at run time and may be on an arbitrary address. Thus, the
-// unconditional branch is also generated at run time to jump to the correct
-// address.
-//
-// Similarly, _from_compiled_entry points to a fixed address in the CODE
-// section. This address has enough space for an unconditional branch
-// instruction, and is initially zero-filled. After the AdapterHandlerEntry is
-// initialized, and the address for the actual c2i_entry is known, we emit a
-// branch instruction here to branch to the actual c2i_entry.
-//
-// The effect of the extra branch on the i2i and c2i entries is negligible.
-//
-// The reason for putting _adapter_trampoline in RO is many shared Methods
-// share the same AdapterHandlerEntry, so we can save space in the RW section
-// by having the extra indirection.
-
-
-[Method A: RW]
-  _constMethod ----> [ConstMethod: RO]
-                       _adapter_trampoline -----------+
-                                                      |
-  _i2i_entry              (same value as method B)    |
-  _from_interpreted_entry (same value as method B)    |
-  _from_compiled_entry    (same value as method B)    |
-                                                      |
-                                                      |
-[Method B: RW]                               +--------+
-  _constMethod ----> [ConstMethod: RO]       |
-                       _adapter_trampoline --+--->(AdapterHandlerEntry* ptr: RW)-+
-                                                                                 |
-                                                 +-------------------------------+
-                                                 |
-                                                 +----> [AdapterHandlerEntry] (allocated at run time)
-                                                              _fingerprint
-                                                              _c2i_entry ---------------------------------+->[c2i entry..]
- _i2i_entry  -------------+                                   _i2c_entry ---------------+-> [i2c entry..] |
- _from_interpreted_entry  |                                   _c2i_unverified_entry     |                 |
-         |                |                                   _c2i_no_clinit_check_entry|                 |
-         |                |  (_cds_entry_table: CODE)                                   |                 |
-         |                +->[0]: jmp _entry_table[0] --> (i2i_entry_for "zero_locals") |                 |
-         |                |                               (allocated at run time)       |                 |
-         |                |  ...                           [asm code ...]               |                 |
-         +-[not compiled]-+  [n]: jmp _entry_table[n]                                   |                 |
-         |                                                                              |                 |
-         |                                                                              |                 |
-         +-[compiled]-------------------------------------------------------------------+                 |
-                                                                                                          |
- _from_compiled_entry------------>  (_c2i_entry_trampoline: CODE)                                         |
-                                    [jmp c2i_entry] ------------------------------------------------------+
-
-***/
-
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
-  if (is_shared()) {
-    // Can't assert that the adapters are sane, because methods get linked before
-    // the interpreter is generated, and hence before its adapters are generated.
-    // If you messed them up you will notice soon enough though, don't you worry.
-    if (adapter() != NULL) {
-      return;
-    }
-  } else if (_i2i_entry != NULL) {
+  if (_i2i_entry != NULL) {
     return;
   }
   assert( _code == NULL, "nothing compiled yet" );
@@ -1227,13 +1141,11 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // Setup interpreter entrypoint
   assert(this == h_method(), "wrong h_method()" );
 
-  if (!is_shared()) {
-    assert(adapter() == NULL, "init'd to NULL");
-    address entry = Interpreter::entry_for_method(h_method);
-    assert(entry != NULL, "interpreter entry must be non-null");
-    // Sets both _i2i_entry and _from_interpreted_entry
-    set_interpreter_entry(entry);
-  }
+  assert(adapter() == NULL, "init'd to NULL");
+  address entry = Interpreter::entry_for_method(h_method);
+  assert(entry != NULL, "interpreter entry must be non-null");
+  // Sets both _i2i_entry and _from_interpreted_entry
+  set_interpreter_entry(entry);
 
   // Don't overwrite already registered native entries.
   if (is_native() && !has_native_function()) {
@@ -1253,7 +1165,6 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   (void) make_adapters(h_method, CHECK);
 
   // ONLY USE the h_method now as make_adapter may have blocked
-
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {
@@ -1272,25 +1183,13 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
     }
   }
 
-  if (mh->is_shared()) {
-    assert(mh->adapter() == adapter, "must be");
-    assert(mh->_from_compiled_entry != NULL, "must be");
-  } else {
-    mh->set_adapter_entry(adapter);
-    mh->_from_compiled_entry = adapter->get_c2i_entry();
-  }
+  mh->set_adapter_entry(adapter);
+  mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
 }
 
 void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
-
-  // Since restore_unshareable_info can be called more than once for a method, don't
-  // redo any work.
-  if (adapter() == NULL) {
-    methodHandle mh(THREAD, this);
-    link_method(mh, CHECK);
-  }
 }
 
 address Method::from_compiled_entry_no_trampoline() const {
@@ -1971,7 +1870,7 @@ void Method::clear_all_breakpoints() {
 
 #endif // INCLUDE_JVMTI
 
-int Method::invocation_count() {
+int Method::invocation_count() const {
   MethodCounters* mcs = method_counters();
   MethodData* mdo = method_data();
   if (((mcs != NULL) ? mcs->invocation_counter()->carry() : false) ||
@@ -1983,7 +1882,7 @@ int Method::invocation_count() {
   }
 }
 
-int Method::backedge_count() {
+int Method::backedge_count() const {
   MethodCounters* mcs = method_counters();
   MethodData* mdo = method_data();
   if (((mcs != NULL) ? mcs->backedge_counter()->carry() : false) ||
