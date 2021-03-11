@@ -129,13 +129,13 @@ public class ClassFileInstaller {
     }
 
     public static class Manifest {
-        private InputStream in;
+        private final InputStream in;
 
         private Manifest(InputStream in) {
             this.in = in;
         }
 
-        static Manifest fromSourceFile(String fileName) throws Exception {
+        public static Manifest fromSourceFile(String fileName) throws Exception {
             String pathName = System.getProperty("test.src") + File.separator + fileName;
             return new Manifest(new FileInputStream(pathName));
         }
@@ -146,7 +146,7 @@ public class ClassFileInstaller {
         //  ClassFileInstaller.writeJar("redefineagent.jar",
         //    ClassFileInstaller.Manifest.fromString(manifest),
         //    "RedefineClassHelper");
-        static Manifest fromString(String manifest) throws Exception {
+        public static Manifest fromString(String manifest) throws Exception {
             return new Manifest(new ByteArrayInputStream(manifest.getBytes()));
         }
 
