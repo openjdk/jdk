@@ -175,9 +175,9 @@ public final class Utils {
     // used by caller.
 
     public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
-        return (k, v) -> client.authenticator() == null ||
-                ! (k.equalsIgnoreCase("Authorization")
-                        && k.equalsIgnoreCase("Proxy-Authorization"));
+        return (k, v) -> !client.authenticator().isPresent() ||
+                (!k.equalsIgnoreCase("Authorization")
+                        && !k.equalsIgnoreCase("Proxy-Authorization"));
     }
     private static final BiPredicate<String, String> HOST_RESTRICTED = (k,v) -> !"host".equalsIgnoreCase(k);
     public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client)  {
