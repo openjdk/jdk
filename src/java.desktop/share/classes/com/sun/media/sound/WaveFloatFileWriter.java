@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,11 +80,7 @@ public final class WaveFloatFileWriter extends AudioFileWriter {
             fmt_chunk.writeUnsignedShort(format.getSampleSizeInBits());
         }
         try (RIFFWriter data_chunk = writer.writeChunk("data")) {
-            byte[] buff = new byte[1024];
-            int len;
-            while ((len = stream.read(buff, 0, buff.length)) != -1) {
-                data_chunk.write(buff, 0, len);
-            }
+            stream.transferTo(data_chunk);
         }
     }
 

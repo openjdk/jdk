@@ -179,15 +179,10 @@ template <MEMFLAGS F> bool BasicHashtable<F>::resize(int new_size) {
   for (int index_old = 0; index_old < table_size_old; index_old++) {
     for (BasicHashtableEntry<F>* p = _buckets[index_old].get_entry(); p != NULL; ) {
       BasicHashtableEntry<F>* next = p->next();
-      bool keep_shared = p->is_shared();
       int index_new = hash_to_index(p->hash());
 
       p->set_next(buckets_new[index_new].get_entry());
       buckets_new[index_new].set_entry(p);
-
-      if (keep_shared) {
-        p->set_shared();
-      }
       p = next;
     }
   }

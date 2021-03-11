@@ -229,7 +229,10 @@ void handleSendFailed
         msg->msg_iovlen = 1;
 
         bufferObj = (*env)->NewDirectByteBuffer(env, addressP, dataLength);
-        CHECK_NULL(bufferObj);
+        if (bufferObj == NULL) {
+            free(addressP);
+            return;
+        }
 
         alreadyRead = read - dataOffset;
         if (alreadyRead > 0) {
@@ -243,12 +246,14 @@ void handleSendFailed
 
         if (remaining > 0) {
             if ((rv = recvmsg(fd, msg, 0)) < 0) {
+                free(addressP);
                 handleSocketError(env, errno);
                 return;
             }
 
             if (rv != (dataLength - alreadyRead) || !(msg->msg_flags & MSG_EOR)) {
                 //TODO: assert false: "should not reach here";
+                free(addressP);
                 return;
             }
             // TODO: Set and document (in API) buffers position.
@@ -258,7 +263,10 @@ void handleSendFailed
     /* create SendFailed */
     resultObj = (*env)->NewObject(env, ssf_class, ssf_ctrID, ssf->ssf_assoc_id,
             isaObj, bufferObj, ssf->ssf_error, sri->sinfo_stream);
-    CHECK_NULL(resultObj);
+    if (resultObj == NULL) {
+        if (bufferObj != NULL) free(addressP);
+        return;
+    }
     (*env)->SetObjectField(env, resultContainerObj, src_valueID, resultObj);
     (*env)->SetIntField(env, resultContainerObj, src_typeID,
             sun_nio_ch_sctp_ResultContainer_SEND_FAILED);

@@ -87,24 +87,13 @@ class CharacterDataLatin1 extends CharacterData {
 
     @IntrinsicCandidate
     boolean isLowerCase(int ch) {
-        int props = getProperties(ch);
-        return (props & $$maskType) == Character.LOWERCASE_LETTER;
+        return (getProperties(ch) & $$maskType) == Character.LOWERCASE_LETTER
+            || (getPropertiesEx(ch) & $$maskOtherLowercase) != 0; // 0xaa, 0xba
     }
 
     @IntrinsicCandidate
     boolean isUpperCase(int ch) {
-        int props = getProperties(ch);
-        return (props & $$maskType) == Character.UPPERCASE_LETTER;
-    }
-
-    boolean isOtherLowercase(int ch) {
-        int props = getPropertiesEx(ch);
-        return (props & $$maskOtherLowercase) != 0;
-    }
-
-    boolean isOtherUppercase(int ch) {
-        int props = getPropertiesEx(ch);
-        return (props & $$maskOtherUppercase) != 0;
+        return (getProperties(ch) & $$maskType) == Character.UPPERCASE_LETTER;
     }
 
     boolean isOtherAlphabetic(int ch) {
@@ -290,6 +279,6 @@ class CharacterDataLatin1 extends CharacterData {
 
     static {
         $$Initializers
-    }        
+    }
 }
 

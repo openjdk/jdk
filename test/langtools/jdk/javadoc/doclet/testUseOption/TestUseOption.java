@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200 8186332
- *      8182765 8196202 8202626
+ *      8182765 8196202 8202626 8261976
  * @summary A simple test to ensure class-use files are correct.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -156,20 +156,20 @@ public class TestUseOption extends JavadocTester {
 
         checkOutput("class-use/UsedInC.html", true,
                 """
-                    Uses of <a href="../UsedInC.html" title="class in &lt;Unnamed&gt;">UsedInC</a> i\
-                    n <a href="../package-summary.html">&lt;Unnamed&gt;</a>"""
+                    Uses of <a href="../UsedInC.html" title="class in Unnamed Package">UsedInC</a> i\
+                    n <a href="../package-summary.html">Unnamed Package</a>"""
         );
         checkOutput("class-use/UsedInC.html", true,
                 """
                     <li>
-                    <section class="detail" id="unnamed.package">
+                    <section class="detail" id="unnamed-package">
                     """
         );
         checkOutput("package-use.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="class-use/UsedInC.html#unnamed.package">UsedInC</a></div>""",
+                    <div class="col-first even-row-color"><a href="class-use/UsedInC.html#unnamed-package">UsedInC</a></div>""",
                 """
-                    <div class="col-first even-row-color"><a href="#unnamed.package">&lt;Unnamed&gt;</a></div>
+                    <div class="col-first even-row-color"><a href="#unnamed-package">Unnamed Package</a></div>
                     <div class="col-last even-row-color">&nbsp;</div>"""
         );
     }
