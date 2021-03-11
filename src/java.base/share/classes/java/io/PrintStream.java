@@ -41,8 +41,8 @@ import java.nio.charset.UnsupportedCharsetException;
  * Optionally, a {@code PrintStream} can be created so as to flush
  * automatically; this means that the {@code flush} method of the underlying
  * output stream is automatically invoked after a byte array is written, one
- * of the {@code append}, {@code print}, or {@code println} methods is invoked,
- * or a newline character or byte ({@code '\n'}) is written.
+ * of the {@code println} methods is invoked, or a newline character or byte
+ * ({@code '\n'}) is written.
  *
  * <p> All characters printed by a {@code PrintStream} are converted into
  * bytes using the given encoding or charset, or the platform's default
