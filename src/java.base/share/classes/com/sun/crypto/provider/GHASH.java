@@ -36,6 +36,7 @@ import java.nio.ByteOrder;
 import java.security.ProviderException;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.nio.ch.DirectBuffer;
 
 /**
  * This class represents the GHASH function defined in NIST 800-38D
@@ -47,7 +48,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * @since 1.8
  */
-final class GHASH {
+final class GHASH implements Cloneable {
     private static final int AES_BLOCK_SIZE = 16;
     // Handle for converting byte[] <-> long
     private static final VarHandle asLongView =
@@ -148,6 +149,12 @@ final class GHASH {
         subkeyHtbl[1] = (long)asLongView.get(subkeyH, 8);
     }
 
+    // Cloning constructor
+    private GHASH(GHASH g) {
+        state = g.state.clone();
+        subkeyHtbl = g.subkeyHtbl.clone();
+    }
+
     /**
      * Resets the GHASH object to its original state, i.e. blank w/
      * the same subkey H. Used after digest() is called and to re-use
@@ -174,6 +181,11 @@ final class GHASH {
         state[1] = stateSave1;
     }
 
+    @Override
+    public GHASH clone() {
+        return new GHASH(this);
+    }
+
     private static void processBlock(byte[] data, int ofs, long[] st, long[] subH) {
         st[0] ^= (long)asLongView.get(data, ofs);
         st[1] ^= (long)asLongView.get(data, ofs + 8);
@@ -198,7 +210,7 @@ final class GHASH {
     int update(ByteBuffer src, int inLen) {
         // If the bytebuffer is backed by arrays, use that instead of
         // allocating and copying for direct bytebuffers
-        if (!src.isDirect()) {
+        if (!src.isDirect() && !src.isReadOnly()) {
             int len = update(src.array(), src.arrayOffset() + src.position(),
                 inLen);
             src.position(src.position() + len);
@@ -225,7 +237,7 @@ final class GHASH {
     void doLastBlock(ByteBuffer src, int inLen) {
         // If the bytebuffer is backed by arrays, use that instead of
         // allocating and copying for direct bytebuffers
-        if (!src.isDirect()) {
+        if (!src.isDirect() && !src.isReadOnly()) {
             doLastBlock(src.array(), src.arrayOffset() + src.position(),
                 inLen);
             src.position(src.position() + inLen);

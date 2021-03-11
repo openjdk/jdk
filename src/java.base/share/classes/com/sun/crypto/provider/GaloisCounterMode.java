@@ -132,6 +132,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 throw new InvalidAlgorithmParameterException(
                     "Cannot reuse iv for GCM encryption");
             }
+
+            // Both values are already clones
             lastKey = keyValue;
             lastIv = iv;
         } else {
@@ -285,10 +287,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         if (!initialized) {
             throw new IllegalStateException("Operation not initialized.");
         }
-        if (reInit) {
-            throw new IllegalStateException("Must use either different key or" +
-                " iv for GCM encryption");
-        }
+
         if (engine == null) {
             if (encryption) {
                 engine = new GCMEncrypt(blockCipher);
@@ -298,13 +297,12 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
     }
 
-    void exitOp() {
-        engine = null;
-        if (encryption) {
-            reInit = true;
+    void checkReInit() {
+        if (reInit) {
+            throw new IllegalStateException(
+                "Must use either different key or " + " iv for GCM encryption");
         }
     }
-
 
     @Override
     protected byte[] engineUpdate(byte[] input, int inputOffset, int inputLen) {
@@ -362,7 +360,6 @@ abstract class GaloisCounterMode extends CipherSpi {
     protected byte[] engineDoFinal(byte[] input, int inputOffset,
         int inputLen) throws IllegalBlockSizeException, BadPaddingException {
         checkInit();
-
         byte[] output = new byte[engine.getOutputSize(inputLen, true)];
         if (input == null) {
             input = emptyBuf;
@@ -372,7 +369,8 @@ abstract class GaloisCounterMode extends CipherSpi {
         } catch (ShortBufferException e) {
             throw new ProviderException(e);
         } finally {
-            exitOp();
+            // Release crypto engine
+            engine = null;
         }
         return output;
     }
@@ -382,22 +380,23 @@ abstract class GaloisCounterMode extends CipherSpi {
         byte[] output, int outputOffset) throws ShortBufferException,
         IllegalBlockSizeException, BadPaddingException {
         checkInit();
-
         if (input == null) {
             input = emptyBuf;
         }
         try {
             ArrayUtil.nullAndBoundsCheck(input, inputOffset, inputLen);
         } catch (Exception e) {
-            exitOp();
+            // Release crypto engine
+            engine = null;
             throw new IllegalBlockSizeException("input array invalid");
         }
         int len = engine.doFinal(input, inputOffset, inputLen, output,
             outputOffset);
-        exitOp();
-        return len;
 
-//        return engineDoFinal(ByteBuffer.wrap(input), ByteBuffer.wrap(output));
+        // Release crypto engine
+        engine = null;
+
+        return len;
     }
 
     @Override
@@ -406,7 +405,10 @@ abstract class GaloisCounterMode extends CipherSpi {
         BadPaddingException {
         checkInit();
         int len = engine.doFinal(input, output);
-        exitOp();
+
+        // Release crypto engine
+        engine = null;
+
         return len;
     }
 
@@ -424,7 +426,8 @@ abstract class GaloisCounterMode extends CipherSpi {
         } catch (BadPaddingException e) {
             // should never happen
         } finally {
-            exitOp();
+            // Release crypto engine
+            engine = null;
         }
         return null;
     }
@@ -447,8 +450,6 @@ abstract class GaloisCounterMode extends CipherSpi {
         return ConstructKeys.constructKey(encodedKey, wrappedKeyAlgorithm,
                                           wrappedKeyType);
     }
-
-
 
     // value must be 16-byte long; used by GCTR and GHASH as well
     static void increment32(byte[] value) {
@@ -536,70 +537,22 @@ abstract class GaloisCounterMode extends CipherSpi {
         this.keySize = keySize;
     }
 
-    /**
-     * Gets the name of the feedback mechanism
-     *
-     * @return the name of the feedback mechanism
-     */
-    String getFeedback() {
-        return "GCM";
-    }
-
-    /**
-     * Resets the cipher object to its original state.
-     * This is used when doFinal is called in the Cipher class, so that the
-     * cipher can be reused (with its original key and iv).
-     */
-    void reset() {
-        if (encryption) {
-            engine = new GCMEncrypt(blockCipher);
-        } else {
-            engine = new GCMDecrypt(blockCipher);
-        }
-        reInit = true;
-    }
-
-    class GCMState {
-        // length of total data, i.e. len(C)
-        int processed = 0;
-
-        // additional variables for save/restore calls
-        private byte[] aadBufferSave = null;
-        private int sizeOfAADSave = 0;
-        private byte[] ibufferSave = null;
-        private int processedSave = 0;
-        // buffer for AAD data; if null, meaning update has been called
-        ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
-        int sizeOfAAD = 0;
-
-        // buffer data for crypto operation
-        ByteArrayOutputStream ibuffer = null;
-        // Original dst buffer if there was an overlap situation
-        ByteBuffer originalDst = null;
-        byte[] originalOut = null;
-        int originalOutOfs = 0;
-
-
-    }
-
     abstract class GCMEngine {
-        byte[] subkeyH;
         byte[] preCounterBlock;
 
         GCTR gctrPAndC;
         GHASH ghashAllToS;
 
+        // Block size of the algorithm
+        int blockSize;
+
         // length of total data, i.e. len(C)
         int processed = 0;
 
-        // additional variables for save/restore calls
-        private byte[] aadBufferSave = null;
-        private int sizeOfAADSave = 0;
-        private byte[] ibufferSave = null;
-        private int processedSave = 0;
         // buffer for AAD data; if null, meaning update has been called
         ByteArrayOutputStream aadBuffer = null;
         int sizeOfAAD = 0;
+        boolean aadProcessed = false;
 
         // buffer data for crypto operation
         ByteArrayOutputStream ibuffer = null;
@@ -609,13 +562,11 @@ abstract class GaloisCounterMode extends CipherSpi {
         byte[] originalOut = null;
         int originalOutOfs = 0;
 
-        int blockSize;
 
         GCMEngine(SymmetricCipher blockCipher) {
-            // This can be in-place because subkeyH is zeroed data
             blockSize = blockCipher.getBlockSize();
+            byte[] subkeyH = new byte[blockSize];
 
-            subkeyH = new byte[blockSize];
             blockCipher.encryptBlock(subkeyH, 0, subkeyH,0);
             preCounterBlock = getJ0(iv, subkeyH);
             byte[] j0Plus1 = preCounterBlock.clone();
@@ -623,7 +574,31 @@ abstract class GaloisCounterMode extends CipherSpi {
             gctrPAndC = new GCTR(blockCipher, j0Plus1);
             ghashAllToS = new GHASH(subkeyH);
         }
+/*
+        GCMEngine(GCMEngine e) {
+            preCounterBlock = e.preCounterBlock.clone();
+            processed = e.processed;
+            blockSize = e.blockSize;
+            aadBufferSave =
+                ((aadBuffer == null || aadBuffer.size() == 0)?
+                    null : aadBuffer.toByteArray());
+            if (ibuffer != null)  {
+                ibuffer.writeBytes(e.ibuffer.toByteArray());
+            }
 
+            // originalDst and originalOut must be the same value as they are
+            // references back to the original variables.
+            if (originalDst != null) {
+                originalDst = e.originalDst;
+            }
+            if (originalOut != null) {
+                originalOut = e.originalOut;
+                originalOutOfs = e.originalOutOfs;
+            }
+            gctrPAndC.clone();
+            ghashAllToS.clone();
+        }
+*/
         /**
          *
          * @param inLen Contains the length of the input data and buffered data.
@@ -646,42 +621,6 @@ abstract class GaloisCounterMode extends CipherSpi {
             int outOfs);
         abstract int cryptBlocks(byte[] in, int inOfs, int inLen, ByteBuffer dst);
         abstract int cryptBlocks(ByteBuffer src, ByteBuffer dst);
-
-        /**
-         * Save the current content of this cipher.
-         */
-        void save() {
-            processedSave = processed;
-            sizeOfAADSave = sizeOfAAD;
-            aadBufferSave =
-                ((aadBuffer == null || aadBuffer.size() == 0)?
-                    null : aadBuffer.toByteArray());
-            if (gctrPAndC != null) gctrPAndC.save();
-            if (ghashAllToS != null) ghashAllToS.save();
-            if (ibuffer != null) {
-                ibufferSave = ibuffer.toByteArray();
-            }
-        }
-
-        /**
-         * Restores the content of this cipher to the previous saved one.
-         */
-        void restore() {
-            processed = processedSave;
-            sizeOfAAD = sizeOfAADSave;
-            if (aadBuffer != null) {
-                aadBuffer.reset();
-                if (aadBufferSave != null) {
-                    aadBuffer.write(aadBufferSave, 0, aadBufferSave.length);
-                }
-            }
-            if (gctrPAndC != null) gctrPAndC.restore();
-            if (ghashAllToS != null) ghashAllToS.restore();
-            if (ibuffer != null) {
-                ibuffer.reset();
-                ibuffer.write(ibufferSave, 0, ibufferSave.length);
-            }
-        }
 
         void initBuffer(int len) {
             if (ibuffer == null) {
@@ -881,12 +820,14 @@ abstract class GaloisCounterMode extends CipherSpi {
          * encryption/decryption operation
          * @throws UnsupportedOperationException if this method
          * has not been overridden by an implementation
-         *
-         * @since 1.8
          */
         void updateAAD(byte[] src, int offset, int len) {
+            if (encryption) {
+                checkReInit();
+            }
+
             if (aadBuffer == null) {
-                if (sizeOfAAD == 0) {
+                if (sizeOfAAD == 0 && !aadProcessed) {
                     aadBuffer = new ByteArrayOutputStream(len);
                 } else {
                     // update has already been called
@@ -916,6 +857,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 }
                 aadBuffer = null;
             }
+            aadProcessed = true;
         }
 
         // Process en/decryption all the way to the last block.  It takes both
@@ -1074,9 +1016,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
 
             System.arraycopy(out, originalOutOfs, originalOut, originalOutOfs, len);
-
         }
-
     }
 
     class GCMEncrypt extends GCMEngine {
@@ -1098,6 +1038,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
         @Override
         byte[] doUpdate(byte[] in, int inOff, int inLen) {
+            checkReInit();
             byte[] output = new byte[getOutputSize(inLen, false)];
             try {
                 doUpdate(in, inOff, inLen, output, 0);
@@ -1125,6 +1066,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         @Override
         public int doUpdate(byte[] in, int inOfs, int inLen, byte[] out,
             int outOfs) throws ShortBufferException {
+            checkReInit();
             checkDataLength(inLen, getBufferedLength());
             ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
             ArrayUtil.nullAndBoundsCheck(out, outOfs, out.length - outOfs);
@@ -1166,7 +1108,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         @Override
         public int doUpdate(ByteBuffer src, ByteBuffer dst)
             throws ShortBufferException {
-
+            checkReInit();
             int len = processBlocks((ibuffer == null || ibuffer.size() == 0) ?
                     null : ByteBuffer.wrap(ibuffer.toByteArray()), src, dst);
 /*
@@ -1195,6 +1137,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         @Override
         public int doFinal(byte[] in, int inOfs, int inLen, byte[] out,
             int outOfs) throws IllegalBlockSizeException, ShortBufferException {
+            checkReInit();
             try {
                 ArrayUtil.nullAndBoundsCheck(out, outOfs, getOutputSize(inLen, true));
             } catch (ArrayIndexOutOfBoundsException aiobe) {
@@ -1258,12 +1201,16 @@ abstract class GaloisCounterMode extends CipherSpi {
             // copy the tag to the end of the buffer
             System.arraycopy(block, 0, out, (outOfs + inLen), tagLenBytes);
             restoreOut(out, resultLen + tagLenBytes);
+
+            reInit = true;
+
             return (resultLen + tagLenBytes);
         }
 
         @Override
         public int doFinal(ByteBuffer src, ByteBuffer dst) throws IllegalBlockSizeException,
             ShortBufferException {
+            checkReInit();
             dst = overlapDetection(src, dst);
             int len = src.remaining() + getBufferedLength();
 
@@ -1289,6 +1236,9 @@ abstract class GaloisCounterMode extends CipherSpi {
             new GCTR(blockCipher, preCounterBlock).doFinal(block, 0, tagLenBytes, block, 0);
             dst.put(block, 0, tagLenBytes);
             restoreDst(dst);
+
+            reInit = true;
+
             return (len + tagLenBytes);
         }
 
@@ -1365,10 +1315,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (!isFinal) {
                 return 0;
             }
-            if (ibuffer != null) {
-                inLen += ibuffer.size();
-            }
-            return Math.max(inLen - tagLenBytes, 0);
+            return Math.max(inLen + getBufferedLength() - tagLenBytes, 0);
         }
 
         @Override
@@ -1635,6 +1582,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         public int doFinal(byte[] in, int inOfs, int inLen, byte[] out,
             int outOfs) throws IllegalBlockSizeException, AEADBadTagException,
             ShortBufferException {
+            GHASH save = null;
 
             int bufLen = getBufferedLength();
             int len = inLen + bufLen;
@@ -1642,21 +1590,21 @@ abstract class GaloisCounterMode extends CipherSpi {
                 throw new AEADBadTagException("Input too short - need tag");
             }
 
-            try {
-                ArrayUtil.nullAndBoundsCheck(out, outOfs, len - tagLenBytes);
-            } catch (ArrayIndexOutOfBoundsException aiobe) {
-                throw new ShortBufferException("Output buffer invalid");
+            //  XXX Fix output to not go negative even though it doesn't matter
+            if (len - tagLenBytes > out.length - outOfs) {
+                save = ghashAllToS.clone();
             }
+
             checkDataLength(len - tagLenBytes);
             processAAD();
-            out = overlapDetection(in, inOfs, out, outOfs);
 
             findTag(in, inOfs, inLen);
             byte[] block = getLengthBlock(sizeOfAAD,
                 processGHASH(in, inOfs, inLen));
             ghashAllToS.update(block);
             block = ghashAllToS.digest();
-            new GCTR(blockCipher, preCounterBlock).doFinal(block, 0, tagLenBytes, block, 0);
+            new GCTR(blockCipher, preCounterBlock).doFinal(block, 0,
+                tagLenBytes, block, 0);
 
             // check entire authentication tag for time-consistency
             int mismatch = 0;
@@ -1668,6 +1616,18 @@ abstract class GaloisCounterMode extends CipherSpi {
                 throw new AEADBadTagException("Tag mismatch!");
             }
 
+            try {
+                ArrayUtil.nullAndBoundsCheck(out, outOfs, len - tagLenBytes);
+            } catch (ArrayIndexOutOfBoundsException aiobe) {
+                throw new ShortBufferException("Output buffer invalid");
+            }
+
+            if (save != null) {
+                throw new ShortBufferException("Output buffer too small, must" +
+                    "be at least " + (len - tagLenBytes) + " bytes long");
+            }
+
+            out = overlapDetection(in, inOfs, out, outOfs);
             len = processGCTR(in, inOfs, inLen, out, outOfs);
             restoreOut(out, len);
             return len;
@@ -1677,6 +1637,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         public int doFinal(ByteBuffer src, ByteBuffer dst)
             throws IllegalBlockSizeException, AEADBadTagException,
             ShortBufferException {
+            GHASH save = null;
 
             // Check for overlap in the bytebuffers
             dst = overlapDetection(src, dst);
@@ -1719,9 +1680,11 @@ abstract class GaloisCounterMode extends CipherSpi {
             // 'len' contains the length in ibuffer and src
             checkDataLength(len);
 
+            // Save GHASH context to allow the tag to be checked even though
+            // the dst buffer is too short.  Context will be restored so the
+            // method can be called again with the proper sized dst buffer.
             if (len > dst.remaining()) {
-                throw new ShortBufferException("Output buffer too small, must" +
-                    "be at least " + len + " bytes long");
+                save = ghashAllToS.clone();
             }
 
             processAAD();
@@ -1767,6 +1730,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (ct.remaining() > 0) {
                 ghashAllToS.doLastBlock(ct, ct.remaining());
             }
+
             // Prepare buffer for decryption if available
             ct.reset();
 
@@ -1783,6 +1747,12 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             if (mismatch != 0) {
                 throw new AEADBadTagException("Tag mismatch!");
+            }
+
+            if (save != null) {
+                ghashAllToS = save;
+                throw new ShortBufferException("Output buffer too small, must" +
+                    " be at least " + len + " bytes long");
             }
 
             // Decrypt the all the input data and put it into dst
