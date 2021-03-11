@@ -27,7 +27,7 @@
  * @summary Hello World test for dynamic archive with custom loader
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/customLoader/test-classes
- * @build HelloUnload CustomLoadee runtime.testlibrary.ClassUnloadCommon
+ * @build HelloUnload CustomLoadee jdk.test.lib.classloader.ClassUnloadCommon
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar hello.jar HelloUnload
  *                 jdk.test.lib.classloader.ClassUnloadCommon
