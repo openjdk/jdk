@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/protectionDomainCache.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
@@ -67,6 +67,9 @@ class CleanProtectionDomainEntries : public CLDClosure {
 };
 
 void ProtectionDomainCacheTable::unlink() {
+  // The dictionary entries _pd_set field should be null also, so nothing to do.
+  assert(java_lang_System::allow_security_manager(), "should not be called otherwise");
+
   {
     // First clean cached pd lists in loaded CLDs
     // It's unlikely, but some loaded classes in a dictionary might

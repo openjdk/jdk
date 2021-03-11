@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,87 +21,68 @@
  * questions.
  */
 
-import java.net.InetAddress;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import jdk.test.lib.NetworkConfiguration;
 
 /*
  * @test
  * @bug 8021372
  * @summary Tests that the MAC addresses returned by NetworkInterface.getNetworkInterfaces are unique for each adapter.
- *
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ * @run main/othervm UniqueMacAddressesTest
  */
 public class UniqueMacAddressesTest {
 
+    static PrintStream log = System.err;
+
+    // A record pair (NetworkInterface::name,  NetworkInterface::hardwareAddress)
+    record NetIfPair(String interfaceName, byte[] address) {}
+
     public static void main(String[] args) throws Exception {
         new UniqueMacAddressesTest().execute();
-        System.out.println("UniqueMacAddressesTest: OK");
+        log.println("UniqueMacAddressesTest: OK");
     }
 
     public UniqueMacAddressesTest() {
-        System.out.println("UniqueMacAddressesTest: start ");
+        log.println("UniqueMacAddressesTest: start");
     }
 
     public void execute() throws Exception {
-        Enumeration<NetworkInterface> networkInterfaces;
-        boolean areMacAddressesUnique = false;
-        List<NetworkInterface> networkInterfaceList = new ArrayList<NetworkInterface>();
-            networkInterfaces = NetworkInterface.getNetworkInterfaces();
-
-        // build a list of NetworkInterface objects to test MAC address
-        // uniqueness
-        createNetworkInterfaceList(networkInterfaces, networkInterfaceList);
-        areMacAddressesUnique = checkMacAddressesAreUnique(networkInterfaceList);
-        if (!areMacAddressesUnique) {
+        // build a list of NetworkInterface name address pairs
+        // to test MAC address uniqueness
+        List<NetIfPair> netIfList = createNetworkInterfaceList(NetworkConfiguration.probe());
+        if (!macAddressesAreUnique(netIfList))
             throw new RuntimeException("mac address uniqueness test failed");
-        }
     }
 
-    private boolean checkMacAddressesAreUnique (
-            List<NetworkInterface> networkInterfaces) throws Exception {
-        boolean uniqueMacAddresses = true;
-        for (NetworkInterface networkInterface : networkInterfaces) {
-            for (NetworkInterface comparisonNetIf : networkInterfaces) {
-                System.out.println("Comparing netif "
-                        + networkInterface.getName() + " and netif "
-                        + comparisonNetIf.getName());
-                if (testMacAddressesEqual(networkInterface, comparisonNetIf)) {
-                    uniqueMacAddresses = false;
-                    break;
-                }
+    private boolean macAddressesAreUnique(List<NetIfPair> netIfPairs) {
+        for (NetIfPair netIfPair : netIfPairs) {
+            for (NetIfPair compNetIfPair : netIfPairs) {
+                if (!netIfPair.interfaceName.equals(compNetIfPair.interfaceName) &&
+                        testMacAddressesEqual(netIfPair, compNetIfPair))
+                    return false;
             }
-            if (uniqueMacAddresses != true)
-                break;
         }
-        return uniqueMacAddresses;
+        return true;
     }
 
-    private boolean testMacAddressesEqual(NetworkInterface netIf1,
-            NetworkInterface netIf2) throws Exception {
-
-        byte[] rawMacAddress1 = null;
-        byte[] rawMacAddress2 = null;
-        boolean macAddressesEqual = false;
-        if (!netIf1.getName().equals(netIf2.getName())) {
-            System.out.println("compare hardware addresses "
-                +  createMacAddressString(netIf1) + " and " + createMacAddressString(netIf2));
-            rawMacAddress1 = netIf1.getHardwareAddress();
-            rawMacAddress2 = netIf2.getHardwareAddress();
-            macAddressesEqual = Arrays.equals(rawMacAddress1, rawMacAddress2);
-        } else {
-            // same interface
-            macAddressesEqual = false;
-        }
-        return macAddressesEqual;
+    private boolean testMacAddressesEqual(NetIfPair if1, NetIfPair if2) {
+        log.println("Compare hardware addresses of " + if1.interfaceName + " ("
+                +  createMacAddressString(if1.address) + ")" + " and " + if2.interfaceName
+                + " (" + createMacAddressString(if2.address) + ")");
+        return (Arrays.equals(if1.address, if2.address));
     }
 
-    private String createMacAddressString (NetworkInterface netIf) throws Exception {
-        byte[] macAddr = netIf.getHardwareAddress();
+    private String createMacAddressString(byte[] macAddr) {
         StringBuilder sb =  new StringBuilder();
         if (macAddr != null) {
             for (int i = 0; i < macAddr.length; i++) {
@@ -112,21 +93,18 @@ public class UniqueMacAddressesTest {
         return sb.toString();
     }
 
-    private void createNetworkInterfaceList(Enumeration<NetworkInterface> nis,
-            List<NetworkInterface> networkInterfaceList) throws Exception {
-        byte[] macAddr = null;
-        NetworkInterface netIf = null;
-        while (nis.hasMoreElements()) {
-            netIf = (NetworkInterface) nis.nextElement();
-            if (netIf.isUp()) {
-                macAddr = netIf.getHardwareAddress();
-                if (macAddr != null) {
-                    System.out.println("Adding NetworkInterface "
-                            + netIf.getName() + " with mac address "
-                            + createMacAddressString(netIf));
-                    networkInterfaceList.add(netIf);
-                }
-            }
+    private byte[] getNetworkInterfaceHardwareAddress(NetworkInterface inf) {
+        try {
+            return inf.getHardwareAddress();
+        } catch (SocketException se) {
+            throw new UncheckedIOException(se);
         }
+    }
+
+    private List<NetIfPair> createNetworkInterfaceList(NetworkConfiguration netConf) {
+        return netConf.interfaces()
+                .map(netIf -> new NetIfPair(netIf.getName(), getNetworkInterfaceHardwareAddress(netIf)))
+                .collect(Collectors.filtering(netIfPair -> netIfPair.address != null,
+                        Collectors.toCollection(ArrayList::new)));
     }
 }

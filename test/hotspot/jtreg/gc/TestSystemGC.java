@@ -44,8 +44,7 @@ package gc;
  * @run main/othervm -XX:+UseG1GC gc.TestSystemGC
  * @run main/othervm -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC
  * @run main/othervm -XX:+UseLargePages gc.TestSystemGC
- * @run main/othervm -XX:+UseLargePages -XX:+UseLargePagesInMetaspace gc.TestSystemGC
- */
+  */
 
 /*
  * @test TestSystemGCShenandoah

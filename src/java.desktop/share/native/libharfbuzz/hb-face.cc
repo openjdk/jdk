@@ -200,10 +200,15 @@ hb_face_create (hb_blob_t    *blob,
   if (unlikely (!blob))
     blob = hb_blob_get_empty ();
 
-  hb_face_for_data_closure_t *closure = _hb_face_for_data_closure_create (hb_sanitize_context_t ().sanitize_blob<OT::OpenTypeFontFile> (hb_blob_reference (blob)), index);
+  blob = hb_sanitize_context_t ().sanitize_blob<OT::OpenTypeFontFile> (hb_blob_reference (blob));
+
+  hb_face_for_data_closure_t *closure = _hb_face_for_data_closure_create (blob, index);
 
   if (unlikely (!closure))
+  {
+    hb_blob_destroy (blob);
     return hb_face_get_empty ();
+  }
 
   face = hb_face_create_for_tables (_hb_face_for_data_reference_table,
                                     closure,
@@ -226,7 +231,7 @@ hb_face_create (hb_blob_t    *blob,
 hb_face_t *
 hb_face_get_empty ()
 {
-  return const_cast<hb_face_t *> (&Null(hb_face_t));
+  return const_cast<hb_face_t *> (&Null (hb_face_t));
 }
 
 
@@ -367,6 +372,9 @@ hb_blob_t *
 hb_face_reference_table (const hb_face_t *face,
                          hb_tag_t tag)
 {
+  if (unlikely (tag == HB_TAG_NONE))
+    return hb_blob_get_empty ();
+
   return face->reference_table (tag);
 }
 
@@ -531,6 +539,7 @@ hb_face_get_table_tags (const hb_face_t *face,
  */
 
 
+#ifndef HB_NO_FACE_COLLECT_UNICODES
 /**
  * hb_face_collect_unicodes:
  * @face: font face.
@@ -542,9 +551,8 @@ void
 hb_face_collect_unicodes (hb_face_t *face,
                           hb_set_t  *out)
 {
-  face->table.cmap->collect_unicodes (out);
+  face->table.cmap->collect_unicodes (out, face->get_num_glyphs ());
 }
-
 /**
  * hb_face_collect_variation_selectors:
  * @face: font face.
@@ -560,7 +568,6 @@ hb_face_collect_variation_selectors (hb_face_t *face,
 {
   face->table.cmap->collect_variation_selectors (out);
 }
-
 /**
  * hb_face_collect_variation_unicodes:
  * @face: font face.
@@ -577,7 +584,7 @@ hb_face_collect_variation_unicodes (hb_face_t *face,
 {
   face->table.cmap->collect_variation_unicodes (variation_selector, out);
 }
-
+#endif
 
 
 /*
@@ -714,7 +721,10 @@ hb_face_builder_add_table (hb_face_t *face, hb_tag_t tag, hb_blob_t *blob)
     return false;
 
   hb_face_builder_data_t *data = (hb_face_builder_data_t *) face->user_data;
+
   hb_face_builder_data_t::table_entry_t *entry = data->tables.push ();
+  if (data->tables.in_error())
+    return false;
 
   entry->tag = tag;
   entry->blob = hb_blob_reference (blob);

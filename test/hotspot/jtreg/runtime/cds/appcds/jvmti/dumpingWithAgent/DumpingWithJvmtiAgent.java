@@ -25,7 +25,7 @@
  * @test
  * @summary CDS dumping with JVMTI agent.
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile ../../test-classes/Hello.java
  * @run main/othervm/native DumpingWithJvmtiAgent

@@ -26,9 +26,8 @@
 #include "utilities/stringUtils.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/quickSort.hpp"
 
-const char* LogTag::_name[] = {
+const char* const LogTag::_name[] = {
   "", // __NO_TAG
 #define LOG_TAG(name) #name,
   LOG_TAG_LIST
@@ -60,28 +59,30 @@ LogTagType LogTag::fuzzy_match(const char *str) {
   return match;
 }
 
-static int cmp_logtag(LogTagType a, LogTagType b) {
-  return strcmp(LogTag::name(a), LogTag::name(b));
-}
-
-static const size_t sorted_tagcount = LogTag::Count - 1; // Not counting _NO_TAG
-static LogTagType sorted_tags[sorted_tagcount];
-
-class TagSorter {
- public:
-  TagSorter() {
-    for (size_t i = 1; i < LogTag::Count; i++) {
-      sorted_tags[i - 1] = static_cast<LogTagType>(i);
-    }
-    QuickSort::sort(sorted_tags, sorted_tagcount, cmp_logtag, true);
-  }
-};
-
-static TagSorter tagsorter; // Sorts tags during static initialization
-
 void LogTag::list_tags(outputStream* out) {
-  for (size_t i = 0; i < sorted_tagcount; i++) {
-    out->print("%s %s", (i == 0 ? "" : ","), _name[sorted_tags[i]]);
+  for (size_t i = 1; i < LogTag::Count; i++) { // Not including __NO_TAG
+    out->print("%s %s", (i == 1 ? "" : ","), _name[static_cast<LogTagType>(i)]);
   }
   out->cr();
 }
+
+#ifdef ASSERT
+class LogTagTypeChecker {
+ public:
+  LogTagTypeChecker() {
+    assert(LogTagType::__NO_TAG == static_cast<LogTagType>(0), "First tag should be __NO_TAG");
+
+    // assert the LogTag type enum is sorted
+    for (size_t i = 1; i < LogTag::Count - 1; i++) {
+      const char* a = LogTag::name(static_cast<LogTagType>(i));
+      const char* b = LogTag::name(static_cast<LogTagType>(i + 1));
+
+      assert(strcmp(a, b) < 0,
+          "LogTag type not in alphabetical order at index %zu: %s should be after %s",
+          i, a, b);
+    }
+  }
+};
+
+static LogTagTypeChecker logtagtypechecker; // Assert LogTag tags are set up as expected during static initialization
+#endif // ASSERT

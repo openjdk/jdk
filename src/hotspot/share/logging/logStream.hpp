@@ -27,13 +27,13 @@
 
 #include "logging/log.hpp"
 #include "logging/logHandle.hpp"
-#include "memory/resourceArea.hpp"
 #include "utilities/ostream.hpp"
 
 
 class LogStream : public outputStream {
-  friend class LogStreamTest_TestLineBufferAllocation_test_vm_Test; // see test/native/logging/test_logStream.cpp
-  friend class LogStreamTest_TestLineBufferAllocationCap_test_vm_Test; // see test/native/logging/test_logStream.cpp
+  // see test/hotspot/gtest/logging/test_logStream.cpp
+  friend class LogStreamTest_TestLineBufferAllocation_vm_Test;
+  friend class LogStreamTest_TestLineBufferAllocationCap_vm_Test;
 
   // Helper class, maintains the line buffer. For small line lengths,
   // we avoid malloc and use a fixed sized member char array. If LogStream

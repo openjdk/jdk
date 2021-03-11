@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,8 @@
     <Field type="InflateCause" name="cause" label="Monitor Inflation Cause" description="Cause of inflation" />
   </Event>
 
-  <Event name="SyncOnPrimitiveWrapper" category="Java Virtual Machine, Diagnostics" label="Primitive Wrapper Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
-    <Field type="Class" name="boxClass" label="Boxing Class" />
+  <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
+    <Field type="Class" name="valueBasedClass" label="Value Based Class" />
   </Event>
 
   <Event name="BiasedLockRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Revocation" description="Revoked bias of object" thread="true"
@@ -614,6 +614,12 @@
     <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
   </Event>
 
+  <Event name="ObjectAllocationSample" category="Java Application" label="Object Allocation Sample" thread="true" stackTrace="true" startTime="false" throttle="true">
+    <Field type="Class" name="objectClass" label="Object Class" description="Class of allocated object" />
+    <Field type="long" contentType="bytes" name="weight" label="Sample Weight"
+      description="The relative weight of the sample. Aggregating the weights for a large number of samples, for a particular class, thread or stack trace, gives a statistically accurate representation of the allocation pressure" />
+  </Event>
+
   <Event name="OldObjectSample" category="Java Virtual Machine, Profiling" label="Old Object Sample" description="A potential memory leak" stackTrace="true" thread="true"
     startTime="false" cutoff="true">
     <Field type="Ticks" name="allocationTime" label="Allocation Time" />
@@ -1010,14 +1016,12 @@
      <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
      <Field type="uint" name="segments" label="Segments" />
      <Field type="boolean" name="nonBlocking" label="Non-blocking" />
-     <Field type="boolean" name="noReserve" label="No Reserve" />
   </Event>
 
   <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true">
     <Field type="ulong" contentType="bytes" name="total" label="Total" />
     <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
-    <Field type="ulong" contentType="bytes" name="compactingFrom" label="Compacting From" />
-    <Field type="ulong" contentType="bytes" name="compactingTo" label="Compacting To" />
+    <Field type="ulong" contentType="bytes" name="relocate" label="Relocate" />
   </Event>
 
   <Event name="ZRelocationSetGroup" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set Group" thread="true">
@@ -1025,8 +1029,7 @@
     <Field type="ulong" name="pages" label="Pages" />
     <Field type="ulong" contentType="bytes" name="total" label="Total" />
     <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
-    <Field type="ulong" contentType="bytes" name="compactingFrom" label="Compacting From" />
-    <Field type="ulong" contentType="bytes" name="compactingTo" label="Compacting To" />
+    <Field type="ulong" contentType="bytes" name="relocate" label="Relocate" />
   </Event>
 
   <Event name="ZStatisticsCounter" category="Java Virtual Machine, GC, Detailed" label="ZGC Statistics Counter" thread="true" experimental="true">
@@ -1085,6 +1088,11 @@
     <Field type="long" name="size" label="Size" />
     <Field type="boolean" name="gcBeforeDump" label="GC Before Dump" />
     <Field type="boolean" name="onOutOfMemoryError" label="On Out of Memory Error" />
+  </Event>
+
+  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
+    <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
+    <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

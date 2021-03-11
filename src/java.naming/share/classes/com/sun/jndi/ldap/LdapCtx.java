@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,19 @@ import javax.naming.ldap.*;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Set;
 import java.util.Vector;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Enumeration;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -200,6 +207,27 @@ final public class LdapCtx extends ComponentDirContext
     private static final String REPLY_QUEUE_SIZE =
         "com.sun.jndi.ldap.search.replyQueueSize";
 
+    // System and environment property name to control allowed list of
+    // authentication mechanisms: "all" or "" or "mech1,mech2,...,mechN"
+    //  "all": allow all mechanisms,
+    //  "": allow none
+    //  or comma separated list of allowed authentication mechanisms
+    // Note: "none" or "anonymous" are always allowed.
+    private static final String ALLOWED_MECHS_SP =
+            "jdk.jndi.ldap.mechsAllowedToSendCredentials";
+
+    // System property value
+    private static final String ALLOWED_MECHS_SP_VALUE =
+            getMechsAllowedToSendCredentials();
+
+    // Set of authentication mechanisms allowed by the system property
+    private static final Set<String> MECHS_ALLOWED_BY_SP =
+            getMechsFromPropertyValue(ALLOWED_MECHS_SP_VALUE);
+
+    // The message to use in NamingException if the transmission of plain credentials are not allowed
+    private static final String UNSECURED_CRED_TRANSMIT_MSG =
+                "Transmission of credentials over unsecured connection is not allowed";
+
     // ----------------- Fields that don't change -----------------------
     private static final NameParser parser = new LdapNameParser();
 
@@ -235,7 +263,8 @@ final public class LdapCtx extends ComponentDirContext
     Name currentParsedDN;               // DN of this context
     Vector<Control> respCtls = null;    // Response controls read
     Control[] reqCtls = null;           // Controls to be sent with each request
-
+    // Used to track if context was seen to be secured with STARTTLS extended operation
+    volatile boolean contextSeenStartTlsEnabled;
 
     // ------------- Private instance variables ------------------------
 
@@ -2670,6 +2699,73 @@ final public class LdapCtx extends ComponentDirContext
         ensureOpen();      // open or reauthenticated
     }
 
+    // Load 'mechsAllowedToSendCredentials' system property value
+    private static String getMechsAllowedToSendCredentials() {
+        PrivilegedAction<String> pa = () -> System.getProperty(ALLOWED_MECHS_SP);
+        return System.getSecurityManager() == null ? pa.run() : AccessController.doPrivileged(pa);
+    }
+
+    // Get set of allowed authentication mechanism names from the property value
+    private static Set<String> getMechsFromPropertyValue(String propValue) {
+        if (propValue == null || propValue.isBlank()) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(propValue.split(","))
+                .map(String::trim)
+                .filter(Predicate.not(String::isBlank))
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    // Returns true if TLS connection opened using "ldaps" scheme, or using "ldap" and then upgraded with
+    // startTLS extended operation, and startTLS is still active.
+    private boolean isConnectionEncrypted() {
+        return hasLdapsScheme || clnt.isUpgradedToStartTls();
+    }
+
+    // Ensure connection and context are in a safe state to transmit credentials
+    private void ensureCanTransmitCredentials(String authMechanism) throws NamingException {
+
+        // "none" and "anonumous" authentication mechanisms are allowed unconditionally
+        if ("none".equalsIgnoreCase(authMechanism) || "anonymous".equalsIgnoreCase(authMechanism)) {
+            return;
+        }
+
+        // Check environment first
+        String allowedMechanismsOrTrue = (String) envprops.get(ALLOWED_MECHS_SP);
+        boolean useSpMechsCache = false;
+        boolean anyPropertyIsSet = ALLOWED_MECHS_SP_VALUE != null || allowedMechanismsOrTrue != null;
+
+        // If current connection is not encrypted, and context seen to be secured with STARTTLS
+        // or 'mechsAllowedToSendCredentials' is set to any value via system/context environment properties
+        if (!isConnectionEncrypted() && (contextSeenStartTlsEnabled || anyPropertyIsSet)) {
+            // First, check if security principal is provided in context environment for "simple"
+            // authentication mechanism. There is no check for other SASL mechanisms since the credentials
+            // can be specified via other properties
+            if ("simple".equalsIgnoreCase(authMechanism) && !envprops.containsKey(SECURITY_PRINCIPAL)) {
+                return;
+            }
+
+            // If null - will use mechanism name cached from system property
+            if (allowedMechanismsOrTrue == null) {
+                useSpMechsCache = true;
+                allowedMechanismsOrTrue = ALLOWED_MECHS_SP_VALUE;
+            }
+
+            // If the property value (system or environment) is 'all':
+            // any kind of authentication is allowed unconditionally - no check is needed
+            if ("all".equalsIgnoreCase(allowedMechanismsOrTrue)) {
+                return;
+            }
+
+            // Get the set with allowed authentication mechanisms and check current mechanism
+            Set<String> allowedAuthMechs = useSpMechsCache ?
+                    MECHS_ALLOWED_BY_SP : getMechsFromPropertyValue(allowedMechanismsOrTrue);
+            if (!allowedAuthMechs.contains(authMechanism)) {
+                throw new NamingException(UNSECURED_CRED_TRANSMIT_MSG);
+            }
+        }
+    }
+
     private void ensureOpen() throws NamingException {
         ensureOpen(false);
     }
@@ -2772,6 +2868,10 @@ final public class LdapCtx extends ComponentDirContext
                     // Required for SASL client identity
                     envprops);
 
+                // Mark current context as secure if the connection is acquired
+                // from the pool and it is secure.
+                contextSeenStartTlsEnabled |= clnt.isUpgradedToStartTls();
+
                 /**
                  * Pooled connections are preauthenticated;
                  * newly created ones are not.
@@ -2789,8 +2889,12 @@ final public class LdapCtx extends ComponentDirContext
                 ldapVersion = LdapClient.LDAP_VERSION3;
             }
 
-            LdapResult answer = clnt.authenticate(initial,
-                user, passwd, ldapVersion, authMechanism, bindCtls, envprops);
+            LdapResult answer;
+            synchronized (clnt.conn.startTlsLock) {
+                ensureCanTransmitCredentials(authMechanism);
+                answer = clnt.authenticate(initial, user, passwd, ldapVersion,
+                        authMechanism, bindCtls, envprops);
+            }
 
             respCtls = answer.resControls; // retrieve (bind) response controls
 
@@ -3294,6 +3398,7 @@ final public class LdapCtx extends ComponentDirContext
                 String domainName = (String)
                     (envprops != null ? envprops.get(DOMAIN_NAME) : null);
                 ((StartTlsResponseImpl)er).setConnection(clnt.conn, domainName);
+                contextSeenStartTlsEnabled |= startTLS;
             }
             return er;
 

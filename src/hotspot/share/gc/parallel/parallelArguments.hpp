@@ -36,15 +36,12 @@ private:
   virtual void initialize_heap_flags_and_sizes();
 
   void initialize_heap_flags_and_sizes_one_pass();
-  void initialize_heterogeneous();
 
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment();
   virtual CollectedHeap* create_heap();
 
 public:
-  // Heterogeneous heap support
-  static bool is_heterogeneous_heap();
   static size_t heap_reserved_size_bytes();
   static size_t heap_max_size_bytes();
 };

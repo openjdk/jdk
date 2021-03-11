@@ -60,13 +60,13 @@
  *          /test/lib
  * @build nsk.jdi.EventSet.eventIterator.eventiterator002
  *        nsk.jdi.EventSet.eventIterator.eventiterator002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventSet.eventIterator.eventiterator002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

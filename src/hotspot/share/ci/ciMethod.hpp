@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciSignature.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/methodLiveness.hpp"
-#include "prims/methodHandles.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "oops/method.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/bitMap.hpp"
 
 class ciMethodBlocks;
@@ -75,7 +78,7 @@ class ciMethod : public ciMetadata {
   int _code_size;
   int _max_stack;
   int _max_locals;
-  vmIntrinsics::ID _intrinsic_id;
+  vmIntrinsicID _intrinsic_id;
   int _handler_count;
   int _nmethod_age;
   int _interpreter_invocation_count;
@@ -181,7 +184,7 @@ class ciMethod : public ciMetadata {
   int code_size() const                          { check_is_loaded(); return _code_size; }
   int max_stack() const                          { check_is_loaded(); return _max_stack; }
   int max_locals() const                         { check_is_loaded(); return _max_locals; }
-  vmIntrinsics::ID intrinsic_id() const          { check_is_loaded(); return _intrinsic_id; }
+  vmIntrinsicID intrinsic_id() const             { check_is_loaded(); return _intrinsic_id; }
   bool has_exception_handlers() const            { check_is_loaded(); return _handler_count > 0; }
   int exception_table_length() const             { check_is_loaded(); return _handler_count; }
   int interpreter_invocation_count() const       { check_is_loaded(); return _interpreter_invocation_count; }
@@ -201,7 +204,6 @@ class ciMethod : public ciMetadata {
   bool intrinsic_candidate()   const { return get_Method()->intrinsic_candidate();   }
   bool is_static_initializer() const { return get_Method()->is_static_initializer(); }
 
-  int comp_level();
   int highest_osr_comp_level();
 
   Bytecodes::Code java_code_at_bci(int bci) {
@@ -216,14 +218,11 @@ class ciMethod : public ciMetadata {
   ciMethodBlocks    *get_method_blocks();
 
   bool    has_linenumber_table() const;          // length unknown until decompression
-  u_char* compressed_linenumber_table() const;   // not preserved by gc
 
   int line_number_from_bci(int bci) const;
 
   // Runtime information.
   int           vtable_index();
-  address       native_entry();
-  address       interpreter_entry();
 
   // Analysis and profiling.
   //
@@ -258,7 +257,6 @@ class ciMethod : public ciMetadata {
   ciTypeFlow*   get_flow_analysis();
   ciTypeFlow*   get_osr_flow_analysis(int osr_bci);  // alternate entry point
   ciCallProfile call_profile_at_bci(int bci);
-  int           interpreter_call_site_count(int bci);
 
   // Does type profiling provide any useful information at this point?
   bool          argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
@@ -298,12 +296,10 @@ class ciMethod : public ciMetadata {
   // Find the proper vtable index to invoke this method.
   int resolve_vtable_index(ciKlass* caller, ciKlass* receiver);
 
-  bool has_option(const char *option);
-  bool has_option_value(const char* option, double& value);
+  bool has_option(enum CompileCommand option);
+  bool has_option_value(enum CompileCommand option, double& value);
   bool can_be_compiled();
   bool can_be_parsed() const { return _can_be_parsed; }
-  bool can_be_osr_compiled(int entry_bci);
-  void set_not_compilable(const char* reason = NULL);
   bool has_compiled_code();
   void log_nmethod_identity(xmlStream* log);
   bool is_not_reached(int bci);
@@ -340,8 +336,6 @@ class ciMethod : public ciMetadata {
   bool is_strict      () const                   { return flags().is_strict(); }
 
   // Other flags
-  bool is_empty_method() const;
-  bool is_vanilla_constructor() const;
   bool is_final_method() const                   { return is_final() || holder()->is_final(); }
   bool is_default_method() const                 { return !is_abstract() && !is_private() &&
                                                           holder()->is_interface(); }
@@ -356,6 +350,7 @@ class ciMethod : public ciMetadata {
   bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
   bool is_boxing_method() const;
   bool is_unboxing_method() const;
+  bool is_vector_method() const;
   bool is_object_initializer() const;
 
   bool can_be_statically_bound(ciInstanceKlass* context) const;

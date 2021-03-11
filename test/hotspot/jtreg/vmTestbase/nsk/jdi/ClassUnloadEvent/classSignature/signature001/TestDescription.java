@@ -90,7 +90,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassUnloadEvent.classSignature.signature001
  *      ./bin
  *      -verbose
@@ -98,6 +98,6 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

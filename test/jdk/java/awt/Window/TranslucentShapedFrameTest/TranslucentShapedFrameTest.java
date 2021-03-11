@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,19 +31,19 @@
  * @run main/manual/othervm TranslucentShapedFrameTest
  * @run main/manual/othervm -Dsun.java2d.noddraw=true TranslucentShapedFrameTest
  */
+
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.GraphicsEnvironment;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.util.concurrent.CountDownLatch;
+
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 public class TranslucentShapedFrameTest extends javax.swing.JFrame {
     Frame testFrame;
@@ -145,6 +145,7 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
 
         createDisposeGrp.add(createFrameBtn);
         createFrameBtn.setText("Create Frame");
+        createFrameBtn.setSelected(true);
         createFrameBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 createFrameBtnActionPerformed(evt);
@@ -152,7 +153,7 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
         });
 
         createDisposeGrp.add(disposeFrameBtn);
-        disposeFrameBtn.setSelected(true);
+        disposeFrameBtn.setEnabled(false);
         disposeFrameBtn.setText("Dispose Frame");
         disposeFrameBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -268,6 +269,9 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
             testFrame.dispose();
             testFrame = null;
         }
+        disposeFrameBtn.setEnabled(false);
+        createFrameBtn.setEnabled(true);
+        useSwingCb.setEnabled(true);
     }//GEN-LAST:event_disposeFrameBtnActionPerformed
 
     private void createFrameBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createFrameBtnActionPerformed
@@ -277,6 +281,9 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
                 useSwingCb.isSelected(), shapedCb.isSelected(),
                 (transl < 100), nonOpaqueChb.isSelected(),
                 (float)transl/100f);
+        createFrameBtn.setEnabled(false);
+        disposeFrameBtn.setEnabled(true);
+        useSwingCb.setEnabled(false);
     }//GEN-LAST:event_createFrameBtnActionPerformed
 
     private void passedBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passedBtnActionPerformed

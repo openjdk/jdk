@@ -25,7 +25,7 @@
  * @test
  * @bug 8007566
  * @summary DocLint too aggressive with not allowed here: <p>
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs ParaTagTest.java
  */

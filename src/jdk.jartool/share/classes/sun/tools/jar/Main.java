@@ -1737,7 +1737,7 @@ public class Main {
         /** Returns an optional containing the effective URI. */
         @Override public Optional<String> uriString() {
             String uri = (Paths.get(zipFile.getName())).toUri().toString();
-            uri = "jar:" + uri + "/!" + entry.getName();
+            uri = "jar:" + uri + "!/" + entry.getName();
             return Optional.of(uri);
         }
     }

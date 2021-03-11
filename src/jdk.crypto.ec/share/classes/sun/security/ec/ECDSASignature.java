@@ -466,53 +466,6 @@ abstract class ECDSASignature extends SignatureSpi {
     }
 
 
-    private Optional<byte[]> signDigestAvailable(ECPrivateKey privateKey,
-        byte[] digest, SecureRandom random) throws SignatureException {
-
-        ECParameterSpec params = privateKey.getParams();
-
-        // seed is the key size + 64 bits
-        int seedBits = params.getOrder().bitLength() + 64;
-        Optional<ECDSAOperations> opsOpt =
-            ECDSAOperations.forParameters(params);
-        if (opsOpt.isEmpty()) {
-            return Optional.empty();
-        } else {
-            byte[] sig = signDigestImpl(opsOpt.get(), seedBits, digest,
-                privateKey, random);
-            return Optional.of(sig);
-        }
-    }
-
-    private byte[] signDigestNative(ECPrivateKey privateKey, byte[] digest,
-        SecureRandom random) throws SignatureException {
-
-        byte[] s = privateKey.getS().toByteArray();
-        ECParameterSpec params = privateKey.getParams();
-
-        // DER OID
-        byte[] encodedParams = ECUtil.encodeECParameterSpec(null, params);
-        int orderLength = params.getOrder().bitLength();
-
-        // seed is twice the order length (in bytes) plus 1
-        byte[] seed = new byte[(((orderLength + 7) >> 3) + 1) * 2];
-
-        random.nextBytes(seed);
-
-        // random bits needed for timing countermeasures
-        int timingArgument = random.nextInt();
-        // values must be non-zero to enable countermeasures
-        timingArgument |= 1;
-
-        try {
-            return signDigest(digest, s, encodedParams, seed,
-                timingArgument);
-        } catch (GeneralSecurityException e) {
-            throw new SignatureException("Could not sign data", e);
-        }
-
-    }
-
     // sign the data and return the signature. See JCA doc
     @Override
     protected byte[] engineSign() throws SignatureException {
@@ -522,21 +475,18 @@ abstract class ECDSASignature extends SignatureSpi {
         }
 
         byte[] digest = getDigestValue();
-        Optional<byte[]> sigOpt = signDigestAvailable(privateKey, digest, random);
-        byte[] sig;
-        if (sigOpt.isPresent()) {
-            sig = sigOpt.get();
-        } else {
-            if (SunEC.isNativeDisabled()) {
-                NamedCurve nc = CurveDB.lookup(privateKey.getParams());
-                throw new SignatureException(
-                        new InvalidAlgorithmParameterException(
-                                "Legacy SunEC curve disabled:  " +
-                                        (nc != null ? nc.toString()
-                                                : "unknown")));
-            }
-            sig = signDigestNative(privateKey, digest, random);
+        ECParameterSpec params = privateKey.getParams();
+
+        // seed is the key size + 64 bits
+        int seedBits = params.getOrder().bitLength() + 64;
+        Optional<ECDSAOperations> opsOpt =
+            ECDSAOperations.forParameters(params);
+        if (opsOpt.isEmpty()) {
+            throw new SignatureException("Curve not supported: " +
+                params.toString());
         }
+        byte[] sig = signDigestImpl(opsOpt.get(), seedBits, digest, privateKey,
+            random);
 
         if (p1363Format) {
             return sig;
@@ -557,59 +507,14 @@ abstract class ECDSASignature extends SignatureSpi {
         }
 
         byte[] digest = getDigestValue();
-        Optional<Boolean> verifyOpt
-                = verifySignedDigestAvailable(publicKey, sig, digest);
-
-        if (verifyOpt.isPresent()) {
-            return verifyOpt.get();
-        } else {
-            if (SunEC.isNativeDisabled()) {
-                NamedCurve nc = CurveDB.lookup(publicKey.getParams());
-                throw new SignatureException(
-                        new InvalidAlgorithmParameterException(
-                                "Legacy SunEC curve disabled:  " +
-                                        (nc != null ? nc.toString()
-                                                : "unknown")));
-            }
-
-            byte[] w;
-            ECParameterSpec params = publicKey.getParams();
-            // DER OID
-            byte[] encodedParams = ECUtil.encodeECParameterSpec(null, params);
-
-            if (publicKey instanceof ECPublicKeyImpl) {
-                w = ((ECPublicKeyImpl) publicKey).getEncodedPublicValue();
-            } else { // instanceof ECPublicKey
-                w = ECUtil.encodePoint(publicKey.getW(), params.getCurve());
-            }
-
-            try {
-                return verifySignedDigest(sig, digest, w, encodedParams);
-            } catch (GeneralSecurityException e) {
-                throw new SignatureException("Could not verify signature", e);
-            }
-        }
-    }
-
-    private Optional<Boolean> verifySignedDigestAvailable(
-            ECPublicKey publicKey, byte[] sig, byte[] digestValue) {
-
-        ECParameterSpec params = publicKey.getParams();
 
         Optional<ECDSAOperations> opsOpt =
-                ECDSAOperations.forParameters(params);
+            ECDSAOperations.forParameters(publicKey.getParams());
         if (opsOpt.isEmpty()) {
-            return Optional.empty();
-        } else {
-            boolean result = verifySignedDigestImpl(opsOpt.get(), digestValue,
-                    publicKey, sig);
-            return Optional.of(result);
+            throw new SignatureException("Curve not supported: " +
+                publicKey.getParams().toString());
         }
-    }
-
-    private boolean verifySignedDigestImpl(ECDSAOperations ops,
-            byte[] digest, ECPublicKey pub, byte[] sig) {
-        return ops.verifySignedDigest(digest, sig, pub.getW());
+        return opsOpt.get().verifySignedDigest(digest, sig, publicKey.getW());
     }
 
     // set parameter, not supported. See JCA doc
@@ -657,40 +562,4 @@ abstract class ECDSASignature extends SignatureSpi {
             throw new ProviderException("Error retrieving EC parameters", e);
         }
     }
-
-    /**
-     * Signs the digest using the private key.
-     *
-     * @param digest the digest to be signed.
-     * @param s the private key's S value.
-     * @param encodedParams the curve's DER encoded object identifier.
-     * @param seed the random seed.
-     * @param timing When non-zero, the implmentation will use timing
-     *     countermeasures to hide secrets from timing channels. The EC
-     *     implementation will disable the countermeasures when this value is
-     *     zero, because the underlying EC functions are shared by several
-     *     crypto operations, some of which do not use the countermeasures.
-     *     The high-order 31 bits must be uniformly random. The entropy from
-     *     these bits is used by the countermeasures.
-     *
-     * @return byte[] the signature.
-     */
-    private static native byte[] signDigest(byte[] digest, byte[] s,
-                                            byte[] encodedParams, byte[] seed, int timing)
-        throws GeneralSecurityException;
-
-    /**
-     * Verifies the signed digest using the public key.
-     *
-     * @param signature the signature to be verified. It is encoded
-     *        as a concatenation of the key's R and S values.
-     * @param digest the digest to be used.
-     * @param w the public key's W point (in uncompressed form).
-     * @param encodedParams the curve's DER encoded object identifier.
-     *
-     * @return boolean true if the signature is successfully verified.
-     */
-    private static native boolean verifySignedDigest(byte[] signature,
-                                                     byte[] digest, byte[] w, byte[] encodedParams)
-        throws GeneralSecurityException;
 }

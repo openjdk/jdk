@@ -60,9 +60,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Event.THREAD_DEATH.thrdeath001
- *        nsk.jdwp.Event.THREAD_DEATH.thrdeath001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.Event.THREAD_DEATH.thrdeath001a
+ * @run main/othervm
  *      nsk.jdwp.Event.THREAD_DEATH.thrdeath001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

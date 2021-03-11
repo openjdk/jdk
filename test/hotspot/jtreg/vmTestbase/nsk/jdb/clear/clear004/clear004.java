@@ -39,9 +39,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.clear.clear004.clear004
- *        nsk.jdb.clear.clear004.clear004a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.clear.clear004.clear004
+ * @build nsk.jdb.clear.clear004.clear004a
+ * @run main/othervm
+ *      nsk.jdb.clear.clear004.clear004
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

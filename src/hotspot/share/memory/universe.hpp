@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
+class ReservedHeapSpace;
 
 // A helper class for caching a Method* when the user of the cache
 // only cares about the latest version of the Method*.  This cache safely
@@ -83,6 +84,7 @@ class Universe: AllStatic {
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
   friend class MetaspaceShared;
+  friend class vmClasses;
 
   friend jint  universe_init();
   friend void  universe2_init();
@@ -232,7 +234,6 @@ class Universe: AllStatic {
 
   static oop java_mirror(BasicType t);
   static void replace_mirror(BasicType t, oop obj);
-  static void clear_basic_type_mirrors();
 
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);
@@ -301,6 +302,10 @@ class Universe: AllStatic {
 
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
+
+  DEBUG_ONLY(static bool is_gc_active();)
+  DEBUG_ONLY(static bool is_in_heap(const void* p);)
+  DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == NULL || is_in_heap(p); })
 
   // Reserve Java heap and determine CompressedOops mode
   static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);

@@ -26,6 +26,8 @@
 #define SHARE_RUNTIME_THREADSMR_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
 
 class JavaThread;
@@ -33,6 +35,7 @@ class Monitor;
 class outputStream;
 class Thread;
 class ThreadClosure;
+class ThreadsList;
 
 // Thread Safe Memory Reclamation (Thread-SMR) support.
 //
@@ -162,11 +165,14 @@ class ThreadsList : public CHeapObj<mtThread> {
   friend class VMStructs;
   friend class SafeThreadsListPtr;  // for {dec,inc}_nested_handle_cnt() access
   friend class ThreadsSMRSupport;  // for _nested_handle_cnt, {add,remove}_thread(), {,set_}next_list() access
+  friend class ThreadsListHandleTest;  // for _nested_handle_cnt access
 
   const uint _length;
   ThreadsList* _next_list;
   JavaThread *const *const _threads;
   volatile intx _nested_handle_cnt;
+
+  NONCOPYABLE(ThreadsList);
 
   template <class T>
   void threads_do_dispatch(T *cl, JavaThread *const thread) const;
@@ -181,7 +187,7 @@ class ThreadsList : public CHeapObj<mtThread> {
   static ThreadsList* remove_thread(ThreadsList* list, JavaThread* java_thread);
 
 public:
-  ThreadsList(int entries);
+  explicit ThreadsList(int entries);
   ~ThreadsList();
 
   template <class T>
@@ -203,6 +209,7 @@ public:
 // for leaves, or a retained reference count for nested uses. The user of this
 // API does not need to know which mechanism is providing the safety.
 class SafeThreadsListPtr {
+  friend class ThreadsListHandleTest;  // for access to the fields
   friend class ThreadsListSetter;
 
   SafeThreadsListPtr* _previous;
@@ -274,6 +281,8 @@ public:
 // ThreadsList from being deleted until it is safe.
 //
 class ThreadsListHandle : public StackObj {
+  friend class ThreadsListHandleTest;  // for _list_ptr access
+
   SafeThreadsListPtr _list_ptr;
   elapsedTimer _timer;  // Enabled via -XX:+EnableThreadSMRStatistics.
 

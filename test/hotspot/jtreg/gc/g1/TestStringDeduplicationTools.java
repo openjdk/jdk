@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,9 @@ class TestStringDeduplicationTools {
     private static final int MB = 1024 * 1024;
     private static final int StringLength = 50;
 
+    private static final int LargeNumberOfStrings = 10000;
+    private static final int SmallNumberOfStrings = 10;
+
     private static Field valueField;
     private static Unsafe unsafe;
     private static byte[] dummy;
@@ -69,7 +72,11 @@ class TestStringDeduplicationTools {
     }
 
     private static void doFullGc(int numberOfTimes) {
+        List<List<String>> newStrings = new ArrayList<List<String>>();
         for (int i = 0; i < numberOfTimes; i++) {
+            // Create some more strings for every collection, to ensure
+            // there will be deduplication work that will be reported.
+            newStrings.add(createStrings(SmallNumberOfStrings, SmallNumberOfStrings));
             System.out.println("Begin: Full GC " + (i + 1) + "/" + numberOfTimes);
             System.gc();
             System.out.println("End: Full GC " + (i + 1) + "/" + numberOfTimes);
@@ -80,7 +87,11 @@ class TestStringDeduplicationTools {
         // Provoke at least numberOfTimes young GCs
         final int objectSize = 128;
         final int maxObjectInYoung = (Xmn * MB) / objectSize;
+        List<List<String>> newStrings = new ArrayList<List<String>>();
         for (int i = 0; i < numberOfTimes; i++) {
+            // Create some more strings for every collection, to ensure
+            // there will be deduplication work that will be reported.
+            newStrings.add(createStrings(SmallNumberOfStrings, SmallNumberOfStrings));
             System.out.println("Begin: Young GC " + (i + 1) + "/" + numberOfTimes);
             for (int j = 0; j < maxObjectInYoung + 1; j++) {
                 dummy = new byte[objectSize];
@@ -318,9 +329,6 @@ class TestStringDeduplicationTools {
      * Tests
      */
 
-    private static final int LargeNumberOfStrings = 10000;
-    private static final int SmallNumberOfStrings = 10;
-
     private static final int MaxAgeThreshold      = 15;
     private static final int DefaultAgeThreshold  = 3;
     private static final int MinAgeThreshold      = 1;
@@ -376,7 +384,11 @@ class TestStringDeduplicationTools {
                                                       "-XX:+StringDeduplicationRehashALot");
         output.shouldContain("Concurrent String Deduplication");
         output.shouldContain("Deduplicated:");
-        output.shouldNotContain("Rehash Count: 0");
+        // Ensure there have been some rehashes.  Can't check for never
+        // being zero, because the first collection might trigger a resize,
+        // which suppresses rehash.  But as written, some collections should
+        // not lead to a resize, and those will do a rehash.
+        output.shouldMatch(".* Rehash Count: [1-9].*");
         output.shouldNotContain("Hash Seed: 0x0");
         output.shouldHaveExitValue(0);
     }

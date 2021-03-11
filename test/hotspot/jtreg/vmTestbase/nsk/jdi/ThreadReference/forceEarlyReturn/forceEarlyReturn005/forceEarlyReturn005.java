@@ -51,14 +51,14 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn005.forceEarlyReturn005
  *        nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn005.forceEarlyReturn005a
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn005.forceEarlyReturn005
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
 package nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn005;

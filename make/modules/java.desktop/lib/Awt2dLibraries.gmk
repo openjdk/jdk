@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     LIBS_macosx := -lmlib_image \
         -framework Cocoa \
         -framework OpenGL \
-        -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport \
         -framework ApplicationServices \
         -framework AudioToolbox, \
@@ -435,7 +434,6 @@ endif
 ifeq ($(USE_EXTERNAL_HARFBUZZ), true)
   LIBHARFBUZZ_LIBS := $(HARFBUZZ_LIBS)
 else
-  HARFBUZZ_CFLAGS := -DHAVE_OT -DHAVE_FALLBACK -DHAVE_UCDN -DHAVE_ROUND
 
   # This is better than adding EXPORT_ALL_SYMBOLS
   ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
@@ -475,6 +473,11 @@ else
     #
 
   LIBHARFBUZZ_OPTIMIZATION := HIGH
+  # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
+  # when building libharfbuzz
+  ifeq ($(call isTargetOs, aix), true)
+    LIBHARFBUZZ_CFLAGS += -qdebug=necan
+  endif
 
   LIBHARFBUZZ_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
 
@@ -493,7 +496,7 @@ else
         maybe-uninitialized class-memaccess, \
       DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
-        undef missing-field-initializers, \
+        undef missing-field-initializers range-loop-analysis, \
       DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -763,8 +766,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
         -framework ApplicationServices \
         -framework Foundation \
         -framework Security \
-        -framework Cocoa \
-        -framework JavaNativeFoundation
+        -framework Cocoa
   else ifeq ($(call isTargetOs, windows), true)
     LIBSPLASHSCREEN_LIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib $(WIN_JAVA_LIB) jvm.lib
   else
@@ -790,7 +792,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_gcc := sign-compare type-limits unused-result \
           maybe-uninitialized shift-negative-value implicit-fallthrough \
           unused-function, \
-      DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare, \
+      DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare \
+          deprecated-declarations, \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -861,7 +864,6 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework Cocoa \
           -framework Security \
           -framework ExceptionHandling \
-          -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -framework OpenGL \
           -framework QuartzCore -ljava, \
@@ -899,7 +901,6 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework Cocoa \
           -framework Carbon \
           -framework ApplicationServices \
-          -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -ljava -ljvm, \
   ))

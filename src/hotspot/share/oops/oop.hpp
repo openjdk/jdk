@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
-#include "oops/access.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/atomic.hpp"
@@ -59,26 +59,24 @@ class oopDesc {
 
  public:
   inline markWord  mark()          const;
-  inline markWord  mark_raw()      const;
-  inline markWord* mark_addr_raw() const;
+  inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
-  inline void set_mark_raw(markWord m);
-  static inline void set_mark_raw(HeapWord* mem, markWord m);
+  static inline void set_mark(HeapWord* mem, markWord m);
 
   inline void release_set_mark(markWord m);
   inline markWord cas_set_mark(markWord new_mark, markWord old_mark);
-  inline markWord cas_set_mark_raw(markWord new_mark, markWord old_mark, atomic_memory_order order = memory_order_conservative);
+  inline markWord cas_set_mark(markWord new_mark, markWord old_mark, atomic_memory_order order);
 
   // Used only to re-initialize the mark word (e.g., of promoted
   // objects during a GC) -- requires a valid klass pointer
   inline void init_mark();
-  inline void init_mark_raw();
 
   inline Klass* klass() const;
   inline Klass* klass_or_null() const;
   inline Klass* klass_or_null_acquire() const;
 
+  void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
   inline void set_klass(Klass* k);
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
@@ -117,11 +115,10 @@ class oopDesc {
 
  public:
   // field addresses in oop
-  inline void* field_addr(int offset)     const;
-  inline void* field_addr_raw(int offset) const;
+  inline void* field_addr(int offset) const;
 
   // Need this as public for garbage collection.
-  template <class T> inline T* obj_field_addr_raw(int offset) const;
+  template <class T> inline T* obj_field_addr(int offset) const;
 
   template <typename T> inline size_t field_offset(T* p) const;
 
@@ -237,7 +234,6 @@ class oopDesc {
   inline bool is_locked()   const;
   inline bool is_unlocked() const;
   inline bool has_bias_pattern() const;
-  inline bool has_bias_pattern_raw() const;
 
   // asserts and guarantees
   static bool is_oop(oop obj, bool ignore_mark_word = false);
@@ -282,6 +278,9 @@ class oopDesc {
   template <typename OopClosureType>
   inline void oop_iterate_backwards(OopClosureType* cl);
 
+  template <typename OopClosureType>
+  inline void oop_iterate_backwards(OopClosureType* cl, Klass* klass);
+
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
@@ -291,9 +290,9 @@ class oopDesc {
   intptr_t slow_identity_hash();
 
   // marks are forwarded to stack when object is locked
-  inline bool     has_displaced_mark_raw() const;
-  inline markWord displaced_mark_raw() const;
-  inline void     set_displaced_mark_raw(markWord m);
+  inline bool     has_displaced_mark() const;
+  inline markWord displaced_mark() const;
+  inline void     set_displaced_mark(markWord m);
 
   // Checks if the mark word needs to be preserved
   inline bool mark_must_be_preserved() const;
@@ -313,6 +312,10 @@ class oopDesc {
   // for error reporting
   static void* load_klass_raw(oop obj);
   static void* load_oop_raw(oop obj, int offset);
+
+  // Avoid include gc_globals.hpp in oop.inline.hpp
+  DEBUG_ONLY(bool get_UseParallelGC();)
+  DEBUG_ONLY(bool get_UseG1GC();)
 };
 
 #endif // SHARE_OOPS_OOP_HPP

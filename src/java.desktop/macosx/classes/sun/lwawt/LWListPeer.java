@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,29 @@
 
 package sun.lwawt;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.List;
+import java.awt.Point;
+import java.awt.SystemColor;
+import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.awt.peer.ListPeer;
 import java.util.Arrays;
+
+import javax.swing.DefaultListModel;
+import javax.swing.JList;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JViewport;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 /**
  * Lightweight implementation of {@link ListPeer}. Delegates most of the work to
@@ -65,6 +82,7 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     void initializeImpl() {
         super.initializeImpl();
         setMultipleMode(getTarget().isMultipleMode());
+        makeVisible(getTarget().getVisibleIndex());
         final int[] selectedIndices = getTarget().getSelectedIndexes();
         synchronized (getDelegateLock()) {
             getDelegate().setSkipStateChangedEvent(true);

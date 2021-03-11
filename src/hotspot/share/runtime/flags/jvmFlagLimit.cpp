@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
 #include "memory/allocation.inline.hpp"
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
 #include "runtime/flags/jvmFlagConstraintsCompiler.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
 #include "runtime/globals_extension.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "oops/markWord.hpp"
@@ -93,12 +92,12 @@ public:
 //           macro body starts here -------------------+
 //                                                     |
 //                                                     v
-#define FLAG_LIMIT_DEFINE(      type, name, ...)       ); constexpr JVMTypedFlagLimit<type> limit_##name(0
+#define FLAG_LIMIT_DEFINE(      type, name, ...)       ); constexpr JVMTypedFlagLimit<type> limit_##name(JVMFlag::TYPE_##type
 #define FLAG_LIMIT_DEFINE_DUMMY(type, name, ...)       ); constexpr DummyLimit nolimit_##name(0
 #define FLAG_LIMIT_PTR(         type, name, ...)       ), LimitGetter<type>::get_limit(&limit_##name, 0
 #define FLAG_LIMIT_PTR_NONE(    type, name, ...)       ), LimitGetter<type>::no_limit(0
 #define APPLY_FLAG_RANGE(...)                          , __VA_ARGS__
-#define APPLY_FLAG_CONSTRAINT(func, phase)             , next_two_args_are_constraint, (short)CONSTRAINT_ENUM(func), int(JVMFlagConstraint::phase)
+#define APPLY_FLAG_CONSTRAINT(func, phase)             , next_two_args_are_constraint, (short)CONSTRAINT_ENUM(func), int(JVMFlagConstraintPhase::phase)
 
 constexpr JVMTypedFlagLimit<int> limit_dummy
 (
@@ -145,6 +144,49 @@ static constexpr const JVMFlagLimit* const flagLimitTable[1 + NUM_JVMFlagsEnum] 
   )
 };
 
-int JVMFlagLimit::_last_checked = -1;
+JVMFlagsEnum JVMFlagLimit::_last_checked = INVALID_JVMFlagsEnum;
+JVMFlagConstraintPhase JVMFlagLimit::_validating_phase = JVMFlagConstraintPhase::AtParse;
 
 const JVMFlagLimit* const* JVMFlagLimit::flagLimits = &flagLimitTable[1]; // excludes dummy
+
+const JVMFlag* JVMFlagLimit::last_checked_flag() {
+  if (_last_checked != INVALID_JVMFlagsEnum) {
+    return JVMFlag::flag_from_enum(_last_checked);
+  } else {
+    return NULL;
+  }
+}
+
+bool JVMFlagLimit::check_all_ranges() {
+  bool status = true;
+  for (int i = 0; i < NUM_JVMFlagsEnum; i++) {
+    JVMFlagsEnum flag_enum = static_cast<JVMFlagsEnum>(i);
+    if (get_range_at(flag_enum) != NULL &&
+        JVMFlagAccess::check_range(JVMFlag::flag_from_enum(flag_enum), true) != JVMFlag::SUCCESS) {
+      status = false;
+    }
+  }
+  return status;
+}
+
+// Check constraints for specific constraint phase.
+bool JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase phase) {
+  guarantee(phase > _validating_phase, "Constraint check is out of order.");
+  _validating_phase = phase;
+
+  bool status = true;
+  for (int i = 0; i < NUM_JVMFlagsEnum; i++) {
+    JVMFlagsEnum flag_enum = static_cast<JVMFlagsEnum>(i);
+    const JVMFlagLimit* constraint = get_constraint_at(flag_enum);
+    if (constraint != NULL && constraint->phase() == static_cast<int>(phase) &&
+        JVMFlagAccess::check_constraint(JVMFlag::flag_from_enum(flag_enum),
+                                        constraint->constraint_func(), true) != JVMFlag::SUCCESS) {
+      status = false;
+    }
+  }
+  return status;
+}
+
+void JVMFlagLimit::print_range(outputStream* st, const JVMFlag* flag) const {
+  JVMFlagAccess::print_range(st, flag, this);
+}

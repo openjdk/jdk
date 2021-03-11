@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 class UpdateLogBuffersDeferred : public BasicOopIterateClosure {
 private:
   G1CollectedHeap* _g1h;
-  G1RedirtyCardsQueue* _rdcq;
+  G1RedirtyCardsLocalQueueSet* _rdc_local_qset;
   G1CardTable*    _ct;
 
   // Remember the last enqueued card to avoid enqueuing the same card over and over;
@@ -48,8 +48,11 @@ private:
   size_t _last_enqueued_card;
 
 public:
-  UpdateLogBuffersDeferred(G1RedirtyCardsQueue* rdcq) :
-    _g1h(G1CollectedHeap::heap()), _rdcq(rdcq), _ct(_g1h->card_table()), _last_enqueued_card(SIZE_MAX) {}
+  UpdateLogBuffersDeferred(G1RedirtyCardsLocalQueueSet* rdc_local_qset) :
+    _g1h(G1CollectedHeap::heap()),
+    _rdc_local_qset(rdc_local_qset),
+    _ct(_g1h->card_table()),
+    _last_enqueued_card(SIZE_MAX) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
@@ -67,7 +70,7 @@ public:
     }
     size_t card_index = _ct->index_for(p);
     if (card_index != _last_enqueued_card) {
-      _rdcq->enqueue(_ct->byte_for_index(card_index));
+      _rdc_local_qset->enqueue(_ct->byte_for_index(card_index));
       _last_enqueued_card = card_index;
     }
   }
@@ -199,15 +202,19 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  G1RedirtyCardsQueue _rdcq;
+  G1RedirtyCardsLocalQueueSet _rdc_local_qset;
   UpdateLogBuffersDeferred _log_buffer_cl;
 
 public:
   RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs, uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _rdcq(rdcqs),
-    _log_buffer_cl(&_rdcq) {
+    _rdc_local_qset(rdcqs),
+    _log_buffer_cl(&_rdc_local_qset) {
+  }
+
+  ~RemoveSelfForwardPtrHRClosure() {
+    _rdc_local_qset.flush();
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
@@ -259,5 +266,10 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQue
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id);
 
-  _g1h->collection_set_iterate_increment_from(&rsfp_cl, &_hrclaimer, worker_id);
+  // We need to check all collection set regions whether they need self forward
+  // removals, not only the last collection set increment. The reason is that
+  // reference processing (e.g. finalizers) can make it necessary to resurrect an
+  // otherwise unreachable object at the very end of the collection. That object
+  // might cause an evacuation failure in any region in the collection set.
+  _g1h->collection_set_par_iterate_all(&rsfp_cl, &_hrclaimer, worker_id);
 }

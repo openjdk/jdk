@@ -46,11 +46,11 @@
  *          /test/lib
  * @build nsk.share.aod.AODTestRunner
  *        nsk.jvmti.AttachOnDemand.attach041.attach041Target
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach041.attach041Target
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -na attach041Agent00
  */
 

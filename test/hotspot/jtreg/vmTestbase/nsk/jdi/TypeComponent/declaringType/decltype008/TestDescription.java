@@ -53,13 +53,13 @@
  *          /test/lib
  * @build nsk.jdi.TypeComponent.declaringType.decltype008
  *        nsk.jdi.TypeComponent.declaringType.decltype008a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.TypeComponent.declaringType.decltype008
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

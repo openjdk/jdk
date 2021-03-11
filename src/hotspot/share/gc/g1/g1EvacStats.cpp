@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/globals.hpp"
 
 void G1EvacStats::log_plab_allocation() {
   PLABStats::log_plab_allocation();
@@ -88,8 +90,8 @@ size_t G1EvacStats::compute_desired_plab_sz() {
   return cur_plab_sz;
 }
 
-G1EvacStats::G1EvacStats(const char* description, size_t desired_plab_sz_, unsigned wt) :
-  PLABStats(description, desired_plab_sz_, wt),
+G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab_size, unsigned wt) :
+  PLABStats(description, default_per_thread_plab_size, default_per_thread_plab_size * ParallelGCThreads, wt),
   _region_end_waste(0),
   _regions_filled(0),
   _direct_allocated(0),

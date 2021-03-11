@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package com.sun.net.httpserver;
-import java.net.*;
-import java.io.*;
-import java.util.*;
 import java.security.Principal;
 
 /**
@@ -37,12 +34,14 @@ public class HttpPrincipal implements Principal {
     private String username, realm;
 
     /**
-     * creates a HttpPrincipal from the given username and realm
-     * @param username The name of the user within the realm
-     * @param realm The realm.
-     * @throws NullPointerException if either username or realm are null
+     * Creates a {@code HttpPrincipal} from the given {@code username} and
+     * {@code realm}.
+     *
+     * @param username the name of the user within the realm
+     * @param realm the realm for this user
+     * @throws NullPointerException if either username or realm are {@code null}
      */
-    public HttpPrincipal (String username, String realm) {
+    public HttpPrincipal(String username, String realm) {
         if (username == null || realm == null) {
             throw new NullPointerException();
         }
@@ -51,12 +50,16 @@ public class HttpPrincipal implements Principal {
     }
 
     /**
-     * Compares two HttpPrincipal. Returns <code>true</code>
-     * if <i>another</i> is an instance of HttpPrincipal, and its
-     * username and realm are equal to this object's username
-     * and realm. Returns <code>false</code> otherwise.
+     * Compare two instances of {@code HttpPrincipal}. Returns {@code true} if
+     * <i>another</i> is an instance of {@code HttpPrincipal}, and its username
+     * and realm are equal to this object's username and realm. Returns {@code false}
+     * otherwise.
+     *
+     * @param another the object to compare this instance of {@code HttpPrincipal} against
+     * @return {@code true} or {@code false} depending on whether objects are
+     * equal or not
      */
-    public boolean equals (Object another) {
+    public boolean equals(Object another) {
         if (!(another instanceof HttpPrincipal)) {
             return false;
         }
@@ -66,37 +69,47 @@ public class HttpPrincipal implements Principal {
     }
 
     /**
-     * returns the contents of this principal in the form
-     * <i>realm:username</i>
+     * Returns the contents of this principal in the form
+     * <i>realm:username</i>.
+     *
+     * @return the contents of this principal in the form realm:username
      */
     public String getName() {
-        return username;
+        return String.format("%s:%s", realm, username);
     }
 
     /**
-     * returns the username this object was created with.
+     * Returns the {@code username} this object was created with.
+     *
+     * @return the name of the user associated with this object
      */
     public String getUsername() {
         return username;
     }
 
     /**
-     * returns the realm this object was created with.
+     * Returns the {@code realm} this object was created with.
+     *
+     * @return the realm associated with this object
      */
     public String getRealm() {
         return realm;
     }
 
     /**
-     * returns a hashcode for this HttpPrincipal. This is calculated
-     * as <code>(getUsername()+getRealm().hashCode()</code>
+     * Returns a hashcode for this {@code HttpPrincipal}. This is calculated
+     * as {@code (getUsername()+getRealm()).hashCode()}.
+     *
+     * @return the hashcode for this object
      */
     public int hashCode() {
         return (username+realm).hashCode();
     }
 
     /**
-     * returns the same string as getName()
+     * Returns the same string as {@link #getName()}.
+     *
+     * @return the name associated with this object
      */
     public String toString() {
         return getName();

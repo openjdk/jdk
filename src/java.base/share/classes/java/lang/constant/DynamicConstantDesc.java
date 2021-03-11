@@ -49,8 +49,8 @@ import static java.util.stream.Collectors.joining;
  * dynamic constant (one described in the constant pool with
  * {@code Constant_Dynamic_info}.)
  *
- * <p>Concrete subtypes of {@linkplain DynamicConstantDesc} must be
- * <a href="../doc-files/ValueBased.html">value-based</a>.
+ * <p>Concrete subtypes of {@linkplain DynamicConstantDesc} should be immutable
+ * and their behavior should not rely on object identity.
  *
  * @param <T> the type of the dynamic constant
  *

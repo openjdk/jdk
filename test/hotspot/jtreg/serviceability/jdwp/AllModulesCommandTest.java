@@ -34,6 +34,7 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @library /test/lib
  * @modules jdk.jdwp.agent
  * @modules java.base/jdk.internal.misc
+ * @requires vm.jvmti
  * @compile AllModulesCommandTestDebuggee.java
  * @run main/othervm AllModulesCommandTest
  */

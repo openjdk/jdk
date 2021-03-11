@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,24 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "prims/stackwalk.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // setup and cleanup actions
@@ -186,7 +191,7 @@ void JavaFrameStream::fill_frame(int index, objArrayHandle  frames_array,
 // T_OBJECT, or T_CONFLICT.
 oop LiveFrameStream::create_primitive_slot_instance(StackValueCollection* values,
                                                     int i, BasicType type, TRAPS) {
-  Klass* k = SystemDictionary::LiveStackFrameInfo_klass();
+  Klass* k = vmClasses::LiveStackFrameInfo_klass();
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   JavaValue result(T_OBJECT);
@@ -243,7 +248,7 @@ oop LiveFrameStream::create_primitive_slot_instance(StackValueCollection* values
 objArrayHandle LiveFrameStream::values_to_object_array(StackValueCollection* values, TRAPS) {
   objArrayHandle empty;
   int length = values->size();
-  objArrayOop array_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(),
+  objArrayOop array_oop = oopFactory::new_objArray(vmClasses::Object_klass(),
                                                    length, CHECK_(empty));
   objArrayHandle array_h(THREAD, array_oop);
   for (int i = 0; i < values->size(); i++) {
@@ -267,7 +272,7 @@ objArrayHandle LiveFrameStream::values_to_object_array(StackValueCollection* val
 
 objArrayHandle LiveFrameStream::monitors_to_object_array(GrowableArray<MonitorInfo*>* monitors, TRAPS) {
   int length = monitors->length();
-  objArrayOop array_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(),
+  objArrayOop array_oop = oopFactory::new_objArray(vmClasses::Object_klass(),
                                                    length, CHECK_(objArrayHandle()));
   objArrayHandle array_h(THREAD, array_oop);
   for (int i = 0; i < length; i++) {
@@ -365,8 +370,8 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   methodHandle m_doStackWalk(THREAD, Universe::do_stack_walk_method());
 
   {
-    Klass* stackWalker_klass = SystemDictionary::StackWalker_klass();
-    Klass* abstractStackWalker_klass = SystemDictionary::AbstractStackWalker_klass();
+    Klass* stackWalker_klass = vmClasses::StackWalker_klass();
+    Klass* abstractStackWalker_klass = vmClasses::AbstractStackWalker_klass();
     while (!stream.at_end()) {
       InstanceKlass* ik = stream.method()->method_holder();
       if (ik != stackWalker_klass &&
@@ -402,6 +407,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   int end_index = start_index;
   int numFrames = 0;
   if (!stream.at_end()) {
+    KeepStackGCProcessedMark keep_stack(THREAD->as_Java_thread());
     numFrames = fill_in_frames(mode, stream, frame_count, start_index,
                                frames_array, end_index, CHECK_NULL);
     if (numFrames < 1) {
@@ -480,6 +486,11 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
 
   BaseFrameStream& stream = (*existing_stream);
   if (!stream.at_end()) {
+    // If we have to get back here for even more frames, then 1) the user did not supply
+    // an accurate hint suggesting the depth of the stack walk, and 2) we are not just
+    // peeking  at a few frames. Take the cost of flushing out any pending deferred GC
+    // processing of the stack.
+    KeepStackGCProcessedMark keep_stack(jt);
     stream.next(); // advance past the last frame decoded in previous batch
     if (!stream.at_end()) {
       int n = fill_in_frames(mode, stream, frame_count, start_index,

@@ -75,10 +75,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.GetThreadCpuTime.thrcputime002
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:thrcputime002=-waittime=5 iterations=1000"
+ * @build nsk.jvmti.GetThreadCpuTime.thrcputime002
+ * @run main/othervm/native
+ *      -agentlib:thrcputime002=-waittime=5,iterations=1000
  *      nsk.jvmti.GetThreadCpuTime.thrcputime002
  */
 

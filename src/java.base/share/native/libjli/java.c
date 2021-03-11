@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,9 +284,8 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
                                jvmpath, sizeof(jvmpath),
                                jvmcfg,  sizeof(jvmcfg));
 
-    if (!IsJavaArgs()) {
-        SetJvmEnvironment(argc,argv);
-    }
+    /* Set env. Must be done before LoadJavaVM. */
+    SetJvmEnvironment(argc, argv);
 
     ifn.CreateJavaVM = 0;
     ifn.GetDefaultJavaVMInitArgs = 0;
@@ -806,18 +805,22 @@ static void
 SetJvmEnvironment(int argc, char **argv) {
 
     static const char*  NMT_Env_Name    = "NMT_LEVEL_";
+    const char* NMT_Arg_Name = IsJavaArgs() ? "-J-XX:NativeMemoryTracking=" : "-XX:NativeMemoryTracking=";
     int i;
     /* process only the launcher arguments */
     for (i = 0; i < argc; i++) {
         char *arg = argv[i];
         /*
-         * Since this must be a VM flag we stop processing once we see
-         * an argument the launcher would not have processed beyond (such
-         * as -version or -h), or an argument that indicates the following
-         * arguments are for the application (i.e. the main class name, or
-         * the -jar argument).
+         * Java launcher (!IsJavaArgs()):
+         *   Since this must be a VM flag we stop processing once we see
+         *   an argument the launcher would not have processed beyond (such
+         *   as -version or -h), or an argument that indicates the following
+         *   arguments are for the application (i.e. the main class name, or
+         *   the -jar argument).
+         * Other launchers (IsJavaArgs()):
+         *   All arguments have to be scanned to see if it is a -J argument.
          */
-        if (i > 0) {
+        if (!IsJavaArgs() && i > 0) {
             char *prev = argv[i - 1];
             // skip non-dash arg preceded by class path specifiers
             if (*arg != '-' && IsWhiteSpaceOption(prev)) {
@@ -835,10 +838,10 @@ SetJvmEnvironment(int argc, char **argv) {
          * The argument is passed to the JVM, which will check validity.
          * The JVM is responsible for removing the env variable.
          */
-        if (JLI_StrCCmp(arg, "-XX:NativeMemoryTracking=") == 0) {
+        if (JLI_StrCCmp(arg, NMT_Arg_Name) == 0) {
             int retval;
             // get what follows this parameter, include "="
-            size_t pnlen = JLI_StrLen("-XX:NativeMemoryTracking=");
+            size_t pnlen = JLI_StrLen(NMT_Arg_Name);
             if (JLI_StrLen(arg) > pnlen) {
                 char* value = arg + pnlen;
                 size_t pbuflen = pnlen + JLI_StrLen(value) + 10; // 10 max pid digits

@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-
 import java.util.*;
 
 import javax.lang.model.element.PackageElement;
@@ -91,13 +89,11 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
                 = configuration.group.groupPackages(packages);
 
         if (!groupPackageMap.keySet().isEmpty()) {
-            Table table =  new Table(HtmlStyle.overviewSummary, HtmlStyle.summaryTable)
+            Table table =  new Table(HtmlStyle.summaryTable)
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                    .setId("all-packages-table")
-                    .setDefaultTab(resources.getText("doclet.All_Packages"))
-                    .setTabScript(i -> "show(" + i + ");")
-                    .setTabId(i -> (i == 0) ? "t0" : ("t" + (1 << (i - 1))));
+                    .setId(HtmlIds.ALL_PACKAGES_TABLE)
+                    .setDefaultTab(resources.getText("doclet.All_Packages"));
 
             // add the tabs in command-line order
             for (String groupName : configuration.group.getGroupList()) {
@@ -110,7 +106,7 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
             for (PackageElement pkg : configuration.packages) {
                 if (!pkg.isUnnamed()) {
                     if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                        Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
+                        Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
                         Content summaryContent = new ContentBuilder();
                         addSummaryComment(pkg, summaryContent);
                         table.addRow(pkg, packageLinkContent, summaryContent);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/loaderConstraints.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -440,9 +441,8 @@ void LoaderConstraintTable::verify(PlaceholderTable* placeholders) {
         Symbol* name = ik->name();
         ClassLoaderData* loader_data = ik->class_loader_data();
         Dictionary* dictionary = loader_data->dictionary();
-        unsigned int d_hash = dictionary->compute_hash(name);
-        int d_index = dictionary->hash_to_index(d_hash);
-        InstanceKlass* k = dictionary->find_class(d_index, d_hash, name);
+        unsigned int name_hash = dictionary->compute_hash(name);
+        InstanceKlass* k = dictionary->find_class(name_hash, name);
         if (k != NULL) {
           // We found the class in the dictionary, so we should
           // make sure that the Klass* matches what we already have.
@@ -450,10 +450,7 @@ void LoaderConstraintTable::verify(PlaceholderTable* placeholders) {
         } else {
           // If we don't find the class in the dictionary, it
           // has to be in the placeholders table.
-          unsigned int p_hash = placeholders->compute_hash(name);
-          int p_index = placeholders->hash_to_index(p_hash);
-          PlaceholderEntry* entry = placeholders->get_entry(p_index, p_hash,
-                                                            name, loader_data);
+          PlaceholderEntry* entry = placeholders->get_entry(name_hash, name, loader_data);
 
           // The InstanceKlass might not be on the entry, so the only
           // thing we can check here is whether we were successful in

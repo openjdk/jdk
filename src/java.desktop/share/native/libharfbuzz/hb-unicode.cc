@@ -60,6 +60,7 @@ hb_unicode_combining_class_nil (hb_unicode_funcs_t *ufuncs    HB_UNUSED,
   return HB_UNICODE_COMBINING_CLASS_NOT_REORDERED;
 }
 
+#ifndef HB_DISABLE_DEPRECATED
 static unsigned int
 hb_unicode_eastasian_width_nil (hb_unicode_funcs_t *ufuncs    HB_UNUSED,
                                 hb_codepoint_t      unicode   HB_UNUSED,
@@ -67,6 +68,7 @@ hb_unicode_eastasian_width_nil (hb_unicode_funcs_t *ufuncs    HB_UNUSED,
 {
   return 1;
 }
+#endif
 
 static hb_unicode_general_category_t
 hb_unicode_general_category_nil (hb_unicode_funcs_t *ufuncs    HB_UNUSED,
@@ -113,6 +115,7 @@ hb_unicode_decompose_nil (hb_unicode_funcs_t *ufuncs    HB_UNUSED,
 }
 
 
+#ifndef HB_DISABLE_DEPRECATED
 static unsigned int
 hb_unicode_decompose_compatibility_nil (hb_unicode_funcs_t *ufuncs     HB_UNUSED,
                                         hb_codepoint_t      u          HB_UNUSED,
@@ -121,20 +124,23 @@ hb_unicode_decompose_compatibility_nil (hb_unicode_funcs_t *ufuncs     HB_UNUSED
 {
   return 0;
 }
+#endif
 
-
-extern "C" hb_unicode_funcs_t *hb_glib_get_unicode_funcs ();
-extern "C" hb_unicode_funcs_t *hb_icu_get_unicode_funcs ();
-extern "C" hb_unicode_funcs_t *hb_ucdn_get_unicode_funcs ();
+#if !defined(HB_NO_UNICODE_FUNCS) && defined(HAVE_GLIB)
+#include "hb-glib.h"
+#endif
+#if !defined(HB_NO_UNICODE_FUNCS) && defined(HAVE_ICU) && defined(HAVE_ICU_BUILTIN)
+#include "hb-icu.h"
+#endif
 
 hb_unicode_funcs_t *
 hb_unicode_funcs_get_default ()
 {
-#if defined(HAVE_UCDN)
-  return hb_ucdn_get_unicode_funcs ();
-#elif defined(HAVE_GLIB)
+#if !defined(HB_NO_UNICODE_FUNCS) && !defined(HB_NO_UCD)
+  return hb_ucd_get_unicode_funcs ();
+#elif !defined(HB_NO_UNICODE_FUNCS) && defined(HAVE_GLIB)
   return hb_glib_get_unicode_funcs ();
-#elif defined(HAVE_ICU) && defined(HAVE_ICU_BUILTIN)
+#elif !defined(HB_NO_UNICODE_FUNCS) && defined(HAVE_ICU) && defined(HAVE_ICU_BUILTIN)
   return hb_icu_get_unicode_funcs ();
 #else
 #define HB_UNICODE_FUNCS_NIL 1
@@ -144,7 +150,7 @@ hb_unicode_funcs_get_default ()
 
 #if !defined(HB_NO_UNICODE_FUNCS) && defined(HB_UNICODE_FUNCS_NIL)
 #error "Could not find any Unicode functions implementation, you have to provide your own"
-#error "Consider building hb-ucdn.c.  If you absolutely want to build without any, check the code."
+#error "Consider building hb-ucd.cc.  If you absolutely want to build without any, check the code."
 #endif
 
 /**
@@ -206,7 +212,7 @@ DEFINE_NULL_INSTANCE (hb_unicode_funcs_t) =
 hb_unicode_funcs_t *
 hb_unicode_funcs_get_empty ()
 {
-  return const_cast<hb_unicode_funcs_t *> (&Null(hb_unicode_funcs_t));
+  return const_cast<hb_unicode_funcs_t *> (&Null (hb_unicode_funcs_t));
 }
 
 /**
@@ -425,6 +431,7 @@ hb_unicode_decompose (hb_unicode_funcs_t *ufuncs,
   return ufuncs->decompose (ab, a, b);
 }
 
+#ifndef HB_DISABLE_DEPRECATED
 /**
  * hb_unicode_decompose_compatibility:
  * @ufuncs: Unicode functions.
@@ -445,8 +452,10 @@ hb_unicode_decompose_compatibility (hb_unicode_funcs_t *ufuncs,
 {
   return ufuncs->decompose_compatibility (u, decomposed);
 }
+#endif
 
 
+#ifndef HB_NO_OT_SHAPE
 /* See hb-unicode.hh for details. */
 const uint8_t
 _hb_modified_combining_class[256] =
@@ -559,19 +568,19 @@ _hb_modified_combining_class[256] =
   241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
   255, /* HB_UNICODE_COMBINING_CLASS_INVALID */
 };
+#endif
 
 
 /*
  * Emoji
  */
+#ifndef HB_NO_EMOJI_SEQUENCES
 
 #include "hb-unicode-emoji-table.hh"
 
 bool
 _hb_unicode_is_emoji_Extended_Pictographic (hb_codepoint_t cp)
 {
-  return hb_bsearch (&cp, _hb_unicode_emoji_Extended_Pictographic_table,
-                     ARRAY_LENGTH (_hb_unicode_emoji_Extended_Pictographic_table),
-                     sizeof (hb_unicode_range_t),
-                     hb_unicode_range_t::cmp);
+  return _hb_emoji_is_Extended_Pictographic (cp);
 }
+#endif

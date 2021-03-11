@@ -32,6 +32,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/ageTable.hpp"
+#include "gc/shared/partialArrayTaskStepper.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -41,12 +42,13 @@ class G1OopStarChunkedList;
 class G1PLABAllocator;
 class G1EvacuationRootClosures;
 class HeapRegion;
+class Klass;
 class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   G1ScannerTasksQueue* _task_queue;
-  G1RedirtyCardsQueue _rdcq;
+  G1RedirtyCardsLocalQueueSet _rdc_local_qset;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
 
@@ -79,9 +81,13 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Indicates whether in the last generation (old) there is no more space
   // available for allocation.
   bool _old_gen_is_full;
+  // Size (in elements) of a partial objArray task chunk.
+  int _partial_objarray_chunk_size;
+  PartialArrayTaskStepper _partial_array_stepper;
+  // Used to check whether string dedup should be applied to an object.
+  Klass* _string_klass_or_null;
 
-  G1RedirtyCardsQueue& redirty_cards_queue()     { return _rdcq; }
-  G1CardTable* ct()                              { return _ct; }
+  G1CardTable* ct() { return _ct; }
 
   G1HeapRegionAttr dest(G1HeapRegionAttr original) const {
     assert(original.is_valid(),
@@ -105,6 +111,7 @@ public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
                        G1RedirtyCardsQueueSet* rdcqs,
                        uint worker_id,
+                       uint n_workers,
                        size_t young_cset_length,
                        size_t optional_cset_length);
   virtual ~G1ParScanThreadState();
@@ -140,7 +147,7 @@ public:
     size_t card_index = ct()->index_for(p);
     // If the card hasn't been added to the buffer, do it.
     if (_last_enqueued_card != card_index) {
-      redirty_cards_queue().enqueue(ct()->byte_for_index(card_index));
+      _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
       _last_enqueued_card = card_index;
     }
   }
@@ -157,6 +164,7 @@ public:
 
 private:
   void do_partial_array(PartialArrayScanTask task);
+  void start_partial_objarray(G1HeapRegionAttr dest_dir, oop from, oop to);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                oop old,
@@ -249,9 +257,6 @@ class G1ParScanThreadStateSet : public StackObj {
   G1ParScanThreadState* state_for_worker(uint worker_id);
 
   const size_t* surviving_young_words() const;
-
- private:
-  G1ParScanThreadState* new_par_scan_state(uint worker_id, size_t young_cset_length);
 };
 
 #endif // SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP

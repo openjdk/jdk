@@ -1942,15 +1942,14 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, i
     move_resolver.set_multiple_reads_allowed();
 
     Constant* con = from_value->as_Constant();
-    if (con != NULL && !con->is_pinned()) {
-      // unpinned constants may have no register, so add mapping from constant to interval
+    if (con != NULL && (!con->is_pinned() || con->operand()->is_constant())) {
+      // Need a mapping from constant to interval if unpinned (may have no register) or if the operand is a constant (no register).
       move_resolver.add_mapping(LIR_OprFact::value_type(con->type()), to_interval);
     } else {
       // search split child at the throwing op_id
       Interval* from_interval = interval_at_op_id(from_value->operand()->vreg_number(), throwing_op_id);
       move_resolver.add_mapping(from_interval, to_interval);
     }
-
   } else {
     // no phi function, so use reg_num also for from_interval
     // search split child at the throwing op_id
@@ -3212,6 +3211,12 @@ void LinearScan::print_reg_num(outputStream* out, int reg_num) {
     return;
   }
 
+  LIR_Opr opr = get_operand(reg_num);
+  assert(opr->is_valid(), "unknown register");
+  opr->print(out);
+}
+
+LIR_Opr LinearScan::get_operand(int reg_num) {
   LIR_Opr opr = LIR_OprFact::illegal();
 
 #ifdef X86
@@ -3231,9 +3236,9 @@ void LinearScan::print_reg_num(outputStream* out, int reg_num) {
     opr = LIR_OprFact::single_xmm(reg_num - pd_first_xmm_reg);
 #endif
   } else {
-    assert(false, "unknown register");
+    // reg_num == -1 or a virtual register, return the illegal operand
   }
-  opr->print(out);
+  return opr;
 }
 
 Interval* LinearScan::find_interval_at(int reg_num) const {
@@ -3923,8 +3928,8 @@ void MoveResolver::insert_move(Interval* from_interval, Interval* to_interval) {
   assert(_insert_list != NULL && _insert_idx != -1, "must setup insert position first");
   assert(_insertion_buffer.lir_list() == _insert_list, "wrong insertion buffer");
 
-  LIR_Opr from_opr = LIR_OprFact::virtual_register(from_interval->reg_num(), from_interval->type());
-  LIR_Opr to_opr = LIR_OprFact::virtual_register(to_interval->reg_num(), to_interval->type());
+  LIR_Opr from_opr = get_virtual_register(from_interval);
+  LIR_Opr to_opr = get_virtual_register(to_interval);
 
   if (!_multiple_reads_allowed) {
     // the last_use flag is an optimization for FPU stack allocation. When the same
@@ -3942,12 +3947,27 @@ void MoveResolver::insert_move(LIR_Opr from_opr, Interval* to_interval) {
   assert(_insert_list != NULL && _insert_idx != -1, "must setup insert position first");
   assert(_insertion_buffer.lir_list() == _insert_list, "wrong insertion buffer");
 
-  LIR_Opr to_opr = LIR_OprFact::virtual_register(to_interval->reg_num(), to_interval->type());
+  LIR_Opr to_opr = get_virtual_register(to_interval);
   _insertion_buffer.move(_insert_idx, from_opr, to_opr);
 
   TRACE_LINEAR_SCAN(4, tty->print("MoveResolver: inserted move from constant "); from_opr->print(); tty->print_cr("  to %d (%d, %d)", to_interval->reg_num(), to_interval->assigned_reg(), to_interval->assigned_regHi()));
 }
 
+LIR_Opr MoveResolver::get_virtual_register(Interval* interval) {
+  // Add a little fudge factor for the bailout since the bailout is only checked periodically. This allows us to hand out
+  // a few extra registers before we really run out which helps to avoid to trip over assertions.
+  int reg_num = interval->reg_num();
+  if (reg_num + 20 >= LIR_OprDesc::vreg_max) {
+    _allocator->bailout("out of virtual registers in linear scan");
+    if (reg_num + 2 >= LIR_OprDesc::vreg_max) {
+      // Wrap it around and continue until bailout really happens to avoid hitting assertions.
+      reg_num = LIR_OprDesc::vreg_base;
+    }
+  }
+  LIR_Opr vreg = LIR_OprFact::virtual_register(reg_num, interval->type());
+  assert(vreg != LIR_OprFact::illegal(), "ran out of virtual registers");
+  return vreg;
+}
 
 void MoveResolver::resolve_mappings() {
   TRACE_LINEAR_SCAN(4, tty->print_cr("MoveResolver: resolving mappings for Block B%d, index %d", _insert_list->block() != NULL ? _insert_list->block()->block_id() : -1, _insert_idx));
@@ -4598,7 +4618,7 @@ bool Interval::intersects_any_children_of(Interval* interval) const {
 
 
 #ifndef PRODUCT
-void Interval::print_on(outputStream* out) const {
+void Interval::print_on(outputStream* out, bool is_cfg_printer) const {
   const char* SpillState2Name[] = { "no definition", "no spill store", "one spill store", "store at definition", "start in memory", "no optimization" };
   const char* UseKind2Name[] = { "N", "L", "S", "M" };
 
@@ -4608,18 +4628,29 @@ void Interval::print_on(outputStream* out) const {
   } else {
     type_name = type2name(type());
   }
-
   out->print("%d %s ", reg_num(), type_name);
-  if (reg_num() < LIR_OprDesc::vreg_base) {
-    LinearScan::print_reg_num(out, assigned_reg());
-  } else if (assigned_reg() != -1 && (LinearScan::num_physical_regs(type()) == 1 || assigned_regHi() != -1)) {
-    LinearScan::calc_operand_for_interval(this)->print(out);
-  } else {
-    // Virtual register that has no assigned register yet.
-    out->print("[ANY]");
-  }
 
-  out->print(" %d %d ", split_parent()->reg_num(), (register_hint(false) != NULL ? register_hint(false)->reg_num() : -1));
+  if (is_cfg_printer) {
+    // Special version for compatibility with C1 Visualizer.
+    LIR_Opr opr = LinearScan::get_operand(reg_num());
+    if (opr->is_valid()) {
+      out->print("\"");
+      opr->print(out);
+      out->print("\" ");
+    }
+  } else {
+    // Improved output for normal debugging.
+    if (reg_num() < LIR_OprDesc::vreg_base) {
+      LinearScan::print_reg_num(out, assigned_reg());
+    } else if (assigned_reg() != -1 && (LinearScan::num_physical_regs(type()) == 1 || assigned_regHi() != -1)) {
+      LinearScan::calc_operand_for_interval(this)->print(out);
+    } else {
+      // Virtual register that has no assigned register yet.
+      out->print("[ANY]");
+    }
+    out->print(" ");
+  }
+  out->print("%d %d ", split_parent()->reg_num(), (register_hint(false) != NULL ? register_hint(false)->reg_num() : -1));
 
   // print ranges
   Range* cur = _first;
@@ -5436,7 +5467,7 @@ bool LinearScanWalker::alloc_free_reg(Interval* cur) {
     hint_reg = register_hint->assigned_reg();
     hint_regHi = register_hint->assigned_regHi();
 
-    if (allocator()->is_precolored_cpu_interval(register_hint)) {
+    if (_num_phys_regs == 2 && allocator()->is_precolored_cpu_interval(register_hint)) {
       assert(hint_reg != any_reg && hint_regHi == any_reg, "must be for fixed intervals");
       hint_regHi = hint_reg + 1;  // connect e.g. eax-edx
     }
@@ -6410,7 +6441,7 @@ void ControlFlowOptimizer::delete_jumps_to_return(BlockList* code) {
           if (pred_last_branch->block() == block && pred_last_branch->cond() == lir_cond_always && pred_last_branch->info() == NULL) {
             // replace the jump to a return with a direct return
             // Note: currently the edge between the blocks is not deleted
-            pred_instructions->at_put(pred_instructions->length() - 1, new LIR_Op1(lir_return, return_opr));
+            pred_instructions->at_put(pred_instructions->length() - 1, new LIR_OpReturn(return_opr));
 #ifdef ASSERT
             return_converted.set_bit(pred->block_id());
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import jdk.internal.util.StaticProperty;
  * {@link Status#UNDECIDED UNDECIDED}.
  * Filters should be designed for the specific use case and expected types.
  * A filter designed for a particular use may be passed a class that is outside
- * of the scope of the filter. If the purpose of the filter is to black-list classes
+ * of the scope of the filter. If the purpose of the filter is to reject classes
  * then it can reject a candidate class that matches and report UNDECIDED for others.
  * A filter may be called with class equals {@code null}, {@code arrayLength} equal -1,
  * the depth, number of references, and stream size and return a status

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SerialFieldTree;
+import com.sun.source.doctree.SerialTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
@@ -238,7 +238,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
             if (field.getSimpleName().toString().compareTo(SERIAL_VERSION_UID) == 0 &&
                 field.getConstantValue() != null) {
                 writer.addSerialUIDInfo(SERIAL_VERSION_UID_HEADER,
-                                        utils.constantValueExpresion(field), serialUidTree);
+                                        utils.constantValueExpression(field), serialUidTree);
                 break;
             }
         }
@@ -472,10 +472,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         // element.)
         SortedSet<SerialFieldTree> tags = new TreeSet<>(utils.comparators.makeSerialFieldTreeComparator());
         // sort the elements
-        for (DocTree dt : utils.getSerialFieldTrees(field)) {
-            SerialFieldTree st = (SerialFieldTree) dt;
-            tags.add(st);
-        }
+        tags.addAll(utils.getSerialFieldTrees(field));
 
         CommentHelper ch = utils.getCommentHelper(field);
         for (SerialFieldTree tag : tags) {
@@ -553,12 +550,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
             return false;
         }
         if (utils.isSerializable(te)) {
-            if (!utils.getSerialTrees(te).isEmpty()) {
+            if (utils.hasDocCommentTree(te) && !utils.getSerialTrees(te).isEmpty()) {
                 return serialDocInclude(utils, te);
-            } else if (utils.isPublic(te) || utils.isProtected(te)) {
-                return true;
             } else {
-                return false;
+                return utils.isPublic(te) || utils.isProtected(te);
             }
         }
         return false;
@@ -574,7 +569,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         if (utils.isEnum(element)) {
             return false;
         }
-        List<? extends DocTree> serial = utils.getSerialTrees(element);
+        List<? extends SerialTree> serial = utils.getSerialTrees(element);
         if (!serial.isEmpty()) {
             CommentHelper ch = utils.getCommentHelper(element);
             String serialtext = Utils.toLowerCase(ch.getText(serial.get(0)));

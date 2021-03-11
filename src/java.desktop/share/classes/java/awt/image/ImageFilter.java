@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,12 @@ import java.util.Hashtable;
  * @author      Jim Graham
  */
 public class ImageFilter implements ImageConsumer, Cloneable {
+
+    /**
+     * Constructs an {@code ImageFilter}.
+     */
+    public ImageFilter() {}
+
     /**
      * The consumer of the particular image data stream for which this
      * instance of the ImageFilter is filtering data.  It is not

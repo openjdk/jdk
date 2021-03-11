@@ -243,6 +243,11 @@ public class BasicDesktopIconUI extends DesktopIconUI {
         int __x, __y;
         Rectangle startingBounds;
 
+        /**
+         * Constructs a {@code MouseInputHandler}.
+         */
+        public MouseInputHandler() {}
+
         public void mouseReleased(MouseEvent e) {
             _x = 0;
             _y = 0;

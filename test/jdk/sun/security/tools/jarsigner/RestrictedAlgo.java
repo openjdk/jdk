@@ -93,11 +93,6 @@ public class RestrictedAlgo {
         System.out.println("\nTesting DSA Keysize: DSA keySize < 1024\n");
         test("DSA", "SHA256withDSA", "KeySizeDSA", "SHA256", true,
                 "-keysize", "512");
-
-        System.out.println("\nTesting Native Curve:"
-                + " include jdk.disabled.namedCurves\n");
-        test("EC", "SHA256withECDSA", "curve", "SHA256", true,
-                "-groupname", "secp112r1");
     }
 
     private static void test(String keyAlg, String sigAlg, String aliasPrefix,
@@ -123,8 +118,7 @@ public class RestrictedAlgo {
                 "-ext", "bc:c",
                 "-keyalg", keyAlg,
                 "-sigalg", sigAlg,
-                "-alias", alias,
-                "-J-Djdk.sunec.disableNative=false");
+                "-alias", alias);
         for (String additionalCMDArg : additionalCmdArgs) {
             cmd.add(additionalCMDArg);
         }
@@ -147,8 +141,7 @@ public class RestrictedAlgo {
                 "-digestalg", digestAlg,
                 "-signedjar", SIGNED_JARFILE,
                 UNSIGNED_JARFILE,
-                alias,
-                "-J-Djdk.sunec.disableNative=false");
+                alias);
 
         OutputAnalyzer analyzer = SecurityTools.jarsigner(cmd)
                 .shouldHaveExitValue(0);
@@ -162,8 +155,7 @@ public class RestrictedAlgo {
         System.out.println("\nTesting JarSigner Verification\n");
         List<String> cmd = prepareCommand(
                 "-verify",
-                SIGNED_JARFILE,
-                "-J-Djdk.sunec.disableNative=false");
+                SIGNED_JARFILE);
 
         OutputAnalyzer analyzer = SecurityTools.jarsigner(cmd)
                 .shouldHaveExitValue(0);

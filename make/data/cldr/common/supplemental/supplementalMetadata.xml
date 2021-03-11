@@ -30,7 +30,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <attributes element="weekendStart" attribute="time" attributeValue="00:00"/>
         </suppress>
         <alias>
-            <!-- grandfathered BCP47 codes -->
+            <!-- legacy language tags (marked as “Type: grandfathered” in BCP 47) -->
             <languageAlias type="art_lojban" replacement="jbo" reason="deprecated"/> <!-- Lojban -->
             <languageAlias type="i_ami" replacement="ami" reason="deprecated"/> <!-- Amis -->
             <languageAlias type="i_bnn" replacement="bnn" reason="deprecated"/> <!-- Bunun -->
@@ -51,6 +51,8 @@ For terms of use, see http://www.unicode.org/copyright.html
             <languageAlias type="zh_hakka" replacement="hak" reason="deprecated"/> <!-- Hakka -->
             <languageAlias type="zh_min_nan" replacement="nan" reason="deprecated"/> <!-- Minnan, Hokkien, Amoy, Taiwanese, Southern Min, Southern Fujian, Hoklo, Southern Fukien, Ho-lo -->
             <languageAlias type="zh_xiang" replacement="hsn" reason="deprecated"/> <!-- Xiang or Hunanese -->
+            <languageAlias type="en_GB_oed" replacement="en_GB_oxendict" reason="deprecated"/>  <!-- English, Oxford English Dictionary spelling -->
+            
             <!-- deprecated iso codes -->
             <languageAlias type="in" replacement="id" reason="deprecated"/> <!-- Indonesian -->
             <languageAlias type="iw" replacement="he" reason="deprecated"/> <!-- Hebrew -->
@@ -72,7 +74,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="coy" replacement="pij" reason="deprecated"/> <!-- Coyaima -->
 			<languageAlias type="cqu" replacement="quh" reason="deprecated"/> <!-- Chilean Quechua -->
 			<languageAlias type="drh" replacement="mn" reason="deprecated"/> <!-- Darkhat -->
-			<languageAlias type="drw" replacement="fa_af" reason="deprecated"/> <!-- Darwazi -->
+			<languageAlias type="drw" replacement="fa_AF" reason="deprecated"/> <!-- Darwazi -->
 			<languageAlias type="gav" replacement="dev" reason="deprecated"/> <!-- Gabutamon -->
 			<languageAlias type="gfx" replacement="vaj" reason="deprecated"/> <!-- Mangetti Dune ǃXung -->
 			<languageAlias type="ggn" replacement="gvr" reason="deprecated"/> <!-- Eastern Gurung -->
@@ -120,7 +122,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="tlw" replacement="weo" reason="deprecated"/> <!-- South Wemale -->
 			<languageAlias type="tmp" replacement="tyj" reason="deprecated"/> <!-- Tai Mène -->
 			<languageAlias type="tne" replacement="kak" reason="deprecated"/> <!-- Tinoc Kallahan -->
-			<languageAlias type="tnf" replacement="fa_af" reason="deprecated"/> <!-- Tangshewi -->
+			<languageAlias type="tnf" replacement="fa_AF" reason="deprecated"/> <!-- Tangshewi -->
 			<languageAlias type="tsf" replacement="taj" reason="deprecated"/> <!-- Southwestern Tamang -->
 			<languageAlias type="uok" replacement="ema" reason="deprecated"/> <!-- Uokha -->
 			<languageAlias type="xba" replacement="cax" reason="deprecated"/> <!-- Kamba [Brazil] -->
@@ -132,53 +134,107 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="ymt" replacement="mtm" reason="deprecated"/> <!-- Mator-Taygi-Karagas -->
 			<languageAlias type="yos" replacement="zom" reason="deprecated"/> <!-- Yos -->
 			<languageAlias type="yuu" replacement="yug" reason="deprecated"/> <!-- Yugh -->
-			
 			<languageAlias type="asd" replacement="snz" reason="deprecated"/> <!-- Asas ⇒ Kou -->
 			<languageAlias type="dit" replacement="dif" reason="deprecated"/> <!-- Diyari ⇒ Dieri -->
 			<languageAlias type="llo" replacement="ngt" reason="deprecated"/> <!-- Khlor ⇒ Kriang -->
 			<languageAlias type="myd" replacement="aog" reason="deprecated"/> <!-- Maramba ⇒ Angoram -->
-			<languageAlias type="nns" replacement="nbr" reason="deprecated"/> <!-- Ningye ⇒ Numana -->            <!-- miscellaneous deprecated -->
-
+			<languageAlias type="nns" replacement="nbr" reason="deprecated"/> <!-- Ningye ⇒ Numana -->
 			<!-- miscellaneous deprecated -->
-            <languageAlias type="no_BOKMAL" replacement="nb" reason="deprecated"/>
-            <languageAlias type="no_NYNORSK" replacement="nn" reason="deprecated"/>
-            <languageAlias type="aa_SAAHO" replacement="ssy" reason="deprecated"/>
+			<languageAlias type="agp" replacement="apf" reason="deprecated"/>  <!-- Paranan -->
+			<languageAlias type="ais" replacement="ami" reason="deprecated"/>  <!-- Nataoran Amis -->
+			<languageAlias type="baz" replacement="nvo" reason="deprecated"/>  <!-- Tunen -->
+			<languageAlias type="bhk" replacement="fbl" reason="deprecated"/>  <!-- Albay Bicolano -->
+			<languageAlias type="bjq" replacement="bzc" reason="deprecated"/>  <!-- Southern Betsimisaraka Malagasy -->
+			<languageAlias type="bkb" replacement="ebk" reason="deprecated"/>  <!-- Finallig -->
+			<languageAlias type="btb" replacement="beb" reason="deprecated"/>  <!-- Beti (Cameroon) -->
+			<languageAlias type="daf" replacement="dnj" reason="deprecated"/>  <!-- Dan -->
+			<languageAlias type="dap" replacement="njz" reason="deprecated"/>  <!-- Nisi (India) -->
+			<languageAlias type="djl" replacement="dze" reason="deprecated"/>  <!-- Djiwarli -->
+			<languageAlias type="dkl" replacement="aqd" reason="deprecated"/>  <!-- Kolum So Dogon -->
+			<languageAlias type="dud" replacement="uth" reason="deprecated"/>  <!-- Hun-Saare -->
+			<languageAlias type="duj" replacement="dwu" reason="deprecated"/>  <!-- Dhuwal -->
+			<languageAlias type="dwl" replacement="dbt" reason="deprecated"/>  <!-- Walo Kumbe Dogon -->
+			<languageAlias type="elp" replacement="amq" reason="deprecated"/>  <!-- Elpaputih -->
+			<languageAlias type="gbc" replacement="wny" reason="deprecated"/>  <!-- Garawa -->
+			<languageAlias type="ggo" replacement="esg" reason="deprecated"/>  <!-- Southern Gondi -->
+			<languageAlias type="ggr" replacement="gtu" reason="deprecated"/>  <!-- Aghu Tharnggalu -->
+			<languageAlias type="gio" replacement="aou" reason="deprecated"/>  <!-- Gelao -->
+			<languageAlias type="ill" replacement="ilm" reason="deprecated"/>  <!-- Iranun -->
+			<languageAlias type="izi" replacement="eza" reason="deprecated"/>  <!-- Izi-Ezaa-Ikwo-Mgbo -->
+			<languageAlias type="jar" replacement="jgk" reason="deprecated"/>  <!-- Jarawa (Nigeria) -->
+			<languageAlias type="kdv" replacement="zkd" reason="deprecated"/>  <!-- Kado -->
+			<languageAlias type="kgd" replacement="ncq" reason="deprecated"/>  <!-- Kataang -->
+			<languageAlias type="kpp" replacement="jkm" reason="deprecated"/>  <!-- Paku Karen -->
+			<languageAlias type="kzh" replacement="dgl" reason="deprecated"/>  <!-- Kenuzi-Dongola -->
+			<languageAlias type="leg" replacement="enl" reason="deprecated"/>  <!-- Lengua -->
+			<languageAlias type="mgx" replacement="jbk" reason="deprecated"/>  <!-- Omati -->
+			<languageAlias type="mnt" replacement="wnn" reason="deprecated"/>  <!-- Maykulan -->
+			<languageAlias type="mof" replacement="xnt" reason="deprecated"/>  <!-- Mohegan-Montauk-Narragansett -->
+			<languageAlias type="mwd" replacement="dmw" reason="deprecated"/>  <!-- Mudbura -->
+			<languageAlias type="nbf" replacement="nru" reason="deprecated"/>  <!-- Naxi -->
+			<languageAlias type="nbx" replacement="ekc" reason="deprecated"/>  <!-- Ngura -->
+			<languageAlias type="nln" replacement="azd" reason="deprecated"/>  <!-- Durango Nahuatl -->
+			<languageAlias type="nlr" replacement="nrk" reason="deprecated"/>  <!-- Ngarla -->
+			<languageAlias type="noo" replacement="dtd" reason="deprecated"/>  <!-- Nootka -->
+			<languageAlias type="rmr" replacement="emx" reason="deprecated"/>  <!-- Caló -->
+			<languageAlias type="sap" replacement="aqt" reason="deprecated"/>  <!-- Sanapaná -->
+			<languageAlias type="sgl" replacement="isk" reason="deprecated"/>  <!-- Sanglechi-Ishkashimi -->
+			<languageAlias type="sul" replacement="sgd" reason="deprecated"/>  <!-- Surigaonon -->
+			<languageAlias type="sum" replacement="ulw" reason="deprecated"/>  <!-- Sumo-Mayangna -->
+			<languageAlias type="tgg" replacement="bjp" reason="deprecated"/>  <!-- Tangga -->
+			<languageAlias type="tid" replacement="itd" reason="deprecated"/>  <!-- Tidong -->
+			<languageAlias type="unp" replacement="wro" reason="deprecated"/>  <!-- Worora -->
+			<languageAlias type="wgw" replacement="wgb" reason="deprecated"/>  <!-- Wagawaga -->
+			<languageAlias type="wit" replacement="nol" reason="deprecated"/>  <!-- Wintu -->
+			<languageAlias type="wiw" replacement="nwo" reason="deprecated"/>  <!-- Wirangu -->
+			<languageAlias type="yen" replacement="ynq" reason="deprecated"/>  <!-- Yendang -->
+			<languageAlias type="yiy" replacement="yrm" reason="deprecated"/>  <!-- Yir Yoront -->
+			<languageAlias type="drr" replacement="kzk" reason="deprecated"/> <!-- Dororo ⇒ Kazukuru -->
+			<languageAlias type="gli" replacement="kzk" reason="deprecated"/> <!-- Guliguli ⇒ Kazukuru -->
+			<languageAlias type="kxl" replacement="kru" reason="deprecated"/> <!-- Nepali Kurux ⇒ Kurukh -->
+			<languageAlias type="nxu" replacement="bpp" reason="deprecated"/> <!-- Narau ⇒ Kaure -->
+			<languageAlias type="thw" replacement="ola" reason="deprecated"/> <!-- Thudam ⇒ Walungge -->
+			<languageAlias type="xrq" replacement="dmw" reason="deprecated"/> <!-- Karranga ⇒ Mudburra -->
+			<languageAlias type="zir" replacement="scv" reason="deprecated"/> <!-- Ziriya ⇒ Sheni -->
+			<!-- miscellaneous deprecated -->
+
+			<!-- redundant deprecated -->
+            <languageAlias type="sgn_BR" replacement="bzs" reason="deprecated"/> <!-- Brazilian Sign Language -->
+            <languageAlias type="sgn_CO" replacement="csn" reason="deprecated"/> <!-- Colombian Sign Language -->
+            <languageAlias type="sgn_DE" replacement="gsg" reason="deprecated"/> <!-- German Sign Language -->
+            <languageAlias type="sgn_DK" replacement="dsl" reason="deprecated"/> <!-- Danish Sign Language -->
+            <languageAlias type="sgn_FR" replacement="fsl" reason="deprecated"/> <!-- French Sign Language -->
+            <languageAlias type="sgn_GB" replacement="bfi" reason="deprecated"/> <!-- British Sign Language -->
+            <languageAlias type="sgn_GR" replacement="gss" reason="deprecated"/> <!-- Greek Sign Language -->
+            <languageAlias type="sgn_IE" replacement="isg" reason="deprecated"/> <!-- Irish Sign Language -->
+            <languageAlias type="sgn_IT" replacement="ise" reason="deprecated"/> <!-- Italian Sign Language -->
+            <languageAlias type="sgn_JP" replacement="jsl" reason="deprecated"/> <!-- Japanese Sign Language -->
+            <languageAlias type="sgn_MX" replacement="mfs" reason="deprecated"/> <!-- Mexican Sign Language -->
+            <languageAlias type="sgn_NI" replacement="ncs" reason="deprecated"/> <!-- Nicaraguan Sign Language -->
+            <languageAlias type="sgn_NL" replacement="dse" reason="deprecated"/> <!-- Dutch Sign Language -->
+            <languageAlias type="sgn_NO" replacement="nsi" reason="deprecated"/> <!-- Norwegian Sign Language -->
+            <languageAlias type="sgn_PT" replacement="psr" reason="deprecated"/> <!-- Portuguese Sign Language -->
+            <languageAlias type="sgn_SE" replacement="swl" reason="deprecated"/> <!-- Swedish Sign Language -->
+            <languageAlias type="sgn_US" replacement="ase" reason="deprecated"/> <!-- American Sign Language -->
+            <languageAlias type="sgn_ZA" replacement="sfs" reason="deprecated"/> <!-- South African Sign Language -->
+
+			<languageAlias type="sgn_ES" replacement="ssp" reason="deprecated"/>  <!-- Spanish Sign Language -->
+			<languageAlias type="zh_cmn" replacement="zh" reason="deprecated"/>  <!-- Mandarin Chinese -->
+			<languageAlias type="zh_cmn_Hans" replacement="zh_Hans" reason="deprecated"/>  <!-- Mandarin Chinese (Simplified) -->
+			<languageAlias type="zh_cmn_Hant" replacement="zh_Hant" reason="deprecated"/>  <!-- Mandarin Chinese (Traditional) -->
+			<languageAlias type="zh_gan" replacement="gan" reason="deprecated"/>  <!-- Kan or Gan -->
+			<languageAlias type="zh_wuu" replacement="wuu" reason="deprecated"/>  <!-- Shanghaiese or Wu -->
+			<languageAlias type="zh_yue" replacement="yue" reason="deprecated"/>  <!-- Cantonese -->
+			
+			<!-- miscellaneous deprecated -->
+            <languageAlias type="no_bokmal" replacement="nb" reason="deprecated"/>
+            <languageAlias type="no_nynorsk" replacement="nn" reason="deprecated"/>
+            <languageAlias type="aa_saaho" replacement="ssy" reason="deprecated"/>
             <!-- legacy use -->
             <languageAlias type="sh" replacement="sr_Latn" reason="legacy"/> <!-- Serbo-Croatian -->
             <languageAlias type="cnr" replacement="sr_ME" reason="legacy"/> <!-- Montenegrin -->
             <languageAlias type="no" replacement="nb" reason="legacy"/> <!-- Norwegian -->
             <languageAlias type="tl" replacement="fil" reason="legacy"/> <!-- Tagalog -->
-    		<languageAlias type="az_AZ" replacement="az_Latn_AZ" reason="legacy"/>
-    		<languageAlias type="bs_BA" replacement="bs_Latn_BA"  reason="legacy"/>
-    		<languageAlias type="ha_Latn_GH" replacement="ha_GH" reason="legacy"/>
-    		<languageAlias type="ha_Latn_NE" replacement="ha_NE" reason="legacy"/>
-    		<languageAlias type="ha_Latn_NG" replacement="ha_NG" reason="legacy"/>
-    		<languageAlias type="kk_Cyrl_KZ" replacement="kk_KZ"  reason="legacy"/>
-    		<languageAlias type="ky_Cyrl_KG" replacement="ky_KG"  reason="legacy"/>
-    		<languageAlias type="ks_Arab_IN" replacement="ks_IN"  reason="legacy"/>
-    		<languageAlias type="mn_Cyrl_MN" replacement="mn_MN" reason="legacy"/>
-    		<languageAlias type="ms_Latn_BN" replacement="ms_BN" reason="legacy"/>
-    		<languageAlias type="ms_Latn_MY" replacement="ms_MY" reason="legacy"/>
-    		<languageAlias type="ms_Latn_SG" replacement="ms_SG" reason="legacy"/>
-    		<languageAlias type="pa_IN" replacement="pa_Guru_IN" reason="legacy"/>
-    		<languageAlias type="pa_PK" replacement="pa_Arab_PK" reason="legacy"/>
-    		<languageAlias type="shi_MA" replacement="shi_Tfng_MA" reason="legacy"/>
-    		<languageAlias type="sr_BA" replacement="sr_Cyrl_BA" reason="legacy"/>
-    		<languageAlias type="sr_ME" replacement="sr_Latn_ME" reason="legacy"/>
-    		<languageAlias type="sr_RS" replacement="sr_Cyrl_RS" reason="legacy"/>
-    		<languageAlias type="sr_XK" replacement="sr_Cyrl_XK" reason="legacy"/>
-    		<languageAlias type="tzm_Latn_MA" replacement="tzm_MA" reason="legacy"/>
-    		<languageAlias type="ug_Arab_CN" replacement="ug_CN"  reason="legacy"/>
-    		<languageAlias type="uz_AF" replacement="uz_Arab_AF" reason="legacy"/>
-    		<languageAlias type="uz_UZ" replacement="uz_Latn_UZ" reason="legacy"/>
-    		<languageAlias type="vai_LR" replacement="vai_Vaii_LR" reason="legacy"/>
-    		<languageAlias type="yue_CN" replacement="yue_Hans_CN" reason="legacy"/>
-    		<languageAlias type="yue_HK" replacement="yue_Hant_HK" reason="legacy"/>
-    		<languageAlias type="zh_CN" replacement="zh_Hans_CN" reason="legacy"/>
-    		<languageAlias type="zh_HK" replacement="zh_Hant_HK" reason="legacy"/>
-    		<languageAlias type="zh_MO" replacement="zh_Hant_MO" reason="legacy"/>
-    		<languageAlias type="zh_SG" replacement="zh_Hans_SG" reason="legacy"/>
-    		<languageAlias type="zh_TW" replacement="zh_Hant_TW" reason="legacy"/>
             <!-- macrolanguages -->
 			<languageAlias type="aju" replacement="jrb" reason="macrolanguage"/> <!-- Moroccan Judeo-Arabic ⇒ Judeo-Arabic -->
 			<languageAlias type="als" replacement="sq" reason="macrolanguage"/> <!-- Albanian, Tosk ⇒ Albanian -->
@@ -456,11 +512,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="tib" replacement="bo" reason="bibliographic"/> <!-- [Tibetan] -->
 			<languageAlias type="wel" replacement="cy" reason="bibliographic"/> <!-- [Welsh] -->
             <!-- end of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
-			<languageAlias type="cel-gaulish" replacement="xtg-x-cel-gaulish" reason="legacy"/> <!-- bogus bcp47 code -->
-			<languageAlias type="i-default" replacement="en-x-i-default" reason="legacy"/> <!-- bogus bcp47 code -->
-			<languageAlias type="i-enochian" replacement="und-x-i-enochian" reason="legacy"/> <!-- bogus bcp47 code -->
-			<languageAlias type="i-mingo" replacement="see-x-i-mingo" reason="legacy"/> <!-- bogus bcp47 code -->
-			<languageAlias type="zh-min" replacement="nan-x-zh-min" reason="legacy"/> <!-- bogus bcp47 code -->
+			<languageAlias type="cel_gaulish" replacement="xtg" reason="legacy"/> <!-- irregular bcp47 code -->
+			<languageAlias type="i_default" replacement="en_x_i_default" reason="legacy"/> <!-- irregular bcp47 code -->
+			<languageAlias type="i_enochian" replacement="und_x_i_enochian" reason="legacy"/> <!-- irregular bcp47 code -->
+			<languageAlias type="i_mingo" replacement="see_x_i_mingo" reason="legacy"/> <!-- irregular bcp47 code -->
+			<languageAlias type="zh_min" replacement="nan_x_zh_min" reason="legacy"/> <!-- irregular bcp47 code -->
+			
+			<languageAlias type="und_aaland" replacement="und_AX" reason="deprecated"/>
+			<languageAlias type="hy_arevmda" replacement="hyw" reason="deprecated"/>
+			<languageAlias type="und_arevmda" replacement="und" reason="deprecated"/>
+			<languageAlias type="und_arevela" replacement="und" reason="deprecated"/>
+			<languageAlias type="und_lojban" replacement="und" reason="deprecated"/>
+			<languageAlias type="und_saaho" replacement="und" reason="deprecated"/>
+			<languageAlias type="und_bokmal" replacement="und" reason="deprecated"/>
+			<languageAlias type="und_nynorsk" replacement="und" reason="deprecated"/>
+			<languageAlias type="und_hakka" replacement="und" reason="deprecated"/>
+			<languageAlias type="und_xiang" replacement="und" reason="deprecated"/>
+			<languageAlias type="und_hepburn_heploc" replacement="und_alalc97" reason="deprecated"/>
+			
             <!-- scripts -->
             <scriptAlias type="Qaai" replacement="Zinh" reason="deprecated"/>
             <!-- deprecated ISO territories in 3066 + CLDR ones (older deprecated ISO codes -->
@@ -1553,11 +1622,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						
 			
             <!-- variants -->
-            <variantAlias type="AALAND" replacement="AX" reason="deprecated"/>
-            <variantAlias type="POLYTONI" replacement="POLYTON" reason="deprecated"/>
-            <variantAlias type="HEPLOC" replacement="ALALC97" reason="deprecated"/>
-			<variantAlias type="arevela" replacement="hy" reason="deprecated"/> <!-- arevela -->
-			<variantAlias type="arevmda" replacement="hyw" reason="deprecated"/> <!-- arevmda -->
+            <variantAlias type="polytoni" replacement="polyton" reason="deprecated"/>
 			<variantAlias type="heploc" replacement="alalc97" reason="deprecated"/> <!-- heploc -->
             <zoneAlias type="Africa/Timbuktu" replacement="Africa/Bamako" reason="deprecated"/>          
             <zoneAlias type="Pacific/Yap" replacement="Pacific/Truk" reason="deprecated"/>          
@@ -1591,34 +1656,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 			az_Arab_IR az_Cyrl_AZ az_Latn az_Latn_AZ
 			ba_RU bas_CM be_BY bem_ZM bez_TZ bg_BG bgn_PK blt_VN bm_ML bm_Nkoo_ML bn_BD
 			bo_CN br_FR brx_IN bs_Cyrl_BA bs_Latn bs_Latn_BA bss_CM byn_ER
-			ca_ES cad_US cch_NG ccp_BD ce_RU ceb_PH cgg_UG chr_US cic_US ckb_IQ co_FR cs_CZ cu_RU
-			cv_RU cy_GB
-			da_DK dav_KE de_DE dje_NE dsb_DE dua_CM dv_MV dyo_SN dz_BT
+			ca_ES cad_US cch_NG ccp_BD ce_RU ceb_PH cgg_UG chr_US cic_US ckb_IQ co_FR cs_CZ
+			cu_RU cv_RU cy_GB
+			da_DK dav_KE de_DE dje_NE doi_IN dsb_DE dua_CM dv_MV dyo_SN dz_BT
 			ebu_KE ee_GH el_GR en_Dsrt_US en_US eo_001 es_ES et_EE eu_ES ewo_CM
 			fa_IR ff_Adlm_GN ff_Latn ff_Latn_SN fi_FI fil_PH fo_FO fr_FR fur_IT fy_NL
 			ga_IE gaa_GH gd_GB gez_ET gl_ES gn_PY gsw_CH gu_IN guz_KE gv_IM
 			ha_Arab_NG ha_NG haw_US he_IL hi_IN hi_Latn_IN hr_HR hsb_DE hu_HU hy_AM
 			ia_001 id_ID ife_TG ig_NG ii_CN io_001 is_IS it_IT iu_CA iu_Latn_CA
 			ja_JP jbo_001 jgo_CM jmc_TZ jv_ID
-			ka_GE kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV ken_CM khq_ML ki_KE kk_KZ
-			kkj_CM kl_GL kln_KE km_KH kn_IN ko_KR kok_IN kpe_LR ks_Arab ks_Arab_IN ks_Deva_IN ksb_TZ ksf_CM ksh_DE
-			ku_TR kw_GB ky_KG
-			lag_TZ lb_LU lg_UG lkt_US ln_CD lo_LA lrc_IR lt_LT lu_CD luo_KE luy_KE lv_LV
-			mai_IN mas_KE mer_KE mfe_MU mg_MG mgh_MZ mgo_CM mi_NZ mk_MK ml_IN mn_MN mn_Mong_CN
-			mni_Beng mni_Beng_IN mni_Mtei_IN moh_CA mr_IN ms_Arab_MY ms_MY mt_MT mua_CM mus_US my_MM myv_RU mzn_IR
+			ka_GE kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV ken_CM kgp_BR khq_ML ki_KE
+			kk_KZ kkj_CM kl_GL kln_KE km_KH kn_IN ko_KR kok_IN kpe_LR ks_Arab ks_Arab_IN
+			ks_Deva_IN ksb_TZ ksf_CM ksh_DE ku_TR kw_GB ky_KG
+			la_VA lag_TZ lb_LU lg_UG lij_IT lkt_US ln_CD lo_LA lrc_IR lt_LT lu_CD luo_KE luy_KE lv_LV
+			mai_IN mas_KE mer_KE mfe_MU mg_MG mgh_MZ mgo_CM mi_NZ mk_MK ml_IN mn_MN
+			mn_Mong_CN mni_Beng mni_Beng_IN mni_Mtei_IN moh_CA mr_IN ms_Arab_MY ms_MY mt_MT
+			mua_CM mus_US my_MM myv_RU mzn_IR
 			naq_NA nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA nso_ZA
-			nus_SS ny_MW nyn_UG
+			nus_SS nv_US ny_MW nyn_UG
 			oc_FR om_ET or_IN os_GE osa_US
 			pa_Arab_PK pa_Guru pa_Guru_IN pcm_NG pl_PL prg_001 ps_AF pt_BR
 			qu_PE quc_GT
 			rm_CH rn_BI ro_RO rof_TZ ru_RU rw_RW rwk_TZ
 			sa_IN sah_RU saq_KE sat_Deva_IN sat_Olck sat_Olck_IN sbp_TZ sc_IT scn_IT
-			sd_Arab sd_Arab_PK sd_Deva_IN sdh_IR se_NO seh_MZ ses_ML sg_CF
-			shi_Latn_MA shi_Tfng shi_Tfng_MA si_LK sid_ET sk_SK sl_SI sma_SE smj_SE smn_FI
-			sms_FI sn_ZW so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER st_ZA
-			su_Latn su_Latn_ID sv_SE sw_TZ syr_IQ szl_PL
+			sd_Arab sd_Arab_PK sd_Deva_IN sdh_IR se_NO seh_MZ ses_ML sg_CF shi_Latn_MA
+			shi_Tfng shi_Tfng_MA si_LK sid_ET sk_SK sl_SI sma_SE smj_SE smn_FI sms_FI sn_ZW
+			so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER st_ZA su_Latn su_Latn_ID
+			sv_SE sw_TZ syr_IQ szl_PL
 			ta_IN te_IN teo_UG tg_TJ th_TH ti_ET tig_ER tk_TM tn_ZA to_TO tr_TR trv_TW
-			ts_ZA tt_RU twq_NE tzm_MA
+			trw_PK ts_ZA tt_RU twq_NE tzm_MA
 			ug_CN uk_UA ur_PK uz_Arab_AF uz_Cyrl_UZ uz_Latn uz_Latn_UZ
 			vai_Latn_LR vai_Vaii vai_Vaii_LR ve_ZA vi_VN vo_001 vun_TZ
 			wa_BE wae_CH wal_ET wbp_AU wo_SN

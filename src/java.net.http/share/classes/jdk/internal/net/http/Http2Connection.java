@@ -33,7 +33,6 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -41,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
@@ -248,7 +248,7 @@ class Http2Connection  {
     //-------------------------------------
     final HttpConnection connection;
     private final Http2ClientImpl client2;
-    private final Map<Integer,Stream<?>> streams = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer,Stream<?>> streams = new ConcurrentHashMap<>();
     private int nextstreamid;
     private int nextPushStream = 2;
     // actual stream ids are not allocated until the Headers frame is ready
@@ -700,8 +700,7 @@ class Http2Connection  {
         Throwable initialCause = this.cause;
         if (initialCause == null) this.cause = t;
         client2.deleteConnection(this);
-        List<Stream<?>> c = new LinkedList<>(streams.values());
-        for (Stream<?> s : c) {
+        for (Stream<?> s : streams.values()) {
             try {
                 s.connectionClosing(t);
             } catch (Throwable e) {
@@ -802,6 +801,7 @@ class Http2Connection  {
                 try {
                     decodeHeaders((HeaderFrame) frame, stream.rspHeadersConsumer());
                 } catch (UncheckedIOException e) {
+                    debug.log("Error decoding headers: " + e.getMessage(), e);
                     protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
                     return;
                 }
@@ -866,20 +866,12 @@ class Http2Connection  {
         throws IOException
     {
         switch (frame.type()) {
-          case SettingsFrame.TYPE:
-              handleSettings((SettingsFrame)frame);
-              break;
-          case PingFrame.TYPE:
-              handlePing((PingFrame)frame);
-              break;
-          case GoAwayFrame.TYPE:
-              handleGoAway((GoAwayFrame)frame);
-              break;
-          case WindowUpdateFrame.TYPE:
-              handleWindowUpdate((WindowUpdateFrame)frame);
-              break;
-          default:
-            protocolError(ErrorFrame.PROTOCOL_ERROR);
+            case SettingsFrame.TYPE     -> handleSettings((SettingsFrame) frame);
+            case PingFrame.TYPE         -> handlePing((PingFrame) frame);
+            case GoAwayFrame.TYPE       -> handleGoAway((GoAwayFrame) frame);
+            case WindowUpdateFrame.TYPE -> handleWindowUpdate((WindowUpdateFrame) frame);
+
+            default -> protocolError(ErrorFrame.PROTOCOL_ERROR);
         }
     }
 

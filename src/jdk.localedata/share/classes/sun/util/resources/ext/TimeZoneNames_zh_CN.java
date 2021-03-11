@@ -1035,7 +1035,6 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"US/Michigan", EST},
             {"US/Mountain", MST},
             {"US/Pacific", PST},
-            {"US/Pacific-New", PST},
             {"US/Samoa", SAMOA},
             {"VST", ICT},
             {"W-SU", MSK},

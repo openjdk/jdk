@@ -47,10 +47,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.IterateOverReachableObjects.iterreachobj004
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:iterreachobj004=-waittime=5 -verbose"
+ * @build nsk.jvmti.IterateOverReachableObjects.iterreachobj004
+ * @run main/othervm/native
+ *      -agentlib:iterreachobj004=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverReachableObjects.iterreachobj004
  */
 

@@ -35,7 +35,6 @@
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
-import java.security.Signature;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -80,9 +79,6 @@ public class PKCS10AttrEncoding {
         X509Key publicKey = (X509Key) pair.getPublic();
         PrivateKey privateKey = pair.getPrivate();
 
-        Signature signature = Signature.getInstance(sigAlg);
-        signature.initSign(privateKey);
-
         // Create the PKCS10 request
         PKCS10Attribute[] attrs = new PKCS10Attribute[len];
         for (int j = 0; j < len; j++) {
@@ -95,7 +91,7 @@ public class PKCS10AttrEncoding {
 
         // Encode the PKCS10 request and generate another PKCS10 request from
         // the encoded byte array
-        req.encodeAndSign(subject, signature);
+        req.encodeAndSign(subject, privateKey, sigAlg);
         PKCS10 resp = new PKCS10(req.getEncoded());
         System.out.println("List of attributes in DER encoded PKCS10 Request:");
         checkAttributes(resp.getAttributes().getElements());

@@ -45,9 +45,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.suspend.suspend001.suspend001
- *        nsk.jdb.suspend.suspend001.suspend001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.suspend.suspend001.suspend001
+ * @build nsk.jdb.suspend.suspend001.suspend001a
+ * @run main/othervm
+ *      nsk.jdb.suspend.suspend001.suspend001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

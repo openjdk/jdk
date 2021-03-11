@@ -337,6 +337,13 @@ public class CheckGraalIntrinsics extends GraalTest {
             add(toBeInvestigated,
                             "java/lang/StringCoding.hasNegatives([BII)Z",
                             "java/lang/StringCoding.implEncodeISOArray([BI[BII)I");
+
+            if (isJDK16OrHigher()) {
+                // Added by JDK-8173585: Intrinsify StringLatin1.indexOf(char)
+                add(toBeInvestigated,
+                            "java/lang/StringLatin1.indexOfChar([BIII)I");
+            }
+
             add(ignore,
                             // handled through an intrinsic for String.equals itself
                             "java/lang/StringLatin1.equals([B[B)Z",
@@ -429,7 +436,20 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/Math.copySign(FF)F",
                             "java/lang/Math.signum(D)D",
                             "java/lang/Math.signum(F)F",
+                            "jdk/internal/util/Preconditions.checkIndex(JJLjava/util/function/BiFunction;)J",
                             "sun/security/provider/MD5.implCompress0([BI)V");
+            if (config.useBase64Intrinsics()) {
+                // Currently implemented on ppc64le only, but could be implemented on others
+                add(toBeInvestigated,
+                            "java/util/Base64$Decoder.decodeBlock([BII[BIZ)I");
+            } else {
+                add(ignore,
+                            "java/util/Base64$Decoder.decodeBlock([BII[BIZ)I");
+            }
+            // Panama
+            add(toBeInvestigated,
+                    // Native method handle intrinsics
+                    "java/lang/invoke/MethodHandle.linkToNative*");
         }
 
         if (!config.inlineNotify()) {
@@ -497,6 +517,36 @@ public class CheckGraalIntrinsics extends GraalTest {
                 add(toBeInvestigated,
                                 "jdk/internal/util/ArraysSupport.vectorizedMismatch(Ljava/lang/Object;JLjava/lang/Object;JII)I");
             }
+        }
+
+        if (isJDK16OrHigher()) {
+            // The following are intrinsics required for the Vector API
+            add(toBeInvestigated,
+                                "jdk/internal/vm/vector/VectorSupport.binaryOp(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/lang/Object;Ljava/util/function/BiFunction;)Ljava/lang/Object;",
+                                "jdk/internal/vm/vector/VectorSupport.blend(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$VectorMask;Ljdk/internal/vm/vector/VectorSupport$VectorBlendOp;)Ljdk/internal/vm/vector/VectorSupport$Vector;",
+                                "jdk/internal/vm/vector/VectorSupport.broadcastCoerced(Ljava/lang/Class;Ljava/lang/Class;IJLjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$BroadcastOperation;)Ljava/lang/Object;",
+                                "jdk/internal/vm/vector/VectorSupport.broadcastInt(ILjava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;ILjdk/internal/vm/vector/VectorSupport$VectorBroadcastIntOp;)Ljdk/internal/vm/vector/VectorSupport$Vector;",
+                                "jdk/internal/vm/vector/VectorSupport.compare(ILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$VectorCompareOp;)Ljdk/internal/vm/vector/VectorSupport$VectorMask;",
+                                "jdk/internal/vm/vector/VectorSupport.convert(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$VectorPayload;Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$VectorConvertOp;)Ljdk/internal/vm/vector/VectorSupport$VectorPayload;",
+                                "jdk/internal/vm/vector/VectorSupport.extract(Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;ILjdk/internal/vm/vector/VectorSupport$VecExtractOp;)J",
+                                "jdk/internal/vm/vector/VectorSupport.insert(Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;IJLjdk/internal/vm/vector/VectorSupport$VecInsertOp;)Ljdk/internal/vm/vector/VectorSupport$Vector;",
+                                "jdk/internal/vm/vector/VectorSupport.load(Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;JLjava/lang/Object;ILjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadOperation;)Ljava/lang/Object;",
+                                "jdk/internal/vm/vector/VectorSupport.loadWithMap(Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$Vector;Ljava/lang/Object;I[IILjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadVectorOperationWithMap;)Ljdk/internal/vm/vector/VectorSupport$Vector;",
+                                "jdk/internal/vm/vector/VectorSupport.maybeRebox(Ljava/lang/Object;)Ljava/lang/Object;",
+                                "jdk/internal/vm/vector/VectorSupport.rearrangeOp(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;Ljdk/internal/vm/vector/VectorSupport$VectorRearrangeOp;)Ljdk/internal/vm/vector/VectorSupport$Vector;",
+                                "jdk/internal/vm/vector/VectorSupport.reductionCoerced(ILjava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljava/util/function/Function;)J",
+                                "jdk/internal/vm/vector/VectorSupport.shuffleIota(Ljava/lang/Class;Ljava/lang/Class;Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;IIIILjdk/internal/vm/vector/VectorSupport$ShuffleIotaOperation;)Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;",
+                                "jdk/internal/vm/vector/VectorSupport.shuffleToVector(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;ILjdk/internal/vm/vector/VectorSupport$ShuffleToVectorOperation;)Ljava/lang/Object;",
+                                "jdk/internal/vm/vector/VectorSupport.store(Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$Vector;Ljava/lang/Object;ILjdk/internal/vm/vector/VectorSupport$StoreVectorOperation;)V",
+                                "jdk/internal/vm/vector/VectorSupport.storeWithMap(Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$Vector;Ljava/lang/Object;I[IILjdk/internal/vm/vector/VectorSupport$StoreVectorOperationWithMap;)V",
+                                "jdk/internal/vm/vector/VectorSupport.ternaryOp(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljdk/internal/vm/vector/VectorSupport$TernaryOperation;)Ljava/lang/Object;",
+                                "jdk/internal/vm/vector/VectorSupport.test(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/lang/Object;Ljava/util/function/BiFunction;)Z",
+                                "jdk/internal/vm/vector/VectorSupport.unaryOp(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object;");
+        }
+
+        if (isJDK16OrHigher()) {
+            add(toBeInvestigated,
+                                "sun/instrument/InstrumentationImpl.getObjectSize0(JLjava/lang/Object;)J");
         }
 
         /*
@@ -575,6 +625,10 @@ public class CheckGraalIntrinsics extends GraalTest {
         }
         if (!config.useSHA512Intrinsics()) {
             add(ignore, "sun/security/provider/SHA5." + shaCompressName + "([BI)V");
+        }
+
+        if (isJDK16OrHigher()) {
+            add(toBeInvestigated, "sun/security/provider/SHA3." + shaCompressName + "([BI)V");
         }
     }
 

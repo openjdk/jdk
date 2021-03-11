@@ -28,14 +28,15 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.replacements.arraycopy.ArrayCopySnippets;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.replacements.arraycopy.ArrayCopySnippets;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -369,5 +370,23 @@ public class ArrayCopyIntrinsificationTest extends GraalCompilerTest {
         }
         test("objectArraycopyCatchArrayStoreException", longSource, 4, integerDest, 2, 3);
         test("objectArraycopyCatchArrayIndexException", new Integer[128], 0, new Integer[128], Integer.MAX_VALUE, 1);
+    }
+
+    @Test
+    public void testArraycopyDeoptWithSideEffect() {
+        ArgSupplier s = () -> new int[4];
+        int[] b = new int[]{1, 1, 1, 1};
+        int[] c = new int[]{2, 2, 2, 2};
+        test("arraycopyAndDeopt", s, b, c);
+    }
+
+    public static int[] arraycopyAndDeopt(int[] a, int[] b, int[] c) {
+        if (a[0] == 0) {
+            System.arraycopy(b, 0, a, 0, b.length);
+            GraalDirectives.deoptimize();
+        } else {
+            System.arraycopy(c, 0, a, 0, b.length);
+        }
+        return a;
     }
 }

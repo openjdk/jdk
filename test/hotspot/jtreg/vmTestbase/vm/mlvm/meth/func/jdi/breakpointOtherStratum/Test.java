@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  *
  * @summary converted from VM Testbase vm/mlvm/meth/func/jdi/breakpointOtherStratum.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, fds, jdk, quarantine]

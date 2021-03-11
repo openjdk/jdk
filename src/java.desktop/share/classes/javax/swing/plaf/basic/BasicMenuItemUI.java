@@ -928,6 +928,11 @@ public class BasicMenuItemUI extends MenuItemUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
+        /**
+         * Constructs a {@code MouseInputHandler}.
+         */
+        protected MouseInputHandler() {}
+
         /** {@inheritDoc} */
         public void mouseClicked(MouseEvent e) {
             getHandler().mouseClicked(e);

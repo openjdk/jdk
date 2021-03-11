@@ -730,19 +730,6 @@ public abstract class AbstractDrbg {
 
     // Misc
 
-    /** A handy method returning hexdump string with no colon or new line.
-     *
-     * @param in input byte array
-     * @return the hexdump string
-     */
-    protected static String hex(byte[] in) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : in) {
-            sb.append(String.format("%02x", b&0xff));
-        }
-        return sb.toString();
-    }
-
     /**
      * Returns the smallest standard strength (112, 128, 192, 256) that is
      * greater or equal to the input.

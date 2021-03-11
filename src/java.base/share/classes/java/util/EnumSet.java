@@ -480,11 +480,22 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
     }
 
     /**
+     * Throws {@code InvalidObjectException}.
      * @param s the stream
      * @throws java.io.InvalidObjectException always
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
+        throws java.io.InvalidObjectException {
+        throw new java.io.InvalidObjectException("Proxy required");
+    }
+
+    /**
+     * Throws {@code InvalidObjectException}.
+     * @throws java.io.InvalidObjectException always
+     */
+    @java.io.Serial
+    private void readObjectNoData()
         throws java.io.InvalidObjectException {
         throw new java.io.InvalidObjectException("Proxy required");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
@@ -30,13 +31,13 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -45,6 +46,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
@@ -68,7 +70,7 @@ void Klass::replace_java_mirror(oop mirror) {
 
 bool Klass::is_cloneable() const {
   return _access_flags.is_cloneable_fast() ||
-         is_subtype_of(SystemDictionary::Cloneable_klass());
+         is_subtype_of(vmClasses::Cloneable_klass());
 }
 
 void Klass::set_is_cloneable() {
@@ -204,7 +206,7 @@ Klass::Klass(KlassID id) : _id(id),
                            _prototype_header(markWord::prototype()),
                            _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
-  CDS_JAVA_HEAP_ONLY(_archived_mirror = 0;)
+  CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));
 }
@@ -243,8 +245,8 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
     set_super(NULL);
     _primary_supers[0] = this;
     assert(super_depth() == 0, "Object must already be initialized properly");
-  } else if (k != super() || k == SystemDictionary::Object_klass()) {
-    assert(super() == NULL || super() == SystemDictionary::Object_klass(),
+  } else if (k != super() || k == vmClasses::Object_klass()) {
+    assert(super() == NULL || super() == vmClasses::Object_klass(),
            "initialize this only once to a non-trivial value");
     set_super(k);
     Klass* sup = k;
@@ -472,7 +474,7 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     return;
   }
 
-  Klass* root = SystemDictionary::Object_klass();
+  Klass* root = vmClasses::Object_klass();
   Stack<Klass*, mtGC> stack;
 
   stack.push(root);
@@ -573,10 +575,9 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // set.  We leave the class on the CLD list, even if incomplete so that we don't
   // modify the CLD list outside a safepoint.
   if (class_loader_data() == NULL) {
-    // Restore class_loader_data to the null class loader data
     set_class_loader_data(loader_data);
 
-    // Add to null class loader list first before creating the mirror
+    // Add to class loader list first before creating the mirror
     // (same order as class file parsing)
     loader_data->add_class(this);
   }
@@ -597,7 +598,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // Obtain java.lang.Module, if available
   Handle module_handle(THREAD, ((module_entry != NULL) ? module_entry->module() : (oop)NULL));
 
-  if (this->has_raw_archived_mirror()) {
+  if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
     if (HeapShared::open_archive_heap_region_mapped()) {
@@ -612,33 +613,35 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     // No archived mirror data
     log_debug(cds, mirror)("No archived mirror data for %s", external_name());
     clear_java_mirror_handle();
-    this->clear_has_raw_archived_mirror();
+    this->clear_archived_mirror_index();
   }
 
   // Only recreate it if not present.  A previous attempt to restore may have
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == NULL) {
+    ResourceMark rm(THREAD);
     log_trace(cds, mirror)("Recreate mirror for %s", external_name());
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, Handle(), CHECK);
   }
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-// Used at CDS dump time to access the archived mirror. No GC barrier.
-oop Klass::archived_java_mirror_raw() {
-  assert(has_raw_archived_mirror(), "must have raw archived mirror");
-  return CompressedOops::decode(_archived_mirror);
+oop Klass::archived_java_mirror() {
+  assert(has_archived_mirror_index(), "must have archived mirror");
+  return HeapShared::get_root(_archived_mirror_index);
 }
 
-narrowOop Klass::archived_java_mirror_raw_narrow() {
-  assert(has_raw_archived_mirror(), "must have raw archived mirror");
-  return _archived_mirror;
+void Klass::clear_archived_mirror_index() {
+  if (_archived_mirror_index >= 0) {
+    HeapShared::clear_root(_archived_mirror_index);
+  }
+  _archived_mirror_index = -1;
 }
 
 // No GC barrier
-void Klass::set_archived_java_mirror_raw(oop m) {
+void Klass::set_archived_java_mirror(oop m) {
   assert(DumpSharedSpaces, "called only during runtime");
-  _archived_mirror = CompressedOops::encode(m);
+  _archived_mirror_index = HeapShared::append_root(m);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 

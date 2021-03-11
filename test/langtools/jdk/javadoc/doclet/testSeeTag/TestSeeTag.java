@@ -72,6 +72,7 @@ public class TestSeeTag extends JavadocTester {
     public void testBadReference() {
         javadoc("-d", "out-badref",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "badref");
         checkExit(Exit.ERROR);
 
@@ -80,7 +81,7 @@ public class TestSeeTag extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd><code>Object</code>,\s
-                    <code>Foo<String></code></dd>
+                    <code>Foo&lt;String&gt;</code></dd>
                     </dl>""");
     }
 }

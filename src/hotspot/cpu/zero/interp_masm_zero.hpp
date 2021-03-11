@@ -35,14 +35,6 @@
 class InterpreterMacroAssembler : public MacroAssembler {
  public:
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code) {}
-
- public:
-  RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                        Register  tmp,
-                                        int       offset) {
-    ShouldNotCallThis();
-    return RegisterOrConstant();
-  }
 };
 
 #endif // CPU_ZERO_INTERP_MASM_ZERO_HPP

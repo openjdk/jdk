@@ -41,14 +41,14 @@
  *        nsk.jdi.ReferenceType.instances.instances002.instances002a
  *        nsk.share.jdi.TestClass1
  *        nsk.share.jdi.TestInterfaceImplementer1
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.ReferenceType.instances.instances002.instances002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
 package nsk.jdi.ReferenceType.instances.instances002;
@@ -189,7 +189,9 @@ public class instances002 extends HeapwalkingDebugger {
                         objectReferences.add(classType.newInstance(breakpointEvent.thread(), method, new ArrayList<Value>(), 0));
                     }
 
+                    debuggee.resume();
                     checkDebugeeAnswer_instances(className, baseInstances);
+                    debuggee.suspend();
 
                     break;
                 }

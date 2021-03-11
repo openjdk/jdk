@@ -57,9 +57,8 @@
  * @build nsk.share.jdi.PlugConnectors
  * @run driver nsk.jdi.ConnectorsJarBuilder
  *
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --java
- *      -cp jars${file.separator}connectors.jar${path.separator}${test.class.path}
+ * @run main/othervm
+ *      -cp jars${file.separator}connectors.jar${path.separator}${test.class.path}${path.separator}${java.class.path}
  *      nsk.jdi.PlugConnectors.ListenConnector.plugListenConnect001.plugListenConnect001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

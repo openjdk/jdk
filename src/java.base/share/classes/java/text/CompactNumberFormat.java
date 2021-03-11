@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1122,8 +1122,7 @@ public final class CompactNumberFormat extends NumberFormat {
         }
         Number divisor = matchedValue;
         if (count > 0) {
-            if (matchedValue instanceof BigInteger) {
-                BigInteger bigValue = (BigInteger) matchedValue;
+            if (matchedValue instanceof BigInteger bigValue) {
                 if (bigValue.compareTo(BigInteger.valueOf((long) Math.pow(RANGE_MULTIPLIER, count - 1))) < 0) {
                     throw new IllegalArgumentException("Invalid Pattern"
                             + " [" + compactPatterns[patternIndex]
@@ -1212,7 +1211,7 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     // Patterns for plurals syntax validation
-    private final static String EXPR = "([niftvw])\\s*(([/%])\\s*(\\d+))*";
+    private final static String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*";
     private final static String RELATION = "(!?=)";
     private final static String VALUE_RANGE = "((\\d+)\\.\\.(\\d+)|\\d+)";
     private final static String CONDITION = EXPR + "\\s*" +
@@ -2422,7 +2421,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 .allMatch(r -> relationCheck(r, input)));
     }
 
-    private final static String NAMED_EXPR = "(?<op>[niftvw])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
+    private final static String NAMED_EXPR = "(?<op>[niftvwe])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
     private final static String NAMED_RELATION = "(?<rel>!?=)";
     private final static String NAMED_VALUE_RANGE = "(?<start>\\d+)\\.\\.(?<end>\\d+)|(?<value>\\d+)";
     private final static Pattern EXPR_PATTERN = Pattern.compile(NAMED_EXPR);
@@ -2495,7 +2494,7 @@ public final class CompactNumberFormat extends NumberFormat {
         double ret = 0;
 
         if (input == Double.POSITIVE_INFINITY) {
-            ret =input;
+            ret = input;
         } else {
             String op = expr.group("op");
             if (Objects.equals(op, "n") || Objects.equals(op, "i")) {

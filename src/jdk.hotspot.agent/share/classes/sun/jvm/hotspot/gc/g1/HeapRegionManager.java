@@ -42,8 +42,6 @@ import sun.jvm.hotspot.types.TypeDataBase;
 public class HeapRegionManager extends VMObject {
     // G1HeapRegionTable _regions
     static private long regionsFieldOffset;
-    // uint _committed_length
-    static private CIntegerField numCommittedField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -57,7 +55,6 @@ public class HeapRegionManager extends VMObject {
         Type type = db.lookupType("HeapRegionManager");
 
         regionsFieldOffset = type.getField("_regions").getOffset();
-        numCommittedField = type.getCIntegerField("_num_committed");
     }
 
     private G1HeapRegionTable regions() {
@@ -72,10 +69,6 @@ public class HeapRegionManager extends VMObject {
 
     public long length() {
         return regions().length();
-    }
-
-    public long committedLength() {
-        return numCommittedField.getValue(addr);
     }
 
     public Iterator<HeapRegion> heapRegionIterator() {

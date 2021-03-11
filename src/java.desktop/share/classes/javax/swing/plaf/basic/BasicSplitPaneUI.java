@@ -714,6 +714,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class PropertyHandler implements PropertyChangeListener
     {
+        /**
+         * Constructs a {@code PropertyHandler}.
+         */
+        public PropertyHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -766,6 +771,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class KeyboardUpLeftHandler implements ActionListener
     {
+        /**
+         * Constructs a {@code KeyboardUpLeftHandler}.
+         */
+        public KeyboardUpLeftHandler() {}
+
         public void actionPerformed(ActionEvent ev) {
             if (dividerKeyboardResize) {
                 splitPane.setDividerLocation(Math.max(0,getDividerLocation
@@ -861,6 +871,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class KeyboardResizeToggleHandler implements ActionListener
     {
+        /**
+         * Constructs a {@code KeyboardResizeToggleHandler}.
+         */
+        public KeyboardResizeToggleHandler() {}
+
         public void actionPerformed(ActionEvent ev) {
             if (!dividerKeyboardResize) {
                 splitPane.requestFocus();

@@ -23,11 +23,10 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import "JNIUtilities.h"
 
 #import "AWTSurfaceLayers.h"
 
-#import "jni_util.h"
 
 JNIEXPORT JAWT_DrawingSurfaceInfo* JNICALL awt_DrawingSurface_GetDrawingSurfaceInfo
 (JAWT_DrawingSurface* ds)
@@ -37,32 +36,32 @@ JNIEXPORT JAWT_DrawingSurfaceInfo* JNICALL awt_DrawingSurface_GetDrawingSurfaceI
     JNIEnv *env = ds->env;
     jobject target = ds->target;
 
-    static JNF_CLASS_CACHE(jc_Component, "java/awt/Component");
-    static JNF_MEMBER_CACHE(jf_peer, jc_Component, "peer", "Ljava/awt/peer/ComponentPeer;");
-    jobject peer = JNFGetObjectField(env, target, jf_peer);
+    DECLARE_CLASS_RETURN(jc_Component, "java/awt/Component", NULL);
+    DECLARE_FIELD_RETURN(jf_peer, jc_Component, "peer", "Ljava/awt/peer/ComponentPeer;", NULL);
+    jobject peer = (*env)->GetObjectField(env, target, jf_peer);
 
-    static JNF_CLASS_CACHE(jc_ComponentPeer, "sun/lwawt/LWComponentPeer");
-    static JNF_MEMBER_CACHE(jf_platformComponent, jc_ComponentPeer,
-                            "platformComponent", "Lsun/lwawt/PlatformComponent;");
-    jobject platformComponent = JNFGetObjectField(env, peer, jf_platformComponent);
+    DECLARE_CLASS_RETURN(jc_ComponentPeer, "sun/lwawt/LWComponentPeer", NULL);
+    DECLARE_FIELD_RETURN(jf_platformComponent, jc_ComponentPeer,
+                            "platformComponent", "Lsun/lwawt/PlatformComponent;", NULL);
+    jobject platformComponent = (*env)->GetObjectField(env, peer, jf_platformComponent);
 
-    static JNF_CLASS_CACHE(jc_PlatformComponent, "sun/lwawt/macosx/CPlatformComponent");
-    static JNF_MEMBER_CACHE(jm_getPointer, jc_PlatformComponent, "getPointer", "()J");
-    AWTSurfaceLayers *surfaceLayers = jlong_to_ptr(JNFCallLongMethod(env, platformComponent, jm_getPointer));
+    DECLARE_CLASS_RETURN(jc_PlatformComponent, "sun/lwawt/macosx/CPlatformComponent", NULL);
+    DECLARE_METHOD_RETURN(jm_getPointer, jc_PlatformComponent, "getPointer", "()J", NULL);
+    AWTSurfaceLayers *surfaceLayers = jlong_to_ptr((*env)->CallLongMethod(env, platformComponent, jm_getPointer));
     // REMIND: assert(surfaceLayers)
 
     dsi->platformInfo = surfaceLayers;
     dsi->ds = ds;
 
-    static JNF_MEMBER_CACHE(jf_x, jc_Component, "x", "I");
-    static JNF_MEMBER_CACHE(jf_y, jc_Component, "y", "I");
-    static JNF_MEMBER_CACHE(jf_width, jc_Component, "width", "I");
-    static JNF_MEMBER_CACHE(jf_height, jc_Component, "height", "I");
+    DECLARE_FIELD_RETURN(jf_x, jc_Component, "x", "I", NULL);
+    DECLARE_FIELD_RETURN(jf_y, jc_Component, "y", "I", NULL);
+    DECLARE_FIELD_RETURN(jf_width, jc_Component, "width", "I", NULL);
+    DECLARE_FIELD_RETURN(jf_height, jc_Component, "height", "I", NULL);
 
-    dsi->bounds.x = JNFGetIntField(env, target, jf_x);
-    dsi->bounds.y = JNFGetIntField(env, target, jf_y);
-    dsi->bounds.width = JNFGetIntField(env, target, jf_width);
-    dsi->bounds.height = JNFGetIntField(env, target, jf_height);
+    dsi->bounds.x = (*env)->GetIntField(env, target, jf_x);
+    dsi->bounds.y = (*env)->GetIntField(env, target, jf_y);
+    dsi->bounds.width = (*env)->GetIntField(env, target, jf_width);
+    dsi->bounds.height = (*env)->GetIntField(env, target, jf_height);
 
     dsi->clipSize = 1;
     dsi->clip = &(dsi->bounds);
@@ -148,7 +147,9 @@ JNIEXPORT jobject JNICALL awt_CreateEmbeddedFrame
         mid = (*env)->GetMethodID(env, cls, "<init>", "(J)V");
         CHECK_NULL_RETURN(mid, NULL);
     }
-    return (*env)->NewObject(env, cls, mid, platformInfo);
+    jobject o = (*env)->NewObject(env, cls, mid, platformInfo);
+    CHECK_EXCEPTION();
+    return o;
 }
 
 JNIEXPORT void JNICALL awt_SetBounds
@@ -162,6 +163,7 @@ JNIEXPORT void JNICALL awt_SetBounds
         CHECK_NULL(mid);
     }
     (*env)->CallVoidMethod(env, embeddedFrame, mid, x, y, w, h);
+    CHECK_EXCEPTION();
 }
 
 JNIEXPORT void JNICALL awt_SynthesizeWindowActivation
@@ -175,4 +177,5 @@ JNIEXPORT void JNICALL awt_SynthesizeWindowActivation
         CHECK_NULL(mid);
     }
     (*env)->CallVoidMethod(env, embeddedFrame, mid, doActivate);
+    CHECK_EXCEPTION();
 }

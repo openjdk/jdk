@@ -42,9 +42,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.down.down002.down002
- *        nsk.jdb.down.down002.down002a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.down.down002.down002
+ * @build nsk.jdb.down.down002.down002a
+ * @run main/othervm
+ *      nsk.jdb.down.down002.down002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

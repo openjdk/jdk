@@ -1,4 +1,4 @@
-# Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,11 @@ $(eval $(call IncludeCustomExtension, Docs.gmk))
 ################################################################################
 # Javadoc settings
 
+# Include configuration for URLs in generated javadoc
+include $(TOPDIR)/make/conf/javadoc.conf
+
 MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) )
 
-# URLs
-JAVADOC_BASE_URL := https://docs.oracle.com/pls/topic/lookup?ctx=javase$(VERSION_NUMBER)&amp;id=homepage
-BUG_SUBMIT_URL := https://bugreport.java.com/bugreport/
-COPYRIGHT_URL := legal/copyright.html
-LICENSE_URL := https://www.oracle.com/java/javase/terms/license/java$(VERSION_NUMBER)speclicense.html
-REDISTRIBUTION_URL := https://www.oracle.com/technetwork/java/redist-137594.html
 
 # In order to get a specific ordering it's necessary to specify the total
 # ordering of tags as the tags are otherwise ordered in order of definition.
@@ -92,7 +89,6 @@ JAVADOC_TAGS := \
     -tag see \
     -taglet build.tools.taglet.ExtLink \
     -taglet build.tools.taglet.Incubating \
-    -taglet build.tools.taglet.Preview \
     -tagletpath $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     $(CUSTOM_JAVADOC_TAGS) \
     #
@@ -103,7 +99,7 @@ JAVADOC_TAGS := \
 REFERENCE_TAGS := $(JAVADOC_TAGS)
 
 # Which doclint checks to ignore
-JAVADOC_DISABLED_DOCLINT := accessibility html missing syntax reference
+JAVADOC_DISABLED_DOCLINT := missing
 
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
@@ -265,6 +261,7 @@ endef
 #   SHORT_NAME - The short name of this documentation collection
 #   LONG_NAME - The long name of this documentation collection
 #   TARGET_DIR - Where to store the output
+#   OTHER_VERSIONS - URL for other page listing versions
 #
 SetupApiDocsGeneration = $(NamedParamsMacroTemplate)
 define SetupApiDocsGenerationBody
@@ -301,10 +298,16 @@ define SetupApiDocsGenerationBody
   # Ignore the doclint warnings in the W3C DOM package
   $1_OPTIONS += -Xdoclint/package:-org.w3c.*
 
+  ifneq ($$($1_OTHER_VERSIONS), )
+    $1_LINKED_SHORT_NAME = <a href="$$($1_OTHER_VERSIONS)">$$($1_SHORT_NAME)</a>
+  else
+    $1_LINKED_SHORT_NAME = $$($1_SHORT_NAME)
+  endif
+
   $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
       Specification
   $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME))$$(DRAFT_MARKER_TITLE)
-  $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_SHORT_NAME)</strong> \
+  $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_LINKED_SHORT_NAME)</strong> \
       $$(DRAFT_MARKER_STR)</div>
 
   $1_OPTIONS += -doctitle '$$($1_DOC_TITLE)'
@@ -442,6 +445,7 @@ $(eval $(call SetupApiDocsGeneration, JDK_API, \
     SHORT_NAME := $(JDK_SHORT_NAME), \
     LONG_NAME := $(JDK_LONG_NAME), \
     TARGET_DIR := $(DOCS_OUTPUTDIR)/api, \
+    OTHER_VERSIONS := $(OTHER_JDK_VERSIONS_URL), \
 ))
 
 # Targets generated are returned in JDK_API_JAVADOC_TARGETS and
@@ -458,7 +462,7 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
     MODULES := $(JAVASE_MODULES), \
     SHORT_NAME := $(JAVASE_SHORT_NAME), \
     LONG_NAME := $(JAVASE_LONG_NAME), \
-    TARGET_DIR := $(IMAGES_OUTPUTDIR)/javase-docs/api, \
+    TARGET_DIR := $(DOCS_JAVASE_IMAGE_DIR)/api, \
 ))
 
 # Targets generated are returned in JAVASE_API_JAVADOC_TARGETS and
@@ -476,8 +480,8 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
     MODULES := $(JAVASE_MODULES), \
     SHORT_NAME := $(JAVASE_SHORT_NAME), \
     LONG_NAME := $(JAVASE_LONG_NAME), \
-    TARGET_DIR := $(IMAGES_OUTPUTDIR)/reference-docs/api, \
-    JAVADOC_CMD := $(JAVADOC), \
+    TARGET_DIR := $(DOCS_REFERENCE_IMAGE_DIR)/api, \
+    JAVADOC_CMD := $(DOCS_REFERENCE_JAVADOC), \
     OPTIONS := $(REFERENCE_OPTIONS), \
     TAGS := $(REFERENCE_TAGS), \
 ))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class EventNames {
     public final static String JavaMonitorEnter = PREFIX + "JavaMonitorEnter";
     public final static String JavaMonitorWait = PREFIX + "JavaMonitorWait";
     public final static String JavaMonitorInflate = PREFIX + "JavaMonitorInflate";
-    public final static String SyncOnPrimitiveWrapper = PREFIX + "SyncOnPrimitiveWrapper";
+    public final static String SyncOnValueBasedClass = PREFIX + "SyncOnValueBasedClass";
     public final static String ClassLoad = PREFIX + "ClassLoad";
     public final static String ClassDefine = PREFIX + "ClassDefine";
     public final static String ClassUnload = PREFIX + "ClassUnload";
@@ -149,6 +149,7 @@ public class EventNames {
     public final static String ZRelocationSetGroup = PREFIX + "ZRelocationSetGroup";
     public final static String ZUncommit = PREFIX + "ZUncommit";
     public final static String ZUnmap = PREFIX + "ZUnmap";
+    public final static String GCLocker = PREFIX + "GCLocker";
 
     // Compiler
     public final static String Compilation = PREFIX + "Compilation";
@@ -165,6 +166,7 @@ public class EventNames {
     public final static String CodeCacheFull = PREFIX + "CodeCacheFull";
     public final static String ObjectAllocationInNewTLAB = PREFIX + "ObjectAllocationInNewTLAB";
     public final static String ObjectAllocationOutsideTLAB = PREFIX + "ObjectAllocationOutsideTLAB";
+    public final static String ObjectAllocationSample = PREFIX + "ObjectAllocationSample";
     public final static String Deoptimization = PREFIX + "Deoptimization";
 
     // OS
@@ -197,6 +199,8 @@ public class EventNames {
     public final static String X509Validation = PREFIX + "X509Validation";
     public final static String SecurityProperty = PREFIX + "SecurityPropertyModification";
     public final static String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
+    public final static String Deserialization = PREFIX + "Deserialization";
+
 
     // Flight Recorder
     public final static String DumpReason = PREFIX + "DumpReason";

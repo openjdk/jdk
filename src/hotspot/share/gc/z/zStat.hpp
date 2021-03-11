@@ -35,6 +35,7 @@
 #include "utilities/ticks.hpp"
 
 class ZPage;
+class ZPageAllocatorStats;
 class ZRelocationSetSelectorGroupStats;
 class ZRelocationSetSelectorStats;
 class ZStatSampler;
@@ -101,6 +102,8 @@ protected:
                      uint32_t size);
 
 public:
+  static void sort();
+
   static uint32_t count() {
     return _count;
   }
@@ -420,14 +423,19 @@ public:
 //
 class ZStatRelocation : public AllStatic {
 private:
-  static ZRelocationSetSelectorStats _stats;
-  static bool                        _success;
+  static ZRelocationSetSelectorStats _selector_stats;
+  static size_t                      _forwarding_usage;
+  static size_t                      _small_in_place_count;
+  static size_t                      _medium_in_place_count;
 
-  static void print(const char* name, const ZRelocationSetSelectorGroupStats& group);
+  static void print(const char* name,
+                    const ZRelocationSetSelectorGroupStats& selector_group,
+                    size_t in_place_count);
 
 public:
-  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
-  static void set_at_relocate_end(bool success);
+  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats);
+  static void set_at_install_relocation_set(size_t forwarding_usage);
+  static void set_at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count);
 
   static void print();
 };
@@ -479,82 +487,61 @@ private:
   static struct ZAtInitialize {
     size_t min_capacity;
     size_t max_capacity;
-    size_t max_reserve;
   } _at_initialize;
 
   static struct ZAtMarkStart {
     size_t soft_max_capacity;
     size_t capacity;
-    size_t reserve;
-    size_t used;
     size_t free;
+    size_t used;
   } _at_mark_start;
 
   static struct ZAtMarkEnd {
     size_t capacity;
-    size_t reserve;
-    size_t allocated;
-    size_t used;
     size_t free;
+    size_t used;
     size_t live;
+    size_t allocated;
     size_t garbage;
   } _at_mark_end;
 
   static struct ZAtRelocateStart {
     size_t capacity;
-    size_t reserve;
-    size_t garbage;
-    size_t allocated;
-    size_t reclaimed;
-    size_t used;
     size_t free;
+    size_t used;
+    size_t allocated;
+    size_t garbage;
+    size_t reclaimed;
   } _at_relocate_start;
 
   static struct ZAtRelocateEnd {
     size_t capacity;
     size_t capacity_high;
     size_t capacity_low;
-    size_t reserve;
-    size_t reserve_high;
-    size_t reserve_low;
-    size_t garbage;
-    size_t allocated;
-    size_t reclaimed;
-    size_t used;
-    size_t used_high;
-    size_t used_low;
     size_t free;
     size_t free_high;
     size_t free_low;
+    size_t used;
+    size_t used_high;
+    size_t used_low;
+    size_t allocated;
+    size_t garbage;
+    size_t reclaimed;
   } _at_relocate_end;
 
   static size_t capacity_high();
   static size_t capacity_low();
-  static size_t available(size_t used);
-  static size_t reserve(size_t used);
   static size_t free(size_t used);
+  static size_t allocated(size_t used, size_t reclaimed);
+  static size_t garbage(size_t reclaimed);
 
 public:
-  static void set_at_initialize(size_t min_capacity,
-                                size_t max_capacity,
-                                size_t max_reserve);
-  static void set_at_mark_start(size_t soft_max_capacity,
-                                size_t capacity,
-                                size_t used);
-  static void set_at_mark_end(size_t capacity,
-                              size_t allocated,
-                              size_t used);
-  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats,
-                                           size_t reclaimed);
-  static void set_at_relocate_start(size_t capacity,
-                                    size_t allocated,
-                                    size_t used);
-  static void set_at_relocate_end(size_t capacity,
-                                  size_t allocated,
-                                  size_t reclaimed,
-                                  size_t used,
-                                  size_t used_high,
-                                  size_t used_low);
+  static void set_at_initialize(const ZPageAllocatorStats& stats);
+  static void set_at_mark_start(const ZPageAllocatorStats& stats);
+  static void set_at_mark_end(const ZPageAllocatorStats& stats);
+  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
+  static void set_at_relocate_start(const ZPageAllocatorStats& stats);
+  static void set_at_relocate_end(const ZPageAllocatorStats& stats);
 
   static size_t max_capacity();
   static size_t used_at_mark_start();

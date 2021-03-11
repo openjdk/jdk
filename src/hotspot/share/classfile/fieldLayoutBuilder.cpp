@@ -30,6 +30,7 @@
 #include "oops/array.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 

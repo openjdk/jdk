@@ -74,8 +74,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn001.forceEarlyReturn001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn001.forceEarlyReturn001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -87,21 +86,21 @@
 
 package nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn001;
 
-import java.io.*;
 import nsk.share.Consts;
-import nsk.share.jdwp.*;
+import nsk.share.jdwp.CommandPacket;
+import nsk.share.jdwp.JDWP;
 import nsk.share.jdwp.JDWP.Value;
+import nsk.share.jdwp.ReplyPacket;
+import nsk.share.jdwp.TestDebuggerType1;
 import nsk.share.jpda.ForceEarlyReturnTestThread;
 
-public class forceEarlyReturn001
-extends TestDebuggerType1
-{
+import java.io.PrintStream;
+
+public class forceEarlyReturn001 extends TestDebuggerType1 {
     // data needed to create JDWP command,
     // also this class create breakpoint in method which should be forced to return
-    class TestData
-    {
-        public TestData(long classID, String methodName, int lineNumber, long threadID, Value value, Value invalidValue)
-        {
+    class TestData {
+        public TestData(long classID, String methodName, int lineNumber, long threadID, Value value, Value invalidValue) {
             breakpointID = debuggee.requestBreakpointEvent(
                     JDWP.TypeTag.CLASS,
                     classID,
@@ -120,27 +119,22 @@ extends TestDebuggerType1
         public long threadID;
     }
 
-    protected String getDebugeeClassName()
-    {
+    protected String getDebugeeClassName() {
         return "nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn001.forceEarlyReturn001a";
     }
 
-    public static void main (String argv[])
-    {
-        System.exit(run(argv,System.out) + Consts.JCK_STATUS_BASE);
+    public static void main(String[] argv) {
+        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out)
-    {
+    public static int run(String[] argv, PrintStream out) {
         return new forceEarlyReturn001().runIt(argv, out);
     }
 
     // send command and receive empty reply
     // all asserts should be done in debuggee
-    private void sendCommand(long threadID, Value value, boolean expectError, int errorCode)
-    {
-        try
-        {
+    private void sendCommand(long threadID, Value value, boolean expectError, int errorCode) {
+        try {
             int JDWP_COMMAND_ID = JDWP.Command.ThreadReference.ForceEarlyReturn;
 
             log.display("Create command: " + JDWP.commandNames.get(JDWP_COMMAND_ID));
@@ -159,19 +153,16 @@ extends TestDebuggerType1
 
             reply = getReply(command, expectError, errorCode);
 
-            if(expectError)
+            if (expectError)
                 return;
 
             log.display("Empty reply");
 
-            if(!reply.isParsed())
-            {
+            if (!reply.isParsed()) {
                 setSuccess(false);
                 log.complain("Extra trailing bytes found in reply packet at: " + reply.currentPosition());
             }
-        }
-        catch(Exception e)
-        {
+        } catch (Exception e) {
             setSuccess(false);
             log.complain("Caught exception while testing JDWP command: " + e);
             e.printStackTrace(log.getOutStream());
@@ -182,24 +173,21 @@ extends TestDebuggerType1
 
     // create Value objects which should be send in command packet and
     // initialize breapoints in tested methods
-    private void initTestData()
-    {
+    private void initTestData() {
         long classID = debuggee.getReferenceTypeID(createTypeSignature(ForceEarlyReturnTestThread.class.getName()));
 
-        Value testValues[] = new Value[ForceEarlyReturnTestThread.testedTypesNames.length + 1];
-        Value testInvalidValues[] = new Value[ForceEarlyReturnTestThread.testedTypesNames.length + 1];
+        Value[] testValues = new Value[ForceEarlyReturnTestThread.testedTypesNames.length + 1];
+        Value[] testInvalidValues = new Value[ForceEarlyReturnTestThread.testedTypesNames.length + 1];
 
-        testValues[0] = new JDWP.Value(JDWP.Tag.VOID, new Long(0));
+        testValues[0] = new JDWP.Value(JDWP.Tag.VOID, 0L);
 
-        for(int i = 1; i < ForceEarlyReturnTestThread.testedTypesNames.length; i++)
-        {
+        for (int i = 1; i < ForceEarlyReturnTestThread.testedTypesNames.length; i++) {
             testValues[i] = debuggee.getStaticFieldValue(
                     classID,
                     debuggee.getClassFieldID(classID, "expected" + ForceEarlyReturnTestThread.testedTypesNames[i] + "Value", true));
         }
 
-        for(int i = 0; i < ForceEarlyReturnTestThread.testedTypesNames.length; i++)
-        {
+        for (int i = 0; i < ForceEarlyReturnTestThread.testedTypesNames.length; i++) {
             testInvalidValues[i] = debuggee.getStaticFieldValue(
                     classID,
                     debuggee.getClassFieldID(classID, "invalid" + ForceEarlyReturnTestThread.testedTypesNames[i] + "Value", true));
@@ -209,8 +197,7 @@ extends TestDebuggerType1
 
         testData = new TestData[ForceEarlyReturnTestThread.testedTypesNames.length];
 
-        for(int i = 0; i < ForceEarlyReturnTestThread.testedTypesNames.length; i++)
-        {
+        for (int i = 0; i < ForceEarlyReturnTestThread.testedTypesNames.length; i++) {
             testData[i] = new TestData(classID,
                     ForceEarlyReturnTestThread.testedTypesNames[i] + "Method",
                     ForceEarlyReturnTestThread.breakpointLines[i],
@@ -220,27 +207,25 @@ extends TestDebuggerType1
         }
     }
 
-    public void doTest()
-    {
+    public void doTest() {
         initTestData();
 
         pipe.println(forceEarlyReturn001a.COMMAND_START_EXECUTION);
 
-        if(!isDebuggeeReady())
+        if (!isDebuggeeReady())
             return;
 
-        for(int i = 0; i < testData.length; i++)
-        {
+        for (TestData testDatum : testData) {
             // wait when tested thread call method with breapoint
-            debuggee.waitForBreakpointEvent(testData[i].breakpointID);
+            debuggee.waitForBreakpointEvent(testDatum.breakpointID);
 
-            log.display("Send invalid command: valid value: " + testData[i].value + " invalid value: " + testData[i].invalidValue);
+            log.display("Send invalid command: valid value: " + testDatum.value + " invalid value: " + testDatum.invalidValue);
             // send ForceEarlyReturn command with invalid value
-            sendCommand(testData[i].threadID, testData[i].invalidValue, true, JDWP.Error.TYPE_MISMATCH);
+            sendCommand(testDatum.threadID, testDatum.invalidValue, true, JDWP.Error.TYPE_MISMATCH);
 
-            log.display("Send valid command: valid value: " + testData[i].value);
+            log.display("Send valid command: valid value: " + testDatum.value);
             // send ForceEarlyReturn command
-            sendCommand(testData[i].threadID, testData[i].value, false, 0);
+            sendCommand(testDatum.threadID, testDatum.value, false, 0);
 
             // resume debuggee
             debuggee.resume();
@@ -248,7 +233,7 @@ extends TestDebuggerType1
 
         pipe.println(forceEarlyReturn001a.COMMAND_END_EXECUTION);
 
-        if(!isDebuggeeReady())
+        if (!isDebuggeeReady())
             return;
     }
 }

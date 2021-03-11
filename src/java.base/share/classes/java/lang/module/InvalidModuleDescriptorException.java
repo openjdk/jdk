@@ -31,7 +31,6 @@ package java.lang.module;
  *
  * @see ModuleDescriptor#read
  * @since 9
- * @spec JPMS
  */
 public class InvalidModuleDescriptorException extends RuntimeException {
     @java.io.Serial

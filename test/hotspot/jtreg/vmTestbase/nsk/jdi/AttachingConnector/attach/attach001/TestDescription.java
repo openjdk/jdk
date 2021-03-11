@@ -47,13 +47,13 @@
  *          /test/lib
  * @build nsk.jdi.AttachingConnector.attach.attach001
  *        nsk.jdi.AttachingConnector.attach.attach001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.AttachingConnector.attach.attach001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

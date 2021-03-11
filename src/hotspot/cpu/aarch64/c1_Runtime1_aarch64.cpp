@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,6 +32,8 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -41,6 +43,7 @@
 #include "register_aarch64.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -80,7 +83,6 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   pop(r0, sp);
 #endif
   reset_last_Java_frame(true);
-  maybe_isb();
 
   // check for pending exceptions
   { Label L;
@@ -143,9 +145,9 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1, Register arg2, Register arg3) {
   // if there is any conflict use the stack
   if (arg1 == c_rarg2 || arg1 == c_rarg3 ||
-      arg2 == c_rarg1 || arg1 == c_rarg3 ||
-      arg3 == c_rarg1 || arg1 == c_rarg2) {
-    stp(arg3, arg2, Address(pre(sp, 2 * wordSize)));
+      arg2 == c_rarg1 || arg2 == c_rarg3 ||
+      arg3 == c_rarg1 || arg3 == c_rarg2) {
+    stp(arg3, arg2, Address(pre(sp, -2 * wordSize)));
     stp(arg1, zr, Address(pre(sp, -2 * wordSize)));
     ldp(c_rarg1, zr, Address(post(sp, 2 * wordSize)));
     ldp(c_rarg3, c_rarg2, Address(post(sp, 2 * wordSize)));
@@ -553,84 +555,39 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
     __ bind(L);
   }
 #endif
+
   __ reset_last_Java_frame(true);
-  __ maybe_isb();
-
-  // check for pending exceptions
-  { Label L;
-    __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
-    __ cbz(rscratch1, L);
-    // exception pending => remove activation and forward to exception handler
-
-    { Label L1;
-      __ cbnz(r0, L1);                                  // have we deoptimized?
-      __ far_jump(RuntimeAddress(Runtime1::entry_for(Runtime1::forward_exception_id)));
-      __ bind(L1);
-    }
-
-    // the deopt blob expects exceptions in the special fields of
-    // JavaThread, so copy and clear pending exception.
-
-    // load and clear pending exception
-    __ ldr(r0, Address(rthread, Thread::pending_exception_offset()));
-    __ str(zr, Address(rthread, Thread::pending_exception_offset()));
-
-    // check that there is really a valid exception
-    __ verify_not_null_oop(r0);
-
-    // load throwing pc: this is the return address of the stub
-    __ mov(r3, lr);
 
 #ifdef ASSERT
-    // check that fields in JavaThread for exception oop and issuing pc are empty
-    Label oop_empty;
-    __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
-    __ cbz(rscratch1, oop_empty);
-    __ stop("exception oop must be empty");
-    __ bind(oop_empty);
+  // check that fields in JavaThread for exception oop and issuing pc are empty
+  Label oop_empty;
+  __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+  __ cbz(rscratch1, oop_empty);
+  __ stop("exception oop must be empty");
+  __ bind(oop_empty);
 
-    Label pc_empty;
-    __ ldr(rscratch1, Address(rthread, JavaThread::exception_pc_offset()));
-    __ cbz(rscratch1, pc_empty);
-    __ stop("exception pc must be empty");
-    __ bind(pc_empty);
+  Label pc_empty;
+  __ ldr(rscratch1, Address(rthread, JavaThread::exception_pc_offset()));
+  __ cbz(rscratch1, pc_empty);
+  __ stop("exception pc must be empty");
+  __ bind(pc_empty);
 #endif
 
-    // store exception oop and throwing pc to JavaThread
-    __ str(r0, Address(rthread, JavaThread::exception_oop_offset()));
-    __ str(r3, Address(rthread, JavaThread::exception_pc_offset()));
+  // Runtime will return true if the nmethod has been deoptimized, this is the
+  // expected scenario and anything else is  an error. Note that we maintain a
+  // check on the result purely as a defensive measure.
+  Label no_deopt;
+  __ cbz(r0, no_deopt);                                // Have we deoptimized?
 
-    restore_live_registers(sasm);
-
-    __ leave();
-
-    // Forward the exception directly to deopt blob. We can blow no
-    // registers and must leave throwing pc on the stack.  A patch may
-    // have values live in registers so the entry point with the
-    // exception in tls.
-    __ far_jump(RuntimeAddress(deopt_blob->unpack_with_exception_in_tls()));
-
-    __ bind(L);
-  }
-
-
-  // Runtime will return true if the nmethod has been deoptimized during
-  // the patching process. In that case we must do a deopt reexecute instead.
-
-  Label cont;
-
-  __ cbz(r0, cont);                                 // have we deoptimized?
-
-  // Will reexecute. Proper return address is already on the stack we just restore
-  // registers, pop all of our frame but the return address and jump to the deopt blob
+  // Perform a re-execute. The proper return  address is already on the stack,
+  // we just need  to restore registers, pop  all of our frame  but the return
+  // address and jump to the deopt blob.
   restore_live_registers(sasm);
   __ leave();
   __ far_jump(RuntimeAddress(deopt_blob->unpack_with_reexecution()));
 
-  __ bind(cont);
-  restore_live_registers(sasm);
-  __ leave();
-  __ ret(lr);
+  __ bind(no_deopt);
+  __ stop("deopt not performed");
 
   return oop_maps;
 }

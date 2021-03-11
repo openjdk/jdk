@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -66,11 +66,11 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # Add -z,defs, to forbid undefined symbols in object files.
     # add -z,relro (mark relocations read only) for all libs
     # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
-    BASIC_LDFLAGS="-Wl,--hash-style=gnu -Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
+    BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
     # Linux : remove unused code+data in link step
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       if test "x$OPENJDK_TARGET_CPU" = xs390x; then
-        BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--gc-sections -Wl,--print-gc-sections"
+        BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--gc-sections"
       else
         BASIC_LDFLAGS_JDK_ONLY="$BASIC_LDFLAGS_JDK_ONLY -Wl,--gc-sections"
       fi
@@ -106,7 +106,14 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       # Assume clang or gcc.
       # FIXME: We should really generalize SET_SHARED_LIBRARY_ORIGIN instead.
       OS_LDFLAGS_JVM_ONLY="-Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
-      OS_LDFLAGS_JDK_ONLY="-mmacosx-version-min=$MACOSX_VERSION_MIN"
+      OS_LDFLAGS="-mmacosx-version-min=$MACOSX_VERSION_MIN"
+    fi
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      # Hotspot needs to link librt to get the clock_* functions.
+      # But once our supported minimum build and runtime platform
+      # has glibc 2.17, this can be removed as the functions are
+      # in libc.
+      OS_LDFLAGS_JVM_ONLY="-lrt"
     fi
   fi
 
@@ -137,9 +144,17 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
   fi
 
+  if test "x$ENABLE_REPRODUCIBLE_BUILD" = "xtrue"; then
+    if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      REPRODUCIBLE_LDFLAGS="-experimental:deterministic"
+    fi
+  fi
+
   if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
     if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       BASIC_LDFLAGS="$BASIC_LDFLAGS -pdbaltpath:%_PDB%"
+      # PATHMAP_FLAGS is setup in flags-cflags.m4.
+      FILE_MACRO_LDFLAGS="${PATHMAP_FLAGS}"
     fi
   fi
 
@@ -164,21 +179,30 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
       $1_CPU_LDFLAGS="$ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
     fi
 
+    # MIPS ABI does not support GNU hash style
+    if test "x${OPENJDK_$1_CPU}" = xmips ||
+       test "x${OPENJDK_$1_CPU}" = xmipsel ||
+       test "x${OPENJDK_$1_CPU}" = xmips64 ||
+       test "x${OPENJDK_$1_CPU}" = xmips64el; then
+      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=sysv"
+    else
+      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=gnu"
+    fi
+
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    if test "x${OPENJDK_$1_CPU_BITS}" = "x32"; then
+      $1_CPU_EXECUTABLE_LDFLAGS="-stack:327680"
+    elif test "x${OPENJDK_$1_CPU_BITS}" = "x64"; then
+      $1_CPU_EXECUTABLE_LDFLAGS="-stack:1048576"
+    fi
     if test "x${OPENJDK_$1_CPU}" = "xx86"; then
       $1_CPU_LDFLAGS="-safeseh"
-      # NOTE: Old build added -machine. Probably not needed.
-      $1_CPU_LDFLAGS_JVM_ONLY="-machine:I386"
-      $1_CPU_EXECUTABLE_LDFLAGS="-stack:327680"
-    else
-      $1_CPU_LDFLAGS_JVM_ONLY="-machine:AMD64"
-      $1_CPU_EXECUTABLE_LDFLAGS="-stack:1048576"
     fi
   fi
 
   # JVM_VARIANT_PATH depends on if this is build or target...
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    $1_LDFLAGS_JDK_LIBPATH="-libpath:${OUTPUTDIR}/support/modules_libs/java.base"
+    $1_LDFLAGS_JDK_LIBPATH="-libpath:\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base"
   else
     $1_LDFLAGS_JDK_LIBPATH="-L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
         -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/${$1_JVM_VARIANT_PATH}"
@@ -186,15 +210,17 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
 
   # Export variables according to old definitions, prefix with $2 if present.
   LDFLAGS_JDK_COMMON="$BASIC_LDFLAGS $BASIC_LDFLAGS_JDK_ONLY \
-      $OS_LDFLAGS_JDK_ONLY $DEBUGLEVEL_LDFLAGS_JDK_ONLY ${$2EXTRA_LDFLAGS}"
+      $OS_LDFLAGS $DEBUGLEVEL_LDFLAGS_JDK_ONLY ${$2EXTRA_LDFLAGS}"
   $2LDFLAGS_JDKLIB="$LDFLAGS_JDK_COMMON $BASIC_LDFLAGS_JDK_LIB_ONLY \
-      ${$1_LDFLAGS_JDK_LIBPATH} $SHARED_LIBRARY_FLAGS"
+      ${$1_LDFLAGS_JDK_LIBPATH} $SHARED_LIBRARY_FLAGS \
+      $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
   $2LDFLAGS_JDKEXE="$LDFLAGS_JDK_COMMON $EXECUTABLE_LDFLAGS \
-      ${$1_CPU_EXECUTABLE_LDFLAGS}"
+      ${$1_CPU_EXECUTABLE_LDFLAGS} $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
 
-  $2JVM_LDFLAGS="$BASIC_LDFLAGS $BASIC_LDFLAGS_JVM_ONLY $OS_LDFLAGS_JVM_ONLY \
+  $2JVM_LDFLAGS="$BASIC_LDFLAGS $BASIC_LDFLAGS_JVM_ONLY $OS_LDFLAGS $OS_LDFLAGS_JVM_ONLY \
       $DEBUGLEVEL_LDFLAGS $DEBUGLEVEL_LDFLAGS_JVM_ONLY $BASIC_LDFLAGS_ONLYCXX \
-      ${$1_CPU_LDFLAGS} ${$1_CPU_LDFLAGS_JVM_ONLY} ${$2EXTRA_LDFLAGS}"
+      ${$1_CPU_LDFLAGS} ${$1_CPU_LDFLAGS_JVM_ONLY} ${$2EXTRA_LDFLAGS} \
+      $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
 
   AC_SUBST($2LDFLAGS_JDKLIB)
   AC_SUBST($2LDFLAGS_JDKEXE)

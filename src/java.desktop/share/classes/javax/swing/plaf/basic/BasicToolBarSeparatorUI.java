@@ -46,6 +46,11 @@ import javax.swing.plaf.basic.BasicSeparatorUI;
 public class BasicToolBarSeparatorUI extends BasicSeparatorUI
 {
     /**
+     * Constructs a {@code BasicToolBarSeparatorUI}.
+     */
+    public BasicToolBarSeparatorUI() {}
+
+    /**
      * Returns a new instance of {@code BasicToolBarSeparatorUI}.
      *
      * @param c a component

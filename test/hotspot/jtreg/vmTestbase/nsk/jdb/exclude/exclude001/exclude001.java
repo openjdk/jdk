@@ -58,9 +58,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.exclude.exclude001.exclude001
- *        nsk.jdb.exclude.exclude001.exclude001a
- * @run main/othervm/timeout=600 PropertyResolvingWrapper nsk.jdb.exclude.exclude001.exclude001
+ * @build nsk.jdb.exclude.exclude001.exclude001a
+ * @run main/othervm/timeout=600
+ *      nsk.jdb.exclude.exclude001.exclude001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=10
  *      -debugee.vmkind=java

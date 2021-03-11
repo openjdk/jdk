@@ -55,10 +55,14 @@ MemoryLayout.ofStruct(
  *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code SequenceLayout} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -137,7 +141,6 @@ public final class SequenceLayout extends AbstractLayout {
      * @param elementCounts an array of element counts, of which at most one can be {@code -1}.
      * @return a new sequence layout where element layouts in the flattened projection of this
      * sequence layout (see {@link #flatten()}) are re-arranged into one or more nested sequence layouts.
-     * @throws NullPointerException if {@code elementCounts == null}.
      * @throws UnsupportedOperationException if this sequence layout does not have an element count.
      * @throws IllegalArgumentException if two or more element counts are set to {@code -1}, or if one
      * or more element count is {@code <= 0} (but other than {@code -1}) or, if, after any required inference,

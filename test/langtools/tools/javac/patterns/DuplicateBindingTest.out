@@ -1,4 +1,4 @@
-DuplicateBindingTest.java:16:43: compiler.err.already.defined: kindname.variable, s, kindname.method, main(java.lang.String[])
+DuplicateBindingTest.java:18:38: compiler.err.already.defined: kindname.variable, s, kindname.method, main(java.lang.String[])
 DuplicateBindingTest.java:25:60: compiler.err.match.binding.exists
 DuplicateBindingTest.java:26:62: compiler.err.match.binding.exists
 DuplicateBindingTest.java:27:39: compiler.err.match.binding.exists
@@ -22,6 +22,4 @@ DuplicateBindingTest.java:50:102: compiler.err.match.binding.exists
 DuplicateBindingTest.java:51:73: compiler.err.match.binding.exists
 DuplicateBindingTest.java:54:69: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, DuplicateBindingTest, null)
 DuplicateBindingTest.java:55:44: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, DuplicateBindingTest, null)
-- compiler.note.preview.filename: DuplicateBindingTest.java
-- compiler.note.preview.recompile
 24 errors

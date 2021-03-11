@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,13 +159,20 @@ lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t 
    return add_lib_info_fd(ph, libname, -1, base);
 }
 
-static bool fill_instr_info(lib_info* lib) {
+static inline uintptr_t align_down(uintptr_t ptr, size_t page_size) {
+  return (ptr & ~(page_size - 1));
+}
+
+static inline uintptr_t align_up(uintptr_t ptr, size_t page_size) {
+  return ((ptr + page_size - 1) & ~(page_size - 1));
+}
+
+static bool fill_addr_info(lib_info* lib) {
   off_t current_pos;
   ELF_EHDR ehdr;
   ELF_PHDR* phbuf = NULL;
   ELF_PHDR* ph = NULL;
   int cnt;
-  long align = sysconf(_SC_PAGE_SIZE);
 
   current_pos = lseek(lib->fd, (off_t)0L, SEEK_CUR);
   lseek(lib->fd, (off_t)0L, SEEK_SET);
@@ -175,32 +182,35 @@ static bool fill_instr_info(lib_info* lib) {
     return false;
   }
 
+  lib->end = (uintptr_t)-1L;
   lib->exec_start = (uintptr_t)-1L;
   lib->exec_end = (uintptr_t)-1L;
   for (ph = phbuf, cnt = 0; cnt < ehdr.e_phnum; cnt++, ph++) {
-    if ((ph->p_type == PT_LOAD) && (ph->p_flags & PF_X)) {
-      print_debug("[%d] vaddr = 0x%lx, memsz = 0x%lx, filesz = 0x%lx\n", cnt, ph->p_vaddr, ph->p_memsz, ph->p_filesz);
-      if ((lib->exec_start == -1L) || (lib->exec_start > ph->p_vaddr)) {
-        lib->exec_start = ph->p_vaddr;
+    if (ph->p_type == PT_LOAD) {
+      uintptr_t aligned_start = align_down(lib->base + ph->p_vaddr, ph->p_align);
+      uintptr_t aligned_end = align_up(aligned_start + ph->p_filesz, ph->p_align);
+      if ((lib->end == (uintptr_t)-1L) || (lib->end < aligned_end)) {
+        lib->end = aligned_end;
       }
-      if ((lib->exec_end == (uintptr_t)-1L) || (lib->exec_end < (ph->p_vaddr + ph->p_memsz))) {
-        lib->exec_end = ph->p_vaddr + ph->p_memsz;
+      print_debug("%s [%d] 0x%lx-0x%lx: base = 0x%lx, "
+                  "vaddr = 0x%lx, memsz = 0x%lx, filesz = 0x%lx\n",
+                  lib->name, cnt, aligned_start, aligned_end, lib->base,
+                  ph->p_vaddr, ph->p_memsz, ph->p_filesz);
+      if (ph->p_flags & PF_X) {
+        if ((lib->exec_start == -1L) || (lib->exec_start > aligned_start)) {
+          lib->exec_start = aligned_start;
+        }
+        if ((lib->exec_end == (uintptr_t)-1L) || (lib->exec_end < aligned_end)) {
+          lib->exec_end = aligned_end;
+        }
       }
-      align = ph->p_align;
     }
   }
 
   free(phbuf);
   lseek(lib->fd, current_pos, SEEK_SET);
 
-  if ((lib->exec_start == -1L) || (lib->exec_end == -1L)) {
-    return false;
-  } else {
-    lib->exec_start = (lib->exec_start + lib->base) & ~(align - 1);
-    lib->exec_end = (lib->exec_end + lib->base + align) & ~(align - 1);
-    return true;
-  }
-
+  return (lib->end != -1L) && (lib->exec_start != -1L) && (lib->exec_end != -1L);
 }
 
 bool read_eh_frame(struct ps_prochandle* ph, lib_info* lib) {
@@ -275,7 +285,7 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
       print_debug("symbol table build failed for %s\n", newlib->name);
    }
 
-   if (fill_instr_info(newlib)) {
+   if (fill_addr_info(newlib)) {
      if (!read_eh_frame(ph, newlib)) {
        print_debug("Could not find .eh_frame section in %s\n", newlib->name);
      }
@@ -429,6 +439,21 @@ uintptr_t get_lib_base(struct ps_prochandle* ph, int index) {
       lib = lib->next;
    }
    return (uintptr_t)NULL;
+}
+
+// get address range of lib
+void get_lib_addr_range(struct ps_prochandle* ph, int index, uintptr_t* base, uintptr_t* memsz) {
+   int count = 0;
+   lib_info* lib = ph->libs;
+   while (lib) {
+      if (count == index) {
+         *base = lib->base;
+         *memsz = lib->end - lib->base;
+         return;
+      }
+      count++;
+      lib = lib->next;
+   }
 }
 
 bool find_lib(struct ps_prochandle* ph, const char *lib_name) {

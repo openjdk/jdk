@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,35 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import java.lang.ref.*;
-import java.util.*;
-import javax.swing.plaf.basic.*;
-import javax.swing.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.IndexColorModel;
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+
+import javax.swing.ButtonModel;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JScrollBar;
+import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicArrowButton;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
-
 
 /**
  * Windows rendition of the component.
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
  */
 public class WindowsScrollBarUI extends BasicScrollBarUI {
     private Grid thumbGrid;

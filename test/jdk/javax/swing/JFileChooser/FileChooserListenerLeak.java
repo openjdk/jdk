@@ -21,9 +21,14 @@
  * questions.
  */
 
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.EventQueue;
 
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -52,19 +57,33 @@ public final class FileChooserListenerLeak {
         });
     }
 
-    private static void checkListenersCount(JFileChooser chooser) {
-        test(chooser.getComponentListeners());
-        test(chooser.getFocusListeners());
-        test(chooser.getHierarchyListeners());
-        test(chooser.getHierarchyBoundsListeners());
-        test(chooser.getKeyListeners());
-        test(chooser.getMouseListeners());
-        test(chooser.getMouseMotionListeners());
-        test(chooser.getMouseWheelListeners());
-        test(chooser.getInputMethodListeners());
-        test(chooser.getPropertyChangeListeners());
-        test(chooser.getAncestorListeners());
-        test(chooser.getVetoableChangeListeners());
+    private static void checkListenersCount(Component comp) {
+        test(comp.getComponentListeners());
+        test(comp.getFocusListeners());
+        test(comp.getHierarchyListeners());
+        test(comp.getHierarchyBoundsListeners());
+        test(comp.getKeyListeners());
+        test(comp.getMouseListeners());
+        test(comp.getMouseMotionListeners());
+        test(comp.getMouseWheelListeners());
+        test(comp.getInputMethodListeners());
+        test(comp.getPropertyChangeListeners());
+        if (comp instanceof JComponent) {
+            test(((JComponent) comp).getAncestorListeners());
+            test(((JComponent) comp).getVetoableChangeListeners());
+        }
+        if (comp instanceof JMenuItem) {
+            test(((JMenuItem) comp).getMenuKeyListeners());
+            test(((JMenuItem) comp).getMenuDragMouseListeners());
+        }
+        if (comp instanceof JMenu) {
+            test(((JMenu) comp).getMenuListeners());
+        }
+        if (comp instanceof Container) {
+            for (Component child : ((Container) comp).getComponents()) {
+                checkListenersCount(child);
+            }
+        }
     }
 
     /**
@@ -73,7 +92,7 @@ public final class FileChooserListenerLeak {
      */
     private static void test(Object[] listeners) {
         int length = listeners.length;
-        if (length > 10) {
+        if (length > 20) {
             throw new RuntimeException("The count of listeners is: " + length);
         }
     }

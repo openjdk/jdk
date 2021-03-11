@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class ReferenceProcessorPhaseTimes;
 // List of discovered references.
 class DiscoveredList {
 public:
-  DiscoveredList() : _oop_head(NULL), _compressed_head(0), _len(0) { }
+  DiscoveredList() : _oop_head(NULL), _compressed_head(narrowOop::null), _len(0) { }
   inline oop head() const;
   HeapWord* adr_head() {
     return UseCompressedOops ? (HeapWord*)&_compressed_head :
@@ -71,7 +71,6 @@ private:
   HeapWord*          _current_discovered_addr;
   oop                _next_discovered;
 
-  HeapWord*          _referent_addr;
   oop                _referent;
 
   OopClosure*        _keep_alive;
@@ -120,14 +119,8 @@ public:
   // Remove the current reference from the list
   void remove();
 
-  // Make the referent alive.
-  inline void make_referent_alive() {
-    if (UseCompressedOops) {
-      _keep_alive->do_oop((narrowOop*)_referent_addr);
-    } else {
-      _keep_alive->do_oop((oop*)_referent_addr);
-    }
-  }
+  // Apply the keep_alive function to the referent address.
+  void make_referent_alive();
 
   // Do enqueuing work, i.e. notifying the GC about the changed discovered pointers.
   void enqueue();
@@ -208,8 +201,6 @@ private:
   bool        _discovery_is_mt;         // true if reference discovery is MT.
 
   bool        _enqueuing_is_done;       // true if all weak references enqueued
-  bool        _processing_is_mt;        // true during phases when
-                                        // reference processing is MT.
   uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
@@ -378,12 +369,10 @@ private:
 
   bool is_subject_to_discovery(oop const obj) const;
 
-  bool is_mt_processing_set_up(AbstractRefProcTaskExecutor* task_executor) const;
-
 public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
-                     bool mt_processing = false, uint mt_processing_degree = 1,
+                     uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
                      bool atomic_discovery = true,
                      BoolObjectClosure* is_alive_non_header = NULL,
@@ -424,8 +413,7 @@ public:
   void set_mt_discovery(bool mt) { _discovery_is_mt = mt; }
 
   // Whether we are in a phase when _processing_ is MT.
-  bool processing_is_mt() const { return _processing_is_mt; }
-  void set_mt_processing(bool mt) { _processing_is_mt = mt; }
+  bool processing_is_mt() const;
 
   // whether all enqueueing of weak references is complete
   bool enqueuing_is_done()  { return _enqueuing_is_done; }
@@ -608,28 +596,6 @@ class ReferenceProcessorAtomicMutator: StackObj {
   }
 };
 
-
-// A utility class to temporarily change the MT processing
-// disposition of the given ReferenceProcessor instance
-// in the scope that contains it.
-class ReferenceProcessorMTProcMutator: StackObj {
- private:
-  ReferenceProcessor* _rp;
-  bool  _saved_mt;
-
- public:
-  ReferenceProcessorMTProcMutator(ReferenceProcessor* rp,
-                                  bool mt):
-    _rp(rp) {
-    _saved_mt = _rp->processing_is_mt();
-    _rp->set_mt_processing(mt);
-  }
-
-  ~ReferenceProcessorMTProcMutator() {
-    _rp->set_mt_processing(_saved_mt);
-  }
-};
-
 // This class is an interface used to implement task execution for the
 // reference processing.
 class AbstractRefProcTaskExecutor {
@@ -640,9 +606,6 @@ public:
 
   // Executes a task using worker threads.
   virtual void execute(ProcessTask& task, uint ergo_workers) = 0;
-
-  // Switch to single threaded mode.
-  virtual void set_single_threaded_mode() { };
 };
 
 // Abstract reference processing task to execute.
@@ -677,7 +640,6 @@ class RefProcMTDegreeAdjuster : public StackObj {
   typedef ReferenceProcessor::RefProcPhases RefProcPhases;
 
   ReferenceProcessor* _rp;
-  bool                _saved_mt_processing;
   uint                _saved_num_queues;
 
   // Calculate based on total of references.

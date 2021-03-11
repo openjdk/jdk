@@ -26,6 +26,7 @@
 package com.sun.jndi.ldap.sasl;
 
 import java.io.*;
+import java.security.cert.X509Certificate;
 import java.util.Vector;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
@@ -41,6 +42,7 @@ import javax.security.sasl.*;
 import com.sun.jndi.ldap.Connection;
 import com.sun.jndi.ldap.LdapClient;
 import com.sun.jndi.ldap.LdapResult;
+import com.sun.jndi.ldap.sasl.TlsChannelBinding.TlsChannelBindingType;
 
 /**
   * Handles SASL support.
@@ -110,10 +112,38 @@ final public class LdapSasl {
         String authzId = (env != null) ? (String)env.get(SASL_AUTHZ_ID) : null;
         String[] mechs = getSaslMechanismNames(authMech);
 
+        // Internal TLS Channel Binding property cannot be set explicitly
+        if (env.get(TlsChannelBinding.CHANNEL_BINDING) != null) {
+            throw new NamingException(TlsChannelBinding.CHANNEL_BINDING +
+                    " property cannot be set explicitly");
+        }
+
+        Hashtable<String, Object> envProps = (Hashtable<String, Object>) env;
+
         try {
+            // Prepare TLS Channel Binding data
+            if (conn.isTlsConnection()) {
+                TlsChannelBindingType cbType =
+                        TlsChannelBinding.parseType(
+                                (String)env.get(TlsChannelBinding.CHANNEL_BINDING_TYPE));
+                if (cbType == TlsChannelBindingType.TLS_SERVER_END_POINT) {
+                    // set tls-server-end-point channel binding
+                    X509Certificate cert = conn.getTlsServerCertificate();
+                    if (cert != null) {
+                        TlsChannelBinding tlsCB =
+                                TlsChannelBinding.create(cert);
+                        envProps = (Hashtable<String, Object>) env.clone();
+                        envProps.put(TlsChannelBinding.CHANNEL_BINDING, tlsCB.getData());
+                    } else {
+                        throw new SaslException("No suitable certificate to generate " +
+                                "TLS Channel Binding data");
+                    }
+                }
+            }
+
             // Create SASL client to use using SASL package
             saslClnt = Sasl.createSaslClient(
-                mechs, authzId, "ldap", server, (Hashtable<String, ?>)env, cbh);
+                mechs, authzId, "ldap", server, envProps, cbh);
 
             if (saslClnt == null) {
                 throw new AuthenticationNotSupportedException(authMech);

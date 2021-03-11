@@ -55,7 +55,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ban">ბალინური</language>
 			<language type="bas">ბასა</language>
 			<language type="bax">ბამუნი</language>
-			<language type="be">ბელორუსული</language>
+			<language type="be">ბელარუსული</language>
 			<language type="bej">ბეჯა</language>
 			<language type="bem">ბემბა</language>
 			<language type="bez">ბენა</language>
@@ -132,7 +132,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">ავსტრალიური ინგლისური</language>
 			<language type="en_CA">კანადური ინგლისური</language>
 			<language type="en_GB">ბრიტანული ინგლისური</language>
-			<language type="en_GB" alt="short">გართ. სამ. ინგლისური</language>
+			<language type="en_GB" alt="short">ინგლისური (გაერთ. სამეფო)</language>
 			<language type="en_US">ამერიკული ინგლისური</language>
 			<language type="en_US" alt="short">აშშ ინგლისური</language>
 			<language type="enm">საშუალო ინგლისური</language>
@@ -3529,7 +3529,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>სენტ-ლუსია</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
-				<exemplarCity>ვადუზი</exemplarCity>
+				<exemplarCity>ვადუცი</exemplarCity>
 			</zone>
 			<zone type="Asia/Colombo">
 				<exemplarCity>კოლომბო</exemplarCity>
@@ -3772,16 +3772,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>რეიუნიონი</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
-				<exemplarCity>ბუხარესტი</exemplarCity>
+				<exemplarCity>ბუქარესტი</exemplarCity>
 			</zone>
 			<zone type="Europe/Belgrade">
 				<exemplarCity>ბელგრადი</exemplarCity>
 			</zone>
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>კალინინგრადი</exemplarCity>
-			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>სიმფეროპოლი</exemplarCity>
 			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>მოსკოვი</exemplarCity>
@@ -3977,6 +3974,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>კიევი</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>სიმფეროპოლი</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>ზაპოროჟიე</exemplarCity>
@@ -5025,6 +5025,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">+</plusSign>
 			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>≈</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -5983,7 +5984,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">ნიკარაგუას კორდობა</displayName>
 			</currency>
 			<currency type="NIO">
-				<displayName>ნიკარაგუული კორდობა</displayName>
+				<displayName>ნიკარაგუას ოქროს კორდობა</displayName>
 				<displayName count="one">ნიკარაგუას ოქროს კორდობა</displayName>
 				<displayName count="other">ნიკარაგუას ოქროს კორდობა</displayName>
 				<symbol draft="contributed">NIO</symbol>
@@ -6550,6 +6551,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>იოტა{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>კიბი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>მები{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>გიბი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>ტები{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>პები{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ექსბი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>ზები{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>იობი{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -6945,6 +6970,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} წერტილი დუიმზე</unitPattern>
 				<unitPattern count="other">{0} წერტილი დუიმზე</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>წერტილი</displayName>
+				<unitPattern count="one">{0} წერტილი</unitPattern>
+				<unitPattern count="other">{0} წერტილი</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>დედამიწის რადიუსი</displayName>
+				<unitPattern count="one">{0} დედამიწის რადიუსი</unitPattern>
+				<unitPattern count="other">{0} დედამიწის რადიუსი</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>კილომეტრი</displayName>
 				<unitPattern count="one">{0} კილომეტრი</unitPattern>
@@ -7025,6 +7060,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ასტრონომიული ერთეული</unitPattern>
 				<unitPattern count="other">{0} ასტრონომიული ერთეული</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>ფურლონგი</displayName>
+				<unitPattern count="one">{0} ფურლონგი</unitPattern>
+				<unitPattern count="other">{0} ფურლონგი</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ფატომი</displayName>
+				<unitPattern count="one">{0} ფატომი</unitPattern>
+				<unitPattern count="other">{0} ფატომი</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>საზღვაო მილი</displayName>
 				<unitPattern count="one">{0} საზღვაო მილი</unitPattern>
@@ -7040,10 +7085,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} პუნქტი</unitPattern>
 				<unitPattern count="other">{0} პუნქტი</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>მზის რადიუსი</displayName>
+				<unitPattern count="one">{0} მზის რადიუსი</unitPattern>
+				<unitPattern count="other">{0} მზის რადიუსი</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>ლუქსი</displayName>
 				<unitPattern count="one">{0} ლუქსი</unitPattern>
 				<unitPattern count="other">{0} ლუქსი</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>კანდელა</displayName>
+				<unitPattern count="one">{0} კანდელა</unitPattern>
+				<unitPattern count="other">{0} კანდელა</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>ლუმენი</displayName>
+				<unitPattern count="one">{0} ლუმენი</unitPattern>
+				<unitPattern count="other">{0} ლუმენი</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>მზის სხივიერობა</displayName>
+				<unitPattern count="one">{0} მზის სხივიერობა</unitPattern>
+				<unitPattern count="other">{0} მზის სხივიერობა</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>მეტრული ტონა</displayName>
@@ -7076,6 +7141,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ტონა</displayName>
 				<unitPattern count="one">{0} ტონა</unitPattern>
 				<unitPattern count="other">{0} ტ</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>სტოუნი</displayName>
+				<unitPattern count="one">{0} სტოუნი</unitPattern>
+				<unitPattern count="other">{0} სტოუნი</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>ფუნტი</displayName>
@@ -7113,6 +7183,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>მზის მასა</displayName>
 				<unitPattern count="one">{0} მზის მასა</unitPattern>
 				<unitPattern count="other">{0} მზის მასა</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>გრანი</displayName>
+				<unitPattern count="one">{0} გრანი</unitPattern>
+				<unitPattern count="other">{0} გრანი</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>გიგავატი</displayName>
@@ -7234,6 +7309,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} კელვინი</unitPattern>
 				<unitPattern count="other">{0} კელვინის გრადუსი</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>ფუნტი-ფუტი</displayName>
+				<unitPattern count="one">{0} ფუნტი-ფუტი</unitPattern>
+				<unitPattern count="other">{0} ფუნტი-ფუტი</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>ნიუტონ-მეტრი</displayName>
+				<unitPattern count="one">{0} ნიუტონ-მეტრი</unitPattern>
+				<unitPattern count="other">{0} ნიუტონ-მეტრი</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>კუბური კილომეტრი</displayName>
 				<unitPattern count="one">{0} კუბური კილომეტრი</unitPattern>
@@ -7317,6 +7402,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} აკრი-ფუტი</unitPattern>
 				<unitPattern count="other">{0} აკრი-ფუტი</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>ბუშელი</displayName>
+				<unitPattern count="one">{0} ბუშელი</unitPattern>
+				<unitPattern count="other">{0} ბუშელი</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>გალონი</displayName>
 				<unitPattern count="one">{0} გალონი</unitPattern>
@@ -7368,6 +7458,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ბარელი</displayName>
 				<unitPattern count="one">{0} ბარელი</unitPattern>
 				<unitPattern count="other">{0} ბარელი</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>დესერტის კოვზი</displayName>
+				<unitPattern count="one">{0} დესერტის კოვზი</unitPattern>
+				<unitPattern count="other">{0} დესერტის კოვზი</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ბრიტ. დესერტის კოვზი</displayName>
+				<unitPattern count="one">{0} ბრიტ. დესერტის კოვზი</unitPattern>
+				<unitPattern count="other">{0} ბრიტ. დესერტის კოვზი</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>წვეთი</displayName>
+				<unitPattern count="one">{0} წვეთი</unitPattern>
+				<unitPattern count="other">{0} წვეთი</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ბრიტანული თხევადი დრაქმა</displayName>
+				<unitPattern count="one">{0} ბრიტანული თხევადი დრაქმა</unitPattern>
+				<unitPattern count="other">{0} ბრიტანული თხევადი დრაქმა</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ჯიგერი</displayName>
+				<unitPattern count="one">{0} ჯიგერი</unitPattern>
+				<unitPattern count="other">{0} ჯიგერი</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>მწიკვი</displayName>
+				<unitPattern count="one">{0} მწიკვი</unitPattern>
+				<unitPattern count="other">{0} მწიკვი</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ბრიტანული კვარტი</displayName>
+				<unitPattern count="one">{0} ბრიტანული კვარტი</unitPattern>
+				<unitPattern count="other">{0} ბრიტანული კვარტი</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>კარდინალური მიმართულება</displayName>
@@ -7437,6 +7562,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>კი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>მე{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>გი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>ტე{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>პე{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ექს{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>ზე{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>იო{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -7833,6 +7982,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} წერტ/დუიმზე</unitPattern>
 				<unitPattern count="other">{0} წერტ/დუიმზე</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>წერტილი</displayName>
+				<unitPattern count="one">{0} წერტილი</unitPattern>
+				<unitPattern count="other">{0} წერტილი</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>⊕ რადიუსი</displayName>
+				<unitPattern count="one">{0} ⊕ რადიუსი</unitPattern>
+				<unitPattern count="other">{0} ⊕ რადიუსი</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>კმ</displayName>
 				<unitPattern count="one">{0} კმ</unitPattern>
@@ -7913,6 +8072,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ა.ე.</unitPattern>
 				<unitPattern count="other">{0} ა.ე.</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>ფურლონგი</displayName>
+				<unitPattern count="one">{0} ფურლონგი</unitPattern>
+				<unitPattern count="other">{0} ფურლონგი</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ფატომი</displayName>
+				<unitPattern count="one">{0} ფატომი</unitPattern>
+				<unitPattern count="other">{0} ფატომი</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>საზღვაო მილი</displayName>
 				<unitPattern count="one">{0} საზღვ. მილი</unitPattern>
@@ -7928,10 +8097,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} პნქტ.</unitPattern>
 				<unitPattern count="other">{0} პქნტ.</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>☉ რადიუსი</displayName>
+				<unitPattern count="one">{0} ☉ რადიუსი</unitPattern>
+				<unitPattern count="other">{0} ☉ რადიუსი</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>ლუქსი</displayName>
 				<unitPattern count="one">{0} ლუქსი</unitPattern>
 				<unitPattern count="other">{0} ლუქსი</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>კდ</displayName>
+				<unitPattern count="one">{0} კდ</unitPattern>
+				<unitPattern count="other">{0} კდ</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>ლმ</displayName>
+				<unitPattern count="one">{0} ლმ</unitPattern>
+				<unitPattern count="other">{0} ლმ</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>☉ სხივიერობა</displayName>
+				<unitPattern count="one">{0} ☉ სხივიერობა</unitPattern>
+				<unitPattern count="other">{0} ☉ სხივიერობა</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>მტ</displayName>
@@ -7965,6 +8154,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ტ</unitPattern>
 				<unitPattern count="other">{0} ტ</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>სტოუნი</displayName>
+				<unitPattern count="one">{0} სტოუნი</unitPattern>
+				<unitPattern count="other">{0} სტოუნი</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>ფუნტი</displayName>
 				<unitPattern count="one">{0} ფნტ</unitPattern>
@@ -7991,6 +8185,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>დალტონი</displayName>
 				<unitPattern count="one">{0} დალტ.</unitPattern>
 				<unitPattern count="other">{0} დალტ.</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>გრანი</displayName>
+				<unitPattern count="one">{0} გრანი</unitPattern>
+				<unitPattern count="other">{0} გრანი</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>გვტ</displayName>
@@ -8112,6 +8311,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>ფუნტი-ფუტი</displayName>
+				<unitPattern count="one">{0} ფუნტი-ფუტი</unitPattern>
+				<unitPattern count="other">{0} ფუნტი-ფუტი</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>ნიუტ. მ</displayName>
+				<unitPattern count="one">{0} ნიუტ. მ</unitPattern>
+				<unitPattern count="other">{0} ნიუტ. მ</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>კუბური კილომეტრი</displayName>
 				<unitPattern count="one">{0} კმ³</unitPattern>
@@ -8195,6 +8404,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} აკრ.ფტ.</unitPattern>
 				<unitPattern count="other">{0} აკრ.ფტ.</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>ბუშელი</displayName>
+				<unitPattern count="one">{0} ბუშელი</unitPattern>
+				<unitPattern count="other">{0} ბუშელი</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>გალონი</displayName>
 				<unitPattern count="one">{0} გალონი</unitPattern>
@@ -8246,6 +8460,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ბარელი</displayName>
 				<unitPattern count="one">{0} ბარ.</unitPattern>
 				<unitPattern count="other">{0} ბარ.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>დესერტის კოვზი</displayName>
+				<unitPattern count="one">{0} დესერტის კოვზი</unitPattern>
+				<unitPattern count="other">{0} დესერტის კოვზი</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ბრიტ. დესერტის კოვზი</displayName>
+				<unitPattern count="one">{0} ბრიტ. დეს. კოვზი</unitPattern>
+				<unitPattern count="other">{0} ბრიტ. დეს. კოვზი</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>წვეთი</displayName>
+				<unitPattern count="one">{0} წვეთი</unitPattern>
+				<unitPattern count="other">{0} წვეთი</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ბრიტ. თხევადი დრაქმა</displayName>
+				<unitPattern count="one">{0} ბრიტ. თხევ. დრაქმა</unitPattern>
+				<unitPattern count="other">{0} ბრიტ. თხევ. დრაქმა</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ჯიგერი</displayName>
+				<unitPattern count="one">{0} ჯიგერი</unitPattern>
+				<unitPattern count="other">{0} ჯიგერი</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>მწიკვი</displayName>
+				<unitPattern count="one">{0} მწიკვი</unitPattern>
+				<unitPattern count="other">{0} მწიკვი</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ბრიტ. კვარტი</displayName>
+				<unitPattern count="one">{0} ბრიტ. კვარტი</unitPattern>
+				<unitPattern count="other">{0} ბრიტ. კვარტი</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>მიმართულება</displayName>
@@ -8315,6 +8564,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>კი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>მე{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>გი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>ტე{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>პე{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ექს{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>ზე{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>იო{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -8614,6 +8887,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">დამწერლობები — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} შტრიხი</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} შტრიხი</characterLabelPattern>
+		<characterLabelPattern type="subscript">ქვედა ინდექსი {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">ზედა ინდექსი {0}</characterLabelPattern>
 		<characterLabel type="activities">აქტივობები</characterLabel>
 		<characterLabel type="african_scripts">აფრიკული დამწერლობები</characterLabel>
 		<characterLabel type="american_scripts">ამერიკული დამწერლობები</characterLabel>

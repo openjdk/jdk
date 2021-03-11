@@ -53,9 +53,9 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
   // Mapping management
   CHeapBitMap _region_commit_map;
 
-  MemoryType _memory_type;
+  MEMFLAGS _memory_type;
 
-  G1RegionToSpaceMapper(ReservedSpace rs, size_t used_size, size_t page_size, size_t region_granularity, size_t commit_factor, MemoryType type);
+  G1RegionToSpaceMapper(ReservedSpace rs, size_t used_size, size_t page_size, size_t region_granularity, size_t commit_factor, MEMFLAGS type);
 
   void fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled);
  public:
@@ -66,9 +66,10 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
 
   void set_mapping_changed_listener(G1MappingChangedListener* listener) { _listener = listener; }
 
+  void signal_mapping_changed(uint start_idx, size_t num_regions);
+
   virtual ~G1RegionToSpaceMapper() {}
 
-  void commit_and_set_special();
   virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL) = 0;
   virtual void uncommit_regions(uint start_idx, size_t num_regions = 1) = 0;
 
@@ -85,36 +86,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
                                               size_t page_size,
                                               size_t region_granularity,
                                               size_t byte_translation_factor,
-                                              MemoryType type);
-
-  static G1RegionToSpaceMapper* create_heap_mapper(ReservedSpace rs,
-                                                   size_t actual_size,
-                                                   size_t page_size,
-                                                   size_t region_granularity,
-                                                   size_t byte_translation_factor,
-                                                   MemoryType type);
+                                              MEMFLAGS type);
 };
 
-// G1RegionToSpaceMapper implementation where
-// part of space is mapped to dram and part to nv-dimm
-class G1RegionToHeteroSpaceMapper : public G1RegionToSpaceMapper {
-private:
-  ReservedSpace _rs;
-  G1RegionToSpaceMapper* _dram_mapper;
-  uint _num_committed_dram;
-  uint _num_committed_nvdimm;
-  uint _start_index_of_dram;
-  size_t _page_size;
-  size_t _commit_factor;
-  MemoryType _type;
-
-public:
-  G1RegionToHeteroSpaceMapper(ReservedSpace rs, size_t used_size, size_t page_size, size_t region_granularity, size_t commit_factor, MemoryType type);
-  bool initialize();
-  uint num_committed_dram() const;
-  uint num_committed_nvdimm() const;
-
-  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL);
-  virtual void uncommit_regions(uint start_idx, size_t num_regions = 1);
-};
 #endif // SHARE_GC_G1_G1REGIONTOSPACEMAPPER_HPP

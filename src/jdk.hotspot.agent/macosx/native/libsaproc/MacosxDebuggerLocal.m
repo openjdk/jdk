@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 #include <objc/objc-runtime.h>
 #import <Foundation/Foundation.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #include <jni.h>
 
@@ -260,6 +258,39 @@ jlong lookupByNameIncore(
   return addr;
 }
 
+/* Create a pool and initiate a try block to catch any exception */
+#define JNI_COCOA_ENTER(env) \
+ NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+ @try {
+
+/* Don't allow NSExceptions to escape to Java.
+ * If there is a Java exception that has been thrown that should escape.
+ * And ensure we drain the auto-release pool.
+ */
+#define JNI_COCOA_EXIT(env) \
+ } \
+ @catch (NSException *e) { \
+     NSLog(@"%@", [e callStackSymbols]); \
+ } \
+ @finally { \
+    [pool drain]; \
+ };
+
+static NSString* JavaStringToNSString(JNIEnv *env, jstring jstr) {
+
+    if (jstr == NULL) {
+        return NULL;
+    }
+    jsize len = (*env)->GetStringLength(env, jstr);
+    const jchar *chars = (*env)->GetStringChars(env, jstr, NULL);
+    if (chars == NULL) {
+        return NULL;
+    }
+    NSString *result = [NSString stringWithCharacters:(UniChar *)chars length:len];
+    (*env)->ReleaseStringChars(env, jstr, chars);
+    return result;
+}
+
 /*
  * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
  * Method:    lookupByName0
@@ -277,8 +308,9 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(
 
   jlong address = 0;
 
-JNF_COCOA_ENTER(env);
-  NSString *symbolNameString = JNFJavaToNSString(env, symbolName);
+  JNI_COCOA_ENTER(env);
+
+  NSString *symbolNameString = JavaStringToNSString(env, symbolName);
 
   print_debug("lookupInProcess called for %s\n", [symbolNameString UTF8String]);
 
@@ -289,7 +321,7 @@ JNF_COCOA_ENTER(env);
   }
 
   print_debug("address of symbol %s = %llx\n", [symbolNameString UTF8String], address);
-JNF_COCOA_EXIT(env);
+  JNI_COCOA_EXIT(env);
 
   return address;
 }
@@ -812,7 +844,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
 {
   print_debug("attach0 called for jpid=%d\n", (int)jpid);
 
-JNF_COCOA_ENTER(env);
+  JNI_COCOA_ENTER(env);
 
   kern_return_t result;
   task_t gTask = 0;
@@ -926,34 +958,37 @@ JNF_COCOA_ENTER(env);
     THROW_NEW_DEBUGGER_EXCEPTION("Can't attach symbolicator to the process");
   }
 
-JNF_COCOA_EXIT(env);
+  JNI_COCOA_EXIT(env);
 }
 
 /** For core file,
     called from Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2Ljava_lang_String_2 */
 static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) {
   int n = 0, i = 0;
+  jobject loadObjectList;
+
+  loadObjectList = (*env)->GetObjectField(env, this_obj, loadObjectList_ID);
+  CHECK_EXCEPTION;
 
   // add load objects
   n = get_num_libs(ph);
   for (i = 0; i < n; i++) {
-     uintptr_t base;
+     uintptr_t base, memsz;
      const char* name;
      jobject loadObject;
-     jobject loadObjectList;
      jstring nameString;
 
-     base = get_lib_base(ph, i);
+     get_lib_addr_range(ph, i, &base, &memsz);
      name = get_lib_name(ph, i);
      nameString = (*env)->NewStringUTF(env, name);
      CHECK_EXCEPTION;
      loadObject = (*env)->CallObjectMethod(env, this_obj, createLoadObject_ID,
-                                            nameString, (jlong)0, (jlong)base);
-     CHECK_EXCEPTION;
-     loadObjectList = (*env)->GetObjectField(env, this_obj, loadObjectList_ID);
+                                            nameString, (jlong)memsz, (jlong)base);
      CHECK_EXCEPTION;
      (*env)->CallBooleanMethod(env, loadObjectList, listAdd_ID, loadObject);
      CHECK_EXCEPTION;
+     (*env)->DeleteLocalRef(env, nameString);
+     (*env)->DeleteLocalRef(env, loadObject);
   }
 }
 
@@ -1020,7 +1055,8 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
      Prelease(ph);
      return;
   }
-JNF_COCOA_ENTER(env);
+
+  JNI_COCOA_ENTER(env);
 
   task_t gTask = getTask(env, this_obj);
   kern_return_t k_res = 0;
@@ -1071,5 +1107,5 @@ JNF_COCOA_ENTER(env);
 
   detach_cleanup(gTask, env, this_obj, false);
 
-JNF_COCOA_EXIT(env);
+  JNI_COCOA_EXIT(env);
 }

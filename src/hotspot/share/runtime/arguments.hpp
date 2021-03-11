@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/flags/jvmFlag.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#include "runtime/perfData.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/vmEnums.hpp"
 
 // Arguments parses the command line and recognizes options
 
@@ -226,19 +226,6 @@ class AgentLibraryList {
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
 class ScopedVMInitArgs;
 
-// Most logging functions require 5 tags. Some of them may be _NO_TAG.
-typedef struct {
-  const char* alias_name;
-  LogLevelType level;
-  bool exactMatch;
-  LogTagType tag0;
-  LogTagType tag1;
-  LogTagType tag2;
-  LogTagType tag3;
-  LogTagType tag4;
-  LogTagType tag5;
-} AliasedLoggingFlag;
-
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
@@ -367,8 +354,6 @@ class Arguments : AllStatic {
   static bool _UseOnStackReplacement;
   static bool _BackgroundCompilation;
   static bool _ClipInlining;
-  static intx _Tier3InvokeNotifyFreqLog;
-  static intx _Tier4InvocationThreshold;
 
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
@@ -376,9 +361,10 @@ class Arguments : AllStatic {
   static void set_use_compressed_klass_ptrs();
   static jint set_ergonomics_flags();
   static jint set_shared_spaces_flags_and_archive_paths();
-  // limits the given memory size by the maximum amount of memory this process is
-  // currently allowed to allocate or reserve.
-  static julong limit_by_allocatable_memory(julong size);
+  // Limits the given heap size by the maximum amount of virtual
+  // memory this process is currently allowed to use. It also takes
+  // the virtual-to-physical ratio of the current GC into account.
+  static size_t limit_heap_by_allocatable_memory(size_t size);
   // Setup heap size
   static void set_heap_size();
 
@@ -408,9 +394,8 @@ class Arguments : AllStatic {
   static jint set_aggressive_heap_flags();
 
   // Argument parsing
-  static void do_pd_flag_adjustments();
-  static bool parse_argument(const char* arg, JVMFlag::Flags origin);
-  static bool process_argument(const char* arg, jboolean ignore_unrecognized, JVMFlag::Flags origin);
+  static bool parse_argument(const char* arg, JVMFlagOrigin origin);
+  static bool process_argument(const char* arg, jboolean ignore_unrecognized, JVMFlagOrigin origin);
   static void process_java_launcher_argument(const char*, void*);
   static void process_java_compiler_argument(const char* arg);
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
@@ -437,7 +422,7 @@ class Arguments : AllStatic {
                                  const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
-  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlag::Flags origin);
+  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlagOrigin origin);
   static jint finalize_vm_init_args(bool patch_mod_javabase);
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
@@ -461,10 +446,6 @@ class Arguments : AllStatic {
   // the version number when the flag became obsolete.
   static bool is_obsolete_flag(const char* flag_name, JDK_Version* version);
 
-#ifndef PRODUCT
-  static const char* removed_develop_logging_flag_name(const char* name);
-#endif // PRODUCT
-
   // Returns 1 if the flag is deprecated (and not yet obsolete or expired).
   //     In this case the 'version' buffer is filled in with the version number when
   //     the flag became deprecated.
@@ -478,7 +459,6 @@ class Arguments : AllStatic {
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
   // Return NULL if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
-  static AliasedLoggingFlag catch_logging_aliases(const char* name, bool on);
 
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;
@@ -635,8 +615,10 @@ class Arguments : AllStatic {
   static bool  init_shared_archive_paths() NOT_CDS_RETURN_(false);
 
   // Operation modi
-  static Mode mode()                        { return _mode; }
-  static bool is_interpreter_only() { return mode() == _int; }
+  static Mode mode()                { return _mode;           }
+  static bool is_interpreter_only() { return mode() == _int;  }
+  static bool is_compiler_only()    { return mode() == _comp; }
+
 
   // preview features
   static void set_enable_preview() { _enable_preview = true; }
@@ -685,5 +667,14 @@ do {                                                     \
   }                                                      \
 } while(0)
 
+// Initialize options not supported in this release, with a warning
+// if they were explicitly requested on the command-line
+#define UNSUPPORTED_OPTION_INIT(opt, value)              \
+do {                                                     \
+  if (FLAG_IS_CMDLINE(opt)) {                            \
+    warning("-XX flag " #opt " not supported in this VM"); \
+  }                                                      \
+  FLAG_SET_DEFAULT(opt, value);                          \
+} while(0)
 
 #endif // SHARE_RUNTIME_ARGUMENTS_HPP

@@ -61,6 +61,11 @@ public class BasicCheckBoxUI extends BasicRadioButtonUI {
     // ********************************
 
     /**
+     * Constructs a {@code BasicCheckBoxUI}.
+     */
+    public BasicCheckBoxUI() {}
+
+    /**
      * Returns an instance of {@code BasicCheckBoxUI}.
      *
      * @param b a component

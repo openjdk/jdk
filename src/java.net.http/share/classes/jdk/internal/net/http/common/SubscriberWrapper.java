@@ -74,7 +74,7 @@ public abstract class SubscriberWrapper
     private final CompletableFuture<Void> cf;
     private final SequentialScheduler pushScheduler;
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
-    final AtomicLong upstreamWindow = new AtomicLong(0);
+    final AtomicLong upstreamWindow = new AtomicLong();
 
     /**
      * Wraps the given downstream subscriber. For each call to {@link

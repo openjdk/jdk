@@ -43,7 +43,7 @@ private:
   bool _unaligned_access; // Unaligned access from unsafe
   bool _mismatched_access; // Mismatched access from unsafe: byte read in integer array for instance
   bool _unsafe_access;     // Access of unsafe origin.
-  uint8_t _barrier; // Bit field with barrier information
+  uint8_t _barrier_data;   // Bit field with barrier information
 
 protected:
 #ifdef ASSERT
@@ -69,7 +69,7 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier(0) {
+      _barrier_data(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -78,7 +78,7 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier(0) {
+      _barrier_data(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -87,7 +87,7 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier(0) {
+      _barrier_data(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -140,8 +140,8 @@ public:
 #endif
   }
 
-  uint8_t barrier_data() { return _barrier; }
-  void set_barrier_data(uint8_t barrier_data) { _barrier = barrier_data; }
+  uint8_t barrier_data() { return _barrier_data; }
+  void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening
@@ -281,6 +281,9 @@ public:
 
   Node* convert_to_unsigned_load(PhaseGVN& gvn);
   Node* convert_to_signed_load(PhaseGVN& gvn);
+
+  bool  has_reinterpret_variant(const Type* rt);
+  Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
   void pin() { _control_dependency = Pinned; }
   bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
@@ -634,6 +637,9 @@ public:
   // have all possible loads of the value stored been optimized away?
   bool value_never_loaded(PhaseTransform *phase) const;
 
+  bool  has_reinterpret_variant(const Type* vt);
+  Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
+
   MemBarNode* trailing_membar() const;
 };
 
@@ -833,7 +839,7 @@ class LoadStoreNode : public Node {
 private:
   const Type* const _type;      // What kind of value is loaded?
   const TypePtr* _adr_type;     // What kind of memory is being addressed?
-  uint8_t _barrier; // Bit field with barrier information
+  uint8_t _barrier_data;        // Bit field with barrier information
   virtual uint size_of() const; // Size is bigger
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
@@ -847,8 +853,8 @@ public:
   bool result_not_used() const;
   MemBarNode* trailing_membar() const;
 
-  uint8_t barrier_data() { return _barrier; }
-  void set_barrier_data(uint8_t barrier_data) { _barrier = barrier_data; }
+  uint8_t barrier_data() { return _barrier_data; }
+  void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 };
 
 class LoadStoreConditionalNode : public LoadStoreNode {
@@ -1184,7 +1190,8 @@ class MemBarNode: public MultiNode {
     TrailingStore,
     LeadingStore,
     TrailingLoadStore,
-    LeadingLoadStore
+    LeadingLoadStore,
+    TrailingPartialArrayCopy
   } _kind;
 
 #ifdef ASSERT
@@ -1221,6 +1228,8 @@ public:
   bool trailing() const { return _kind == TrailingLoad || _kind == TrailingStore || _kind == TrailingLoadStore; }
   bool leading() const { return _kind == LeadingStore || _kind == LeadingLoadStore; }
   bool standalone() const { return _kind == Standalone; }
+  void set_trailing_partial_array_copy() { _kind = TrailingPartialArrayCopy; }
+  bool trailing_partial_array_copy() const { return _kind == TrailingPartialArrayCopy; }
 
   static void set_store_pair(MemBarNode* leading, MemBarNode* trailing);
   static void set_load_store_pair(MemBarNode* leading, MemBarNode* trailing);

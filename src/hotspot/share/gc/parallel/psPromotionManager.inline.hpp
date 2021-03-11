@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
@@ -53,7 +54,7 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(should_scavenge(p, true), "revisiting object?");
   assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-  Prefetch::write(obj->mark_addr_raw(), 0);
+  Prefetch::write(obj->mark_addr(), 0);
   push_depth(ScannerTask(p));
 }
 
@@ -97,9 +98,6 @@ class PSPushContentsClosure: public BasicOopIterateClosure {
 
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-
-  // Don't use the oop verification code in the oop_oop_iterate framework.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 //
@@ -141,7 +139,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   // NOTE! We must be very careful with any methods that access the mark
   // in o. There may be multiple threads racing on it, and it may be forwarded
   // at any time. Do not use oop methods for accessing the mark!
-  markWord test_mark = o->mark_raw();
+  markWord test_mark = o->mark();
 
   // The same test as "o->is_forwarded()"
   if (!test_mark.is_marked()) {
@@ -196,13 +194,13 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
           // Do we allocate directly, or flush and refill?
           if (new_obj_size > (OldPLABSize / 2)) {
             // Allocate this object directly
-            new_obj = (oop)old_gen()->cas_allocate(new_obj_size);
+            new_obj = (oop)old_gen()->allocate(new_obj_size);
             promotion_trace_event(new_obj, o, new_obj_size, age, true, NULL);
           } else {
             // Flush and fill
             _old_lab.flush();
 
-            HeapWord* lab_base = old_gen()->cas_allocate(OldPLABSize);
+            HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
             if(lab_base != NULL) {
 #ifdef ASSERT
               // Delay the initialization of the promotion lab (plab).

@@ -26,6 +26,7 @@ package java.util.stream;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -44,6 +45,7 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Abstract base class for an intermediate pipeline stage or pipeline source
@@ -618,6 +620,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final Object[] toArray() {
         return toArray(Object[]::new);
+    }
+
+    @Override
+    public List<P_OUT> toList() {
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(this.toArray());
     }
 
     @Override

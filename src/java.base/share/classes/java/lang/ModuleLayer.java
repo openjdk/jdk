@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,6 @@ import sun.security.util.SecurityConstants;
  * }</pre>
  *
  * @since 9
- * @spec JPMS
  * @see Module#getLayer()
  */
 
@@ -193,7 +192,6 @@ public final class ModuleLayer {
      * should never be shared with untrusted code.
      *
      * @since 9
-     * @spec JPMS
      */
     public static final class Controller {
         private final ModuleLayer layer;
@@ -933,7 +931,9 @@ public final class ModuleLayer {
             servicesCatalog = this.servicesCatalog;
             if (servicesCatalog == null) {
                 servicesCatalog = ServicesCatalog.create();
-                nameToModule.values().forEach(servicesCatalog::register);
+                for (Module m : nameToModule.values()) {
+                    servicesCatalog.register(m);
+                }
                 this.servicesCatalog = servicesCatalog;
             }
         }

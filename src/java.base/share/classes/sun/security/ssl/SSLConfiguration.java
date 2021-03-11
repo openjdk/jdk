@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +42,7 @@ import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
+import sun.security.action.GetIntegerAction;
 import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLExtension.ClientExtensions;
 import sun.security.ssl.SSLExtension.ServerExtensions;
@@ -104,6 +104,14 @@ final class SSLConfiguration implements Cloneable {
     static final boolean acknowledgeCloseNotify  = Utilities.getBooleanProperty(
             "jdk.tls.acknowledgeCloseNotify", false);
 
+    // Set the max size limit for Handshake Message to 2^15
+    static final int maxHandshakeMessageSize = GetIntegerAction.privilegedGetProperty(
+            "jdk.tls.maxHandshakeMessageSize", 32768);
+
+    // Set the max certificate chain length to 10
+    static final int maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
+            "jdk.tls.maxCertificateChainLength", 10);
+
     // Is the extended_master_secret extension supported?
     static {
         boolean supportExtendedMasterSecret = Utilities.getBooleanProperty(
@@ -130,8 +138,8 @@ final class SSLConfiguration implements Cloneable {
         this.clientAuthType = ClientAuthType.CLIENT_AUTH_NONE;
 
         this.identificationProtocol = null;
-        this.serverNames = Collections.<SNIServerName>emptyList();
-        this.sniMatchers = Collections.<SNIMatcher>emptyList();
+        this.serverNames = Collections.emptyList();
+        this.sniMatchers = Collections.emptyList();
         this.preferLocalCipherSuites = true;
 
         this.applicationProtocols = new String[0];
@@ -359,8 +367,7 @@ final class SSLConfiguration implements Cloneable {
      */
     SSLExtension[] getEnabledExtensions(
             SSLHandshake handshakeType, ProtocolVersion protocolVersion) {
-        return getEnabledExtensions(
-            handshakeType, Arrays.asList(protocolVersion));
+        return getEnabledExtensions(handshakeType, List.of(protocolVersion));
     }
 
     /**
@@ -425,7 +432,7 @@ final class SSLConfiguration implements Cloneable {
     //
     // See Effective Java Second Edition: Item 71.
     private static final class CustomizedClientSignatureSchemes {
-        private static List<SignatureScheme> signatureSchemes =
+        private static final List<SignatureScheme> signatureSchemes =
                 getCustomizedSignatureScheme("jdk.tls.client.SignatureSchemes");
     }
 
@@ -433,7 +440,7 @@ final class SSLConfiguration implements Cloneable {
     //
     // See Effective Java Second Edition: Item 71.
     private static final class CustomizedServerSignatureSchemes {
-        private static List<SignatureScheme> signatureSchemes =
+        private static final List<SignatureScheme> signatureSchemes =
                 getCustomizedSignatureScheme("jdk.tls.server.SignatureSchemes");
     }
 

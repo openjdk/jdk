@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ var getJibProfiles = function (input) {
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
     data.conf_bundle_includes = [
-        "make/autoconf/version-numbers",
+        "make/conf/version-numbers.conf",
     ];
 
     // Define some common values
@@ -240,7 +240,7 @@ var getJibProfilesCommon = function (input, data) {
     // List of the main profile names used for iteration
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64",
-        "windows-x64", "windows-x86",
+        "windows-x64", "windows-x86", "windows-aarch64",
         "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x"
     ];
 
@@ -251,8 +251,17 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: concat("--enable-jtreg-failure-handler",
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
+            "--disable-jvm-feature-aot",
+            "--disable-jvm-feature-graal",
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
+    };
+    // Extra settings for release profiles
+    common.release_profile_base = {
+        configure_args: [
+            "--enable-reproducible-build",
+            "--with-source-date=current",
+        ],
     };
     // Extra settings for debug profiles
     common.debug_suffix = "-debug";
@@ -265,6 +274,12 @@ var getJibProfilesCommon = function (input, data) {
     common.slowdebug_profile_base = {
         configure_args: ["--with-debug-level=slowdebug"],
         labels: "slowdebug"
+    };
+    // Extra settings for optimized profiles
+    common.optimized_suffix = "-optimized";
+    common.optimized_profile_base = {
+        configure_args: ["--with-debug-level=optimized"],
+        labels: "optimized",
     };
     // Extra settings for openjdk only profiles
     common.open_suffix = "-open";
@@ -381,7 +396,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "14";
+    common.boot_jdk_version = "15";
     common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
@@ -404,12 +419,11 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "graphviz", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit,
-                "--enable-full-docs", "--with-zlib=system",
+                "--with-zlib=system", "--disable-dtrace",
                 (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
                     "--build=x86_64-unknown-linux-gnu" ] : [])),
-            default_make_targets: ["docs-bundles"],
         },
 
         "linux-x86": {
@@ -424,9 +438,9 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
-                "--with-macosx-version-max=10.9.0",
+                "--with-macosx-version-max=10.12.00",
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.
                 "SETFILE=/usr/bin/SetFile"),
@@ -435,7 +449,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit),
         },
 
@@ -447,6 +461,15 @@ var getJibProfilesProfiles = function (input, common, data) {
             configure_args: concat(common.configure_args_32bit),
         },
 
+        "windows-aarch64": {
+            target_os: "windows",
+            target_cpu: "aarch64",
+            dependencies: ["devkit", "gtest", "build_devkit"],
+            configure_args: [
+                "--openjdk-target=aarch64-unknown-cygwin",
+            ],
+        },
+
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
@@ -454,9 +477,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
-		"--disable-jvm-feature-jvmci",
-		"--disable-jvm-feature-graal",
-		"--disable-jvm-feature-aot",
             ],
         },
 
@@ -510,6 +530,13 @@ var getJibProfilesProfiles = function (input, common, data) {
         var debugName = name + common.slowdebug_suffix;
         profiles[debugName] = concatObjects(profiles[name],
                                             common.slowdebug_profile_base);
+    });
+    // Generate optimized versions of all the main profiles
+    common.main_profile_names.forEach(function (name) {
+        var optName = name + common.optimized_suffix;
+        profiles[optName] = concatObjects(profiles[name],
+                                          common.optimized_profile_base);
+        profiles[optName].default_make_targets = [ "hotspot" ];
     });
     // Generate testmake profiles for the main profile of each build host
     // platform. This profile only runs the makefile tests.
@@ -654,6 +681,10 @@ var getJibProfilesProfiles = function (input, common, data) {
             platform: "windows-x86",
             jdk_suffix: "zip",
         },
+        "windows-aarch64": {
+            platform: "windows-aarch64",
+            jdk_suffix: "zip",
+        },
        "linux-aarch64": {
             platform: "linux-aarch64",
         },
@@ -680,20 +711,50 @@ var getJibProfilesProfiles = function (input, common, data) {
             common.debug_profile_artifacts(artifactData[name]));
     });
 
-    profilesArtifacts = {
-        "linux-x64": {
+    buildJdkDep = input.build_os + "-" + input.build_cpu + ".jdk";
+    docsProfiles = {
+        "docs": {
+            target_os: input.build_os,
+            target_cpu: input.build_cpu,
+            dependencies: [
+                "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
+            ],
+            configure_args: concat(
+                "--enable-full-docs",
+                versionArgs(input, common),
+                "--with-build-jdk=" + input.get(buildJdkDep, "home_path"),
+                // Provide an explicit JDK for the docs-reference target to
+                // mimic the running conditions of when it's run for real as
+                // closely as possible.
+                "--with-docs-reference-jdk=" + input.get(buildJdkDep, "home_path")
+            ),
+            default_make_targets: ["all-docs-bundles"],
             artifacts: {
                 doc_api_spec: {
-                    local: "bundles/\\(jdk.*doc-api-spec.tar.gz\\)",
+                    local: "bundles/\\(jdk-" + data.version + ".*doc-api-spec.tar.gz\\)",
                     remote: [
                         "bundles/common/jdk-" + data.version + "_doc-api-spec.tar.gz",
+                        "bundles/common/\\1"
+                    ],
+                },
+                javase_doc_api_spec: {
+                    local: "bundles/\\(javase-" + data.version + ".*doc-api-spec.tar.gz\\)",
+                    remote: [
+                        "bundles/common/javase-" + data.version + "_doc-api-spec.tar.gz",
+                        "bundles/common/\\1"
+                    ],
+                },
+                reference_doc_api_spec: {
+                    local: "bundles/\\(jdk-reference-" + data.version + ".*doc-api-spec.tar.gz\\)",
+                    remote: [
+                        "bundles/common/jdk-reference-" + data.version + "_doc-api-spec.tar.gz",
                         "bundles/common/\\1"
                     ],
                 },
             }
         }
     };
-    profiles = concatObjects(profiles, profilesArtifacts);
+    profiles = concatObjects(profiles, docsProfiles);
 
     // Generate open only profiles for all the main and debug profiles.
     // Rewrite artifact remote paths by adding "openjdk/GPL".
@@ -769,6 +830,13 @@ var getJibProfilesProfiles = function (input, common, data) {
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
         });
+    });
+
+    // After creating all derived profiles, we can add the release profile base
+    // to the main profiles
+    common.main_profile_names.forEach(function (name) {
+        profiles[name] = concatObjects(profiles[name],
+            common.release_profile_base);
     });
 
     // Artifacts of JCov profiles
@@ -932,9 +1000,9 @@ var getJibProfilesProfiles = function (input, common, data) {
     // test tasks. Care must however be taken not to polute that work dir by
     // setting the appropriate make variables to control output directories.
     //
-    // Use the existance of the top level README as indication of if this is
+    // Use the existance of the top level README.md as indication of if this is
     // the full source or just src.conf.
-    if (!new java.io.File(__DIR__, "../../README").exists()) {
+    if (!new java.io.File(__DIR__, "../../README.md").exists()) {
         var runTestPrebuiltSrcFullExtra = {
             dependencies: "src.full",
             work_dir: input.get("src.full", "install_path"),
@@ -959,10 +1027,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc9.2.0-OL6.4+1.0",
-        macosx_x64: "Xcode11.3.1-MacOSX10.15+1.0",
-        windows_x64: "VS2019-16.5.3+1.0",
-        linux_aarch64: "gcc9.2.0-OL7.6+1.0",
+        linux_x64: "gcc10.2.0-OL6.4+1.0",
+        macosx_x64: "Xcode11.3.1-MacOSX10.15+1.1",
+        windows_x64: "VS2019-16.7.2+1.1",
+        linux_aarch64: "gcc10.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0"
@@ -971,9 +1039,11 @@ var getJibProfilesDependencies = function (input, common) {
     var devkit_platform = (input.target_cpu == "x86"
         ? input.target_os + "_x64"
         : input.target_platform);
-
+    if (input.target_platform == "windows_aarch64") {
+        devkit_platform = "windows_x64";
+    }
     var devkit_cross_prefix = "";
-    if (!(input.target_os == "windows" && isWsl(input))) {
+    if (!(input.target_os == "windows")) {
         if (input.build_platform != input.target_platform
            && input.build_platform != devkit_platform) {
             devkit_cross_prefix = input.build_platform + "-to-";
@@ -994,17 +1064,8 @@ var getJibProfilesDependencies = function (input, common) {
         ? input.get("gnumake", "install_path") + "/cygwin/bin"
         : input.get("gnumake", "install_path") + "/bin");
 
-    if (input.build_cpu == 'aarch64') {
-        boot_jdk = {
-            organization: common.organization,
-            ext: "tar.gz",
-            module: "jdk-linux_aarch64",
-            revision: "14+1.0",
-            configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
-            environment_path: common.boot_jdk_home + "/bin"
-        }
-    } else {
-        boot_jdk = {
+    var dependencies = {
+        boot_jdk: {
             server: "jpg",
             product: "jdk",
             version: common.boot_jdk_version,
@@ -1013,11 +1074,7 @@ var getJibProfilesDependencies = function (input, common) {
                 + boot_jdk_platform + "_bin" + boot_jdk_ext,
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
-        }
-    }
-
-    var dependencies = {
-        boot_jdk: boot_jdk,
+        },
 
         devkit: {
             organization: common.organization,
@@ -1057,7 +1114,7 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.21+1.0"
+            revision: "1.28+1.0"
         },
 
         jcov: {
@@ -1137,15 +1194,6 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "zip",
             revision: "1.7.1+1.0",
             configure_args: "",
-        },
-
-        graalunit_lib: {
-            organization: common.organization,
-            ext: "zip",
-            revision: "619_Apr_12_2018",
-            module: "graalunit-lib",
-            configure_args: "--with-graalunit-lib=" + input.get("graalunit_lib", "install_path"),
-            environment_name: "GRAALUNIT_LIB"
         },
 
         gtest: {
@@ -1305,7 +1353,7 @@ var concatObjects = function (o1, o2) {
 
 /**
  * Constructs the numeric version string from reading the
- * make/autoconf/version-numbers file and removing all trailing ".0".
+ * make/conf/version-numbers.conf file and removing all trailing ".0".
  *
  * @param feature Override feature version
  * @param interim Override interim version
@@ -1313,15 +1361,15 @@ var concatObjects = function (o1, o2) {
  * @param patch Override patch version
  * @returns {String} The numeric version string
  */
-var getVersion = function (feature, interim, update, patch) {
+var getVersion = function (feature, interim, update, patch, extra1, extra2, extra3) {
     var version_numbers = getVersionNumbers();
     var version = (feature != null ? feature : version_numbers.get("DEFAULT_VERSION_FEATURE"))
         + "." + (interim != null ? interim : version_numbers.get("DEFAULT_VERSION_INTERIM"))
         + "." + (update != null ? update :  version_numbers.get("DEFAULT_VERSION_UPDATE"))
         + "." + (patch != null ? patch : version_numbers.get("DEFAULT_VERSION_PATCH"))
-        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA1")
-        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA2")
-        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA3");
+        + "." + (extra1 != null ? extra1 : version_numbers.get("DEFAULT_VERSION_EXTRA1"))
+        + "." + (extra2 != null ? extra2 : version_numbers.get("DEFAULT_VERSION_EXTRA2"))
+        + "." + (extra3 != null ? extra3 : version_numbers.get("DEFAULT_VERSION_EXTRA3"));
     while (version.match(".*\\.0$")) {
         version = version.substring(0, version.length - 2);
     }
@@ -1356,20 +1404,20 @@ var versionArgs = function(input, common) {
     return args;
 }
 
-// Properties representation of the make/autoconf/version-numbers file. Lazily
+// Properties representation of the make/conf/version-numbers.conf file. Lazily
 // initiated by the function below.
 var version_numbers;
 
 /**
- * Read the make/autoconf/version-numbers file into a Properties object.
+ * Read the make/conf/version-numbers.conf file into a Properties object.
  *
  * @returns {java.utilProperties}
  */
 var getVersionNumbers = function () {
-    // Read version information from make/autoconf/version-numbers
+    // Read version information from make/conf/version-numbers.conf
     if (version_numbers == null) {
         version_numbers = new java.util.Properties();
-        var stream = new java.io.FileInputStream(__DIR__ + "/../autoconf/version-numbers");
+        var stream = new java.io.FileInputStream(__DIR__ + "/version-numbers.conf");
         version_numbers.load(stream);
         stream.close();
     }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 
 // no precompiled headers
 #include "jvm.h"
+#include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -51,6 +50,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 #ifdef COMPILER1
@@ -64,16 +64,7 @@
 # include <ucontext.h>
 
 address os::current_stack_pointer() {
-  address csp;
-
-#if !defined(USE_XLC_BUILTINS)
-  // inline assembly for `mr regno(csp), R1_SP':
-  __asm__ __volatile__ ("mr %0, 1":"=r"(csp):);
-#else
-  csp = (address) __builtin_frame_address(0);
-#endif
-
-  return csp;
+  return (address)__builtin_frame_address(0);
 }
 
 char* os::non_memory_address_word() {
@@ -88,7 +79,7 @@ char* os::non_memory_address_word() {
 // always looks like a C-frame according to the frame
 // conventions in frame_ppc.hpp.
 
-address os::Aix::ucontext_get_pc(const ucontext_t * uc) {
+address os::Posix::ucontext_get_pc(const ucontext_t * uc) {
   return (address)uc->uc_mcontext.jmp_context.iar;
 }
 
@@ -101,7 +92,7 @@ intptr_t* os::Aix::ucontext_get_fp(const ucontext_t * uc) {
   return NULL;
 }
 
-void os::Aix::ucontext_set_pc(ucontext_t* uc, address new_pc) {
+void os::Posix::ucontext_set_pc(ucontext_t* uc, address new_pc) {
   uc->uc_mcontext.jmp_context.iar = (uint64_t) new_pc;
 }
 
@@ -116,7 +107,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = os::Aix::ucontext_get_pc(uc);
+    epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Aix::ucontext_get_sp(uc);
     if (ret_fp) *ret_fp = os::Aix::ucontext_get_fp(uc);
   } else {
@@ -141,40 +132,11 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return fr;
 }
 
-bool os::Aix::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr) {
-  address pc = (address) os::Aix::ucontext_get_pc(uc);
-  if (Interpreter::contains(pc)) {
-    // Interpreter performs stack banging after the fixed frame header has
-    // been generated while the compilers perform it before. To maintain
-    // semantic consistency between interpreted and compiled frames, the
-    // method returns the Java sender of the current frame.
-    *fr = os::fetch_frame_from_context(uc);
-    if (!fr->is_first_java_frame()) {
-      assert(fr->safe_for_sender(thread), "Safety check");
-      *fr = fr->java_sender();
-    }
-  } else {
-    // More complex code with compiled code.
-    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
-    CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
-      // Not sure where the pc points to, fallback to default
-      // stack overflow handling. In compiled code, we bang before
-      // the frame is complete.
-      return false;
-    } else {
-      intptr_t* sp = os::Aix::ucontext_get_sp(uc);
-      address lr = ucontext_get_lr(uc);
-      *fr = frame(sp, lr);
-      if (!fr->is_java_frame()) {
-        assert(fr->safe_for_sender(thread), "Safety check");
-        assert(!fr->is_first_frame(), "Safety check");
-        *fr = fr->java_sender();
-      }
-    }
-  }
-  assert(fr->is_java_frame(), "Safety check");
-  return true;
+frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  intptr_t* sp = os::Aix::ucontext_get_sp(uc);
+  address lr = ucontext_get_lr(uc);
+  return frame(sp, lr);
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -187,77 +149,25 @@ frame os::get_sender_for_C_frame(frame* fr) {
 
 
 frame os::current_frame() {
-  intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
-  // hack.
-  frame topframe(csp, (address)0x8);
-  // Return sender of sender of current topframe which hopefully
-  // both have pc != NULL.
-  frame tmp = os::get_sender_for_C_frame(&topframe);
-  return os::get_sender_for_C_frame(&tmp);
+  intptr_t* csp = *(intptr_t**) __builtin_frame_address(0);
+  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame));
+  return os::get_sender_for_C_frame(&topframe);
 }
 
-// Utility functions
-
-extern "C" JNIEXPORT int
-JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrecognized) {
-
-  ucontext_t* uc = (ucontext_t*) ucVoid;
-
-  Thread* t = Thread::current_or_null_safe();
-
-  SignalHandlerMark shm(t);
-
-  // Note: it's not uncommon that JNI code uses signal/sigset to install
-  // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
-  // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_aix_signal() might be invoked with junk info/ucVoid. To
-  // avoid unnecessary crash when libjsig is not preloaded, try handle signals
-  // that do not require siginfo/ucontext first.
-
-  if (sig == SIGPIPE) {
-    if (os::Aix::chained_handler(sig, info, ucVoid)) {
-      return 1;
-    } else {
-      // Ignoring SIGPIPE - see bugs 4229104
-      return 1;
-    }
-  }
-
-  JavaThread* thread = NULL;
-  VMThread* vmthread = NULL;
-  if (os::Aix::signal_handlers_are_installed) {
-    if (t != NULL) {
-      if(t->is_Java_thread()) {
-        thread = t->as_Java_thread();
-      }
-      else if(t->is_VM_thread()) {
-        vmthread = (VMThread *)t;
-      }
-    }
-  }
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
 
   // Decide if this trap can be handled by a stub.
   address stub = NULL;
 
   // retrieve program counter
-  address const pc = uc ? os::Aix::ucontext_get_pc(uc) : NULL;
+  address const pc = uc ? os::Posix::ucontext_get_pc(uc) : NULL;
 
   // retrieve crash address
   address const addr = info ? (const address) info->si_addr : NULL;
 
-  // SafeFetch 32 handling:
-  // - make it work if _thread is null
-  // - make it use the standard os::...::ucontext_get/set_pc APIs
-  if (uc) {
-    address const pc = os::Aix::ucontext_get_pc(uc);
-    if (pc && StubRoutines::is_safefetch_fault(pc)) {
-      os::Aix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
-  }
-
-  if (info == NULL || uc == NULL || thread == NULL && vmthread == NULL) {
-    goto run_chained_handler;
+  if (info == NULL || uc == NULL) {
+    return false; // Fatal error
   }
 
   // If we are a java thread...
@@ -266,54 +176,13 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV && thread->is_in_full_stack(addr)) {
       // stack overflow
-      //
-      // If we are in a yellow zone and we are inside java, we disable the yellow zone and
-      // throw a stack overflow exception.
-      // If we are in native code or VM C code, we report-and-die. The original coding tried
-      // to continue with yellow zone disabled, but that doesn't buy us much and prevents
-      // hs_err_pid files.
-      if (thread->in_stack_yellow_reserved_zone(addr)) {
-        if (thread->thread_state() == _thread_in_Java) {
-            if (thread->in_stack_reserved_zone(addr)) {
-              frame fr;
-              if (os::Aix::get_frame_at_stack_banging_point(thread, uc, &fr)) {
-                assert(fr.is_java_frame(), "Must be a Javac frame");
-                frame activation =
-                  SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
-                if (activation.sp() != NULL) {
-                  thread->disable_stack_reserved_zone();
-                  if (activation.is_interpreted_frame()) {
-                    thread->set_reserved_stack_activation((address)activation.fp());
-                  } else {
-                    thread->set_reserved_stack_activation((address)activation.unextended_sp());
-                  }
-                  return 1;
-                }
-              }
-            }
-          // Throw a stack overflow exception.
-          // Guard pages will be reenabled while unwinding the stack.
-          thread->disable_stack_yellow_reserved_zone();
-          stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
-          goto run_stub;
-        } else {
-          // Thread was in the vm or native code. Return and try to finish.
-          thread->disable_stack_yellow_reserved_zone();
-          return 1;
-        }
-      } else if (thread->in_stack_red_zone(addr)) {
-        // Fatal red zone violation. Disable the guard pages and fall through
-        // to handle_unexpected_exception way down below.
-        thread->disable_stack_red_zone();
-        tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
-        goto report_and_die;
+      if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
+        return true; // continue
+      } else if (stub != NULL) {
+        goto run_stub;
       } else {
-        // This means a segv happened inside our stack, but not in
-        // the guarded zone. I'd like to know when this happens,
-        tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
-        goto report_and_die;
+        return false; // Fatal error
       }
-
     } // end handle SIGSEGV inside stack boundaries
 
     if (thread->thread_state() == _thread_in_Java) {
@@ -351,17 +220,6 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
       //     If the compiler finds a store it uses it for a null check. Unfortunately this
       //     happens rarely.  In heap based and disjoint base compressd oop modes also loads
       //     are used for null checks.
-
-      // A VM-related SIGILL may only occur if we are not in the zero page.
-      // On AIX, we get a SIGILL if we jump to 0x0 or to somewhere else
-      // in the zero page, because it is filled with 0x0. We ignore
-      // explicit SIGILLs in the zero page.
-      if (sig == SIGILL && (pc < (address) 0x200)) {
-        if (TraceTraps) {
-          tty->print_raw_cr("SIGILL happened inside zero page.");
-        }
-        goto report_and_die;
-      }
 
       int stop_type = -1;
       // Handle signal from NativeJump::patch_verified_entry().
@@ -455,17 +313,20 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
           tty->print_cr("trap: %s: %s (SIGTRAP, stop type %d)", msg, detail_msg, stop_type);
         }
 
-        va_list detail_args;
-        VMError::report_and_die(INTERNAL_ERROR, msg, detail_msg, detail_args, thread,
-                                pc, info, ucVoid, NULL, 0, 0);
-        va_end(detail_args);
+        // End life with a fatal error, message and detail message and the context.
+        // Note: no need to do any post-processing here (e.g. signal chaining)
+        va_list va_dummy;
+        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
+        va_end(va_dummy);
+
+        ShouldNotReachHere();
       }
 
       else if (sig == SIGBUS) {
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        CompiledMethod* nm = cb->as_compiled_method_or_null();
+        CompiledMethod* nm = cb ? cb->as_compiled_method_or_null() : NULL;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
         if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
           address next_pc = pc + 4;
@@ -473,8 +334,8 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
             next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
           }
           next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
-          os::Aix::ucontext_set_pc(uc, next_pc);
-          return 1;
+          os::Posix::ucontext_set_pc(uc, next_pc);
+          return true;
         }
       }
     }
@@ -498,8 +359,8 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
           next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
         }
         next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
-        os::Aix::ucontext_set_pc(uc, next_pc);
-        return 1;
+        os::Posix::ucontext_set_pc(uc, next_pc);
+        return true;
       }
     }
 
@@ -520,33 +381,11 @@ run_stub:
   if (stub != NULL) {
     // Save all thread context in case we need to restore it.
     if (thread != NULL) thread->set_saved_exception_pc(pc);
-    os::Aix::ucontext_set_pc(uc, stub);
-    return 1;
+    os::Posix::ucontext_set_pc(uc, stub);
+    return true;
   }
 
-run_chained_handler:
-
-  // signal-chaining
-  if (os::Aix::chained_handler(sig, info, ucVoid)) {
-    return 1;
-  }
-  if (!abort_if_unrecognized) {
-    // caller wants another chance, so give it to him
-    return 0;
-  }
-
-report_and_die:
-
-  // Use sigthreadmask instead of sigprocmask on AIX and unmask current signal.
-  sigset_t newset;
-  sigemptyset(&newset);
-  sigaddset(&newset, sig);
-  sigthreadmask(SIG_UNBLOCK, &newset, NULL);
-
-  VMError::report_and_die(t, sig, pc, info, ucVoid);
-
-  ShouldNotReachHere();
-  return 0;
+  return false; // Fatal error
 }
 
 void os::Aix::init_thread_fpu_state(void) {
@@ -602,7 +441,7 @@ void os::print_context(outputStream *st, const void *context) {
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Aix::ucontext_get_pc(uc);
+  address pc = os::Posix::ucontext_get_pc(uc);
   print_instructions(st, pc, /*instrsize=*/4);
   st->cr();
 
@@ -652,4 +491,9 @@ int os::extra_bang_size_in_bytes() {
 bool os::platform_print_native_stack(outputStream* st, void* context, char *buf, int buf_size) {
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
+}
+
+// HAVE_FUNCTION_DESCRIPTORS
+void* os::resolve_function_descriptor(void* p) {
+  return ((const FunctionDescriptor*)p)->entry();
 }

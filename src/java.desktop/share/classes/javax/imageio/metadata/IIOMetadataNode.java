@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,30 @@
 
 package javax.imageio.metadata;
 
+import java.io.Serial;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.DOMException;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.TypeInfo;
 import org.w3c.dom.UserDataHandler;
 
-
+/**
+ * An {@code IIODOMException} is thrown by the {@code IIOMetadataNode} in
+ * "exceptional" circumstances.
+ */
 class IIODOMException extends DOMException {
+
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -4369510142067447468L;
 
     public IIODOMException(short code, String message) {
@@ -61,9 +69,7 @@ class IIONamedNodeMap implements NamedNodeMap {
     }
 
     public Node getNamedItem(String name) {
-        Iterator<? extends Node> iter = nodes.iterator();
-        while (iter.hasNext()) {
-            Node node = iter.next();
+        for (Node node : nodes) {
             if (name.equals(node.getNodeName())) {
                 return node;
             }

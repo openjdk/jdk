@@ -93,7 +93,7 @@ public class OrderResourcesPluginTest {
         {
             ResourcePoolManager out = new ResourcePoolManager();
             Map<String, String> config = new HashMap<>();
-            config.put(OrderResourcesPlugin.NAME, "/zazou/**,**/module-info.class");
+            config.put("order-resources", "/zazou/**,**/module-info.class");
             Plugin p = new OrderResourcesPlugin();
             p.configure(config);
             ResourcePool resPool = p.transform(resources.resourcePool(), out.resourcePoolBuilder());
@@ -116,7 +116,7 @@ public class OrderResourcesPluginTest {
 
             ResourcePoolManager out = new ResourcePoolManager();
             Map<String, String> config = new HashMap<>();
-            config.put(OrderResourcesPlugin.NAME, "@" + order.getAbsolutePath());
+            config.put("order-resources", "@" + order.getAbsolutePath());
             Plugin p = new OrderResourcesPlugin();
             p.configure(config);
             ResourcePool resPool = p.transform(resources.resourcePool(), out.resourcePoolBuilder());

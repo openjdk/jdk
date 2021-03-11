@@ -22,14 +22,11 @@
  */
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -57,7 +54,7 @@ import sun.security.timestamp.TimestampToken;
 
 /*
  * @test
- * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404 8247960
+ * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404 8247960 8242068
  * @summary checking response of timestamp
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
@@ -354,6 +351,26 @@ public class TimestampCheck {
                         .shouldContain("Algorithm constraints check failed on keysize")
                         .shouldHaveExitValue(4);
                 checkMultiple("sign2.jar");
+
+                // signed with everyone
+                signVerbose("normal", "unsigned.jar", "signall.jar", "signer",
+                        "-sigalg", "SHA3-256withRSA")
+                        .shouldHaveExitValue(0);
+                signVerbose("normal", "signall.jar", "signall.jar", "dsakey")
+                        .shouldHaveExitValue(0);
+                signVerbose("normal", "signall.jar", "signall.jar", "eckey")
+                        .shouldHaveExitValue(0);
+                signVerbose("normal", "signall.jar", "signall.jar", "psskey")
+                        .shouldHaveExitValue(0);
+                signVerbose("normal", "signall.jar", "signall.jar", "edkey")
+                        .shouldHaveExitValue(0);
+                verify("signall.jar", "-verbose")
+                        .shouldHaveExitValue(0)
+                        .shouldContain("Signature algorithm: SHA3-256withRSA")
+                        .shouldContain("Signature algorithm: RSASSA-PSS")
+                        .shouldContain("Signature algorithm: SHA256withECDSA")
+                        .shouldContain("Signature algorithm: Ed25519")
+                        .shouldContain("Signature algorithm: SHA256withDSA");
 
                 // Legacy algorithms
                 sign("tsweak", "-digestalg", "SHA1",
@@ -817,6 +834,9 @@ public class TimestampCheck {
         keytool("-alias signer -genkeypair -ext bc -dname CN=signer");
         keytool("-alias oldsigner -genkeypair -dname CN=oldsigner");
         keytool("-alias dsakey -genkeypair -keyalg DSA -dname CN=dsakey");
+        keytool("-alias eckey -genkeypair -keyalg EC -dname CN=eckey");
+        keytool("-alias psskey -genkeypair -keyalg RSASSA-PSS -dname CN=psskey");
+        keytool("-alias edkey -genkeypair -keyalg Ed25519 -dname CN=edkey");
         keytool("-alias weakkeysize -genkeypair -keysize 1024 -dname CN=weakkeysize");
         keytool("-alias disabledkeysize -genkeypair -keysize 512 -dname CN=disabledkeysize");
         keytool("-alias badku -genkeypair -dname CN=badku");
@@ -846,6 +866,9 @@ public class TimestampCheck {
         gencert("signer");
         gencert("oldsigner", "-startdate -30d -validity 20");
         gencert("dsakey");
+        gencert("eckey");
+        gencert("psskey");
+        gencert("edkey");
         gencert("weakkeysize");
         gencert("disabledkeysize");
         gencert("badku", "-ext ku:critical=keyAgreement");

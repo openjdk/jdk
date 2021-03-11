@@ -40,6 +40,11 @@ import javax.swing.plaf.*;
 public class BasicCheckBoxMenuItemUI extends BasicMenuItemUI {
 
     /**
+     * Constructs a {@code BasicCheckBoxMenuItemUI}.
+     */
+    public BasicCheckBoxMenuItemUI() {}
+
+    /**
      * Constructs a new instance of {@code BasicCheckBoxMenuItemUI}.
      *
      * @param c a component

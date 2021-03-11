@@ -275,6 +275,7 @@ public:
     /*
      * methods on this component
      */
+    virtual int GetScreenImOn();
     virtual void Show();
     virtual void Hide();
     virtual void Reshape(int x, int y, int w, int h);
@@ -755,9 +756,13 @@ protected:
     virtual void FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha);
 
     int ScaleUpX(int x);
+    int ScaleUpAbsX(int x);
     int ScaleUpY(int y);
+    int ScaleUpAbsY(int y);
     int ScaleDownX(int x);
+    int ScaleDownAbsX(int x);
     int ScaleDownY(int y);
+    int ScaleDownAbsY(int y);
 
 private:
     /* A bitmask keeps the button's numbers as MK_LBUTTON, MK_MBUTTON, MK_RBUTTON

@@ -92,13 +92,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="154">Europa del Norte</territory>
 			<territory type="155">Europa del Oeste</territory>
 			<territory type="AC">Isla Ascensión</territory>
+			<territory type="AX">Islas Åland</territory>
 			<territory type="BA">Bosnia-Herzegovina</territory>
 			<territory type="CD" alt="variant">Congo (República Democrática del Congo)</territory>
 			<territory type="CG">República del Congo</territory>
 			<territory type="CI">Costa de Marfil</territory>
 			<territory type="EZ">Eurozona</territory>
 			<territory type="GB" alt="short">R. U.</territory>
-			<territory type="GG">Guernesey</territory>
 			<territory type="IC">Islas Canarias</territory>
 			<territory type="QO">Islas Ultramarinas</territory>
 			<territory type="TA">Tristán da Cunha</territory>
@@ -360,6 +360,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="contributed">dom.</day>
+							<day type="mon" draft="contributed">lun.</day>
+							<day type="tue" draft="contributed">mar.</day>
+							<day type="wed" draft="contributed">mié.</day>
+							<day type="thu" draft="contributed">jue.</day>
+							<day type="fri" draft="contributed">vie.</day>
+							<day type="sat" draft="contributed">sáb.</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="contributed">D</day>
 							<day type="mon" draft="contributed">L</day>
@@ -389,28 +398,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">a.m.</dayPeriod>
-							<dayPeriod type="pm">p.m.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">a.m.</dayPeriod>
-							<dayPeriod type="pm">p.m.</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">a.m.</dayPeriod>
-							<dayPeriod type="pm">p.m.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">a.m.</dayPeriod>
-							<dayPeriod type="pm">p.m.</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -485,8 +472,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="MMMdd">dd-MMM</dateFormatItem>
 						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
-						<dateFormatItem id="yMMM">MMMM 'de' y</dateFormatItem>
-						<dateFormatItem id="yMMMd">d 'de' MMMM 'de' y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM 'de' y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d 'de' MMM 'de' y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d 'de' MMM 'de' y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ 'de' y</dateFormatItem>
 					</availableFormats>
@@ -860,9 +847,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="dayperiod-short">
 				<displayName>a.m./p.m.</displayName>
 			</field>
-			<field type="dayperiod">
-				<displayName>a.m./p.m.</displayName>
-			</field>
 			<field type="dayperiod-narrow">
 				<displayName>a.m./p.m.</displayName>
 			</field>
@@ -872,8 +856,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat type="standard">hora estándar de {0}</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
-					<standard>Hora Universal Coordinada</standard>
+					<standard>hora universal coordinada</standard>
 				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>ciudad desconocida</exemplarCity>
 			</zone>
 			<zone type="America/Nassau">
 				<exemplarCity>Nasáu</exemplarCity>
@@ -889,6 +876,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Canary">
 				<exemplarCity>Islas Canarias</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity>Guernsey</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
@@ -1007,9 +997,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">hora de la Isla Norfolk</generic>
-					<standard draft="contributed">hora estándar de la Isla Norfolk</standard>
-					<daylight draft="contributed">hora de verano de la Isla Norfolk</daylight>
+					<generic>hora de la Isla Norfolk</generic>
+					<standard>hora estándar de la Isla Norfolk</standard>
+					<daylight>hora de verano de la Isla Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pyongyang">
@@ -1033,6 +1023,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
+			<approximatelySign>~</approximatelySign>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
@@ -1095,12 +1086,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
+			<currency type="ANG">
+				<displayName>florín de las Antillas Neerlandesas</displayName>
+				<displayName count="one">florín de las Antillas Neerlandesas</displayName>
+				<displayName count="other">florines de las Antillas Neerlandesas</displayName>
+			</currency>
 			<currency type="BGN">
 				<displayName count="one">lev búlgaro</displayName>
 				<displayName count="other">leva búlgaros</displayName>
 			</currency>
-			<currency type="CAD">
-				<symbol>CAD</symbol>
+			<currency type="BMD">
+				<displayName>dólar de Bermudas</displayName>
+				<displayName count="one">dólar de Bermudas</displayName>
+				<displayName count="other">dólares de Bermudas</displayName>
 			</currency>
 			<currency type="EGP">
 				<symbol alt="narrow" draft="contributed">E£</symbol>
@@ -1115,6 +1113,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kwacha malauí</displayName>
 				<displayName count="one">kwacha malauí</displayName>
 				<displayName count="other">kwachas malauís</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>córdoba nicaragüense</displayName>
+				<displayName count="one">córdoba nicaragüense</displayName>
+				<displayName count="other">córdobas nicaragüenses</displayName>
 			</currency>
 			<currency type="SSP">
 				<symbol alt="narrow" draft="contributed">SD£</symbol>
@@ -1150,6 +1153,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<unit type="acceleration-g-force">
+				<displayName>fuerza G</displayName>
+				<unitPattern count="one">{0} unidad de fuerza gravitacional</unitPattern>
+				<unitPattern count="other">{0} unidades de fuerza gravitacional</unitPattern>
+			</unit>
 			<unit type="concentr-milligram-per-deciliter">
 				<displayName>mg/dL</displayName>
 			</unit>
@@ -1184,15 +1192,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-mile-scandinavian">
 				<displayName>milla escandinava</displayName>
 			</unit>
-			<unit type="mass-stone">
-				<displayName draft="contributed">stones</displayName>
-				<unitPattern count="one" draft="contributed">{0} stone</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} stones</unitPattern>
+			<unit type="mass-metric-ton">
+				<displayName>toneladas métricas</displayName>
+				<unitPattern count="one">{0} tonelada métrica</unitPattern>
+				<unitPattern count="other">{0} toneladas métricas</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>toneladas</displayName>
+				<unitPattern count="one">{0} tonelada</unitPattern>
+				<unitPattern count="other">{0} toneladas</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>caballos de fuerza</displayName>
 				<unitPattern count="one">caballo de fuerza</unitPattern>
 				<unitPattern count="other">{0} caballos de fuerza</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
 				<displayName>kelvins</displayName>
@@ -1245,6 +1262,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} dd.</unitPattern>
 				<perUnitPattern>{0}/d.</perUnitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>p</displayName>
+				<unitPattern count="one">{0} p</unitPattern>
+				<unitPattern count="other">{0} p</unitPattern>
+			</unit>
 			<unit type="length-yard">
 				<displayName>yardas</displayName>
 			</unit>
@@ -1280,28 +1302,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ton</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">stones</displayName>
+				<displayName>stones</displayName>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>ozt</displayName>
 				<unitPattern count="one">{0} ozt</unitPattern>
 				<unitPattern count="other">{0} ozt</unitPattern>
 			</unit>
-			<unit type="mass-carat">
-				<displayName>ct</displayName>
-				<unitPattern count="one">{0} ct</unitPattern>
-				<unitPattern count="other">{0} ct</unitPattern>
-			</unit>
 			<unit type="power-horsepower">
 				<displayName>hp</displayName>
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="volume-gallon-imperial">
-				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
-			</unit>
 			<unit type="volume-pint">
 				<displayName>pintas</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<unitPattern count="one">{0} tza.</unitPattern>
+				<unitPattern count="other">{0} tza.</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>cdas.</displayName>
@@ -1344,14 +1364,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}d.</unitPattern>
 				<unitPattern count="other">{0}dd.</unitPattern>
 				<perUnitPattern draft="contributed">{0}/d.</perUnitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<unitPattern count="one">{0}h</unitPattern>
-				<unitPattern count="other">{0}h</unitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<unitPattern count="one">{0}min</unitPattern>
-				<unitPattern count="other">{0}min</unitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName draft="contributed">parsec</displayName>
@@ -1473,15 +1485,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</characterLabels>
 	<typographicNames>
 		<axisName type="wdth">ancho</axisName>
-		<styleName type="wdth" subtype="100" draft="contributed">estándar</styleName>
-		<styleName type="wght" subtype="400" draft="contributed">normal</styleName>
-		<styleName type="wght" subtype="600" draft="contributed">seminegrita</styleName>
+		<styleName type="wdth" subtype="100">estándar</styleName>
+		<styleName type="wght" subtype="400">normal</styleName>
+		<styleName type="wght" subtype="600">seminegrita</styleName>
 		<styleName type="wght" subtype="600" alt="demi">seminegrita demi</styleName>
 		<styleName type="wght" subtype="800">extranegrita</styleName>
-		<styleName type="wght" subtype="800" alt="ultra">extra negrita</styleName>
-		<styleName type="wght" subtype="900" alt="heavy" draft="contributed">pesada</styleName>
-		<styleName type="wght" subtype="950" draft="contributed">extranegra</styleName>
-		<styleName type="wght" subtype="950" alt="ultrablack" draft="contributed">ultranegra</styleName>
-		<styleName type="wght" subtype="950" alt="ultraheavy" draft="contributed">ultrapesada</styleName>
+		<styleName type="wght" subtype="800" alt="ultra">ultranegrita</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">pesada</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ultrapesada</styleName>
 	</typographicNames>
 </ldml>

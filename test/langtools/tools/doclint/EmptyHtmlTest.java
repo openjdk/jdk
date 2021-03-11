@@ -26,7 +26,7 @@
  * @test
  * @bug 8246712
  * @summary doclint incorrectly reports some HTML elements as empty
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @library /tools/lib
  * @build toolbox.TestRunner toolbox.ToolBox
  * @run main EmptyHtmlTest
@@ -41,7 +41,7 @@ import java.util.List;
 
 import com.sun.source.doctree.DocTreeVisitor;
 import com.sun.source.doctree.InlineTagTree;
-import com.sun.tools.doclint.DocLint;
+import jdk.javadoc.internal.doclint.DocLint;
 import toolbox.TestRunner;
 import toolbox.ToolBox;
 
@@ -101,6 +101,9 @@ public class EmptyHtmlTest extends TestRunner {
 
             case "LiteralTree" ->
                     test(d, type, "{@literal abc}");
+
+            case "ReturnTree" ->
+                    test(d, type, "{@return abc}");
 
             case "SummaryTree" ->
                     test(d, type, "{@summary First sentence.}");

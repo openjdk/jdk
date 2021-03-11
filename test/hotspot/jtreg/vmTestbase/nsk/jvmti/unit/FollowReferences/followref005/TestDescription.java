@@ -37,10 +37,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.unit.FollowReferences.followref005
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:followref005=-waittime=5 -verbose"
+ * @build nsk.jvmti.unit.FollowReferences.followref005
+ * @run main/othervm/native
+ *      -agentlib:followref005=-waittime=5,-verbose
  *      nsk.jvmti.unit.FollowReferences.followref005
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_KLASS_HPP
 #define SHARE_OOPS_KLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/markWord.hpp"
@@ -67,6 +66,7 @@ const uint KLASS_ID_COUNT = 6;
 // Forward declarations.
 template <class T> class Array;
 template <class T> class GrowableArray;
+class ClassLoaderData;
 class fieldDescriptor;
 class klassVtable;
 class ModuleEntry;
@@ -176,14 +176,12 @@ private:
   // Flags of the current shared class.
   u2     _shared_class_flags;
   enum {
-    _has_raw_archived_mirror = 1,
-    _archived_lambda_proxy_is_available = 2
+    _archived_lambda_proxy_is_available = 2,
+    _has_value_based_class_annotation = 4
   };
 #endif
 
-  // The _archived_mirror is set at CDS dump time pointing to the cached mirror
-  // in the open archive heap region when archiving java object is supported.
-  CDS_JAVA_HEAP_ONLY(narrowOop _archived_mirror;)
+  CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
 
 protected:
 
@@ -262,9 +260,8 @@ protected:
   oop java_mirror_no_keepalive() const;
   void set_java_mirror(Handle m);
 
-  oop archived_java_mirror_raw() NOT_CDS_JAVA_HEAP_RETURN_(NULL); // no GC barrier
-  narrowOop archived_java_mirror_raw_narrow() NOT_CDS_JAVA_HEAP_RETURN_(0); // no GC barrier
-  void set_archived_java_mirror_raw(oop m) NOT_CDS_JAVA_HEAP_RETURN; // no GC barrier
+  oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  void set_archived_java_mirror(oop m) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Temporary mirror switch used by RedefineClasses
   void replace_java_mirror(oop mirror);
@@ -307,16 +304,12 @@ protected:
     _shared_class_path_index = index;
   };
 
-  void set_has_raw_archived_mirror() {
-    CDS_ONLY(_shared_class_flags |= _has_raw_archived_mirror;)
+  bool has_archived_mirror_index() const {
+    CDS_JAVA_HEAP_ONLY(return _archived_mirror_index >= 0;)
+    NOT_CDS_JAVA_HEAP(return false);
   }
-  void clear_has_raw_archived_mirror() {
-    CDS_ONLY(_shared_class_flags &= ~_has_raw_archived_mirror;)
-  }
-  bool has_raw_archived_mirror() const {
-    CDS_ONLY(return (_shared_class_flags & _has_raw_archived_mirror) != 0;)
-    NOT_CDS(return false;)
-  }
+
+  void clear_archived_mirror_index() NOT_CDS_JAVA_HEAP_RETURN;
 
   void set_lambda_proxy_is_available() {
     CDS_ONLY(_shared_class_flags |= _archived_lambda_proxy_is_available;)
@@ -328,6 +321,18 @@ protected:
     CDS_ONLY(return (_shared_class_flags & _archived_lambda_proxy_is_available) != 0;)
     NOT_CDS(return false;)
   }
+
+  void set_has_value_based_class_annotation() {
+    CDS_ONLY(_shared_class_flags |= _has_value_based_class_annotation;)
+  }
+  void clear_has_value_based_class_annotation() {
+    CDS_ONLY(_shared_class_flags &= ~_has_value_based_class_annotation;)
+  }
+  bool has_value_based_class_annotation() const {
+    CDS_ONLY(return (_shared_class_flags & _has_value_based_class_annotation) != 0;)
+    NOT_CDS(return false;)
+  }
+
 
   // Obtain the module or package for this class
   virtual ModuleEntry* module() const = 0;
@@ -503,11 +508,7 @@ protected:
 
   oop class_loader() const;
 
-  // This loads the klass's holder as a phantom. This is useful when a weak Klass
-  // pointer has been "peeked" and then must be kept alive before it may
-  // be used safely.  All uses of klass_holder need to apply the appropriate barriers,
-  // except during GC.
-  oop klass_holder() const { return class_loader_data()->holder_phantom(); }
+  inline oop klass_holder() const;
 
  protected:
   virtual Klass* array_klass_impl(bool or_null, int rank, TRAPS);
@@ -534,7 +535,7 @@ protected:
 
   bool is_unshareable_info_restored() const {
     assert(is_shared(), "use this for shared classes only");
-    if (has_raw_archived_mirror()) {
+    if (has_archived_mirror_index()) {
       // _java_mirror is not a valid OopHandle but rather an encoded reference in the shared heap
       return false;
     } else if (_java_mirror.ptr_raw() == NULL) {
@@ -630,10 +631,10 @@ protected:
   void set_is_shared()                  { _access_flags.set_is_shared_class(); }
   bool is_hidden() const                { return access_flags().is_hidden_class(); }
   void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
-  bool is_non_strong_hidden() const     { return access_flags().is_hidden_class() &&
-                                          class_loader_data()->has_class_mirror_holder(); }
-  bool is_box() const                   { return access_flags().is_box_class(); }
-  void set_is_box()                     { _access_flags.set_is_box_class(); }
+  bool is_value_based()                 { return _access_flags.is_value_based_class(); }
+  void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
+
+  inline bool is_non_strong_hidden() const;
 
   bool is_cloneable() const;
   void set_is_cloneable();
@@ -667,10 +668,7 @@ protected:
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
-  // Iff the class loader (or mirror for unsafe anonymous classes) is alive the
-  // Klass is considered alive. This is safe to call before the CLD is marked as
-  // unloading, and hence during concurrent class unloading.
-  bool is_loader_alive() const { return class_loader_data()->is_alive(); }
+  inline bool is_loader_alive() const;
 
   void clean_subklass();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
  */
 
 #include "jvm.h"
+#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/osThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "services/memTracker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
@@ -48,17 +51,16 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/types.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <utmpx.h>
 
-// Todo: provide a os::get_max_process_id() or similar. Number of processes
-// may have been configured, can be read more accurately from proc fs etc.
-#ifndef MAX_PID
-#define MAX_PID INT_MAX
+#ifdef __APPLE__
+  #include <crt_externs.h>
 #endif
-#define IS_VALID_PID(p) (p > 0 && p < MAX_PID)
 
 #define ROOT_UID 0
 
@@ -303,36 +305,18 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
-// so on posix, unmap the section at the start and at the end of the chunk that we mapped
-// rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
+static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
       "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
+  return extra_size;
+}
 
-  char* extra_base;
-  if (file_desc != -1) {
-    // For file mapping, we do not call os:reserve_memory(extra_size, NULL, alignment, file_desc) because
-    // we need to deal with shrinking of the file space later when we release extra memory after alignment.
-    // We also cannot called os:reserve_memory() with file_desc set to -1 because on aix we might get SHM memory.
-    // So here to call a helper function while reserve memory for us. After we have a aligned base,
-    // we will replace anonymous mapping with file mapping.
-    extra_base = reserve_mmapped_memory(extra_size, NULL);
-    if (extra_base != NULL) {
-      MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
-    }
-  } else {
-    extra_base = os::reserve_memory(extra_size, NULL, alignment);
-  }
-
-  if (extra_base == NULL) {
-    return NULL;
-  }
-
+// After a bigger chunk was mapped, unmaps start and end parts to get the requested alignment.
+static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, size_t extra_size) {
   // Do manual alignment
   char* aligned_base = align_up(extra_base, alignment);
 
@@ -354,28 +338,40 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       os::release_memory(extra_base + begin_offset + size, end_offset);
   }
 
-  if (file_desc != -1) {
-    // After we have an aligned address, we can replace anonymous mapping with file mapping
-    if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
-      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
-    }
-    MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
-  }
   return aligned_base;
 }
 
-// On Posix platforms, reservations are done using mmap which can be released in parts. So splitting is a no-op.
-void os::split_reserved_memory(char *base, size_t size, size_t split) {
-  char* const split_address = base + split;
-  assert(size > 0, "Sanity");
-  assert(size > split, "Sanity");
-  assert(split > 0, "Sanity");
-  assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
-  assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
+// Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
+// so on posix, unmap the section at the start and at the end of the chunk that we mapped
+// rather than unmapping and remapping the whole chunk to get requested alignment.
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+  size_t extra_size = calculate_aligned_extra_size(size, alignment);
+  char* extra_base = os::reserve_memory(extra_size, exec);
+  if (extra_base == NULL) {
+    return NULL;
+  }
+  return chop_extra_memory(size, alignment, extra_base, extra_size);
+}
 
-  // NMT: tell NMT to track both parts individually from now on.
-  MemTracker::record_virtual_memory_split_reserved(base, size, split);
-
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc) {
+  size_t extra_size = calculate_aligned_extra_size(size, alignment);
+  // For file mapping, we do not call os:map_memory_to_file(size,fd) since:
+  // - we later chop away parts of the mapping using os::release_memory and that could fail if the
+  //   original mmap call had been tied to an fd.
+  // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
+  //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
+  //   chopping off and unmapping excess bits back and front (see below) would not work.
+  char* extra_base = reserve_mmapped_memory(extra_size, NULL);
+  if (extra_base == NULL) {
+    return NULL;
+  }
+  char* aligned_base = chop_extra_memory(size, alignment, extra_base, extra_size);
+  // After we have an aligned address, we can replace anonymous mapping with file mapping
+  if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
+    vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+  }
+  MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
+  return aligned_base;
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
@@ -544,7 +540,7 @@ bool os::get_host_name(char* buf, size_t buflen) {
   return true;
 }
 
-bool os::has_allocatable_memory_limit(julong* limit) {
+bool os::has_allocatable_memory_limit(size_t* limit) {
   struct rlimit rlim;
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
   // if there was an error when calling getrlimit, assume that there is no limitation
@@ -553,7 +549,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   if ((getrlimit_res != 0) || (rlim.rlim_cur == RLIM_INFINITY)) {
     result = false;
   } else {
-    *limit = (julong)rlim.rlim_cur;
+    *limit = (size_t)rlim.rlim_cur;
     result = true;
   }
 #ifdef _LP64
@@ -562,7 +558,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   // arbitrary virtual space limit for 32 bit Unices found by testing. If
   // getrlimit above returned a limit, bound it with this limit. Otherwise
   // directly use it.
-  const julong max_virtual_limit = (julong)3800*M;
+  const size_t max_virtual_limit = 3800*M;
   if (result) {
     *limit = MIN2(*limit, max_virtual_limit);
   } else {
@@ -579,9 +575,9 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   // until the difference between these limits is "small".
 
   // the minimum amount of memory we care about allocating.
-  const julong min_allocation_size = M;
+  const size_t min_allocation_size = M;
 
-  julong upper_limit = *limit;
+  size_t upper_limit = *limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
@@ -592,9 +588,9 @@ bool os::has_allocatable_memory_limit(julong* limit) {
     *limit = min_allocation_size;
   } else {
     // perform the binary search.
-    julong lower_limit = min_allocation_size;
+    size_t lower_limit = min_allocation_size;
     while ((upper_limit - lower_limit) > min_allocation_size) {
-      julong temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
+      size_t temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
       temp_limit = align_down(temp_limit, min_allocation_size);
       if (is_allocatable(temp_limit)) {
         lower_limit = temp_limit;
@@ -704,603 +700,6 @@ void os::naked_short_sleep(jlong ms) {
   return;
 }
 
-static const struct {
-  int sig; const char* name;
-}
- g_signal_info[] =
-  {
-  {  SIGABRT,     "SIGABRT" },
-#ifdef SIGAIO
-  {  SIGAIO,      "SIGAIO" },
-#endif
-  {  SIGALRM,     "SIGALRM" },
-#ifdef SIGALRM1
-  {  SIGALRM1,    "SIGALRM1" },
-#endif
-  {  SIGBUS,      "SIGBUS" },
-#ifdef SIGCANCEL
-  {  SIGCANCEL,   "SIGCANCEL" },
-#endif
-  {  SIGCHLD,     "SIGCHLD" },
-#ifdef SIGCLD
-  {  SIGCLD,      "SIGCLD" },
-#endif
-  {  SIGCONT,     "SIGCONT" },
-#ifdef SIGCPUFAIL
-  {  SIGCPUFAIL,  "SIGCPUFAIL" },
-#endif
-#ifdef SIGDANGER
-  {  SIGDANGER,   "SIGDANGER" },
-#endif
-#ifdef SIGDIL
-  {  SIGDIL,      "SIGDIL" },
-#endif
-#ifdef SIGEMT
-  {  SIGEMT,      "SIGEMT" },
-#endif
-  {  SIGFPE,      "SIGFPE" },
-#ifdef SIGFREEZE
-  {  SIGFREEZE,   "SIGFREEZE" },
-#endif
-#ifdef SIGGFAULT
-  {  SIGGFAULT,   "SIGGFAULT" },
-#endif
-#ifdef SIGGRANT
-  {  SIGGRANT,    "SIGGRANT" },
-#endif
-  {  SIGHUP,      "SIGHUP" },
-  {  SIGILL,      "SIGILL" },
-#ifdef SIGINFO
-  {  SIGINFO,     "SIGINFO" },
-#endif
-  {  SIGINT,      "SIGINT" },
-#ifdef SIGIO
-  {  SIGIO,       "SIGIO" },
-#endif
-#ifdef SIGIOINT
-  {  SIGIOINT,    "SIGIOINT" },
-#endif
-#ifdef SIGIOT
-// SIGIOT is there for BSD compatibility, but on most Unices just a
-// synonym for SIGABRT. The result should be "SIGABRT", not
-// "SIGIOT".
-#if (SIGIOT != SIGABRT )
-  {  SIGIOT,      "SIGIOT" },
-#endif
-#endif
-#ifdef SIGKAP
-  {  SIGKAP,      "SIGKAP" },
-#endif
-  {  SIGKILL,     "SIGKILL" },
-#ifdef SIGLOST
-  {  SIGLOST,     "SIGLOST" },
-#endif
-#ifdef SIGLWP
-  {  SIGLWP,      "SIGLWP" },
-#endif
-#ifdef SIGLWPTIMER
-  {  SIGLWPTIMER, "SIGLWPTIMER" },
-#endif
-#ifdef SIGMIGRATE
-  {  SIGMIGRATE,  "SIGMIGRATE" },
-#endif
-#ifdef SIGMSG
-  {  SIGMSG,      "SIGMSG" },
-#endif
-  {  SIGPIPE,     "SIGPIPE" },
-#ifdef SIGPOLL
-  {  SIGPOLL,     "SIGPOLL" },
-#endif
-#ifdef SIGPRE
-  {  SIGPRE,      "SIGPRE" },
-#endif
-  {  SIGPROF,     "SIGPROF" },
-#ifdef SIGPTY
-  {  SIGPTY,      "SIGPTY" },
-#endif
-#ifdef SIGPWR
-  {  SIGPWR,      "SIGPWR" },
-#endif
-  {  SIGQUIT,     "SIGQUIT" },
-#ifdef SIGRECONFIG
-  {  SIGRECONFIG, "SIGRECONFIG" },
-#endif
-#ifdef SIGRECOVERY
-  {  SIGRECOVERY, "SIGRECOVERY" },
-#endif
-#ifdef SIGRESERVE
-  {  SIGRESERVE,  "SIGRESERVE" },
-#endif
-#ifdef SIGRETRACT
-  {  SIGRETRACT,  "SIGRETRACT" },
-#endif
-#ifdef SIGSAK
-  {  SIGSAK,      "SIGSAK" },
-#endif
-  {  SIGSEGV,     "SIGSEGV" },
-#ifdef SIGSOUND
-  {  SIGSOUND,    "SIGSOUND" },
-#endif
-#ifdef SIGSTKFLT
-  {  SIGSTKFLT,    "SIGSTKFLT" },
-#endif
-  {  SIGSTOP,     "SIGSTOP" },
-  {  SIGSYS,      "SIGSYS" },
-#ifdef SIGSYSERROR
-  {  SIGSYSERROR, "SIGSYSERROR" },
-#endif
-#ifdef SIGTALRM
-  {  SIGTALRM,    "SIGTALRM" },
-#endif
-  {  SIGTERM,     "SIGTERM" },
-#ifdef SIGTHAW
-  {  SIGTHAW,     "SIGTHAW" },
-#endif
-  {  SIGTRAP,     "SIGTRAP" },
-#ifdef SIGTSTP
-  {  SIGTSTP,     "SIGTSTP" },
-#endif
-  {  SIGTTIN,     "SIGTTIN" },
-  {  SIGTTOU,     "SIGTTOU" },
-#ifdef SIGURG
-  {  SIGURG,      "SIGURG" },
-#endif
-  {  SIGUSR1,     "SIGUSR1" },
-  {  SIGUSR2,     "SIGUSR2" },
-#ifdef SIGVIRT
-  {  SIGVIRT,     "SIGVIRT" },
-#endif
-  {  SIGVTALRM,   "SIGVTALRM" },
-#ifdef SIGWAITING
-  {  SIGWAITING,  "SIGWAITING" },
-#endif
-#ifdef SIGWINCH
-  {  SIGWINCH,    "SIGWINCH" },
-#endif
-#ifdef SIGWINDOW
-  {  SIGWINDOW,   "SIGWINDOW" },
-#endif
-  {  SIGXCPU,     "SIGXCPU" },
-  {  SIGXFSZ,     "SIGXFSZ" },
-#ifdef SIGXRES
-  {  SIGXRES,     "SIGXRES" },
-#endif
-  { -1, NULL }
-};
-
-// Returned string is a constant. For unknown signals "UNKNOWN" is returned.
-const char* os::Posix::get_signal_name(int sig, char* out, size_t outlen) {
-
-  const char* ret = NULL;
-
-#ifdef SIGRTMIN
-  if (sig >= SIGRTMIN && sig <= SIGRTMAX) {
-    if (sig == SIGRTMIN) {
-      ret = "SIGRTMIN";
-    } else if (sig == SIGRTMAX) {
-      ret = "SIGRTMAX";
-    } else {
-      jio_snprintf(out, outlen, "SIGRTMIN+%d", sig - SIGRTMIN);
-      return out;
-    }
-  }
-#endif
-
-  if (sig > 0) {
-    for (int idx = 0; g_signal_info[idx].sig != -1; idx ++) {
-      if (g_signal_info[idx].sig == sig) {
-        ret = g_signal_info[idx].name;
-        break;
-      }
-    }
-  }
-
-  if (!ret) {
-    if (!is_valid_signal(sig)) {
-      ret = "INVALID";
-    } else {
-      ret = "UNKNOWN";
-    }
-  }
-
-  if (out && outlen > 0) {
-    strncpy(out, ret, outlen);
-    out[outlen - 1] = '\0';
-  }
-  return out;
-}
-
-int os::Posix::get_signal_number(const char* signal_name) {
-  char tmp[30];
-  const char* s = signal_name;
-  if (s[0] != 'S' || s[1] != 'I' || s[2] != 'G') {
-    jio_snprintf(tmp, sizeof(tmp), "SIG%s", signal_name);
-    s = tmp;
-  }
-  for (int idx = 0; g_signal_info[idx].sig != -1; idx ++) {
-    if (strcmp(g_signal_info[idx].name, s) == 0) {
-      return g_signal_info[idx].sig;
-    }
-  }
-  return -1;
-}
-
-int os::get_signal_number(const char* signal_name) {
-  return os::Posix::get_signal_number(signal_name);
-}
-
-// Returns true if signal number is valid.
-bool os::Posix::is_valid_signal(int sig) {
-  // MacOS not really POSIX compliant: sigaddset does not return
-  // an error for invalid signal numbers. However, MacOS does not
-  // support real time signals and simply seems to have just 33
-  // signals with no holes in the signal range.
-#ifdef __APPLE__
-  return sig >= 1 && sig < NSIG;
-#else
-  // Use sigaddset to check for signal validity.
-  sigset_t set;
-  sigemptyset(&set);
-  if (sigaddset(&set, sig) == -1 && errno == EINVAL) {
-    return false;
-  }
-  return true;
-#endif
-}
-
-bool os::Posix::is_sig_ignored(int sig) {
-  struct sigaction oact;
-  sigaction(sig, (struct sigaction*)NULL, &oact);
-  void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oact.sa_sigaction)
-                                 : CAST_FROM_FN_PTR(void*,  oact.sa_handler);
-  if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN)) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// Returns:
-// NULL for an invalid signal number
-// "SIG<num>" for a valid but unknown signal number
-// signal name otherwise.
-const char* os::exception_name(int sig, char* buf, size_t size) {
-  if (!os::Posix::is_valid_signal(sig)) {
-    return NULL;
-  }
-  const char* const name = os::Posix::get_signal_name(sig, buf, size);
-  if (strcmp(name, "UNKNOWN") == 0) {
-    jio_snprintf(buf, size, "SIG%d", sig);
-  }
-  return buf;
-}
-
-#define NUM_IMPORTANT_SIGS 32
-// Returns one-line short description of a signal set in a user provided buffer.
-const char* os::Posix::describe_signal_set_short(const sigset_t* set, char* buffer, size_t buf_size) {
-  assert(buf_size == (NUM_IMPORTANT_SIGS + 1), "wrong buffer size");
-  // Note: for shortness, just print out the first 32. That should
-  // cover most of the useful ones, apart from realtime signals.
-  for (int sig = 1; sig <= NUM_IMPORTANT_SIGS; sig++) {
-    const int rc = sigismember(set, sig);
-    if (rc == -1 && errno == EINVAL) {
-      buffer[sig-1] = '?';
-    } else {
-      buffer[sig-1] = rc == 0 ? '0' : '1';
-    }
-  }
-  buffer[NUM_IMPORTANT_SIGS] = 0;
-  return buffer;
-}
-
-// Prints one-line description of a signal set.
-void os::Posix::print_signal_set_short(outputStream* st, const sigset_t* set) {
-  char buf[NUM_IMPORTANT_SIGS + 1];
-  os::Posix::describe_signal_set_short(set, buf, sizeof(buf));
-  st->print("%s", buf);
-}
-
-// Writes one-line description of a combination of sigaction.sa_flags into a user
-// provided buffer. Returns that buffer.
-const char* os::Posix::describe_sa_flags(int flags, char* buffer, size_t size) {
-  char* p = buffer;
-  size_t remaining = size;
-  bool first = true;
-  int idx = 0;
-
-  assert(buffer, "invalid argument");
-
-  if (size == 0) {
-    return buffer;
-  }
-
-  strncpy(buffer, "none", size);
-
-  const struct {
-    // NB: i is an unsigned int here because SA_RESETHAND is on some
-    // systems 0x80000000, which is implicitly unsigned.  Assignining
-    // it to an int field would be an overflow in unsigned-to-signed
-    // conversion.
-    unsigned int i;
-    const char* s;
-  } flaginfo [] = {
-    { SA_NOCLDSTOP, "SA_NOCLDSTOP" },
-    { SA_ONSTACK,   "SA_ONSTACK"   },
-    { SA_RESETHAND, "SA_RESETHAND" },
-    { SA_RESTART,   "SA_RESTART"   },
-    { SA_SIGINFO,   "SA_SIGINFO"   },
-    { SA_NOCLDWAIT, "SA_NOCLDWAIT" },
-    { SA_NODEFER,   "SA_NODEFER"   },
-#ifdef AIX
-    { SA_ONSTACK,   "SA_ONSTACK"   },
-    { SA_OLDSTYLE,  "SA_OLDSTYLE"  },
-#endif
-    { 0, NULL }
-  };
-
-  for (idx = 0; flaginfo[idx].s && remaining > 1; idx++) {
-    if (flags & flaginfo[idx].i) {
-      if (first) {
-        jio_snprintf(p, remaining, "%s", flaginfo[idx].s);
-        first = false;
-      } else {
-        jio_snprintf(p, remaining, "|%s", flaginfo[idx].s);
-      }
-      const size_t len = strlen(p);
-      p += len;
-      remaining -= len;
-    }
-  }
-
-  buffer[size - 1] = '\0';
-
-  return buffer;
-}
-
-// Prints one-line description of a combination of sigaction.sa_flags.
-void os::Posix::print_sa_flags(outputStream* st, int flags) {
-  char buffer[0x100];
-  os::Posix::describe_sa_flags(flags, buffer, sizeof(buffer));
-  st->print("%s", buffer);
-}
-
-// Helper function for os::Posix::print_siginfo_...():
-// return a textual description for signal code.
-struct enum_sigcode_desc_t {
-  const char* s_name;
-  const char* s_desc;
-};
-
-static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t* out) {
-
-  const struct {
-    int sig; int code; const char* s_code; const char* s_desc;
-  } t1 [] = {
-    { SIGILL,  ILL_ILLOPC,   "ILL_ILLOPC",   "Illegal opcode." },
-    { SIGILL,  ILL_ILLOPN,   "ILL_ILLOPN",   "Illegal operand." },
-    { SIGILL,  ILL_ILLADR,   "ILL_ILLADR",   "Illegal addressing mode." },
-    { SIGILL,  ILL_ILLTRP,   "ILL_ILLTRP",   "Illegal trap." },
-    { SIGILL,  ILL_PRVOPC,   "ILL_PRVOPC",   "Privileged opcode." },
-    { SIGILL,  ILL_PRVREG,   "ILL_PRVREG",   "Privileged register." },
-    { SIGILL,  ILL_COPROC,   "ILL_COPROC",   "Coprocessor error." },
-    { SIGILL,  ILL_BADSTK,   "ILL_BADSTK",   "Internal stack error." },
-#if defined(IA64) && defined(LINUX)
-    { SIGILL,  ILL_BADIADDR, "ILL_BADIADDR", "Unimplemented instruction address" },
-    { SIGILL,  ILL_BREAK,    "ILL_BREAK",    "Application Break instruction" },
-#endif
-    { SIGFPE,  FPE_INTDIV,   "FPE_INTDIV",   "Integer divide by zero." },
-    { SIGFPE,  FPE_INTOVF,   "FPE_INTOVF",   "Integer overflow." },
-    { SIGFPE,  FPE_FLTDIV,   "FPE_FLTDIV",   "Floating-point divide by zero." },
-    { SIGFPE,  FPE_FLTOVF,   "FPE_FLTOVF",   "Floating-point overflow." },
-    { SIGFPE,  FPE_FLTUND,   "FPE_FLTUND",   "Floating-point underflow." },
-    { SIGFPE,  FPE_FLTRES,   "FPE_FLTRES",   "Floating-point inexact result." },
-    { SIGFPE,  FPE_FLTINV,   "FPE_FLTINV",   "Invalid floating-point operation." },
-    { SIGFPE,  FPE_FLTSUB,   "FPE_FLTSUB",   "Subscript out of range." },
-    { SIGSEGV, SEGV_MAPERR,  "SEGV_MAPERR",  "Address not mapped to object." },
-    { SIGSEGV, SEGV_ACCERR,  "SEGV_ACCERR",  "Invalid permissions for mapped object." },
-#ifdef AIX
-    // no explanation found what keyerr would be
-    { SIGSEGV, SEGV_KEYERR,  "SEGV_KEYERR",  "key error" },
-#endif
-#if defined(IA64) && !defined(AIX)
-    { SIGSEGV, SEGV_PSTKOVF, "SEGV_PSTKOVF", "Paragraph stack overflow" },
-#endif
-    { SIGBUS,  BUS_ADRALN,   "BUS_ADRALN",   "Invalid address alignment." },
-    { SIGBUS,  BUS_ADRERR,   "BUS_ADRERR",   "Nonexistent physical address." },
-    { SIGBUS,  BUS_OBJERR,   "BUS_OBJERR",   "Object-specific hardware error." },
-    { SIGTRAP, TRAP_BRKPT,   "TRAP_BRKPT",   "Process breakpoint." },
-    { SIGTRAP, TRAP_TRACE,   "TRAP_TRACE",   "Process trace trap." },
-    { SIGCHLD, CLD_EXITED,   "CLD_EXITED",   "Child has exited." },
-    { SIGCHLD, CLD_KILLED,   "CLD_KILLED",   "Child has terminated abnormally and did not create a core file." },
-    { SIGCHLD, CLD_DUMPED,   "CLD_DUMPED",   "Child has terminated abnormally and created a core file." },
-    { SIGCHLD, CLD_TRAPPED,  "CLD_TRAPPED",  "Traced child has trapped." },
-    { SIGCHLD, CLD_STOPPED,  "CLD_STOPPED",  "Child has stopped." },
-    { SIGCHLD, CLD_CONTINUED,"CLD_CONTINUED","Stopped child has continued." },
-#ifdef SIGPOLL
-    { SIGPOLL, POLL_OUT,     "POLL_OUT",     "Output buffers available." },
-    { SIGPOLL, POLL_MSG,     "POLL_MSG",     "Input message available." },
-    { SIGPOLL, POLL_ERR,     "POLL_ERR",     "I/O error." },
-    { SIGPOLL, POLL_PRI,     "POLL_PRI",     "High priority input available." },
-    { SIGPOLL, POLL_HUP,     "POLL_HUP",     "Device disconnected. [Option End]" },
-#endif
-    { -1, -1, NULL, NULL }
-  };
-
-  // Codes valid in any signal context.
-  const struct {
-    int code; const char* s_code; const char* s_desc;
-  } t2 [] = {
-    { SI_USER,      "SI_USER",     "Signal sent by kill()." },
-    { SI_QUEUE,     "SI_QUEUE",    "Signal sent by the sigqueue()." },
-    { SI_TIMER,     "SI_TIMER",    "Signal generated by expiration of a timer set by timer_settime()." },
-    { SI_ASYNCIO,   "SI_ASYNCIO",  "Signal generated by completion of an asynchronous I/O request." },
-    { SI_MESGQ,     "SI_MESGQ",    "Signal generated by arrival of a message on an empty message queue." },
-    // Linux specific
-#ifdef SI_TKILL
-    { SI_TKILL,     "SI_TKILL",    "Signal sent by tkill (pthread_kill)" },
-#endif
-#ifdef SI_DETHREAD
-    { SI_DETHREAD,  "SI_DETHREAD", "Signal sent by execve() killing subsidiary threads" },
-#endif
-#ifdef SI_KERNEL
-    { SI_KERNEL,    "SI_KERNEL",   "Signal sent by kernel." },
-#endif
-#ifdef SI_SIGIO
-    { SI_SIGIO,     "SI_SIGIO",    "Signal sent by queued SIGIO" },
-#endif
-
-#ifdef AIX
-    { SI_UNDEFINED, "SI_UNDEFINED","siginfo contains partial information" },
-    { SI_EMPTY,     "SI_EMPTY",    "siginfo contains no useful information" },
-#endif
-
-#ifdef __sun
-    { SI_NOINFO,    "SI_NOINFO",   "No signal information" },
-    { SI_RCTL,      "SI_RCTL",     "kernel generated signal via rctl action" },
-    { SI_LWP,       "SI_LWP",      "Signal sent via lwp_kill" },
-#endif
-
-    { -1, NULL, NULL }
-  };
-
-  const char* s_code = NULL;
-  const char* s_desc = NULL;
-
-  for (int i = 0; t1[i].sig != -1; i ++) {
-    if (t1[i].sig == si->si_signo && t1[i].code == si->si_code) {
-      s_code = t1[i].s_code;
-      s_desc = t1[i].s_desc;
-      break;
-    }
-  }
-
-  if (s_code == NULL) {
-    for (int i = 0; t2[i].s_code != NULL; i ++) {
-      if (t2[i].code == si->si_code) {
-        s_code = t2[i].s_code;
-        s_desc = t2[i].s_desc;
-      }
-    }
-  }
-
-  if (s_code == NULL) {
-    out->s_name = "unknown";
-    out->s_desc = "unknown";
-    return false;
-  }
-
-  out->s_name = s_code;
-  out->s_desc = s_desc;
-
-  return true;
-}
-
-bool os::signal_sent_by_kill(const void* siginfo) {
-  const siginfo_t* const si = (const siginfo_t*)siginfo;
-  return si->si_code == SI_USER || si->si_code == SI_QUEUE
-#ifdef SI_TKILL
-         || si->si_code == SI_TKILL
-#endif
-  ;
-}
-
-void os::print_siginfo(outputStream* os, const void* si0) {
-
-  const siginfo_t* const si = (const siginfo_t*) si0;
-
-  char buf[20];
-  os->print("siginfo:");
-
-  if (!si) {
-    os->print(" <null>");
-    return;
-  }
-
-  const int sig = si->si_signo;
-
-  os->print(" si_signo: %d (%s)", sig, os::Posix::get_signal_name(sig, buf, sizeof(buf)));
-
-  enum_sigcode_desc_t ed;
-  get_signal_code_description(si, &ed);
-  os->print(", si_code: %d (%s)", si->si_code, ed.s_name);
-
-  if (si->si_errno) {
-    os->print(", si_errno: %d", si->si_errno);
-  }
-
-  // Output additional information depending on the signal code.
-
-  // Note: Many implementations lump si_addr, si_pid, si_uid etc. together as unions,
-  // so it depends on the context which member to use. For synchronous error signals,
-  // we print si_addr, unless the signal was sent by another process or thread, in
-  // which case we print out pid or tid of the sender.
-  if (signal_sent_by_kill(si)) {
-    const pid_t pid = si->si_pid;
-    os->print(", si_pid: %ld", (long) pid);
-    if (IS_VALID_PID(pid)) {
-      const pid_t me = getpid();
-      if (me == pid) {
-        os->print(" (current process)");
-      }
-    } else {
-      os->print(" (invalid)");
-    }
-    os->print(", si_uid: %ld", (long) si->si_uid);
-    if (sig == SIGCHLD) {
-      os->print(", si_status: %d", si->si_status);
-    }
-  } else if (sig == SIGSEGV || sig == SIGBUS || sig == SIGILL ||
-             sig == SIGTRAP || sig == SIGFPE) {
-    os->print(", si_addr: " PTR_FORMAT, p2i(si->si_addr));
-#ifdef SIGPOLL
-  } else if (sig == SIGPOLL) {
-    os->print(", si_band: %ld", si->si_band);
-#endif
-  }
-
-}
-
-bool os::signal_thread(Thread* thread, int sig, const char* reason) {
-  OSThread* osthread = thread->osthread();
-  if (osthread) {
-    int status = pthread_kill(osthread->pthread_id(), sig);
-    if (status == 0) {
-      Events::log(Thread::current(), "sent signal %d to Thread " INTPTR_FORMAT " because %s.",
-                  sig, p2i(thread), reason);
-      return true;
-    }
-  }
-  return false;
-}
-
-int os::Posix::unblock_thread_signal_mask(const sigset_t *set) {
-  return pthread_sigmask(SIG_UNBLOCK, set, NULL);
-}
-
-address os::Posix::ucontext_get_pc(const ucontext_t* ctx) {
-#if defined(AIX)
-   return Aix::ucontext_get_pc(ctx);
-#elif defined(BSD)
-   return Bsd::ucontext_get_pc(ctx);
-#elif defined(LINUX)
-   return Linux::ucontext_get_pc(ctx);
-#else
-   VMError::report_and_die("unimplemented ucontext_get_pc");
-#endif
-}
-
-void os::Posix::ucontext_set_pc(ucontext_t* ctx, address pc) {
-#if defined(AIX)
-   Aix::ucontext_set_pc(ctx, pc);
-#elif defined(BSD)
-   Bsd::ucontext_set_pc(ctx, pc);
-#elif defined(LINUX)
-   Linux::ucontext_set_pc(ctx, pc);
-#else
-   VMError::report_and_die("unimplemented ucontext_get_pc");
-#endif
-}
-
 char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr) {
   size_t stack_size = 0;
   size_t guard_size = 0;
@@ -1403,8 +802,8 @@ jint os::Posix::set_minimum_stack_sizes() {
   size_t os_min_stack_allowed = PTHREAD_STACK_MIN;
 
   _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
-                                   JavaThread::stack_guard_zone_size() +
-                                   JavaThread::stack_shadow_zone_size();
+                                   StackOverflow::stack_guard_zone_size() +
+                                   StackOverflow::stack_shadow_zone_size();
 
   _java_thread_min_stack_allowed = align_up(_java_thread_min_stack_allowed, vm_page_size());
   _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, os_min_stack_allowed);
@@ -1427,8 +826,8 @@ jint os::Posix::set_minimum_stack_sizes() {
 
   // Reminder: a compiler thread is a Java thread.
   _compiler_thread_min_stack_allowed = _compiler_thread_min_stack_allowed +
-                                       JavaThread::stack_guard_zone_size() +
-                                       JavaThread::stack_shadow_zone_size();
+                                       StackOverflow::stack_guard_zone_size() +
+                                       StackOverflow::stack_shadow_zone_size();
 
   _compiler_thread_min_stack_allowed = align_up(_compiler_thread_min_stack_allowed, vm_page_size());
   _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, os_min_stack_allowed);
@@ -1510,6 +909,123 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
   return stack_size;
 }
 
+#ifndef ZERO
+#ifndef ARM
+static bool get_frame_at_stack_banging_point(JavaThread* thread, address pc, const void* ucVoid, frame* fr) {
+  if (Interpreter::contains(pc)) {
+    // interpreter performs stack banging after the fixed frame header has
+    // been generated while the compilers perform it before. To maintain
+    // semantic consistency between interpreted and compiled frames, the
+    // method returns the Java sender of the current frame.
+    *fr = os::fetch_frame_from_context(ucVoid);
+    if (!fr->is_first_java_frame()) {
+      // get_frame_at_stack_banging_point() is only called when we
+      // have well defined stacks so java_sender() calls do not need
+      // to assert safe_for_sender() first.
+      *fr = fr->java_sender();
+    }
+  } else {
+    // more complex code with compiled code
+    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+      // Not sure where the pc points to, fallback to default
+      // stack overflow handling
+      return false;
+    } else {
+      // in compiled code, the stack banging is performed just after the return pc
+      // has been pushed on the stack
+      *fr = os::fetch_compiled_frame_from_context(ucVoid);
+      if (!fr->is_java_frame()) {
+        assert(!fr->is_first_frame(), "Safety check");
+        // See java_sender() comment above.
+        *fr = fr->java_sender();
+      }
+    }
+  }
+  assert(fr->is_java_frame(), "Safety check");
+  return true;
+}
+#endif // ARM
+
+// This return true if the signal handler should just continue, ie. return after calling this
+bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address pc,
+                                      const void* ucVoid, address* stub) {
+  // stack overflow
+  StackOverflow* overflow_state = thread->stack_overflow_state();
+  if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+    if (thread->thread_state() == _thread_in_Java) {
+#ifndef ARM
+      // arm32 doesn't have this
+      if (overflow_state->in_stack_reserved_zone(addr)) {
+        frame fr;
+        if (get_frame_at_stack_banging_point(thread, pc, ucVoid, &fr)) {
+          assert(fr.is_java_frame(), "Must be a Java frame");
+          frame activation =
+            SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+          if (activation.sp() != NULL) {
+            overflow_state->disable_stack_reserved_zone();
+            if (activation.is_interpreted_frame()) {
+              overflow_state->set_reserved_stack_activation((address)(activation.fp()
+                // Some platforms use frame pointers for interpreter frames, others use initial sp.
+#if !defined(PPC64) && !defined(S390)
+                + frame::interpreter_frame_initial_sp_offset
+#endif
+                ));
+            } else {
+              overflow_state->set_reserved_stack_activation((address)activation.unextended_sp());
+            }
+            return true; // just continue
+          }
+        }
+      }
+#endif // ARM
+      // Throw a stack overflow exception.  Guard pages will be reenabled
+      // while unwinding the stack.
+      overflow_state->disable_stack_yellow_reserved_zone();
+      *stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
+    } else {
+      // Thread was in the vm or native code.  Return and try to finish.
+      overflow_state->disable_stack_yellow_reserved_zone();
+      return true; // just continue
+    }
+  } else if (overflow_state->in_stack_red_zone(addr)) {
+    // Fatal red zone violation.  Disable the guard pages and fall through
+    // to handle_unexpected_exception way down below.
+    overflow_state->disable_stack_red_zone();
+    tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
+
+    // This is a likely cause, but hard to verify. Let's just print
+    // it as a hint.
+    tty->print_raw_cr("Please check if any of your loaded .so files has "
+                      "enabled executable stack (see man page execstack(8))");
+
+  } else {
+#if !defined(AIX) && !defined(__APPLE__)
+    // bsd and aix don't have this
+
+    // Accessing stack address below sp may cause SEGV if current
+    // thread has MAP_GROWSDOWN stack. This should only happen when
+    // current thread was created by user code with MAP_GROWSDOWN flag
+    // and then attached to VM. See notes in os_linux.cpp.
+    if (thread->osthread()->expanding_stack() == 0) {
+       thread->osthread()->set_expanding_stack();
+       if (os::Linux::manually_expand_stack(thread, addr)) {
+         thread->osthread()->clear_expanding_stack();
+         return true; // just continue
+       }
+       thread->osthread()->clear_expanding_stack();
+    } else {
+       fatal("recursive segv. expanding stack.");
+    }
+#else
+    tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
+#endif // AIX or BSD
+  }
+  return false;
+}
+#endif // ZERO
+
 bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
 }
@@ -1524,9 +1040,10 @@ bool os::Posix::matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid) {
 
 Thread* os::ThreadCrashProtection::_protected_thread = NULL;
 os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-volatile intptr_t os::ThreadCrashProtection::_crash_mux = 0;
 
 os::ThreadCrashProtection::ThreadCrashProtection() {
+  _protected_thread = Thread::current();
+  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
 }
 
 /*
@@ -1537,11 +1054,6 @@ os::ThreadCrashProtection::ThreadCrashProtection() {
  */
 bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   sigset_t saved_sig_mask;
-
-  Thread::muxAcquire(&_crash_mux, "CrashProtection");
-
-  _protected_thread = Thread::current_or_null();
-  assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
 
   // we cannot rely on sigsetjmp/siglongjmp to save/restore the signal mask
   // since on at least some systems (OS X) siglongjmp will restore the mask
@@ -1555,14 +1067,12 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
     // and clear the crash protection
     _crash_protection = NULL;
     _protected_thread = NULL;
-    Thread::muxRelease(&_crash_mux);
     return true;
   }
   // this happens when we siglongjmp() back
   pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
   _crash_protection = NULL;
   _protected_thread = NULL;
-  Thread::muxRelease(&_crash_mux);
   return false;
 }
 
@@ -1613,39 +1123,6 @@ static void pthread_init_common(void) {
   os::PlatformMutex::init();
 }
 
-sigset_t sigs;
-struct sigaction sigact[NSIG];
-
-struct sigaction* os::Posix::get_preinstalled_handler(int sig) {
-  if (sigismember(&sigs, sig)) {
-    return &sigact[sig];
-  }
-  return NULL;
-}
-
-void os::Posix::save_preinstalled_handler(int sig, struct sigaction& oldAct) {
-  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
-  sigact[sig] = oldAct;
-  sigaddset(&sigs, sig);
-}
-
-// Not all POSIX types and API's are available on all notionally "posix"
-// platforms. If we have build-time support then we will check for actual
-// runtime support via dlopen/dlsym lookup. This allows for running on an
-// older OS version compared to the build platform. But if there is no
-// build time support then there cannot be any runtime support as we do not
-// know what the runtime types would be (for example clockid_t might be an
-// int or int64_t).
-//
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
-// This means we have clockid_t, clock_gettime et al and CLOCK_MONOTONIC
-
-int (*os::Posix::_clock_gettime)(clockid_t, struct timespec *) = NULL;
-int (*os::Posix::_clock_getres)(clockid_t, struct timespec *) = NULL;
-
-bool os::Posix::_supports_monotonic_clock = false;
-
 static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
 
 static bool _use_clock_monotonic_condattr = false;
@@ -1657,44 +1134,7 @@ void os::Posix::init(void) {
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
 
-  // 1. Check for CLOCK_MONOTONIC support.
-
-  void* handle = NULL;
-
-  // For older linux we need librt, for other OS we can find
-  // this function in regular libc.
-#ifdef NEEDS_LIBRT
-  // We do dlopen's in this particular order due to bug in linux
-  // dynamic loader (see 6348968) leading to crash on exit.
-  handle = dlopen("librt.so.1", RTLD_LAZY);
-  if (handle == NULL) {
-    handle = dlopen("librt.so", RTLD_LAZY);
-  }
-#endif
-
-  if (handle == NULL) {
-    handle = RTLD_DEFAULT;
-  }
-
-  int (*clock_getres_func)(clockid_t, struct timespec*) =
-    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_getres");
-  int (*clock_gettime_func)(clockid_t, struct timespec*) =
-    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_gettime");
-  if (clock_getres_func != NULL && clock_gettime_func != NULL) {
-    _clock_gettime = clock_gettime_func;
-    _clock_getres = clock_getres_func;
-    // We assume that if both clock_gettime and clock_getres support
-    // CLOCK_MONOTONIC then the OS provides true high-res monotonic clock.
-    struct timespec res;
-    struct timespec tp;
-    if (clock_getres_func(CLOCK_MONOTONIC, &res) == 0 &&
-        clock_gettime_func(CLOCK_MONOTONIC, &tp) == 0) {
-      // Yes, monotonic clock is supported.
-      _supports_monotonic_clock = true;
-    }
-  }
-
-  // 2. Check for pthread_condattr_setclock support.
+  // Check for pthread_condattr_setclock support.
 
   // libpthread is already loaded.
   int (*condattr_setclock_func)(pthread_condattr_t*, clockid_t) =
@@ -1709,7 +1149,7 @@ void os::Posix::init(void) {
   pthread_init_common();
 
   int status;
-  if (_pthread_condattr_setclock != NULL && _clock_gettime != NULL) {
+  if (_pthread_condattr_setclock != NULL) {
     if ((status = _pthread_condattr_setclock(_condAttr, CLOCK_MONOTONIC)) != 0) {
       if (status == EINVAL) {
         _use_clock_monotonic_condattr = false;
@@ -1725,29 +1165,12 @@ void os::Posix::init(void) {
 }
 
 void os::Posix::init_2(void) {
-  log_info(os)("Use of CLOCK_MONOTONIC is%s supported",
-               (_clock_gettime != NULL ? "" : " not"));
+  log_info(os)("Use of CLOCK_MONOTONIC is supported");
   log_info(os)("Use of pthread_condattr_setclock is%s supported",
                (_pthread_condattr_setclock != NULL ? "" : " not"));
   log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with %s",
                _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
-  sigemptyset(&sigs);
 }
-
-#else // !SUPPORTS_CLOCK_MONOTONIC
-
-void os::Posix::init(void) {
-  pthread_init_common();
-}
-
-void os::Posix::init_2(void) {
-  log_info(os)("Use of CLOCK_MONOTONIC is not supported");
-  log_info(os)("Use of pthread_condattr_setclock is not supported");
-  log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with the default clock");
-  sigemptyset(&sigs);
-}
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
 
 // Utility to convert the given timeout to an absolute timespec
 // (based on the appropriate clock) to use with pthread_cond_timewait,
@@ -1800,7 +1223,6 @@ static void calc_rel_time(timespec* abstime, jlong timeout, jlong now_sec,
 
 // Unpack the given deadline in milliseconds since the epoch, into the given timespec.
 // The current time in seconds is also passed in to enforce an upper bound as discussed above.
-// This is only used with gettimeofday, when clock_gettime is not available.
 static void unpack_abs_time(timespec* abstime, jlong deadline, jlong now_sec) {
   time_t max_secs = now_sec + MAX_SECS;
 
@@ -1835,38 +1257,21 @@ static void to_abstime(timespec* abstime, jlong timeout,
     timeout = 0;
   }
 
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
   clockid_t clock = CLOCK_MONOTONIC;
-  // need to ensure we have a runtime check for clock_gettime support
-  if (!isAbsolute && os::Posix::supports_monotonic_clock()) {
-    if (!_use_clock_monotonic_condattr || isRealtime) {
-      clock = CLOCK_REALTIME;
-    }
-    struct timespec now;
-    int status = os::Posix::clock_gettime(clock, &now);
-    assert_status(status == 0, status, "clock_gettime");
-    calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
-    DEBUG_ONLY(max_secs += now.tv_sec;)
-  } else {
-
-#else
-
-  { // Match the block scope.
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
-
-    // Time-of-day clock is all we can reliably use.
-    struct timeval now;
-    int status = gettimeofday(&now, NULL);
-    assert_status(status == 0, errno, "gettimeofday");
-    if (isAbsolute) {
-      unpack_abs_time(abstime, timeout, now.tv_sec);
-    } else {
-      calc_rel_time(abstime, timeout, now.tv_sec, now.tv_usec, MICROUNITS);
-    }
-    DEBUG_ONLY(max_secs += now.tv_sec;)
+  if (isAbsolute || (!_use_clock_monotonic_condattr || isRealtime)) {
+    clock = CLOCK_REALTIME;
   }
+
+  struct timespec now;
+  int status = clock_gettime(clock, &now);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+
+  if (!isAbsolute) {
+    calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
+  } else {
+    unpack_abs_time(abstime, timeout, now.tv_sec);
+  }
+  DEBUG_ONLY(max_secs += now.tv_sec;)
 
   assert(abstime->tv_sec >= 0, "tv_sec < 0");
   assert(abstime->tv_sec <= max_secs, "tv_sec > max_secs");
@@ -1881,6 +1286,51 @@ void os::Posix::to_RTC_abstime(timespec* abstime, int64_t millis) {
              false /* not absolute */,
              true  /* use real-time clock */);
 }
+
+// Common (partly) shared time functions
+
+jlong os::javaTimeMillis() {
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  return jlong(ts.tv_sec) * MILLIUNITS +
+    jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
+}
+
+void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  seconds = jlong(ts.tv_sec);
+  nanos = jlong(ts.tv_nsec);
+}
+
+// macOS and AIX have platform specific implementations for javaTimeNanos()
+// using native clock/timer access APIs. These have historically worked well
+// for those platforms, but it may be possible for them to switch to the
+// generic clock_gettime mechanism in the future.
+#if !defined(__APPLE__) && !defined(AIX)
+
+jlong os::javaTimeNanos() {
+  struct timespec tp;
+  int status = clock_gettime(CLOCK_MONOTONIC, &tp);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  jlong result = jlong(tp.tv_sec) * NANOSECS_PER_SEC + jlong(tp.tv_nsec);
+  return result;
+}
+
+// for timer info max values which include all bits
+#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
+
+void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
+  // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
+  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
+  info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
+  info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
+}
+
+#endif // ! APPLE && !AIX
 
 // Shared pthread_mutex/cond based PlatformEvent implementation.
 // Not currently usable by Solaris.
@@ -2022,7 +1472,7 @@ void os::PlatformEvent::unpark() {
   // shake out uses of park() and unpark() without checking state conditions
   // properly. This spurious return doesn't manifest itself in any user code
   // but only in the correctly written condition checking loops of ObjectMonitor,
-  // Mutex/Monitor, Thread::muxAcquire and JavaThread::sleep
+  // Mutex/Monitor, and JavaThread::sleep
 
   if (Atomic::xchg(&_event, 1) >= 0) return;
 
@@ -2049,15 +1499,22 @@ void os::PlatformEvent::unpark() {
 
 // JSR166 support
 
- os::PlatformParker::PlatformParker() {
-  int status;
-  status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
+ os::PlatformParker::PlatformParker() : _counter(0), _cur_index(-1) {
+  int status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
   assert_status(status == 0, status, "cond_init rel");
   status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
   assert_status(status == 0, status, "cond_init abs");
   status = pthread_mutex_init(_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
-  _cur_index = -1; // mark as unused
+}
+
+os::PlatformParker::~PlatformParker() {
+  int status = pthread_cond_destroy(&_cond[REL_INDEX]);
+  assert_status(status == 0, status, "cond_destroy rel");
+  status = pthread_cond_destroy(&_cond[ABS_INDEX]);
+  assert_status(status == 0, status, "cond_destroy abs");
+  status = pthread_mutex_destroy(_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
 }
 
 // Parker::park decrements count if > 0, else does a condvar wait.  Unpark
@@ -2312,5 +1769,77 @@ int os::PlatformMonitor::wait(jlong millis) {
     assert_status(status == 0 MACOS_ONLY(|| status == ETIMEDOUT),
                   status, "cond_wait");
     return OS_OK;
+  }
+}
+
+// Darwin has no "environ" in a dynamic library.
+#ifdef __APPLE__
+  #define environ (*_NSGetEnviron())
+#else
+  extern char** environ;
+#endif
+
+char** os::get_environ() { return environ; }
+
+// Run the specified command in a separate process. Return its exit value,
+// or -1 on failure (e.g. can't fork a new process).
+// Notes: -Unlike system(), this function can be called from signal handler. It
+//         doesn't block SIGINT et al.
+//        -this function is unsafe to use in non-error situations, mainly
+//         because the child process will inherit all parent descriptors.
+int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
+  const char * argv[4] = {"sh", "-c", cmd, NULL};
+
+  pid_t pid ;
+
+  char** env = os::get_environ();
+
+  // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
+  // Otherwise leave it up to the caller.
+  AIX_ONLY(prefer_vfork = true;)
+  pid = prefer_vfork ? ::vfork() : ::fork();
+
+  if (pid < 0) {
+    // fork failed
+    return -1;
+
+  } else if (pid == 0) {
+    // child process
+
+    ::execve("/bin/sh", (char* const*)argv, env);
+
+    // execve failed
+    ::_exit(-1);
+
+  } else  {
+    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
+    // care about the actual exit code, for now.
+
+    int status;
+
+    // Wait for the child process to exit.  This returns immediately if
+    // the child has already exited. */
+    while (::waitpid(pid, &status, 0) < 0) {
+      switch (errno) {
+      case ECHILD: return 0;
+      case EINTR: break;
+      default: return -1;
+      }
+    }
+
+    if (WIFEXITED(status)) {
+      // The child exited normally; get its exit code.
+      return WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+      // The child exited because of a signal
+      // The best value to return is 0x80 + signal number,
+      // because that is what all Unix shells do, and because
+      // it allows callers to distinguish between process exit and
+      // process death by signal.
+      return 0x80 + WTERMSIG(status);
+    } else {
+      // Unknown exit code; pass it through
+      return status;
+    }
   }
 }

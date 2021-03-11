@@ -44,12 +44,16 @@ public class TestGetField {
         EventType type = EventType.getEventType(MyEvent.class);
 
         ValueDescriptor v = type.getField("myByte");
-        Asserts.assertNotNull(v, "getFiled(myByte) was null");
+        Asserts.assertNotNull(v, "getField(myByte) was null");
         Asserts.assertEquals(v.getTypeName(), "byte", "myByte was not type byte");
 
         v = type.getField("myInt");
-        Asserts.assertNotNull(v, "getFiled(myInt) was null");
+        Asserts.assertNotNull(v, "getField(myInt) was null");
         Asserts.assertEquals(v.getTypeName(), "int", "myInt was not type int");
+
+        v = type.getField("eventThread.group.name");
+        Asserts.assertNotNull(v, "getField(eventThread.group.name) was null");
+        Asserts.assertEquals(v.getTypeName(), "java.lang.String", "eventThread.group.name was not type java.lang.String");
 
         v = type.getField("myStatic");
         Asserts.assertNull(v, "got static field");
@@ -59,6 +63,7 @@ public class TestGetField {
 
         v = type.getField("");
         Asserts.assertNull(v, "got field for empty name");
+
 
         try {
             v = type.getField(null);

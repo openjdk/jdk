@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.record.cannot.declare.instance.fields
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
 
 record R(int i) {
     private final int y = 0;

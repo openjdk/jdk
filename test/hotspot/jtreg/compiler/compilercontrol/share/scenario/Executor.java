@@ -85,7 +85,7 @@ public class Executor {
         vmOptions.add(execClass);
         OutputAnalyzer output;
         try (ServerSocket serverSocket = new ServerSocket(0)) {
-            if (isValid) {
+            {
                 // Get port test VM will connect to
                 int port = serverSocket.getLocalPort();
                 if (port == -1) {
@@ -150,7 +150,11 @@ public class Executor {
                 pw.println();
             }
         } catch (IOException e) {
-            throw new Error("Failed to write data: " + e.getMessage(), e);
+            // hotspot process may exit because of invalid directives,
+            // suppress the IOException of closed socket.
+            if (!e.getMessage().equals("Socket closed")) {
+              throw new Error("Failed to write data: " + e.getMessage(), e);
+            }
         }
     }
 

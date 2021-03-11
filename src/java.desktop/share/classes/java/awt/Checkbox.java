@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.peer.CheckboxPeer;
-import java.awt.event.*;
-import java.util.EventListener;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import javax.accessibility.*;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.util.EventListener;
 
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.accessibility.AccessibleValue;
 
 /**
  * A check box is a graphical component that can be in either an
@@ -115,9 +124,10 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     private static final String base = "checkbox";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 7270714317450821763L;
 
     /**
@@ -602,8 +612,8 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     /* Serialization support.
      */
 
-    /*
-     * Serialized data version
+    /**
+     * Serialized data version.
      * @serial
      */
     private int checkboxSerializedDataVersion = 1;
@@ -615,7 +625,8 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * {@code ItemListeners} are detected and
      * no attempt is made to serialize them.
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData {@code null} terminated sequence of 0
      *   or more pairs; the pair consists of a {@code String}
      *   and an {@code Object}; the {@code String} indicates
@@ -627,6 +638,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @see java.awt.Component#itemListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws java.io.IOException
     {
@@ -642,16 +654,19 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * item events fired by the {@code Checkbox}.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the {@code ObjectInputStream} to read
-     * @exception HeadlessException if
-     *   {@code GraphicsEnvironment.isHeadless} returns
-     *   {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @serial
      * @see #removeItemListener(ItemListener)
      * @see #addItemListener(ItemListener)
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -707,9 +722,10 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     protected class AccessibleAWTCheckbox extends AccessibleAWTComponent
         implements ItemListener, AccessibleAction, AccessibleValue
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 7881579233144754107L;
 
         /**

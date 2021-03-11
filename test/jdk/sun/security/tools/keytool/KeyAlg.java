@@ -41,10 +41,6 @@ public class KeyAlg {
         keytool("-printcert -file user.crt")
                 .shouldMatch("Signature algorithm name:.*SHA1withECDSA")
                 .shouldMatch("Subject Public Key Algorithm:.*1024.*RSA");
-        keytool("-genkeypair -alias e -dname CN=e " +
-                "-J-Djdk.sunec.disableNative=false -keyalg EC " +
-                        "-groupname brainpoolP256r1")
-                .shouldContain("Generating 256 bit EC (brainpoolP256r1) key pair");
         keytool("-genkeypair -alias f -dname CN=f -keyalg EC")
                 .shouldContain("Generating 256 bit EC (secp256r1) key pair");
         keytool("-genkeypair -alias g -dname CN=g -keyalg EC -keysize 384")

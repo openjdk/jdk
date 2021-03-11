@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key stress randomness
  * @bug 8235332 8248226
  * @summary Test cloning with more than 8 (=ArrayCopyLoadStoreMaxElem) fields with StressGCM
  * @library /

@@ -37,7 +37,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.AttachingConnector.attach.attach004.TestDriver
- * @run driver PropertyResolvingWrapper
+ * @run driver
  *      nsk.jdi.AttachingConnector.attach.attach004.TestDriver
  *      ${os.family}-${os.simpleArch} dt_shmem y
  *      -waitVMStartEvent

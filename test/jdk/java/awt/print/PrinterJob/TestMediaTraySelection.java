@@ -21,9 +21,9 @@
  * questions.
  */
 /*
- * @bug 6357887 8165146
+ * @bug 6357887 8165146 8234393
  * @summary  Verifies if selected printertray is used
- * @requires os.family == "linux"
+ * @requires (os.family == "linux" | os.family == "mac")
  * @run main/manual TestMediaTraySelection
  */
 

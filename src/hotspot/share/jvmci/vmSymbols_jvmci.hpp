@@ -92,6 +92,7 @@
   template(jdk_vm_ci_code_site_DataSectionReference,              "jdk/vm/ci/code/site/DataSectionReference")                             \
   template(jdk_vm_ci_code_site_ExceptionHandler,                  "jdk/vm/ci/code/site/ExceptionHandler")                                 \
   template(jdk_vm_ci_code_site_Mark,                              "jdk/vm/ci/code/site/Mark")                                             \
+  template(jdk_vm_ci_code_site_ImplicitExceptionDispatch,         "jdk/vm/ci/code/site/ImplicitExceptionDispatch")                        \
   template(jdk_vm_ci_code_site_Infopoint,                         "jdk/vm/ci/code/site/Infopoint")                                        \
   template(jdk_vm_ci_code_stack_InspectedFrameVisitor,            "jdk/vm/ci/code/stack/InspectedFrameVisitor")                           \
   template(jdk_vm_ci_code_site_Site,                              "jdk/vm/ci/code/site/Site")                                             \
@@ -102,6 +103,7 @@
   template(visitFrame_signature,                                  "(Ljdk/vm/ci/code/stack/InspectedFrame;)Ljava/lang/Object;")            \
   template(compileMethod_name,                                    "compileMethod")                                                        \
   template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)Ljdk/vm/ci/hotspot/HotSpotCompilationRequestResult;") \
+  template(isGCSupported_name,                                    "isGCSupported")                                                        \
   template(encodeThrowable_name,                                  "encodeThrowable")                                                      \
   template(encodeThrowable_signature,                             "(Ljava/lang/Throwable;)Ljava/lang/String;")                            \
   template(decodeThrowable_name,                                  "decodeThrowable")                                                      \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,8 @@ import org.netbeans.jemmy.drivers.FocusDriver;
 import org.netbeans.jemmy.drivers.KeyDriver;
 import org.netbeans.jemmy.drivers.MouseDriver;
 
+import javax.accessibility.AccessibleContext;
+
 /**
  * Root class for all component operators.
  *
@@ -121,6 +123,20 @@ public class ComponentOperator extends Operator
      * @see #getDump
      */
     public static final String NAME_DPROP = "Name:";
+
+    /**
+     * Identifier for a name property.
+     *
+     * @see #getDump
+     */
+    public static final String ACCESSIBLE_NAME_DPROP = "Accessible name:";
+
+    /**
+     * Identifier for a name property.
+     *
+     * @see #getDump
+     */
+    public static final String ACCESSIBLE_DESCRIPTION_DPROP = "Accessible description:";
 
     /**
      * Identifier for a visible property.
@@ -1222,7 +1238,7 @@ public class ComponentOperator extends Operator
     /**
      * Wait till the component reaches exact location on screen.
      *
-     * @param exactLocation exact expected screen location.
+     * @param exactlocation exact expected screen location.
      */
     public void waitComponentLocationOnScreen(Point exactlocation) {
         waitComponentLocationOnScreen(exactlocation, exactlocation);
@@ -1269,6 +1285,15 @@ public class ComponentOperator extends Operator
         Hashtable<String, Object> result = super.getDump();
         if (getSource().getName() != null) {
             result.put(NAME_DPROP, getSource().getName());
+        }
+        AccessibleContext context = source.getAccessibleContext();
+        if(context != null) {
+            if(context.getAccessibleName() != null) {
+                result.put(ACCESSIBLE_NAME_DPROP, context.getAccessibleName());
+            }
+            if(context.getAccessibleDescription() != null) {
+                result.put(ACCESSIBLE_DESCRIPTION_DPROP, context.getAccessibleDescription());
+            }
         }
         result.put(IS_VISIBLE_DPROP, getSource().isVisible() ? "true" : "false");
         result.put(IS_SHOWING_DPROP, getSource().isShowing() ? "true" : "false");

@@ -56,8 +56,8 @@ public class ExcludeModuleInfoTest {
 
     public void check(String s, String sample) throws Exception {
         Map<String, String> prop = new HashMap<>();
-        prop.put(ExcludePlugin.NAME, s);
         ExcludePlugin excludePlugin = new ExcludePlugin();
+        prop.put(excludePlugin.getName(), s);
         excludePlugin.configure(prop);
         ResourcePoolManager resourcesMgr = new ResourcePoolManager();
         ResourcePoolEntry resource = ResourcePoolEntry.create(sample, new byte[0]);

@@ -27,8 +27,9 @@ package jdk.jfr.internal.instrument;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
-
 import jdk.jfr.events.Handlers;
 import jdk.jfr.internal.handlers.EventHandler;
 
@@ -40,8 +41,6 @@ final class SocketChannelImplInstrumentor {
 
     private SocketChannelImplInstrumentor() {
     }
-
-    private InetSocketAddress remoteAddress;
 
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
@@ -58,16 +57,28 @@ final class SocketChannelImplInstrumentor {
         } finally {
             long duration = EventHandler.timestamp() - start;
             if (handler.shouldCommit(duration))  {
-                String hostString  = remoteAddress.getAddress().toString();
-                int delimiterIndex = hostString.lastIndexOf('/');
+                SocketAddress remoteAddress = getRemoteAddress();
+                if (remoteAddress instanceof InetSocketAddress) {
+                    InetSocketAddress isa = (InetSocketAddress) remoteAddress;
+                    String hostString  = isa.getAddress().toString();
+                    int delimiterIndex = hostString.lastIndexOf('/');
 
-                String host = hostString.substring(0, delimiterIndex);
-                String address = hostString.substring(delimiterIndex + 1);
-                int port = remoteAddress.getPort();
-                if (bytesRead < 0) {
-                    handler.write(start, duration, host, address, port, 0, 0L, true);
+                    String host = hostString.substring(0, delimiterIndex);
+                    String address = hostString.substring(delimiterIndex + 1);
+                    int port = isa.getPort();
+                    if (bytesRead < 0) {
+                        handler.write(start, duration, host, address, port, 0, 0L, true);
+                    } else {
+                        handler.write(start, duration, host, address, port, 0, bytesRead, false);
+                    }
                 } else {
-                    handler.write(start, duration, host, address, port, 0, bytesRead, false);
+                    UnixDomainSocketAddress udsa = (UnixDomainSocketAddress) remoteAddress;
+                    String path = "[" + udsa.getPath().toString() + "]";
+                    if (bytesRead < 0) {
+                        handler.write(start, duration, "Unix domain socket", path, 0, 0, 0L, true);
+                    } else {
+                        handler.write(start, duration, "Unix domain socket", path, 0, 0, bytesRead, false);
+                    }
                 }
             }
         }
@@ -81,7 +92,6 @@ final class SocketChannelImplInstrumentor {
         if (!handler.isEnabled()) {
             return read(dsts, offset, length);
         }
-
         long bytesRead = 0;
         long start = 0;
         try {
@@ -90,16 +100,28 @@ final class SocketChannelImplInstrumentor {
         } finally {
             long duration = EventHandler.timestamp() - start;
             if (handler.shouldCommit(duration)) {
-                String hostString  = remoteAddress.getAddress().toString();
-                int delimiterIndex = hostString.lastIndexOf('/');
+                SocketAddress remoteAddress = getRemoteAddress();
+                if (remoteAddress instanceof InetSocketAddress) {
+                    InetSocketAddress isa = (InetSocketAddress) remoteAddress;
+                    String hostString  = isa.getAddress().toString();
+                    int delimiterIndex = hostString.lastIndexOf('/');
 
-                String host = hostString.substring(0, delimiterIndex);
-                String address = hostString.substring(delimiterIndex + 1);
-                int port = remoteAddress.getPort();
-                if (bytesRead < 0) {
-                    handler.write(start, duration, host, address, port, 0, 0L, true);
+                    String host = hostString.substring(0, delimiterIndex);
+                    String address = hostString.substring(delimiterIndex + 1);
+                    int port = isa.getPort();
+                    if (bytesRead < 0) {
+                        handler.write(start, duration, host, address, port, 0, 0L, true);
+                    } else {
+                        handler.write(start, duration, host, address, port, 0, bytesRead, false);
+                    }
                 } else {
-                    handler.write(start, duration, host, address, port, 0, bytesRead, false);
+                    UnixDomainSocketAddress udsa = (UnixDomainSocketAddress) remoteAddress;
+                    String path = "[" + udsa.getPath().toString() + "]";
+                    if (bytesRead < 0) {
+                        handler.write(start, duration, "Unix domain socket", path, 0, 0, 0L, true);
+                    } else {
+                        handler.write(start, duration, "Unix domain socket", path, 0, 0, bytesRead, false);
+                    }
                 }
             }
         }
@@ -121,17 +143,30 @@ final class SocketChannelImplInstrumentor {
         } finally {
             long duration = EventHandler.timestamp() - start;
             if (handler.shouldCommit(duration)) {
-                String hostString  = remoteAddress.getAddress().toString();
-                int delimiterIndex = hostString.lastIndexOf('/');
-
-                String host = hostString.substring(0, delimiterIndex);
-                String address = hostString.substring(delimiterIndex + 1);
-                int port = remoteAddress.getPort();
                 long bytes = bytesWritten < 0 ? 0 : bytesWritten;
-                handler.write(start, duration, host, address, port, bytes);
+                SocketAddress remoteAddress = getRemoteAddress();
+                if (remoteAddress instanceof InetSocketAddress) {
+                    InetSocketAddress isa = (InetSocketAddress) remoteAddress;
+                    String hostString  = isa.getAddress().toString();
+                    int delimiterIndex = hostString.lastIndexOf('/');
+
+                    String host = hostString.substring(0, delimiterIndex);
+                    String address = hostString.substring(delimiterIndex + 1);
+                    int port = isa.getPort();
+                    handler.write(start, duration, host, address, port, bytes);
+                } else {
+                    UnixDomainSocketAddress udsa = (UnixDomainSocketAddress) remoteAddress;
+                    String path = "[" + udsa.getPath().toString() + "]";
+                    handler.write(start, duration, "Unix domain socket", path, 0, bytes);
+                }
             }
         }
         return bytesWritten;
+    }
+
+    public SocketAddress getRemoteAddress() throws IOException {
+        // gets replaced by call to instrumented class
+        return null;
     }
 
     @SuppressWarnings("deprecation")
@@ -149,14 +184,22 @@ final class SocketChannelImplInstrumentor {
         } finally {
             long duration = EventHandler.timestamp() - start;
             if (handler.shouldCommit(duration)) {
-                String hostString  = remoteAddress.getAddress().toString();
-                int delimiterIndex = hostString.lastIndexOf('/');
-
-                String host = hostString.substring(0, delimiterIndex);
-                String address = hostString.substring(delimiterIndex + 1);
-                int port = remoteAddress.getPort();
                 long bytes = bytesWritten < 0 ? 0 : bytesWritten;
-                handler.write(start, duration, host, address, port, bytes);
+                SocketAddress remoteAddress = getRemoteAddress();
+                if (remoteAddress instanceof InetSocketAddress) {
+                    InetSocketAddress isa = (InetSocketAddress) remoteAddress;
+                    String hostString  = isa.getAddress().toString();
+                    int delimiterIndex = hostString.lastIndexOf('/');
+
+                    String host = hostString.substring(0, delimiterIndex);
+                    String address = hostString.substring(delimiterIndex + 1);
+                    int port = isa.getPort();
+                    handler.write(start, duration, host, address, port, bytes);
+                } else {
+                    UnixDomainSocketAddress udsa = (UnixDomainSocketAddress) remoteAddress;
+                    String path = "[" + udsa.getPath().toString() + "]";
+                    handler.write(start, duration, "Unix domain socket", path, 0, bytes);
+                }
             }
         }
         return bytesWritten;

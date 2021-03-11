@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 extern "C" {
 
 static jvmtiEnv* gJvmti = NULL;
-static volatile jboolean gGotEvent = JNI_FALSE;
+static volatile jint gEventFlags = 0;
 
 void JNICALL
 resourceExhausted(jvmtiEnv *jvmti_env,
@@ -46,19 +46,19 @@ resourceExhausted(jvmtiEnv *jvmti_env,
     if (flags & JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR) NSK_DISPLAY0("Agent:    JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR\n");
     if (flags & JVMTI_RESOURCE_EXHAUSTED_JAVA_HEAP) NSK_DISPLAY0("Agent:    JVMTI_RESOURCE_EXHAUSTED_JAVA_HEAP\n");
     if (flags & JVMTI_RESOURCE_EXHAUSTED_THREADS)   NSK_DISPLAY0("Agent:    JVMTI_RESOURCE_EXHAUSTED_THREADS\n");
-    gGotEvent = JNI_TRUE;
+    gEventFlags = flags;
 }
 
-JNIEXPORT jboolean JNICALL
-Java_nsk_jvmti_ResourceExhausted_Helper_gotExhaustedEvent(JNIEnv* env, jclass cls)
+JNIEXPORT jint JNICALL
+Java_nsk_jvmti_ResourceExhausted_Helper_getExhaustedEventFlags(JNIEnv* env, jclass cls)
 {
-    return gGotEvent;
+    return gEventFlags;
 }
 
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_ResourceExhausted_Helper_resetExhaustedEvent(JNIEnv* env, jclass cls)
 {
-    gGotEvent = JNI_FALSE;
+    gEventFlags = 0;
 }
 
 #ifdef STATIC_BUILD

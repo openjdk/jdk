@@ -48,7 +48,7 @@ public class TestZoneInfo310 {
         String TESTDIR = System.getProperty("test.dir", ".");
         Path tzdir = Paths.get(System.getProperty("test.root"),
             "..", "..", "make", "data", "tzdata");
-        String tzfiles = "africa antarctica asia australasia europe northamerica pacificnew southamerica backward etcetera systemv gmt";
+        String tzfiles = "africa antarctica asia australasia europe northamerica southamerica backward etcetera gmt";
         Path jdk_tzdir = Paths.get(System.getProperty("test.src"), "tzdata_jdk");
         String jdk_tzfiles = "jdk11_backward";
         String zidir = TESTDIR + File.separator + "zi";
@@ -215,8 +215,9 @@ public class TestZoneInfo310 {
 
         // test getAvailableIDs(raw);
         zids_new = TimeZone.getAvailableIDs(-8 * 60 * 60 * 1000);
-        //Arrays.sort(zids_new);
+        Arrays.sort(zids_new);
         zids_old = ZoneInfoOld.getAvailableIDs(-8 * 60 * 60 * 1000);
+        Arrays.sort(zids_old);
         if (!Arrays.equals(zids_new, zids_old)) {
             System.out.println("------------------------");
             System.out.println("NEW.getAvailableIDs(-8:00)");

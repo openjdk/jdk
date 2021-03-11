@@ -221,25 +221,25 @@ static void RELEASE_ARRAYS(JNIEnv *env, sun_jpeg_source_ptr src)
 
 static int GET_ARRAYS(JNIEnv *env, sun_jpeg_source_ptr src)
 {
-    if (src->hInputBuffer) {
-        assert(src->inbuf == 0);
-        src->inbuf = (JOCTET *)(*env)->GetPrimitiveArrayCritical
-            (env, src->hInputBuffer, 0);
-        if (src->inbuf == 0) {
-            return 0;
-        }
-        if ((int)(src->inbufoffset) >= 0) {
-            src->pub.next_input_byte = src->inbuf + src->inbufoffset;
-        }
-    }
     if (src->hOutputBuffer) {
         assert(src->outbuf.ip == 0);
         src->outbufSize = (*env)->GetArrayLength(env, src->hOutputBuffer);
         src->outbuf.ip = (int *)(*env)->GetPrimitiveArrayCritical
             (env, src->hOutputBuffer, 0);
         if (src->outbuf.ip == 0) {
+            return 0;
+        }
+    }
+    if (src->hInputBuffer) {
+        assert(src->inbuf == 0);
+        src->inbuf = (JOCTET *)(*env)->GetPrimitiveArrayCritical
+            (env, src->hInputBuffer, 0);
+        if (src->inbuf == 0) {
             RELEASE_ARRAYS(env, src);
             return 0;
+        }
+        if ((int)(src->inbufoffset) >= 0) {
+            src->pub.next_input_byte = src->inbuf + src->inbufoffset;
         }
     }
     return 1;

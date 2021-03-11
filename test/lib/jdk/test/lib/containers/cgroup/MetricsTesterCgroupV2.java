@@ -239,22 +239,39 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
             fail("memory.stat[sock]", oldVal, newVal);
         }
 
-        oldVal = metrics.getMemoryAndSwapLimit();
-        newVal = getLongLimitValueFromFile("memory.swap.max");
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail("memory.swap.max", oldVal, newVal);
-        }
+        long memAndSwapLimit = metrics.getMemoryAndSwapLimit();
+        long memLimit = metrics.getMemoryLimit();
+        // Only test swap memory limits if we can. On systems with swapaccount=0
+        // we cannot, as swap limits are disabled.
+        if (memAndSwapLimit <= memLimit) {
+            System.out.println("No swap memory limits, test case(s) skipped");
+        } else {
+            oldVal = memAndSwapLimit;
+            long valSwap = getLongLimitValueFromFile("memory.swap.max");
+            long valMemory = getLongLimitValueFromFile("memory.max");
+            if (valSwap == UNLIMITED) {
+                newVal = valSwap;
+            } else {
+                assert valMemory >= 0;
+                newVal = valSwap + valMemory;
+            }
+            if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
+                fail("memory.swap.max", oldVal, newVal);
+            }
 
-        oldVal = metrics.getMemoryAndSwapUsage();
-        newVal = getLongValueFromFile("memory.swap.current");
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail("memory.swap.current", oldVal, newVal);
+            oldVal = metrics.getMemoryAndSwapUsage();
+            long swapUsage = getLongValueFromFile("memory.swap.current");
+            long memUsage = getLongValueFromFile("memory.current");
+            newVal = swapUsage + memUsage;
+            if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
+                fail("memory.swap.current", oldVal, newVal);
+            }
         }
 
         oldVal = metrics.getMemorySoftLimit();
-        newVal = getLongLimitValueFromFile("memory.high");
+        newVal = getLongLimitValueFromFile("memory.low");
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail("memory.high", oldVal, newVal);
+            fail("memory.low", oldVal, newVal);
         }
 
     }

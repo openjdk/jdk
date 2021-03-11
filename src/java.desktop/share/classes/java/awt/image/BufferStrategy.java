@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,11 @@ import java.awt.Image;
  * @since 1.4
  */
 public abstract class BufferStrategy {
+
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected BufferStrategy() {}
 
     /**
      * Returns the {@code BufferCapabilities} for this

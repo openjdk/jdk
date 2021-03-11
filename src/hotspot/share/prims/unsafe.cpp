@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.inline.hpp"
@@ -36,6 +37,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -47,8 +49,10 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
@@ -115,8 +119,8 @@ static inline void assert_field_offset_sane(oop p, jlong field_offset) {
     assert(byte_offset >= 0 && byte_offset <= (jlong)MAX_OBJECT_SIZE, "sane offset");
     if (byte_offset == (jint)byte_offset) {
       void* ptr_plus_disp = cast_from_oop<address>(p) + byte_offset;
-      assert(p->field_addr_raw((jint)byte_offset) == ptr_plus_disp,
-             "raw [ptr+disp] must be consistent with oop::field_addr_raw");
+      assert(p->field_addr((jint)byte_offset) == ptr_plus_disp,
+             "raw [ptr+disp] must be consistent with oop::field_addr");
     }
     jlong p_size = HeapWordSize * (jlong)(p->size());
     assert(byte_offset < p_size, "Unsafe access: offset " INT64_FORMAT " > object's size " INT64_FORMAT, (int64_t)byte_offset, (int64_t)p_size);
@@ -127,10 +131,6 @@ static inline void assert_field_offset_sane(oop p, jlong field_offset) {
 static inline void* index_oop_from_field_offset_long(oop p, jlong field_offset) {
   assert_field_offset_sane(p, field_offset);
   jlong byte_offset = field_offset_to_byte_offset(field_offset);
-
-  if (p != NULL) {
-    p = Access<>::resolve(p);
-  }
 
   if (sizeof(char*) == sizeof(jint)) {   // (this constant folds!)
     return cast_from_oop<address>(p) + (jint) byte_offset;
@@ -862,16 +862,13 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
                         false,    // is_strong_hidden
                         true);    // can_access_vm_annotations
 
-  Klass* anonk = SystemDictionary::parse_stream(no_class_name,
-                                                host_loader,
-                                                &st,
-                                                cl_info,
-                                                CHECK_NULL);
-  if (anonk == NULL) {
-    return NULL;
-  }
-
-  return InstanceKlass::cast(anonk);
+  InstanceKlass* anonk = SystemDictionary::parse_stream(no_class_name,
+                                                        host_loader,
+                                                        &st,
+                                                        cl_info,
+                                                        CHECK_NULL);
+  assert(anonk != NULL, "no klass created");
+  return anonk;
 }
 
 UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass0(JNIEnv *env, jobject unsafe, jclass host_class, jbyteArray data, jobjectArray cp_patches_jh)) {
@@ -951,7 +948,6 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
   oop p = JNIHandles::resolve(obj);
-  GuardUnsafeAccess guard(thread);
   if (p == NULL) {
     volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
     return RawAccess<>::atomic_cmpxchg(addr, e, x) == e;
@@ -963,7 +959,6 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobj
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
   oop p = JNIHandles::resolve(obj);
-  GuardUnsafeAccess guard(thread);
   if (p == NULL) {
     volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
     return RawAccess<>::atomic_cmpxchg(addr, e, x) == e;
@@ -1005,8 +1000,6 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) {
-  Parker* p = NULL;
-
   if (jthread != NULL) {
     ThreadsListHandle tlh;
     JavaThread* thr = NULL;
@@ -1016,18 +1009,13 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) 
       // This is a valid oop.
       if (thr != NULL) {
         // The JavaThread is alive.
-        p = thr->parker();
+        Parker* p = thr->parker();
+        HOTSPOT_THREAD_UNPARK((uintptr_t) p);
+        p->unpark();
       }
     }
   } // ThreadsListHandle is destroyed here.
 
-  // 'p' points to type-stable-memory if non-NULL. If the target
-  // thread terminates before we get here the new user of this
-  // Parker will get a 'spurious' unpark - which is perfectly valid.
-  if (p != NULL) {
-    HOTSPOT_THREAD_UNPARK((uintptr_t) p);
-    p->unpark();
-  }
 } UNSAFE_END
 
 UNSAFE_ENTRY(jint, Unsafe_GetLoadAverage0(JNIEnv *env, jobject unsafe, jdoubleArray loadavg, jint nelem)) {

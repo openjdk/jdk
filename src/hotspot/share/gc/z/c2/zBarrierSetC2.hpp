@@ -29,9 +29,11 @@
 #include "opto/node.hpp"
 #include "utilities/growableArray.hpp"
 
-const uint8_t ZLoadBarrierStrong = 1;
-const uint8_t ZLoadBarrierWeak   = 2;
-const uint8_t ZLoadBarrierElided = 3;
+const uint8_t ZLoadBarrierElided      = 0;
+const uint8_t ZLoadBarrierStrong      = 1;
+const uint8_t ZLoadBarrierWeak        = 2;
+const uint8_t ZLoadBarrierPhantom     = 4;
+const uint8_t ZLoadBarrierNoKeepalive = 8;
 
 class ZLoadBarrierStubC2 : public ResourceObj {
 private:
@@ -39,14 +41,14 @@ private:
   const Address   _ref_addr;
   const Register  _ref;
   const Register  _tmp;
-  const bool      _weak;
+  const uint8_t   _barrier_data;
   Label           _entry;
   Label           _continuation;
 
-  ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, bool weak);
+  ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data);
 
 public:
-  static ZLoadBarrierStubC2* create(const MachNode* node, Address ref_addr, Register ref, Register tmp, bool weak);
+  static ZLoadBarrierStubC2* create(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data);
 
   Address ref_addr() const;
   Register ref() const;

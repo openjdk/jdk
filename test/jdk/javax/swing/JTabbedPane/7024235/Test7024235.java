@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,14 @@
  */
 
 import java.awt.BorderLayout;
-
 import java.awt.Container;
 import java.awt.Rectangle;
-import java.awt.Toolkit;
+import java.awt.Robot;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JTabbedPane;
-
 import javax.swing.JFrame;
+import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -41,9 +39,6 @@ import javax.swing.UIManager.LookAndFeelInfo;
  * @key headful
  * @bug 7024235
  * @summary Tests JFrame.pack() with the JTabbedPane
- * @library /lib/client/
- * @build ExtendedRobot
- * @author Sergey Malenkov
  * @run main Test7024235
  */
 
@@ -54,12 +49,15 @@ public class Test7024235 implements Runnable {
     public static void main(String[] args) throws Exception {
         Test7024235 test = new Test7024235();
         for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-            UIManager.setLookAndFeel(info.getClassName());
+            String className = info.getClassName();
+            System.out.println("className = " + className);
+            UIManager.setLookAndFeel(className);
 
             test.test();
             try {
-                ExtendedRobot robot = new ExtendedRobot();
-                robot.waitForIdle(1000);
+                Robot robot = new Robot();
+                robot.waitForIdle();
+                robot.delay(1000);
             }catch(Exception ex) {
                 ex.printStackTrace();
                 throw new Error("Unexpected Failure");
@@ -81,6 +79,7 @@ public class Test7024235 implements Runnable {
             JFrame frame = new JFrame();
             frame.add(BorderLayout.WEST, this.pane);
             frame.pack();
+            frame.setLocationRelativeTo(null);
             frame.setVisible(true);
 
             test("first");
@@ -105,6 +104,9 @@ public class Test7024235 implements Runnable {
         this.passed = true;
         for (int index = 0; index < this.pane.getTabCount(); index++) {
             Rectangle bounds = this.pane.getBoundsAt(index);
+            if (bounds == null) {
+                continue;
+            }
             int centerX = bounds.x + bounds.width / 2;
             int centerY = bounds.y + bounds.height / 2;
             int actual = this.pane.indexAtLocation(centerX, centerY);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include "jvm.h"
 #include "jni.h"
 #include "jni_util.h"
 #include "dlfcn.h"
@@ -48,6 +49,10 @@ void* getProcessHandle() {
     procHandle = (void*)dlopen(NULL, RTLD_LAZY);
 #endif
     return procHandle;
+}
+
+void* findEntryInProcess(const char* name) {
+    return JVM_FindLibraryEntry(RTLD_DEFAULT, name);
 }
 
 void buildJniFunctionName(const char *sym, const char *cname,

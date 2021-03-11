@@ -120,10 +120,10 @@ JNIEXPORT jboolean JNICALL JavaCritical_gc_CriticalNative_isNull
 
 JNIEXPORT jboolean JNICALL Java_gc_CriticalNative_isNull
   (JNIEnv *env, jclass jclazz, jintArray a) {
-  jboolean is_null;
+  if (a == NULL) return JNI_TRUE;
   jsize len = (*env)->GetArrayLength(env, a);
   jint* arr = (jint*)(*env)->GetPrimitiveArrayCritical(env, a, 0);
-  is_null = (arr == NULL) && (len == 0);
+  jboolean is_null = (arr == NULL) && (len == 0);
   (*env)->ReleasePrimitiveArrayCritical(env, a, arr, 0);
   return is_null;
 }

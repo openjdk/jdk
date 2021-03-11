@@ -79,7 +79,7 @@ public class LIRCompilerBackend {
     public static <T extends CompilationResult> void emitBackEnd(StructuredGraph graph, Object stub, ResolvedJavaMethod installedCodeOwner, Backend backend, T compilationResult,
                     CompilationResultBuilderFactory factory, RegisterConfig registerConfig, LIRSuites lirSuites) {
         DebugContext debug = graph.getDebug();
-        try (DebugContext.Scope s = debug.scope("BackEnd", graph.getLastSchedule()); DebugCloseable a = BackEnd.start(debug)) {
+        try (DebugContext.Scope s = debug.scope("BackEnd", graph, graph.getLastSchedule()); DebugCloseable a = BackEnd.start(debug)) {
             LIRGenerationResult lirGen = null;
             lirGen = emitLIR(backend, graph, stub, registerConfig, lirSuites);
             try (DebugContext.Scope s2 = debug.scope("CodeGen", lirGen, lirGen.getLIR())) {

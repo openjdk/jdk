@@ -116,6 +116,7 @@ template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
 class PaddedPrimitiveArray {
  public:
   static T* create_unfreeable(size_t length);
+  static T* create(size_t length, void** alloc_base);
 };
 
 #endif // SHARE_MEMORY_PADDED_HPP

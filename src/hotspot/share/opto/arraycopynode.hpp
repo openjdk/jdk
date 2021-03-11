@@ -100,12 +100,12 @@ private:
                                bool disjoint_bases, int count,
                                Node*& forward_ctl, Node*& backward_ctl);
   Node* array_copy_forward(PhaseGVN *phase, bool can_reshape, Node*& ctl,
-                           MergeMemNode* mm,
+                           Node* mem,
                            const TypePtr* atp_src, const TypePtr* atp_dest,
                            Node* adr_src, Node* base_src, Node* adr_dest, Node* base_dest,
                            BasicType copy_type, const Type* value_type, int count);
   Node* array_copy_backward(PhaseGVN *phase, bool can_reshape, Node*& ctl,
-                            MergeMemNode* mm,
+                            Node* mem,
                             const TypePtr* atp_src, const TypePtr* atp_dest,
                             Node* adr_src, Node* base_src, Node* adr_dest, Node* base_dest,
                             BasicType copy_type, const Type* value_type, int count);
@@ -180,6 +180,9 @@ public:
   bool has_negative_length_guard() const { return _has_negative_length_guard; }
 
   static bool may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac);
+
+  static int get_partial_inline_vector_lane_count(BasicType type, int const_len);
+
   bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify) const;
 
 #ifndef PRODUCT

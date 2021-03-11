@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public interface ExtendedRequest extends java.io.Serializable {
       * @return A possibly null byte array representing the ASN.1 BER encoded
       *         contents of the LDAP {@code ExtendedRequest.requestValue}
       *         component.
-      * @exception IllegalStateException If the encoded value cannot be retrieved
+      * @throws IllegalStateException If the encoded value cannot be retrieved
       * because the request contains insufficient or invalid data/state.
       */
     public byte[] getEncodedValue();
@@ -137,7 +137,7 @@ public interface ExtendedRequest extends java.io.Serializable {
       * @param length   The number of bytes in berValue to use.
       *
       * @return A non-null object.
-      * @exception NamingException if cannot create extended response
+      * @throws NamingException if cannot create extended response
       *     due to an error.
       * @see ExtendedResponse
       */

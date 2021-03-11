@@ -757,6 +757,12 @@ public class BasicFileChooserUI extends FileChooserUI {
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+
+        /**
+         * Constructs a {@code SelectionListener}.
+         */
+        protected SelectionListener() {}
+
         /** {@inheritDoc} */
         public void valueChanged(ListSelectionEvent e) {
             getHandler().valueChanged(e);
@@ -1325,6 +1331,11 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class CancelSelectionAction extends AbstractAction {
+        /**
+         * Constructs a {@code CancelSelectionAction}.
+         */
+        protected CancelSelectionAction() {}
+
         /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
             getFileChooser().cancelSelection();
@@ -1336,6 +1347,11 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class UpdateAction extends AbstractAction {
+        /**
+         * Constructs an {@code UpdateAction}.
+         */
+        protected UpdateAction() {}
+
         /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
             JFileChooser fc = getFileChooser();

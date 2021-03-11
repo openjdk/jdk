@@ -3326,9 +3326,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>କାଲିନିନଗ୍ରାଡ୍</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>ସିମଫେରୋପୋଲ୍</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>ମସ୍କୋ</exemplarCity>
 			</zone>
@@ -3523,6 +3520,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>କିଏଭ୍</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>ସିମଫେରୋପୋଲ୍</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>ଜାପୋରୋଜହୟେ</exemplarCity>
@@ -4355,9 +4355,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">ନରଫୋକ୍‌ ଦ୍ୱୀପ ସମୟ</generic>
-					<standard draft="contributed">ନରଫୋକ୍‌ ଦ୍ୱୀପ ମାନାଙ୍କ ସମୟ</standard>
-					<daylight draft="contributed">ନରଫୋକ୍‌ ଦ୍ୱୀପ ଗ୍ରୀଷ୍ମକାଳ ସମୟ</daylight>
+					<generic>ନରଫୋକ୍‌ ଦ୍ୱୀପ ସମୟ</generic>
+					<standard>ନରଫୋକ୍‌ ଦ୍ୱୀପ ମାନାଙ୍କ ସମୟ</standard>
+					<daylight>ନରଫୋକ୍‌ ଦ୍ୱୀପ ଗ୍ରୀଷ୍ମକାଳ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5869,7 +5869,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} ଦିନ</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} ଦିନଗୁଡ଼ିକ</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other" draft="contributed">ଡାହାଣରେ ଥିବା {0} ନିଅନ୍ତୁ</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">ଡାହାଣରେ ଥିବା {0} ନିଅନ୍ତୁ</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -5899,16 +5899,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>ଅଟୋ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-21">
-				<unitPrefixPattern draft="provisional">ଜିପୋଟ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ଜିପୋଟ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-24">
-				<unitPrefixPattern draft="provisional">ୟୋକଟ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ୟୋକଟ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern>ଡେକା{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p2">
-				<unitPrefixPattern draft="provisional">ହେକ୍ଟା{0}</unitPrefixPattern>
+				<unitPrefixPattern>ହେକ୍ଟା{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p3">
 				<unitPrefixPattern>କିଲୋ{0}</unitPrefixPattern>
@@ -5933,6 +5933,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ୟୋଟା{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{1} ପ୍ରତି {0}</compoundUnitPattern>
@@ -6308,6 +6311,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ହର୍ଜ୍</displayName>
 				<unitPattern count="one">{0} ହର୍ଜ୍</unitPattern>
 				<unitPattern count="other">{0} ହର୍ଜ୍</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<unitPattern count="one">{0} ବିନ୍ଦୁ</unitPattern>
+				<unitPattern count="other">{0} ବି</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>କିଲୋମିଟର୍</displayName>
@@ -7179,6 +7186,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>ବି.</displayName>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>କିମି</displayName>
 				<unitPattern count="one">{0} କିମି</unitPattern>
@@ -7316,6 +7326,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ଟନ୍</displayName>
 				<unitPattern count="one">{0} ଟନ୍</unitPattern>
 				<unitPattern count="other">{0} ଟନ୍</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<unitPattern count="one">{0} ଷ୍ଟ.</unitPattern>
+				<unitPattern count="other">{0} ଷ୍ଟ.</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>ପାଉଣ୍ଡ୍</displayName>

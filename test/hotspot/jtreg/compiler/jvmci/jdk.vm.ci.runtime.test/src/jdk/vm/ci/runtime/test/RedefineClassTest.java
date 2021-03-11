@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @requires vm.jvmci
+ * @requires vm.jvmti
  * @library ../../../../../
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
@@ -44,7 +45,6 @@ import java.io.InputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -133,10 +133,7 @@ public class RedefineClassTest extends TypeUniverse {
     }
 
     public static void loadAgent(Path agent) throws Exception {
-        String vmName = ManagementFactory.getRuntimeMXBean().getName();
-        int p = vmName.indexOf('@');
-        assumeTrue(p != -1);
-        String pid = vmName.substring(0, p);
+        String pid = Long.toString(ProcessHandle.current().pid());
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         Class<?> c = Class.forName("com.sun.tools.attach.VirtualMachine", true, cl);
         Method attach = c.getDeclaredMethod("attach", String.class);

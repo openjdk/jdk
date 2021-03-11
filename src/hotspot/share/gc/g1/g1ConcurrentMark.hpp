@@ -30,12 +30,14 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/heapRegionSet.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/compilerWarnings.hpp"
+#include "utilities/numberSeq.hpp"
 
 class ConcurrentGCTimer;
 class G1ConcurrentMarkThread;
@@ -47,10 +49,6 @@ class G1OldTracer;
 class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 class ThreadClosure;
-
-PRAGMA_DIAG_PUSH
-// warning C4522: multiple assignment operators specified
-PRAGMA_DISABLE_MSVC_WARNING(4522)
 
 // This is a container class for either an oop or a continuation address for
 // mark stack entries. Both are pushed onto the mark stack.
@@ -86,8 +84,6 @@ public:
   bool is_array_slice() const { return ((uintptr_t)_holder & ArraySliceBit) != 0; }
   bool is_null() const { return _holder == NULL; }
 };
-
-PRAGMA_DIAG_POP
 
 typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
@@ -305,7 +301,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   MemRegion const         _heap;
 
   // Root region tracking and claiming
-  G1CMRootMemRegions         _root_regions;
+  G1CMRootMemRegions      _root_regions;
 
   // For grey objects
   G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
@@ -371,8 +367,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void weak_refs_work(bool clear_all_soft_refs);
 
   void report_object_count(bool mark_completed);
-
-  void swap_mark_bitmaps();
 
   void reclaim_empty_regions();
 
@@ -537,13 +531,14 @@ public:
   // to be called concurrently to the mutator. It will yield to safepoint requests.
   void cleanup_for_next_mark();
 
-  // Clear the previous marking bitmap during safepoint.
-  void clear_prev_bitmap(WorkGang* workers);
+  // Clear the next marking bitmap during safepoint.
+  void clear_next_bitmap(WorkGang* workers);
 
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
-  void pre_concurrent_start();
-  void post_concurrent_start();
+  void pre_concurrent_start(GCCause::Cause cause);
+  void post_concurrent_mark_start();
+  void post_concurrent_undo_start();
 
   // Scan all the root regions and mark everything reachable from
   // them.
@@ -559,6 +554,8 @@ public:
   void preclean();
 
   void remark();
+
+  void swap_mark_bitmaps();
 
   void cleanup();
   // Mark in the previous bitmap. Caution: the prev bitmap is usually read-only, so use
@@ -594,7 +591,6 @@ public:
   inline bool is_marked_in_next_bitmap(oop p) const;
 
   ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
-  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
 
 private:
   // Rebuilds the remembered sets for chosen regions in parallel and concurrently to the application.

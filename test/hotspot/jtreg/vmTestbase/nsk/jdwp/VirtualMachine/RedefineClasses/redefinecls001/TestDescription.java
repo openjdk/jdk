@@ -70,12 +70,11 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build ExecDriver
- * @build nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001
- *        nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001a
+ * @build nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001a
  *        nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001b
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001
  *      .
  *      -arch=${os.family}-${os.simpleArch}

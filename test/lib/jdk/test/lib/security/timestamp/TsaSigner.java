@@ -34,10 +34,7 @@ import jdk.test.lib.hexdump.HexPrinter;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.util.KnownOIDs;
-import sun.security.util.ObjectIdentifier;
+import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
 
@@ -209,7 +206,7 @@ public class TsaSigner {
                     ObjectIdentifier.of(KnownOIDs.TimeStampTokenInfo),
                     new DerValue(eContentOut.toByteArray()));
 
-            String defaultSigAlgo =  AlgorithmId.getDefaultSigAlgForKey(
+            String defaultSigAlgo =  SignatureUtil.getDefaultSigAlgForKey(
                     signerEntry.privateKey);
             String sigAlgo = interceptor.getSigAlgo(defaultSigAlgo);
             Signature signature = Signature.getInstance(sigAlgo);
@@ -221,8 +218,8 @@ public class TsaSigner {
             SignerInfo signerInfo = new SignerInfo(
                     new X500Name(issuerName),
                     signerEntry.cert.getSerialNumber(),
-                    AlgorithmId.get(
-                            AlgorithmId.getDigAlgFromSigAlg(sigAlgo)),
+                    SignatureUtil.getDigestAlgInPkcs7SignerInfo(
+                            signature, sigAlgo, signerEntry.privateKey, false),
                     AlgorithmId.get(sigAlgo),
                     signature.sign());
 

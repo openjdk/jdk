@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.PropertyPermission;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.Test;
 
 /*
@@ -118,45 +117,54 @@ public class PermissionTest {
         }
     }
 
-    @BeforeGroups (groups = {"NoManageProcessPermission"})
+    /**
+     * Setup a policy that would reject ProcessHandle requests without Permissions ManageProcess.
+     */
     public void noPermissionsSetup(){
         Policy.setPolicy(new TestPolicy());
         SecurityManager sm = new SecurityManager();
         System.setSecurityManager(sm);
     }
 
-    @Test(groups = { "NoManageProcessPermission" }, expectedExceptions = SecurityException.class)
+    @Test(expectedExceptions = SecurityException.class)
     public void noPermissionAllChildren() {
+        noPermissionsSetup();
         currentHndl.descendants();
     }
 
-    @Test(groups = { "NoManageProcessPermission" }, expectedExceptions = SecurityException.class)
+    @Test(expectedExceptions = SecurityException.class)
     public void noPermissionAllProcesses() {
+        noPermissionsSetup();
         ProcessHandle.allProcesses();
     }
 
-    @Test(groups = { "NoManageProcessPermission" }, expectedExceptions = SecurityException.class)
+    @Test(expectedExceptions = SecurityException.class)
     public void noPermissionChildren() {
+        noPermissionsSetup();
         currentHndl.children();
     }
 
-    @Test(groups = { "NoManageProcessPermission" }, expectedExceptions = SecurityException.class)
+    @Test(expectedExceptions = SecurityException.class)
     public void noPermissionCurrent() {
+        noPermissionsSetup();
         ProcessHandle.current();
     }
 
-    @Test(groups = { "NoManageProcessPermission" }, expectedExceptions = SecurityException.class)
+    @Test(expectedExceptions = SecurityException.class)
     public void noPermissionOf() {
+        noPermissionsSetup();
         ProcessHandle.of(0);
     }
 
-    @Test(groups = { "NoManageProcessPermission" }, expectedExceptions = SecurityException.class)
+    @Test(expectedExceptions = SecurityException.class)
     public void noPermissionParent() {
+        noPermissionsSetup();
         currentHndl.parent();
     }
 
-    @Test(groups = { "NoManageProcessPermission" }, expectedExceptions = SecurityException.class)
+    @Test(expectedExceptions = SecurityException.class)
     public void noPermissionProcessToHandle() throws IOException {
+        noPermissionsSetup();
         Process p = null;
         try {
             ProcessBuilder pb = new ProcessBuilder("sleep", "30");

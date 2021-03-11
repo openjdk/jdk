@@ -2,6 +2,5 @@
   {    
     match: "*.helper",
     PrintAssembly: false,
-    DisableIntrinsic:"x"
   }
 ]

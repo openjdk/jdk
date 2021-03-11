@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -854,32 +854,32 @@ public class TCKDateTimeParseResolver {
     @DataProvider(name="resolveAmPm")
     Object[][] data_resolveAmPm() {
         return new Object[][]{
-                {STRICT, 0, 0},
-                {STRICT, 1, 1},
-                {STRICT, -1, null},
-                {STRICT, 2, null},
+                {STRICT, 0, null, 0},
+                {STRICT, 1, null, 1},
+                {STRICT, -1, null, null},
+                {STRICT, 2, null, null},
 
-                {SMART, 0, 0},
-                {SMART, 1, 1},
-                {SMART, -1, null},
-                {SMART, 2, null},
+                {SMART, 0, LocalTime.of(6, 0), 0},
+                {SMART, 1, LocalTime.of(18, 0), 1},
+                {SMART, -1, null, null},
+                {SMART, 2, null, null},
 
-                {LENIENT, 0, 0},
-                {LENIENT, 1, 1},
-                {LENIENT, -1, -1},
-                {LENIENT, 2, 2},
+                {LENIENT, 0, LocalTime.of(6, 0), 0},
+                {LENIENT, 1, LocalTime.of(18, 0), 1},
+                {LENIENT, -1, LocalTime.of(18, 0), 1},
+                {LENIENT, 2, LocalTime.of(6, 0), 0},
         };
     }
 
     @Test(dataProvider="resolveAmPm")
-    public void test_resolveAmPm(ResolverStyle style, long value, Integer expectedValue) {
+    public void test_resolveAmPm(ResolverStyle style, long value, LocalTime expectedTime, Integer expectedValue) {
         String str = Long.toString(value);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(AMPM_OF_DAY).toFormatter();
 
         if (expectedValue != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
             assertEquals(accessor.query(TemporalQueries.localDate()), null);
-            assertEquals(accessor.query(TemporalQueries.localTime()), null);
+            assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime);
             assertEquals(accessor.isSupported(AMPM_OF_DAY), true);
             assertEquals(accessor.getLong(AMPM_OF_DAY), expectedValue.longValue());
         } else {

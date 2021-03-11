@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -ref SummaryTest.out SummaryTest.java
  */

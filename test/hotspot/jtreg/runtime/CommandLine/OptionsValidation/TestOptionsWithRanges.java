@@ -233,7 +233,6 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("G1RSetRegionEntries");
         excludeTestMaxRange("G1RSetSparseRegionEntries");
         excludeTestMaxRange("G1UpdateBufferSize");
-        excludeTestMaxRange("InitialBootClassLoaderMetaspaceSize");
         excludeTestMaxRange("InitialHeapSize");
         excludeTestMaxRange("MaxHeapSize");
         excludeTestMaxRange("MaxRAM");

@@ -1,14 +1,11 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8072945
+ * @bug 8072945 8247957
  * @summary test tags and attributes specific to the output HTML version
  * @library ..
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -XhtmlVersion:html5 -ref HtmlVersionTagsAttrsTestHtml5.out HtmlVersionTagsAttrsTest.java
- * @run main DocLintTester -XhtmlVersion:html4 -ref HtmlVersionTagsAttrsTestHtml4.out HtmlVersionTagsAttrsTest.java
- * @run main DocLintTester -badargs -XhtmlVersion: HtmlVersionTagsAttrsTest.java
- * @run main DocLintTester -ref HtmlVersionTagsAttrsTestHtml4.out HtmlVersionTagsAttrsTest.java
+ * @run main DocLintTester -Xmaxerrs 200 -ref HtmlVersionTagsAttrsTest.out HtmlVersionTagsAttrsTest.java
  */
 
 /**
@@ -73,7 +70,7 @@ public class HtmlVersionTagsAttrsTest {
      * <tr><td>Test border</td></tr>
      * </table>
      */
-    public void SupportedAttrs_in_html4_not_in_html5() { }
+    public void notSupportedAttrs_html5() { }
 
     /**
      * <ol reversed="reversed">
@@ -88,7 +85,7 @@ public class HtmlVersionTagsAttrsTest {
      * <p id="t2" aria-label="Label">Label test</p>
      * </div>
      */
-    public void SupportedAttrs_in_html5_not_in_html4() { }
+    public void SupportedAttrs_html5() { }
 
     /**
      * <p><big>Bigger text test</big></p>
@@ -156,7 +153,7 @@ public class HtmlVersionTagsAttrsTest {
      * <p>Test current time is <time>10:00</time> at night</p>
      * <p>Test <wbr>WBR</wbr> text</p>
      */
-    public void SupportedTags_in_html5_not_in_html4() { }
+    public void SupportedTags_html5() { }
 
     /**
      * <section>

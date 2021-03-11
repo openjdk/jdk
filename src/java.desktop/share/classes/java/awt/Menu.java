@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.peer.MenuPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Enumeration;
 import java.util.EventListener;
 import java.util.Vector;
@@ -114,9 +115,10 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     private static final String base = "menu";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = -8809584163345499784L;
 
     /**
@@ -526,10 +528,12 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     /**
      * Writes default serializable fields to stream.
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
       throws java.io.IOException
     {
@@ -540,13 +544,16 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * Reads the {@code ObjectInputStream}.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the {@code ObjectInputStream} to read
-     * @exception HeadlessException if
-     *   {@code GraphicsEnvironment.isHeadless} returns
-     *   {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws IOException, ClassNotFoundException, HeadlessException
     {
@@ -619,10 +626,16 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      */
     protected class AccessibleAWTMenu extends AccessibleAWTMenuItem
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 5228160894980069094L;
+
+        /**
+         * Constructs an {@code AccessibleAWTMenu}.
+         */
+        protected AccessibleAWTMenu() {}
 
         /**
          * Get the role of this object.

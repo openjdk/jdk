@@ -143,7 +143,7 @@ public class BaseTaglet implements Taglet {
      * @implSpec This implementation throws {@link UnsupportedTagletOperationException}.
      */
     @Override
-    public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");
     }
 
@@ -153,7 +153,7 @@ public class BaseTaglet implements Taglet {
      * @implSpec This implementation throws {@link UnsupportedTagletOperationException}
      */
     @Override
-    public Content getTagletOutput(Element holder, TagletWriter writer) {
+    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");
     }
 }

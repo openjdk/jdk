@@ -25,8 +25,8 @@
  * @test
  * @bug 8231827
  * @summary All example code from "Pattern Matching for Java" document, released April 2017, adjusted to current state (no switches, etc)
- * @compile --enable-preview -source ${jdk.version} ExamplesFromProposal.java
- * @run main/othervm --enable-preview ExamplesFromProposal
+ * @compile ExamplesFromProposal.java
+ * @run main ExamplesFromProposal
  */
 
 interface Node {

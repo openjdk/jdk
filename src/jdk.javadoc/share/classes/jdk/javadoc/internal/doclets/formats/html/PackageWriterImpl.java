@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,12 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 import java.util.SortedSet;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -40,9 +42,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -73,8 +73,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     protected HtmlTree sectionTree = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
 
-    private final Navigation navBar;
-
     private final BodyContents bodyContents = new BodyContents();
 
     /**
@@ -93,19 +91,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
         this.packageElement = packageElement;
-        this.navBar = new Navigation(packageElement, configuration, PageMode.PACKAGE, path);
     }
 
     @Override
-    public Content getPackageHeader(String heading) {
-        HtmlTree bodyTree = getBody(getWindowTitle(utils.getPackageName(packageElement)));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                contents.moduleLabel);
-        navBar.setNavLinkModule(linkContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+    public Content getPackageHeader() {
+        String packageName = getLocalizedPackageName(packageElement).toString();
+        HtmlTree bodyTree = getBody(getWindowTitle(packageName));
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -114,19 +105,18 @@ public class PackageWriterImpl extends HtmlDocletWriter
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
             moduleNameDiv.add(Entity.NO_BREAK_SPACE);
             moduleNameDiv.add(getModuleLink(mdle,
-                    new StringContent(mdle.getQualifiedName().toString())));
+                    Text.of(mdle.getQualifiedName().toString())));
             div.add(moduleNameDiv);
         }
-        Content annotationContent = new HtmlTree(TagName.P);
-        addAnnotationInfo(packageElement, annotationContent);
-        div.add(annotationContent);
+        Content packageHead = new ContentBuilder();
+        if (!packageElement.isUnnamed()) {
+            packageHead.add(contents.packageLabel).add(" ");
+        }
+        packageHead.add(packageName);
         Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, contents.packageLabel);
-        tHeading.add(Entity.NO_BREAK_SPACE);
-        Content packageHead = new StringContent(heading);
-        tHeading.add(packageHead);
+                HtmlStyle.title, packageHead);
         div.add(tHeading);
-        bodyContents.setHeader(headerContent)
+        bodyContents.setHeader(getHeader(PageMode.PACKAGE, packageElement))
                 .addMainContent(div);
         return bodyTree;
     }
@@ -136,13 +126,21 @@ public class PackageWriterImpl extends HtmlDocletWriter
         return new ContentBuilder();
     }
 
+    @Override
+    protected Navigation getNavBar(PageMode pageMode, Element element) {
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
+                contents.moduleLabel);
+        return super.getNavBar(pageMode, element)
+                .setNavLinkModule(linkContent);
+    }
+
     /**
      * Add the package deprecation information to the documentation tree.
      *
      * @param div the content tree to which the deprecation information will be added
      */
     public void addDeprecationInfo(Content div) {
-        List<? extends DocTree> deprs = utils.getBlockTags(packageElement, DocTree.Kind.DEPRECATED);
+        List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(packageElement);
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
             HtmlTree deprDiv = new HtmlTree(TagName.DIV);
@@ -167,50 +165,50 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public void addInterfaceSummary(SortedSet<TypeElement> interfaces, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.interfaceLabel, contents.descriptionLabel);
-        addClassesSummary(interfaces, resources.interfaceSummary, tableHeader, summaryContentTree);
+        addClassesSummary(interfaces, contents.interfaceSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addClassSummary(SortedSet<TypeElement> classes, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.classLabel, contents.descriptionLabel);
-        addClassesSummary(classes, resources.classSummary, tableHeader, summaryContentTree);
+        addClassesSummary(classes, contents.classSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addEnumSummary(SortedSet<TypeElement> enums, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.enum_, contents.descriptionLabel);
-        addClassesSummary(enums, resources.enumSummary, tableHeader, summaryContentTree);
+        addClassesSummary(enums, contents.enumSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addRecordSummary(SortedSet<TypeElement> records, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.record, contents.descriptionLabel);
-        addClassesSummary(records, resources.recordSummary, tableHeader, summaryContentTree);
+        addClassesSummary(records, contents.recordSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addExceptionSummary(SortedSet<TypeElement> exceptions, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.exception, contents.descriptionLabel);
-        addClassesSummary(exceptions, resources.exceptionSummary, tableHeader, summaryContentTree);
+        addClassesSummary(exceptions, contents.exceptionSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addErrorSummary(SortedSet<TypeElement> errors, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.error, contents.descriptionLabel);
-        addClassesSummary(errors, resources.errorSummary, tableHeader, summaryContentTree);
+        addClassesSummary(errors, contents.errorSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addAnnotationTypeSummary(SortedSet<TypeElement> annoTypes, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.annotationType, contents.descriptionLabel);
-        addClassesSummary(annoTypes, resources.annotationTypeSummary, tableHeader, summaryContentTree);
+        addClassesSummary(annoTypes, contents.annotationTypeSummary, tableHeader, summaryContentTree);
     }
 
     public void addClassesSummary(SortedSet<TypeElement> classes, String label,
             TableHeader tableHeader, Content summaryContentTree) {
         if(!classes.isEmpty()) {
-            Table table = new Table(HtmlStyle.typeSummary, HtmlStyle.summaryTable)
-                    .setCaption(new StringContent(label))
+            Table table = new Table(HtmlStyle.summaryTable)
+                    .setCaption(Text.of(label))
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
 
@@ -218,12 +216,13 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 if (!utils.isCoreClass(klass) || !configuration.isGeneratedDoc(klass)) {
                     continue;
                 }
-                Content classLink = getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.Kind.PACKAGE, klass));
+                Content classLink = getLink(new HtmlLinkInfo(
+                        configuration, HtmlLinkInfo.Kind.PACKAGE, klass));
                 ContentBuilder description = new ContentBuilder();
+                addPreviewSummary(klass, description);
                 if (utils.isDeprecated(klass)) {
                     description.add(getDeprecatedPhrase(klass));
-                    List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
+                    List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(klass);
                     if (!tags.isEmpty()) {
                         addSummaryDeprecatedComment(klass, tags.get(0), description);
                     }
@@ -238,9 +237,10 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public void addPackageDescription(Content packageContentTree) {
+        addPreviewInfo(packageElement, packageContentTree);
         if (!utils.getBody(packageElement).isEmpty()) {
             HtmlTree tree = sectionTree;
-            tree.setId(SectionName.PACKAGE_DESCRIPTION.getName());
+            tree.setId(HtmlIds.PACKAGE_DESCRIPTION);
             addDeprecationInfo(tree);
             addInlineComment(packageElement, tree);
         }
@@ -254,17 +254,19 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     @Override
+    public void addPackageSignature(Content packageContentTree) {
+        packageContentTree.add(new HtmlTree(TagName.HR));
+        packageContentTree.add(Signatures.getPackageSignature(packageElement, this));
+    }
+
+    @Override
     public void addPackageContent(Content packageContentTree) {
         bodyContents.addMainContent(packageContentTree);
     }
 
     @Override
     public void addPackageFooter() {
-        Content htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
+        bodyContents.setFooter(getFooter());
     }
 
     @Override

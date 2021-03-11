@@ -143,9 +143,10 @@ import java.util.Objects;
  * </UL>
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances
- * may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * <p>
@@ -162,7 +163,6 @@ public final class HexPrinter {
             "dle", "dc1", "dc2", "dc3", "dc4", "nak", "syn", "etb",
             "can", "em", "sub", "esc", "fs", "gs", "rs", "us"
     };
-    private static final String initOffsetFormat = "%5d: ";
     private static final int initBytesCount = 16;   // 16 byte values
     private static final String initBytesFormat = "%02x ";
     private static final int initAnnoWidth = initBytesCount * 4;
@@ -265,7 +265,7 @@ public final class HexPrinter {
      * to a multi-line string.
      * The parameters are set to:
      * <UL>
-     * <LI>byte offset format: signed decimal width 5 and a space, {@code "%5d: "},
+     * <LI>byte offset format: hexadecimal width 4, colon, and a space, {@code "%04x: "},
      * <LI>each byte value is formatted as 2 hex digits and a space: {@code "%02x "},
      * <LI>maximum number of byte values per line: {@value initBytesCount},
      * <LI>delimiter for the annotation: {@code " // "},
@@ -288,7 +288,7 @@ public final class HexPrinter {
      * @return a new HexPrinter
      */
     public static HexPrinter simple() {
-        return new HexPrinter(Formatters.ASCII, initOffsetFormat,
+        return new HexPrinter(Formatters.ASCII, "%04x: ",
                 initBytesFormat, initBytesCount,
                 initAnnoDelim, initAnnoWidth, System.lineSeparator(),
                 System.out);
@@ -604,11 +604,14 @@ public final class HexPrinter {
      * If the byteFormat is an empty String, there are no byte values in the output.
      *
      * @param byteFormat a format string for each byte
-     * @param bytesCount the maximum number of byte values per line
+     * @param bytesCount the maximum number of byte values per line; greater than zero
      * @return a new HexPrinter
+     * @throws IllegalArgumentException if bytesCount is less than or equal to zero
      */
     public HexPrinter withBytesFormat(String byteFormat, int bytesCount) {
         Objects.requireNonNull(bytesFormat, "bytesFormat");
+        if (bytesCount <= 0)
+            throw new IllegalArgumentException("bytesCount should be greater than zero");
         return new HexPrinter(annoFormatter, offsetFormat, byteFormat, bytesCount,
                 annoDelim, annoWidth, lineSeparator, dest);
     }
@@ -946,6 +949,7 @@ public final class HexPrinter {
         private final transient DataInputStream in;
         private final transient int baseOffset;
         private final transient HexPrinter params;
+        private final transient int bytesSingleWidth;
         private final transient int bytesColWidth;
         private final transient int annoWidth;
         private final transient Appendable dest;
@@ -966,7 +970,8 @@ public final class HexPrinter {
             this.source = new OffsetInputStream(source);
             this.source.mark(1024);
             this.in = new DataInputStream(this.source);
-            this.bytesColWidth = params.bytesCount * String.format(params.bytesFormat, 255).length();
+            this.bytesSingleWidth = String.format(params.bytesFormat, 255).length();
+            this.bytesColWidth = params.bytesCount * bytesSingleWidth;
             this.annoWidth = params.annoWidth;
             this.dest = dest;
         }
@@ -1062,11 +1067,16 @@ public final class HexPrinter {
             int count = source.markedByteCount();
             try {
                 source.reset();
-                long binColOffset = source.byteOffset();
+                int binColOffset = (int)source.byteOffset();
                 while (count > 0 || info.length() > 0) {
-                    dest.append(String.format(params.offsetFormat, binColOffset + baseOffset));
-                    int colWidth = 0;
-                    int byteCount = Math.min(params.bytesCount, count);
+                    int offset = binColOffset + baseOffset; // offset of first byte on the line
+                    dest.append(String.format(params.offsetFormat, offset));
+                    // Compute indent based on offset modulo bytesCount
+                    int colOffset = offset % params.bytesCount;
+                    int colWidth = colOffset * bytesSingleWidth;
+                    dest.append(" ".repeat(colWidth));
+                    // Append the bytes that fit on this line
+                    int byteCount = Math.min(params.bytesCount - colOffset, count);
                     for (int i = 0; i < byteCount; i++) {
                         int b = source.read();
                         if (b == -1)
@@ -1090,7 +1100,9 @@ public final class HexPrinter {
                             dest.append(info);
                             info = "";
                         } else {
-                            dest.append(info, 0, nl);
+                            // append up to the newline (ignoring \r if present)
+                            dest.append(info, 0,
+                                    (nl > 0 && info.charAt(nl - 1) == '\r') ? nl - 1 : nl);
                             info = info.substring(nl + 1);
                         }
                     }

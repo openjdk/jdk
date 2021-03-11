@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,23 +38,14 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * {@preview Associated with records, a preview feature of the Java language.
- *
- *           This class is associated with <i>records</i>, a preview
- *           feature of the Java language. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java language.}
- *
  * Bootstrap methods for state-driven implementations of core methods,
  * including {@link Object#equals(Object)}, {@link Object#hashCode()}, and
  * {@link Object#toString()}.  These methods may be used, for example, by
  * Java compiler implementations to implement the bodies of {@link Object}
  * methods for record classes.
  *
- * @since 14
+ * @since 16
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
 public class ObjectMethods {
 
     private ObjectMethods() { }
@@ -81,7 +72,6 @@ public class ObjectMethods {
 
     static {
         try {
-            @SuppressWarnings("preview")
             Class<ObjectMethods> OBJECT_METHODS_CLASS = ObjectMethods.class;
             MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
             MethodHandles.Lookup lookup = MethodHandles.lookup();

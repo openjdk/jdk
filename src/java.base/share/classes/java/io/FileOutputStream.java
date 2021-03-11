@@ -366,7 +366,6 @@ public class FileOutputStream extends OutputStream
      * @throws     IOException  if an I/O error occurs.
      *
      * @revised 1.4
-     * @spec JSR-51
      */
     public void close() throws IOException {
         if (closed) {
@@ -425,7 +424,6 @@ public class FileOutputStream extends OutputStream
      * @return  the file channel associated with this file output stream
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public FileChannel getChannel() {
         FileChannel fc = this.channel;

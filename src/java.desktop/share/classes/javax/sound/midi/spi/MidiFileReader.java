@@ -46,7 +46,7 @@ import javax.sound.midi.Sequence;
 public abstract class MidiFileReader {
 
     /**
-     * Constructs a {@code MidiFileReader}.
+     * Constructor for subclasses to call.
      */
     protected MidiFileReader() {}
 

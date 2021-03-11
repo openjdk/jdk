@@ -81,6 +81,8 @@ import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.locks.ReentrantLock;
+
 import static sun.net.www.protocol.http.AuthScheme.BASIC;
 import static sun.net.www.protocol.http.AuthScheme.DIGEST;
 import static sun.net.www.protocol.http.AuthScheme.NTLM;
@@ -97,7 +99,7 @@ import sun.security.action.GetPropertyAction;
 
 public class HttpURLConnection extends java.net.HttpURLConnection {
 
-    static String HTTP_CONNECT = "CONNECT";
+    static final String HTTP_CONNECT = "CONNECT";
 
     static final String version;
     public static final String userAgent;
@@ -353,7 +355,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      *     - getOutputStream()
      *     - getInputStream())
      *     - connect()
-     * Access synchronized on this.
+     * Access is protected by connectionLock.
      */
     private boolean connecting = false;
 
@@ -431,6 +433,22 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /* Logging support */
     private static final PlatformLogger logger =
             PlatformLogger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
+
+    /* Lock */
+    private final ReentrantLock connectionLock = new ReentrantLock();
+
+    private final void lock() {
+        connectionLock.lock();
+    }
+
+    private final void unlock() {
+        connectionLock.unlock();
+    }
+
+    public final boolean isLockHeldByCurrentThread() {
+        return connectionLock.isHeldByCurrentThread();
+    }
+
 
     /*
      * privileged request password authentication
@@ -514,13 +532,18 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     @Override
-    public synchronized void setAuthenticator(Authenticator auth) {
-        if (connecting || connected) {
-            throw new IllegalStateException(
-                  "Authenticator must be set before connecting");
+    public void setAuthenticator(Authenticator auth) {
+        lock();
+        try {
+            if (connecting || connected) {
+                throw new IllegalStateException(
+                        "Authenticator must be set before connecting");
+            }
+            authenticator = Objects.requireNonNull(auth);
+            authenticatorKey = AuthenticatorKeys.getKey(authenticator);
+        } finally {
+            unlock();
         }
-        authenticator = Objects.requireNonNull(auth);
-        authenticatorKey = AuthenticatorKeys.getKey(authenticator);
     }
 
     public String getAuthenticatorKey() {
@@ -563,18 +586,25 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
     }
 
-    public synchronized void setRequestMethod(String method)
+    public void setRequestMethod(String method)
                         throws ProtocolException {
-        if (connecting) {
-            throw new IllegalStateException("connect in progress");
+        lock();
+        try {
+            if (connecting) {
+                throw new IllegalStateException("connect in progress");
+            }
+            super.setRequestMethod(method);
+        } finally {
+            unlock();
         }
-        super.setRequestMethod(method);
     }
 
     /* adds the standard key/val pairs to reqests if necessary & write to
      * given PrintStream
      */
     private void writeRequests() throws IOException {
+        assert isLockHeldByCurrentThread();
+
         /* print all message headers in the MessageHeader
          * onto the wire - all the ones we've set and any
          * others that have been set
@@ -683,6 +713,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
             } else if (poster != null) {
                 /* add Content-Length & POST/PUT data */
+                // safe to synchronize on poster: this is
+                // a simple subclass of ByteArrayOutputStream
                 synchronized (poster) {
                     /* close it, so no more data can be added */
                     poster.close();
@@ -1010,8 +1042,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     // overridden in HTTPS subclass
 
     public void connect() throws IOException {
-        synchronized (this) {
+        lock();
+        try {
             connecting = true;
+        } finally {
+            unlock();
         }
         plainConnect();
     }
@@ -1057,11 +1092,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return host + ":" + Integer.toString(port);
     }
 
-    protected void plainConnect()  throws IOException {
-        synchronized (this) {
+    protected void plainConnect() throws IOException {
+        lock();
+        try {
             if (connected) {
                 return;
             }
+        } finally {
+            unlock();
         }
         SocketPermission p = URLtoSocketPermission(this.url);
         if (p != null) {
@@ -1330,28 +1368,34 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      */
 
     @Override
-    public synchronized OutputStream getOutputStream() throws IOException {
-        connecting = true;
-        SocketPermission p = URLtoSocketPermission(this.url);
+    public OutputStream getOutputStream() throws IOException {
+        lock();
+        try {
+            connecting = true;
+            SocketPermission p = URLtoSocketPermission(this.url);
 
-        if (p != null) {
-            try {
-                return AccessController.doPrivilegedWithCombiner(
-                    new PrivilegedExceptionAction<>() {
-                        public OutputStream run() throws IOException {
-                            return getOutputStream0();
-                        }
-                    }, null, p
-                );
-            } catch (PrivilegedActionException e) {
-                throw (IOException) e.getException();
+            if (p != null) {
+                try {
+                    return AccessController.doPrivilegedWithCombiner(
+                            new PrivilegedExceptionAction<>() {
+                                public OutputStream run() throws IOException {
+                                    return getOutputStream0();
+                                }
+                            }, null, p
+                    );
+                } catch (PrivilegedActionException e) {
+                    throw (IOException) e.getException();
+                }
+            } else {
+                return getOutputStream0();
             }
-        } else {
-            return getOutputStream0();
+        } finally {
+            unlock();
         }
     }
 
-    private synchronized OutputStream getOutputStream0() throws IOException {
+    private OutputStream getOutputStream0() throws IOException {
+        assert isLockHeldByCurrentThread();
         try {
             if (!doOutput) {
                 throw new ProtocolException("cannot write to a URLConnection"
@@ -1441,16 +1485,19 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             // we only want to capture the user defined Cookies once, as
             // they cannot be changed by user code after we are connected,
             // only internally.
-            synchronized (this) {
-                if (setUserCookies) {
-                    int k = requests.getKey("Cookie");
-                    if (k != -1)
-                        userCookies = requests.getValue(k);
-                    k = requests.getKey("Cookie2");
-                    if (k != -1)
-                        userCookies2 = requests.getValue(k);
-                    setUserCookies = false;
-                }
+
+            // we should only reach here when called from
+            // writeRequest, which in turn is only called by
+            // getInputStream0
+            assert isLockHeldByCurrentThread();
+            if (setUserCookies) {
+                int k = requests.getKey("Cookie");
+                if (k != -1)
+                    userCookies = requests.getValue(k);
+                k = requests.getKey("Cookie2");
+                if (k != -1)
+                    userCookies2 = requests.getValue(k);
+                setUserCookies = false;
             }
 
             // remove old Cookie header before setting new one.
@@ -1508,30 +1555,36 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     @Override
-    public synchronized InputStream getInputStream() throws IOException {
-        connecting = true;
-        SocketPermission p = URLtoSocketPermission(this.url);
+    public InputStream getInputStream() throws IOException {
+        lock();
+        try {
+            connecting = true;
+            SocketPermission p = URLtoSocketPermission(this.url);
 
-        if (p != null) {
-            try {
-                return AccessController.doPrivilegedWithCombiner(
-                    new PrivilegedExceptionAction<>() {
-                        public InputStream run() throws IOException {
-                            return getInputStream0();
-                        }
-                    }, null, p
-                );
-            } catch (PrivilegedActionException e) {
-                throw (IOException) e.getException();
+            if (p != null) {
+                try {
+                    return AccessController.doPrivilegedWithCombiner(
+                            new PrivilegedExceptionAction<>() {
+                                public InputStream run() throws IOException {
+                                    return getInputStream0();
+                                }
+                            }, null, p
+                    );
+                } catch (PrivilegedActionException e) {
+                    throw (IOException) e.getException();
+                }
+            } else {
+                return getInputStream0();
             }
-        } else {
-            return getInputStream0();
+        } finally {
+            unlock();
         }
     }
 
     @SuppressWarnings("empty-statement")
-    private synchronized InputStream getInputStream0() throws IOException {
+    private InputStream getInputStream0() throws IOException {
 
+        assert isLockHeldByCurrentThread();
         if (!doInput) {
             throw new ProtocolException("Cannot read from URLConnection"
                    + " if doInput=false (call setDoInput(true))");
@@ -2010,6 +2063,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      */
     private AuthenticationInfo
         resetProxyAuthentication(AuthenticationInfo proxyAuthentication, AuthenticationHeader auth) throws IOException {
+
+        // Only called from getInputStream0 and doTunneling0
+        assert isLockHeldByCurrentThread();
+
         if ((proxyAuthentication != null )&&
              proxyAuthentication.getAuthScheme() != NTLM) {
             String raw = auth.raw();
@@ -2060,13 +2117,24 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /**
      * establish a tunnel through proxy server
      */
-    public synchronized void doTunneling() throws IOException {
+    public void doTunneling() throws IOException {
+        lock();
+        try {
+            doTunneling0();
+        } finally{
+            unlock();
+        }
+    }
+
+    private void doTunneling0() throws IOException {
         int retryTunnel = 0;
         String statusLine = "";
         int respCode = 0;
         AuthenticationInfo proxyAuthentication = null;
         String proxyHost = null;
         int proxyPort = -1;
+
+        assert isLockHeldByCurrentThread();
 
         // save current requests so that they can be restored after tunnel is setup.
         MessageHeader savedRequests = requests;
@@ -2273,7 +2341,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * the connection.
      */
     @SuppressWarnings("fallthrough")
-    private AuthenticationInfo getHttpProxyAuthentication (AuthenticationHeader authhdr) {
+    private AuthenticationInfo getHttpProxyAuthentication(AuthenticationHeader authhdr) {
+
+        assert isLockHeldByCurrentThread();
+
         /* get authorization from authenticator */
         AuthenticationInfo ret = null;
         String raw = authhdr.raw();
@@ -2434,11 +2505,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /**
      * Gets the authentication for an HTTP server, and applies it to
      * the connection.
-     * @param authHdr the AuthenticationHeader which tells what auth scheme is
+     * @param authhdr the AuthenticationHeader which tells what auth scheme is
      * preferred.
      */
     @SuppressWarnings("fallthrough")
-    private AuthenticationInfo getServerAuthentication (AuthenticationHeader authhdr) {
+    private AuthenticationInfo getServerAuthentication(AuthenticationHeader authhdr) {
+
+        // Only called from getInputStream0
+        assert isLockHeldByCurrentThread();
+
         /* get authorization from authenticator */
         AuthenticationInfo ret = null;
         String raw = authhdr.raw();
@@ -2716,6 +2791,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private boolean followRedirect0(String loc, int stat, URL locUrl)
         throws IOException
     {
+        assert isLockHeldByCurrentThread();
+
         disconnectInternal();
         if (streaming()) {
             throw new HttpRetryException (RETRY_MSG3, stat, loc);
@@ -3195,17 +3272,22 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @param value the value to be set
      */
     @Override
-    public synchronized void setRequestProperty(String key, String value) {
-        if (connected || connecting)
-            throw new IllegalStateException("Already connected");
-        if (key == null)
-            throw new NullPointerException ("key is null");
+    public void setRequestProperty(String key, String value) {
+        lock();
+        try {
+            if (connected || connecting)
+                throw new IllegalStateException("Already connected");
+            if (key == null)
+                throw new NullPointerException("key is null");
 
-        if (isExternalMessageHeaderAllowed(key, value)) {
-            requests.set(key, value);
-            if (!key.equalsIgnoreCase("Content-Type")) {
-                userHeaders.set(key, value);
+            if (isExternalMessageHeaderAllowed(key, value)) {
+                requests.set(key, value);
+                if (!key.equalsIgnoreCase("Content-Type")) {
+                    userHeaders.set(key, value);
+                }
             }
+        } finally {
+            unlock();
         }
     }
 
@@ -3221,21 +3303,26 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @param   key     the keyword by which the request is known
      *                  (e.g., "<code>accept</code>").
      * @param   value  the value associated with it.
-     * @see #getRequestProperties(java.lang.String)
+     * @see #getRequestProperty(java.lang.String)
      * @since 1.4
      */
     @Override
-    public synchronized void addRequestProperty(String key, String value) {
-        if (connected || connecting)
-            throw new IllegalStateException("Already connected");
-        if (key == null)
-            throw new NullPointerException ("key is null");
+    public void addRequestProperty(String key, String value) {
+        lock();
+        try {
+            if (connected || connecting)
+                throw new IllegalStateException("Already connected");
+            if (key == null)
+                throw new NullPointerException("key is null");
 
-        if (isExternalMessageHeaderAllowed(key, value)) {
-            requests.add(key, value);
-            if (!key.equalsIgnoreCase("Content-Type")) {
+            if (isExternalMessageHeaderAllowed(key, value)) {
+                requests.add(key, value);
+                if (!key.equalsIgnoreCase("Content-Type")) {
                     userHeaders.add(key, value);
+                }
             }
+        } finally {
+            unlock();
         }
     }
 
@@ -3244,31 +3331,41 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     // the connected test.
     //
     public void setAuthenticationProperty(String key, String value) {
+        // Only called by the implementation of AuthenticationInfo::setHeaders(...)
+        // in AuthenticationInfo subclasses, which is only called from
+        // methods from HttpURLConnection protected by the connectionLock.
+        assert isLockHeldByCurrentThread();
+
         checkMessageHeader(key, value);
         requests.set(key, value);
     }
 
     @Override
-    public synchronized String getRequestProperty (String key) {
-        if (key == null) {
-            return null;
-        }
-
-        // don't return headers containing security sensitive information
-        for (int i=0; i < EXCLUDE_HEADERS.length; i++) {
-            if (key.equalsIgnoreCase(EXCLUDE_HEADERS[i])) {
+    public String getRequestProperty (String key) {
+        lock();
+        try {
+            if (key == null) {
                 return null;
             }
-        }
-        if (!setUserCookies) {
-            if (key.equalsIgnoreCase("Cookie")) {
-                return userCookies;
+
+            // don't return headers containing security sensitive information
+            for (int i = 0; i < EXCLUDE_HEADERS.length; i++) {
+                if (key.equalsIgnoreCase(EXCLUDE_HEADERS[i])) {
+                    return null;
+                }
             }
-            if (key.equalsIgnoreCase("Cookie2")) {
-                return userCookies2;
+            if (!setUserCookies) {
+                if (key.equalsIgnoreCase("Cookie")) {
+                    return userCookies;
+                }
+                if (key.equalsIgnoreCase("Cookie2")) {
+                    return userCookies2;
+                }
             }
+            return requests.findValue(key);
+        } finally {
+            unlock();
         }
-        return requests.findValue(key);
     }
 
     /**
@@ -3284,29 +3381,34 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @since 1.4
      */
     @Override
-    public synchronized Map<String, List<String>> getRequestProperties() {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+    public Map<String, List<String>> getRequestProperties() {
+        lock();
+        try {
+            if (connected)
+                throw new IllegalStateException("Already connected");
 
-        // exclude headers containing security-sensitive info
-        if (setUserCookies) {
-            return requests.getHeaders(EXCLUDE_HEADERS);
-        }
-        /*
-         * The cookies in the requests message headers may have
-         * been modified. Use the saved user cookies instead.
-         */
-        Map<String, List<String>> userCookiesMap = null;
-        if (userCookies != null || userCookies2 != null) {
-            userCookiesMap = new HashMap<>();
-            if (userCookies != null) {
-                userCookiesMap.put("Cookie", Arrays.asList(userCookies));
+            // exclude headers containing security-sensitive info
+            if (setUserCookies) {
+                return requests.getHeaders(EXCLUDE_HEADERS);
             }
-            if (userCookies2 != null) {
-                userCookiesMap.put("Cookie2", Arrays.asList(userCookies2));
+            /*
+             * The cookies in the requests message headers may have
+             * been modified. Use the saved user cookies instead.
+             */
+            Map<String, List<String>> userCookiesMap = null;
+            if (userCookies != null || userCookies2 != null) {
+                userCookiesMap = new HashMap<>();
+                if (userCookies != null) {
+                    userCookiesMap.put("Cookie", Arrays.asList(userCookies));
+                }
+                if (userCookies2 != null) {
+                    userCookiesMap.put("Cookie2", Arrays.asList(userCookies2));
+                }
             }
+            return requests.filterAndAddHeaders(EXCLUDE_HEADERS2, userCookiesMap);
+        } finally {
+            unlock();
         }
-        return requests.filterAndAddHeaders(EXCLUDE_HEADERS2, userCookiesMap);
     }
 
     @Override
@@ -3350,7 +3452,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * value to be used in milliseconds
      * @throws IllegalArgumentException if the timeout parameter is negative
      *
-     * @see java.net.URLConnectiongetReadTimeout()
+     * @see java.net.URLConnection#getReadTimeout()
      * @see java.io.InputStream#read()
      * @since 1.5
      */
@@ -3469,6 +3571,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
          * @see     java.io.FilterInputStream#in
          * @see     java.io.FilterInputStream#reset()
          */
+        // safe to use synchronized here: super method is synchronized too
+        // and involves no blocking operation; only mark & reset are
+        // synchronized in the super class hierarchy.
         @Override
         public synchronized void mark(int readlimit) {
             super.mark(readlimit);
@@ -3499,6 +3604,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
          * @see        java.io.FilterInputStream#in
          * @see        java.io.FilterInputStream#mark(int)
          */
+        // safe to use synchronized here: super method is synchronized too
+        // and involves no blocking operation; only mark & reset are
+        // synchronized in the super class hierarchy.
         @Override
         public synchronized void reset() throws IOException {
             super.reset();
@@ -3679,8 +3787,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (error) {
                 throw errorExcp;
             }
-            if (((PrintStream)out).checkError()) {
-                throw new IOException("Error writing request body to server");
+            if (out instanceof PrintStream) {
+                if (((PrintStream) out).checkError()) {
+                    throw new IOException("Error writing request body to server");
+                }
+            } else if (out instanceof ChunkedOutputStream) {
+                if (((ChunkedOutputStream) out).checkError()) {
+                    throw new IOException("Error writing request body to server");
+                }
             }
         }
 

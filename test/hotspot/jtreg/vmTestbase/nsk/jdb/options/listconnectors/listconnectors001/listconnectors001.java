@@ -51,8 +51,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.options.listconnectors.listconnectors001.listconnectors001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdb.options.listconnectors.listconnectors001.listconnectors001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

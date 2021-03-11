@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131019 8169561
+ * @bug 8131019 8169561 8261450
  * @summary Test JavadocFormatter
  * @library /tools/lib
  * @modules jdk.compiler/jdk.internal.shellsupport.doc
@@ -137,7 +137,7 @@ public class JavadocFormatterTest {
                    "1234 1234 1234 1234 1234 1234 1234 1234 1234 1234 1234 1234 1234\n" +
                    "1234 1234 1234 1234 1234 1234 1234 1234 1234 1234 1234 1234 1234\n" +
                    "1234 1234 1234 1234 1234 1234 1234 1234 1234 1234 1234 1234 1234\n" +
-                   "1234 1234 1234 1234 1234 1234 1234 1234 1234\n";
+                   "1234 1234 1234 1234 1234 1234 1234 1234 1234 \n";
 
         if (!Objects.equals(actual, expected)) {
             throw new AssertionError("Incorrect output: " + actual);
@@ -399,6 +399,18 @@ public class JavadocFormatterTest {
         if (!Objects.equals(actual, expected)) {
             throw new AssertionError("Incorrect output: " + actual);
         }
+    }
+
+    public void testSpaceAtEndOfLine() {
+        String header = "Class<?> Class<T>.forName(Module module, String name)";
+        String javadoc = """
+                         @throws SecurityException
+                                 <ul>
+                                 <li> test </li>
+                                 </ul>
+                         """;
+
+            new JavadocFormatter(60, true).formatJavadoc(header, javadoc);
     }
 
 }

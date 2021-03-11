@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ $(eval $(call IncludeCustomExtension, hotspot/gensrc/GenerateSources.gmk))
 
 # Setup the hotspot launcher script for developer use
 $(eval $(call SetupTextFileProcessing, CREATE_HOTSPOT_LAUNCHER, \
-    SOURCE_FILES := $(TOPDIR)/make/hotspot/hotspot.script, \
+    SOURCE_FILES := $(TOPDIR)/make/scripts/hotspot.sh, \
     OUTPUT_FILE := $(JVM_OUTPUTDIR)/hotspot, \
     REPLACEMENTS := \
         @@LIBARCH@@ => $(OPENJDK_TARGET_CPU_LEGACY_LIB) ; \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,5 +41,11 @@ public enum StandardProtocolFamily implements ProtocolFamily {
     /**
      * Internet Protocol Version 6 (IPv6)
      */
-    INET6
+    INET6,
+
+    /**
+     * Unix domain (Local) interprocess communication.
+     * @since 16
+     */
+    UNIX
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -49,34 +50,13 @@
 #include "utilities/ticks.hpp"
 
 G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset) :
-  // Dirty card queues are always active, so we create them with their
-  // active field set to true.
-  PtrQueue(qset, true /* active */),
+  PtrQueue(qset),
   _refinement_stats(new G1ConcurrentRefineStats())
 { }
 
 G1DirtyCardQueue::~G1DirtyCardQueue() {
-  flush();
+  G1BarrierSet::dirty_card_queue_set().flush_queue(*this);
   delete _refinement_stats;
-}
-
-void G1DirtyCardQueue::flush() {
-  _refinement_stats->inc_dirtied_cards(size());
-  flush_impl();
-}
-
-void G1DirtyCardQueue::on_thread_detach() {
-  assert(this == &G1ThreadLocalData::dirty_card_queue(Thread::current()), "precondition");
-  flush();
-  dirty_card_qset()->record_detached_refinement_stats(_refinement_stats);
-}
-
-void G1DirtyCardQueue::handle_completed_buffer() {
-  assert(!is_empty(), "precondition");
-  _refinement_stats->inc_dirtied_cards(size());
-  BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-  allocate_buffer();
-  dirty_card_qset()->handle_completed_buffer(node, _refinement_stats);
 }
 
 // Assumed to be zero by concurrent threads.
@@ -93,9 +73,7 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet(BufferNode::Allocator* allocator) :
   _max_cards(MaxCardsUnlimited),
   _padded_max_cards(MaxCardsUnlimited),
   _detached_refinement_stats()
-{
-  _all_active = true;
-}
+{}
 
 G1DirtyCardQueueSet::~G1DirtyCardQueueSet() {
   abandon_completed_buffers();
@@ -106,8 +84,36 @@ uint G1DirtyCardQueueSet::num_par_ids() {
   return (uint)os::initial_active_processor_count();
 }
 
+void G1DirtyCardQueueSet::flush_queue(G1DirtyCardQueue& queue) {
+  if (queue.buffer() != nullptr) {
+    G1ConcurrentRefineStats* stats = queue.refinement_stats();
+    stats->inc_dirtied_cards(buffer_size() - queue.index());
+  }
+  PtrQueueSet::flush_queue(queue);
+}
+
+void G1DirtyCardQueueSet::enqueue(G1DirtyCardQueue& queue,
+                                  volatile CardValue* card_ptr) {
+  CardValue* value = const_cast<CardValue*>(card_ptr);
+  if (!try_enqueue(queue, value)) {
+    handle_zero_index(queue);
+    retry_enqueue(queue, value);
+  }
+}
+
+void G1DirtyCardQueueSet::handle_zero_index(G1DirtyCardQueue& queue) {
+  assert(queue.index() == 0, "precondition");
+  BufferNode* old_node = exchange_buffer_with_new(queue);
+  if (old_node != nullptr) {
+    G1ConcurrentRefineStats* stats = queue.refinement_stats();
+    stats->inc_dirtied_cards(buffer_size());
+    handle_completed_buffer(old_node, stats);
+  }
+}
+
 void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
-  G1ThreadLocalData::dirty_card_queue(t).handle_zero_index();
+  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
+  G1BarrierSet::dirty_card_queue_set().handle_zero_index(queue);
 }
 
 #ifdef ASSERT
@@ -616,12 +622,14 @@ void G1DirtyCardQueueSet::abandon_logs() {
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.
   struct AbandonThreadLogClosure : public ThreadClosure {
+    G1DirtyCardQueueSet& _qset;
+    AbandonThreadLogClosure(G1DirtyCardQueueSet& qset) : _qset(qset) {}
     virtual void do_thread(Thread* t) {
-      G1DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(t);
-      dcq.reset();
-      dcq.refinement_stats()->reset();
+      G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
+      _qset.reset_queue(queue);
+      queue.refinement_stats()->reset();
     }
-  } closure;
+  } closure(*this);
   Threads::threads_do(&closure);
 
   G1BarrierSet::shared_dirty_card_queue().reset();
@@ -636,13 +644,16 @@ void G1DirtyCardQueueSet::concatenate_logs() {
   set_max_cards(MaxCardsUnlimited);
 
   struct ConcatenateThreadLogClosure : public ThreadClosure {
+    G1DirtyCardQueueSet& _qset;
+    ConcatenateThreadLogClosure(G1DirtyCardQueueSet& qset) : _qset(qset) {}
     virtual void do_thread(Thread* t) {
-      G1DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(t);
-      if (!dcq.is_empty()) {
-        dcq.flush();
+      G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
+      if ((queue.buffer() != nullptr) &&
+          (queue.index() != _qset.buffer_size())) {
+        _qset.flush_queue(queue);
       }
     }
-  } closure;
+  } closure(*this);
   Threads::threads_do(&closure);
 
   G1BarrierSet::shared_dirty_card_queue().flush();

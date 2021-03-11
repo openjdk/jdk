@@ -1,9 +1,9 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832
+ * @bug 8004832 8247957
  * @summary Add new doclint package
  * @library ..
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -ref TextNotAllowed.out TextNotAllowed.java
  */
@@ -13,21 +13,21 @@
  * <ol> abc <li> item </li> def <li> item </li> ghi </ol>
  * <ul> abc <li> item </li> def <li> item </li> ghi </ul>
  *
- * <table summary=description> abc </table>
- * <table summary=description> <thead> abc </thead> </table>
- * <table summary=description> <tbody> abc </tbody> </table>
- * <table summary=description> <tfoot> abc </tfoot> </table>
- * <table summary=description> <tr> abc </tr> </table>
+ * <table> <caption> description </caption> abc </table>
+ * <table> <caption> description </caption> <thead> abc </thead> </table>
+ * <table> <caption> description </caption> <tbody> abc </tbody> </table>
+ * <table> <caption> description </caption> <tfoot> abc </tfoot> </table>
+ * <table> <caption> description </caption> <tr> abc </tr> </table>
  *
  * <dl> &amp; <dt> term </dt> &lt; <dd> description </dd> &gt; </dl>
  * <ol> &amp; <li> item </li> &lt; <li> item </li> &gt; </ol>
  * <ul> &amp; <li> item </li> &lt; <li> item </li> &gt; </ul>
  *
- * <table summary=description> &amp; </table>
- * <table summary=description> <thead> &amp; </thead> </table>
- * <table summary=description> <tbody> &amp; </tbody> </table>
- * <table summary=description> <tfoot> &amp; </tfoot> </table>
- * <table summary=description> <tr> &amp; </tr> </table>
+ * <table> <caption> description </caption> &amp; </table>
+ * <table> <caption> description </caption> <thead> &amp; </thead> </table>
+ * <table> <caption> description </caption> <tbody> &amp; </tbody> </table>
+ * <table> <caption> description </caption> <tfoot> &amp; </tfoot> </table>
+ * <table> <caption> description </caption> <tr> &amp; </tr> </table>
  *
  */
 public class TextNotAllowed { }

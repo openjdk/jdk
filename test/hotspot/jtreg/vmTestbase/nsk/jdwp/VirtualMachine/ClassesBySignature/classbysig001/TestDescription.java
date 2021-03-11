@@ -46,9 +46,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.ClassesBySignature.classbysig001
- *        nsk.jdwp.VirtualMachine.ClassesBySignature.classbysig001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.VirtualMachine.ClassesBySignature.classbysig001a
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.ClassesBySignature.classbysig001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

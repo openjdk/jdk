@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4856966
+ * @bug 4856966 8242332
  * @summary Test the Signature.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @library /test/lib ..
@@ -55,10 +55,10 @@ public class ByteBuffers extends PKCS11Test {
         random.nextBytes(t);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
-        kpg.initialize(512);
+        kpg.initialize(2048);
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("MD5withRSA", p);
+        Signature sig = Signature.getInstance("SHA256withRSA", p);
         sig.initSign(kp.getPrivate());
         sig.update(t);
         byte[] signature = sig.sign();

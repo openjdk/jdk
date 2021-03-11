@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @bug 8184328
+ * @bug 8184328 8253368
  * @summary JDK8u131-b34-socketRead0 hang at SSL read
  * @run main/othervm SSLSocketCloseHang
+ * @run main/othervm SSLSocketCloseHang shutdownInputTest
  */
 
 import java.io.*;
@@ -71,6 +72,8 @@ public class SSLSocketCloseHang {
      * Turn on SSL debugging?
      */
     static boolean debug = false;
+
+    static boolean shutdownInputTest = false;
 
     /*
      * If the client or server is doing some kind of object creation
@@ -145,7 +148,26 @@ public class SSLSocketCloseHang {
         Thread.sleep(500);
         System.err.println("Client closing: " + System.nanoTime());
 
-        sslSocket.close();
+        if (shutdownInputTest) {
+            try {
+                sslSocket.shutdownInput();
+            } catch (SSLException e) {
+                if (!e.getMessage().contains
+                        ("closing inbound before receiving peer's close_notify")) {
+                    throw new RuntimeException("expected different exception message. " +
+                        e.getMessage());
+                }
+            }
+            if (!sslSocket.getSession().isValid()) {
+                throw new RuntimeException("expected session to remain valid");
+            }
+
+        } else {
+            sslSocket.close();
+        }
+
+
+
         clientClosed = true;
         System.err.println("Client closed: " + System.nanoTime());
     }
@@ -178,6 +200,8 @@ public class SSLSocketCloseHang {
 
         if (debug)
             System.setProperty("javax.net.debug", "all");
+
+        shutdownInputTest = args.length > 0 ? true : false;
 
         /*
          * Start the tests.

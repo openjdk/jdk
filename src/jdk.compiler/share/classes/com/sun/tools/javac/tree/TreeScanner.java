@@ -304,8 +304,7 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitBindingPattern(JCBindingPattern tree) {
-        if (tree.vartype != null)
-            scan(tree.vartype);
+        scan(tree.var);
     }
 
     public void visitIndexed(JCArrayAccess tree) {

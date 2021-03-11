@@ -140,7 +140,6 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
      * @return   {@inheritDoc}
      *
      * @since 9
-     * @spec JPMS
      */
     @Override
     public R visitModule(ModuleElement e, P p) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,11 +83,6 @@ public class Compiler {
             executor.execute(new CompileMethodCommand(id, e));
         }
         METHOD_COUNT.addAndGet(methodCount);
-
-        if (Utils.DEOPTIMIZE_ALL_CLASSES_RATE > 0
-                && (id % Utils.DEOPTIMIZE_ALL_CLASSES_RATE == 0)) {
-            WHITE_BOX.deoptimizeAll();
-        }
     }
 
     private static void preloadClasses(String className, long id,

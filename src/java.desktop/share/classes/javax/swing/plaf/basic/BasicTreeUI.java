@@ -2905,6 +2905,11 @@ public class BasicTreeUI extends TreeUI
         // class calls into the Handler.
 
         /**
+         * Constructs a {@code TreeExpansionHandler}.
+         */
+        public TreeExpansionHandler() {}
+
+        /**
          * Called whenever an item in the tree has been expanded.
          */
         public void treeExpanded(TreeExpansionEvent event) {
@@ -2930,6 +2935,11 @@ public class BasicTreeUI extends TreeUI
         protected Timer                timer;
         /** ScrollBar that is being adjusted. */
         protected JScrollBar           scrollBar;
+
+        /**
+         * Constructs a {@code ComponentHandler}.
+         */
+        public ComponentHandler() {}
 
         public void componentMoved(ComponentEvent e) {
             if(timer == null) {
@@ -3008,6 +3018,11 @@ public class BasicTreeUI extends TreeUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
+        /**
+         * Constructs a {@code TreeModelHandler}.
+         */
+        public TreeModelHandler() {}
+
         public void treeNodesChanged(TreeModelEvent e) {
             getHandler().treeNodesChanged(e);
         }
@@ -3038,6 +3053,11 @@ public class BasicTreeUI extends TreeUI
         // class calls into the Handler.
 
         /**
+         * Constructs a {@code TreeSelectionHandler}.
+         */
+        public TreeSelectionHandler() {}
+
+        /**
          * Messaged when the selection changes in the tree we're displaying
          * for.  Stops editing, messages super and displays the changed paths.
          */
@@ -3057,6 +3077,11 @@ public class BasicTreeUI extends TreeUI
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+
+        /**
+         * Constructs a {@code CellEditorHandler}.
+         */
+        public CellEditorHandler() {}
 
         /** Messaged when editing has stopped in the tree. */
         public void editingStopped(ChangeEvent e) {
@@ -3092,6 +3117,11 @@ public class BasicTreeUI extends TreeUI
         protected boolean            isKeyDown;
 
         /**
+         * Constructs a {@code KeyHandler}.
+         */
+        public KeyHandler() {}
+
+        /**
          * Invoked when a key has been typed.
          *
          * Moves the keyboard focus to the first element
@@ -3124,6 +3154,11 @@ public class BasicTreeUI extends TreeUI
         // class calls into the Handler.
 
         /**
+         * Constructs a {@code FocusHandler}.
+         */
+        public FocusHandler() {}
+
+        /**
          * Invoked when focus is activated on the tree we're in, redraws the
          * lead row.
          */
@@ -3149,6 +3184,11 @@ public class BasicTreeUI extends TreeUI
     // This returns locations that don't include any Insets.
     public class NodeDimensionsHandler extends
                  AbstractLayoutCache.NodeDimensions {
+        /**
+         * Constructs a {@code NodeDimensionsHandler}.
+         */
+        public NodeDimensionsHandler() {}
+
         /**
          * Responsible for getting the size of a particular node.
          */
@@ -3230,6 +3270,11 @@ public class BasicTreeUI extends TreeUI
         // class calls into the Handler.
 
         /**
+         * Constructs a {@code MouseHandler}.
+         */
+        public MouseHandler() {}
+
+        /**
          * Invoked when a mouse button has been pressed on a component.
          */
         public void mousePressed(MouseEvent e) {
@@ -3267,6 +3312,11 @@ public class BasicTreeUI extends TreeUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
+        /**
+         * Constructs a {@code PropertyChangeHandler}.
+         */
+        public PropertyChangeHandler() {}
+
         public void propertyChange(PropertyChangeEvent event) {
             getHandler().propertyChange(event);
         }
@@ -3284,6 +3334,11 @@ public class BasicTreeUI extends TreeUI
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+
+        /**
+         * Constructs a {@code SelectionModelPropertyChangeHandler}.
+         */
+        public SelectionModelPropertyChangeHandler() {}
 
         public void propertyChange(PropertyChangeEvent event) {
             getHandler().propertyChange(event);

@@ -34,27 +34,19 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
 import java.security.*;
+import java.security.spec.PSSParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
+import sun.security.provider.SHAKE256;
 import sun.security.timestamp.TimestampToken;
-import sun.security.util.ConstraintsParameters;
-import sun.security.util.Debug;
-import sun.security.util.DerEncoder;
-import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.util.DisabledAlgorithmConstraints;
-import sun.security.util.HexDumpEncoder;
-import sun.security.util.KeyUtil;
-import sun.security.util.ObjectIdentifier;
+import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
 import sun.security.x509.KeyUsageExtension;
-import sun.security.util.SignatureUtil;
 
 /**
  * A SignerInfo, as defined in PKCS#7's signedData type.
@@ -92,12 +84,8 @@ public class SignerInfo implements DerEncoder {
                       AlgorithmId digestAlgorithmId,
                       AlgorithmId digestEncryptionAlgorithmId,
                       byte[] encryptedDigest) {
-        this.version = BigInteger.ONE;
-        this.issuerName = issuerName;
-        this.certificateSerialNumber = serial;
-        this.digestAlgorithmId = digestAlgorithmId;
-        this.digestEncryptionAlgorithmId = digestEncryptionAlgorithmId;
-        this.encryptedDigest = encryptedDigest;
+        this(issuerName, serial, digestAlgorithmId, null,
+                digestEncryptionAlgorithmId, encryptedDigest, null);
     }
 
     public SignerInfo(X500Name  issuerName,
@@ -198,6 +186,36 @@ public class SignerInfo implements DerEncoder {
         if (derin.available() != 0) {
             throw new ParsingException("extra data at the end");
         }
+
+        // verify CMSAlgorithmProtection
+        checkCMSAlgorithmProtection();
+    }
+
+    // CMSAlgorithmProtection verification as described in RFC 6211
+    private void checkCMSAlgorithmProtection() throws IOException {
+        if (authenticatedAttributes == null) {
+            return;
+        }
+        PKCS9Attribute ap = authenticatedAttributes.getAttribute(
+                PKCS9Attribute.CMS_ALGORITHM_PROTECTION_OID);
+        if (ap == null) {
+            return;
+        }
+        DerValue dv = new DerValue((byte[])ap.getValue());
+        DerInputStream data = dv.data();
+        AlgorithmId d = AlgorithmId.parse(data.getDerValue());
+        DerValue ds = data.getDerValue();
+        if (data.available() > 0) {
+            throw new IOException("Unknown field in CMSAlgorithmProtection");
+        }
+        if (!ds.isContextSpecific((byte)1)) {
+            throw new IOException("No signature algorithm in CMSAlgorithmProtection");
+        }
+        AlgorithmId s = AlgorithmId.parse(ds.withTag(DerValue.tag_Sequence));
+        if (!s.equals(digestEncryptionAlgorithmId)
+                || !d.equals(digestAlgorithmId)) {
+            throw new IOException("CMSAlgorithmProtection check failed");
+        }
     }
 
     public void encode(DerOutputStream out) throws IOException {
@@ -241,8 +259,6 @@ public class SignerInfo implements DerEncoder {
 
         out.write(tmp.toByteArray());
     }
-
-
 
     /*
      * Returns the (user) certificate pertaining to this SignerInfo.
@@ -327,7 +343,6 @@ public class SignerInfo implements DerEncoder {
 
             ConstraintsParameters cparams =
                     new ConstraintsParameters(timestamp);
-            String digestAlgname = getDigestAlgorithmId().getName();
 
             byte[] dataSigned;
 
@@ -353,6 +368,8 @@ public class SignerInfo implements DerEncoder {
                 if (messageDigest == null) // fail if there is no message digest
                     return null;
 
+                String digestAlgname = digestAlgorithmId.getName();
+
                 // check that digest algorithm is not restricted
                 try {
                     JAR_DISABLED_CHECK.permits(digestAlgname, cparams);
@@ -360,8 +377,24 @@ public class SignerInfo implements DerEncoder {
                     throw new SignatureException(e.getMessage(), e);
                 }
 
-                MessageDigest md = MessageDigest.getInstance(digestAlgname);
-                byte[] computedMessageDigest = md.digest(data);
+                byte[] computedMessageDigest;
+                if (digestAlgname.equals("SHAKE256")
+                        || digestAlgname.equals("SHAKE256-LEN")) {
+                    if (digestAlgname.equals("SHAKE256-LEN")) {
+                        int v = new DerValue(digestAlgorithmId
+                                .getEncodedParams()).getInteger();
+                        if (v != 512) {
+                            throw new SignatureException(
+                                    "Unsupported id-shake256-" + v);
+                        }
+                    }
+                    var md = new SHAKE256(64);
+                    md.update(data, 0, data.length);
+                    computedMessageDigest = md.digest();
+                } else {
+                    MessageDigest md = MessageDigest.getInstance(digestAlgname);
+                    computedMessageDigest = md.digest(data);
+                }
 
                 if (messageDigest.length != computedMessageDigest.length)
                     return null;
@@ -380,16 +413,11 @@ public class SignerInfo implements DerEncoder {
             }
 
             // put together digest algorithm and encryption algorithm
-            // to form signing algorithm
-            String encryptionAlgname =
-                getDigestEncryptionAlgorithmId().getName();
-
-            // Workaround: sometimes the encryptionAlgname is actually
-            // a signature name
-            String tmp = AlgorithmId.getEncAlgFromSigAlg(encryptionAlgname);
-            if (tmp != null) encryptionAlgname = tmp;
-            String algname = AlgorithmId.makeSigAlg(
-                    digestAlgname, encryptionAlgname);
+            // to form signing algorithm. See makeSigAlg for details.
+            String algname = makeSigAlg(
+                    digestAlgorithmId,
+                    digestEncryptionAlgorithmId,
+                    authenticatedAttributes == null);
 
             // check that jar signature algorithm is not restricted
             try {
@@ -435,11 +463,11 @@ public class SignerInfo implements DerEncoder {
                                                  + "extension");
                 }
 
-                boolean digSigAllowed = keyUsage.get(
-                        KeyUsageExtension.DIGITAL_SIGNATURE).booleanValue();
+                boolean digSigAllowed
+                        = keyUsage.get(KeyUsageExtension.DIGITAL_SIGNATURE);
 
-                boolean nonRepuAllowed = keyUsage.get(
-                        KeyUsageExtension.NON_REPUDIATION).booleanValue();
+                boolean nonRepuAllowed
+                        = keyUsage.get(KeyUsageExtension.NON_REPUDIATION);
 
                 if (!digSigAllowed && !nonRepuAllowed) {
                     throw new SignatureException("Key usage restricted: "
@@ -469,6 +497,68 @@ public class SignerInfo implements DerEncoder {
                                          e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Derives the signature algorithm name from the digest algorithm
+     * and the encryption algorithm inside a PKCS7 SignerInfo.
+     *
+     * The digest algorithm is in the form "DIG", and the encryption
+     * algorithm can be in any of the 3 forms:
+     *
+     * 1. Old style key algorithm like RSA, DSA, EC, this method returns
+     *    DIGwithKEY.
+     * 2. New style signature algorithm in the form of HASHwithKEY, this
+     *    method returns DIGwithKEY. Please note this is not HASHwithKEY.
+     * 3. Modern signature algorithm like RSASSA-PSS and EdDSA, this method
+     *    returns the signature algorithm itself but ensures digAlgId is
+     *    compatible with the algorithm as described in RFC 4056 and 8419.
+     *
+     * @param digAlgId the digest algorithm
+     * @param encAlgId the encryption algorithm
+     * @param directSign whether the signature is calculated on the content
+     *                   directly. This makes difference for Ed448.
+     */
+    public static String makeSigAlg(AlgorithmId digAlgId, AlgorithmId encAlgId,
+            boolean directSign) throws NoSuchAlgorithmException {
+        String encAlg = encAlgId.getName();
+        switch (encAlg) {
+            case "RSASSA-PSS":
+                PSSParameterSpec spec = (PSSParameterSpec)
+                        SignatureUtil.getParamSpec(encAlg, encAlgId.getParameters());
+                if (!AlgorithmId.get(spec.getDigestAlgorithm()).equals(digAlgId)) {
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                }
+                return encAlg;
+            case "Ed25519":
+                if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.sha512)) {
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                }
+                return encAlg;
+            case "Ed448":
+                if (directSign) {
+                    if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.shake256)) {
+                        throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                    }
+                } else {
+                    if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.shake256$512)) {
+                        throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                    }
+                }
+                return encAlg;
+            default:
+                String digAlg = digAlgId.getName();
+                String keyAlg = SignatureUtil.extractKeyAlgFromDwithE(encAlg);
+                if (keyAlg == null) {
+                    // The encAlg used to be only the key alg
+                    keyAlg = encAlg;
+                }
+                if (digAlg.startsWith("SHA-")) {
+                    digAlg = "SHA" + digAlg.substring(4);
+                }
+                if (keyAlg.equals("EC")) keyAlg = "ECDSA";
+                return digAlg + "with" + keyAlg;
+        }
     }
 
     /* Verify the content of the pkcs7 block. */

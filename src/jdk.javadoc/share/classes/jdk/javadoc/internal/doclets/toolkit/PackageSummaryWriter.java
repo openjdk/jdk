@@ -45,10 +45,9 @@ public interface PackageSummaryWriter {
     /**
      * Get the header for the summary.
      *
-     * @param heading Package name.
      * @return the header to be added to the content tree
      */
-    Content getPackageHeader(String heading);
+    Content getPackageHeader();
 
     /**
      * Get the header for the package content.
@@ -137,6 +136,14 @@ public interface PackageSummaryWriter {
      *                           be added
      */
     void addPackageTags(Content packageContentTree);
+
+    /**
+     * Adds the package signature.
+     *
+     * @param packageContentTree the content tree to which the package signature
+     *                           will be added
+     */
+    void addPackageSignature(Content packageContentTree);
 
     /**
      * Adds the tag information from the "packages.html" or "package-info.java" file to the

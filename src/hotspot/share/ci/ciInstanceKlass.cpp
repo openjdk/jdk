@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,13 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -104,7 +107,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _java_mirror = NULL;
 
   if (is_shared()) {
-    if (k != SystemDictionary::Object_klass()) {
+    if (k != vmClasses::Object_klass()) {
       super();
     }
     //compute_nonstatic_fields();  // done outside of constructor
@@ -257,7 +260,7 @@ bool ciInstanceKlass::uses_default_loader() const {
  */
 BasicType ciInstanceKlass::box_klass_type() const {
   if (uses_default_loader() && is_loaded()) {
-    return SystemDictionary::box_klass_type(get_Klass());
+    return vmClasses::box_klass_type(get_Klass());
   } else {
     return T_OBJECT;
   }
@@ -686,7 +689,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
             _out->print_cr("null");
           } else if (value->is_instance()) {
             assert(fd->field_type() == T_OBJECT, "");
-            if (value->is_a(SystemDictionary::String_klass())) {
+            if (value->is_a(vmClasses::String_klass())) {
               const char* ascii_value = java_lang_String::as_quoted_ascii(value);
               _out->print("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
             } else {
@@ -724,7 +727,7 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   // Try to record related loaded classes
   Klass* sub = ik->subklass();
   while (sub != NULL) {
-    if (sub->is_instance_klass()) {
+    if (sub->is_instance_klass() && !sub->is_hidden() && !InstanceKlass::cast(sub)->is_unsafe_anonymous()) {
       out->print_cr("instanceKlass %s", sub->name()->as_quoted_ascii());
     }
     sub = sub->next_sibling();

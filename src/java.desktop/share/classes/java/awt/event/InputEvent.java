@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package java.awt.event;
 
-import java.awt.Event;
 import java.awt.Component;
+import java.awt.Event;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
+import java.io.Serial;
 import java.util.Arrays;
 
 import sun.awt.AWTAccessor;
@@ -522,8 +523,11 @@ public abstract class InputEvent extends ComponentEvent {
         return consumed;
     }
 
-    // state serialization compatibility with JDK 1.1
-    static final long serialVersionUID = -2482525981698309786L;
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
+     */
+    @Serial
+    private static final long serialVersionUID = -2482525981698309786L;
 
     /**
      * Returns a String describing the extended modifier keys and

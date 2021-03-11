@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ IndexSet::IndexSet (IndexSet *set) {
       set_block(i, &_empty_block);
     } else {
       BitBlock *new_block = alloc_block();
-      memcpy(new_block->words(), block->words(), sizeof(uint32_t) * words_per_block);
+      memcpy(new_block->words(), block->words(), sizeof(uintptr_t) * words_per_block);
       set_block(i, new_block);
     }
   }

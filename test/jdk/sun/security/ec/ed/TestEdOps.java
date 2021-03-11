@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8166597
  * @summary Test EdDSA basic operations
  * @library /test/lib
- * @build jdk.test.lib.Convert
  * @modules java.base/sun.security.provider
  *          java.base/sun.security.util
  *          java.base/sun.security.util.math
@@ -39,8 +38,9 @@ import sun.security.ec.ed.*;
 import java.security.*;
 import java.security.spec.*;
 import java.util.Arrays;
+import java.util.HexFormat;
+
 import sun.security.provider.SHAKE256;
-import jdk.test.lib.Convert;
 
 public class TestEdOps {
 
@@ -71,8 +71,8 @@ public class TestEdOps {
     }
 
     private static void runShakeTest(int outputLen, String msg, String digest) {
-        byte[] msgBytes = Convert.hexStringToByteArray(msg);
-        byte[] digestBytes = Convert.hexStringToByteArray(digest);
+        byte[] msgBytes = HexFormat.of().parseHex(msg);
+        byte[] digestBytes = HexFormat.of().parseHex(digest);
         SHAKE256 md = new SHAKE256(outputLen);
         md.update(msgBytes, 0, msgBytes.length);
         byte[] computed = md.digest();
@@ -178,14 +178,14 @@ public class TestEdOps {
 
         EdDSAParameterSpec sigParams = new EdDSAParameterSpec(false);
 
-        byte[] privKeyBytes = Convert.hexStringToByteArray(privateKey);
-        byte[] pubKeyBytes = Convert.hexStringToByteArray(publicKey);
-        byte[] msgBytes = Convert.hexStringToByteArray(message);
+        HexFormat hex = HexFormat.of();
+        byte[] privKeyBytes = hex.parseHex(privateKey);
+        byte[] pubKeyBytes = hex.parseHex(publicKey);
+        byte[] msgBytes = hex.parseHex(message);
         byte[] computedSig = ops.sign(sigParams, privKeyBytes, msgBytes);
-        if (!Arrays.equals(computedSig,
-                           Convert.hexStringToByteArray(signature))) {
+        if (!Arrays.equals(computedSig, hex.parseHex(signature))) {
             throw new RuntimeException("Incorrect signature: " +
-                Convert.byteArrayToHexString(computedSig) + " != " + signature);
+                HexFormat.of().withUpperCase().formatHex(computedSig) + " != " + signature);
         }
         // Test public key computation
         EdECPoint pubPoint = ops.computePublic(privKeyBytes);
@@ -262,7 +262,7 @@ public class TestEdOps {
         // y value too large
         testInvalidPoint(NamedParameterSpec.ED448,
             "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" +
-            "fffffffffffffffffffffffffffffffffffffffffffffffffff00");
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffff00");
         // not square
         testInvalidPoint(NamedParameterSpec.ED448,
             "43ba28f430cdfe456ae531545f7ecd0ac834a55c9358c0372bfa0c6c6798c086" +
@@ -277,7 +277,7 @@ public class TestEdOps {
     private static void testInvalidPoint(NamedParameterSpec curve,
                                          String pointStr) throws Exception {
 
-        byte[] encodedPoint = Convert.hexStringToByteArray(pointStr);
+        byte[] encodedPoint = HexFormat.of().parseHex(pointStr);
         EdDSAParameters params =
             EdDSAParameters.get(RuntimeException::new, curve);
         EdDSAOperations ops = new EdDSAOperations(params);

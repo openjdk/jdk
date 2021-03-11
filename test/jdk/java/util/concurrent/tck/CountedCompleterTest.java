@@ -74,7 +74,7 @@ public class CountedCompleterTest extends JSR166TestCase {
                                 null, true);
     }
 
-    private void testInvokeOnPool(ForkJoinPool pool, ForkJoinTask a) {
+    private void testInvokeOnPool(ForkJoinPool pool, ForkJoinTask<?> a) {
         try (PoolCleaner cleaner = cleaner(pool)) {
             assertFalse(a.isDone());
             assertFalse(a.isCompletedNormally());
@@ -94,7 +94,7 @@ public class CountedCompleterTest extends JSR166TestCase {
         }
     }
 
-    void checkNotDone(CountedCompleter a) {
+    void checkNotDone(CountedCompleter<?> a) {
         assertFalse(a.isDone());
         assertFalse(a.isCompletedNormally());
         assertFalse(a.isCompletedAbnormally());
@@ -145,7 +145,7 @@ public class CountedCompleterTest extends JSR166TestCase {
         assertNull(v2);
     }
 
-    void checkCancelled(CountedCompleter a) {
+    void checkCancelled(CountedCompleter<?> a) {
         assertTrue(a.isDone());
         assertTrue(a.isCancelled());
         assertFalse(a.isCompletedNormally());
@@ -182,7 +182,7 @@ public class CountedCompleterTest extends JSR166TestCase {
         } catch (Throwable fail) { threadUnexpectedException(fail); }
     }
 
-    void checkCompletedAbnormally(CountedCompleter a, Throwable t) {
+    void checkCompletedAbnormally(CountedCompleter<?> a, Throwable t) {
         assertTrue(a.isDone());
         assertFalse(a.isCancelled());
         assertFalse(a.isCompletedNormally());
@@ -245,19 +245,19 @@ public class CountedCompleterTest extends JSR166TestCase {
         int setRawResultN() { return setRawResultN.get(); }
 
         CheckedCC() { super(); }
-        CheckedCC(CountedCompleter p) { super(p); }
-        CheckedCC(CountedCompleter p, int n) { super(p, n); }
+        CheckedCC(CountedCompleter<?> p) { super(p); }
+        CheckedCC(CountedCompleter<?> p, int n) { super(p, n); }
         abstract void realCompute();
         public final void compute() {
             computeN.incrementAndGet();
             realCompute();
         }
-        public void onCompletion(CountedCompleter caller) {
+        public void onCompletion(CountedCompleter<?> caller) {
             onCompletionN.incrementAndGet();
             super.onCompletion(caller);
         }
         public boolean onExceptionalCompletion(Throwable ex,
-                                               CountedCompleter caller) {
+                                               CountedCompleter<?> caller) {
             onExceptionalCompletionN.incrementAndGet();
             assertNotNull(ex);
             assertTrue(isCompletedAbnormally());
@@ -305,8 +305,8 @@ public class CountedCompleterTest extends JSR166TestCase {
 
     final class NoopCC extends CheckedCC {
         NoopCC() { super(); }
-        NoopCC(CountedCompleter p) { super(p); }
-        NoopCC(CountedCompleter p, int initialPendingCount) {
+        NoopCC(CountedCompleter<?> p) { super(p); }
+        NoopCC(CountedCompleter<?> p, int initialPendingCount) {
             super(p, initialPendingCount);
         }
         protected void realCompute() {}
@@ -427,9 +427,9 @@ public class CountedCompleterTest extends JSR166TestCase {
     public void testGetCompleter() {
         NoopCC a = new NoopCC();
         assertNull(a.getCompleter());
-        CountedCompleter b = new NoopCC(a);
+        NoopCC b = new NoopCC(a);
         assertSame(a, b.getCompleter());
-        CountedCompleter c = new NoopCC(b);
+        NoopCC c = new NoopCC(b);
         assertSame(b, c.getCompleter());
     }
 
@@ -552,7 +552,7 @@ public class CountedCompleterTest extends JSR166TestCase {
         int number;
         int rnumber;
 
-        public CCF(CountedCompleter parent, int n) {
+        public CCF(CountedCompleter<?> parent, int n) {
             super(parent, 1);
             this.number = n;
         }
@@ -570,10 +570,10 @@ public class CountedCompleterTest extends JSR166TestCase {
 
     final class LCCF extends CCF {
         public LCCF(int n) { this(null, n); }
-        public LCCF(CountedCompleter parent, int n) {
+        public LCCF(CountedCompleter<?> parent, int n) {
             super(parent, n);
         }
-        public final void onCompletion(CountedCompleter caller) {
+        public final void onCompletion(CountedCompleter<?> caller) {
             super.onCompletion(caller);
             CCF p = (CCF)getCompleter();
             int n = number + rnumber;
@@ -584,10 +584,10 @@ public class CountedCompleterTest extends JSR166TestCase {
         }
     }
     final class RCCF extends CCF {
-        public RCCF(CountedCompleter parent, int n) {
+        public RCCF(CountedCompleter<?> parent, int n) {
             super(parent, n);
         }
-        public final void onCompletion(CountedCompleter caller) {
+        public final void onCompletion(CountedCompleter<?> caller) {
             super.onCompletion(caller);
             CCF p = (CCF)getCompleter();
             int n = number + rnumber;
@@ -603,7 +603,7 @@ public class CountedCompleterTest extends JSR166TestCase {
         int number;
         int rnumber;
 
-        public FailingCCF(CountedCompleter parent, int n) {
+        public FailingCCF(CountedCompleter<?> parent, int n) {
             super(parent, 1);
             this.number = n;
         }
@@ -621,10 +621,10 @@ public class CountedCompleterTest extends JSR166TestCase {
 
     final class LFCCF extends FailingCCF {
         public LFCCF(int n) { this(null, n); }
-        public LFCCF(CountedCompleter parent, int n) {
+        public LFCCF(CountedCompleter<?> parent, int n) {
             super(parent, n);
         }
-        public final void onCompletion(CountedCompleter caller) {
+        public final void onCompletion(CountedCompleter<?> caller) {
             super.onCompletion(caller);
             FailingCCF p = (FailingCCF)getCompleter();
             int n = number + rnumber;
@@ -635,10 +635,10 @@ public class CountedCompleterTest extends JSR166TestCase {
         }
     }
     final class RFCCF extends FailingCCF {
-        public RFCCF(CountedCompleter parent, int n) {
+        public RFCCF(CountedCompleter<?> parent, int n) {
             super(parent, n);
         }
-        public final void onCompletion(CountedCompleter caller) {
+        public final void onCompletion(CountedCompleter<?> caller) {
             super.onCompletion(caller);
             completeExceptionally(new FJException());
         }
@@ -650,7 +650,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * completed tasks; getRawResult returns null.
      */
     public void testInvoke() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertNull(f.invoke());
@@ -666,7 +666,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * completed tasks
      */
     public void testQuietlyInvoke() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 f.quietlyInvoke();
@@ -680,7 +680,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * join of a forked task returns when task completes
      */
     public void testForkJoin() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -695,7 +695,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * get of a forked task returns when task completes
      */
     public void testForkGet() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -710,7 +710,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * timed get of a forked task returns when task completes
      */
     public void testForkTimedGet() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -725,7 +725,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * timed get with null time unit throws NPE
      */
     public void testForkTimedGetNPE() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -741,7 +741,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * quietlyJoin of a forked task returns when task completes
      */
     public void testForkQuietlyJoin() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -757,7 +757,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * getQueuedTaskCount returns 0 when quiescent
      */
     public void testForkHelpQuiesce() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -775,7 +775,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invoke task throws exception when task completes abnormally
      */
     public void testAbnormalInvoke() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 try {
@@ -792,7 +792,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * quietlyInvoke task returns when task completes abnormally
      */
     public void testAbnormalQuietlyInvoke() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 f.quietlyInvoke();
@@ -806,7 +806,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * join of a forked task throws exception when task completes abnormally
      */
     public void testAbnormalForkJoin() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 assertSame(f, f.fork());
@@ -824,7 +824,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * get of a forked task throws exception when task completes abnormally
      */
     public void testAbnormalForkGet() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 FailingCCF f = new LFCCF(8);
                 assertSame(f, f.fork());
@@ -844,7 +844,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * timed get of a forked task throws exception when task completes abnormally
      */
     public void testAbnormalForkTimedGet() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 FailingCCF f = new LFCCF(8);
                 assertSame(f, f.fork());
@@ -864,7 +864,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * quietlyJoin of a forked task returns when task completes abnormally
      */
     public void testAbnormalForkQuietlyJoin() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 assertSame(f, f.fork());
@@ -879,7 +879,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invoke task throws exception when task cancelled
      */
     public void testCancelledInvoke() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -897,7 +897,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * join of a forked task throws exception when task cancelled
      */
     public void testCancelledForkJoin() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -916,7 +916,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * get of a forked task throws exception when task cancelled
      */
     public void testCancelledForkGet() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -935,7 +935,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * timed get of a forked task throws exception when task cancelled
      */
     public void testCancelledForkTimedGet() throws Exception {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -954,7 +954,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * quietlyJoin of a forked task returns when task cancelled
      */
     public void testCancelledForkQuietlyJoin() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -970,7 +970,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      */
     public void testGetPool() {
         final ForkJoinPool mainPool = mainPool();
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 assertSame(mainPool, getPool());
             }};
@@ -981,7 +981,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * getPool of non-FJ task returns null
      */
     public void testGetPool2() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 assertNull(getPool());
             }};
@@ -992,7 +992,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * inForkJoinPool of executing task returns true
      */
     public void testInForkJoinPool() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 assertTrue(inForkJoinPool());
             }};
@@ -1003,7 +1003,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * inForkJoinPool of non-FJ task returns false
      */
     public void testInForkJoinPool2() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 assertFalse(inForkJoinPool());
             }};
@@ -1014,7 +1014,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * setRawResult(null) succeeds
      */
     public void testSetRawResult() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 setRawResult(null);
                 assertNull(getRawResult());
@@ -1026,7 +1026,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invoke task throws exception after invoking completeExceptionally
      */
     public void testCompleteExceptionally2() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF n = new LCCF(8);
                 CCF f = new LCCF(n, 8);
@@ -1042,7 +1042,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(t1, t2) invokes all task arguments
      */
     public void testInvokeAll2() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 CCF g = new LCCF(9);
@@ -1059,7 +1059,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with 1 argument invokes task
      */
     public void testInvokeAll1() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 invokeAll(f);
@@ -1073,7 +1073,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with > 2 argument invokes tasks
      */
     public void testInvokeAll3() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 CCF g = new LCCF(9);
@@ -1093,12 +1093,12 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(collection) invokes all tasks in the collection
      */
     public void testInvokeAllCollection() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 CCF g = new LCCF(9);
                 CCF h = new LCCF(7);
-                HashSet set = new HashSet();
+                HashSet<CCF> set = new HashSet<>();
                 set.add(f);
                 set.add(g);
                 set.add(h);
@@ -1117,7 +1117,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with any null task throws NPE
      */
     public void testInvokeAllNPE() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 CCF g = new LCCF(9);
@@ -1134,7 +1134,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(t1, t2) throw exception if any task does
      */
     public void testAbnormalInvokeAll2() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 FailingCCF g = new LFCCF(9);
@@ -1152,7 +1152,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with 1 argument throws exception if task does
      */
     public void testAbnormalInvokeAll1() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF g = new LFCCF(9);
                 try {
@@ -1169,7 +1169,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with > 2 argument throws exception if any task does
      */
     public void testAbnormalInvokeAll3() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 FailingCCF g = new LFCCF(9);
@@ -1188,12 +1188,12 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(collection) throws exception if any task does
      */
     public void testAbnormalInvokeAllCollection() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 CCF g = new LCCF(9);
                 CCF h = new LCCF(7);
-                HashSet set = new HashSet();
+                HashSet<ForkJoinTask<?>> set = new HashSet<>();
                 set.add(f);
                 set.add(g);
                 set.add(h);
@@ -1212,7 +1212,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * and suppresses execution
      */
     public void testTryUnfork() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF g = new LCCF(9);
                 assertSame(g, g.fork());
@@ -1231,7 +1231,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * there are more tasks than threads
      */
     public void testGetSurplusQueuedTaskCount() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF h = new LCCF(7);
                 assertSame(h, h.fork());
@@ -1253,7 +1253,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * peekNextLocalTask returns most recent unexecuted task.
      */
     public void testPeekNextLocalTask() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF g = new LCCF(9);
                 assertSame(g, g.fork());
@@ -1273,7 +1273,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * executing it
      */
     public void testPollNextLocalTask() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF g = new LCCF(9);
                 assertSame(g, g.fork());
@@ -1292,7 +1292,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * pollTask returns an unexecuted task without executing it
      */
     public void testPollTask() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF g = new LCCF(9);
                 assertSame(g, g.fork());
@@ -1310,7 +1310,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * peekNextLocalTask returns least recent unexecuted task in async mode
      */
     public void testPeekNextLocalTaskAsync() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF g = new LCCF(9);
                 assertSame(g, g.fork());
@@ -1331,7 +1331,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * executing it, in async mode
      */
     public void testPollNextLocalTaskAsync() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF g = new LCCF(9);
                 assertSame(g, g.fork());
@@ -1351,7 +1351,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * async mode
      */
     public void testPollTaskAsync() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF g = new LCCF(9);
                 assertSame(g, g.fork());
@@ -1374,7 +1374,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * completed tasks; getRawResult returns null.
      */
     public void testInvokeSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertNull(f.invoke());
@@ -1390,7 +1390,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * completed tasks
      */
     public void testQuietlyInvokeSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 f.quietlyInvoke();
@@ -1404,7 +1404,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * join of a forked task returns when task completes
      */
     public void testForkJoinSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -1419,7 +1419,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * get of a forked task returns when task completes
      */
     public void testForkGetSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -1434,7 +1434,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * timed get of a forked task returns when task completes
      */
     public void testForkTimedGetSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -1449,7 +1449,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * timed get with null time unit throws NPE
      */
     public void testForkTimedGetNPESingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -1465,7 +1465,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * quietlyJoin of a forked task returns when task completes
      */
     public void testForkQuietlyJoinSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -1481,7 +1481,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * getQueuedTaskCount returns 0 when quiescent
      */
     public void testForkHelpQuiesceSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
@@ -1497,7 +1497,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invoke task throws exception when task completes abnormally
      */
     public void testAbnormalInvokeSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 try {
@@ -1514,7 +1514,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * quietlyInvoke task returns when task completes abnormally
      */
     public void testAbnormalQuietlyInvokeSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 f.quietlyInvoke();
@@ -1528,7 +1528,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * join of a forked task throws exception when task completes abnormally
      */
     public void testAbnormalForkJoinSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 assertSame(f, f.fork());
@@ -1546,7 +1546,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * get of a forked task throws exception when task completes abnormally
      */
     public void testAbnormalForkGetSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 FailingCCF f = new LFCCF(8);
                 assertSame(f, f.fork());
@@ -1566,7 +1566,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * timed get of a forked task throws exception when task completes abnormally
      */
     public void testAbnormalForkTimedGetSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 FailingCCF f = new LFCCF(8);
                 assertSame(f, f.fork());
@@ -1586,7 +1586,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * quietlyJoin of a forked task returns when task completes abnormally
      */
     public void testAbnormalForkQuietlyJoinSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 assertSame(f, f.fork());
@@ -1601,7 +1601,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invoke task throws exception when task cancelled
      */
     public void testCancelledInvokeSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -1619,7 +1619,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * join of a forked task throws exception when task cancelled
      */
     public void testCancelledForkJoinSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -1638,7 +1638,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * get of a forked task throws exception when task cancelled
      */
     public void testCancelledForkGetSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -1657,7 +1657,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * timed get of a forked task throws exception when task cancelled
      */
     public void testCancelledForkTimedGetSingleton() throws Exception {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws Exception {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -1676,7 +1676,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * quietlyJoin of a forked task returns when task cancelled
      */
     public void testCancelledForkQuietlyJoinSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 assertTrue(f.cancel(true));
@@ -1691,7 +1691,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invoke task throws exception after invoking completeExceptionally
      */
     public void testCompleteExceptionallySingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF n = new LCCF(8);
                 CCF f = new LCCF(n, 8);
@@ -1707,7 +1707,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(t1, t2) invokes all task arguments
      */
     public void testInvokeAll2Singleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 CCF g = new LCCF(9);
@@ -1724,7 +1724,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with 1 argument invokes task
      */
     public void testInvokeAll1Singleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 invokeAll(f);
@@ -1738,7 +1738,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with > 2 argument invokes tasks
      */
     public void testInvokeAll3Singleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 CCF g = new LCCF(9);
@@ -1758,12 +1758,12 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(collection) invokes all tasks in the collection
      */
     public void testInvokeAllCollectionSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 CCF g = new LCCF(9);
                 CCF h = new LCCF(7);
-                HashSet set = new HashSet();
+                HashSet<ForkJoinTask<?>> set = new HashSet<>();
                 set.add(f);
                 set.add(g);
                 set.add(h);
@@ -1782,7 +1782,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with any null task throws NPE
      */
     public void testInvokeAllNPESingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 CCF g = new LCCF(9);
@@ -1799,7 +1799,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(t1, t2) throw exception if any task does
      */
     public void testAbnormalInvokeAll2Singleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 FailingCCF g = new LFCCF(9);
@@ -1817,7 +1817,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with 1 argument throws exception if task does
      */
     public void testAbnormalInvokeAll1Singleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF g = new LFCCF(9);
                 try {
@@ -1834,7 +1834,7 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(tasks) with > 2 argument throws exception if any task does
      */
     public void testAbnormalInvokeAll3Singleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 CCF f = new LCCF(8);
                 FailingCCF g = new LFCCF(9);
@@ -1853,12 +1853,12 @@ public class CountedCompleterTest extends JSR166TestCase {
      * invokeAll(collection) throws exception if any task does
      */
     public void testAbnormalInvokeAllCollectionSingleton() {
-        ForkJoinTask a = new CheckedRecursiveAction() {
+        CheckedRecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 FailingCCF f = new LFCCF(8);
                 CCF g = new LCCF(9);
                 CCF h = new LCCF(7);
-                HashSet set = new HashSet();
+                HashSet<ForkJoinTask<?>> set = new HashSet<>();
                 set.add(f);
                 set.add(g);
                 set.add(h);

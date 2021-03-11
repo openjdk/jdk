@@ -25,10 +25,10 @@
 
 #import <sys/stat.h>
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
-#import "CFileDialog.h"
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
+#import "CFileDialog.h"
 
 #import "java_awt_FileDialog.h"
 #import "sun_lwawt_macosx_CFileDialog.h"
@@ -48,7 +48,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
 {
   if (self = [super init]) {
         fHasFileFilter = inHasFilter;
-        fFileDialog = JNFNewGlobalRef(env, inDialog);
+        fFileDialog = (*env)->NewGlobalRef(env, inDialog);
         fDirectory = inPath;
         [fDirectory retain];
         fFile = inFile;
@@ -68,7 +68,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
 -(void) disposer {
     if (fFileDialog != NULL) {
         JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-        JNFDeleteGlobalRef(env, fFileDialog);
+        (*env)->DeleteGlobalRef(env, fFileDialog);
         fFileDialog = NULL;
     }
 }
@@ -142,11 +142,12 @@ canChooseDirectories:(BOOL)inChooseDirectories
 
 - (BOOL) askFilenameFilter:(NSString *)filename {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jstring jString = JNFNormalizedJavaStringForPath(env, filename);
+    jstring jString = NormalizedPathJavaStringFromNSString(env, filename);
 
-    static JNF_CLASS_CACHE(jc_CFileDialog, "sun/lwawt/macosx/CFileDialog");
-    static JNF_MEMBER_CACHE(jm_queryFF, jc_CFileDialog, "queryFilenameFilter", "(Ljava/lang/String;)Z");
-    BOOL returnValue = JNFCallBooleanMethod(env, fFileDialog, jm_queryFF, jString); // AWT_THREADING Safe (AWTRunLoopMode)
+    DECLARE_CLASS_RETURN(jc_CFileDialog, "sun/lwawt/macosx/CFileDialog", NO);
+    DECLARE_METHOD_RETURN(jm_queryFF, jc_CFileDialog, "queryFilenameFilter", "(Ljava/lang/String;)Z", NO);
+    BOOL returnValue = (*env)->CallBooleanMethod(env, fFileDialog, jm_queryFF, jString);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jString);
 
     return returnValue;
@@ -196,8 +197,8 @@ Java_sun_lwawt_macosx_CFileDialog_nativeRunFileDialog
 {
     jobjectArray returnValue = NULL;
 
-JNF_COCOA_ENTER(env);
-    NSString *dialogTitle = JNFJavaToNSString(env, title);
+JNI_COCOA_ENTER(env);
+    NSString *dialogTitle = JavaStringToNSString(env, title);
     if ([dialogTitle length] == 0) {
         dialogTitle = @" ";
     }
@@ -205,15 +206,15 @@ JNF_COCOA_ENTER(env);
     CFileDialog *dialogDelegate = [[CFileDialog alloc] initWithFilter:hasFilter
                                                            fileDialog:peer
                                                                 title:dialogTitle
-                                                            directory:JNFJavaToNSString(env, directory)
-                                                                 file:JNFJavaToNSString(env, file)
+                                                            directory:JavaStringToNSString(env, directory)
+                                                                 file:JavaStringToNSString(env, file)
                                                                  mode:mode
                                                          multipleMode:multipleMode
                                                        shouldNavigate:navigateApps
                                                  canChooseDirectories:chooseDirectories
                                                               withEnv:env];
 
-    [JNFRunLoop performOnMainThread:@selector(safeSaveOrLoad)
+    [ThreadUtilities performOnMainThread:@selector(safeSaveOrLoad)
                                  on:dialogDelegate
                          withObject:nil
                       waitUntilDone:YES];
@@ -222,17 +223,17 @@ JNF_COCOA_ENTER(env);
         NSArray *urls = [dialogDelegate URLs];
         jsize count = [urls count];
 
-        static JNF_CLASS_CACHE(jc_String, "java/lang/String");
-        returnValue = JNFNewObjectArray(env, &jc_String, count);
+        DECLARE_CLASS_RETURN(jc_String, "java/lang/String", NULL);
+        returnValue = (*env)->NewObjectArray(env, count, jc_String, NULL);
 
         [urls enumerateObjectsUsingBlock:^(id url, NSUInteger index, BOOL *stop) {
-            jstring filename = JNFNormalizedJavaStringForPath(env, [url path]);
+            jstring filename = NormalizedPathJavaStringFromNSString(env, [url path]);
             (*env)->SetObjectArrayElement(env, returnValue, index, filename);
             (*env)->DeleteLocalRef(env, filename);
         }];
     }
 
     [dialogDelegate release];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return returnValue;
 }

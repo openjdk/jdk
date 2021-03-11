@@ -40,9 +40,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.fields.fields001.fields001
- *        nsk.jdb.fields.fields001.fields001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.fields.fields001.fields001
+ * @build nsk.jdb.fields.fields001.fields001a
+ * @run main/othervm
+ *      nsk.jdb.fields.fields001.fields001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

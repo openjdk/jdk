@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "utilities/copy.hpp"
 
@@ -37,46 +39,22 @@
 // ------------------------------------------------------------------
 // ciMethodData::ciMethodData
 //
-ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md) {
-  assert(md != NULL, "no null method data");
-  Copy::zero_to_words((HeapWord*) &_orig, sizeof(_orig) / sizeof(HeapWord));
-  _data = NULL;
-  _data_size = 0;
-  _extra_data_size = 0;
-  _current_mileage = 0;
-  _invocation_counter = 0;
-  _backedge_counter = 0;
-  _state = empty_state;
-  _saw_free_extra_data = false;
+ciMethodData::ciMethodData(MethodData* md)
+: ciMetadata(md),
+  _data_size(0), _extra_data_size(0), _data(NULL),
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
-  _hint_di = first_di();
+  _hint_di(first_di()),
+  _state(empty_state),
+  _saw_free_extra_data(false),
   // Initialize the escape information (to "don't know.");
-  _eflags = _arg_local = _arg_stack = _arg_returned = 0;
-  _parameters = NULL;
-}
-
-// ------------------------------------------------------------------
-// ciMethodData::ciMethodData
-//
-// No MethodData*.
-ciMethodData::ciMethodData() : ciMetadata(NULL) {
-  Copy::zero_to_words((HeapWord*) &_orig, sizeof(_orig) / sizeof(HeapWord));
-  _data = NULL;
-  _data_size = 0;
-  _extra_data_size = 0;
-  _current_mileage = 0;
-  _invocation_counter = 0;
-  _backedge_counter = 0;
-  _state = empty_state;
-  _saw_free_extra_data = false;
-  // Set an initial hint. Don't use set_hint_di() because
-  // first_di() may be out of bounds if data_size is 0.
-  _hint_di = first_di();
-  // Initialize the escape information (to "don't know.");
-  _eflags = _arg_local = _arg_stack = _arg_returned = 0;
-  _parameters = NULL;
-}
+  _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
+  _creation_mileage(0),
+  _current_mileage(0),
+  _invocation_counter(0),
+  _backedge_counter(0),
+  _orig(),
+  _parameters(NULL) {}
 
 // Check for entries that reference an unloaded method
 class PrepareExtraDataClosure : public CleanExtraDataClosure {
@@ -226,7 +204,13 @@ void ciMethodData::load_data() {
   // _extra_data_size = extra_data_limit - extra_data_base
   // total_size = _data_size + _extra_data_size
   // args_data_limit = data_base + total_size - parameter_data_size
-  Copy::disjoint_words_atomic((HeapWord*) mdo,
+
+#ifndef ZERO
+  // Some Zero platforms do not have expected alignment, and do not use
+  // this code. static_assert would still fire and fail for them.
+  static_assert(sizeof(_orig) % HeapWordSize == 0, "align");
+#endif
+  Copy::disjoint_words_atomic((HeapWord*) &mdo->_compiler_counters,
                               (HeapWord*) &_orig,
                               sizeof(_orig) / HeapWordSize);
   Arena* arena = CURRENT_ENV->arena();
@@ -266,6 +250,7 @@ void ciMethodData::load_data() {
   load_remaining_extra_data();
 
   // Note:  Extra data are all BitData, and do not need translation.
+  _creation_mileage = mdo->creation_mileage();
   _current_mileage = MethodData::mileage_of(mdo->method());
   _invocation_counter = mdo->invocation_count();
   _backedge_counter = mdo->backedge_count();
@@ -335,7 +320,10 @@ ciProfileData* ciMethodData::data_at(int data_index) {
     return NULL;
   }
   DataLayout* data_layout = data_layout_at(data_index);
+  return data_from(data_layout);
+}
 
+ciProfileData* ciMethodData::data_from(DataLayout* data_layout) {
   switch (data_layout->tag()) {
   case DataLayout::no_tag:
   default:
@@ -376,6 +364,16 @@ ciProfileData* ciMethodData::next_data(ciProfileData* current) {
   return next;
 }
 
+DataLayout* ciMethodData::next_data_layout(DataLayout* current) {
+  int current_index = dp_to_di((address)current);
+  int next_index = current_index + current->size_in_bytes();
+  if (out_of_bounds(next_index)) {
+    return NULL;
+  }
+  DataLayout* next = data_layout_at(next_index);
+  return next;
+}
+
 ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots) {
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
@@ -413,12 +411,12 @@ ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_f
 ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
   // If m is not NULL we look for a SpeculativeTrapData entry
   if (m == NULL) {
-    ciProfileData* data = data_before(bci);
-    for ( ; is_valid(data); data = next_data(data)) {
-      if (data->bci() == bci) {
-        set_hint_di(dp_to_di(data->dp()));
-        return data;
-      } else if (data->bci() > bci) {
+    DataLayout* data_layout = data_layout_before(bci);
+    for ( ; is_valid(data_layout); data_layout = next_data_layout(data_layout)) {
+      if (data_layout->bci() == bci) {
+        set_hint_di(dp_to_di((address)data_layout));
+        return data_from(data_layout);
+      } else if (data_layout->bci() > bci) {
         break;
       }
     }

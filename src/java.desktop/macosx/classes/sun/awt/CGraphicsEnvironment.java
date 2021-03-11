@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.awt;
 
-import java.awt.AWTError;
 import java.awt.Font;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -112,7 +111,7 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
         }
 
         /* Populate the device table */
-        initDevices();
+        rebuildDevices();
 
         /* Register our display reconfiguration listener */
         displayReconfigContext = registerDisplayReconfiguration();
@@ -122,32 +121,26 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
     }
 
     /**
+     * Updates the list of devices and notify listeners.
+     */
+    private void rebuildDevices() {
+        initDevices();
+        displayChanged();
+    }
+
+    /**
      * Called by the CoreGraphics Display Reconfiguration Callback.
      *
      * @param displayId CoreGraphics displayId
      * @param removed   true if displayId was removed, false otherwise.
      */
-    void _displayReconfiguration(final int displayId, final boolean removed) {
-        synchronized (this) {
-            if (removed && devices.containsKey(displayId)) {
-                final CGraphicsDevice gd = devices.remove(displayId);
-                oldDevices.add(new WeakReference<>(gd));
-            }
-        }
-        initDevices();
-
-        // Need to notify old devices, in case the user hold the reference to it
-        for (ListIterator<WeakReference<CGraphicsDevice>> it =
-             oldDevices.listIterator(); it.hasNext(); ) {
-            CGraphicsDevice gd = it.next().get();
-            if (gd != null) {
-                gd.invalidate(mainDisplayID);
-                gd.displayChanged();
-            } else {
-                // no more references to this device, remove it
-                it.remove();
-            }
-        }
+    void _displayReconfiguration(int displayId, boolean removed) {
+        // we ignore the passed parameters and check removed devices ourself
+        // Note that it is possible that this callback is called when the
+        // monitors are not added nor removed, but when the video card is
+        // switched to/from the discrete video card, so we should try to map the
+        // old to the new devices.
+        rebuildDevices();
     }
 
     @Override
@@ -163,44 +156,74 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
     /**
      * (Re)create all CGraphicsDevices, reuses a devices if it is possible.
      */
-    private void initDevices() {
-        synchronized (this) {
-            final Map<Integer, CGraphicsDevice> old = new HashMap<>(devices);
-            devices.clear();
+    private synchronized void initDevices() {
+        Map<Integer, CGraphicsDevice> old = new HashMap<>(devices);
+        devices.clear();
+        mainDisplayID = getMainDisplayID();
 
-            mainDisplayID = getMainDisplayID();
+        // initialization of the graphics device may change list of displays on
+        // hybrid systems via an activation of discrete video.
+        // So, we initialize the main display first, then retrieve actual list
+        // of displays, and then recheck the main display again.
+        if (!old.containsKey(mainDisplayID)) {
+            old.put(mainDisplayID, new CGraphicsDevice(mainDisplayID));
+        }
 
-            // initialization of the graphics device may change
-            // list of displays on hybrid systems via an activation
-            // of discrete video.
-            // So, we initialize the main display first, and then
-            // retrieve actual list of displays.
-            if (!old.containsKey(mainDisplayID)) {
-                old.put(mainDisplayID, new CGraphicsDevice(mainDisplayID));
-            }
+        int[] displayIDs = getDisplayIDs();
+        if (displayIDs.length == 0) {
+            // we could throw AWTError in this case.
+            displayIDs = new int[]{mainDisplayID};
+        }
+        for (int id : displayIDs) {
+            devices.put(id, old.containsKey(id) ? old.remove(id)
+                                                : new CGraphicsDevice(id));
+        }
+        // fetch the main display again, the old value might be outdated
+        mainDisplayID = getMainDisplayID();
 
-            for (final int id : getDisplayIDs()) {
-                devices.put(id, old.containsKey(id) ? old.get(id)
-                                                    : new CGraphicsDevice(id));
+        // unlikely but make sure the main screen is in the list of screens,
+        // most probably one more "displayReconfiguration" is on the road if not
+        if (!devices.containsKey(mainDisplayID)) {
+            mainDisplayID = displayIDs[0]; // best we can do
+        }
+        // if a device was not reused it should be invalidated
+        for (CGraphicsDevice gd : old.values()) {
+            oldDevices.add(new WeakReference<>(gd));
+        }
+        // Need to notify old devices, in case the user hold the reference to it
+        for (ListIterator<WeakReference<CGraphicsDevice>> it =
+             oldDevices.listIterator(); it.hasNext(); ) {
+            CGraphicsDevice gd = it.next().get();
+            if (gd != null) {
+                // If the old device has the same bounds as some new device
+                // then map that old device to the new, or to the main screen.
+                CGraphicsDevice similarDevice = getSimilarDevice(gd);
+                if (similarDevice == null) {
+                    gd.invalidate(devices.get(mainDisplayID));
+                } else {
+                    gd.invalidate(similarDevice);
+                }
+                gd.displayChanged();
+            } else {
+                // no more references to this device, remove it
+                it.remove();
             }
         }
-        displayChanged();
+    }
+
+    private CGraphicsDevice getSimilarDevice(CGraphicsDevice old) {
+        for (CGraphicsDevice device : devices.values()) {
+            if (device.getBounds().equals(old.getBounds())) {
+                // for now we will use the bounds only
+                return device;
+            }
+        }
+        return null;
     }
 
     @Override
     public synchronized GraphicsDevice getDefaultScreenDevice() throws HeadlessException {
-        CGraphicsDevice d = devices.get(mainDisplayID);
-        if (d == null) {
-            // we do not expect that this may happen, the only response
-            // is to re-initialize the list of devices
-            initDevices();
-
-            d = devices.get(mainDisplayID);
-            if (d == null) {
-                throw new AWTError("no screen devices");
-            }
-        }
-        return d;
+        return devices.get(mainDisplayID);
     }
 
     @Override

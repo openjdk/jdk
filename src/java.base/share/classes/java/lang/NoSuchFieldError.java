@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ package java.lang;
  * only occur at run time if the definition of a class has
  * incompatibly changed.
  *
- * @author  unascribed
  * @since   1.0
  */
 public class NoSuchFieldError extends IncompatibleClassChangeError {

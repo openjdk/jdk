@@ -67,21 +67,25 @@ public enum LogTag {
      */
     JFR_SYSTEM_STREAMING(7),
     /**
+     *  Covers throttling (for Hotspot developers)
+     */
+    JFR_SYSTEM_THROTTLE(8),
+    /**
      *  Covers metadata for Java user (for Hotspot developers)
      */
-    JFR_METADATA(8),
+    JFR_METADATA(9),
     /**
      * Covers events (for users of the JDK)
      */
-    JFR_EVENT(9),
+    JFR_EVENT(10),
     /**
      * Covers setting (for users of the JDK)
      */
-    JFR_SETTING(10),
+    JFR_SETTING(11),
     /**
      * Covers usage of jcmd with JFR
      */
-    JFR_DCMD(11);
+    JFR_DCMD(12);
 
     /* set from native side */
     volatile int tagSetLevel = 100; // prevent logging if JVM log system has not been initialized

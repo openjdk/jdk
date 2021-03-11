@@ -41,9 +41,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.where.where006.where006
- *        nsk.jdb.where.where006.where006a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.where.where006.where006
+ * @build nsk.jdb.where.where006.where006a
+ * @run main/othervm
+ *      nsk.jdb.where.where006.where006
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

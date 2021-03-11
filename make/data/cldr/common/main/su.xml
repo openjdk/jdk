@@ -23,7 +23,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en">Inggris</language>
 			<language type="en_AU">Inggris Australia</language>
 			<language type="en_CA">Inggris Kanada</language>
-			<language type="en_GB">Inggris Inggris</language>
 			<language type="en_GB" alt="short">Inggris UK</language>
 			<language type="en_US">Inggris Amerika</language>
 			<language type="en_US" alt="short">Inggris AS</language>
@@ -41,7 +40,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pt_PT">Portugis Éropa</language>
 			<language type="ru">Rusia</language>
 			<language type="su">Basa Sunda</language>
-			<language type="und">Teu Dipikaterang</language>
+			<language type="und">Basa teu dikenal</language>
 			<language type="zh">Tiongkok</language>
 			<language type="zh" alt="menu">Tiongkok, Mandarin</language>
 			<language type="zh_Hans">Tiongkok Sederhana</language>
@@ -50,7 +49,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hant" alt="long">Tiongkok Mandarin Tradisional</language>
 		</languages>
 		<scripts>
-			<script type="Arab">Basa Arab</script>
 			<script type="Cyrl">Sirilik</script>
 			<script type="Hans">Sederhana</script>
 			<script type="Hans" alt="stand-alone">Han Sederhana</script>
@@ -58,23 +56,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hant" alt="stand-alone">Han Tradisional</script>
 			<script type="Latn">Latin</script>
 			<script type="Zxxx">Non-tulisan</script>
-			<script type="Zzzz">Skrip Teu Dipikaterang</script>
+			<script type="Zzzz">Tulisan Teu Dikenal</script>
 		</scripts>
 		<territories>
 			<territory type="BR">Brasil</territory>
 			<territory type="CN">Tiongkok</territory>
 			<territory type="DE">Jérman</territory>
 			<territory type="FR">Prancis</territory>
-			<territory type="GB">Inggris Raya</territory>
+			<territory type="GB">Britania Raya</territory>
 			<territory type="IN">India</territory>
 			<territory type="IT">Italia</territory>
 			<territory type="JP">Jepang</territory>
 			<territory type="RU">Rusia</territory>
 			<territory type="US">Amérika Sarikat</territory>
-			<territory type="ZZ">Wilayah Teu Dipikaterang</territory>
+			<territory type="ZZ">Wilayah Teu Dikenal</territory>
 		</territories>
 		<types>
-			<type key="calendar" type="gregorian">Kalender Grégorian</type>
+			<type key="calendar" type="gregorian">Kalénder Grégorian</type>
 			<type key="collation" type="standard">Aturan Runtuyan Standar</type>
 			<type key="numbers" type="latn">Digit Barat</type>
 		</types>
@@ -127,12 +125,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} 'pukul' {0}</pattern>
+							<pattern>{1} 'jam' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} 'pukul' {0}</pattern>
+							<pattern>{1} 'jam' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -234,7 +232,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="mon">Sen</day>
 							<day type="tue">Sal</day>
 							<day type="wed">Reb</day>
-							<day type="thu">Kam</day>
+							<day type="thu">Kem</day>
 							<day type="fri">Jum</day>
 							<day type="sat">Sap</day>
 						</dayWidth>
@@ -252,7 +250,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="mon">Senén</day>
 							<day type="tue">Salasa</day>
 							<day type="wed">Rebo</day>
-							<day type="thu">Kamis</day>
+							<day type="thu">Kemis</day>
 							<day type="fri">Jumaah</day>
 							<day type="sat">Saptu</day>
 						</dayWidth>
@@ -263,7 +261,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="mon">Sen</day>
 							<day type="tue">Sal</day>
 							<day type="wed">Reb</day>
-							<day type="thu">Kam</day>
+							<day type="thu">Kem</day>
 							<day type="fri">Jum</day>
 							<day type="sat">Sap</day>
 						</dayWidth>
@@ -281,7 +279,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="mon">Senén</day>
 							<day type="tue">Salasa</day>
 							<day type="wed">Rebo</day>
-							<day type="thu">Kamis</day>
+							<day type="thu">Kemis</day>
 							<day type="fri">Jumaah</day>
 							<day type="sat">Saptu</day>
 						</dayWidth>
@@ -370,12 +368,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} 'pukul' {0}</pattern>
+							<pattern>{1} 'jam' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} 'pukul' {0}</pattern>
+							<pattern>{1} 'jam' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -497,6 +495,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="weekday">
 				<displayName>dinten dina saminggu</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">Minggu kamari</relative>
+				<relative type="0">Minggu ieu</relative>
+				<relative type="1">Minggu payun</relative>
 			</field>
 			<field type="dayperiod">
 				<displayName>AM/PM</displayName>
@@ -635,6 +638,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</decimalFormatLength>
 		</decimalFormats>
 		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
@@ -691,6 +699,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">dolar A.S.</displayName>
 				<symbol draft="contributed">$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="XXX">
+				<displayName>Mata Uang Teu Dikenal</displayName>
+				<displayName count="other">(mata uang teu dikenal)</displayName>
 			</currency>
 		</currencies>
 	</numbers>

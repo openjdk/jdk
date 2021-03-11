@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "ci/ciSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
@@ -86,13 +86,13 @@ void Parse::do_checkcast() {
     }
     null_assert(obj);
     assert( stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null" );
-    if (!stopped()) {
-      profile_null_checkcast();
-    }
     return;
   }
 
-  Node *res = gen_checkcast(obj, makecon(TypeKlassPtr::make(klass)) );
+  Node* res = gen_checkcast(obj, makecon(TypeKlassPtr::make(klass)));
+  if (stopped()) {
+    return;
+  }
 
   // Pop from stack AFTER gen_checkcast because it can uncommon trap and
   // the debug info has to be correct.
@@ -245,7 +245,7 @@ void Parse::do_new() {
 
   // Should throw an InstantiationError?
   if (klass->is_abstract() || klass->is_interface() ||
-      klass->name() == ciSymbol::java_lang_Class() ||
+      klass->name() == ciSymbols::java_lang_Class() ||
       iter().is_unresolved_klass()) {
     uncommon_trap(Deoptimization::Reason_unhandled,
                   Deoptimization::Action_none,
@@ -299,287 +299,3 @@ void Parse::dump_map_adr_mem() const {
 
 #endif
 
-
-//=============================================================================
-//
-// parser methods for profiling
-
-
-//----------------------test_counter_against_threshold ------------------------
-void Parse::test_counter_against_threshold(Node* cnt, int limit) {
-  // Test the counter against the limit and uncommon trap if greater.
-
-  // This code is largely copied from the range check code in
-  // array_addressing()
-
-  // Test invocation count vs threshold
-  Node *threshold = makecon(TypeInt::make(limit));
-  Node *chk   = _gvn.transform( new CmpUNode( cnt, threshold) );
-  BoolTest::mask btest = BoolTest::lt;
-  Node *tst   = _gvn.transform( new BoolNode( chk, btest) );
-  // Branch to failure if threshold exceeded
-  { BuildCutout unless(this, tst, PROB_ALWAYS);
-    uncommon_trap(Deoptimization::Reason_age,
-                  Deoptimization::Action_maybe_recompile);
-  }
-}
-
-//----------------------increment_and_test_invocation_counter-------------------
-void Parse::increment_and_test_invocation_counter(int limit) {
-  if (!count_invocations()) return;
-
-  // Get the Method* node.
-  ciMethod* m = method();
-  MethodCounters* counters_adr = m->ensure_method_counters();
-  if (counters_adr == NULL) {
-    C->record_failure("method counters allocation failed");
-    return;
-  }
-
-  Node* ctrl = control();
-  const TypePtr* adr_type = TypeRawPtr::make((address) counters_adr);
-  Node *counters_node = makecon(adr_type);
-  Node* adr_iic_node = basic_plus_adr(counters_node, counters_node,
-    MethodCounters::interpreter_invocation_counter_offset_in_bytes());
-  Node* cnt = make_load(ctrl, adr_iic_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-
-  test_counter_against_threshold(cnt, limit);
-
-  // Add one to the counter and store
-  Node* incr = _gvn.transform(new AddINode(cnt, _gvn.intcon(1)));
-  store_to_memory(ctrl, adr_iic_node, incr, T_INT, adr_type, MemNode::unordered);
-}
-
-//----------------------------method_data_addressing---------------------------
-Node* Parse::method_data_addressing(ciMethodData* md, ciProfileData* data, ByteSize counter_offset, Node* idx, uint stride) {
-  // Get offset within MethodData* of the data array
-  ByteSize data_offset = MethodData::data_offset();
-
-  // Get cell offset of the ProfileData within data array
-  int cell_offset = md->dp_to_di(data->dp());
-
-  // Add in counter_offset, the # of bytes into the ProfileData of counter or flag
-  int offset = in_bytes(data_offset) + cell_offset + in_bytes(counter_offset);
-
-  const TypePtr* adr_type = TypeMetadataPtr::make(md);
-  Node* mdo = makecon(adr_type);
-  Node* ptr = basic_plus_adr(mdo, mdo, offset);
-
-  if (stride != 0) {
-    Node* str = _gvn.MakeConX(stride);
-    Node* scale = _gvn.transform( new MulXNode( idx, str ) );
-    ptr   = _gvn.transform( new AddPNode( mdo, ptr, scale ) );
-  }
-
-  return ptr;
-}
-
-//--------------------------increment_md_counter_at----------------------------
-void Parse::increment_md_counter_at(ciMethodData* md, ciProfileData* data, ByteSize counter_offset, Node* idx, uint stride) {
-  Node* adr_node = method_data_addressing(md, data, counter_offset, idx, stride);
-
-  const TypePtr* adr_type = _gvn.type(adr_node)->is_ptr();
-  Node* cnt  = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-  Node* incr = _gvn.transform(new AddINode(cnt, _gvn.intcon(DataLayout::counter_increment)));
-  store_to_memory(NULL, adr_node, incr, T_INT, adr_type, MemNode::unordered);
-}
-
-//--------------------------test_for_osr_md_counter_at-------------------------
-void Parse::test_for_osr_md_counter_at(ciMethodData* md, ciProfileData* data, ByteSize counter_offset, int limit) {
-  Node* adr_node = method_data_addressing(md, data, counter_offset);
-
-  const TypePtr* adr_type = _gvn.type(adr_node)->is_ptr();
-  Node* cnt  = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-
-  test_counter_against_threshold(cnt, limit);
-}
-
-//-------------------------------set_md_flag_at--------------------------------
-void Parse::set_md_flag_at(ciMethodData* md, ciProfileData* data, int flag_constant) {
-  Node* adr_node = method_data_addressing(md, data, DataLayout::flags_offset());
-
-  const TypePtr* adr_type = _gvn.type(adr_node)->is_ptr();
-  Node* flags = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-  Node* incr = _gvn.transform(new OrINode(flags, _gvn.intcon(flag_constant)));
-  store_to_memory(NULL, adr_node, incr, T_INT, adr_type, MemNode::unordered);
-}
-
-//----------------------------profile_taken_branch-----------------------------
-void Parse::profile_taken_branch(int target_bci, bool force_update) {
-  // This is a potential osr_site if we have a backedge.
-  int cur_bci = bci();
-  bool osr_site =
-    (target_bci <= cur_bci) && count_invocations() && UseOnStackReplacement;
-
-  // If we are going to OSR, restart at the target bytecode.
-  set_bci(target_bci);
-
-  // To do: factor out the the limit calculations below. These duplicate
-  // the similar limit calculations in the interpreter.
-
-  if (method_data_update() || force_update) {
-    ciMethodData* md = method()->method_data();
-    assert(md != NULL, "expected valid ciMethodData");
-    ciProfileData* data = md->bci_to_data(cur_bci);
-    assert(data != NULL && data->is_JumpData(), "need JumpData for taken branch");
-    increment_md_counter_at(md, data, JumpData::taken_offset());
-  }
-
-  // In the new tiered system this is all we need to do. In the old
-  // (c2 based) tiered sytem we must do the code below.
-#ifndef TIERED
-  if (method_data_update()) {
-    ciMethodData* md = method()->method_data();
-    if (osr_site) {
-      ciProfileData* data = md->bci_to_data(cur_bci);
-      assert(data != NULL && data->is_JumpData(), "need JumpData for taken branch");
-      int limit = (int)((int64_t)CompileThreshold
-                   * (OnStackReplacePercentage - InterpreterProfilePercentage) / 100);
-      test_for_osr_md_counter_at(md, data, JumpData::taken_offset(), limit);
-    }
-  } else {
-    // With method data update off, use the invocation counter to trigger an
-    // OSR compilation, as done in the interpreter.
-    if (osr_site) {
-      int limit = (int)((int64_t)CompileThreshold * OnStackReplacePercentage / 100);
-      increment_and_test_invocation_counter(limit);
-    }
-  }
-#endif // TIERED
-
-  // Restore the original bytecode.
-  set_bci(cur_bci);
-}
-
-//--------------------------profile_not_taken_branch---------------------------
-void Parse::profile_not_taken_branch(bool force_update) {
-
-  if (method_data_update() || force_update) {
-    ciMethodData* md = method()->method_data();
-    assert(md != NULL, "expected valid ciMethodData");
-    ciProfileData* data = md->bci_to_data(bci());
-    assert(data != NULL && data->is_BranchData(), "need BranchData for not taken branch");
-    increment_md_counter_at(md, data, BranchData::not_taken_offset());
-  }
-
-}
-
-//---------------------------------profile_call--------------------------------
-void Parse::profile_call(Node* receiver) {
-  if (!method_data_update()) return;
-
-  switch (bc()) {
-  case Bytecodes::_invokevirtual:
-  case Bytecodes::_invokeinterface:
-    profile_receiver_type(receiver);
-    break;
-  case Bytecodes::_invokestatic:
-  case Bytecodes::_invokedynamic:
-  case Bytecodes::_invokespecial:
-    profile_generic_call();
-    break;
-  default: fatal("unexpected call bytecode");
-  }
-}
-
-//------------------------------profile_generic_call---------------------------
-void Parse::profile_generic_call() {
-  assert(method_data_update(), "must be generating profile code");
-
-  ciMethodData* md = method()->method_data();
-  assert(md != NULL, "expected valid ciMethodData");
-  ciProfileData* data = md->bci_to_data(bci());
-  assert(data != NULL && data->is_CounterData(), "need CounterData for not taken branch");
-  increment_md_counter_at(md, data, CounterData::count_offset());
-}
-
-//-----------------------------profile_receiver_type---------------------------
-void Parse::profile_receiver_type(Node* receiver) {
-  assert(method_data_update(), "must be generating profile code");
-
-  ciMethodData* md = method()->method_data();
-  assert(md != NULL, "expected valid ciMethodData");
-  ciProfileData* data = md->bci_to_data(bci());
-  assert(data != NULL && data->is_ReceiverTypeData(), "need ReceiverTypeData here");
-
-  // Skip if we aren't tracking receivers
-  if (TypeProfileWidth < 1) {
-    increment_md_counter_at(md, data, CounterData::count_offset());
-    return;
-  }
-  ciReceiverTypeData* rdata = (ciReceiverTypeData*)data->as_ReceiverTypeData();
-
-  Node* method_data = method_data_addressing(md, rdata, in_ByteSize(0));
-
-  // Using an adr_type of TypePtr::BOTTOM to work around anti-dep problems.
-  // A better solution might be to use TypeRawPtr::BOTTOM with RC_NARROW_MEM.
-  make_runtime_call(RC_LEAF, OptoRuntime::profile_receiver_type_Type(),
-                    CAST_FROM_FN_PTR(address,
-                                     OptoRuntime::profile_receiver_type_C),
-                    "profile_receiver_type_C",
-                    TypePtr::BOTTOM,
-                    method_data, receiver);
-}
-
-//---------------------------------profile_ret---------------------------------
-void Parse::profile_ret(int target_bci) {
-  if (!method_data_update()) return;
-
-  // Skip if we aren't tracking ret targets
-  if (TypeProfileWidth < 1) return;
-
-  ciMethodData* md = method()->method_data();
-  assert(md != NULL, "expected valid ciMethodData");
-  ciProfileData* data = md->bci_to_data(bci());
-  assert(data != NULL && data->is_RetData(), "need RetData for ret");
-  ciRetData* ret_data = (ciRetData*)data->as_RetData();
-
-  // Look for the target_bci is already in the table
-  uint row;
-  bool table_full = true;
-  for (row = 0; row < ret_data->row_limit(); row++) {
-    int key = ret_data->bci(row);
-    table_full &= (key != RetData::no_bci);
-    if (key == target_bci) break;
-  }
-
-  if (row >= ret_data->row_limit()) {
-    // The target_bci was not found in the table.
-    if (!table_full) {
-      // XXX: Make slow call to update RetData
-    }
-    return;
-  }
-
-  // the target_bci is already in the table
-  increment_md_counter_at(md, data, RetData::bci_count_offset(row));
-}
-
-//--------------------------profile_null_checkcast----------------------------
-void Parse::profile_null_checkcast() {
-  // Set the null-seen flag, done in conjunction with the usual null check. We
-  // never unset the flag, so this is a one-way switch.
-  if (!method_data_update()) return;
-
-  ciMethodData* md = method()->method_data();
-  assert(md != NULL, "expected valid ciMethodData");
-  ciProfileData* data = md->bci_to_data(bci());
-  assert(data != NULL && data->is_BitData(), "need BitData for checkcast");
-  set_md_flag_at(md, data, BitData::null_seen_byte_constant());
-}
-
-//-----------------------------profile_switch_case-----------------------------
-void Parse::profile_switch_case(int table_index) {
-  if (!method_data_update()) return;
-
-  ciMethodData* md = method()->method_data();
-  assert(md != NULL, "expected valid ciMethodData");
-
-  ciProfileData* data = md->bci_to_data(bci());
-  assert(data != NULL && data->is_MultiBranchData(), "need MultiBranchData for switch case");
-  if (table_index >= 0) {
-    increment_md_counter_at(md, data, MultiBranchData::case_count_offset(table_index));
-  } else {
-    increment_md_counter_at(md, data, MultiBranchData::default_count_offset());
-  }
-}

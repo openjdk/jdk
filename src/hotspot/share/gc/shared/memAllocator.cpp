@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -383,10 +384,10 @@ void MemAllocator::mem_clear(HeapWord* mem) const {
 oop MemAllocator::finish(HeapWord* mem) const {
   assert(mem != NULL, "NULL object pointer");
   if (UseBiasedLocking) {
-    oopDesc::set_mark_raw(mem, _klass->prototype_header());
+    oopDesc::set_mark(mem, _klass->prototype_header());
   } else {
     // May be bootstrapping
-    oopDesc::set_mark_raw(mem, markWord::prototype());
+    oopDesc::set_mark(mem, markWord::prototype());
   }
   // Need a release store to ensure array/class length, mark word, and
   // object zeroing are visible before setting the klass non-NULL, for

@@ -29,7 +29,6 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.util.DocTreeFactory;
-import com.sun.tools.doclint.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -42,6 +41,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclint.HtmlTag;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -64,7 +64,6 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     public final DocPath  source;
     public final HtmlConfiguration configuration;
     private final HtmlOptions options;
-    private Navigation navBar;
 
     /**
      * Constructor to construct the DocFilesWriter object.
@@ -196,38 +195,24 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         DocFileElement dfElement = new DocFileElement(utils, element, fileObject);
 
         DocPath dfilePath = dstPath.resolve(srcfile.getName());
-        HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element);
-        configuration.messages.notice("doclet.Generating_0", docletWriter.filename.getPath());
+        PackageElement pkg = dfElement.getPackageElement();
+
+        HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element, pkg);
 
         List<? extends DocTree> localTags = getLocalHeaderTags(utils.getPreamble(dfElement));
         Content localTagsContent = docletWriter.commentTagsToContent(null, dfElement, localTags, false);
 
         String title = getWindowTitle(docletWriter, dfElement).trim();
         HtmlTree htmlContent = docletWriter.getBody(title);
-        PackageElement pkg = dfElement.getPackageElement();
-        this.navBar = new Navigation(element, configuration, PageMode.DOC_FILE, docletWriter.path);
-        Content headerContent = new ContentBuilder();
-        docletWriter.addTop(headerContent);
-        Content mdleLinkContent = docletWriter.getModuleLink(utils.elementUtils.getModuleOf(pkg),
-                docletWriter.contents.moduleLabel);
-        navBar.setNavLinkModule(mdleLinkContent);
-        Content pkgLinkContent = docletWriter.getPackageLink(pkg, docletWriter.contents.packageLabel);
-        navBar.setNavLinkPackage(pkgLinkContent);
-        navBar.setUserHeader(docletWriter.getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
 
         List<? extends DocTree> fullBody = utils.getFullBody(dfElement);
         Content pageContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
         docletWriter.addTagsInfo(dfElement, pageContent);
 
-        navBar.setUserFooter(docletWriter.getUserHeaderFooter(false));
-        Content footer = HtmlTree.FOOTER();
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        docletWriter.addBottom(footer);
         htmlContent.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(docletWriter.getHeader(PageMode.DOC_FILE, element))
                 .addMainContent(pageContent)
-                .setFooter(footer));
+                .setFooter(docletWriter.getFooter()));
         docletWriter.printHtmlDocument(Collections.emptyList(), null, localTagsContent, Collections.emptyList(), htmlContent);
     }
 
@@ -291,15 +276,17 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     }
 
     private static class DocFileWriter extends HtmlDocletWriter {
+        private final PackageElement pkg;
 
         /**
          * Constructor to construct the HtmlDocletWriter object.
          *
-         * @param configuration the configuration of this doclet.
-         * @param path          the file to be generated.
-         * @param e             the anchoring element.
+         * @param configuration the configuration of this doclet
+         * @param path          the file to be generated
+         * @param e             the anchoring element
+         * @param pkg           the package containing the doc file
          */
-        public DocFileWriter(HtmlConfiguration configuration, DocPath path, Element e) {
+        public DocFileWriter(HtmlConfiguration configuration, DocPath path, Element e, PackageElement pkg) {
             super(configuration, path);
             switch (e.getKind()) {
                 case PACKAGE:
@@ -308,6 +295,17 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
                 default:
                     throw new AssertionError("unsupported element: " + e.getKind());
             }
+            this.pkg = pkg;
+        }
+
+        @Override
+        protected Navigation getNavBar(PageMode pageMode, Element element) {
+            Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
+                    contents.moduleLabel);
+            Content pkgLinkContent = getPackageLink(pkg, contents.packageLabel);
+            return super.getNavBar(pageMode, element)
+                    .setNavLinkModule(mdleLinkContent)
+                    .setNavLinkPackage(pkgLinkContent);
         }
     }
 }

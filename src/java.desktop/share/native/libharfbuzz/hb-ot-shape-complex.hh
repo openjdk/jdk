@@ -50,8 +50,9 @@ enum hb_ot_shape_zero_width_marks_type_t {
 
 /* Master OT shaper list */
 #define HB_COMPLEX_SHAPERS_IMPLEMENT_SHAPERS \
-  HB_COMPLEX_SHAPER_IMPLEMENT (default) /* should be first */ \
   HB_COMPLEX_SHAPER_IMPLEMENT (arabic) \
+  HB_COMPLEX_SHAPER_IMPLEMENT (default) \
+  HB_COMPLEX_SHAPER_IMPLEMENT (dumber) \
   HB_COMPLEX_SHAPER_IMPLEMENT (hangul) \
   HB_COMPLEX_SHAPER_IMPLEMENT (hebrew) \
   HB_COMPLEX_SHAPER_IMPLEMENT (indic) \
@@ -60,7 +61,7 @@ enum hb_ot_shape_zero_width_marks_type_t {
   HB_COMPLEX_SHAPER_IMPLEMENT (myanmar_zawgyi) \
   HB_COMPLEX_SHAPER_IMPLEMENT (thai) \
   HB_COMPLEX_SHAPER_IMPLEMENT (use) \
-  /* ^--- Add new shapers here */
+  /* ^--- Add new shapers here; keep sorted. */
 
 
 struct hb_ot_complex_shaper_t
@@ -376,6 +377,13 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     //case HB_SCRIPT_HANIFI_ROHINGYA:
     case HB_SCRIPT_MAKASAR:
     //case HB_SCRIPT_SOGDIAN:
+
+    /* Unicode-12.0 additions */
+    case HB_SCRIPT_NANDINAGARI:
+
+    /* Unicode-13.0 additions */
+    case HB_SCRIPT_CHORASMIAN:
+    case HB_SCRIPT_DIVES_AKURU:
 
       /* If the designer designed the font for the 'DFLT' script,
        * (or we ended up arbitrarily pick 'latn'), use the default shaper.

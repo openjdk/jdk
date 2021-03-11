@@ -54,20 +54,13 @@ const DecoratorSet DECORATORS_NONE                   = UCONST64(0);
 const DecoratorSet INTERNAL_CONVERT_COMPRESSED_OOP   = UCONST64(1) << 1;
 const DecoratorSet INTERNAL_VALUE_IS_OOP             = UCONST64(1) << 2;
 
-// == Internal build-time Decorators ==
-// * INTERNAL_BT_BARRIER_ON_PRIMITIVES: This is set in the barrierSetConfig.hpp file.
-// * INTERNAL_BT_TO_SPACE_INVARIANT: This is set in the barrierSetConfig.hpp file iff
-//   no GC is bundled in the build that is to-space invariant.
-const DecoratorSet INTERNAL_BT_BARRIER_ON_PRIMITIVES = UCONST64(1) << 3;
-const DecoratorSet INTERNAL_BT_TO_SPACE_INVARIANT    = UCONST64(1) << 4;
-
 // == Internal run-time Decorators ==
 // * INTERNAL_RT_USE_COMPRESSED_OOPS: This decorator will be set in runtime resolved
 //   access backends iff UseCompressedOops is true.
 const DecoratorSet INTERNAL_RT_USE_COMPRESSED_OOPS   = UCONST64(1) << 5;
 
 const DecoratorSet INTERNAL_DECORATOR_MASK           = INTERNAL_CONVERT_COMPRESSED_OOP | INTERNAL_VALUE_IS_OOP |
-                                                       INTERNAL_BT_BARRIER_ON_PRIMITIVES | INTERNAL_RT_USE_COMPRESSED_OOPS;
+                                                       INTERNAL_RT_USE_COMPRESSED_OOPS;
 
 // == Memory Ordering Decorators ==
 // The memory ordering decorators can be described in the following way:
@@ -238,7 +231,7 @@ namespace AccessInternal {
     // If no barrier strength has been picked, normal will be used
     static const DecoratorSet barrier_strength_default = memory_ordering_default |
       ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : DECORATORS_NONE);
-    static const DecoratorSet value = barrier_strength_default | BT_BUILDTIME_DECORATORS;
+    static const DecoratorSet value = barrier_strength_default;
   };
 
   // This function implements the above DecoratorFixup rules, but without meta
@@ -254,8 +247,7 @@ namespace AccessInternal {
     // If no barrier strength has been picked, normal will be used
     DecoratorSet barrier_strength_default = memory_ordering_default |
       ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : DECORATORS_NONE);
-    DecoratorSet value = barrier_strength_default | BT_BUILDTIME_DECORATORS;
-    return value;
+    return barrier_strength_default;
   }
 }
 

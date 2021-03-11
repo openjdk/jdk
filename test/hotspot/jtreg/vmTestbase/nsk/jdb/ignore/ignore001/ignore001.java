@@ -39,9 +39,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.ignore.ignore001.ignore001
- *        nsk.jdb.ignore.ignore001.ignore001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.ignore.ignore001.ignore001
+ * @build nsk.jdb.ignore.ignore001.ignore001a
+ * @run main/othervm
+ *      nsk.jdb.ignore.ignore001.ignore001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

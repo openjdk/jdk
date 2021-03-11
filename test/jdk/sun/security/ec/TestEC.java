@@ -37,8 +37,9 @@
  * @library ../../../java/security/testlibrary
  * @library ../../../javax/net/ssl/TLSCommon
  * @modules jdk.crypto.cryptoki/sun.security.pkcs11.wrapper
- * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1" -Djdk.sunec.disableNative=false TestEC
- * @run main/othervm -Djava.security.policy=TestEC.policy -Djdk.tls.namedGroups="secp256r1,sect193r1" -Djdk.sunec.disableNative=false TestEC
+ * @run main/othervm -Djdk.tls.namedGroups="secp256r1" TestEC
+ * @run main/othervm -Djava.security.policy=TestEC.policy
+ *    -Djdk.tls.namedGroups="secp256r1" TestEC
  */
 
 import java.security.NoSuchProviderException;
@@ -48,13 +49,12 @@ import java.security.Security;
 /*
  * Leverage the collection of EC tests used by PKCS11
  *
- * NOTE: the following 6 files were copied here from the PKCS11 EC Test area
+ * NOTE: the following 5 files were copied here from the PKCS11 EC Test area
  *       and must be kept in sync with the originals:
  *
  *           ../pkcs11/ec/p12passwords.txt
  *           ../pkcs11/ec/certs/sunlabscerts.pem
  *           ../pkcs11/ec/pkcs12/secp256r1server-secp384r1ca.p12
- *           ../pkcs11/ec/pkcs12/sect193r1server-rsa1024ca.p12
  *           ../pkcs11/sslecc/keystore
  *           ../pkcs11/sslecc/truststore
  */
@@ -99,14 +99,21 @@ public class TestEC {
          * The entry point used for each test is its instance method
          * called main (not its static method called main).
          */
+        System.out.println("TestECDH");
         new TestECDH().main(p);
+        System.out.println("TestECDSA");
         new TestECDSA().main(p);
+        System.out.println("TestCurves");
         new TestCurves().main(p);
+        System.out.println("TestKeyFactory");
         new TestKeyFactory().main(p);
+        System.out.println("TestECGenSpec");
         new TestECGenSpec().main(p);
+        System.out.println("ReadPKCS12");
         new ReadPKCS12().main(p);
+        System.out.println("ReadCertificate");
         new ReadCertificates().main(p);
-
+        System.out.println("ClientJSSEServerJSSE");
         new ClientJSSEServerJSSE().main(p);
 
         long stop = System.currentTimeMillis();

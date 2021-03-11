@@ -72,6 +72,14 @@ public interface MethodWriter extends MemberWriter {
     void addDeprecated(ExecutableElement method, Content methodDocTree);
 
     /**
+     * Adds the preview output for the given member.
+     *
+     * @param member the member being documented
+     * @param annotationDocTree content tree to which the preview information will be added
+     */
+    void addPreview(ExecutableElement member, Content contentTree);
+
+    /**
      * Add the comments for the given method.
      *
      * @param holder the holder type (not erasure) of the method

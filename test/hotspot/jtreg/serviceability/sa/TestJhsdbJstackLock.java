@@ -65,7 +65,7 @@ public class TestJhsdbJstackLock {
             out.shouldMatch("^\\s+- locked <0x[0-9a-f]+> \\(a java\\.lang\\.Thread\\)$");
             out.shouldMatch("^\\s+- locked <0x[0-9a-f]+> \\(a java\\.lang\\.Class for int\\)$");
 
-            out.stderrShouldBeEmptyIgnoreVMWarnings();
+            out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
 
             System.out.println("Test Completed");
         } finally {

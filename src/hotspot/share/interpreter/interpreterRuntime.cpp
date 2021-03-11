@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -43,13 +44,15 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -64,6 +67,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
@@ -314,7 +318,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* thread, int reason,
       Method::build_interpreter_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Only metaspace OOM is expected. No Java code executed.
-        assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())),
+        assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())),
                "we expect only an OOM error here");
         CLEAR_PENDING_EXCEPTION;
       }
@@ -361,7 +365,7 @@ static Handle get_preinitialized_exception(Klass* k, TRAPS) {
 // constructor for the same reason (it is empty, anyway).
 JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* thread))
   Handle exception = get_preinitialized_exception(
-                                 SystemDictionary::StackOverflowError_klass(),
+                                 vmClasses::StackOverflowError_klass(),
                                  CHECK);
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
@@ -370,7 +374,7 @@ JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread* thread))
   Handle exception = get_preinitialized_exception(
-                                 SystemDictionary::StackOverflowError_klass(),
+                                 vmClasses::StackOverflowError_klass(),
                                  CHECK);
   java_lang_Throwable::set_message(exception(),
           Universe::delayed_stack_overflow_error_message());
@@ -447,6 +451,10 @@ JRT_END
 // from a call, the expression stack contains the values for the bci at the
 // invoke w/o arguments (i.e., as if one were inside the call).
 JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThread* thread, oopDesc* exception))
+  // We get here after we have unwound from a callee throwing an exception
+  // into the interpreter. Any deferred stack processing is notified of
+  // the event via the StackWatermarkSet.
+  StackWatermarkSet::after_unwind(thread);
 
   LastFrameAccessor last_frame(thread);
   Handle             h_exception(thread, exception);
@@ -483,14 +491,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     should_repeat = false;
 
     // assertions
-#ifdef ASSERT
     assert(h_exception.not_null(), "NULL exceptions should be handled by athrow");
-    // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
-    if (!(h_exception->is_a(SystemDictionary::Throwable_klass()))) {
-      if (ExitVMOnVerifyError) vm_exit(-1);
-      ShouldNotReachHere();
-    }
-#endif
+    // Check that exception is a subclass of Throwable.
+    assert(h_exception->is_a(vmClasses::Throwable_klass()),
+           "Exception not subclass of Throwable");
 
     // tracing
     if (log_is_enabled(Info, exceptions)) {
@@ -548,7 +552,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 
   address continuation = NULL;
   address handler_pc = NULL;
-  if (handler_bci < 0 || !thread->reguard_stack((address) &continuation)) {
+  if (handler_bci < 0 || !thread->stack_overflow_state()->reguard_stack((address) &continuation)) {
     // Forward exception to callee (leaving bci/bcp untouched) because (a) no
     // handler in this method, or (b) after a stack overflow there is not yet
     // enough stack space available to reprotect the stack.
@@ -627,6 +631,10 @@ JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(Ja
                recvKlass ? recvKlass->external_name() : "NULL",
                interfaceKlass ? interfaceKlass->external_name() : "NULL");
   THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+JRT_END
+
+JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* thread))
+  THROW(vmSymbols::java_lang_NullPointerException());
 JRT_END
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -724,7 +732,7 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, Ba
   Handle h_obj(thread, elem->obj());
   assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be NULL or an object");
-  ObjectSynchronizer::enter(h_obj, elem->lock(), CHECK);
+  ObjectSynchronizer::enter(h_obj, elem->lock(), thread);
   assert(Universe::heap()->is_in_or_null(elem->obj()),
          "must be NULL or an object");
 #ifdef ASSERT
@@ -733,24 +741,21 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, Ba
 JRT_END
 
 
-//%note monitor_1
-JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorexit(JavaThread* thread, BasicObjectLock* elem))
-#ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
-  Handle h_obj(thread, elem->obj());
-  assert(Universe::heap()->is_in_or_null(h_obj()),
-         "must be NULL or an object");
-  if (elem == NULL || h_obj()->is_unlocked()) {
-    THROW(vmSymbols::java_lang_IllegalMonitorStateException());
+JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
+  oop obj = elem->obj();
+  assert(Universe::heap()->is_in(obj), "must be an object");
+  // The object could become unlocked through a JNI call, which we have no other checks for.
+  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
+  if (obj->is_unlocked()) {
+    if (CheckJNICalls) {
+      fatal("Object has been unlocked by JNI");
+    }
+    return;
   }
-  ObjectSynchronizer::exit(h_obj(), elem->lock(), thread);
-  // Free entry. This must be done here, since a pending exception might be installed on
-  // exit. If it is not cleared, the exception handling code will try to unlock the monitor again.
+  ObjectSynchronizer::exit(obj, elem->lock(), JavaThread::current());
+  // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
+  // again at method exit or in the case of an exception.
   elem->set_obj(NULL);
-#ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
 JRT_END
 
 
@@ -769,9 +774,9 @@ JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   Handle exception(thread, thread->vm_result());
   assert(exception() != NULL, "vm result should be set");
   thread->set_vm_result(NULL); // clear vm result before continuing (may cause memory leaks and assert failures)
-  if (!exception->is_a(SystemDictionary::ThreadDeath_klass())) {
+  if (!exception->is_a(vmClasses::ThreadDeath_klass())) {
     exception = get_preinitialized_exception(
-                       SystemDictionary::IllegalMonitorStateException_klass(),
+                       vmClasses::IllegalMonitorStateException_klass(),
                        CATCH);
   }
   thread->set_vm_result(exception());
@@ -817,24 +822,17 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
   CallInfo info;
   constantPoolHandle pool(thread, last_frame.method()->constants());
 
+  methodHandle resolved_method;
+
   {
     JvmtiHideSingleStepping jhss(thread);
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
                                  CHECK);
-    if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
-      int retry_count = 0;
-      while (info.resolved_method()->is_old()) {
-        // It is very unlikely that method is redefined more than 100 times
-        // in the middle of resolve. If it is looping here more than 100 times
-        // means then there could be a bug here.
-        guarantee((retry_count++ < 100),
-                  "Could not resolve to latest version of redefined method");
-        // method is redefined in the middle of resolve so re-try.
-        LinkResolver::resolve_invoke(info, receiver, pool,
-                                     last_frame.get_index_u2_cpcache(bytecode), bytecode,
-                                     CHECK);
-      }
+    if (JvmtiExport::can_hotswap_or_post_breakpoint() && info.resolved_method()->is_old()) {
+      resolved_method = methodHandle(THREAD, info.resolved_method()->get_new_method());
+    } else {
+      resolved_method = methodHandle(THREAD, info.resolved_method());
     }
   } // end JvmtiHideSingleStepping
 
@@ -844,22 +842,20 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
 
 #ifdef ASSERT
   if (bytecode == Bytecodes::_invokeinterface) {
-    if (info.resolved_method()->method_holder() ==
-                                            SystemDictionary::Object_klass()) {
+    if (resolved_method->method_holder() == vmClasses::Object_klass()) {
       // NOTE: THIS IS A FIX FOR A CORNER CASE in the JVM spec
       // (see also CallInfo::set_interface for details)
       assert(info.call_kind() == CallInfo::vtable_call ||
              info.call_kind() == CallInfo::direct_call, "");
-      Method* rm = info.resolved_method();
-      assert(rm->is_final() || info.has_vtable_index(),
+      assert(resolved_method->is_final() || info.has_vtable_index(),
              "should have been set already");
-    } else if (!info.resolved_method()->has_itable_index()) {
+    } else if (!resolved_method->has_itable_index()) {
       // Resolved something like CharSequence.toString.  Use vtable not itable.
       assert(info.call_kind() != CallInfo::itable_call, "");
     } else {
       // Setup itable entry
       assert(info.call_kind() == CallInfo::itable_call, "");
-      int index = info.resolved_method()->itable_index();
+      int index = resolved_method->itable_index();
       assert(info.itable_index() == index, "");
     }
   } else if (bytecode == Bytecodes::_invokespecial) {
@@ -874,7 +870,6 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
   // methods must be checked for every call.
   InstanceKlass* sender = pool->pool_holder();
   sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
-  methodHandle resolved_method(THREAD, info.resolved_method());
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:
@@ -1028,7 +1023,7 @@ JRT_ENTRY(nmethod*,
   const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
   const int bci = branch_bcp != NULL ? method->bci_from(last_frame.bcp()) : InvocationEntryBci;
 
-  nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, NULL, THREAD);
+  nmethod* osr_nm = CompilationPolicy::event(method, method, branch_bci, bci, CompLevel_none, NULL, THREAD);
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (osr_nm != NULL && bs_nm != NULL) {
@@ -1067,25 +1062,6 @@ JRT_LEAF(jint, InterpreterRuntime::bcp_to_di(Method* method, address cur_bcp))
   if (mdo == NULL)  return 0;
   return mdo->bci_to_di(bci);
 JRT_END
-
-JRT_ENTRY(void, InterpreterRuntime::profile_method(JavaThread* thread))
-  // use UnlockFlagSaver to clear and restore the _do_not_unlock_if_synchronized
-  // flag, in case this method triggers classloading which will call into Java.
-  UnlockFlagSaver fs(thread);
-
-  assert(ProfileInterpreter, "must be profiling interpreter");
-  LastFrameAccessor last_frame(thread);
-  assert(last_frame.is_interpreted_frame(), "must come from interpreter");
-  methodHandle method(thread, last_frame.method());
-  Method::build_interpreter_method_data(method, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    // Only metaspace OOM is expected. No Java code executed.
-    assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
-    CLEAR_PENDING_EXCEPTION;
-    // and fall through...
-  }
-JRT_END
-
 
 #ifdef ASSERT
 JRT_LEAF(void, InterpreterRuntime::verify_mdp(Method* method, address bcp, address mdp))
@@ -1140,7 +1116,7 @@ JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread*
   MethodCounters* mcs = Method::build_method_counters(m, thread);
   if (HAS_PENDING_EXCEPTION) {
     // Only metaspace OOM is expected. No Java code executed.
-    assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+    assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
     CLEAR_PENDING_EXCEPTION;
   }
   return mcs;
@@ -1156,12 +1132,28 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* thread))
   // if this is called during a safepoint
 
   if (JvmtiExport::should_post_single_step()) {
+    // This function is called by the interpreter when single stepping. Such single
+    // stepping could unwind a frame. Then, it is important that we process any frames
+    // that we might return into.
+    StackWatermarkSet::before_unwind(thread);
+
     // We are called during regular safepoints and when the VM is
     // single stepping. If any thread is marked for single stepping,
     // then we may have JVMTI work to do.
     LastFrameAccessor last_frame(thread);
     JvmtiExport::at_single_stepping_point(thread, last_frame.method(), last_frame.bcp());
   }
+JRT_END
+
+JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* thread))
+  // This function is called by the interpreter when the return poll found a reason
+  // to call the VM. The reason could be that we are returning into a not yet safe
+  // to access frame. We handle that below.
+  // Note that this path does not check for single stepping, because we do not want
+  // to single step when unwinding frames for an exception being thrown. Instead,
+  // such single stepping code will use the safepoint table, which will use the
+  // InterpreterRuntime::at_safepoint callback.
+  StackWatermarkSet::before_unwind(thread);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread *thread, oopDesc* obj,
@@ -1250,7 +1242,10 @@ JRT_ENTRY(void, InterpreterRuntime::post_method_entry(JavaThread *thread))
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread *thread))
+// This is a JRT_BLOCK_ENTRY because we have to stash away the return oop
+// before transitioning to VM, and restore it after transitioning back
+// to Java. The return oop at the top-of-stack, is not walked by the GC.
+JRT_BLOCK_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread *thread))
   LastFrameAccessor last_frame(thread);
   JvmtiExport::post_method_exit(thread, last_frame.method(), last_frame.get_frame());
 JRT_END

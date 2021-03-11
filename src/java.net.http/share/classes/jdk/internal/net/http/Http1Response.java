@@ -576,11 +576,12 @@ class Http1Response<T> {
     }
 
     Receiver<?> receiver(State state) {
-        switch(state) {
-            case READING_HEADERS: return headersReader;
-            case READING_BODY: return bodyReader;
-            default: return null;
-        }
+        return switch (state) {
+            case READING_HEADERS    -> headersReader;
+            case READING_BODY       -> bodyReader;
+
+            default -> null;
+        };
 
     }
 

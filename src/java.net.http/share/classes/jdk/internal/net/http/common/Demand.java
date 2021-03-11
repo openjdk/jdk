@@ -47,7 +47,7 @@ public final class Demand {
      */
     public boolean increase(long n) {
         if (n <= 0) {
-            throw new IllegalArgumentException(String.valueOf(n));
+            throw new IllegalArgumentException("non-positive subscription request: " + String.valueOf(n));
         }
         long prev = val.getAndAccumulate(n, (p, i) -> p + i < 0 ? Long.MAX_VALUE : p + i);
         return prev == 0;

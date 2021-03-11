@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -443,23 +443,8 @@ public abstract class URLStreamHandler {
      * IP address.
      * @since 1.3
      */
-    protected synchronized InetAddress getHostAddress(URL u) {
-        if (u.hostAddress != null)
-            return u.hostAddress;
-
-        String host = u.getHost();
-        if (host == null || host.isEmpty()) {
-            return null;
-        } else {
-            try {
-                u.hostAddress = InetAddress.getByName(host);
-            } catch (UnknownHostException ex) {
-                return null;
-            } catch (SecurityException se) {
-                return null;
-            }
-        }
-        return u.hostAddress;
+    protected InetAddress getHostAddress(URL u) {
+        return u.getHostAddress();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,38 +268,45 @@ public abstract class SelectorProvider {
      * associated network port. In this example, the process that is started,
      * inherits a channel representing a network socket.
      *
-     * <p> In cases where the inherited channel represents a network socket
-     * then the {@link java.nio.channels.Channel Channel} type returned
+     * <p> In cases where the inherited channel is for an <i>Internet protocol</i>
+     * socket then the {@link Channel Channel} type returned
      * by this method is determined as follows:
      *
      * <ul>
      *
-     *  <li><p> If the inherited channel represents a stream-oriented connected
-     *  socket then a {@link java.nio.channels.SocketChannel SocketChannel} is
-     *  returned. The socket channel is, at least initially, in blocking
-     *  mode, bound to a socket address, and connected to a peer.
+     *  <li><p> If the inherited channel is for a stream-oriented connected
+     *  socket then a {@link SocketChannel SocketChannel} is returned. The
+     *  socket channel is, at least initially, in blocking mode, bound
+     *  to a socket address, and connected to a peer.
      *  </p></li>
      *
-     *  <li><p> If the inherited channel represents a stream-oriented listening
-     *  socket then a {@link java.nio.channels.ServerSocketChannel
-     *  ServerSocketChannel} is returned. The server-socket channel is, at
-     *  least initially, in blocking mode, and bound to a socket address.
+     *  <li><p> If the inherited channel is for a stream-oriented listening
+     *  socket then a {@link ServerSocketChannel ServerSocketChannel} is returned.
+     *  The server-socket channel is, at least initially, in blocking mode,
+     *  and bound to a socket address.
      *  </p></li>
      *
-     *  <li><p> If the inherited channel is a datagram-oriented socket
-     *  then a {@link java.nio.channels.DatagramChannel DatagramChannel} is
-     *  returned. The datagram channel is, at least initially, in blocking
-     *  mode, and bound to a socket address.
+     *  <li><p> If the inherited channel is a datagram-oriented socket then a
+     *  {@link DatagramChannel DatagramChannel} is returned. The datagram channel
+     *  is, at least initially, in blocking mode, and bound to a socket address.
      *  </p></li>
      *
      * </ul>
      *
-     * <p> In addition to the network-oriented channels described, this method
-     * may return other kinds of channels in the future.
+     * <p> In cases where the inherited channel is for a <i>Unix domain</i>
+     * socket then the {@link Channel} type returned is the same as for
+     * <i>Internet protocol</i> sockets as described above, except that
+     * datagram-oriented sockets are not supported.
+     *
+     * <p> In addition to the two types of socket just described, this method
+     * may return other types in the future.
      *
      * <p> The first invocation of this method creates the channel that is
      * returned. Subsequent invocations of this method return the same
      * channel. </p>
+     *
+     * @implSpec The default implementation of this method returns
+     * {@code null}.
      *
      * @return  The inherited channel, if any, otherwise {@code null}.
      *

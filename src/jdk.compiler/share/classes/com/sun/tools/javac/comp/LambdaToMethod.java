@@ -968,13 +968,18 @@ public class LambdaToMethod extends TreeTranslator {
             for (int i = 0; implPTypes.nonEmpty() && i < last; ++i) {
                 // By default use the implementation method parameter type
                 Type parmType = implPTypes.head;
-                // If the unerased parameter type is a type variable whose
-                // bound is an intersection (eg. <T extends A & B>) then
-                // use the SAM parameter type
-                if (checkForIntersection && descPTypes.head.getKind() == TypeKind.TYPEVAR) {
-                    TypeVar tv = (TypeVar) descPTypes.head;
-                    if (tv.getUpperBound().getKind() == TypeKind.INTERSECTION) {
+                if (checkForIntersection) {
+                    if (descPTypes.head.getKind() == TypeKind.INTERSECTION) {
                         parmType = samPTypes.head;
+                    }
+                    // If the unerased parameter type is a type variable whose
+                    // bound is an intersection (eg. <T extends A & B>) then
+                    // use the SAM parameter type
+                    if (descPTypes.head.getKind() == TypeKind.TYPEVAR) {
+                        TypeVar tv = (TypeVar) descPTypes.head;
+                        if (tv.getUpperBound().getKind() == TypeKind.INTERSECTION) {
+                            parmType = samPTypes.head;
+                        }
                     }
                 }
                 addParameter("x$" + i, parmType, true);
@@ -1438,7 +1443,7 @@ public class LambdaToMethod extends TreeTranslator {
         public void visitNewClass(JCNewClass tree) {
             TypeSymbol def = tree.type.tsym;
             boolean inReferencedClass = currentlyInClass(def);
-            boolean isLocal = def.isLocal();
+            boolean isLocal = def.isDirectlyOrIndirectlyLocal();
             if ((inReferencedClass && isLocal || lambdaNewClassFilter(context(), tree))) {
                 TranslationContext<?> localContext = context();
                 final TypeSymbol outerInstanceSymbol = tree.type.getEnclosingType().tsym;
@@ -1454,11 +1459,11 @@ public class LambdaToMethod extends TreeTranslator {
                     localContext = localContext.prev;
                 }
             }
+            super.visitNewClass(tree);
             if (context() != null && !inReferencedClass && isLocal) {
                 LambdaTranslationContext lambdaContext = (LambdaTranslationContext)context();
                 captureLocalClassDefs(def, lambdaContext);
             }
-            super.visitNewClass(tree);
         }
         //where
             void captureLocalClassDefs(Symbol csym, final LambdaTranslationContext lambdaContext) {
@@ -1592,7 +1597,7 @@ public class LambdaToMethod extends TreeTranslator {
             while (frameStack2.nonEmpty()) {
                 switch (frameStack2.head.tree.getTag()) {
                     case VARDEF:
-                        if (((JCVariableDecl)frameStack2.head.tree).sym.isLocal()) {
+                        if (((JCVariableDecl)frameStack2.head.tree).sym.isDirectlyOrIndirectlyLocal()) {
                             frameStack2 = frameStack2.tail;
                             break;
                         }
@@ -2063,12 +2068,30 @@ public class LambdaToMethod extends TreeTranslator {
                         };
                         break;
                     case LOCAL_VAR:
-                        ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym);
+                        ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym) {
+                            @Override
+                            public Symbol baseSymbol() {
+                                //keep mapping with original symbol
+                                return sym;
+                            }
+                        };
                         ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
+                        // If sym.data == ElementKind.EXCEPTION_PARAMETER,
+                        // set ret.data = ElementKind.EXCEPTION_PARAMETER too.
+                        // Because method com.sun.tools.javac.jvm.Code.fillExceptionParameterPositions and
+                        // com.sun.tools.javac.jvm.Code.fillLocalVarPosition would use it.
+                        // See JDK-8257740 for more information.
+                        if (((VarSymbol) sym).isExceptionParameter()) {
+                            ((VarSymbol) ret).setData(ElementKind.EXCEPTION_PARAMETER);
+                        }
                         break;
                     case PARAM:
                         ret = new VarSymbol((sym.flags() & FINAL) | PARAMETER, sym.name, types.erasure(sym.type), translatedSym);
                         ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
+                        // Set ret.data. Same as case LOCAL_VAR above.
+                        if (((VarSymbol) sym).isExceptionParameter()) {
+                            ((VarSymbol) ret).setData(ElementKind.EXCEPTION_PARAMETER);
+                        }
                         break;
                     default:
                         Assert.error(skind.name());
@@ -2313,7 +2336,7 @@ public class LambdaToMethod extends TreeTranslator {
                         !receiverAccessible() ||
                         (tree.getMode() == ReferenceMode.NEW &&
                           tree.kind != ReferenceKind.ARRAY_CTOR &&
-                          (tree.sym.owner.isLocal() || tree.sym.owner.isInner()));
+                          (tree.sym.owner.isDirectlyOrIndirectlyLocal() || tree.sym.owner.isInner()));
             }
 
             Type generatedRefSig() {

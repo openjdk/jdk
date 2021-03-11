@@ -39,6 +39,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.Principal;
 import java.security.cert.*;
+import java.util.List;
 import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -341,8 +342,10 @@ final class HttpsClient extends HttpClient
                 boolean compatible = ((ret.proxy != null && ret.proxy.equals(p)) ||
                     (ret.proxy == null && p == Proxy.NO_PROXY))
                      && Objects.equals(ret.getAuthenticatorKey(), ak);
+
                 if (compatible) {
-                    synchronized (ret) {
+                    ret.lock();
+                    try {
                         ret.cachedHttpClient = true;
                         assert ret.inCache;
                         ret.inCache = false;
@@ -351,18 +354,23 @@ final class HttpsClient extends HttpClient
                         if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                             logger.finest("KeepAlive stream retrieved from the cache, " + ret);
                         }
+                    } finally {
+                        ret.unlock();
                     }
                 } else {
                     // We cannot return this connection to the cache as it's
                     // KeepAliveTimeout will get reset. We simply close the connection.
                     // This should be fine as it is very rare that a connection
                     // to the same host will not use the same proxy.
-                    synchronized(ret) {
+                    ret.lock();
+                    try {
                         if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                             logger.finest("Not returning this connection to cache: " + ret);
                         }
                         ret.inCache = false;
                         ret.closeServer();
+                    } finally {
+                        ret.unlock();
                     }
                     ret = null;
                 }
@@ -419,7 +427,7 @@ final class HttpsClient extends HttpClient
             // unconnected sockets have not been implemented.
             //
             Throwable t = se.getCause();
-            if (t != null && t instanceof UnsupportedOperationException) {
+            if (t instanceof UnsupportedOperationException) {
                 return super.createSocket();
             } else {
                 throw se;
@@ -558,6 +566,10 @@ final class HttpsClient extends HttpClient
                     // will do the spoof checks in SSLSocket.
                     SSLParameters paramaters = s.getSSLParameters();
                     paramaters.setEndpointIdentificationAlgorithm("HTTPS");
+                    // host has been set previously for SSLSocketImpl
+                    if (!(s instanceof SSLSocketImpl)) {
+                        paramaters.setServerNames(List.of(new SNIHostName(host)));
+                    }
                     s.setSSLParameters(paramaters);
 
                     needToCheckSpoofing = false;

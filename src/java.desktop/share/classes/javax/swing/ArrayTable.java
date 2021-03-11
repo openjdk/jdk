@@ -255,17 +255,19 @@ class ArrayTable implements Cloneable {
      */
     public Object clone() {
         ArrayTable newArrayTable = new ArrayTable();
-        if (isArray()) {
-            Object[] array = (Object[])table;
-            for (int i = 0 ;i < array.length-1 ; i+=2) {
-                newArrayTable.put(array[i], array[i+1]);
-            }
-        } else {
-            Hashtable<?,?> tmp = (Hashtable)table;
-            Enumeration<?> keys = tmp.keys();
-            while (keys.hasMoreElements()) {
-                Object o = keys.nextElement();
-                newArrayTable.put(o,tmp.get(o));
+        if (table != null) {
+            if (isArray()) {
+                Object[] array = (Object[]) table;
+                for (int i = 0; i < array.length - 1; i += 2) {
+                    newArrayTable.put(array[i], array[i + 1]);
+                }
+            } else {
+                Hashtable<?, ?> tmp = (Hashtable) table;
+                Enumeration<?> keys = tmp.keys();
+                while (keys.hasMoreElements()) {
+                    Object o = keys.nextElement();
+                    newArrayTable.put(o, tmp.get(o));
+                }
             }
         }
         return newArrayTable;

@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 import javax.lang.model.element.Name;
 import javax.tools.Diagnostic;
@@ -46,7 +47,6 @@ import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreeFactory;
-import com.sun.tools.doclint.HtmlTag;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.ReferenceParser;
@@ -95,8 +95,8 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
+import com.sun.tools.javac.util.StringUtils;
 
-import static com.sun.tools.doclint.HtmlTag.*;
 
 /**
  *
@@ -112,7 +112,7 @@ public class DocTreeMaker implements DocTreeFactory {
 
     // A subset of block tags, which acts as sentence breakers, appearing
     // anywhere but the zero'th position in the first sentence.
-    final EnumSet<HtmlTag> sentenceBreakTags;
+    final Set<String> sentenceBreakTags;
 
     /** Get the TreeMaker instance. */
     public static DocTreeMaker instance(Context context) {
@@ -142,7 +142,7 @@ public class DocTreeMaker implements DocTreeFactory {
         this.pos = Position.NOPOS;
         trees = JavacTrees.instance(context);
         referenceParser = new ReferenceParser(ParserFactory.instance(context));
-        sentenceBreakTags = EnumSet.of(H1, H2, H3, H4, H5, H6, PRE, P);
+        sentenceBreakTags = Set.of("H1", "H2", "H3", "H4", "H5", "H6", "PRE", "P");
     }
 
     /** Reassign current position.
@@ -386,7 +386,12 @@ public class DocTreeMaker implements DocTreeFactory {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCReturn newReturnTree(List<? extends DocTree> description) {
-        DCReturn tree = new DCReturn(cast(description));
+        return newReturnTree(false, description);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCReturn newReturnTree(boolean isInline, List<? extends DocTree> description) {
+        DCReturn tree = new DCReturn(isInline, cast(description));
         tree.pos = pos;
         return tree;
     }
@@ -533,6 +538,7 @@ public class DocTreeMaker implements DocTreeFactory {
                     continue;
                 }
                 switch (dt.getKind()) {
+                    case RETURN:
                     case SUMMARY:
                         foundFirstSentence = true;
                         break;
@@ -690,7 +696,7 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     private boolean isSentenceBreak(Name tagName) {
-        return sentenceBreakTags.contains(get(tagName));
+        return sentenceBreakTags.contains(StringUtils.toUpperCase(tagName.toString()));
     }
 
     private boolean isSentenceBreak(DocTree dt, boolean isFirstDocTree) {

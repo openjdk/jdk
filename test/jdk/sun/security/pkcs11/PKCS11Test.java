@@ -96,7 +96,7 @@ public abstract class PKCS11Test {
     // NSS version info
     public static enum ECCState { None, Basic, Extended };
     static double nss_version = -1;
-    static ECCState nss_ecc_status = ECCState.Extended;
+    static ECCState nss_ecc_status = ECCState.Basic;
 
     // The NSS library we need to search for in getNSSLibDir()
     // Default is "libsoftokn3.so", listed as "softokn3"
@@ -853,7 +853,7 @@ public abstract class PKCS11Test {
                         + "please check if JIB jar is present in classpath.");
             } else {
                 throw new RuntimeException("Fetch artifact failed: " + clazz
-                        + "\nPlease make sure the artifact is available.");
+                        + "\nPlease make sure the artifact is available.", e);
             }
         }
         Policy.setPolicy(null); // Clear the policy created by JIB if any

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.util.regex.Pattern;
 public final class OutputAnalyzer {
 
     private static final String jvmwarningmsg = ".* VM warning:.*";
+
+    private static final String deprecatedmsg = ".* VM warning:.* deprecated.*";
 
     private final OutputBuffer buffer;
     /**
@@ -141,6 +143,21 @@ public final class OutputAnalyzer {
      */
     public OutputAnalyzer stderrShouldBeEmptyIgnoreVMWarnings() {
         if (!getStderr().replaceAll(jvmwarningmsg + "\\R", "").isEmpty()) {
+            reportDiagnosticSummary();
+            throw new RuntimeException("stderr was not empty");
+        }
+        return this;
+    }
+
+    /**
+     * Verify that the stderr contents of output buffer is empty,
+     * after filtering out the Hotspot deprecation warning messages
+     *
+     * @throws RuntimeException
+     *             If stderr was not empty
+     */
+    public OutputAnalyzer stderrShouldBeEmptyIgnoreDeprecatedWarnings() {
+        if (!getStderr().replaceAll(deprecatedmsg + "\\R", "").isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was not empty");
         }
@@ -547,6 +564,15 @@ public final class OutputAnalyzer {
      */
     public int getExitValue() {
         return buffer.getExitValue();
+    }
+
+    /**
+     * Get the process' pid
+     *
+     * @return pid
+     */
+    public long pid() {
+        return buffer.pid();
     }
 
     /**

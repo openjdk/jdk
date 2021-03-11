@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,15 +33,14 @@ import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import com.sun.source.doctree.SerialTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 /**
@@ -102,7 +101,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     public Content getSerializableFields(String heading, Content serializableFieldsTree) {
         HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail);
         if (serializableFieldsTree.isValid()) {
-            Content headingContent = new StringContent(heading);
+            Content headingContent = Text.of(heading);
             Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
             section.add(serialHeading);
             section.add(serializableFieldsTree);
@@ -113,15 +112,15 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public void addMemberHeader(TypeElement fieldType, String fieldTypeStr,
             String fieldDimensions, String fieldName, Content contentTree) {
-        Content nameContent = new StringContent(fieldName);
+        Content nameContent = Text.of(fieldName);
         Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
         contentTree.add(heading);
         Content pre = new HtmlTree(TagName.PRE);
         if (fieldType == null) {
             pre.add(fieldTypeStr);
         } else {
-            Content fieldContent = writer.getLink(new LinkInfoImpl(
-                    configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
+            Content fieldContent = writer.getLink(new HtmlLinkInfo(
+                    configuration, HtmlLinkInfo.Kind.SERIAL_MEMBER, fieldType));
             pre.add(fieldContent);
         }
         pre.add(fieldDimensions + " ");
@@ -131,12 +130,12 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
 
     @Override
     public void addMemberHeader(TypeMirror fieldType, String fieldName, Content contentTree) {
-        Content nameContent = new StringContent(fieldName);
+        Content nameContent = Text.of(fieldName);
         Content heading = HtmlTree.HEADING(TagName.H5, nameContent);
         contentTree.add(heading);
         Content pre = new HtmlTree(TagName.PRE);
-        Content fieldContent = writer.getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
+        Content fieldContent = writer.getLink(new HtmlLinkInfo(
+                configuration, HtmlLinkInfo.Kind.SERIAL_MEMBER, fieldType));
         pre.add(fieldContent);
         pre.add(" ");
         pre.add(fieldName);
@@ -165,7 +164,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (!utils.getFullBody(field).isEmpty()) {
             writer.addInlineComment(field, contentTree);
         }
-        List<? extends DocTree> tags = utils.getBlockTags(field, DocTree.Kind.SERIAL);
+        List<? extends SerialTree> tags = utils.getSerialTrees(field);
         if (!tags.isEmpty()) {
             writer.addInlineComment(field, tags.get(0), contentTree);
         }
@@ -196,13 +195,12 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     @Override
     public void addMemberTags(VariableElement field, Content contentTree) {
-        Content tagContent = new ContentBuilder();
-        TagletWriter.genTagOutput(configuration.tagletManager, field,
-                configuration.tagletManager.getBlockTaglets(field),
-                writer.getTagletWriterInstance(false), tagContent);
-        HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
-        dl.add(tagContent);
-        contentTree.add(dl);  // TODO: what if empty?
+        Content tagContent = writer.getBlockTagOutput(field);
+        if (!tagContent.isEmpty()) {
+            HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
+            dl.add(tagContent);
+            contentTree.add(dl);
+        }
     }
 
     /**

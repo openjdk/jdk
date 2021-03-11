@@ -117,7 +117,8 @@ public class ClassFile {
         V57(57, 0),   // JDK 13
         V58(58, 0),   // JDK 14
         V59(59, 0),   // JDK 15
-        V60(60, 0);   // JDK 16
+        V60(60, 0),   // JDK 16
+        V61(61, 0);   // JDK 17
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;

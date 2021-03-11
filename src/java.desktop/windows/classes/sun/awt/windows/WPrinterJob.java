@@ -980,7 +980,7 @@ public final class WPrinterJob extends RasterPrinterJob
                                 float control2x, float control2y,
                                 float endX, float endY) {
 
-        polyBezierTo(getPrintDC(), control1x, control1y,
+        polyBezierTo(getPrintDC(),  control1x, control1y,
                                control2x, control2y,
                                endX, endY);
     }

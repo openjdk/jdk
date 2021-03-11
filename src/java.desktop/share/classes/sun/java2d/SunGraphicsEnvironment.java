@@ -27,6 +27,7 @@ package sun.java2d;
 
 import java.awt.AWTError;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -349,53 +350,124 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     }
 
     /**
+     * Returns the bounds of the graphics configuration in device space.
+     *
+     * @param  config the graphics configuration which bounds are requested
+     * @return the bounds of the area covered by this
+     *         {@code GraphicsConfiguration} in device space (pixels)
+     */
+    public static Rectangle getGCDeviceBounds(GraphicsConfiguration config) {
+        AffineTransform tx = config.getDefaultTransform();
+        Rectangle bounds = config.getBounds();
+        bounds.width *= tx.getScaleX();
+        bounds.height *= tx.getScaleY();
+        return bounds;
+    }
+
+    /**
+     * Converts the size (w, h) from the device space to the user's space using
+     * passed graphics configuration.
+     *
+     * @param  gc the graphics configuration to be used for transformation
+     * @param  w the width in the device space
+     * @param  h the height in the device space
+     * @return the size in the user's space
+     */
+    public static Dimension toUserSpace(GraphicsConfiguration gc,
+                                        int w, int h) {
+        AffineTransform tx = gc.getDefaultTransform();
+        return new Dimension(
+                Region.clipRound(w / tx.getScaleX()),
+                Region.clipRound(h / tx.getScaleY())
+        );
+    }
+
+    /**
+     * Converts absolute coordinates from the user's space to the device space
+     * using appropriate device transformation.
+     *
+     * @param  x absolute coordinate in the user's space
+     * @param  y absolute coordinate in the user's space
+     * @return the point which uses device space (pixels)
+     */
+    public static Point toDeviceSpaceAbs(int x, int y) {
+        GraphicsConfiguration gc = getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration();
+        gc = getGraphicsConfigurationAtPoint(gc, x, y);
+        return toDeviceSpaceAbs(gc, x, y, 0, 0).getLocation();
+    }
+
+    /**
+     * Converts the rectangle from the user's space to the device space using
+     * appropriate device transformation.
+     *
+     * @param  rect the rectangle in the user's space
+     * @return the rectangle which uses device space (pixels)
+     */
+    public static Rectangle toDeviceSpaceAbs(Rectangle rect) {
+        GraphicsConfiguration gc = getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration();
+        gc = getGraphicsConfigurationAtPoint(gc, rect.x, rect.y);
+        return toDeviceSpaceAbs(gc, rect.x, rect.y, rect.width, rect.height);
+    }
+
+    /**
+     * Converts absolute coordinates (x, y) and the size (w, h) from the user's
+     * space to the device space using passed graphics configuration.
+     *
+     * @param  gc the graphics configuration to be used for transformation
+     * @param  x absolute coordinate in the user's space
+     * @param  y absolute coordinate in the user's space
+     * @param  w the width in the user's space
+     * @param  h the height in the user's space
+     * @return the rectangle which uses device space (pixels)
+     */
+    public static Rectangle toDeviceSpaceAbs(GraphicsConfiguration gc,
+                                             int x, int y, int w, int h) {
+        AffineTransform tx = gc.getDefaultTransform();
+        Rectangle screen = gc.getBounds();
+        return new Rectangle(
+                screen.x + Region.clipRound((x - screen.x) * tx.getScaleX()),
+                screen.y + Region.clipRound((y - screen.y) * tx.getScaleY()),
+                Region.clipRound(w * tx.getScaleX()),
+                Region.clipRound(h * tx.getScaleY())
+        );
+    }
+
+    /**
      * Converts coordinates from the user's space to the device space using
      * appropriate device transformation.
      *
-     * @param  x coordinate in the user space
-     * @param  y coordinate in the user space
-     * @return the point which uses device space(pixels)
+     * @param  x coordinate in the user's space
+     * @param  y coordinate in the user's space
+     * @return the point which uses device space (pixels)
      */
-    public static Point convertToDeviceSpace(double x, double y) {
-        GraphicsConfiguration gc = getLocalGraphicsEnvironment()
-                        .getDefaultScreenDevice().getDefaultConfiguration();
-        gc = getGraphicsConfigurationAtPoint(gc, x, y);
-
-        AffineTransform tx = gc.getDefaultTransform();
-        x = Region.clipRound(x * tx.getScaleX());
-        y = Region.clipRound(y * tx.getScaleY());
-        return new Point((int) x, (int) y);
-    }
-
-    /**
-     * Converts bounds from the user's space to the device space using
-     * appropriate device transformation.
-     *
-     * @param  bounds the rectangle in the user space
-     * @return the rectangle which uses device space(pixels)
-     */
-    public static Rectangle convertToDeviceSpace(Rectangle bounds) {
+    public static Point toDeviceSpace(int x, int y) {
         GraphicsConfiguration gc = getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice().getDefaultConfiguration();
-        gc = getGraphicsConfigurationAtPoint(gc, bounds.x, bounds.y);
-        return convertToDeviceSpace(gc, bounds);
+        gc = getGraphicsConfigurationAtPoint(gc, x, y);
+        return toDeviceSpace(gc, x, y, 0, 0).getLocation();
     }
 
     /**
-     * Converts bounds from the user's space to the device space using
-     * appropriate device transformation of the passed graphics configuration.
+     * Converts coordinates (x, y) and the size (w, h) from the user's
+     * space to the device space using passed graphics configuration.
      *
-     * @param  bounds the rectangle in the user space
-     * @return the rectangle which uses device space(pixels)
+     * @param  gc the graphics configuration to be used for transformation
+     * @param  x coordinate in the user's space
+     * @param  y coordinate in the user's space
+     * @param  w the width in the user's space
+     * @param  h the height in the user's space
+     * @return the rectangle which uses device space (pixels)
      */
-    public static Rectangle convertToDeviceSpace(GraphicsConfiguration gc,
-                                                 Rectangle bounds) {
+    public static Rectangle toDeviceSpace(GraphicsConfiguration gc,
+                                          int x, int y, int w, int h) {
         AffineTransform tx = gc.getDefaultTransform();
         return new Rectangle(
-                Region.clipRound(bounds.x * tx.getScaleX()),
-                Region.clipRound(bounds.y * tx.getScaleY()),
-                Region.clipRound(bounds.width * tx.getScaleX()),
-                Region.clipRound(bounds.height * tx.getScaleY())
+                Region.clipRound(x * tx.getScaleX()),
+                Region.clipRound(y * tx.getScaleY()),
+                Region.clipRound(w * tx.getScaleX()),
+                Region.clipRound(h * tx.getScaleY())
         );
     }
 }

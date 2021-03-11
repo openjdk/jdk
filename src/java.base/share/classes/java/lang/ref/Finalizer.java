@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,8 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
 
         try {
             Object finalizee = this.get();
-            if (finalizee != null && !(finalizee instanceof java.lang.Enum)) {
+            assert finalizee != null;
+            if (!(finalizee instanceof java.lang.Enum)) {
                 jla.invokeFinalize(finalizee);
 
                 // Clear stack slot containing this variable, to decrease

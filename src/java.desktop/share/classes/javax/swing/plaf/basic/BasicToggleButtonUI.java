@@ -53,6 +53,11 @@ public class BasicToggleButtonUI extends BasicButtonUI {
     // ********************************
 
     /**
+     * Constructs a {@code BasicToggleButtonUI}.
+     */
+    public BasicToggleButtonUI() {}
+
+    /**
      * Returns an instance of {@code BasicToggleButtonUI}.
      *
      * @param b a component

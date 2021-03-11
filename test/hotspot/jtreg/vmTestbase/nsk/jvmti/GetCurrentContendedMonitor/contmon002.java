@@ -23,7 +23,6 @@
 
 package nsk.jvmti.GetCurrentContendedMonitor;
 
-import nsk.share.Wicket;
 import java.io.PrintStream;
 
 public class contmon002 {
@@ -42,7 +41,7 @@ public class contmon002 {
         }
     }
 
-    public static Wicket startingBarrier;
+    public static boolean startingBarrier = true;
 
     public static void main(String[] args) {
         args = nsk.share.jvmti.JVMTITest.commonInit(args);
@@ -50,13 +49,22 @@ public class contmon002 {
         System.exit(run(args, System.out) + 95/*STATUS_TEMP*/);
     }
 
+    public static void doSleep() {
+        try {
+            Thread.sleep(10);
+        } catch (Exception e) {
+            throw new Error("Unexpected " + e);
+        }
+    }
+
     public static int run(String argv[], PrintStream ref) {
         checkMon(1, Thread.currentThread());
 
         contmon002a thr = new contmon002a();
-        startingBarrier = new Wicket();
         thr.start();
-        startingBarrier.waitFor();
+        while (startingBarrier) {
+            doSleep();
+        }
         checkMon(2, thr);
         thr.letItGo();
         try {
@@ -73,7 +81,7 @@ class contmon002a extends Thread {
     private volatile boolean flag = true;
 
     private synchronized void meth() {
-        contmon002.startingBarrier.unlock();
+        contmon002.startingBarrier = false;
         int i = 0;
         int n = 1000;
         while (flag) {

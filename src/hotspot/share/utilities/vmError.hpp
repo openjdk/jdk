@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,13 +85,9 @@ class VMError : public AllStatic {
   // Whether or not the last error reporting step did timeout.
   static volatile bool _step_did_timeout;
 
-  static bool _error_reported;
-
- public:
-
-  // set signal handlers on Solaris/Linux or the default exception filter
-  // on Windows, to handle recursive crashes.
-  static void reset_signal_handlers();
+  // Install secondary signal handler to handle secondary faults during error reporting
+  // (see VMError::crash_handler)
+  static void install_secondary_signal_handler();
 
   // handle -XX:+ShowMessageBoxOnError. buf is used to format the message string
   static void show_message_box(char* buf, int buflen);
@@ -115,10 +112,6 @@ class VMError : public AllStatic {
   // Write a hint to the stream in case siginfo relates to a segv/bus error
   // and the offending address points into CDS store.
   static void check_failing_cds_access(outputStream* st, const void* siginfo);
-
-  static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
-                             void* context, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(6, 7);
-  static void report_and_die(const char* message, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(2, 3);
 
   // Timeout handling.
   // Hook functions for platform dependend functionality:
@@ -147,6 +140,9 @@ public:
   static void print_vm_info(outputStream* st);
 
   // main error reporting function
+  static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
+                             void* context, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(6, 7);
+
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
                              Thread* thread, address pc, void* siginfo, void* context,
                              const char* filename, int lineno, size_t size) ATTRIBUTE_PRINTF(3, 0);
@@ -161,37 +157,28 @@ public:
                              VMErrorType vm_err_type, const char* detail_fmt,
                              va_list detail_args) ATTRIBUTE_PRINTF(6, 0);
 
-  static void report_and_die(const char* message);
-
   // reporting OutOfMemoryError
   static void report_java_out_of_memory(const char* message);
-
-  // returns original flags for signal, if it was resetted, or -1 if
-  // signal was not changed by error reporter
-  static int get_resetted_sigflags(int sig);
-
-  // returns original handler for signal, if it was resetted, or NULL if
-  // signal was not changed by error reporter
-  static address get_resetted_sighandler(int sig);
-
-  // check to see if fatal error reporting is in progress
-  static bool fatal_error_in_progress() { return _first_error_tid != -1; }
-
-  static intptr_t get_first_error_tid() { return _first_error_tid; }
 
   // Called by the WatcherThread to check if error reporting has timed-out.
   //  Returns true if error reporting has not completed within the ErrorLogTimeout limit.
   static bool check_timeout();
 
-  // Support for avoiding multiple asserts
+  // Returns true if at least one thread reported a fatal error and
+  //  fatal error handling is in process.
   static bool is_error_reported();
 
-  // Test vmassert(), fatal(), guarantee(), etc.
-  NOT_PRODUCT(static void test_error_handler();)
-  NOT_PRODUCT(static void controlled_crash(int how);)
+  // Returns true if the current thread reported a fatal error.
+  static bool is_error_reported_in_current_thread();
 
-  // returns an address which is guaranteed to generate a SIGSEGV on read,
-  // for test purposes, which is not NULL and contains bits in every word
-  static void* get_segfault_address();
+  DEBUG_ONLY(static void controlled_crash(int how);)
+
+  // Address which is guaranteed to generate a fault on read, for test purposes,
+  // which is not NULL and contains bits in every word.
+  static const intptr_t segfault_address = LP64_ONLY(0xABC0000000000ABCULL) NOT_LP64(0x00000ABC);
+
+  // Needed when printing signal handlers.
+  NOT_WINDOWS(static const void* crash_handler_address;)
+
 };
 #endif // SHARE_UTILITIES_VMERROR_HPP

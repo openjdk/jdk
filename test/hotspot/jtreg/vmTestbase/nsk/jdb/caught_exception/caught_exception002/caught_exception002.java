@@ -45,9 +45,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.caught_exception.caught_exception002.caught_exception002
- *        nsk.jdb.caught_exception.caught_exception002.caught_exception002a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdb.caught_exception.caught_exception002.caught_exception002a
+ * @run main/othervm
  *      nsk.jdb.caught_exception.caught_exception002.caught_exception002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package java.lang.reflect;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * The {@code Array} class provides static methods to dynamically create and
@@ -122,7 +122,7 @@ class Array {
      * @throws    IllegalArgumentException if the object argument is not
      * an array
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native int getLength(Object array)
         throws IllegalArgumentException;
 
@@ -481,7 +481,7 @@ class Array {
      * Private
      */
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static native Object newArray(Class<?> componentType, int length)
         throws NegativeArraySizeException;
 
