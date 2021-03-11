@@ -153,9 +153,10 @@ public class JDIBase {
     }
 
     // Special version of getEventSet for ThreadStartEvent/ThreadDeathEvent.
-    // When ThreadStartRequest and/or ThreadDeathRequest are enabled, we can get the events from system threads
-    // unexpected for tests.
-    // The method skips ThreadStartEvent/ThreadDeathEvent events for all threads except the expected one.
+    // When ThreadStartRequest and/or ThreadDeathRequest are enabled,
+    // we can get the events from system threads unexpected for tests.
+    // The method skips ThreadStartEvent/ThreadDeathEvent events
+    // for all threads except the expected one.
     protected void getEventSetForThreadStartDeath(String threadName) throws JDITestRuntimeException {
         boolean gotDesiredEvent = false;
         while (!gotDesiredEvent) {
